@@ -17,6 +17,26 @@ void ViewDelta::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId Compon
 	AuthorityChanges.SetAuthority(EntityId, ComponentId, Authority);
 }
 
+void ViewDelta::AddComponent(Worker_EntityId EntityId, ComponentData Data)
+{
+	EntityComponentChanges.AddComponent(EntityId, MoveTemp(Data));
+}
+
+void ViewDelta::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	EntityComponentChanges.RemoveComponent(EntityId, ComponentId);
+}
+
+void ViewDelta::AddComponentAsUpdate(Worker_EntityId EntityId, ComponentData Data)
+{
+	EntityComponentChanges.AddComponentAsUpdate(EntityId, MoveTemp(Data));
+}
+
+void ViewDelta::AddUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+{
+	EntityComponentChanges.AddUpdate(EntityId, MoveTemp(Update));
+}
+
 const TArray<CreateEntityResponse>& ViewDelta::GetCreateEntityResponses() const
 {
 	return CreateEntityResponses;
@@ -35,6 +55,26 @@ const TArray<EntityComponentId>& ViewDelta::GetAuthorityLost() const
 const TArray<EntityComponentId>& ViewDelta::GetAuthorityLostTemporarily() const
 {
 	return AuthorityChanges.GetAuthorityLostTemporarily();
+}
+
+const TArray<EntityComponentData>& ViewDelta::GetComponentsAdded() const
+{
+	return EntityComponentChanges.GetComponentsAdded();
+}
+
+const TArray<EntityComponentId>& ViewDelta::GetComponentsRemoved() const
+{
+	return EntityComponentChanges.GetComponentsRemoved();
+}
+
+const TArray<EntityComponentUpdate>& ViewDelta::GetUpdates() const
+{
+	return EntityComponentChanges.GetUpdates();
+}
+
+const TArray<EntityComponentCompleteUpdate>& ViewDelta::GetCompleteUpdates() const
+{
+	return EntityComponentChanges.GetCompleteUpdates();
 }
 
 TUniquePtr<AbstractOpList> ViewDelta::GenerateLegacyOpList() const

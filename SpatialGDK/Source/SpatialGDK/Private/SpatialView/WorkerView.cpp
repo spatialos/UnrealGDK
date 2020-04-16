@@ -38,6 +38,23 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
+void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
+{
+	AddedComponents.Add(EntityComponentId{ EntityId, Data.GetComponentId() });
+	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data));
+}
+
+void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+{
+	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update));
+}
+
+void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	AddedComponents.Remove(EntityComponentId{ EntityId, ComponentId });
+	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);
+}
+
 void WorkerView::SendCreateEntityRequest(CreateEntityRequest Request)
 {
 	LocalChanges->CreateEntityRequests.Push(MoveTemp(Request));
@@ -71,13 +88,16 @@ void WorkerView::ProcessOp(const Worker_Op& Op)
 	case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 		break;
 	case WORKER_OP_TYPE_ADD_COMPONENT:
+		HandleAddComponent(Op.op.add_component);
 		break;
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+		HandleRemoveComponent(Op.op.remove_component);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 		HandleAuthorityChange(Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+		HandleComponentUpdate(Op.op.component_update);
 		break;
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
 		break;
@@ -101,4 +121,32 @@ void WorkerView::HandleCreateEntityResponse(const Worker_CreateEntityResponseOp&
 	});
 }
 
+void WorkerView::HandleAddComponent(const Worker_AddComponentOp& Component)
+{
+	const EntityComponentId Id = { Component.entity_id, Component.data.component_id };
+	if (AddedComponents.Contains(Id))
+	{
+		Delta.AddComponentAsUpdate(Id.EntityId, ComponentData::CreateCopy(Component.data.schema_type, Id.ComponentId));
+	}
+	else
+	{
+		AddedComponents.Add(Id);
+		Delta.AddComponent(Id.EntityId, ComponentData::CreateCopy(Component.data.schema_type, Id.ComponentId));
+	}
+}
+
+void WorkerView::HandleComponentUpdate(const Worker_ComponentUpdateOp& Update)
+{
+	Delta.AddUpdate(Update.entity_id, ComponentUpdate::CreateCopy(Update.update.schema_type, Update.update.component_id));
+}
+
+void WorkerView::HandleRemoveComponent(const Worker_RemoveComponentOp& Component)
+{
+	const EntityComponentId Id = { Component.entity_id, Component.component_id };
+	// If the component has been added, remove it. Otherwise drop the op.
+	if (AddedComponents.Remove(Id))
+	{
+		Delta.RemoveComponent(Id.EntityId, Id.ComponentId);
+	}
+}
 }  // namespace SpatialGDK

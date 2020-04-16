@@ -1,10 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "MessagesToSend.h"
-#include "ViewDelta.h"
+
+#include "SpatialView/MessagesToSend.h"
+#include "SpatialView/ViewDelta.h"
+#include "Containers/Set.h"
 #include "Templates/UniquePtr.h"
-#include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
@@ -24,6 +25,9 @@ public:
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 
 private:
@@ -31,11 +35,15 @@ private:
 
 	void HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange);
 	void HandleCreateEntityResponse(const Worker_CreateEntityResponseOp& Response);
+	void HandleAddComponent(const Worker_AddComponentOp& Component);
+	void HandleComponentUpdate(const Worker_ComponentUpdateOp& Update);
+	void HandleRemoveComponent(const Worker_RemoveComponentOp& Component);
 
 	TArray<TUniquePtr<AbstractOpList>> QueuedOps;
 
 	ViewDelta Delta;
 	TUniquePtr<MessagesToSend> LocalChanges;
+	TSet<EntityComponentId> AddedComponents;
 };
 
 }  // namespace SpatialGDK
