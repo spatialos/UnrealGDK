@@ -112,7 +112,7 @@ private:
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
-	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
+	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);

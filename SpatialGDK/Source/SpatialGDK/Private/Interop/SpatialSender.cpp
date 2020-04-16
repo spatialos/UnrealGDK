@@ -287,9 +287,9 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		FTimerHandle RetryTimer;
 		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
 		{
-			if (USpatialSender* Sender = WeakSender.Get())
+			if (USpatialSender* SpatialSender = WeakSender.Get())
 			{
-				Sender->CreateServerWorkerEntity(AttemptCounter + 1);
+				SpatialSender->CreateServerWorkerEntity(AttemptCounter + 1);
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
@@ -440,43 +440,6 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 			UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
 		}
 	}
-}
-
-void USpatialSender::FlushPackedRPCs()
-{
-	if (RPCsToPack.Num() == 0)
-	{
-		return;
-	}
-
-	// TODO: This could be further optimized for the case when there's only 1 RPC to be sent during this frame
-	// by sending it directly to the corresponding entity, without including the EntityId in the payload - UNR-1563.
-	for (const auto& It : RPCsToPack)
-	{
-		Worker_EntityId PlayerControllerEntityId = It.Key;
-		const TArray<FPendingRPC>& PendingRPCArray = It.Value;
-
-		FWorkerComponentUpdate ComponentUpdate = {};
-
-		Worker_ComponentId ComponentId = NetDriver->IsServer() ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-
-		for (const FPendingRPC& RPC : PendingRPCArray)
-		{
-			Schema_Object* EventData = Schema_AddObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID);
-
-			Schema_AddUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, RPC.Offset);
-			Schema_AddUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, RPC.Index);
-			SpatialGDK::AddBytesToSchema(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, RPC.Data.GetData(), RPC.Data.Num());
-			Schema_AddEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID, RPC.Entity);
-		}
-
-		Connection->SendComponentUpdate(PlayerControllerEntityId, &ComponentUpdate);
-	}
-
-	RPCsToPack.Empty();
 }
 
 void USpatialSender::FlushRPCService()
@@ -839,6 +802,12 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		if (SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
 		{
 			EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
+
+			if (Result == EPushRPCResult::Success)
+			{
+				FlushRPCService();
+			}
+
 #if !UE_BUILD_SHIPPING
 			if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
 			{
@@ -879,63 +848,19 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 
-		bool bCanPackRPC = SpatialGDKSettings->bPackRPCs;
-		if (bCanPackRPC && RPCInfo.Type == ERPCType::NetMulticast)
+		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 		{
-			bCanPackRPC = false;
+			return ERPCResult::NoAuthority;
 		}
 
-		if (bCanPackRPC && SpatialGDKSettings->bEnableOffloading)
-		{
-			if (const AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get()))
-			{
-				if (const UNetConnection* OwningConnection = TargetActor->GetNetConnection())
-				{
-					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
-					{
-						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
-						{
-							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
-								*Function->GetName(),
-								*TargetActor->GetName(),
-								*ConnectionOwner->GetName()
-							);
-							bCanPackRPC = false;
-						}
-					}
-				}
-			}
-		}
+		FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
-		if (bCanPackRPC)
-		{
-			ERPCResult Result = AddPendingRPC(TargetObject, Function, Payload, ComponentId, RPCInfo.Index);
+		Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
-			if (Result == ERPCResult::Success)
-			{
-				TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
-			}
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
-			return Result;
-		}
-		else
-		{
-			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
-			{
-				return ERPCResult::NoAuthority;
-			}
-
-			FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
-
-			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-#if !UE_BUILD_SHIPPING
-			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
-#endif // !UE_BUILD_SHIPPING
-
-			NetDriver->Connection->MaybeFlush();
-
-			return ERPCResult::Success;
-		}
+		NetDriver->Connection->MaybeFlush();
+		return ERPCResult::Success;
 	}
 	default:
 		checkNoEntry();
@@ -1123,56 +1048,6 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 #endif
 
 	return ComponentUpdate;
-}
-ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex)
-{
-	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-
-	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get());
-	check(TargetActor != nullptr);
-	UNetConnection* OwningConnection = TargetActor->GetNetConnection();
-	if (OwningConnection == nullptr)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
-			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
-		return ERPCResult::NoNetConnection;
-	}
-
-	APlayerController* Controller = Cast<APlayerController>(OwningConnection->OwningActor);
-	if (Controller == nullptr)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
-			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
-		return ERPCResult::NoOwningController;
-	}
-
-	USpatialActorChannel* ControllerChannel = NetDriver->GetOrCreateSpatialActorChannel(Controller);
-	if (ControllerChannel == nullptr)
-	{
-		return ERPCResult::NoControllerChannel;
-	}
-
-	if (!ControllerChannel->IsListening())
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: ControllerChannel is not listening for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
-			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
-		return ERPCResult::ControllerChannelNotListening;
-	}
-
-	FUnrealObjectRef ControllerObjectRef = PackageMap->GetUnrealObjectRefFromObject(Controller);
-	ensure(ControllerObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-
-	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-
-	FPendingRPC RPC;
-	RPC.Offset = TargetObjectRef.Offset;
-	RPC.Index = RPCIndex;
-	RPC.Data.SetNumUninitialized(Payload.PayloadData.Num());
-	FMemory::Memcpy(RPC.Data.GetData(), Payload.PayloadData.GetData(), Payload.PayloadData.Num());
-	RPC.Entity = TargetObjectRef.Entity;
-	RPCsToPack.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
-	return ERPCResult::Success;
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)

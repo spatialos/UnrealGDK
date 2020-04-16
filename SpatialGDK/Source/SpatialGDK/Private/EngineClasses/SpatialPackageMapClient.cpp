@@ -32,10 +32,10 @@ void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager*
 	}
 }
 
-void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
+void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 {
 	InSubobjects.Empty();
-	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
+	ForEachObjectWithOuter(ParentObject, [&InSubobjects](UObject* Object)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
 		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())

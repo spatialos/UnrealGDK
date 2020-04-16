@@ -547,6 +547,9 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext.PendingNetGame->bSentJoinRequest = false;
 			WorldContext.PendingNetGame->URL = RedirectURL;
+
+			// Ensure the singleton map is reset as it will contain bad data from the old map
+			GlobalStateManager->RemoveAllSingletons();
 		}
 		else
 		{
@@ -1799,11 +1802,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 
 #endif // WITH_SERVER_CODE
-	}
-
-	if (SpatialGDKSettings->bPackRPCs && Sender != nullptr)
-	{
-		Sender->FlushPackedRPCs();
 	}
 
 	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)
