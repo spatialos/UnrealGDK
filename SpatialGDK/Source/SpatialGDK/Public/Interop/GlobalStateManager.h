@@ -72,6 +72,7 @@ public:
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 	void RemoveSingletonInstance(const AActor* SingletonActor);
+	void RemoveAllSingletons();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
