@@ -12,6 +12,9 @@
 namespace SpatialGDK
 {
 
+static const Schema_FieldId kEventId = 1;
+static const Schema_FieldId kEventIntFieldId = 2;
+
 // TODO(Alex): remove
 template <typename T, typename Value>
 void PopulateVector(std::vector<T>* vec, Value&& value);
@@ -62,6 +65,18 @@ inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId id, double v
 	auto* fields = componentUpdate.GetFields();
 	Schema_AddDouble(fields, kTestDoubleFieldId, value);
 	return componentUpdate;
+}
+
+inline void AddTestEvent(ComponentUpdate* update, int value) {
+  auto* events = update->GetEvents();
+  auto* eventData = Schema_AddObject(events, kEventId);
+  Schema_AddInt32(eventData, kEventIntFieldId, value);
+}
+
+inline ComponentUpdate CreateTestComponentEvent(Worker_ComponentId id, int value) {
+  ComponentUpdate update{id};
+  AddTestEvent(&update, value);
+  return update;
 }
 
 /** Returns true if lhs and rhs have the same serialized form. */
@@ -141,6 +156,17 @@ inline bool CompareEntityComponentUpdates(const EntityComponentUpdate& lhs,
 		return false;
 	}
 	return CompareComponentUpdates(lhs.Update, rhs.Update);
+}
+
+/** Returns true if lhs and rhs have the same ID, component ID, data, state and events. */
+inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteUpdate& lhs,
+	const EntityComponentCompleteUpdate& rhs)
+{
+	if (lhs.EntityId != rhs.EntityId)
+	{
+		return false;
+	}
+	return CompareComponentData(lhs.CompleteUpdate, rhs.CompleteUpdate) && CompareComponentUpdates(lhs.Events, rhs.Events);
 }
 
 }
