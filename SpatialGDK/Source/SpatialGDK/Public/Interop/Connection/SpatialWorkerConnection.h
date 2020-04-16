@@ -55,7 +55,7 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
 
-	void QueueLatestOpList(uint32_t WaitTime);
+	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
 	void MaybeFlush();
 

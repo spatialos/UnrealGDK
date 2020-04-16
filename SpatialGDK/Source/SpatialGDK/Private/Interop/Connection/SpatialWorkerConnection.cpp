@@ -185,7 +185,7 @@ uint32 USpatialWorkerConnection::Run()
 	while (KeepRunning)
 	{
 		ThreadWaitCondition->Wait();
-		QueueLatestOpList(0);
+		QueueLatestOpList();
 		ProcessOutgoingMessages();
 	}
 
@@ -206,9 +206,9 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 	check(OpsProcessingThread);
 }
 
-void USpatialWorkerConnection::QueueLatestOpList(uint32_t WaitTime)
+void USpatialWorkerConnection::QueueLatestOpList()
 {
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, WaitTime);
+	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
 	if (OpList->op_count > 0)
 	{
 		OpListQueue.Enqueue(OpList);
