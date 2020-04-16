@@ -44,7 +44,7 @@ void USpatialWorkerConnection::DestroyConnection()
 		OpsProcessingThread = nullptr;
 	}
 
-	ThreadWaitCondition.Reset();
+	ThreadWaitCondition.Reset(); // Set TOptional value to null
 
 	if (WorkerConnection)
 	{
