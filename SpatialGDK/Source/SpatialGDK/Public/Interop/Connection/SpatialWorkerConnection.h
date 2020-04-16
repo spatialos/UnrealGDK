@@ -3,18 +3,17 @@
 #pragma once
 
 #include "Containers/Queue.h"
+#include "HAL/Event.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
-#include "HAL/Event.h"
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
+#include "Interop/Connection/WorkerConnectionCoordinator.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/WeakObjectPtr.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "Interop/Connection/WorkerConnectionCoordinator.h"
 
 #include "SpatialWorkerConnection.generated.h"
 

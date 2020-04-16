@@ -65,6 +65,7 @@ struct FConnectionConfig
 
 		if (SpatialGDKSettings->bWorkerFlushAfterSend) // Explicit flush intervals, ticked at a minimum of the frame rate.
 		{
+			// This is set unreasonably large but is flushed at the rate of USpatialGDKSettings::OpsUpdateRate.
 			UdpUpstreamIntervalMS = 255; 
 		}
 		else
