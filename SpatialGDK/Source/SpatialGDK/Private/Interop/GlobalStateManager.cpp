@@ -387,6 +387,11 @@ void UGlobalStateManager::RemoveSingletonInstance(const AActor* SingletonActor)
 	SingletonClassPathToActorChannels.Remove(SingletonActor->GetClass()->GetPathName());
 }
 
+void UGlobalStateManager::RemoveAllSingletons()
+{
+	SingletonClassPathToActorChannels.Reset();
+}
+
 void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
 {
 	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActor->GetClass()->GetPathName());
