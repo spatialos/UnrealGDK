@@ -212,8 +212,12 @@ public:
 		}
 	}
 
-	inline void SetServerAuthority(const bool IsAuth)
+	void SetServerAuthority(const bool IsAuth)
 	{
+		if (IsAuth && !bIsAuthServer)
+		{
+			AuthorityTimestamp = FPlatformTime::Cycles64();
+		}
 		bIsAuthServer = IsAuth;
 	}
 
@@ -304,6 +308,8 @@ private:
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
+
+	void GetLatestAuthorityChangeFromHierarchy(AActor* RootActor, uint64& OutTimestamp);
 	
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
@@ -359,4 +365,10 @@ private:
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
+
+	// Band-aid until we get Actor Sets.
+	// Record when an actor got authority from a zoning transition.
+	// If an actor whose position depends on other in the same ownership hierarchy arrives before the others, it could report a position different
+	// from the position it is migrating to. So we prevent the actor from migrating immediately after to leave some time for the other actors it depends on to arrive.
+	uint64 AuthorityTimestamp;
 };
