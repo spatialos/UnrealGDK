@@ -440,10 +440,7 @@ void USpatialWorkerConnection::MaybeFlush()
 		}
 		else
 		{
-			//std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
-			//WorkerFlushCV.notify_one();
-			//Event->Trigger();
-			//Sem.Signal();
+			ThreadWaitCondition->Wake();
 		}
 	}
 }
