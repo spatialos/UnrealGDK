@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "SpatialView/OpList/AbstractOpList.h"
 #include "Containers/Array.h"
 #include <improbable/c_worker.h>

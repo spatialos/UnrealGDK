@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "Misc/Optional.h"
 #include "Containers/UnrealString.h"
 #include <improbable/c_worker.h>

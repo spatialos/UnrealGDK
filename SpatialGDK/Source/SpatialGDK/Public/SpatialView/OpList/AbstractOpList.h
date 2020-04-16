@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include <improbable/c_worker.h>
 
 namespace SpatialGDK

@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "SpatialView/OpList/AbstractOpList.h"
-#include "UniquePtr.h"
+#include "Templates/UniquePtr.h"
 #include <improbable/c_worker.h>
 
 namespace SpatialGDK
