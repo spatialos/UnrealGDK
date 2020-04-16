@@ -49,6 +49,13 @@ bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_
 
 void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
+	// With dynamic components enabled, it's possible to get duplicate AddComponent ops which need handling idempotently.
+	// For the sake of efficiency we just exit early here.
+	if (EntityComponentMap.Contains(Op.entity_id) && EntityComponentMap.Find(Op.entity_id)->Contains(Op.data.component_id))
+	{
+		return;
+	}
+
 	TUniquePtr<SpatialGDK::Component> Data;
 	switch (Op.data.component_id)
 	{
