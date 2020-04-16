@@ -309,7 +309,7 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
-	void GetLatestAuthorityChangeFromHierarchy(AActor* RootActor, uint64& OutTimestamp);
+	void GetLatestAuthorityChangeFromHierarchy(const AActor* RootActor, uint64& OutTimestamp);
 	
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
