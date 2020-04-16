@@ -224,30 +224,3 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyCompleteUpdateIfNoComponentAdded)
 	return true;
 }
 
-ENTITYCOMPONENTRECORD_TEST(CanRemoveEntity)
-{
-	const Worker_EntityId kEntityIdToRemove = 1337;
-	const Worker_EntityId kEntityIdToKeep = 1338;
-	const Worker_ComponentId kFirstComponentId = 1339;
-	const Worker_ComponentId kSecondComponentId = 1339;
-	const double kTestValue = 7331;
-
-	ComponentData firstDataToRemove = CreateTestComponentData(kFirstComponentId, kTestValue);
-	ComponentData secondDataToRemove = CreateTestComponentData(kSecondComponentId, kTestValue);
-	ComponentData dataToKeep = CreateTestComponentData(kFirstComponentId, kTestValue);
-
-	const auto expectedComponentsAdded =
-		CreateVector<EntityComponentData>(EntityComponentData{ kEntityIdToKeep, dataToKeep.DeepCopy() });
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
-
-	EntityComponentRecord storage;
-	storage.AddComponent(kEntityIdToRemove, std::move(firstDataToRemove));
-	storage.AddComponent(kEntityIdToRemove, std::move(secondDataToRemove));
-	storage.AddComponent(kEntityIdToKeep, std::move(dataToKeep));
-	storage.RemoveComponent(kEntityIdToRemove, kFirstComponentId);
-	storage.RemoveComponent(kEntityIdToRemove, kSecondComponentId);
-
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
-	return true;
-}

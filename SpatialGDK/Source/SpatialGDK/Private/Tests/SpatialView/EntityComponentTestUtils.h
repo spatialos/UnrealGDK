@@ -166,7 +166,7 @@ inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteU
 	{
 		return false;
 	}
-	return CompareComponentData(lhs.CompleteUpdate, rhs.CompleteUpdate) && CompareComponentUpdates(lhs.Events, rhs.Events);
+	return CompareComponentData(lhs.CompleteUpdate, rhs.CompleteUpdate) && CompareComponentUpdateEvents(lhs.Events, rhs.Events);
 }
 
 }
