@@ -120,4 +120,8 @@ private:
 
 	ECheckBoxState IsBuildClientWorkerEnabled() const;
 	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
+
+	void OnBuildSuccess();
+
+	bool CanLaunchDeployment() const;
 };

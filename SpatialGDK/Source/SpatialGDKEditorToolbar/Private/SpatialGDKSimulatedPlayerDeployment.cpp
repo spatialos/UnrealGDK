@@ -517,28 +517,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite)
 								]
 							]
-							// Build and Upload Assembly Button
-							+ SVerticalBox::Slot()
-							.FillHeight(1.0f)
-							.Padding(2.0f)
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								.HAlign(HAlign_Right)
-								[
-									SNew(SUniformGridPanel)
-									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
-									+ SUniformGridPanel::Slot(0, 0)
-									[
-										SNew(SButton)
-										.HAlign(HAlign_Center)
-										.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
-										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked)
-										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanBuildAndUpload)
-									]
-								]
-							]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -566,7 +544,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 										.HAlign(HAlign_Center)
 										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
 										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked)
-										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid)
+										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment)
 									]
 								]
 							]
@@ -695,6 +673,25 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
+	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	{
+		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
+		PackageAssembly->OnSuccess.BindSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildSuccess);
+			PackageAssembly->BuildAllAndUpload(
+				SpatialGDKEditorSettings->GetAssemblyName(),
+				SpatialGDKEditorSettings->AssemblyWindowsPlatform,
+				SpatialGDKEditorSettings->AssemblyBuildConfiguration,
+				TEXT(""),
+				SpatialGDKEditorSettings->bForceAssemblyOverwrite
+			);
+	}
+	return FReply::Handled();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnBuildSuccess()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -713,6 +710,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		}
 	}
 
+	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 	if (ToolbarPtr)
 	{
 		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
@@ -767,8 +765,6 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
 		}
 	});
-
-	return FReply::Handled();
 }
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
@@ -835,6 +831,15 @@ ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled()
 
 bool SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid() const
 {
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty())
+	{
+		return false;
+	}
+	if (SpatialGDKSettings->GetAssemblyName().IsEmpty())
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -962,4 +967,9 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedBuildClientWorker(ECheckBoxS
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetBuildClientWorker(NewCheckedState == ECheckBoxState::Checked);
+}
+
+bool SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment() const
+{
+	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }

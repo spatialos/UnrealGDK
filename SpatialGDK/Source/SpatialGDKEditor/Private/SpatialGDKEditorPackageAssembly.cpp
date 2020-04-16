@@ -153,6 +153,7 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 			{
 				FString NotificationMessage = FString::Printf(TEXT("Assembly successfully uploaded to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 				this->ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Success);
+				OnSuccess.ExecuteIfBound();
 			});
 		}
 	}
