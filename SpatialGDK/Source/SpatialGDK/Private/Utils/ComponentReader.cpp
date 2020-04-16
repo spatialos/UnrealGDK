@@ -180,12 +180,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	if (bIsInitialData)
 	{
 		const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
-
 		int32 SchemaType = ClassInfoManager->GetCategoryByComponentId(ComponentId);
 		for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
 		{
-			const FRepParentCmd& Parent = Parents[Cmds[BaseHandleToCmdIndex[HandleIndex].CmdIndex].ParentIndex];
-			if (GetGroupFromCondition(Parent.Condition) == SchemaType)
+			const int32 CmdIndex = BaseHandleToCmdIndex[HandleIndex].CmdIndex;
+			const FRepParentCmd& ParentCmd = Parents[Cmds[CmdIndex].ParentIndex];
+			if (GetGroupFromCondition(ParentCmd.Condition) == SchemaType)
 			{
 				InitialIds.Add(HandleIndex + 1);
 			}
