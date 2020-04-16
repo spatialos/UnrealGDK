@@ -343,6 +343,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Force Assembly Overwrite"))
 		bool bForceAssemblyOverwrite;
 
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
+		bool bBuildClientWorker;
+
 public:
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
@@ -374,6 +377,8 @@ private:
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
+
+
 
 public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
@@ -522,6 +527,12 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetBuildClientWorker(bool bBuild);
+	FORCEINLINE bool IsBuildClientWorkerEnabled() const
+	{
+		return bBuildClientWorker;
 	}
 
 	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);

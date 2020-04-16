@@ -246,6 +246,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
+{
+	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(bool Use)
 {
 	bUseGDKPinnedRuntimeVersion = Use;

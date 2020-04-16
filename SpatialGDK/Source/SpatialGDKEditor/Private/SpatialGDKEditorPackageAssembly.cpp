@@ -24,7 +24,6 @@ namespace
 }
 
 FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
-	: CurrentAssemblyTarget( EPackageAssemblyTarget::NONE )
 {
 }
 
@@ -75,76 +74,93 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 
 void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce)
 {
-	if (AssemblyDetailsPtr == nullptr && CurrentAssemblyTarget == EPackageAssemblyTarget::NONE)
+	if (AssemblyDetailsPtr == nullptr && Steps.IsEmpty())
 	{
-		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, Configuration, bForce));
-		CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_CLIENT;
-		BuildAssembly(FApp::GetProjectName(), WindowsPlatform, Configuration, AdditionalArgs);
+		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, WindowsPlatform, Configuration, bForce));
+		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-		AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskStartedNotification(TEXT("Building Assembly")); });
+		Steps.Enqueue(EPackageAssemblyTarget::BUILD_SERVER);
+		if (SpatialGDKSettings->IsBuildClientWorkerEnabled())
+		{
+			Steps.Enqueue(EPackageAssemblyTarget::BUILD_CLIENT);
+		}
+		if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
+		{
+			Steps.Enqueue(EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS);
+		}
+		Steps.Enqueue(EPackageAssemblyTarget::UPLOAD_ASSEMBLY);
+
+		AsyncTask(ENamedThreads::GameThread, [this]()
+		{
+			this->ShowTaskStartedNotification(TEXT("Building Assembly"));
+			this->NextStep();
+		});
 	}
 }
 
 bool FSpatialGDKPackageAssembly::CanBuild() const
 {
-	return CurrentAssemblyTarget == EPackageAssemblyTarget::NONE;
+	return Steps.IsEmpty();
+}
+
+bool FSpatialGDKPackageAssembly::NextStep()
+{
+	bool HasMoreSteps = false;
+	EPackageAssemblyTarget target = EPackageAssemblyTarget::NONE;
+	if (Steps.Dequeue(target))
+	{
+		HasMoreSteps = true;
+		switch(target)
+		{
+		case EPackageAssemblyTarget::BUILD_SERVER:
+			AsyncTask(ENamedThreads::GameThread, [this]()
+			{
+				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
+			});
+			break;
+		case EPackageAssemblyTarget::BUILD_CLIENT:
+			AsyncTask(ENamedThreads::GameThread, [this]()
+			{
+				this->BuildAssembly(FApp::GetProjectName(), AssemblyDetailsPtr->WindowsPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
+			});
+			break;
+		case EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS:
+			AsyncTask(ENamedThreads::GameThread, [this]()
+			{
+				this->BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
+			});
+			break;
+		case EPackageAssemblyTarget::UPLOAD_ASSEMBLY:
+		{
+			AsyncTask(ENamedThreads::GameThread, [this]()
+			{
+				this->AssemblyDetailsPtr->Upload(*this);
+			});
+		}
+		break;
+		}
+	}
+	return HasMoreSteps;
 }
 
 void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 {
 	if (TaskResult == 0)
 	{
-		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-		switch (CurrentAssemblyTarget)
+		if (!NextStep())
 		{
-		case EPackageAssemblyTarget::BUILD_CLIENT:
-			CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SERVER;
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
-			});
-			break;
-		case EPackageAssemblyTarget::BUILD_SERVER:
-			if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
-			{
-				CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS;
-				AsyncTask(ENamedThreads::GameThread, [this]()
-				{
-					this->BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
-				});
-			}
-			else
-			{
-				CurrentAssemblyTarget = EPackageAssemblyTarget::UPLOAD_ASSEMBLY;
-				AsyncTask(ENamedThreads::GameThread, [this]()
-				{
-					this->AssemblyDetailsPtr->Upload(*this);
-				});
-			}
-			break;
-		case EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS:
-			CurrentAssemblyTarget = EPackageAssemblyTarget::UPLOAD_ASSEMBLY;
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
-				this->AssemblyDetailsPtr->Upload(*this);
-			});
-			break;
-		case EPackageAssemblyTarget::UPLOAD_ASSEMBLY:
-			{
-				CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
 				FString NotificationMessage = FString::Printf(TEXT("Assembly successfully uploaded to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-				AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskEndedNotification(TEXT("Assembly Failed"), SNotificationItem::CS_Success); });
-			}
-			break;
-		default:
-			CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+				this->ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Success);
+			});
 		}
 	}
 	else
 	{
 		FString NotificationMessage = FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 		AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskEndedNotification(TEXT("Assembly Failed"), SNotificationItem::CS_Fail); });
-		CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+		Steps.Empty();
 	}
 }
 
@@ -155,7 +171,7 @@ void FSpatialGDKPackageAssembly::OnTaskOutput(FString Message)
 
 void FSpatialGDKPackageAssembly::OnTaskCanceled()
 {
-	CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+	Steps.Empty();
 	FString NotificationMessage = FString::Printf(TEXT("Cancelled assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 	AsyncTask(ENamedThreads::GameThread, [this, NotificationMessage]()
 	{
@@ -164,12 +180,12 @@ void FSpatialGDKPackageAssembly::OnTaskCanceled()
 	});
 }
 
-FSpatialGDKPackageAssembly::AssemblyDetails::AssemblyDetails(const FString& Name, const FString& Config, bool bInForce)
+FSpatialGDKPackageAssembly::AssemblyDetails::AssemblyDetails(const FString& Name, const FString& WinPlat, const FString& Config, bool bInForce)
 	: AssemblyName(Name)
+	, WindowsPlatform(WinPlat)
 	, Configuration(Config)
 	, bForce(bInForce)
 {
-
 }
 
 void FSpatialGDKPackageAssembly::AssemblyDetails::Upload(FSpatialGDKPackageAssembly& PackageAssembly)

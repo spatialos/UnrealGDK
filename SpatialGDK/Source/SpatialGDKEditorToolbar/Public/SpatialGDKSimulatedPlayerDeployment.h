@@ -117,4 +117,7 @@ private:
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
+
+	ECheckBoxState IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
 };

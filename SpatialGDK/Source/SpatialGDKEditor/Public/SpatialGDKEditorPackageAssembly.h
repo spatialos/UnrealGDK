@@ -22,20 +22,23 @@ private:
 	enum class EPackageAssemblyTarget
 	{
 		NONE = 0,
-		BUILD_CLIENT,
 		BUILD_SERVER,
+		BUILD_CLIENT,
 		BUILD_SIMULATED_PLAYERS,
 		UPLOAD_ASSEMBLY,
-	} CurrentAssemblyTarget;
+	};
+
+	TQueue<EPackageAssemblyTarget> Steps;
 
 	TSharedPtr<FMonitoredProcess> PackageAssemblyTask;
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
 	struct AssemblyDetails
 	{
-		AssemblyDetails(const FString& Name, const FString& Config, bool bForce);
+		AssemblyDetails(const FString& Name, const FString& WinPlat, const FString& Config, bool bForce);
 		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
 		FString AssemblyName;
+		FString WindowsPlatform;
 		FString Configuration;
 		bool bForce;
 	};
@@ -44,6 +47,8 @@ private:
 
 	void BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
 	void UploadAssembly(const FString& AssemblyName, bool bForce);
+
+	bool NextStep();
 
 	void ShowTaskStartedNotification(const FString& NotificationText);
 	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
