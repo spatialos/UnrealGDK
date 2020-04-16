@@ -136,6 +136,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
+	// Remove all RemoveComponentOps that have already been received and have the same entityId and componentId as the AddComponentOp.
+	// TODO: This can probably be removed when spatial view is added.
+	QueuedRemoveComponentOps.RemoveAll([&Op](const Worker_RemoveComponentOp& RemoveComponentOp) {
+		return RemoveComponentOp.entity_id == Op.entity_id &&
+			RemoveComponentOp.component_id == Op.data.component_id;
+	});
+
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::METADATA_COMPONENT_ID:
@@ -843,8 +850,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
 	}
-
-	Channel->RefreshAuthority();
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 

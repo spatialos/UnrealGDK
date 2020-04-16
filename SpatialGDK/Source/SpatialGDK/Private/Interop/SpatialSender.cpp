@@ -287,9 +287,9 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		FTimerHandle RetryTimer;
 		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
 		{
-			if (USpatialSender* Sender = WeakSender.Get())
+			if (USpatialSender* SpatialSender = WeakSender.Get())
 			{
-				Sender->CreateServerWorkerEntity(AttemptCounter + 1);
+				SpatialSender->CreateServerWorkerEntity(AttemptCounter + 1);
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
