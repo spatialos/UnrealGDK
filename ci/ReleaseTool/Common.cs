@@ -7,9 +7,7 @@ namespace ReleaseTool
     {
         public const string SpatialOsOrg = "spatialos";
         public const string GithubBotUser = "gdk-for-unreal-bot";
-        public const string ReleaseBranch = "release";
         public const string RemoteUrlTemplate = "git@github.com:{0}/{1}.git";
-        public const string ReleaseBranchNameTemplate = "feature/release-{0}";
 
         public static string ReplaceHomePath(string originalPath)
         {

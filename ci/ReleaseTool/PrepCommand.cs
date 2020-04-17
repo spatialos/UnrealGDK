@@ -52,9 +52,14 @@ namespace ReleaseTool
             [Value(0, MetaName = "version", HelpText = "The release version that is being cut.", Required = true)]
             public string Version { get; set; }
 
-            [Option('g', "update-pinned-gdk", HelpText =
-                "The git hash of the version of the gdk to upgrade to. (Only if this is a project).")]
-            public string PinnedGdkVersion { get; set; }
+            [Option("source-branch", HelpText = "The source branch name from which we are cutting the candidate.", Required = true)]
+            public string SourceBranch { get; set; }
+
+            [Option("candidate-branch", HelpText = "The candidate branch name.", Required = true)]
+            public string CandidateBranch { get; set; }
+
+            [Option("target-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
+            public string TargetBranch { get; set; }
 
             [Option("git-repository-name", HelpText = "The Git repository that we are targeting.", Required = true)]
             public string GitRepoName { get; set; }
@@ -72,8 +77,6 @@ namespace ReleaseTool
             public string GitHubToken { get; set; }
 
             #endregion
-
-            public bool ShouldUpdateGdkVersion => !string.IsNullOrEmpty(PinnedGdkVersion);
         }
 
         private readonly Options options;
@@ -110,9 +113,11 @@ namespace ReleaseTool
                     gitClient.Fetch(Common.SpatialOsOrg);
 
                     // This does step 3 from above.
-                    gitClient.CheckoutRemoteBranch(Common.ReleaseBranch, Common.SpatialOsOrg);
+                    gitClient.CheckoutRemoteBranch(GitSourceBranch, Common.SpatialOsOrg);
 
                     // This does step 4 from above.
+                    // TODO: Remove steps that are irrelevant to the Unreal GDK repos
+                    // TODO: Add steps for the Unreal GDK repos
                     using (new WorkingDirectoryScope(gitClient.RepositoryPath))
                     {
                         UpdateManifestJson(gitClient);
@@ -138,15 +143,14 @@ namespace ReleaseTool
                     }
 
                     // This does step 5 from above.
-                    var branchName = string.Format(Common.ReleaseBranchNameTemplate, options.Version);
                     gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
-                    gitClient.ForcePush(branchName);
+                    gitClient.ForcePush(CandidateBranch);
 
                     // This does step 6 from above.
                     var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
 
-                    var branchFrom = $"{Common.GithubBotUser}:{branchName}";
-                    var branchTo = Common.ReleaseBranch;
+                    var branchFrom = $"{Common.GithubBotUser}:{CandidateBranch}";
+                    var branchTo = GitSourceBranch;
 
                     // Only open a PR if one does not exist yet.
                     if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
@@ -163,7 +167,7 @@ namespace ReleaseTool
                         using (var sink = new BuildkiteMetadataSink(options))
                         {
                             sink.WriteMetadata($"{options.GitRepoName}-release-branch",
-                                $"pull/{pullRequest.Number}/head:{branchName}");
+                                $"pull/{pullRequest.Number}/head:{CandidateBranch}");
                             sink.WriteMetadata($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
                         }
                     }
@@ -333,7 +337,7 @@ namespace ReleaseTool
             }
 
             // Pin is always to master in this case.
-            File.WriteAllText(gdkPinnedFilename, $"{Common.ReleaseBranch} {newPinnedVersion}");
+            File.WriteAllText(gdkPinnedFilename, $"{GitSourceBranch} {newPinnedVersion}");
 
             gitClient.StageFile(gdkPinnedFilename);
         }
