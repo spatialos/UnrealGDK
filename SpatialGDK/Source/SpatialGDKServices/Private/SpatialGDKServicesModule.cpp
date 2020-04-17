@@ -12,17 +12,20 @@
 #include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesPrivate.h"
 #include "Widgets/Docking/SDockTab.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
+#define SpatialOSConfigFile "spatialos.json"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
+static TSharedPtr<FJsonObject> JsonParsedSpatialFile;
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
@@ -137,16 +140,34 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 	FPlatformProcess::ClosePipe(0, WritePipe);
 }
 
+void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
+{
+	FString SpatialFileName = TEXT(SpatialOSConfigFile);
+	FString SpatialFileResult;
+
+	JsonParsedSpatialFile->SetStringField("name", InProjectName);
+	
+	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&SpatialFileResult);
+	if (!FJsonSerializer::Serialize(JsonParsedSpatialFile.ToSharedRef(), JsonWriter))
+	{
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Write project name failed! Can not Serialize content to json file!"));
+		return;
+	}
+	if (!FFileHelper::SaveStringToFile(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialFileName)))
+	{
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write file content to %s"), *SpatialFileName);
+	}
+}
+
 FString FSpatialGDKServicesModule::ParseProjectName()
 {
 	FString ProjectNameParsed;
 
-	FString SpatialFileName = TEXT("spatialos.json");
+	FString SpatialFileName = TEXT(SpatialOSConfigFile);
 	FString SpatialFileResult;
 
 	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialFileName)))
 	{
-		TSharedPtr<FJsonObject> JsonParsedSpatialFile;
 		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
 		{
 			if (JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectNameParsed))
