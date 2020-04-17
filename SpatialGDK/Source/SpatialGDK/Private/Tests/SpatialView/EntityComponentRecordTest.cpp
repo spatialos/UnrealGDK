@@ -6,9 +6,6 @@
 
 #include "EntityComponentTestUtils.h"
 
-// TODO(Alex): remove std include
-#include <vector>
-
 #define ENTITYCOMPONENTRECORD_TEST(TestName) \
 	GDK_TEST(Core, EntityComponentRecord, TestName)
 
@@ -17,9 +14,9 @@ using namespace SpatialGDK;
 namespace
 {
 	bool AreEquivalent(const TArray<EntityComponentData>& lhs,
-		const std::vector<EntityComponentData>& rhs)
+		const TArray<EntityComponentData>& rhs)
 	{
-		if (lhs.Num() == rhs.size())
+		if (lhs.Num() == rhs.Num())
 		{
 			for (int i = 0; i < lhs.Num(); i++)
 			{
@@ -34,9 +31,9 @@ namespace
 	}
 
 	bool AreEquivalent(const TArray<EntityComponentId>& lhs,
-		const std::vector<EntityComponentId>& rhs)
+		const TArray<EntityComponentId>& rhs)
 	{
-		if (lhs.Num() == rhs.size())
+		if (lhs.Num() == rhs.Num())
 		{
 			for (int i = 0; i < lhs.Num(); i++)
 			{
@@ -59,11 +56,12 @@ ENTITYCOMPONENTRECORD_TEST(CanAddComponent)
 
 	auto testData = CreateTestComponentData(kTestComponentId, kTestValue);
 
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
-	const auto expectedComponentsAdded = CreateVector<EntityComponentData>(EntityComponentData{ kTestEntityId, testData.DeepCopy() });
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	TArray<EntityComponentData> expectedComponentsAdded;
+	expectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, testData.DeepCopy() });
 
 	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, std::move(testData));
+	storage.AddComponent(kTestEntityId, MoveTemp(testData));
 
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
@@ -77,10 +75,9 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveComponent)
 	EntityComponentRecord storage;
 	storage.RemoveComponent(kEntityComponentId.EntityId, kEntityComponentId.ComponentId);
 
-	const std::vector<EntityComponentData> expectedComponentsAdded = {};
-	const std::vector<EntityComponentId> expectedComponentsRemoved = { kEntityComponentId };
+	const TArray<EntityComponentData> expectedComponentsAdded = {};
+	const TArray<EntityComponentId> expectedComponentsRemoved = { kEntityComponentId };
 
-	//TestTrue(TEXT(""), removed);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 
@@ -95,15 +92,13 @@ ENTITYCOMPONENTRECORD_TEST(CanAddThenRemoveComponent)
 
 	auto testData = CreateTestComponentData(kTestComponentId, kTestValue);
 
-	const std::vector<EntityComponentData> expectedComponentsAdded = {};
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> expectedComponentsAdded = {};
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, std::move(testData));
+	storage.AddComponent(kTestEntityId, MoveTemp(testData));
 	storage.RemoveComponent(kTestEntityId, kTestComponentId);
 
-	//TestTrue(TEXT(""), added);
-	//TestFalse(TEXT(""), removed);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
@@ -118,15 +113,13 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveThenAddComponent)
 
 	auto testData = CreateTestComponentData(kTestComponentId, kTestValue);
 
-	const std::vector<EntityComponentData> expectedComponentsAdded = {};
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> expectedComponentsAdded = {};
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
 	storage.RemoveComponent(kTestEntityId, kTestComponentId);
-	storage.AddComponent(kTestEntityId, std::move(testData));
+	storage.AddComponent(kTestEntityId, MoveTemp(testData));
 
-	//TestTrue(TEXT(""), removed);
-	//TestFalse(TEXT(""), added);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
@@ -143,16 +136,14 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyUpdateToComponentAdded)
 	ComponentUpdate testUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
 	ComponentData expectedData = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 
-	const auto expectedComponentsAdded = CreateVector<EntityComponentData>(
-		EntityComponentData{ kTestEntityId, std::move(expectedData) });
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
+	TArray<EntityComponentData> expectedComponentsAdded;
+	expectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, MoveTemp(expectedData) });
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, std::move(testData));
+	storage.AddComponent(kTestEntityId, MoveTemp(testData));
 	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	//TestTrue(TEXT(""), added);
-	//TestTrue(TEXT(""), updated);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
@@ -166,13 +157,12 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyUpdateIfNoComponentAdded)
 
 	ComponentUpdate testUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
 
-	const std::vector<EntityComponentData> expectedComponentsAdded = {};
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> expectedComponentsAdded = {};
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
 	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	//TestFalse(TEXT(""), updated);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
@@ -189,16 +179,14 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyCompleteUpdateToComponentAdded)
 	ComponentData testUpdate = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 	ComponentData expectedData = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 
-	const auto expectedComponentsAdded = CreateVector<EntityComponentData>(
-		EntityComponentData{ kTestEntityId, std::move(expectedData) });
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
+	TArray<EntityComponentData> expectedComponentsAdded;
+	expectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, MoveTemp(expectedData) });
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, std::move(testData));
-	storage.AddComponentAsUpdate(kTestEntityId, std::move(testUpdate));
+	storage.AddComponent(kTestEntityId, MoveTemp(testData));
+	storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	//TestTrue(TEXT(""), added);
-	//TestTrue(TEXT(""), updated);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
@@ -212,13 +200,12 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyCompleteUpdateIfNoComponentAdded)
 
 	ComponentData testUpdate = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 
-	const std::vector<EntityComponentData> expectedComponentsAdded = {};
-	const std::vector<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> expectedComponentsAdded = {};
+	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
-	 storage.AddComponentAsUpdate(kTestEntityId, std::move(testUpdate));
+	 storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	//TestFalse(TEXT(""), updated);
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
