@@ -21,7 +21,7 @@ public:
 	FSimpleDelegate OnSuccess;
 
 private:
-	enum class EPackageAssemblyTarget
+	enum class EPackageAssemblyStep
 	{
 		NONE = 0,
 		BUILD_SERVER,
@@ -30,7 +30,7 @@ private:
 		UPLOAD_ASSEMBLY,
 	};
 
-	TQueue<EPackageAssemblyTarget> Steps;
+	TQueue<EPackageAssemblyStep> Steps;
 
 	TSharedPtr<FMonitoredProcess> PackageAssemblyTask;
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;

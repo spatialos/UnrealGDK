@@ -789,7 +789,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnBuildSuccess()
 			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
 			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
 			{
-				return FReply::Handled();
+				return;
 			}
 		}
 	}

@@ -79,16 +79,16 @@ void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, 
 		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, WindowsPlatform, Configuration, bForce));
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-		Steps.Enqueue(EPackageAssemblyTarget::BUILD_SERVER);
+		Steps.Enqueue(EPackageAssemblyStep::BUILD_SERVER);
 		if (SpatialGDKSettings->IsBuildClientWorkerEnabled())
 		{
-			Steps.Enqueue(EPackageAssemblyTarget::BUILD_CLIENT);
+			Steps.Enqueue(EPackageAssemblyStep::BUILD_CLIENT);
 		}
 		if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 		{
-			Steps.Enqueue(EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS);
+			Steps.Enqueue(EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS);
 		}
-		Steps.Enqueue(EPackageAssemblyTarget::UPLOAD_ASSEMBLY);
+		Steps.Enqueue(EPackageAssemblyStep::UPLOAD_ASSEMBLY);
 
 		AsyncTask(ENamedThreads::GameThread, [this]()
 		{
@@ -106,31 +106,31 @@ bool FSpatialGDKPackageAssembly::CanBuild() const
 bool FSpatialGDKPackageAssembly::NextStep()
 {
 	bool HasMoreSteps = false;
-	EPackageAssemblyTarget target = EPackageAssemblyTarget::NONE;
+	EPackageAssemblyStep target = EPackageAssemblyStep::NONE;
 	if (Steps.Dequeue(target))
 	{
 		HasMoreSteps = true;
 		switch(target)
 		{
-		case EPackageAssemblyTarget::BUILD_SERVER:
+		case EPackageAssemblyStep::BUILD_SERVER:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
 				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
-		case EPackageAssemblyTarget::BUILD_CLIENT:
+		case EPackageAssemblyStep::BUILD_CLIENT:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
 				this->BuildAssembly(FApp::GetProjectName(), AssemblyDetailsPtr->WindowsPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
-		case EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS:
+		case EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
 				this->BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
-		case EPackageAssemblyTarget::UPLOAD_ASSEMBLY:
+		case EPackageAssemblyStep::UPLOAD_ASSEMBLY:
 		{
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
