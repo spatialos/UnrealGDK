@@ -199,8 +199,8 @@ FSpatialPingAverageData USpatialPingComponent::GetAverageData() const
 
 		TArray<float> Sorted = LastPingMeasurements;
 		Sorted.Sort();
-		Data.LastMeasurementsWindow50thPercentile = Sorted[floorf(Sorted.Num() * 0.5f)];
-		Data.LastMeasurementsWindow90thPercentile = Sorted[floorf(Sorted.Num() * 0.9f)];
+		Data.LastMeasurementsWindow50thPercentile = Sorted[static_cast<uint32>(Sorted.Num() * 0.5f)];
+		Data.LastMeasurementsWindow90thPercentile = Sorted[static_cast<uint32>(Sorted.Num() * 0.9f)];
 	}
 	Data.WindowSize = LastPingMeasurements.Num();
 
