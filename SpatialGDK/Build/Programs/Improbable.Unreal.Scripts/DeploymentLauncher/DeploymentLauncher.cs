@@ -118,6 +118,7 @@ namespace Improbable
             var mainDeploymentJsonPath = args[5];
             var mainDeploymentSnapshotPath = args[6];
             var mainDeploymentRegion = args[7];
+            var mainDeploymentTags = args[8];
 
             var simDeploymentName = string.Empty;
             var simDeploymentJson = string.Empty;
@@ -126,11 +127,11 @@ namespace Improbable
 
             if (launchSimPlayerDeployment)
             {
-                simDeploymentName = args[8];
-                simDeploymentJson = args[9];
-                simDeploymentRegion = args[10];
+                simDeploymentName = args[9];
+                simDeploymentJson = args[10];
+                simDeploymentRegion = args[11];
 
-                if (!Int32.TryParse(args[11], out simNumPlayers))
+                if (!Int32.TryParse(args[12], out simNumPlayers))
                 {
                     Console.WriteLine("Cannot parse the number of simulated players to connect.");
                     return 1;
@@ -146,7 +147,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, mainDeploymentName);
                 }
 
-                var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, runtimeVersion, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath, mainDeploymentRegion);
+                var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, runtimeVersion, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath, mainDeploymentRegion, mainDeploymentTags);
 
                 if (!launchSimPlayerDeployment)
                 {
@@ -329,7 +330,7 @@ namespace Improbable
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
-            bool launchSimPlayerDeployment, string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode)
+            bool launchSimPlayerDeployment, string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode, string Tags)
         {
             var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
@@ -358,6 +359,10 @@ namespace Improbable
             };
 
             mainDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
+            foreach(String tag in Tags.Split(' '))
+            {
+                mainDeploymentConfig.Tag.Add(tag);
+            }
 
             if (launchSimPlayerDeployment)
             {
@@ -632,7 +637,7 @@ namespace Improbable
         private static int Main(string[] args)
         {
             if (args.Length == 0 ||
-                (args[0] == "create" && (args.Length != 12 && args.Length != 8)) ||
+                (args[0] == "create" && (args.Length != 13 && args.Length != 9)) ||
                 (args[0] == "createsim" && args.Length != 10) ||
                 (args[0] == "stop" && (args.Length != 3 && args.Length != 4)) ||
                 (args[0] == "list" && args.Length != 3))

@@ -331,6 +331,9 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+		FString DeploymentTags;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -496,6 +499,12 @@ public:
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	void SetDeploymentTags(const FString& Tags);
+	FORCEINLINE FString GetDeploymentTags() const
+	{
+		return DeploymentTags;
 	}
 
 	void SetAssemblyWindowsPlatform(const FString& Platform);

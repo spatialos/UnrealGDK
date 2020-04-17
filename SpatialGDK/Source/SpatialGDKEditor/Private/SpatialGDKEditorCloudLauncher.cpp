@@ -18,14 +18,15 @@ bool SpatialGDKCloudLaunch()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LauncherCreateArguments = FString::Printf(
-		TEXT("create %s %s %s %s \"%s\" \"%s\" %s"),
+		TEXT("create %s %s %s %s \"%s\" \"%s\" %s \"%s\""),
 		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
 		*SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud(),
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
 		*SpatialGDKSettings->GetPrimaryLaunchConfigPath(),
 		*SpatialGDKSettings->GetSnapshotPath(),
-		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString(),
+		*SpatialGDKSettings->GetDeploymentTags()
 	);
 
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())

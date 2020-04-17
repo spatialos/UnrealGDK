@@ -223,6 +223,12 @@ void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type Reg
 	PrimaryDeploymentRegionCode = RegionCode;
 }
 
+void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
+{
+	DeploymentTags = Tags;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetAssemblyWindowsPlatform(const FString& Platform)
 {
 	AssemblyWindowsPlatform = Platform;

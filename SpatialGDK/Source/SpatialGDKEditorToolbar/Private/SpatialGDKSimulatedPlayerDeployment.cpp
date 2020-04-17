@@ -277,6 +277,29 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Deployment Tags
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Deployment Tags"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetDeploymentTags()))
+									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommited)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommited, ETextCommit::Default)
+								]
+							]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -594,6 +617,12 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetPrimaryLaunchConfigPath(PickedPath);
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetDeploymentTags(InText.ToString());
 }
 
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeploymentRegionCode()
