@@ -180,7 +180,7 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyCompleteUpdateIfNoComponentAdded)
 	const TArray<EntityComponentId> expectedComponentsRemoved = {};
 
 	EntityComponentRecord storage;
-	 storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(testUpdate));
+	storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(testUpdate));
 
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
 	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
