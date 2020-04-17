@@ -279,14 +279,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 #endif
 }
 
-void USpatialNetDriver::FetchWorkerOps()
-{
-	if (Connection)
-	{
-		Connection->QueueLatestOpList();
-	}
-}
-
 void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 {
 	Connection = ConnectionManager->GetWorkerConnection();
@@ -1619,7 +1611,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
-		FetchWorkerOps();
+		if (Connection != nullptr)
+		{
+			Connection->QueueLatestOpList();
+		}
 	}
 
 	if (Connection != nullptr)
@@ -1825,7 +1820,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 	Super::TickFlush(DeltaTime);
 
-	if (Connection)
+	if (Connection != nullptr)
 	{
 		Connection->MaybeFlush();
 	}

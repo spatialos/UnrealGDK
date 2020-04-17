@@ -202,8 +202,7 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
-	EThreadPriority Priority = GetDefault<USpatialGDKSettings>()->bWorkerSendHighPriority ? TPri_AboveNormal : TPri_Normal;
-	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, Priority);
+	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
 	check(OpsProcessingThread);
 }
 

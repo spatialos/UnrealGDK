@@ -290,17 +290,9 @@ public:
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
 
-	/** Explicit flush intervals instead of relying on a flush interval. Flush is triggered by events such as RPCs. */
-	UPROPERTY(Config)
-	bool bWorkerFlushAfterSend;
-
 	/** When explicitly flushing, whether to flush immediately after an RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
 	bool bWorkerFlushAfterRPC;
-
-	/** Use higher priority for worker send/receive thread to ensure scheduling is fast. */
-	UPROPERTY(Config)
-	bool bWorkerSendHighPriority;
 
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
