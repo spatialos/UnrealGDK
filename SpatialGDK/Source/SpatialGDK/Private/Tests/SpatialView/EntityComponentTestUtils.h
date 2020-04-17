@@ -156,4 +156,25 @@ bool AreEquivalent(const TArray<T>& lhs, const TArray<T>& rhs, ComparisonFunctio
 
 	return true;
 }
+
+inline bool AreEquivalent(const TArray<EntityComponentUpdate>& lhs, const TArray<EntityComponentUpdate>& rhs)
+{
+	return AreEquivalent(lhs, rhs, CompareEntityComponentUpdates);
+}
+
+inline bool AreEquivalent(const TArray<EntityComponentCompleteUpdate>& lhs, const TArray<EntityComponentCompleteUpdate>& rhs)
+{
+	return AreEquivalent(lhs, rhs, CompareEntityComponentCompleteUpdates);
+}
+
+inline bool AreEquivalent(const TArray<EntityComponentData>& lhs, const TArray<EntityComponentData>& rhs)
+{
+	return AreEquivalent(lhs, rhs, CompareEntityComponentData);
+}
+
+inline bool AreEquivalent(const TArray<EntityComponentId>& lhs, const TArray<EntityComponentId>& rhs)
+{
+	return AreEquivalent(lhs, rhs, CompareEntityComponentId);
+}
+
 }

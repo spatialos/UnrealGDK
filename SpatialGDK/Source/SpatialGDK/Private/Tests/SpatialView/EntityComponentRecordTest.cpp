@@ -11,19 +11,6 @@
 
 using namespace SpatialGDK;
 
-namespace
-{
-	bool AreEquivalent(const TArray<EntityComponentData>& lhs, const TArray<EntityComponentData>& rhs)
-	{
-		return AreEquivalent(lhs, rhs, CompareEntityComponentData);
-	}
-
-	bool AreEquivalent(const TArray<EntityComponentId>& lhs, const TArray<EntityComponentId>& rhs)
-	{
-		return AreEquivalent(lhs, rhs, CompareEntityComponentId);
-	}
-}  // anonymous namespace
-
 ENTITYCOMPONENTRECORD_TEST(CanAddComponent)
 {
 	const Worker_EntityId kTestEntityId = 1337;
