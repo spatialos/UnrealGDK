@@ -148,7 +148,7 @@ void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&SpatialFileResult);
 	if (!FJsonSerializer::Serialize(JsonParsedSpatialFile.ToSharedRef(), JsonWriter))
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Write project name failed! Can not Serialize content to json file!"));
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write project name to parsed spatial file. Unable to serialize content to json file."));
 		return;
 	}
 	if (!FFileHelper::SaveStringToFile(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialGDKServicesConstants::SpatialOSConfigFileName)))
