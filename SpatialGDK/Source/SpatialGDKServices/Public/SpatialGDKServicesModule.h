@@ -29,6 +29,7 @@ public:
 	{
 		return ProjectName;
 	}
+	
 	static void SetProjectName(const FString& InProjectName);
 
 	static bool ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
