@@ -4,50 +4,11 @@
 
 #include "SpatialView/EntityComponentTypes.h"
 
-// TODO(Alex): remove std include
-#include <memory>
-#include <vector>
-#include <type_traits>
-
 namespace SpatialGDK
 {
 
 static const Schema_FieldId kEventId = 1;
 static const Schema_FieldId kEventIntFieldId = 2;
-
-// TODO(Alex): remove
-template <typename T, typename Value>
-void PopulateVector(std::vector<T>* vec, Value&& value);
-template <typename T, typename Head, typename... Tail>
-void PopulateVector(std::vector<T>* vec, Head&& head, Tail&&... tail);
-
-/**
- * Syntactic sugar for creating a vector of move only types.
- * Allows creation of a const vector of move-only objects without defining it in a lambda.
- * All arguments passed must be convertible to VectorType.
- */
-template <typename VectorType, typename... Values>
-std::vector<VectorType> CreateVector(Values&&... values) {
-	std::vector<VectorType> vec;
-	PopulateVector(&vec, std::forward<Values>(values)...);
-	return vec;
-}
-
-template <typename T, typename Value>
-void PopulateVector(std::vector<T>* vec, Value&& value) {
-	static_assert(std::is_convertible<Value&&, T>::value,
-		"All values passed to CreateVector must be convertible To VectorType");
-	vec->emplace_back(std::forward<Value>(value));
-}
-
-template <typename T, typename Head, typename... Tail>
-void PopulateVector(std::vector<T>* vec, Head&& head, Tail&&... tail) {
-	static_assert(std::is_convertible<Head&&, T>::value,
-		"All values passed to CreateVector must be convertible To VectorType");
-	vec->emplace_back(std::forward<Head>(head));
-	PopulateVector(vec, std::forward<Tail>(tail)...);
-}
-// TODO(Alex): end
 
 static const Schema_FieldId kTestDoubleFieldId = 1;
 
@@ -87,11 +48,11 @@ inline bool CompareSchemaObjects(const Schema_Object* lhs, const Schema_Object* 
 	{
 		return false;
 	}
-	const auto lhsBuffer = std::make_unique<std::uint8_t[]>(length);
-	const auto rhsBuffer = std::make_unique<std::uint8_t[]>(length);
-	Schema_SerializeToBuffer(lhs, lhsBuffer.get(), length);
-	Schema_SerializeToBuffer(rhs, rhsBuffer.get(), length);
-	return std::memcmp(lhsBuffer.get(), rhsBuffer.get(), length) == 0;
+	const TUniquePtr<unsigned char[]> lhsBuffer = MakeUnique<unsigned char[]>(length);
+	const TUniquePtr<unsigned char[]> rhsBuffer = MakeUnique<unsigned char[]>(length);
+	Schema_SerializeToBuffer(lhs, lhsBuffer.Get(), length);
+	Schema_SerializeToBuffer(rhs, rhsBuffer.Get(), length);
+	return FMemory::Memcmp(lhsBuffer.Get(), rhsBuffer.Get(), length) == 0;
 }
 
 /** Returns true if lhs and rhs have the same component ID and state. */
