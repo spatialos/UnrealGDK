@@ -290,7 +290,7 @@ public:
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
 
-	/** When explicitly flushing, whether to flush immediately after an RPC. Higher bandwidth but lower latency on RPC calls. */
+	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
 	bool bWorkerFlushAfterRPC;
 

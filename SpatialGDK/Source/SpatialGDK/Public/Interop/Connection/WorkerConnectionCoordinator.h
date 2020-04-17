@@ -22,22 +22,17 @@ class WorkerConnectionCoordinator
 	float									WaitSeconds;
 public:
 	WorkerConnectionCoordinator(bool bCanWake, float InWaitSeconds)
-	{
-		if(bCanWake)
-		{
-			Event.Reset(FGenericPlatformProcess::GetSynchEventFromPool());
-		}
-		WaitSeconds = InWaitSeconds;
-	}
-	~WorkerConnectionCoordinator()
+		: Event(FGenericPlatformProcess::GetSynchEventFromPool())
+		, WaitSeconds(InWaitSeconds)
 	{
 	}
+	~WorkerConnectionCoordinator() = default;
 
 	void Wait()
 	{
-		if(Event)
+		if (Event.IsValid())
 		{
-			FTimespan WaitTime = FTimespan::FromSeconds(WaitSeconds); // Microseconds to allow for fractional ms
+			FTimespan WaitTime = FTimespan::FromSeconds(WaitSeconds);
 			Event->Wait(WaitTime);
 		}
 		else
@@ -47,7 +42,7 @@ public:
 	}
 	void Wake()
 	{
-		if (Event)
+		if (Event.IsValid())
 		{
 			Event->Trigger();
 		}

@@ -1608,17 +1608,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	if (Connection != nullptr)
 	{
-		if (Connection != nullptr)
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 		{
 			Connection->QueueLatestOpList();
 		}
-	}
 
-	if (Connection != nullptr)
-	{
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
@@ -1808,22 +1805,22 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
-	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	if (Connection != nullptr)
 	{
-		if (Connection != nullptr)
+		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 		{
 			Connection->ProcessOutgoingMessages();
+		}
+		else
+		{
+			// Submit a flush here if we are driving the worker thread with events.
+			Connection->MaybeFlush();
 		}
 	}
 
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 	Super::TickFlush(DeltaTime);
-
-	if (Connection != nullptr)
-	{
-		Connection->MaybeFlush();
-	}
 }
 
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const

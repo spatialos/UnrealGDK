@@ -86,5 +86,6 @@ private:
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
 
+	// Coordinates the async worker ops thread.
 	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
 };

@@ -16,12 +16,13 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	CacheWorkerAttributes();
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterRPC;
-	ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
 		{
+			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterRPC;
+			ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
+
 			InitializeOpsProcessingThread();
 		}
 	}
@@ -221,6 +222,7 @@ void USpatialWorkerConnection::QueueLatestOpList()
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
+	bool SentData = !OutgoingMessagesQueue.IsEmpty();
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
@@ -422,8 +424,11 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 	}
 
-	// Flush worker API calls              
-	Worker_Connection_Alpha_Flush(WorkerConnection);
+	// Flush worker API calls
+	if (SentData)
+	{
+		Worker_Connection_Alpha_Flush(WorkerConnection);
+	}
 }
 
 void USpatialWorkerConnection::MaybeFlush()
@@ -437,6 +442,7 @@ void USpatialWorkerConnection::MaybeFlush()
 		}
 		else
 		{
+			check(ThreadWaitCondition.IsSet());
 			ThreadWaitCondition->Wake();
 		}
 	}
