@@ -581,8 +581,12 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
 		{
-			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded."), *BuiltSimPlayersName);
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(MissingSimPlayerBuildText));
+			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded.\n\nWould you still like to continue with the deployment?"), *BuiltSimPlayersName);
+			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
+			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
+			{
+				return FReply::Handled();
+			}
 		}
 	}
 

@@ -249,6 +249,27 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_entity_position_for_vi
 	return true;
 }
 
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_one_cell_WHEN_requires_handover_data_called_THEN_returns_false)
+{
+	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f, 1000.0f);
+	TestFalse("Strategy doesn't require handover data",Strat->RequiresHandoverData());
+	return true;
+}
+
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_row_WHEN_requires_handover_data_called_THEN_returns_true)
+{
+	Strat = UTestGridBasedLBStrategy::Create(2, 1, 10000.f, 10000.f, 1000.0f);
+	TestTrue("Strategy doesn't require handover data",Strat->RequiresHandoverData());
+	return true;
+}
+
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_column_WHEN_requires_handover_data_called_THEN_returns_true)
+{
+	Strat = UTestGridBasedLBStrategy::Create(1, 2, 10000.f, 10000.f, 1000.0f);
+	TestTrue("Strategy doesn't require handover data",Strat->RequiresHandoverData());
+	return true;
+}
+
 }  // anonymous namespace
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
@@ -334,3 +355,4 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_re
 
 	return true;
 }
+

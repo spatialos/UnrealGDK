@@ -17,6 +17,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -138,13 +140,12 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
-	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
-
+	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
+		if (bTrackHandoverProperties && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -187,7 +188,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	{
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
-		if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
+		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 		{
 			return;
 		}
@@ -221,7 +222,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
+			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 			{
 				return;
 			}
@@ -279,6 +280,25 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 	}
 }
 
+bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
+{
+	if (!NetDriver->IsServer())
+	{
+		return false;
+	}
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bEnableUnrealLoadBalancer)
+	{
+		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
+		if (ensure(Strategy != nullptr))
+		{
+			return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+		}
+	}
+	return Settings->bEnableHandover;
+}
+
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
 {
 	if (FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
@@ -301,7 +321,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* 
 	{
 		CreateClassInfoForClass(Class);
 	}
-	
+
 	return ClassInfoMap[Class].Get();
 }
 
