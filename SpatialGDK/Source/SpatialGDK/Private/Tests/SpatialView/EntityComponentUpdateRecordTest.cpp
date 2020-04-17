@@ -11,21 +11,6 @@
 
 using namespace SpatialGDK;
 
-namespace
-{
-	// TODO(Alex): templatize?
-	bool AreEquivalent(const TArray<EntityComponentUpdate>& lhs, const TArray<EntityComponentUpdate>& rhs)
-	{
-		return AreEquivalent(lhs, rhs, CompareEntityComponentUpdates);
-	}
-
-	bool AreEquivalent(const TArray<EntityComponentCompleteUpdate>& lhs, const TArray<EntityComponentCompleteUpdate>& rhs)
-	{
-		return AreEquivalent(lhs, rhs, CompareEntityComponentCompleteUpdates);
-	}
-
-}  // anonymous namespace
-
 ENTITYCOMPONENTUPDATERECORD_TEST(CanAddUpdate)
 {
 	const Worker_EntityId kTestEntityId = 1337;
