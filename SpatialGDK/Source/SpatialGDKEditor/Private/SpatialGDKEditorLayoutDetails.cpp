@@ -80,11 +80,11 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
-		.Content()
-		[
-			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
-		]
+			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
+			.Content()
+			[
+				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
+			]
 		];
 
 	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to iOS device"))
@@ -94,11 +94,11 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
-		.Content()
-		[
-			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
-		]
+			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
+			.Content()
+			[
+				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
+			]
 		];
 }
 
