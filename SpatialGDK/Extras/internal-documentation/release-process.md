@@ -70,6 +70,15 @@ If it fails because the DLL is not available, file a WRK ticket for the Worker t
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
 
+### Create the `UnrealGDKTestGyms` release candidate
+1. `git clone` the [UnrealGDKTestGyms](https://github.com/spatialos/UnrealGDKTestGyms).
+1. `git checkout master`
+1. `git pull`
+1. Using `git log`, take note of the latest commit hash.
+1. `git checkout -b x.y.z-rc` in order to create release candidate branch.
+1. `git push --set-upstream origin x.y.z-rc` to push the branch.
+1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
+
 ## Build your release candidate engine
 1. Open https://documentation.improbable.io/gdk-for-unreal/docs/get-started-1-get-the-dependencies.
 1. Uninstall all dependencies listed on this page so that you can accurately validate our installation steps.
@@ -141,7 +150,16 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. In `UnrealGDKExampleProject`, merge `preview` into `release`.
 1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
-1. In `UnrealGDK`, merge `release` into `master`.
+1. In `UnrealGDKExampleProject`, merge `release` into `master`.
+
+**UnrealGDKTestGyms**
+1. In `UnrealGDKTestGyms`, merge `x.y.z-rc` into `preview`.
+1. If you want to soak test this release on the `preview`, use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKTestGyms/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. In `UnrealGDKTestGyms`, merge `preview` into `release`.
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKTestGyms/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. In `UnrealGDKTestGyms`, merge `release` into `master`.
 
 **Documentation**
 1. Notify @techwriters in [#docs](https://improbable.slack.com/archives/C0TBQAB5X) that they may publish the new version of the docs.

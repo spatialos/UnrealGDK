@@ -1190,7 +1190,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Data.component_id, Offset);
 	if (!bFoundOffset)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when applying component data to Actor %s!"), EntityId, Data.component_id, *Actor->GetPathName());
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s EntityId: %lld, ComponentId: %d - Could not find offset for component id when applying component data to Actor %s!"), *NetDriver->Connection->GetWorkerId(), EntityId, Data.component_id, *Actor->GetPathName());
 		return;
 	}
 
@@ -1553,13 +1553,11 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		}
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.update.component_id);
-
 	uint32 Offset;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.update.component_id, Offset);
 	if (!bFoundOffset)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find Offset for component id"), Op.entity_id, Op.update.component_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s EntityId %d ComponentId %d - Could not find offset for component id when receiving a component update."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 		return;
 	}
 
