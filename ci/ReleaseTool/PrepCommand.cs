@@ -10,11 +10,21 @@ namespace ReleaseTool
 {
     /// <summary>
     ///     Runs the steps required to cut a release candidate branch.
+
+    ///     * TODO: Remove this and modify our equivalent version files instead.
     ///     * Alters all package.json.
+
+    ///     * TODO: Modify this to work with our CHANGELOG.
     ///     * Bumps the version in the CHANGELOG.md.
+
+    ///     * TODO: Remove this and modify our equivalent version files instead.
     ///     * Updates the hash in the gdk.pinned file.
+
+    ///     * TODO: Modify this to work with our repos.
     ///     * Pushes the candidate and creates a Pull Request against master.
     /// </summary>
+
+    ///     * TODO: Most of the strings in this class need modification and/or deletion
     internal class PrepCommand
     {
         internal const string ChangeLogUpdateGdkTemplate = "- Upgraded to GDK for Unity version `{0}`";
