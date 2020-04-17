@@ -18,7 +18,6 @@
 #include "Widgets/Docking/SDockTab.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
-#define SpatialOSConfigFile "spatialos.json"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 
@@ -142,31 +141,28 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 
 void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 {
-	FString SpatialFileName = TEXT(SpatialOSConfigFile);
 	FString SpatialFileResult;
 
 	JsonParsedSpatialFile->SetStringField("name", InProjectName);
-	
+
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&SpatialFileResult);
 	if (!FJsonSerializer::Serialize(JsonParsedSpatialFile.ToSharedRef(), JsonWriter))
 	{
 		UE_LOG(LogSpatialGDKServices, Error, TEXT("Write project name failed! Can not Serialize content to json file!"));
 		return;
 	}
-	if (!FFileHelper::SaveStringToFile(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialFileName)))
+	if (!FFileHelper::SaveStringToFile(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialGDKServicesConstants::SpatialOSConfigFileName)))
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write file content to %s"), *SpatialFileName);
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::SpatialOSConfigFileName);
 	}
 }
 
 FString FSpatialGDKServicesModule::ParseProjectName()
 {
 	FString ProjectNameParsed;
-
-	FString SpatialFileName = TEXT(SpatialOSConfigFile);
 	FString SpatialFileResult;
 
-	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialFileName)))
+	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialGDKServicesConstants::SpatialOSConfigFileName)))
 	{
 		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
 		{
