@@ -110,7 +110,6 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed sending component RPCs on a recently created actor.
 - Fix issue with RPC Ring Buffers dropping ServerUpdateMultipleLevelsVisibility RPC, resulting in incorrect Interest.
 
-
 ### External contributors:
 @DW-Sebastien
 
