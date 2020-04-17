@@ -14,40 +14,14 @@ using namespace SpatialGDK;
 namespace
 {
 	// TODO(Alex): templatize?
-	// TODO(Alex): add is_permutation?
-	bool CompareUpdates(const TArray<EntityComponentUpdate>& lhs,
-		const TArray<EntityComponentUpdate>& rhs)
+	bool AreEquivalent(const TArray<EntityComponentUpdate>& lhs, const TArray<EntityComponentUpdate>& rhs)
 	{
-		// TODO: invert if
-		if (lhs.Num() == rhs.Num())
-		{
-			for (int i = 0; i < lhs.Num(); i++)
-			{
-				if (!CompareEntityComponentUpdates(lhs[i], rhs[i]))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
+		return AreEquivalent(lhs, rhs, CompareEntityComponentUpdates);
 	}
 
-	bool CompareCompleteUpdates(const TArray<EntityComponentCompleteUpdate>& lhs,
-		const TArray<EntityComponentCompleteUpdate>& rhs)
+	bool AreEquivalent(const TArray<EntityComponentCompleteUpdate>& lhs, const TArray<EntityComponentCompleteUpdate>& rhs)
 	{
-		if (lhs.Num() == rhs.Num())
-		{
-			for (int i = 0; i < lhs.Num(); i++)
-			{
-				if (!CompareEntityComponentCompleteUpdates(lhs[i], rhs[i]))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
+		return AreEquivalent(lhs, rhs, CompareEntityComponentCompleteUpdates);
 	}
 
 }  // anonymous namespace
@@ -68,8 +42,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanAddUpdate)
   EntityComponentUpdateRecord storage;
   storage.AddComponentUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
@@ -93,8 +67,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeUpdate)
   storage.AddComponentUpdate(kTestEntityId, MoveTemp(firstUpdate));
   storage.AddComponentUpdate(kTestEntityId, MoveTemp(secondUpdate));
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
@@ -115,8 +89,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanAddCompleteUpdate)
   EntityComponentUpdateRecord storage;
   storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(data));
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
@@ -143,8 +117,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeCompleteUpdate)
   storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
   storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(completeUpdate));
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
@@ -175,8 +149,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeOntoACompleteUpdate)
   storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
   storage.AddComponentUpdate(kTestEntityId, MoveTemp(additionalEvent));
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
@@ -207,8 +181,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponentWithCompleteUpdate)
 
   storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
@@ -230,8 +204,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponent_Update)
 
   storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
 
-  TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
-  TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+  TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
   return true;
 }
