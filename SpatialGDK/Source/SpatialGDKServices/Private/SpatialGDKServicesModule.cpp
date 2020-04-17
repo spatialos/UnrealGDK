@@ -143,6 +143,11 @@ void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 {
 	FString SpatialFileResult;
 
+	if (!JsonParsedSpatialFile)
+	{
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to set project name (%s). Check there are %s file in your spatial folder."), *InProjectName, *SpatialGDKServicesConstants::SpatialOSConfigFileName);
+		return;
+	}
 	JsonParsedSpatialFile->SetStringField("name", InProjectName);
 
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&SpatialFileResult);
