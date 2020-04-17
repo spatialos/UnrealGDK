@@ -72,9 +72,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and ActorComponents. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
-- Added setting `bWorkerFlushAfterSend` (defaulted true) which schedules the worker flush after the GDK worker queue has been executed.
-- Added setting `bWorkerFlushAfterRPC` (defaulted false) which wakes the GDK worker queue to allow for lower latencies.
-- Added setting `bWorkerSendHighPriority` (defaulted false) which sets the GDK worker thread priority higher than normal.
+- Added `bWorkerFlushAfterRPC` (defaulted false) which publishes changes to the GDK worker queue faster to allow for lower latencies. 
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.

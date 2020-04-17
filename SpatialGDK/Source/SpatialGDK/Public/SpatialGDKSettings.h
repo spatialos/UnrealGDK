@@ -282,17 +282,9 @@ public:
 	UPROPERTY(Config)
 	bool bTcpNoDelay;
 
-	/** Only valid on Udp connections - specifies server upstream flush interval - see c_worker.h */
-	UPROPERTY(Config)
-	uint32 UdpServerUpstreamUpdateIntervalMS;
-
 	/** Only valid on Udp connections - specifies server downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpServerDownstreamUpdateIntervalMS;
-
-	/** Only valid on Udp connections - specifies client upstream flush interval - see c_worker.h */
-	UPROPERTY(Config)
-	uint32 UdpClientUpstreamUpdateIntervalMS;
 
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
