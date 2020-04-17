@@ -11,13 +11,24 @@
 
 using namespace SpatialGDK;
 
+namespace
+{
+	const Worker_EntityId kTestEntityId = 1337;
+
+	const Worker_ComponentId kTestComponentId = 1338;
+	const Worker_ComponentId kComponentIdToRemove = 1347;
+	const Worker_ComponentId kComponentIdToKeep = 1348;
+
+	const int kEventValue = 7332;
+
+	const double kTestValue = 7331;
+	const double kTestUpdateValue = 7332;
+	const double kUpdateValue = 7333;
+}  // anonymous namespace
+
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THEN_update_record_has_the_update)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kTestComponentId = 1338;
-	const double kTestValue = 7331;
-
 	auto TestUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
@@ -40,11 +51,6 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THE
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update_added_THEN_new_update_merged)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kTestComponentId = 1338;
-	const double kTestValue = 7331;
-	const double kTestUpdateValue = 7332;
-
 	auto FirstUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
 	auto SecondUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
 
@@ -69,10 +75,6 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_added_THEN_update_record_has_complete_update)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kTestComponentId = 1338;
-	const double kTestValue = 7331;
-
 	auto Data = CreateTestComponentData(kTestComponentId, kTestValue);
 
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
@@ -95,12 +97,6 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_update_added_THEN_complete_update_merged)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kTestComponentId = 1338;
-	const double kTestValue = 7331;
-	const int kEventValue = 7332;
-	const double kUpdateValue = 7333;
-
 	auto Update = CreateTestComponentUpdate(kTestComponentId, kTestValue);
 	AddTestEvent(&Update, kEventValue);
 	auto CompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
@@ -127,12 +123,6 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_u
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN_new_update_added_THEN_new_update_merged)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kTestComponentId = 1338;
-	const double kTestValue = 7331;
-	const int kEventValue = 7332;
-	const double kUpdateValue = 7333;
-
 	auto CompleteUpdate = CreateTestComponentData(kTestComponentId, kTestValue);
 	auto Update = CreateTestComponentUpdate(kTestComponentId, kUpdateValue);
 	AddTestEvent(&Update, kEventValue);
@@ -163,13 +153,6 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_component_removed_THEN_its_updates_removed)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kComponentIdToRemove = 1347;
-	const Worker_ComponentId kComponentIdToKeep = 1348;
-	const double kTestValue = 7331;
-	const int kEventValue = 7332;
-	const double kUpdateValue = 7333;
-
 	auto CompleteUpdateToRemove = CreateTestComponentData(kComponentIdToRemove, kTestValue);
 	auto EventToRemove = CreateTestComponentEvent(kComponentIdToRemove, kEventValue);
 
@@ -198,10 +181,6 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_component_removed_THEN_its_update_removed)
 {
 	// GIVEN
-	const Worker_EntityId kTestEntityId = 1337;
-	const Worker_ComponentId kComponentIdToRemove = 1347;
-	const double kUpdateValue = 7333;
-
 	auto Update = CreateTestComponentUpdate(kComponentIdToRemove, kUpdateValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
