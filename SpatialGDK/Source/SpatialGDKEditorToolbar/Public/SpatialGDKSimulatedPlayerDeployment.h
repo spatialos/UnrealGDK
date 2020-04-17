@@ -67,7 +67,7 @@ private:
 	void OnPrimaryLaunchConfigPathPicked(const FString& PickedPath);
 
 	/** Delegate to commit deployment tags */
-	void OnDeploymentTagsCommited(const FText& InText, ETextCommit::Type InCommitType);
+	void OnDeploymentTagsCommitted(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate called to populate the region codes for the primary deployment */
 	TSharedRef<SWidget> OnGetPrimaryDeploymentRegionCode();

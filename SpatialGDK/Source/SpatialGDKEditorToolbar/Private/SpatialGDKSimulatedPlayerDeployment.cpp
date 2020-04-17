@@ -298,8 +298,8 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetDeploymentTags()))
 									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
-									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommited, ETextCommit::Default)
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommitted)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommitted, ETextCommit::Default)
 								]
 							]
 							// Separator
@@ -663,7 +663,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const
 	SpatialGDKSettings->SetPrimaryLaunchConfigPath(PickedPath);
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommited(const FText& InText, ETextCommit::Type InCommitType)
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommitted(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetDeploymentTags(InText.ToString());
