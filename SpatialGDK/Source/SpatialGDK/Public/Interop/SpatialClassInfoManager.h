@@ -143,6 +143,8 @@ private:
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
+	bool ShouldTrackHandoverProperties() const;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
