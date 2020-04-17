@@ -46,7 +46,7 @@ private:
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	/** Delegate to commit project name */
-	void OnProjectNameCommited(const FText& InText, ETextCommit::Type InCommitType);
+	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);

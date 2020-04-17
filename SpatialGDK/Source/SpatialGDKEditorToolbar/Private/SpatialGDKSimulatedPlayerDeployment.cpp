@@ -123,8 +123,8 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(ProjectName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited, ETextCommit::Default)
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted, ETextCommit::Default)
 								]
 							]
 							// Assembly Name 
@@ -460,7 +460,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FT
 	SpatialGDKSettings->SetAssemblyName(InText.ToString());
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited(const FText& InText, ETextCommit::Type InCommitType)
+void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
 {
 	FSpatialGDKServicesModule::SetProjectName(InText.ToString());
 }
