@@ -46,7 +46,7 @@ void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const
 	FString NotificationMessage = FString::Printf(TEXT("Building %s Assembly"), *ProjectName);
 }
 
-void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, bool bForce)
+void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, bool bForce)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	FString WorkingDir = SpatialGDKServicesConstants::SpatialOSDirectory;

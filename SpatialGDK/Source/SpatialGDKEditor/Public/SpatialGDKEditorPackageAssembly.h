@@ -16,7 +16,7 @@ public:
 
 	bool CanBuild() const;
 
-	void BuildAllAndUpload(const FString &AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
+	void BuildAllAndUpload(const FString& AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
 
 	FSimpleDelegate OnSuccess;
 
