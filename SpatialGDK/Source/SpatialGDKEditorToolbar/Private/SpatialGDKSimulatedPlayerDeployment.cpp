@@ -4,6 +4,7 @@
 
 #include "Async/Async.h"
 #include "DesktopPlatformModule.h"
+#include "Editor.h"
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
@@ -19,6 +20,7 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "Templates/SharedPointer.h"
@@ -446,6 +448,48 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(STextBlock)
 								.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
 							]
+							//Generate Schema
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Generate Schema"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the schema automatically when building the assembly."))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsGenerateSchemaEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSchema)
+								]
+							]
+							//Generate Snapshot
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Generate Snapshot"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the snapshot automatically when building the assembly."))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsGenerateSnapshotEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot)
+								]
+							]
 							// Windows Build Platform (Win32 or Win64)
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -705,6 +749,17 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 	{
 		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+		if (SpatialGDKEditorSettings->IsGenerateSchemaEnabled())
+		{
+			SpatialGDKEditorSharedPtr->GenerateSchema(false);
+		}
+
+		if (SpatialGDKEditorSettings->IsGenerateSnapshotEnabled())
+		{
+			SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKEditorSettings->GetSpatialOSSnapshotToSave());
+		}
+
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildSuccess);
 			PackageAssembly->BuildAllAndUpload(
@@ -996,6 +1051,30 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedBuildClientWorker(ECheckBoxS
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetBuildClientWorker(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsGenerateSchemaEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsGenerateSchemaEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSchema(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetGenerateSchema(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsGenerateSnapshotEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsGenerateSnapshotEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetGenerateSnapshot(NewCheckedState == ECheckBoxState::Checked);
 }
 
 bool SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment() const

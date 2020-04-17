@@ -258,6 +258,18 @@ void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
+{
+	bGenerateSchema = bGenerate;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
+{
+	bGenerateSnapshot = bGenerate;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(bool Use)
 {
 	bUseGDKPinnedRuntimeVersion = Use;

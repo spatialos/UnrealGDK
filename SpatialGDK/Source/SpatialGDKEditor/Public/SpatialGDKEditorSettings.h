@@ -349,6 +349,13 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
 		bool bBuildClientWorker;
 
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Schema"))
+		bool bGenerateSchema;
+
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Snapshot"))
+		bool bGenerateSnapshot;
+
+
 public:
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
@@ -542,6 +549,18 @@ public:
 	FORCEINLINE bool IsBuildClientWorkerEnabled() const
 	{
 		return bBuildClientWorker;
+	}
+
+	void SetGenerateSchema(bool bGenerate);
+	FORCEINLINE bool IsGenerateSchemaEnabled() const
+	{
+		return bGenerateSchema;
+	}
+
+	void SetGenerateSnapshot(bool bGenerate);
+	FORCEINLINE bool IsGenerateSnapshotEnabled() const
+	{
+		return bGenerateSnapshot;
 	}
 
 	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);

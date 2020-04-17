@@ -124,6 +124,12 @@ private:
 	ECheckBoxState IsBuildClientWorkerEnabled() const;
 	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
 
+	ECheckBoxState IsGenerateSchemaEnabled() const;
+	void OnCheckedGenerateSchema(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsGenerateSnapshotEnabled() const;
+	void OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState);
+
 	void OnBuildSuccess();
 
 	bool CanLaunchDeployment() const;
