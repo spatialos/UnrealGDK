@@ -89,22 +89,19 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
 }
 
-void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, const AActor* RootActor, const AActor* OriginalActor)
+void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, const AActor* HierarchyActor, const AActor* OriginalActorBeingReplicated)
 {
-	if (RootActor->GetIsReplicated())
+	if (HierarchyActor->GetIsReplicated() && HierarchyActor != OriginalActorBeingReplicated)
 	{
-		if (RootActor != OriginalActor)
+		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
 		{
-			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(NetDriver->PackageMap->GetEntityIdFromObject(RootActor)))
-			{
-				Channel->ReplicateActor();
-			}
+			Channel->ReplicateActor();
 		}
 	}
 
-	for (AActor* Child : RootActor->Children)
+	for (const AActor* Child : HierarchyActor->Children)
 	{
-		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActor);
+		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActorBeingReplicated);
 	}
 }
 
@@ -238,7 +235,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bIsAuthServer = false;
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0f;
-	AuthorityTimestamp = 0;
+	AuthorityReceivedTimestamp = 0;
 
 	PendingDynamicSubobjects.Empty();
 	SavedConnectionOwningWorkerId.Empty();
@@ -442,20 +439,20 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	return HandoverChanged;
 }
 
-void USpatialActorChannel::GetLatestAuthorityChangeFromHierarchy(const AActor* RootActor, uint64& OutTimestamp)
+void USpatialActorChannel::GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp)
 {
-	if (RootActor->GetIsReplicated())
+	if (HierarchyActor->GetIsReplicated())
 	{
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(NetDriver->PackageMap->GetEntityIdFromObject(RootActor)))
+		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
 		{
-			if (Channel->AuthorityTimestamp > OutTimestamp)
+			if (Channel->AuthorityReceivedTimestamp > OutTimestamp)
 			{
-				OutTimestamp = Channel->AuthorityTimestamp;
+				OutTimestamp = Channel->AuthorityReceivedTimestamp;
 			}
 		}
 	}
 
-	for (AActor* Child : RootActor->Children)
+	for (const AActor* Child : HierarchyActor->Children)
 	{
 		GetLatestAuthorityChangeFromHierarchy(Child, OutTimestamp);
 	}
@@ -764,38 +761,41 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			const AActor* NetOwner = Actor->GetNetOwner();
 
-			uint64 HierarchyAuthorityTimestamp = AuthorityTimestamp;
+			uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
 			if (NetOwner != nullptr)
 			{
-				GetLatestAuthorityChangeFromHierarchy(NetOwner, HierarchyAuthorityTimestamp);
+				GetLatestAuthorityChangeFromHierarchy(NetOwner, HierarchyAuthorityReceivedTimestamp);
 			}
 
-			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityTimestamp) * FPlatformTime::GetSecondsPerCycle64();
+			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
 			const float MigrationBackoffTimeInSeconds = 1.0f;
 
-			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
 			{
-				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Tried to change auth too early to %i for actor %s"), NewAuthVirtualWorkerId, *Actor->GetName());
-			}
-			else if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-			{
-				UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
 			}
 			else
 			{
-				Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
-
-				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-
-				if (NetOwner != nullptr)
+				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
-					ForceReplicateOnActorHierarchy(NetDriver, NetOwner, Actor);
+					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 				}
+				else
+				{
+					Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
 
-				Actor->OnAuthorityLost();
+					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
+					Actor->Role = ROLE_SimulatedProxy;
+					Actor->RemoteRole = ROLE_Authority;
+
+					Actor->OnAuthorityLost();
+
+					if (NetOwner != nullptr)
+					{
+						ForceReplicateOnActorHierarchy(NetDriver, NetOwner, Actor);
+					}
+				}
 			}
 		}
 
