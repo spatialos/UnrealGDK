@@ -11,8 +11,9 @@
 
 using namespace SpatialGDK;
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanAddUpdate)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THEN_update_record_has_the_update)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
@@ -25,16 +26,20 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanAddUpdate)
 	const TArray<EntityComponentUpdate> expectedEvents = {};
 
 	EntityComponentUpdateRecord storage;
+
+	// WHEN
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeUpdate)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update_added_THEN_new_update_merged)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
@@ -50,16 +55,20 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeUpdate)
 
 	EntityComponentUpdateRecord storage;
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(firstUpdate));
+
+	// WHEN
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(secondUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanAddCompleteUpdate)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_added_THEN_update_record_has_complete_update)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
@@ -72,16 +81,20 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanAddCompleteUpdate)
 	const TArray<EntityComponentUpdate> expectedEvents = {};
 
 	EntityComponentUpdateRecord storage;
+
+	// WHEN
 	storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(data));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeCompleteUpdate)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_update_added_THEN_complete_update_merged)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
@@ -100,16 +113,20 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeCompleteUpdate)
 
 	EntityComponentUpdateRecord storage;
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
+
+	// WHEN
 	storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(completeUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeOntoACompleteUpdate)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN_new_update_added_THEN_new_update_merged)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
@@ -131,17 +148,21 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeOntoACompleteUpdate)
 
 	EntityComponentUpdateRecord storage;
 	storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(completeUpdate));
+
+	// WHEN
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(additionalEvent));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponentWithCompleteUpdate)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_component_removed_THEN_its_updates_removed)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kComponentIdToRemove = 1347;
 	const Worker_ComponentId kComponentIdToKeep = 1348;
@@ -164,16 +185,19 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponentWithCompleteUpdate)
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(eventToRemove));
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(updateToKeep));
 
+	// WHEN
 	storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
 
-ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponent_Update)
+ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_component_removed_THEN_its_update_removed)
 {
+	// GIVEN
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kComponentIdToRemove = 1347;
 	const double kUpdateValue = 7333;
@@ -187,10 +211,12 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponent_Update)
 	EntityComponentUpdateRecord storage;
 	storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
 
+	// WHEN
 	storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetUpdates(), expectedUpdates));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
+	// THEN
+	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(storage.GetUpdates(), expectedUpdates));
+	TestTrue(TEXT("Complete updates are equal to expected"), AreEquivalent(storage.GetCompleteUpdates(), expectedCompleteUpdates));
 
 	return true;
 }
