@@ -911,7 +911,19 @@ bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 
 FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 {
+	const UGeneralProjectSettings* GeneralProjectSettings = GetDefault<UGeneralProjectSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (GeneralProjectSettings->bEnableSpatialLocalLauncher)
+	{
+		if (SpatialGDKEditorSettings->bExposeRuntimeIP && GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP != SpatialGDKEditorSettings->ExposedRuntimeIP)
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Local runtime IP specified from both general settings and Spatial settings! "
+				"Using IP specified in general settings: %s (Spatial settings has \"%s\")"),
+				*GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP, *SpatialGDKEditorSettings->ExposedRuntimeIP);
+		}
+		return GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP;
+	}
+
 	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
 	{
 		return SpatialGDKEditorSettings->ExposedRuntimeIP;
