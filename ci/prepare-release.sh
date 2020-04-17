@@ -50,8 +50,9 @@ docker run \
     -v "${SECRETS_DIR}":/var/github \
     -v "$(pwd)"/logs:/var/logs \
     local:gdk-release-tool \
-        prep "${RELEASE_VERSION}" \
+        prep "${GDK_VERSION}" \
         --git-repository-name="${REPO}" \
+        --engine-versions="${ENGINE_VERSIONS}" \
         --github-key-file="/var/github/github_token" \
         --buildkite-metadata-path="/var/logs/bk-metadata" ${PIN_ARG}
 

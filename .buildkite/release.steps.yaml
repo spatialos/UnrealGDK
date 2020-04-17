@@ -44,6 +44,7 @@ steps:
           - label: "4.23-SpatialOSUnrealGDK"
             value: "4.23-SpatialOSUnrealGDK"
 
+            #TODO - remove preview if we stop releasing multiple release streams
       - select: "Preview release?"
         key: "preview"
         hint: "If this is a preview release, press the preview button."
