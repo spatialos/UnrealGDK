@@ -11,23 +11,27 @@
 
 using namespace SpatialGDK;
 
+namespace
+{
+}  // anonymous namespace
+
 ENTITYCOMPONENTRECORD_TEST(CanAddComponent)
 {
 	const Worker_EntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
 
-	auto testData = CreateTestComponentData(kTestComponentId, kTestValue);
+	auto TestData = CreateTestComponentData(kTestComponentId, kTestValue);
 
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
-	TArray<EntityComponentData> expectedComponentsAdded;
-	expectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, testData.DeepCopy() });
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
+	TArray<EntityComponentData> ExpectedComponentsAdded;
+	ExpectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, TestData.DeepCopy() });
 
-	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, MoveTemp(testData));
+	EntityComponentRecord Storage;
+	Storage.AddComponent(kTestEntityId, MoveTemp(TestData));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
@@ -35,14 +39,14 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveComponent)
 {
 	const EntityComponentId kEntityComponentId = { 1337, 1338 };
 
-	EntityComponentRecord storage;
-	storage.RemoveComponent(kEntityComponentId.EntityId, kEntityComponentId.ComponentId);
+	EntityComponentRecord Storage;
+	Storage.RemoveComponent(kEntityComponentId.EntityId, kEntityComponentId.ComponentId);
 
-	const TArray<EntityComponentData> expectedComponentsAdded = {};
-	const TArray<EntityComponentId> expectedComponentsRemoved = { kEntityComponentId };
+	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = { kEntityComponentId };
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 
 	return true;
 }
@@ -53,17 +57,17 @@ ENTITYCOMPONENTRECORD_TEST(CanAddThenRemoveComponent)
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
 
-	auto testData = CreateTestComponentData(kTestComponentId, kTestValue);
+	auto TestData = CreateTestComponentData(kTestComponentId, kTestValue);
 
-	const TArray<EntityComponentData> expectedComponentsAdded = {};
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
-	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, MoveTemp(testData));
-	storage.RemoveComponent(kTestEntityId, kTestComponentId);
+	EntityComponentRecord Storage;
+	Storage.AddComponent(kTestEntityId, MoveTemp(TestData));
+	Storage.RemoveComponent(kTestEntityId, kTestComponentId);
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
@@ -74,17 +78,17 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveThenAddComponent)
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestValue = 7331;
 
-	auto testData = CreateTestComponentData(kTestComponentId, kTestValue);
+	auto TestData = CreateTestComponentData(kTestComponentId, kTestValue);
 
-	const TArray<EntityComponentData> expectedComponentsAdded = {};
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
-	EntityComponentRecord storage;
-	storage.RemoveComponent(kTestEntityId, kTestComponentId);
-	storage.AddComponent(kTestEntityId, MoveTemp(testData));
+	EntityComponentRecord Storage;
+	Storage.RemoveComponent(kTestEntityId, kTestComponentId);
+	Storage.AddComponent(kTestEntityId, MoveTemp(TestData));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
@@ -95,20 +99,20 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyUpdateToComponentAdded)
 	const double kTestValue = 7331;
 	const double kTestUpdateValue = 7332;
 
-	ComponentData testData = CreateTestComponentData(kTestComponentId, kTestValue);
-	ComponentUpdate testUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
-	ComponentData expectedData = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
+	ComponentData TestData = CreateTestComponentData(kTestComponentId, kTestValue);
+	ComponentUpdate TestUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
+	ComponentData ExpectedData = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 
-	TArray<EntityComponentData> expectedComponentsAdded;
-	expectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, MoveTemp(expectedData) });
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	TArray<EntityComponentData> ExpectedComponentsAdded;
+	ExpectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, MoveTemp(ExpectedData) });
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
-	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, MoveTemp(testData));
-	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
+	EntityComponentRecord Storage;
+	Storage.AddComponent(kTestEntityId, MoveTemp(TestData));
+	Storage.AddUpdate(kTestEntityId, MoveTemp(TestUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
@@ -118,16 +122,16 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyUpdateIfNoComponentAdded)
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestUpdateValue = 7332;
 
-	ComponentUpdate testUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
+	ComponentUpdate TestUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
 
-	const TArray<EntityComponentData> expectedComponentsAdded = {};
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
-	EntityComponentRecord storage;
-	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
+	EntityComponentRecord Storage;
+	Storage.AddUpdate(kTestEntityId, MoveTemp(TestUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
@@ -138,20 +142,20 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyCompleteUpdateToComponentAdded)
 	const double kTestValue = 7331;
 	const double kTestUpdateValue = 7332;
 
-	ComponentData testData = CreateTestComponentData(kTestComponentId, kTestValue);
-	ComponentData testUpdate = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
-	ComponentData expectedData = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
+	ComponentData TestData = CreateTestComponentData(kTestComponentId, kTestValue);
+	ComponentData TestUpdate = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
+	ComponentData ExpectedData = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 
-	TArray<EntityComponentData> expectedComponentsAdded;
-	expectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, MoveTemp(expectedData) });
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	TArray<EntityComponentData> ExpectedComponentsAdded;
+	ExpectedComponentsAdded.Push(EntityComponentData{ kTestEntityId, MoveTemp(ExpectedData) });
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
-	EntityComponentRecord storage;
-	storage.AddComponent(kTestEntityId, MoveTemp(testData));
-	storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(testUpdate));
+	EntityComponentRecord Storage;
+	Storage.AddComponent(kTestEntityId, MoveTemp(TestData));
+	Storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(TestUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
@@ -161,16 +165,16 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyCompleteUpdateIfNoComponentAdded)
 	const Worker_ComponentId kTestComponentId = 1338;
 	const double kTestUpdateValue = 7332;
 
-	ComponentData testUpdate = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
+	ComponentData TestUpdate = CreateTestComponentData(kTestComponentId, kTestUpdateValue);
 
-	const TArray<EntityComponentData> expectedComponentsAdded = {};
-	const TArray<EntityComponentId> expectedComponentsRemoved = {};
+	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
+	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
-	EntityComponentRecord storage;
-	storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(testUpdate));
+	EntityComponentRecord Storage;
+	Storage.AddComponentAsUpdate(kTestEntityId, MoveTemp(TestUpdate));
 
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(Storage.GetComponentsRemoved(), ExpectedComponentsRemoved));
 	return true;
 }
 
