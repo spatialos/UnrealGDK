@@ -539,6 +539,9 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext.PendingNetGame->bSentJoinRequest = false;
 			WorldContext.PendingNetGame->URL = RedirectURL;
+
+			// Ensure the singleton map is reset as it will contain bad data from the old map
+			GlobalStateManager->RemoveAllSingletons();
 		}
 		else
 		{
