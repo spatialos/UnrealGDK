@@ -373,7 +373,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
-	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
+	// If metrics display is enabled, spawn an Actor to replicate the information to each client
 	if (IsServer())
 	{
 		if (SpatialSettings->bEnableMetricsDisplay)
@@ -2300,7 +2300,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	USpatialActorChannel* Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to create a channel for actor %s."), *GetNameSafe(Actor));
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to create a channel for Actor %s."), *GetNameSafe(Actor));
 		return Channel;
 	}
 

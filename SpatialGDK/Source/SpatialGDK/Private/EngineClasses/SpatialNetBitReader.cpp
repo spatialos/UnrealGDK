@@ -40,6 +40,7 @@ void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
 	}
 
 	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
+	SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
 }
 
 UObject* FSpatialNetBitReader::ReadObject(bool& bUnresolved)

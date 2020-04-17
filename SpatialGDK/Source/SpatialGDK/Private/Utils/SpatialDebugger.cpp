@@ -273,7 +273,7 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 
 void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
 {
-	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE || AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 
 	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{

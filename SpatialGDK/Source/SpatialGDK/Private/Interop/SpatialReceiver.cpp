@@ -764,8 +764,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity for actor %s has been checked out on the worker which spawned it. "
-			"Entity ID: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+			*NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->HasAuthority(EntityId, Position::ComponentId);

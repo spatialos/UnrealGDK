@@ -128,7 +128,7 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					}
 				}
 
-				// If this is am Actor that should exist once per Worker (e.g. GameMode, GameState) and hasn't been resolved yet,
+				// If this is an Actor that should exist once per Worker (e.g. GameMode, GameState) and hasn't been resolved yet,
 				// send its class path instead.
 				if (ShouldLoadObjectFromClassPath(ObjectValue))
 				{

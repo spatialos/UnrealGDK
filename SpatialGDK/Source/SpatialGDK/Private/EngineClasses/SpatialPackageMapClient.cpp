@@ -271,10 +271,10 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnreal
 	{
 		TArray<AActor*> FoundActors;
 		// USpatialPackageMapClient is an inner object of UNetConnection,
-		// which in turn contains a NetDriver and gets the UWorld it references
+		// which in turn contains a NetDriver and gets the UWorld it references.
 		UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
 
-		// There should be only one Actor per class
+		// There should be only one Actor per class.
 		if (FoundActors.Num() == 1)
 		{
 			return FoundActors[0];

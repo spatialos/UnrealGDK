@@ -156,10 +156,7 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 	{
 		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID);
 	}
-	if (Schema_GetBoolCount(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID) > 0)
-	{
-		ObjectRef.bUseClassPathToLoadObject = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID);
-	}
+	ObjectRef.bUseClassPathToLoadObject = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID);
 
 	return ObjectRef;
 }
