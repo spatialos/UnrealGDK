@@ -664,7 +664,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+	const float QueuedOutgoingRPCWaitTime = GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime;
+	if (QueuedOutgoingRPCWaitTime != 0.f && QueuedOutgoingRPCWaitTime < TimeDiff)
 	{
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::TimedOut, true };
 	}
