@@ -3,17 +3,20 @@
 #include "EditorExtension/LBStrategyEditorExtension.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditorLBExtension);
+
 namespace
 {
 
 bool InheritFromClosest(UClass* Derived, UClass* PotentialBase, uint32& InOutPreviousDistance)
 {
 	uint32 InheritanceDistance = 0;
-	for (const UStruct* TempStruct = Derived; TempStruct; TempStruct = TempStruct->GetSuperStruct())
+	for (const UStruct* TempStruct = Derived; TempStruct != nullptr; TempStruct = TempStruct->GetSuperStruct())
 	{
 		if (TempStruct == PotentialBase)
 		{
-			break;
+			InOutPreviousDistance = InheritanceDistance;
+			return true;
 		}
 		++InheritanceDistance;
 		if (InheritanceDistance > InOutPreviousDistance)
@@ -21,9 +24,7 @@ bool InheritFromClosest(UClass* Derived, UClass* PotentialBase, uint32& InOutPre
 			return false;
 		}
 	}
-
-	InOutPreviousDistance = InheritanceDistance;
-	return true;
+	return false;
 }
 
 } // anonymous namespace
@@ -53,6 +54,7 @@ bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbs
 		return StrategyInterface->GetDefaultLaunchConfiguration_Virtual(Strategy, OutConfiguration, OutWorldDimensions);
 	}
 
+	UE_LOG(LogSpatialGDKEditorLBExtension, Error, TEXT("Could not find editor extension for load balancing strategy %s"), *StrategyClass->GetName());
 	return false;
 }
 

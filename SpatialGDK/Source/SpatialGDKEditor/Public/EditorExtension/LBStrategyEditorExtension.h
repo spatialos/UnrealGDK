@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorLBExtension, Log, All);
+
 class UAbstractLBStrategy;
 class FLBStrategyEditorExtensionManager;
 struct FWorkerTypeLaunchSection;
