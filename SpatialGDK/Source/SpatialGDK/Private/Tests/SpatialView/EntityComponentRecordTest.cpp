@@ -13,38 +13,14 @@ using namespace SpatialGDK;
 
 namespace
 {
-	bool AreEquivalent(const TArray<EntityComponentData>& lhs,
-		const TArray<EntityComponentData>& rhs)
+	bool AreEquivalent(const TArray<EntityComponentData>& lhs, const TArray<EntityComponentData>& rhs)
 	{
-		if (lhs.Num() == rhs.Num())
-		{
-			for (int i = 0; i < lhs.Num(); i++)
-			{
-				if (!CompareEntityComponentData(lhs[i], rhs[i]))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
+		return AreEquivalent(lhs, rhs, CompareEntityComponentData);
 	}
 
-	bool AreEquivalent(const TArray<EntityComponentId>& lhs,
-		const TArray<EntityComponentId>& rhs)
+	bool AreEquivalent(const TArray<EntityComponentId>& lhs, const TArray<EntityComponentId>& rhs)
 	{
-		if (lhs.Num() == rhs.Num())
-		{
-			for (int i = 0; i < lhs.Num(); i++)
-			{
-				if (!(lhs[i] == rhs[i]))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
+		return AreEquivalent(lhs, rhs, CompareEntityComponentId);
 	}
 }  // anonymous namespace
 

@@ -29,15 +29,15 @@ inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId id, double v
 }
 
 inline void AddTestEvent(ComponentUpdate* update, int value) {
-  auto* events = update->GetEvents();
-  auto* eventData = Schema_AddObject(events, kEventId);
-  Schema_AddInt32(eventData, kEventIntFieldId, value);
+	auto* events = update->GetEvents();
+	auto* eventData = Schema_AddObject(events, kEventId);
+	Schema_AddInt32(eventData, kEventIntFieldId, value);
 }
 
 inline ComponentUpdate CreateTestComponentEvent(Worker_ComponentId id, int value) {
-  ComponentUpdate update{id};
-  AddTestEvent(&update, value);
-  return update;
+	ComponentUpdate update{ id };
+	AddTestEvent(&update, value);
+	return update;
 }
 
 /** Returns true if lhs and rhs have the same serialized form. */
@@ -130,4 +130,30 @@ inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteU
 	return CompareComponentData(lhs.CompleteUpdate, rhs.CompleteUpdate) && CompareComponentUpdateEvents(lhs.Events, rhs.Events);
 }
 
+inline bool CompareEntityComponentId(const EntityComponentId& lhs, const EntityComponentId& rhs)
+{
+	return lhs == rhs;
+}
+
+template<typename T>
+using ComparisonFunction = bool(*)(const T& lhs, const T& rhs);
+
+template<typename T>
+bool AreEquivalent(const TArray<T>& lhs, const TArray<T>& rhs, ComparisonFunction<T> Compare)
+{
+	if (lhs.Num() != rhs.Num())
+	{
+		return false;
+	}
+
+	for (int i = 0; i < lhs.Num(); i++)
+	{
+		if (!Compare(lhs[i], rhs[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
 }
