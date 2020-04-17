@@ -84,7 +84,7 @@ namespace ReleaseTool
                 {
                     // Create release
                     gitClient.Fetch();
-                    gitClient.CheckoutRemoteBranch(Common.MasterBranch);
+                    gitClient.CheckoutRemoteBranch(Common.ReleaseBranch);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
                     Logger.Info("Release Successful!");

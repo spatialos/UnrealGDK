@@ -110,7 +110,7 @@ namespace ReleaseTool
                     gitClient.Fetch(Common.SpatialOsOrg);
 
                     // This does step 3 from above.
-                    gitClient.CheckoutRemoteBranch(Common.MasterBranch, Common.SpatialOsOrg);
+                    gitClient.CheckoutRemoteBranch(Common.ReleaseBranch, Common.SpatialOsOrg);
 
                     // This does step 4 from above.
                     using (new WorkingDirectoryScope(gitClient.RepositoryPath))
@@ -146,7 +146,7 @@ namespace ReleaseTool
                     var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
 
                     var branchFrom = $"{Common.GithubBotUser}:{branchName}";
-                    var branchTo = Common.MasterBranch;
+                    var branchTo = Common.ReleaseBranch;
 
                     // Only open a PR if one does not exist yet.
                     if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
@@ -333,7 +333,7 @@ namespace ReleaseTool
             }
 
             // Pin is always to master in this case.
-            File.WriteAllText(gdkPinnedFilename, $"{Common.MasterBranch} {newPinnedVersion}");
+            File.WriteAllText(gdkPinnedFilename, $"{Common.ReleaseBranch} {newPinnedVersion}");
 
             gitClient.StageFile(gdkPinnedFilename);
         }
