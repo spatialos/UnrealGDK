@@ -25,7 +25,6 @@
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
 #include "Utils/EntityPool.h"
-#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 

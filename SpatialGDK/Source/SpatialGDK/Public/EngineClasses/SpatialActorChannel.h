@@ -137,12 +137,6 @@ public:
 
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
-			// If the entity already exists, make sure we have spatial authority before we replicate with Offloading, because we pretend to have local authority
-			if (USpatialStatics::IsSpatialOffloadingEnabled() && !bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
-			{
-				return false;
-			}
-
 			return true;
 		}
 

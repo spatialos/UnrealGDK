@@ -3,7 +3,6 @@
 #pragma once
  
 #include "SpatialCommonTypes.h"
-#include "Utils/SpatialStatics.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

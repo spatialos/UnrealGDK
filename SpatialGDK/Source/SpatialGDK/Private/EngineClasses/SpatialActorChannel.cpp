@@ -431,6 +431,16 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	check(Actor);
+
+	// If the entity already exists, make sure we have authority before we replicate in a multi-worker deployment, because we pretend to have local authority
+	if (!bCreatingNewEntity
+		&& NetDriver->LoadBalanceStrategy != nullptr
+		&& !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID)
+		&& !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+	{
+		return 0;
+	}
+
 	check(!Closing);
 	check(Connection);
 	check(Connection->PackageMap);
