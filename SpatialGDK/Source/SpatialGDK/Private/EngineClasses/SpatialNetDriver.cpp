@@ -1807,15 +1807,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (Connection != nullptr)
 	{
-		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
-		{
-			Connection->ProcessOutgoingMessages();
-		}
-		else
-		{
-			// Submit a flush here if we are driving the worker thread with events.
-			Connection->MaybeFlush();
-		}
+		Connection->MaybeFlushImportantMessages(/* bForce */ true);
 	}
 
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.

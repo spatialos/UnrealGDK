@@ -20,7 +20,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	{
 		if (OpsProcessingThread == nullptr)
 		{
-			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterRPC;
+			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterImportantEvent;
 			ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
 
 			InitializeOpsProcessingThread();
@@ -431,20 +431,35 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 	}
 }
 
-void USpatialWorkerConnection::MaybeFlush()
+void USpatialWorkerConnection::MaybeFlushImportantMessages(bool bForce /* = false */)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bWorkerFlushAfterRPC)
+	if (Settings->bWorkerFlushAfterImportantEvent || bForce)
 	{
 		if (Settings->bRunSpatialWorkerConnectionOnGameThread)
 		{
 			ProcessOutgoingMessages();
 		}
-		else
+		else if(Settings->bWorkerFlushAfterImportantEvent)
 		{
 			check(ThreadWaitCondition.IsSet());
 			ThreadWaitCondition->Wake();
 		}
+		// else flushing is performed at 1 / Settings->OpsUpdateRate frequency.
+	}
+}
+
+void USpatialWorkerConnection::Flush()
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		ProcessOutgoingMessages();
+	}
+	else
+	{
+		check(ThreadWaitCondition.IsSet());
+		ThreadWaitCondition->Wake();
 	}
 }
 

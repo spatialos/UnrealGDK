@@ -56,7 +56,7 @@ public:
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
-	void MaybeFlush();
+	void MaybeFlushImportantMessages(bool bForce /* = false */);
 
 private:
 	void CacheWorkerAttributes();

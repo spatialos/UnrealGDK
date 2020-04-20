@@ -453,7 +453,7 @@ void USpatialSender::FlushRPCService()
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 		}
 
-		NetDriver->Connection->MaybeFlush();
+		NetDriver->Connection->MaybeFlushImportantMessages();
 	}
 }
 
@@ -859,7 +859,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 #if !UE_BUILD_SHIPPING
 		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
-		NetDriver->Connection->MaybeFlush();
+		NetDriver->Connection->MaybeFlushImportantMessages();
 		return ERPCResult::Success;
 	}
 	default:
