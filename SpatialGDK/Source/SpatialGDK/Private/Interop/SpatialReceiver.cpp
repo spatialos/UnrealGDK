@@ -118,7 +118,7 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			continue;
 		}
-		if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
+		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
 		{
 			continue;
 		}
