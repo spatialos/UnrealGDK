@@ -15,7 +15,7 @@ static const Schema_FieldId kTestDoubleFieldId = 1;
 inline ComponentData CreateTestComponentData(Worker_ComponentId Id, double Value)
 {
 	ComponentData Data{ Id };
-	auto* Fields = Data.GetFields();
+	Schema_Object* Fields = Data.GetFields();
 	Schema_AddDouble(Fields, kTestDoubleFieldId, Value);
 	return Data;
 }
@@ -23,14 +23,14 @@ inline ComponentData CreateTestComponentData(Worker_ComponentId Id, double Value
 inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId Id, double Value)
 {
 	ComponentUpdate Update{ Id };
-	auto* Fields = Update.GetFields();
+	Schema_Object* Fields = Update.GetFields();
 	Schema_AddDouble(Fields, kTestDoubleFieldId, Value);
 	return Update;
 }
 
 inline void AddTestEvent(ComponentUpdate* Update, int Value) {
-	auto* events = Update->GetEvents();
-	auto* eventData = Schema_AddObject(events, kEventId);
+	Schema_Object* events = Update->GetEvents();
+	Schema_Object* eventData = Schema_AddObject(events, kEventId);
 	Schema_AddInt32(eventData, kEventIntFieldId, Value);
 }
 
