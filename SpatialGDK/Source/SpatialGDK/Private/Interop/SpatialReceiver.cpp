@@ -291,13 +291,22 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
 	// We should exit early if we're receiving a duplicate RemoveComponent op. This can happen with dynamic
 	// components enabled. We detect if the op is a duplicate via the queue of ops to be processed (duplicate
-	// op receive in the same op list) OR whether the data removed from the StaticComponentView (received and
-	// processed in a previous op list).
+	// op receive in the same op list).
 	if (QueuedRemoveComponentOps.ContainsByPredicate([&Op](const Worker_RemoveComponentOp& QueuedOp)
 	{
 		return QueuedOp.entity_id == Op.entity_id && QueuedOp.component_id == Op.component_id;
-	}) || !StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
+	}))
 	{
+		return;
+	}
+
+	// Similarly, we want to ignore a duplicate RemoveComponent that is received in a following op list (which we
+	// can deduce from the data having been removed from the StaticComponentView). However, as the ever wise
+	// Samiec points out, hitting this conditional might indicate something more sinister going on, so we should
+	// log.
+	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received duplicate RemoveComponent op in separate op lists. Could be sinister!"));
 		return;
 	}
 
