@@ -2419,14 +2419,32 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		FoundOps.Add(EntityQueryResponseOp);
 	}
 
-	// CreateEntityResponseOps are needed for non-GSM-authoritative server workers sending an update
-	// to the Runtime indicating that the worker is ready to begin play.
-	Worker_Op* CreateEntityResponseOp = nullptr;
-	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
-
-	if (CreateEntityResponseOp != nullptr)
+	// To correctly initialize the ServerWorkerEntity on each server during op queueing, we need to catch several ops here.
+	// Note that this will break if any other CreateEntity requests are issued during the startup flow.
 	{
-		FoundOps.Add(CreateEntityResponseOp);
+		Worker_Op* CreateEntityResponseOp = nullptr;
+		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+
+		Worker_Op* AddComponentOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::SERVER_WORKER_COMPONENT_ID, &AddComponentOp);
+
+		Worker_Op* AuthorityChangedOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::SERVER_WORKER_COMPONENT_ID, &AuthorityChangedOp);
+
+		if (CreateEntityResponseOp != nullptr)
+		{
+			FoundOps.Add(CreateEntityResponseOp);
+		}
+
+		if (AddComponentOp != nullptr)
+		{
+			FoundOps.Add(AddComponentOp);
+		}
+
+		if (AuthorityChangedOp != nullptr)
+		{
+			FoundOps.Add(AuthorityChangedOp);
+		}
 	}
 
 	// Search for entity id reservation response and process it.  The entity id reservation
