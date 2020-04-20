@@ -177,4 +177,4 @@ inline bool AreEquivalent(const TArray<EntityComponentId>& Lhs, const TArray<Ent
 	return AreEquivalent(Lhs, Rhs, CompareEntityComponentId);
 }
 
-}
+}  // namespace SpatialGDK
