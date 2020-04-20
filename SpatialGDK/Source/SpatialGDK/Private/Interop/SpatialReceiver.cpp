@@ -1268,7 +1268,7 @@ void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId Ent
 	bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
 	if (!bIsDynamicSubobject)
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), EntityId, ComponentId, *Actor->GetPathName());
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), EntityId, ComponentId, *Actor->GetPathName());
 		return;
 	}
 
