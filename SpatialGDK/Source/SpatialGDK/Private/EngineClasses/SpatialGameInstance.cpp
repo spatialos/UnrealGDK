@@ -233,8 +233,8 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 
 void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 {
-	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player. Reason: %s"), *Reason);
-	OnPlayerSpawnFailed.Broadcast(Reason);
+	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player on SpatialOS. Reason: %s"), *Reason);
+	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)

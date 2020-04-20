@@ -64,7 +64,7 @@ public:
 	FOnConnectionFailedEvent OnSpatialConnectionFailed;
 	// Invoked when the player could not be spawned
 	UPROPERTY(BlueprintAssignable)
-	FOnPlayerSpawnFailedEvent OnPlayerSpawnFailed;
+	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
