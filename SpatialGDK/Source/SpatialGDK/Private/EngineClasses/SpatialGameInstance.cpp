@@ -219,7 +219,7 @@ void USpatialGameInstance::HandleOnConnected()
 	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
 	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
-	OnConnected.Broadcast();
+	OnSpatialConnected.Broadcast();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
@@ -228,7 +228,7 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->ResetWorkerId();
 #endif
-	OnConnectionFailed.Broadcast(Reason);
+	OnSpatialConnectionFailed.Broadcast(Reason);
 }
 
 void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)

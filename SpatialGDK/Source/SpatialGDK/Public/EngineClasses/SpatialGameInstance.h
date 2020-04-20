@@ -58,10 +58,10 @@ public:
 
 	// Invoked when this worker has successfully connected to SpatialOS
 	UPROPERTY(BlueprintAssignable)
-	FOnConnectedEvent OnConnected;
+	FOnConnectedEvent OnSpatialConnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	UPROPERTY(BlueprintAssignable)
-	FOnConnectionFailedEvent OnConnectionFailed;
+	FOnConnectionFailedEvent OnSpatialConnectionFailed;
 	// Invoked when the player could not be spawned
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerSpawnFailedEvent OnPlayerSpawnFailed;
