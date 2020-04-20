@@ -145,7 +145,7 @@ void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 
 	if (!JsonParsedSpatialFile)
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to update project name(%s).Please ensure that the following file exists : %s"), *InProjectName, *SpatialGDKServicesConstants::SpatialOSConfigFileName);
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to update project name(%s). Please ensure that the following file exists: %s"), *InProjectName, *SpatialGDKServicesConstants::SpatialOSConfigFileName);
 		return;
 	}
 	JsonParsedSpatialFile->SetStringField("name", InProjectName);
