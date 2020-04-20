@@ -300,16 +300,6 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		return;
 	}
 
-	// Similarly, we want to ignore a duplicate RemoveComponent that is received in a following op list (which we
-	// can deduce from the data having been removed from the StaticComponentView). However, as the ever wise
-	// Samiec points out, hitting this conditional might indicate something more sinister going on, so we should
-	// log.
-	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received duplicate RemoveComponent op in separate op lists. Could be sinister!"));
-		return;
-	}
-
 	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
 	{
 		if (IsEntityWaitingForAsyncLoad(Op.entity_id))
@@ -389,6 +379,12 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		return;
 	}
 
+	// We want to do nothing for RemoveComponent ops for which we never received a corresponding
+	// AddComponent op. This can happen because of the worker SDK generating a RemoveComponent op
+	// when a worker receives authority over a component without having already received the
+	// AddComponent op. The generation is a known part of the worker SDK we need to tolerate for
+	// enabling dynamic components, and having authority ACL entries without having the component
+	// data present on an entity is permitted as part of our Unreal dynamic component implementation.
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
 	{
 		return;
@@ -938,6 +934,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// flow) take care of setting roles correctly.
 		if (EntityActor->HasAuthority())
 		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Trying to unexpectedly spawn received network Actor with authority. Actor %s. Entity: %lld"), *EntityActor->GetName(), EntityId);
 			EntityActor->Role = ROLE_SimulatedProxy;
 			EntityActor->RemoteRole = ROLE_Authority;
 		}
