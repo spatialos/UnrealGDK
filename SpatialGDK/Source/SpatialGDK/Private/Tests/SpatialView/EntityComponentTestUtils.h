@@ -48,8 +48,8 @@ inline bool CompareSchemaObjects(const Schema_Object* Lhs, const Schema_Object* 
 	{
 		return false;
 	}
-	const TUniquePtr<unsigned char[]> LhsBuffer = MakeUnique<unsigned char[]>(Length);
-	const TUniquePtr<unsigned char[]> RhsBuffer = MakeUnique<unsigned char[]>(Length);
+	const TUniquePtr<uint8_t[]> LhsBuffer = MakeUnique<uint8_t[]>(Length);
+	const TUniquePtr<uint8_t[]> RhsBuffer = MakeUnique<uint8_t[]>(Length);
 	Schema_SerializeToBuffer(Lhs, LhsBuffer.Get(), Length);
 	Schema_SerializeToBuffer(Rhs, RhsBuffer.Get(), Length);
 	return FMemory::Memcmp(LhsBuffer.Get(), RhsBuffer.Get(), Length) == 0;
