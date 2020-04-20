@@ -1793,6 +1793,10 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			}
 		}
 
+		if (Connection != nullptr)
+		{
+			Connection->MaybeFlush();
+		}
 #endif // WITH_SERVER_CODE
 	}
 
@@ -1804,11 +1808,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	ProcessPendingDormancy();
 
 	TimerManager.Tick(DeltaTime);
-
-	if (Connection != nullptr)
-	{
-		Connection->MaybeFlushImportantMessages(/* bForce */ true);
-	}
 
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.

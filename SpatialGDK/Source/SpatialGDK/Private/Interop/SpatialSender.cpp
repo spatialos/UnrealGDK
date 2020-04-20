@@ -448,12 +448,16 @@ void USpatialSender::FlushRPCService()
 	{
 		RPCService->PushOverflowedRPCs();
 
-		for (const SpatialRPCService::UpdateToSend& Update : RPCService->GetRPCsAndAcksToSend())
+		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+		for (const SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 		}
 
-		NetDriver->Connection->MaybeFlushImportantMessages();
+		if (RPCs.Num())
+		{
+			NetDriver->Connection->MaybeFlush();
+		}
 	}
 }
 
@@ -859,7 +863,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 #if !UE_BUILD_SHIPPING
 		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
-		NetDriver->Connection->MaybeFlushImportantMessages();
+		NetDriver->Connection->MaybeFlush();
 		return ERPCResult::Success;
 	}
 	default:

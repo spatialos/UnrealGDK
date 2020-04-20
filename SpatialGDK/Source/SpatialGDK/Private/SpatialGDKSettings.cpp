@@ -71,7 +71,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
-	, bWorkerFlushAfterImportantEvent(false)
+	, bWorkerFlushAfterOutgoingNetworkOp(false)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
@@ -103,7 +103,7 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterImportantUpdate"), TEXT("Flush worker ops after important updates"), bWorkerFlushAfterImportantEvent);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 	
 	
 

@@ -292,7 +292,7 @@ public:
 
 	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
-	bool bWorkerFlushAfterImportantEvent;
+	bool bWorkerFlushAfterOutgoingNetworkOp;
 
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
