@@ -80,27 +80,15 @@ private:
 
 	TMap<FName, uint32>  LayerNameToVirtualWorkerOffset;
 
-	// TODO(harkness): Convert this from pointers to TUniquePtr
-	// TMap<FName, TUniquePtr<UAbstractLBStrategy> > LayerNameToLBStrategy;
-
 	FName DefaultWorkerType;
 
 	// Returns the first Layer that contains this, or a parent of this class,
 	// or the default actor group, if no mapping is found.
 	FName GetLayerForClass(TSubclassOf<AActor> Class) const;
 
-	// Returns the Server worker type that is authoritative over this Layer.
-	VirtualWorkerId GetVirtualWorkerIdForLayer(const FName& Layer) const;
-
 	// Returns true if ActorA and ActorB are contained in Layers that are
 	// on the same Server worker type.
 	bool IsSameWorkerType(const AActor* ActorA, const AActor* ActorB) const;
-
-	/**
-	 * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.
-	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
-	 */
-		// bool IsLayerOwnerForActor(const AActor* Actor) const;
 
 	/**
 	 * Returns true if the current Worker Type owns this Actor Group.

@@ -24,11 +24,8 @@ void ULayeredLBStrategy::Init()
 
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
-		// TODO: can we just check that bEnableOffloading is true?
-		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
-		if (Settings->bEnableMultiWorker)  // TODO(harkness) need to check something else here?
+		if (Settings->bEnableMultiWorker)
 		{
-
 			const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
 			if (WorldSettings == nullptr)
@@ -38,7 +35,6 @@ void ULayeredLBStrategy::Init()
 			}
 
 			TMap<FName, FLBLayerInfo> WorkerLBLayers = WorldSettings->WorkerLBLayers;
-			uint8 MinWorkersNeeded = 0;
 
 			for (const TPair<FName, FLayerInfo>& Layer : Settings->WorkerLayers)
 			{
@@ -55,7 +51,6 @@ void ULayeredLBStrategy::Init()
 				LayerNameToLBStrategy.Add(LayerKey, LBStrategy);
 				LBStrategy->Init();
 				LBStrategy->AddToRoot();
-				MinWorkersNeeded += 0;  // TODO(harkness) query strategy for workers needed.
 
 				for (const TSoftClassPtr<AActor>& ClassPtr : Layer.Value.ActorClasses)
 				{
@@ -69,16 +64,15 @@ void ULayeredLBStrategy::Init()
 				UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
 				UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 				DefaultLBStrategy->AddToRoot();
-				LayerNameToLBStrategy.Emplace(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+				LayerNameToLBStrategy.Add(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 				LayerNameToLBStrategy[SpatialConstants::DefaultLayer]->Init();
 			}
 			else
 			{
 				UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLoadBalanceStrategy);
 				DefaultLBStrategy->AddToRoot();
-				LayerNameToLBStrategy.Emplace(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+				LayerNameToLBStrategy.Add(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 				LayerNameToLBStrategy[SpatialConstants::DefaultLayer]->Init();
-				UE_LOG(LogLayeredLBStrategy, Log, TEXT("Added new strategy at location %lld"), DefaultLBStrategy);
 			}
 		}
 	}
@@ -89,7 +83,7 @@ void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualW
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 	for (const auto& Elem : LayerNameToLBStrategy)
 	{
-		Elem.Value->SetLocalVirtualWorkerId(InLocalVirtualWorkerId - LayerNameToVirtualWorkerOffset[Elem.Key]);
+		Elem.Value->SetLocalVirtualWorkerId(InLocalVirtualWorkerId);
 	}
 }
 
@@ -103,7 +97,6 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 	if (!IsReady())
 	{
 		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
-		// TODO(harkness) Check if this is a valid return?
 		return false;
 	}
 
@@ -131,16 +124,17 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	}
 
 	const FName& LayerKey = GetLayerForActor(Actor);
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy found Layer %s for Actor %s."), *LayerKey.ToString(), *AActor::GetDebugName(&Actor));
 	if (!LayerNameToLBStrategy.Contains(LayerKey))
 	{
 		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(&Actor), *LayerKey.ToString());
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const VirtualWorkerId ReturnedWorkerId =  LayerNameToLBStrategy[LayerKey]->WhoShouldHaveAuthority(Actor);
+	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerKey]->WhoShouldHaveAuthority(Actor);
 
 	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId, *AActor::GetDebugName(&Actor));
-	return ReturnedWorkerId + LayerNameToVirtualWorkerOffset[LayerKey];
+	return ReturnedWorkerId;
 }
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint() const
@@ -190,22 +184,21 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 	for (auto& Elem : LayerNameToLBStrategy)
 	{
 		VirtualWorkerId MinimumRequiredWorkers = Elem.Value->GetMinimumRequiredWorkers();
-		LayerNameToVirtualWorkerOffset.Add(Elem.Key, NextWorkerIdToAssign - 1);
 
-		if (NextWorkerIdToAssign + MinimumRequiredWorkers - 1 > LastVirtualWorkerId)
+		VirtualWorkerId LastVirtualWorkerIdToAssign = NextWorkerIdToAssign + MinimumRequiredWorkers - 1;
+		if (LastVirtualWorkerIdToAssign > LastVirtualWorkerId)
 		{
 			UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy was not given enough VirtualWorkerIds to meet the demands of the layer strategies."));
 			return;
 		}
+		Elem.Value->SetVirtualWorkerIds(NextWorkerIdToAssign, LastVirtualWorkerIdToAssign);
 
-		Elem.Value->SetVirtualWorkerIds(1, MinimumRequiredWorkers);
-
-		for (VirtualWorkerId id = 1; id <= MinimumRequiredWorkers; id++)
+		for (VirtualWorkerId id = NextWorkerIdToAssign; id <= LastVirtualWorkerIdToAssign; id++)
 		{
-			VirtualWorkerIdToLayerName.Add(id + LayerNameToVirtualWorkerOffset[Elem.Key], Elem.Key);
+			VirtualWorkerIdToLayerName.Add(id, Elem.Key);
 		}
 
-		NextWorkerIdToAssign += MinimumRequiredWorkers;
+		NextWorkerIdToAssign = LastVirtualWorkerIdToAssign + 1;
 	}
 }
 
@@ -240,17 +233,6 @@ FName ULayeredLBStrategy::GetLayerForClass(const TSubclassOf<AActor> Class) cons
 	return SpatialConstants::DefaultLayer;
 }
 
-VirtualWorkerId ULayeredLBStrategy::GetVirtualWorkerIdForLayer(const FName& Layer) const
-{
-	if (const VirtualWorkerId* WorkerId = LayerNameToVirtualWorkerId.Find(Layer))
-	{
-		return *WorkerId;
-	}
-
-	// TODO(harkness): Need to clean this up.
-	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-}
-
 bool ULayeredLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB) const
 {
 	if (ActorA == nullptr || ActorB == nullptr)
@@ -263,16 +245,6 @@ bool ULayeredLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* Ac
 
 	return (LayerA == LayerB);
 }
-
-// bool ULayeredLBStrategy::IsLayerOwnerForActor(const AActor* Actor) const
-// {
-// 	if (Actor == nullptr)
-// 	{
-// 		return false;
-// 	}
-// 
-// 	return IsLayerOwnerForClass(Actor->GetClass());
-// }
 
 // Note: this is returning whether this is one of the workers which can simulate the layer. If there are
 // multiple workers simulating the layer, there's no concept of owner.
