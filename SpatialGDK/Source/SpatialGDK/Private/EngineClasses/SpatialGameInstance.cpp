@@ -231,6 +231,12 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	OnConnectionFailed.Broadcast(Reason);
 }
 
+void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player. Reason: %s"), *Reason);
+	OnPlayerSpawnFailed.Broadcast(Reason);
+}
+
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
 	const FString WorkerType = GetSpatialWorkerType().ToString();
