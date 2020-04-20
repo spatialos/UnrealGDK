@@ -74,7 +74,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
-- Make project name field editable in cloud deployment window.
+- You can now edit the project name field in the `Cloud Deployment` window.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
