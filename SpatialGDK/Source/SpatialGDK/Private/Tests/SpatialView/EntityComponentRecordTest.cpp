@@ -61,7 +61,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_component_removed_T
 ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_that_component_removed_THEN_component_record_is_empty)
 {
 	// GIVEN
-	auto TestData = CreateTestComponentData(kTestComponentId, kTestValue);
+	ComponentData TestData = CreateTestComponentData(kTestComponentId, kTestValue);
 
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
@@ -79,7 +79,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_that_compo
 }
 
 // This should not produce the component added - just cancel removing it
-ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_removed_component_WHEN_component_added_again_THEN_componen_record_is_empty)
+ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_removed_component_WHEN_component_added_again_THEN_component_record_is_empty)
 {
 	// GIVEN
 	auto TestData = CreateTestComponentData(kTestComponentId, kTestValue);

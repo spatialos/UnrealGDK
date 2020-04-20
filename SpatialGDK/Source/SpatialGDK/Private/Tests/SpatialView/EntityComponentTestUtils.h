@@ -12,143 +12,143 @@ static const Schema_FieldId kEventIntFieldId = 2;
 
 static const Schema_FieldId kTestDoubleFieldId = 1;
 
-inline ComponentData CreateTestComponentData(Worker_ComponentId id, double value)
+inline ComponentData CreateTestComponentData(Worker_ComponentId Id, double Value)
 {
-	ComponentData componentData{ id };
-	auto* fields = componentData.GetFields();
-	Schema_AddDouble(fields, kTestDoubleFieldId, value);
-	return componentData;
+	ComponentData Data{ Id };
+	auto* Fields = Data.GetFields();
+	Schema_AddDouble(Fields, kTestDoubleFieldId, Value);
+	return Data;
 }
 
-inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId id, double value)
+inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId Id, double Value)
 {
-	ComponentUpdate componentUpdate{ id };
-	auto* fields = componentUpdate.GetFields();
-	Schema_AddDouble(fields, kTestDoubleFieldId, value);
-	return componentUpdate;
+	ComponentUpdate Update{ Id };
+	auto* Fields = Update.GetFields();
+	Schema_AddDouble(Fields, kTestDoubleFieldId, Value);
+	return Update;
 }
 
-inline void AddTestEvent(ComponentUpdate* update, int value) {
-	auto* events = update->GetEvents();
+inline void AddTestEvent(ComponentUpdate* Update, int Value) {
+	auto* events = Update->GetEvents();
 	auto* eventData = Schema_AddObject(events, kEventId);
-	Schema_AddInt32(eventData, kEventIntFieldId, value);
+	Schema_AddInt32(eventData, kEventIntFieldId, Value);
 }
 
-inline ComponentUpdate CreateTestComponentEvent(Worker_ComponentId id, int value) {
-	ComponentUpdate update{ id };
-	AddTestEvent(&update, value);
-	return update;
+inline ComponentUpdate CreateTestComponentEvent(Worker_ComponentId Id, int Value) {
+	ComponentUpdate Update{ Id };
+	AddTestEvent(&Update, Value);
+	return Update;
 }
 
-/** Returns true if lhs and rhs have the same serialized form. */
-inline bool CompareSchemaObjects(const Schema_Object* lhs, const Schema_Object* rhs)
+/** Returns true if Lhs and Rhs have the same serialized form. */
+inline bool CompareSchemaObjects(const Schema_Object* Lhs, const Schema_Object* Rhs)
 {
-	const auto length = Schema_GetWriteBufferLength(lhs);
-	if (Schema_GetWriteBufferLength(rhs) != length)
+	const auto Length = Schema_GetWriteBufferLength(Lhs);
+	if (Schema_GetWriteBufferLength(Rhs) != Length)
 	{
 		return false;
 	}
-	const TUniquePtr<unsigned char[]> lhsBuffer = MakeUnique<unsigned char[]>(length);
-	const TUniquePtr<unsigned char[]> rhsBuffer = MakeUnique<unsigned char[]>(length);
-	Schema_SerializeToBuffer(lhs, lhsBuffer.Get(), length);
-	Schema_SerializeToBuffer(rhs, rhsBuffer.Get(), length);
-	return FMemory::Memcmp(lhsBuffer.Get(), rhsBuffer.Get(), length) == 0;
+	const TUniquePtr<unsigned char[]> LhsBuffer = MakeUnique<unsigned char[]>(Length);
+	const TUniquePtr<unsigned char[]> RhsBuffer = MakeUnique<unsigned char[]>(Length);
+	Schema_SerializeToBuffer(Lhs, LhsBuffer.Get(), Length);
+	Schema_SerializeToBuffer(Rhs, RhsBuffer.Get(), Length);
+	return FMemory::Memcmp(LhsBuffer.Get(), RhsBuffer.Get(), Length) == 0;
 }
 
-/** Returns true if lhs and rhs have the same component ID and state. */
-inline bool CompareComponentData(const ComponentData& lhs, const ComponentData& rhs)
+/** Returns true if Lhs and Rhs have the same component ID and state. */
+inline bool CompareComponentData(const ComponentData& Lhs, const ComponentData& Rhs)
 {
-	if (lhs.GetComponentId() != rhs.GetComponentId())
+	if (Lhs.GetComponentId() != Rhs.GetComponentId())
 	{
 		return false;
 	}
-	return CompareSchemaObjects(lhs.GetFields(), rhs.GetFields());
+	return CompareSchemaObjects(Lhs.GetFields(), Rhs.GetFields());
 }
 
-/** Returns true if lhs and rhs have the same component ID and events. */
-inline bool CompareComponentUpdateEvents(const ComponentUpdate& lhs, const ComponentUpdate& rhs)
+/** Returns true if Lhs and Rhs have the same component ID and events. */
+inline bool CompareComponentUpdateEvents(const ComponentUpdate& Lhs, const ComponentUpdate& Rhs)
 {
-	if (lhs.GetComponentId() != rhs.GetComponentId())
+	if (Lhs.GetComponentId() != Rhs.GetComponentId())
 	{
 		return false;
 	}
-	return CompareSchemaObjects(lhs.GetEvents(), rhs.GetEvents());
+	return CompareSchemaObjects(Lhs.GetEvents(), Rhs.GetEvents());
 }
 
-/** Returns true if lhs and rhs have the same component ID and state. */
-inline bool CompareComponentUpdates(const ComponentUpdate& lhs, const ComponentUpdate& rhs)
+/** Returns true if Lhs and Rhs have the same component ID and state. */
+inline bool CompareComponentUpdates(const ComponentUpdate& Lhs, const ComponentUpdate& Rhs)
 {
-	if (lhs.GetComponentId() != rhs.GetComponentId())
+	if (Lhs.GetComponentId() != Rhs.GetComponentId())
 	{
 		return false;
 	}
-	return CompareSchemaObjects(lhs.GetFields(), rhs.GetFields()) &&
-		CompareSchemaObjects(lhs.GetEvents(), rhs.GetEvents());
+	return CompareSchemaObjects(Lhs.GetFields(), Rhs.GetFields()) &&
+		CompareSchemaObjects(Lhs.GetEvents(), Rhs.GetEvents());
 }
 
-/** Returns true if lhs and rhs have the same entity ID, component ID, and state. */
-inline bool CompareEntityComponentData(const EntityComponentData& lhs,
-	const EntityComponentData& rhs)
+/** Returns true if Lhs and Rhs have the same entity ID, component ID, and state. */
+inline bool CompareEntityComponentData(const EntityComponentData& Lhs,
+	const EntityComponentData& Rhs)
 {
-	if (lhs.EntityId != rhs.EntityId)
+	if (Lhs.EntityId != Rhs.EntityId)
 	{
 		return false;
 	}
-	return CompareComponentData(lhs.Data, rhs.Data);
+	return CompareComponentData(Lhs.Data, Rhs.Data);
 }
 
-/** Returns true if lhs and rhs have the same entity ID, component ID, and events. */
-inline bool CompareEntityComponentUpdateEvents(const EntityComponentUpdate& lhs,
-	const EntityComponentUpdate& rhs)
+/** Returns true if Lhs and Rhs have the same entity ID, component ID, and events. */
+inline bool CompareEntityComponentUpdateEvents(const EntityComponentUpdate& Lhs,
+	const EntityComponentUpdate& Rhs)
 {
-	if (lhs.EntityId != rhs.EntityId)
+	if (Lhs.EntityId != Rhs.EntityId)
 	{
 		return false;
 	}
-	return CompareComponentUpdateEvents(lhs.Update, rhs.Update);
+	return CompareComponentUpdateEvents(Lhs.Update, Rhs.Update);
 }
 
-/** Returns true if lhs and rhs have the same entity ID, component ID, state, and events. */
-inline bool CompareEntityComponentUpdates(const EntityComponentUpdate& lhs,
-	const EntityComponentUpdate& rhs)
+/** Returns true if Lhs and Rhs have the same entity ID, component ID, state, and events. */
+inline bool CompareEntityComponentUpdates(const EntityComponentUpdate& Lhs,
+	const EntityComponentUpdate& Rhs)
 {
-	if (lhs.EntityId != rhs.EntityId)
+	if (Lhs.EntityId != Rhs.EntityId)
 	{
 		return false;
 	}
-	return CompareComponentUpdates(lhs.Update, rhs.Update);
+	return CompareComponentUpdates(Lhs.Update, Rhs.Update);
 }
 
-/** Returns true if lhs and rhs have the same ID, component ID, data, state and events. */
-inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteUpdate& lhs,
-	const EntityComponentCompleteUpdate& rhs)
+/** Returns true if Lhs and Rhs have the same ID, component ID, data, state and events. */
+inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteUpdate& Lhs,
+	const EntityComponentCompleteUpdate& Rhs)
 {
-	if (lhs.EntityId != rhs.EntityId)
+	if (Lhs.EntityId != Rhs.EntityId)
 	{
 		return false;
 	}
-	return CompareComponentData(lhs.CompleteUpdate, rhs.CompleteUpdate) && CompareComponentUpdateEvents(lhs.Events, rhs.Events);
+	return CompareComponentData(Lhs.CompleteUpdate, Rhs.CompleteUpdate) && CompareComponentUpdateEvents(Lhs.Events, Rhs.Events);
 }
 
-inline bool CompareEntityComponentId(const EntityComponentId& lhs, const EntityComponentId& rhs)
+inline bool CompareEntityComponentId(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
 {
-	return lhs == rhs;
+	return Lhs == Rhs;
 }
 
 template<typename T>
-using ComparisonFunction = bool(*)(const T& lhs, const T& rhs);
+using ComparisonFunction = bool(*)(const T& Lhs, const T& Rhs);
 
 template<typename T>
-bool AreEquivalent(const TArray<T>& lhs, const TArray<T>& rhs, ComparisonFunction<T> Compare)
+bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, ComparisonFunction<T> Compare)
 {
-	if (lhs.Num() != rhs.Num())
+	if (Lhs.Num() != Rhs.Num())
 	{
 		return false;
 	}
 
-	for (int i = 0; i < lhs.Num(); i++)
+	for (int i = 0; i < Lhs.Num(); i++)
 	{
-		if (!Compare(lhs[i], rhs[i]))
+		if (!Compare(Lhs[i], Rhs[i]))
 		{
 			return false;
 		}
@@ -157,24 +157,24 @@ bool AreEquivalent(const TArray<T>& lhs, const TArray<T>& rhs, ComparisonFunctio
 	return true;
 }
 
-inline bool AreEquivalent(const TArray<EntityComponentUpdate>& lhs, const TArray<EntityComponentUpdate>& rhs)
+inline bool AreEquivalent(const TArray<EntityComponentUpdate>& Lhs, const TArray<EntityComponentUpdate>& Rhs)
 {
-	return AreEquivalent(lhs, rhs, CompareEntityComponentUpdates);
+	return AreEquivalent(Lhs, Rhs, CompareEntityComponentUpdates);
 }
 
-inline bool AreEquivalent(const TArray<EntityComponentCompleteUpdate>& lhs, const TArray<EntityComponentCompleteUpdate>& rhs)
+inline bool AreEquivalent(const TArray<EntityComponentCompleteUpdate>& Lhs, const TArray<EntityComponentCompleteUpdate>& Rhs)
 {
-	return AreEquivalent(lhs, rhs, CompareEntityComponentCompleteUpdates);
+	return AreEquivalent(Lhs, Rhs, CompareEntityComponentCompleteUpdates);
 }
 
-inline bool AreEquivalent(const TArray<EntityComponentData>& lhs, const TArray<EntityComponentData>& rhs)
+inline bool AreEquivalent(const TArray<EntityComponentData>& Lhs, const TArray<EntityComponentData>& Rhs)
 {
-	return AreEquivalent(lhs, rhs, CompareEntityComponentData);
+	return AreEquivalent(Lhs, Rhs, CompareEntityComponentData);
 }
 
-inline bool AreEquivalent(const TArray<EntityComponentId>& lhs, const TArray<EntityComponentId>& rhs)
+inline bool AreEquivalent(const TArray<EntityComponentId>& Lhs, const TArray<EntityComponentId>& Rhs)
 {
-	return AreEquivalent(lhs, rhs, CompareEntityComponentId);
+	return AreEquivalent(Lhs, Rhs, CompareEntityComponentId);
 }
 
 }
