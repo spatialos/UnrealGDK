@@ -16,6 +16,7 @@
 #include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Settings/ProjectPackagingSettings.h"
+#include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "UObject/StrongObjectPtr.h"
@@ -25,6 +26,12 @@ using namespace SpatialGDKEditor;
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
+
+FSpatialGDKEditor::FSpatialGDKEditor()
+	: bSchemaGeneratorRunning(false)
+	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>())
+{
+}
 
 bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 {
@@ -313,6 +320,11 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			World->UpdateWorldComponents(true, true);
 		}
 	}
+}
+
+TSharedRef<FSpatialGDKPackageAssembly> FSpatialGDKEditor::GetPackageAssemblyRef()
+{
+	return SpatialGDKPackageAssemblyInstance;
 }
 
 #undef LOCTEXT_NAMESPACE

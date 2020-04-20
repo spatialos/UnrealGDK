@@ -223,6 +223,24 @@ void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type Reg
 	PrimaryDeploymentRegionCode = RegionCode;
 }
 
+void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
+{
+	DeploymentTags = Tags;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetAssemblyWindowsPlatform(const FString& Platform)
+{
+	AssemblyWindowsPlatform = Platform;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
+{
+	AssemblyBuildConfiguration = Configuration;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
@@ -231,6 +249,24 @@ void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
+{
+	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
+{
+	bGenerateSchema = bGenerate;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
+{
+	bGenerateSnapshot = bGenerate;
 	SaveConfig();
 }
 

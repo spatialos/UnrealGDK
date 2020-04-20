@@ -66,6 +66,9 @@ private:
 	/** Delegate called when the user has picked a path for the primary launch configuration file */
 	void OnPrimaryLaunchConfigPathPicked(const FString& PickedPath);
 
+	/** Delegate to commit deployment tags */
+	void OnDeploymentTagsCommitted(const FText& InText, ETextCommit::Type InCommitType);
+
 	/** Delegate called to populate the region codes for the primary deployment */
 	TSharedRef<SWidget> OnGetPrimaryDeploymentRegionCode();
 
@@ -99,6 +102,17 @@ private:
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
 
+	TSharedRef<SWidget> OnGetBuildWindowsPlatform();
+	void OnWindowsPlatformPicked(FString WindowsPlatform);
+	TSharedRef<SWidget> OnGetBuildConfiguration();
+	void OnBuildConfigurationPicked(FString Configuration);
+
+	FReply OnBuildAndUploadClicked();
+	bool CanBuildAndUpload() const;
+
+	ECheckBoxState ForceAssemblyOverwrite() const;
+	void OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState);
+
 	ECheckBoxState IsSimulatedPlayersEnabled() const;
 	ECheckBoxState IsUsingGDKPinnedRuntimeVersion() const;
 	bool IsUsingCustomRuntimeVersion() const;
@@ -106,4 +120,17 @@ private:
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
+
+	ECheckBoxState IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsGenerateSchemaEnabled() const;
+	void OnCheckedGenerateSchema(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsGenerateSnapshotEnabled() const;
+	void OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState);
+
+	void OnBuildSuccess();
+
+	bool CanLaunchDeployment() const;
 };

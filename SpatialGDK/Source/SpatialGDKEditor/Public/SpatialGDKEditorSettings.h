@@ -331,7 +331,36 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
+	/** Tags used when launching a deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+		FString DeploymentTags;
+
 	const FString SimulatedPlayerLaunchConfigPath;
+
+public:
+	/** Windows build architecture for which to build the client assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Windows Build Type"))
+		FString AssemblyWindowsPlatform;
+
+	/** The build configuration to use when creating workers for the assembly, e.g. Development */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
+		FString AssemblyBuildConfiguration;
+
+	/** Allow overwriting an assembly of the same name */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Force Assembly Overwrite"))
+		bool bForceAssemblyOverwrite;
+
+	/** Whether to build client worker as part of the assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
+		bool bBuildClientWorker;
+
+	/** Whether to generate schema automatically before building an assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Schema"))
+		bool bGenerateSchema;
+
+	/** Whether to generate a snapshot automatically before building an assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Snapshot"))
+		bool bGenerateSnapshot;
 
 public:
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
@@ -483,6 +512,24 @@ public:
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
 	}
 
+	void SetDeploymentTags(const FString& Tags);
+	FORCEINLINE FString GetDeploymentTags() const
+	{
+		return DeploymentTags;
+	}
+
+	void SetAssemblyWindowsPlatform(const FString& Platform);
+	FORCEINLINE FText GetAssemblyWindowsPlatform() const
+	{
+		return FText::FromString(AssemblyWindowsPlatform);
+	}
+
+	void SetAssemblyBuildConfiguration(const FString& Configuration);
+	FORCEINLINE FText GetAssemblyBuildConfiguration() const
+	{
+		return FText::FromString(AssemblyBuildConfiguration);
+	}
+
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
 	FORCEINLINE FText GetSimulatedPlayerRegionCode() const
 	{
@@ -500,6 +547,24 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetBuildClientWorker(bool bBuild);
+	FORCEINLINE bool IsBuildClientWorkerEnabled() const
+	{
+		return bBuildClientWorker;
+	}
+
+	void SetGenerateSchema(bool bGenerate);
+	FORCEINLINE bool IsGenerateSchemaEnabled() const
+	{
+		return bGenerateSchema;
+	}
+
+	void SetGenerateSnapshot(bool bGenerate);
+	FORCEINLINE bool IsGenerateSnapshotEnabled() const
+	{
+		return bGenerateSnapshot;
 	}
 
 	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);
