@@ -76,28 +76,60 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to Android device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
+		.MinDesiredWidth(550)
 		[
-			SNew(SButton)
-			.VAlign(VAlign_Center)
-			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
-			.Content()
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
 			[
-				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
+				SNew(SButton)
+				.VAlign(VAlign_Center)
+				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
+				.Content()
+				[
+					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(SButton)
+				.VAlign(VAlign_Center)
+				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromAndroidDevice)
+				.Content()
+				[
+					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from Android device"))
+				]
 			]
 		];
 
 	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to iOS device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
+		.MinDesiredWidth(550)
 		[
-			SNew(SButton)
-			.VAlign(VAlign_Center)
-			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
-			.Content()
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
 			[
-				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
+				SNew(SButton)
+				.VAlign(VAlign_Center)
+				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
+				.Content()
+				[
+					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(SButton)
+				.VAlign(VAlign_Center)
+				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromIOSDevice)
+				.Content()
+				[
+					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from iOS device"))
+				]
 			]
 		];
 }
@@ -245,13 +277,33 @@ bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgsToDevice(const FStrin
 	return true;
 }
 
+namespace
+{
+	static FString GetAdbExePath()
+	{
+		FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
+		if (AndroidHome.IsEmpty())
+		{
+			UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this.")));
+			return TEXT("");
+		}
+
+#if PLATFORM_WINDOWS
+		const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb.exe")));
+#else
+		const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
+#endif
+
+		return AdbExe;
+	}
+}
+
 FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 {
-	FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
-	if (AndroidHome.IsEmpty())
+	const FString AdbExe = GetAdbExePath();
+	if (AdbExe.IsEmpty())
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this.")));
 		return FReply::Unhandled();
 	}
 
@@ -264,12 +316,6 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 
 	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *FString(FApp::GetProjectName()));
 	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
-
-#if PLATFORM_WINDOWS
-	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb.exe")));
-#else
-	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
-#endif
 
 	TryPushCommandLineArgsToDevice(AdbExe, AdbArguments, OutCommandLineArgsFile);
 	return FReply::Handled();
@@ -296,3 +342,34 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
 	TryPushCommandLineArgsToDevice(Executable, DeploymentServerArguments, OutCommandLineArgsFile);
 	return FReply::Handled();
 }
+
+FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromIOSDevice()
+{
+	return FReply::Handled();
+}
+
+FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromAndroidDevice()
+{
+	const FString AdbExe = GetAdbExePath();
+	if (AdbExe.IsEmpty())
+	{
+		return FReply::Unhandled();
+	}
+
+	FString ExeOutput;
+	FString StdErr;
+	int32 ExitCode;
+
+	FString ExeArguments = FString::Printf(TEXT("shell rm -f /mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), FApp::GetProjectName());
+
+	FPlatformProcess::ExecProcess(*AdbExe, *ExeArguments, &ExitCode, &ExeOutput, &StdErr);
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to remove settings from the mobile client. %s %s"), *ExeOutput, *StdErr);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Failed to remove settings from the mobile client. See the Output log for more information.")));
+		return FReply::Unhandled();
+	}
+
+	return FReply::Handled();
+}
+
