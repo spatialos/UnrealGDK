@@ -875,14 +875,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			continue;
 		}
-		if (ClassInfoManager->IsSublevelComponent(PendingAddComponentIt->ComponentId))
-		{
-			continue;
-		}
 
 		if (PendingAddComponentIt->EntityId == EntityId)
 		{
-			ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponentIt->Data->ComponentData, Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
+			ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponentIt->Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
 			PendingAddComponentIt.RemoveCurrent();
 		}
 	}
@@ -1252,7 +1248,7 @@ void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId Ent
 	// Object already exists, we can apply data directly.
 	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset)).Get())
 	{
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			ApplyComponentData(*Channel, *Object, *Data->ComponentData);
 		}
