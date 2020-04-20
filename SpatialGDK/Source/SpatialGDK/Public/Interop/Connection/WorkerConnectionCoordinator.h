@@ -40,6 +40,7 @@ public:
 			FPlatformProcess::Sleep(WaitSeconds);
 		}
 	}
+	
 	void Wake()
 	{
 		if (Event.IsValid())
