@@ -7,16 +7,16 @@
 namespace SpatialGDK
 {
 
-static const Schema_FieldId kEventId = 1;
-static const Schema_FieldId kEventIntFieldId = 2;
+static const Schema_FieldId EventId = 1;
+static const Schema_FieldId EventIntFieldId = 2;
 
-static const Schema_FieldId kTestDoubleFieldId = 1;
+static const Schema_FieldId TestDoubleFieldId = 1;
 
 inline ComponentData CreateTestComponentData(Worker_ComponentId Id, double Value)
 {
 	ComponentData Data{ Id };
 	Schema_Object* Fields = Data.GetFields();
-	Schema_AddDouble(Fields, kTestDoubleFieldId, Value);
+	Schema_AddDouble(Fields, TestDoubleFieldId, Value);
 	return Data;
 }
 
@@ -24,14 +24,14 @@ inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId Id, double V
 {
 	ComponentUpdate Update{ Id };
 	Schema_Object* Fields = Update.GetFields();
-	Schema_AddDouble(Fields, kTestDoubleFieldId, Value);
+	Schema_AddDouble(Fields, TestDoubleFieldId, Value);
 	return Update;
 }
 
 inline void AddTestEvent(ComponentUpdate* Update, int Value) {
 	Schema_Object* events = Update->GetEvents();
-	Schema_Object* eventData = Schema_AddObject(events, kEventId);
-	Schema_AddInt32(eventData, kEventIntFieldId, Value);
+	Schema_Object* eventData = Schema_AddObject(events, EventId);
+	Schema_AddInt32(eventData, EventIntFieldId, Value);
 }
 
 inline ComponentUpdate CreateTestComponentEvent(Worker_ComponentId Id, int Value) {

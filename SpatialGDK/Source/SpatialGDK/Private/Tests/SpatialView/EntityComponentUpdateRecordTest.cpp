@@ -13,32 +13,32 @@ using namespace SpatialGDK;
 
 namespace
 {
-	const Worker_EntityId kTestEntityId = 1337;
+	const Worker_EntityId TestEntityId = 1337;
 
-	const Worker_ComponentId kTestComponentId = 1338;
-	const Worker_ComponentId kComponentIdToRemove = 1347;
-	const Worker_ComponentId kComponentIdToKeep = 1348;
+	const Worker_ComponentId TestComponentId = 1338;
+	const Worker_ComponentId ComponentIdToRemove = 1347;
+	const Worker_ComponentId ComponentIdToKeep = 1348;
 
-	const int kEventValue = 7332;
+	const int EventValue = 7332;
 
-	const double kTestValue = 7331;
-	const double kTestUpdateValue = 7332;
-	const double kUpdateValue = 7333;
+	const double TestValue = 7331;
+	const double TestUpdateValue = 7332;
+	const double UpdateValue = 7333;
 }  // anonymous namespace
 
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THEN_update_record_has_the_update)
 {
 	// GIVEN
-	ComponentUpdate TestUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
+	ComponentUpdate TestUpdate = CreateTestComponentUpdate(TestComponentId, TestValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
-	ExpectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, TestUpdate.DeepCopy() });
+	ExpectedUpdates.Push(EntityComponentUpdate{ TestEntityId, TestUpdate.DeepCopy() });
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
 
 	EntityComponentUpdateRecord Storage;
 
 	// WHEN
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(TestUpdate));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(TestUpdate));
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -50,18 +50,18 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THE
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update_added_THEN_new_update_merged)
 {
 	// GIVEN
-	ComponentUpdate FirstUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
-	ComponentUpdate SecondUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
+	ComponentUpdate FirstUpdate = CreateTestComponentUpdate(TestComponentId, TestValue);
+	ComponentUpdate SecondUpdate = CreateTestComponentUpdate(TestComponentId, TestUpdateValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
-	ExpectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, SecondUpdate.DeepCopy() });
+	ExpectedUpdates.Push(EntityComponentUpdate{ TestEntityId, SecondUpdate.DeepCopy() });
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
 
 	EntityComponentUpdateRecord Storage;
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(FirstUpdate));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(FirstUpdate));
 
 	// WHEN
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(SecondUpdate));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(SecondUpdate));
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -73,16 +73,16 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_added_THEN_update_record_has_complete_update)
 {
 	// GIVEN
-	ComponentData Data = CreateTestComponentData(kTestComponentId, kTestValue);
+	ComponentData Data = CreateTestComponentData(TestComponentId, TestValue);
 
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
-	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, Data.DeepCopy(), ComponentUpdate(kTestComponentId) });
+	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ TestEntityId, Data.DeepCopy(), ComponentUpdate(TestComponentId) });
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
 
 	EntityComponentUpdateRecord Storage;
 
 	// WHEN
-	Storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(Data));
+	Storage.AddComponentDataAsUpdate(TestEntityId, MoveTemp(Data));
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -94,19 +94,19 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_update_added_THEN_complete_update_merged)
 {
 	// GIVEN
-	ComponentUpdate Update = CreateTestComponentUpdate(kTestComponentId, kTestValue);
-	AddTestEvent(&Update, kEventValue);
-	ComponentData CompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
+	ComponentUpdate Update = CreateTestComponentUpdate(TestComponentId, TestValue);
+	AddTestEvent(&Update, EventValue);
+	ComponentData CompleteUpdate = CreateTestComponentData(TestComponentId, UpdateValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
-	ExpectedCompleteUpdates.Push({ kTestEntityId, CompleteUpdate.DeepCopy(), Update.DeepCopy() });
+	ExpectedCompleteUpdates.Push({ TestEntityId, CompleteUpdate.DeepCopy(), Update.DeepCopy() });
 
 	EntityComponentUpdateRecord Storage;
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(Update));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(Update));
 
 	// WHEN
-	Storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(CompleteUpdate));
+	Storage.AddComponentDataAsUpdate(TestEntityId, MoveTemp(CompleteUpdate));
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -118,25 +118,25 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_u
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN_new_update_added_THEN_new_update_merged)
 {
 	// GIVEN
-	ComponentData CompleteUpdate = CreateTestComponentData(kTestComponentId, kTestValue);
-	ComponentUpdate Update = CreateTestComponentUpdate(kTestComponentId, kUpdateValue);
-	AddTestEvent(&Update, kEventValue);
-	ComponentUpdate AdditionalEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
+	ComponentData CompleteUpdate = CreateTestComponentData(TestComponentId, TestValue);
+	ComponentUpdate Update = CreateTestComponentUpdate(TestComponentId, UpdateValue);
+	AddTestEvent(&Update, EventValue);
+	ComponentUpdate AdditionalEvent = CreateTestComponentEvent(TestComponentId, EventValue);
 
-	ComponentData ExpectedCompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
-	ComponentUpdate ExpectedEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
-	AddTestEvent(&ExpectedEvent, kEventValue);
+	ComponentData ExpectedCompleteUpdate = CreateTestComponentData(TestComponentId, UpdateValue);
+	ComponentUpdate ExpectedEvent = CreateTestComponentEvent(TestComponentId, EventValue);
+	AddTestEvent(&ExpectedEvent, EventValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates{};
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
-	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, MoveTemp(ExpectedCompleteUpdate), MoveTemp(ExpectedEvent) });
+	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ TestEntityId, MoveTemp(ExpectedCompleteUpdate), MoveTemp(ExpectedEvent) });
 
 	EntityComponentUpdateRecord Storage;
-	Storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(CompleteUpdate));
+	Storage.AddComponentDataAsUpdate(TestEntityId, MoveTemp(CompleteUpdate));
 
 	// WHEN
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(Update));
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(AdditionalEvent));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(Update));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(AdditionalEvent));
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -148,22 +148,22 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_component_removed_THEN_its_updates_removed)
 {
 	// GIVEN
-	ComponentData CompleteUpdateToRemove = CreateTestComponentData(kComponentIdToRemove, kTestValue);
-	ComponentUpdate EventToRemove = CreateTestComponentEvent(kComponentIdToRemove, kEventValue);
+	ComponentData CompleteUpdateToRemove = CreateTestComponentData(ComponentIdToRemove, TestValue);
+	ComponentUpdate EventToRemove = CreateTestComponentEvent(ComponentIdToRemove, EventValue);
 
-	ComponentUpdate UpdateToKeep = CreateTestComponentUpdate(kComponentIdToKeep, kUpdateValue);
+	ComponentUpdate UpdateToKeep = CreateTestComponentUpdate(ComponentIdToKeep, UpdateValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
-	ExpectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, UpdateToKeep.DeepCopy() });
+	ExpectedUpdates.Push(EntityComponentUpdate{ TestEntityId, UpdateToKeep.DeepCopy() });
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
 
 	EntityComponentUpdateRecord Storage;
-	Storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(CompleteUpdateToRemove));
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(EventToRemove));
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(UpdateToKeep));
+	Storage.AddComponentDataAsUpdate(TestEntityId, MoveTemp(CompleteUpdateToRemove));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(EventToRemove));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(UpdateToKeep));
 
 	// WHEN
-	Storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
+	Storage.RemoveComponent(TestEntityId, ComponentIdToRemove);
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -175,16 +175,16 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_component_removed_THEN_its_update_removed)
 {
 	// GIVEN
-	ComponentUpdate Update = CreateTestComponentUpdate(kComponentIdToRemove, kUpdateValue);
+	ComponentUpdate Update = CreateTestComponentUpdate(ComponentIdToRemove, UpdateValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
 
 	EntityComponentUpdateRecord Storage;
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(Update));
+	Storage.AddComponentUpdate(TestEntityId, MoveTemp(Update));
 
 	// WHEN
-	Storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
+	Storage.RemoveComponent(TestEntityId, ComponentIdToRemove);
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
