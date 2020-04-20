@@ -29,12 +29,11 @@ namespace
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THEN_update_record_has_the_update)
 {
 	// GIVEN
-	auto TestUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
+	ComponentUpdate TestUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
 	ExpectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, TestUpdate.DeepCopy() });
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
-	const TArray<EntityComponentUpdate> ExpectedEvents = {};
 
 	EntityComponentUpdateRecord Storage;
 
@@ -51,13 +50,12 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THE
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update_added_THEN_new_update_merged)
 {
 	// GIVEN
-	auto FirstUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
-	auto SecondUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
+	ComponentUpdate FirstUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
+	ComponentUpdate SecondUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
 	ExpectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, SecondUpdate.DeepCopy() });
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
-	const TArray<EntityComponentUpdate> ExpectedEvents = {};
 
 	EntityComponentUpdateRecord Storage;
 	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(FirstUpdate));
@@ -75,12 +73,11 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_new_update
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_added_THEN_update_record_has_complete_update)
 {
 	// GIVEN
-	auto Data = CreateTestComponentData(kTestComponentId, kTestValue);
+	ComponentData Data = CreateTestComponentData(kTestComponentId, kTestValue);
 
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
 	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, Data.DeepCopy(), ComponentUpdate(kTestComponentId) });
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
-	const TArray<EntityComponentUpdate> ExpectedEvents = {};
 
 	EntityComponentUpdateRecord Storage;
 
@@ -97,15 +94,13 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_complete_update_
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_update_added_THEN_complete_update_merged)
 {
 	// GIVEN
-	auto Update = CreateTestComponentUpdate(kTestComponentId, kTestValue);
+	ComponentUpdate Update = CreateTestComponentUpdate(kTestComponentId, kTestValue);
 	AddTestEvent(&Update, kEventValue);
-	auto CompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
+	ComponentData CompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
 	ExpectedCompleteUpdates.Push({ kTestEntityId, CompleteUpdate.DeepCopy(), Update.DeepCopy() });
-	TArray<EntityComponentUpdate> ExpectedEvents;
-	ExpectedEvents.Push(EntityComponentUpdate{ kTestEntityId, Update.DeepCopy() });
 
 	EntityComponentUpdateRecord Storage;
 	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(Update));
@@ -123,25 +118,25 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_complete_u
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN_new_update_added_THEN_new_update_merged)
 {
 	// GIVEN
-	auto CompleteUpdate = CreateTestComponentData(kTestComponentId, kTestValue);
-	auto Update = CreateTestComponentUpdate(kTestComponentId, kUpdateValue);
+	ComponentData CompleteUpdate = CreateTestComponentData(kTestComponentId, kTestValue);
+	ComponentUpdate Update = CreateTestComponentUpdate(kTestComponentId, kUpdateValue);
 	AddTestEvent(&Update, kEventValue);
-	auto additionalEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
+	ComponentUpdate AdditionalEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
 
-	auto ExpectedCompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
-	auto expectedEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
-	AddTestEvent(&expectedEvent, kEventValue);
+	ComponentData ExpectedCompleteUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
+	ComponentUpdate ExpectedEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
+	AddTestEvent(&ExpectedEvent, kEventValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates{};
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
-	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, MoveTemp(ExpectedCompleteUpdate), MoveTemp(expectedEvent) });
+	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, MoveTemp(ExpectedCompleteUpdate), MoveTemp(ExpectedEvent) });
 
 	EntityComponentUpdateRecord Storage;
 	Storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(CompleteUpdate));
 
 	// WHEN
 	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(Update));
-	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(additionalEvent));
+	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(AdditionalEvent));
 
 	// THEN
 	TestTrue(TEXT("Updates are equal to expected"), AreEquivalent(Storage.GetUpdates(), ExpectedUpdates));
@@ -153,15 +148,14 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_component_removed_THEN_its_updates_removed)
 {
 	// GIVEN
-	auto CompleteUpdateToRemove = CreateTestComponentData(kComponentIdToRemove, kTestValue);
-	auto EventToRemove = CreateTestComponentEvent(kComponentIdToRemove, kEventValue);
+	ComponentData CompleteUpdateToRemove = CreateTestComponentData(kComponentIdToRemove, kTestValue);
+	ComponentUpdate EventToRemove = CreateTestComponentEvent(kComponentIdToRemove, kEventValue);
 
-	auto UpdateToKeep = CreateTestComponentUpdate(kComponentIdToKeep, kUpdateValue);
+	ComponentUpdate UpdateToKeep = CreateTestComponentUpdate(kComponentIdToKeep, kUpdateValue);
 
 	TArray<EntityComponentUpdate> ExpectedUpdates;
 	ExpectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, UpdateToKeep.DeepCopy() });
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
-	const TArray<EntityComponentUpdate> ExpectedEvents = {};
 
 	EntityComponentUpdateRecord Storage;
 	Storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(CompleteUpdateToRemove));
@@ -181,11 +175,10 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_multiple_updates_WHEN_
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_update_WHEN_component_removed_THEN_its_update_removed)
 {
 	// GIVEN
-	auto Update = CreateTestComponentUpdate(kComponentIdToRemove, kUpdateValue);
+	ComponentUpdate Update = CreateTestComponentUpdate(kComponentIdToRemove, kUpdateValue);
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates = {};
 	const TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates = {};
-	const TArray<EntityComponentUpdate> ExpectedEvents = {};
 
 	EntityComponentUpdateRecord Storage;
 	Storage.AddComponentUpdate(kTestEntityId, MoveTemp(Update));
