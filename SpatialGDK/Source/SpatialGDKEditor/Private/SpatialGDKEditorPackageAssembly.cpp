@@ -106,11 +106,11 @@ bool FSpatialGDKPackageAssembly::CanBuild() const
 bool FSpatialGDKPackageAssembly::NextStep()
 {
 	bool HasMoreSteps = false;
-	EPackageAssemblyStep target = EPackageAssemblyStep::NONE;
-	if (Steps.Dequeue(target))
+	EPackageAssemblyStep Target = EPackageAssemblyStep::NONE;
+	if (Steps.Dequeue(Target))
 	{
 		HasMoreSteps = true;
-		switch(target)
+		switch(Target)
 		{
 		case EPackageAssemblyStep::BUILD_SERVER:
 			AsyncTask(ENamedThreads::GameThread, [this]()

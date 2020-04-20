@@ -330,7 +330,7 @@ namespace Improbable
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
-            bool launchSimPlayerDeployment, string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode, string Tags)
+            bool launchSimPlayerDeployment, string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode, string deploymentTags)
         {
             var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
@@ -359,7 +359,7 @@ namespace Improbable
             };
 
             mainDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
-            foreach(String tag in Tags.Split(' '))
+            foreach(String tag in deploymentTags.Split(' '))
             {
                 mainDeploymentConfig.Tag.Add(tag);
             }
