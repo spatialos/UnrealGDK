@@ -60,7 +60,26 @@ bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbs
 
 void FLBStrategyEditorExtensionManager::RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension)
 {
+	for (auto& Extension : Extensions)
+	{
+		if (Extension.Key == StrategyClass)
+		{
+			return;
+		}
+	}
 	Extensions.Push(ExtensionArray::ElementType(StrategyClass, MoveTemp(StrategyExtension)));
+}
+
+void FLBStrategyEditorExtensionManager::UnregisterExtension(UClass* StrategyClass)
+{
+	for (auto Iterator = Extensions.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (Iterator->Key == StrategyClass)
+		{
+			Iterator.RemoveCurrent();
+			return;
+		}
+	}
 }
 
 void FLBStrategyEditorExtensionManager::Cleanup()

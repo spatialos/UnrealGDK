@@ -43,10 +43,18 @@ public:
 		RegisterExtension(Extension::ExtendedStrategy::StaticClass(), MakeUnique<Extension>());
 	}
 
+	template <typename Extension>
+	void UnregisterExtension()
+	{
+		UnregisterExtension(Extension::ExtendedStrategy::StaticClass());
+	}
+
 	void Cleanup();
 
 private:
-	void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension);
+	SPATIALGDKEDITOR_API void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension);
+
+	SPATIALGDKEDITOR_API void UnregisterExtension(UClass* StrategyClass);
 
 	using ExtensionArray = TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>>;
 
