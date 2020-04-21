@@ -26,32 +26,14 @@ steps:
       - text: UnrealGDK component release version
         key: gdk-version
         required: true
-        hint: The UnrealGDK component release version you want to create a release candidate for, e.g. - 0.1.2 or 1.0.1.
-        
-      - select: "Unreal Engine version(s)"
-        key: "engine-version"
-        hint: "The Unreal Engine version(s) you want to branch a release candidate from, e.g. - 4.24-SpatialOSUnrealGDK"
-        required: true
-        multiple: true
-        # When multiple options are selected, they are delimited in the meta-data field by a line break (\n). prepare=release.sh then turns this into a list of comma seperated values.
-        # TODO: Note in the WIP Maintainers Guide (UNR-2648) that you have to update these defaults and optione when you introduce a new engine branch. Even better, have a regex pull these branches by recognising the format.
-        default:
-          - "4.24-SpatialOSUnrealGDK"
-          - "4.23-SpatialOSUnrealGDK"
-        options:
-          - label: "4.24-SpatialOSUnrealGDK"
-            value: "4.24-SpatialOSUnrealGDK"
-          - label: "4.23-SpatialOSUnrealGDK"
-            value: "4.23-SpatialOSUnrealGDK"
+        hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject` and `UnrealGDKTestGyms` release candidates for. All release candidates are branched from master. For example: "0.12.2" or "1.0.1"."
 
-            #TODO - remove preview if we stop releasing multiple release streams
-      - select: "Preview release?"
-        key: "preview"
-        hint: "If this is a preview release, press the preview button."
-        required: false
-        options:
-          - label: "preview"
-            value: "preview"
+      - text: UnrealEngine source branches
+        key: engine-versions
+        required: true
+        hint: "The Unreal Engine version (or versions) that you want to branch release candidates from. Use commas to seperate engine versions. For example:
+          "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK"."
+        default: "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK"
 
   # Stage 1: Prepare the release candidates.
 

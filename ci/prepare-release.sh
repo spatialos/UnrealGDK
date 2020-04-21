@@ -19,33 +19,19 @@ cd "$(dirname "$0")/../"
 
 source ci/common-release.sh
 
+setupReleaseTool
+
+mkdir -p ./logs
+
 # This assigns the first argument passed to this script to the variable REPO
 REPO="${1}"
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
-#Thie removes line breaks, replaces them with commas to form a list
-ENGINE_VERSIONS="${ENGINE_VERSIONS//\\n/,}"
+while IFS= read -r ENGINE_VERSIONS; do
 
-setupReleaseTool
-
-mkdir -p ./logs
-
-if [[ "${REPO}" == "UnrealEngine" ]]; then
-echo "--- Preparing ${REPO} @ ${ENGINE_VERSIONS}, ${RELEASE_VERSION} :package:"
-else
-echo "--- Preparing ${REPO} @ ${RELEASE_VERSION} :package:"
-fi
-
-if [[ "${REPO}" != "UnrealGDK" ]]; then
-	PIN_HASH="$(buildkite-agent meta-data get UnrealGDK-hash)"
-	PIN_ARG="--update-pinned-gdk=${PIN_HASH}"
-else
-	PIN_ARG=""
-fi
-
-docker run \
+  docker run \
     -v "${SECRETS_DIR}":/var/ssh \
     -v "${SECRETS_DIR}":/var/github \
     -v "$(pwd)"/logs:/var/logs \
@@ -56,5 +42,13 @@ docker run \
         --github-key-file="/var/github/github_token" \
         --buildkite-metadata-path="/var/logs/bk-metadata" ${PIN_ARG}
 
+done <<< "${ENGINE_VERSIONS}"
+
 echo "--- Writing metadata :pencil2:"
 writeBuildkiteMetadata "./logs/bk-metadata"
+
+if [[ "${REPO}" == "UnrealEngine" ]]; then
+echo "--- Preparing ${REPO} @ ${ENGINE_VERSIONS}, ${RELEASE_VERSION} :package:"
+else
+echo "--- Preparing ${REPO} @ ${RELEASE_VERSION} :package:"
+fi 
