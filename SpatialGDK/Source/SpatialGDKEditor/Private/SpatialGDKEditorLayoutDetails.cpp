@@ -345,6 +345,28 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
 
 FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromIOSDevice()
 {
+	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
+
+	FString Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
+	FString DeploymentServerArguments = FString::Printf(TEXT("removefile -bundle \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())));
+
+#if PLATFORM_MAC
+	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *Executable, *DeploymentServerArguments);
+	Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
+#endif
+
+	FString ExeOutput;
+	FString StdErr;
+	int32 ExitCode;
+
+	FPlatformProcess::ExecProcess(*Executable, *DeploymentServerArguments, &ExitCode, &ExeOutput, &StdErr);
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to remove settings from the mobile client. %s %s"), *ExeOutput, *StdErr);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Failed to remove settings from the mobile client. See the Output log for more information.")));
+		return FReply::Unhandled();
+	}
+
 	return FReply::Handled();
 }
 
