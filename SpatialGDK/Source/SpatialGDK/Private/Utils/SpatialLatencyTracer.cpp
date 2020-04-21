@@ -66,10 +66,13 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
-	std::cout.rdbuf(&Stream);
-	std::cerr.rdbuf(&Stream);
+	if (LogSpatialLatencyTracing.GetVerbosity() >= ELogVerbosity::Verbose)
+	{
+		std::cout.rdbuf(&Stream);
+		std::cerr.rdbuf(&Stream);
 
-	StdoutExporter::Register();
+		StdoutExporter::Register();
+	}
 #endif // TRACE_LIB_ACTIVE
 }
 
