@@ -98,8 +98,10 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	// AddComponent. This is important for handling startup Actors correctly in a zoned
 	// environment.
 	const bool bHasReceivedStartupActorData = StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	const bool bWorkerEntityCreated = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID;
-	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityCreated)
+	const bool bWorkerEntityReady = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID &&
+		StaticComponentView->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+
+	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityReady)
 	{
 		return;
 	}
