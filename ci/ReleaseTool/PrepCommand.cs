@@ -118,19 +118,18 @@ namespace ReleaseTool
                     // This does step 4 from above.
                     using (new WorkingDirectoryScope(gitClient.RepositoryPath))
                     {
-                        if (!File.Exists(ChangeLogFilename))
+                        if (File.Exists(ChangeLogFilename))
                         {
-                            throw new InvalidOperationException("Could not update the change log as the file," +
-                                $" {ChangeLogFilename}, does not exist");
+                            Logger.Info("Updating {0}...", ChangeLogFilename);
+
+                            var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
+                            UpdateChangeLog(changelog, options);
+                            File.WriteAllLines(ChangeLogFilename, changelog);
+                            gitClient.StageFile(ChangeLogFilename);
                         }
-
-                        Logger.Info("Updating {0}...", ChangeLogFilename);
-
-                        var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
-                        UpdateChangeLog(changelog, options);
-                        File.WriteAllLines(ChangeLogFilename, changelog);
-                        gitClient.StageFile(ChangeLogFilename);
                     }
+
+                    // TODO: If we're working with the UnrealEngine repo, update UnrealGDKVersion.txt and UnrealGDKExampleProjectVersion.txt by setting their contents to options.Version (without newline)
 
                     // This does step 5 from above.
                     gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
