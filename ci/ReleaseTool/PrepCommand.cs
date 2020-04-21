@@ -41,7 +41,7 @@ namespace ReleaseTool
         private const string CommitMessageTemplate = "Release candidate for version {0}.";
 
         private const string ChangeLogFilename = "CHANGELOG.md";
-        private const string ChangeLogReleaseHeadingTemplate = "## `{0}` - {1:yyyy-MM-dd}";
+        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
         private const string PullRequestTemplate = "Release {0} - Pre-Validation";
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -113,44 +113,33 @@ namespace ReleaseTool
                     gitClient.Fetch(Common.SpatialOsOrg);
 
                     // This does step 3 from above.
-                    gitClient.CheckoutRemoteBranch(GitSourceBranch, Common.SpatialOsOrg);
+                    gitClient.CheckoutRemoteBranch(options.SourceBranch, Common.SpatialOsOrg);
 
                     // This does step 4 from above.
-                    // TODO: Remove steps that are irrelevant to the Unreal GDK repos
-                    // TODO: Add steps for the Unreal GDK repos
                     using (new WorkingDirectoryScope(gitClient.RepositoryPath))
                     {
-                        UpdateManifestJson(gitClient);
-                        UpdateAllPackageJsons(gitClient);
-
-                        if (options.ShouldUpdateGdkVersion)
+                        if (File.Exists(ChangeLogFilename))
                         {
-                            UpdateGdkVersion(gitClient, options.PinnedGdkVersion);
+                            Logger.Info("Updating {0}...", ChangeLogFilename);
+
+                            var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
+                            UpdateChangeLog(changelog, options);
+                            File.WriteAllLines(ChangeLogFilename, changelog);
+                            gitClient.StageFile(ChangeLogFilename);
                         }
-
-                        if (!File.Exists(ChangeLogFilename))
-                        {
-                            throw new InvalidOperationException("Could not update the change log as the file," +
-                                $" {ChangeLogFilename}, does not exist");
-                        }
-
-                        Logger.Info("Updating {0}...", ChangeLogFilename);
-
-                        var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
-                        UpdateChangeLog(changelog, options);
-                        File.WriteAllLines(ChangeLogFilename, changelog);
-                        gitClient.StageFile(ChangeLogFilename);
                     }
+
+                    // TODO: If we're working with the UnrealEngine repo, update UnrealGDKVersion.txt and UnrealGDKExampleProjectVersion.txt by setting their contents to options.Version (without newline)
 
                     // This does step 5 from above.
                     gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
-                    gitClient.ForcePush(CandidateBranch);
+                    gitClient.ForcePush(options.CandidateBranch);
 
                     // This does step 6 from above.
                     var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
 
-                    var branchFrom = $"{Common.GithubBotUser}:{CandidateBranch}";
-                    var branchTo = GitSourceBranch;
+                    var branchFrom = $"{Common.GithubBotUser}:{options.CandidateBranch}";
+                    var branchTo = options.SourceBranch;
 
                     // Only open a PR if one does not exist yet.
                     if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
@@ -167,7 +156,7 @@ namespace ReleaseTool
                         using (var sink = new BuildkiteMetadataSink(options))
                         {
                             sink.WriteMetadata($"{options.GitRepoName}-release-branch",
-                                $"pull/{pullRequest.Number}/head:{CandidateBranch}");
+                                $"pull/{pullRequest.Number}/head:{options.CandidateBranch}");
                             sink.WriteMetadata($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
                         }
                     }
@@ -185,6 +174,37 @@ namespace ReleaseTool
 
             return 0;
         }
+
+        internal static void UpdateChangeLog(List<string> changelog, Options options)
+        {
+            // If we already have a changelog entry for this release. Skip this step.
+            if (changelog.Any(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - ")))
+            {
+                Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilename);
+                return;
+            }
+
+            // First add the new release heading under the "## Unreleased" one.
+            // Assuming that this is the first heading.
+            var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
+            var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
+                DateTime.Now);
+
+            changelog.InsertRange(unreleasedIndex + 1, new[]
+            {
+                string.Empty,
+                releaseHeading
+            });
+        }
+
+        private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
+        {
+            var heading = $"{new string('#', level)} {startTitle ?? string.Empty}";
+
+            return markdownLine.StartsWith(heading);
+        }
+
+        // Old stuff from here on out
 
         private void UpdateManifestJson(GitClient gitClient)
         {
@@ -248,82 +268,6 @@ namespace ReleaseTool
             gitClient.StageFile(packageFile);
         }
 
-        internal static void UpdateChangeLog(List<string> changelog, Options options)
-        {
-            // If we already have a changelog entry for this release. Skip this step.
-            if (changelog.Any(line => IsMarkdownHeading(line, 2, $"`{options.Version}` - ")))
-            {
-                Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilename);
-                return;
-            }
-
-            // First add the new release heading under the "## Unreleased" one.
-            // Assuming that this is the first heading.
-            var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
-            var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
-                DateTime.Now);
-
-            changelog.InsertRange(unreleasedIndex + 1, new[]
-            {
-                string.Empty,
-                releaseHeading
-            });
-
-            // If we don't need to update the Changed section. We are done!
-            if (!options.ShouldUpdateGdkVersion)
-            {
-                return;
-            }
-
-            // Next find the changed section between the second and third ## heading.
-            // If one doesn't exist, create it.
-
-            // First find all ## sections (release markers).
-            var headerTwoIndexes = changelog
-                .Select((value, index) => (value, index))
-                .Where(tuple => IsMarkdownHeading(tuple.Item1, 2))
-                .Select(tuple => tuple.Item2)
-                .ToList();
-
-            // 2 headers = Unreleased, this release
-            if (headerTwoIndexes.Count < 2)
-            {
-                throw new InvalidOperationException(
-                    "Changelog is malformed. Expected at least two header two (##) entries.");
-            }
-
-            // Grab the valid range for the Changed section we want to target.
-            // For the end, if is no previous release, use the entire changelog.
-            var startCurrentReleaseIndex = headerTwoIndexes[1];
-            var endCurrentReleaseIndex = headerTwoIndexes.Count == 2 ? changelog.Count - 1 : headerTwoIndexes[2];
-
-            var changedIndexes = changelog.Select((value, index) => (value, index))
-                .Where(tuple => IsMarkdownHeading(tuple.Item1, 3, "Changed"))
-                .Select(tuple => tuple.Item2)
-                .ToList();
-
-            int changedHeaderIndex;
-
-            // If there is no changed section or there isn't one in the current release, add one!
-            if (changedIndexes.Count == 0 || changedIndexes[0] > endCurrentReleaseIndex)
-            {
-                // Insert a changed section.
-                changelog.InsertRange(startCurrentReleaseIndex + 1, new[]
-                {
-                    string.Empty,
-                    "### Changed"
-                });
-
-                changedHeaderIndex = startCurrentReleaseIndex + 2;
-            }
-            else
-            {
-                changedHeaderIndex = changedIndexes[0];
-            }
-
-            changelog.Insert(changedHeaderIndex + 2, string.Format(ChangeLogUpdateGdkTemplate, options.Version));
-        }
-
         private static void UpdateGdkVersion(GitClient gitClient, string newPinnedVersion)
         {
             const string gdkPinnedFilename = "gdk.pinned";
@@ -340,13 +284,6 @@ namespace ReleaseTool
             File.WriteAllText(gdkPinnedFilename, $"{GitSourceBranch} {newPinnedVersion}");
 
             gitClient.StageFile(gdkPinnedFilename);
-        }
-
-        private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
-        {
-            var heading = $"{new string('#', level)} {startTitle ?? string.Empty}";
-
-            return markdownLine.StartsWith(heading);
         }
 
         private static string GetPullRequestBody(string repoName)
@@ -415,6 +352,96 @@ namespace ReleaseTool
                 default:
                     throw new ArgumentException($"No PR body template found for repo {repoName}");
             }
+        }
+
+        private int OldRun()
+        {
+            var remoteUrl = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, options.GitRepoName);
+
+            try
+            {
+                var gitHubClient = new GitHubClient(options);
+
+                using (var gitClient = GitClient.FromRemote(remoteUrl))
+                {
+                    // This does step 2 from above.
+                    var spatialOsRemote =
+                        string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, options.GitRepoName);
+                    gitClient.AddRemote(Common.SpatialOsOrg, spatialOsRemote);
+                    gitClient.Fetch(Common.SpatialOsOrg);
+
+                    // This does step 3 from above.
+                    gitClient.CheckoutRemoteBranch(options.SourceBranch, Common.SpatialOsOrg);
+
+                    // This does step 4 from above.
+                    // TODO: Remove steps that are irrelevant to the Unreal GDK repos
+                    // TODO: Add steps for the Unreal GDK repos
+                    using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+                    {
+                        UpdateManifestJson(gitClient);
+                        UpdateAllPackageJsons(gitClient);
+
+                        if (options.ShouldUpdateGdkVersion)
+                        {
+                            UpdateGdkVersion(gitClient, options.PinnedGdkVersion);
+                        }
+
+                        if (!File.Exists(ChangeLogFilename))
+                        {
+                            throw new InvalidOperationException("Could not update the change log as the file," +
+                                $" {ChangeLogFilename}, does not exist");
+                        }
+
+                        Logger.Info("Updating {0}...", ChangeLogFilename);
+
+                        var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
+                        UpdateChangeLog(changelog, options);
+                        File.WriteAllLines(ChangeLogFilename, changelog);
+                        gitClient.StageFile(ChangeLogFilename);
+                    }
+
+                    // This does step 5 from above.
+                    gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
+                    gitClient.ForcePush(options.CandidateBranch);
+
+                    // This does step 6 from above.
+                    var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
+
+                    var branchFrom = $"{Common.GithubBotUser}:{options.CandidateBranch}";
+                    var branchTo = options.SourceBranch;
+
+                    // Only open a PR if one does not exist yet.
+                    if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
+                    {
+                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                            branchFrom,
+                            branchTo,
+                            string.Format(PullRequestTemplate, options.Version),
+                            GetPullRequestBody(options.GitRepoName));
+                    }
+
+                    if (BuildkiteMetadataSink.CanWrite(options))
+                    {
+                        using (var sink = new BuildkiteMetadataSink(options))
+                        {
+                            sink.WriteMetadata($"{options.GitRepoName}-release-branch",
+                                $"pull/{pullRequest.Number}/head:{options.CandidateBranch}");
+                            sink.WriteMetadata($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
+                        }
+                    }
+
+                    Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+                    Logger.Info("Successfully created release!");
+                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "ERROR: Unable to prep release candidate branch. Error: {0}", e);
+                return 1;
+            }
+
+            return 0;
         }
     }
 }

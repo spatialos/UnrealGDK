@@ -31,6 +31,15 @@ namespace ReleaseTool
                 Required = true)]
             public string PullRequestUrl { get; set; }
 
+            [Option("source-branch", HelpText = "The source branch name from which we are cutting the candidate.", Required = true)]
+            public string SourceBranch { get; set; }
+
+            [Option("candidate-branch", HelpText = "The candidate branch name.", Required = true)]
+            public string CandidateBranch { get; set; }
+
+            [Option("target-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
+            public string TargetBranch { get; set; }
+
             public string GitHubTokenFile { get; set; }
 
             public string GitHubToken { get; set; }
@@ -75,8 +84,7 @@ namespace ReleaseTool
 
                 // Delete remote on the forked repository.
                 var forkedRepoRemote = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, repoName);
-                var branchName = string.Format(Common.ReleaseBranchNameTemplate, options.Version);
-                // gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromRemote(forkedRepoRemote), branchName);
+                gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromRemote(forkedRepoRemote), options.CandidateBranch);
 
                 var remoteUrl = string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, repoName);
 
@@ -84,20 +92,12 @@ namespace ReleaseTool
                 {
                     // Create release
                     gitClient.Fetch();
-                    gitClient.CheckoutRemoteBranch(Common.ReleaseBranch);
+                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
                     Logger.Info("Release Successful!");
                     Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
                     Logger.Info("Draft release: {0}", release.HtmlUrl);
-
-                    if (repoName == "gdk-for-unity" && BuildkiteMetadataSink.CanWrite(options))
-                    {
-                        using (var sink = new BuildkiteMetadataSink(options))
-                        {
-                            sink.WriteMetadata("gdk-for-unity-hash", gitClient.GetHeadCommit().Sha);
-                        }
-                    }
                 }
             }
             catch (Exception e)
@@ -113,6 +113,7 @@ namespace ReleaseTool
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
 
+            // TODO: Changelog always exists for Unity repos, but it only exists in the GDK repo in the Unreal case
             string changelog;
             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
@@ -122,9 +123,10 @@ namespace ReleaseTool
             string name;
             string preamble;
 
-            switch (repoName)
+            // TODO: Modify preambles for the UnrealGDK repos
+            switch (repoName.ToLower())
             {
-                case "gdk-for-unity":
+                case "unrealgdk":
                     name = $"GDK for Unity Alpha Release {options.Version}";
                     preamble =
 @"In this release, we've ...
@@ -135,14 +137,21 @@ Keep giving us your feedback and/or suggestions! Check out [our Discord](https:/
 
 See the full release notes below! 👇";
                     break;
-                case "gdk-for-unity-fps-starter-project":
+                case "unrealengine":
                     name = $"GDK for Unity FPS Starter Project Alpha Release {options.Version}";
                     preamble =
 $@"This release of the FPS Starter Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
                     break;
-                case "gdk-for-unity-blank-project":
+                case "unralgdktestgyms":
+                    name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
+                    preamble =
+$@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
+
+Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
+                    break;
+                case "unrealgdkexampleproject":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
                     preamble =
 $@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
