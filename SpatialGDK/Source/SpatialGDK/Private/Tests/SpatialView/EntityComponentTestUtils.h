@@ -12,7 +12,7 @@ namespace EntityComponentTestUtils
 	static const Schema_FieldId EVENT_ID = 1;
 	static const Schema_FieldId EVENT_INT_FIELD_ID = 2;
 	static const Schema_FieldId TEST_DOUBLE_FIELD_ID = 1;
-}
+} // namespace EntityComponentTestUtils
 
 inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const double Value)
 {

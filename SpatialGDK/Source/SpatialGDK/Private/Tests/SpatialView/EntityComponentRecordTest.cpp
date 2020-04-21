@@ -9,7 +9,8 @@
 #define ENTITYCOMPONENTRECORD_TEST(TestName) \
 	GDK_TEST(Core, EntityComponentRecord, TestName)
 
-using namespace SpatialGDK;
+namespace SpatialGDK
+{
 
 namespace
 {
@@ -183,3 +184,4 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_complete_update_add
 	return true;
 }
 
+} // namespace SpatialGDK
