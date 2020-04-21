@@ -166,7 +166,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
-		// the data which is handled by the SpatialStaticComponentView.
+		// the data (which is handled by the SpatialStaticComponentView).
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
