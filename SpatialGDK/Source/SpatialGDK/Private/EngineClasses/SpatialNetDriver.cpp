@@ -1807,6 +1807,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	ProcessPendingDormancy();
 
+	TimerManager.Tick(DeltaTime);
+
 	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
 		if (Connection != nullptr)
@@ -1814,8 +1816,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			Connection->ProcessOutgoingMessages();
 		}
 	}
-
-	TimerManager.Tick(DeltaTime);
 
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
