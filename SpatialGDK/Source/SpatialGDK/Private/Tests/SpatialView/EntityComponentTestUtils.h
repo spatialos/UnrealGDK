@@ -7,34 +7,36 @@
 namespace SpatialGDK
 {
 
-static const Schema_FieldId EventId = 1;
-static const Schema_FieldId EventIntFieldId = 2;
+namespace EntityComponentTestUtils
+{
+	static const Schema_FieldId EVENT_ID = 1;
+	static const Schema_FieldId EVENT_INT_FIELD_ID = 2;
+	static const Schema_FieldId TEST_DOUBLE_FIELD_ID = 1;
+}
 
-static const Schema_FieldId TestDoubleFieldId = 1;
-
-inline ComponentData CreateTestComponentData(Worker_ComponentId Id, double Value)
+inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const double Value)
 {
 	ComponentData Data{ Id };
 	Schema_Object* Fields = Data.GetFields();
-	Schema_AddDouble(Fields, TestDoubleFieldId, Value);
+	Schema_AddDouble(Fields, EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID, Value);
 	return Data;
 }
 
-inline ComponentUpdate CreateTestComponentUpdate(Worker_ComponentId Id, double Value)
+inline ComponentUpdate CreateTestComponentUpdate(const Worker_ComponentId Id, const double Value)
 {
 	ComponentUpdate Update{ Id };
 	Schema_Object* Fields = Update.GetFields();
-	Schema_AddDouble(Fields, TestDoubleFieldId, Value);
+	Schema_AddDouble(Fields, EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID, Value);
 	return Update;
 }
 
 inline void AddTestEvent(ComponentUpdate* Update, int Value) {
 	Schema_Object* events = Update->GetEvents();
-	Schema_Object* eventData = Schema_AddObject(events, EventId);
-	Schema_AddInt32(eventData, EventIntFieldId, Value);
+	Schema_Object* eventData = Schema_AddObject(events, EntityComponentTestUtils::EVENT_ID);
+	Schema_AddInt32(eventData, EntityComponentTestUtils::EVENT_INT_FIELD_ID, Value);
 }
 
-inline ComponentUpdate CreateTestComponentEvent(Worker_ComponentId Id, int Value) {
+inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, int Value) {
 	ComponentUpdate Update{ Id };
 	AddTestEvent(&Update, Value);
 	return Update;
@@ -135,11 +137,8 @@ inline bool CompareEntityComponentId(const EntityComponentId& Lhs, const EntityC
 	return Lhs == Rhs;
 }
 
-template<typename T>
-using ComparisonFunction = bool(*)(const T& Lhs, const T& Rhs);
-
-template<typename T>
-bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, ComparisonFunction<T> Compare)
+template<typename T, typename Predicate>
+bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, Predicate&& Compare)
 {
 	if (Lhs.Num() != Rhs.Num())
 	{
