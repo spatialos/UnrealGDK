@@ -13,25 +13,25 @@ using namespace SpatialGDK;
 
 namespace
 {
-	const Worker_EntityId TestEntityId = 1337;
-	const Worker_ComponentId TestComponentId = 1338;
-	const double TestValue = 7331;
-	const double TestUpdateValue = 7332;
+	const Worker_EntityId TEST_ENTITY_ID = 1337;
+	const Worker_ComponentId TEST_COMPONENT_ID = 1338;
+	const double TEST_VALUE = 7331;
+	const double TEST_UPDATE_VALUE = 7332;
 }  // anonymous namespace
 
 ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_component_added_THEN_has_component_data)
 {
 	// GIVEN
-	auto TestData = CreateTestComponentData(TestComponentId, TestValue);
+	auto TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
 
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 	TArray<EntityComponentData> ExpectedComponentsAdded;
-	ExpectedComponentsAdded.Push(EntityComponentData{ TestEntityId, TestData.DeepCopy() });
+	ExpectedComponentsAdded.Push(EntityComponentData{ TEST_ENTITY_ID, TestData.DeepCopy() });
 
 	EntityComponentRecord Storage;
 
 	// WHEN
-	Storage.AddComponent(TestEntityId, MoveTemp(TestData));
+	Storage.AddComponent(TEST_ENTITY_ID, MoveTemp(TestData));
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
@@ -42,7 +42,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_component_added_THE
 ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_component_removed_THEN_has_removed_component_id)
 {
 	// GIVEN
-	const EntityComponentId kEntityComponentId = { TestEntityId, TestComponentId };
+	const EntityComponentId kEntityComponentId = { TEST_ENTITY_ID, TEST_COMPONENT_ID };
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = { kEntityComponentId };
 
@@ -61,16 +61,16 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_component_removed_T
 ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_that_component_removed_THEN_component_record_is_empty)
 {
 	// GIVEN
-	ComponentData TestData = CreateTestComponentData(TestComponentId, TestValue);
+	ComponentData TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
 
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
 	EntityComponentRecord Storage;
-	Storage.AddComponent(TestEntityId, MoveTemp(TestData));
+	Storage.AddComponent(TEST_ENTITY_ID, MoveTemp(TestData));
 
 	// WHEN
-	Storage.RemoveComponent(TestEntityId, TestComponentId);
+	Storage.RemoveComponent(TEST_ENTITY_ID, TEST_COMPONENT_ID);
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
@@ -82,16 +82,16 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_that_compo
 ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_removed_component_WHEN_component_added_again_THEN_component_record_is_empty)
 {
 	// GIVEN
-	auto TestData = CreateTestComponentData(TestComponentId, TestValue);
+	auto TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
 
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
 	EntityComponentRecord Storage;
-	Storage.RemoveComponent(TestEntityId, TestComponentId);
+	Storage.RemoveComponent(TEST_ENTITY_ID, TEST_COMPONENT_ID);
 
 	// WHEN
-	Storage.AddComponent(TestEntityId, MoveTemp(TestData));
+	Storage.AddComponent(TEST_ENTITY_ID, MoveTemp(TestData));
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
@@ -102,19 +102,19 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_removed_component_WHEN_co
 ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_update_added_THEN_component_record_has_updated_component_data)
 {
 	// GIVEN
-	ComponentData TestData = CreateTestComponentData(TestComponentId, TestValue);
-	ComponentUpdate TestUpdate = CreateTestComponentUpdate(TestComponentId, TestUpdateValue);
-	ComponentData ExpectedData = CreateTestComponentData(TestComponentId, TestUpdateValue);
+	ComponentData TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
+	ComponentUpdate TestUpdate = CreateTestComponentUpdate(TEST_COMPONENT_ID, TEST_UPDATE_VALUE);
+	ComponentData ExpectedData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_UPDATE_VALUE);
 
 	TArray<EntityComponentData> ExpectedComponentsAdded;
-	ExpectedComponentsAdded.Push(EntityComponentData{ TestEntityId, MoveTemp(ExpectedData) });
+	ExpectedComponentsAdded.Push(EntityComponentData{ TEST_ENTITY_ID, MoveTemp(ExpectedData) });
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
 	EntityComponentRecord Storage;
-	Storage.AddComponent(TestEntityId, MoveTemp(TestData));
+	Storage.AddComponent(TEST_ENTITY_ID, MoveTemp(TestData));
 
 	// WHEN
-	Storage.AddUpdate(TestEntityId, MoveTemp(TestUpdate));
+	Storage.AddUpdate(TEST_ENTITY_ID, MoveTemp(TestUpdate));
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
@@ -125,7 +125,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_update_add
 ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_updated_added_THEN_component_record_is_empty)
 {
 	// GIVEN
-	ComponentUpdate TestUpdate = CreateTestComponentUpdate(TestComponentId, TestUpdateValue);
+	ComponentUpdate TestUpdate = CreateTestComponentUpdate(TEST_COMPONENT_ID, TEST_UPDATE_VALUE);
 
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
@@ -133,7 +133,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_updated_added_THEN_
 	EntityComponentRecord Storage;
 
 	// WHEN
-	Storage.AddUpdate(TestEntityId, MoveTemp(TestUpdate));
+	Storage.AddUpdate(TEST_ENTITY_ID, MoveTemp(TestUpdate));
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
@@ -144,19 +144,19 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_updated_added_THEN_
 ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_complete_update_added_THEN_component_record_has_updated_component_data)
 {
 	// GIVEN
-	ComponentData TestData = CreateTestComponentData(TestComponentId, TestValue);
-	ComponentData TestUpdate = CreateTestComponentData(TestComponentId, TestUpdateValue);
-	ComponentData ExpectedData = CreateTestComponentData(TestComponentId, TestUpdateValue);
+	ComponentData TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
+	ComponentData TestUpdate = CreateTestComponentData(TEST_COMPONENT_ID, TEST_UPDATE_VALUE);
+	ComponentData ExpectedData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_UPDATE_VALUE);
 
 	TArray<EntityComponentData> ExpectedComponentsAdded;
-	ExpectedComponentsAdded.Push(EntityComponentData{ TestEntityId, MoveTemp(ExpectedData) });
+	ExpectedComponentsAdded.Push(EntityComponentData{ TEST_ENTITY_ID, MoveTemp(ExpectedData) });
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 
 	EntityComponentRecord Storage;
-	Storage.AddComponent(TestEntityId, MoveTemp(TestData));
+	Storage.AddComponent(TEST_ENTITY_ID, MoveTemp(TestData));
 
 	// WHEN
-	Storage.AddComponentAsUpdate(TestEntityId, MoveTemp(TestUpdate));
+	Storage.AddComponentAsUpdate(TEST_ENTITY_ID, MoveTemp(TestUpdate));
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
@@ -167,7 +167,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_complete_u
 ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_complete_update_added_THEN_component_record_is_empty)
 {
 	// GIVEN
-	ComponentData TestUpdate = CreateTestComponentData(TestComponentId, TestUpdateValue);
+	ComponentData TestUpdate = CreateTestComponentData(TEST_COMPONENT_ID, TEST_UPDATE_VALUE);
 
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
@@ -175,7 +175,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_complete_update_add
 	EntityComponentRecord Storage;
 
 	// WHEN
-	Storage.AddComponentAsUpdate(TestEntityId, MoveTemp(TestUpdate));
+	Storage.AddComponentAsUpdate(TEST_ENTITY_ID, MoveTemp(TestUpdate));
 
 	// THEN
 	TestTrue(TEXT("ComponentsAdded are equal to expected"), AreEquivalent(Storage.GetComponentsAdded(), ExpectedComponentsAdded));
