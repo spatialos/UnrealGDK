@@ -37,6 +37,13 @@ struct PendingAddComponentWrapper
 	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
 		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)) {}
 
+	// We define equality to cover just entity and component IDs since duplicated AddComponent ops
+	// will be moved into unique pointers and we cannot equate the underlying Worker_ComponentData.
+	bool operator==(const PendingAddComponentWrapper& Other) const
+	{
+		return EntityId == Other.EntityId && ComponentId && Other.ComponentId;
+	}
+
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
