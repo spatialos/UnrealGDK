@@ -165,13 +165,15 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
-		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
+		// We either don't care about processing these components or we only need to store
+		// the data (which is handled by the SpatialStaticComponentView).
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		// The unreal metadata component is used to indicate when an actor needs to be created from the entity.
-		// This means we need to be inside a critical section, otherwise we may not have all the requisite information at the point of creating the actor.
+		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
+		// This means we need to be inside a critical section, otherwise we may not have all the requisite
+		// information at the point of creating the Actor.
 		check(bInCriticalSection);
-		PendingAddActors.Emplace(Op.entity_id);
+		PendingAddActors.AddUnique(Op.entity_id);
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
@@ -183,7 +185,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
-		if(NetDriver->IsServer())
+		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
 		{
 			// Register system identity for a worker connection, to know when a player has disconnected.
 			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
@@ -243,7 +245,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	if (bInCriticalSection)
 	{
-		PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
+		PendingAddComponents.AddUnique(PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
 	}
 	else
 	{
@@ -287,6 +289,17 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	// We should exit early if we're receiving a duplicate RemoveComponent op. This can happen with dynamic
+	// components enabled. We detect if the op is a duplicate via the queue of ops to be processed (duplicate
+	// op receive in the same op list).
+	if (QueuedRemoveComponentOps.ContainsByPredicate([&Op](const Worker_RemoveComponentOp& QueuedOp)
+	{
+		return QueuedOp.entity_id == Op.entity_id && QueuedOp.component_id == Op.component_id;
+	}))
+	{
+		return;
+	}
+
 	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
 	{
 		if (IsEntityWaitingForAsyncLoad(Op.entity_id))
@@ -366,6 +379,12 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		return;
 	}
 
+	// We want to do nothing for RemoveComponent ops for which we never received a corresponding
+	// AddComponent op. This can happen because of the worker SDK generating a RemoveComponent op
+	// when a worker receives authority over a component without having already received the
+	// AddComponent op. The generation is a known part of the worker SDK we need to tolerate for
+	// enabling dynamic components, and having authority ACL entries without having the component
+	// data present on an entity is permitted as part of our Unreal dynamic component implementation.
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
 	{
 		return;
@@ -408,6 +427,12 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 	// This way systems that depend on having non-stale state can function correctly.
 	StaticComponentView->OnAuthorityChange(Op);
+
+	if (Op.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
+		return;
+	}
 
 	if (Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
 	{
@@ -909,6 +934,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// flow) take care of setting roles correctly.
 		if (EntityActor->HasAuthority())
 		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Trying to unexpectedly spawn received network Actor with authority. Actor %s. Entity: %lld"), *EntityActor->GetName(), EntityId);
 			EntityActor->Role = ROLE_SimulatedProxy;
 			EntityActor->RemoteRole = ROLE_Authority;
 		}
@@ -2535,6 +2561,17 @@ bool USpatialReceiver::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
 void USpatialReceiver::QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op)
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
+
+	// Skip queuing a duplicate AddComponent op.
+	if (AsyncLoadEntity.PendingOps.ContainsByPredicate([&Op](const QueuedOpForAsyncLoad& QueuedOp)
+	{
+		return QueuedOp.Op.op_type == WORKER_OP_TYPE_ADD_COMPONENT
+			&& QueuedOp.Op.op.add_component.entity_id == Op.entity_id
+			&& QueuedOp.Op.op.add_component.data.component_id && Op.data.component_id;
+	}))
+	{
+		return;
+	}
 
 	QueuedOpForAsyncLoad NewOp = {};
 	NewOp.AcquiredData = Worker_AcquireComponentData(&Op.data);
