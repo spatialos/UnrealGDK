@@ -42,6 +42,7 @@ generate_build_configuration_steps () {
                 fi
             fi
 
+            export SLOW_NETWORKING_TESTS="${SLOW_NETWORKING_TESTS_LOCAL}"
             if [[ "${SLOW_NETWORKING_TESTS_LOCAL,,}" == "true" ]]; then
                 # Start a build with native tests as a separate step
                 upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "Native"
