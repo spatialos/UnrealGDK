@@ -88,15 +88,18 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
 		check(LBStrategy != nullptr);
-		IntendedVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Actor);
-		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		{
-			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
-		}
-		else
+		const UAbstractLockingPolicy* LockingPolicy = NetDriver->LockingPolicy;
+		check(LockingPolicy != nullptr);
+
+		IntendedVirtualWorkerId = LockingPolicy->IsLocked(Actor) ? LBStrategy->GetLocalVirtualWorkerId() : LBStrategy->WhoShouldHaveAuthority(*Actor);
+		if (IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
 			const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
 			WorkerAttributeOrSpecificWorker = { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) };
+		}
+		else
+		{
+			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
 		}
 	}
 
@@ -262,13 +265,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		{
 			check(NetDriver->VirtualWorkerTranslator != nullptr);
 
-			VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-
-			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntentVirtualWorkerId);
+			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
 			FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
 			FColor IntentColor = PhysicalWorkerName == nullptr ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
 
-			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntentVirtualWorkerId, IntentColor, false);
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId, IntentColor, bIsLocked);
 			ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
 		}
 
