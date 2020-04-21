@@ -15,7 +15,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 
 	CacheWorkerAttributes();
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();    
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
