@@ -29,6 +29,23 @@ REPO="${1}"
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
+
+### TODO: ReleaseCommand.cs ingests the following:
+### "version" = "The version that is being released"
+### This always corresponds to GDK_VERSION.
+
+### "source-branch" = "The source branch name from which we are cutting the candidate."
+### In GDK, Example Project and TestGyms this is `master`
+### In UnrealEngine this is "ENGINE_VERSION", where ENGINE_VERSIONS is IFS iterated over.
+
+### "candidate-branch" = "The candidate branch name."
+### In GDK, Example Project and TestGyms this is "GDK_VERSION-rc"
+### In UnrealEngine this must be compiled from "ENGINE_VERSIONS-GDK_VERSION-rc", where ENGINE_VERSIONS is IFS iterated over.
+
+### "target-branch" = "The name of the branch into which we are merging the candidate."
+### In GDK, Example Project and TestGyms this is `release`
+### In UnrealEngine this is "ENGINE_VERSION", where ENGINE_VERSIONS is IFS iterated over.
+
 while IFS= read -r ENGINE_VERSIONS; do
 
   docker run \
