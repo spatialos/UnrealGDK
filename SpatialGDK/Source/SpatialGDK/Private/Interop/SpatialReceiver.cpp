@@ -2136,6 +2136,17 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 
 	ResolveIncomingOperations(Object, ObjectRef);
 
+	// When resolving a Actor that should uniquely exist in a deployment, e.g. GameMode, GameState, LevelScriptActors, we also
+	// resolve using class path (in case any properties were set from a server that hasn't resolved the Actor yet).
+	if (FUnrealObjectRef::ShouldLoadObjectFromClassPath(Object))
+	{
+		FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetRefFromObjectClassPath(Object, PackageMap);
+		if (ClassObjectRef.IsValid())
+		{
+			ResolveIncomingOperations(Object, ClassObjectRef);
+		}
+	}
+
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
 	IncomingRPCs.ProcessRPCs();
 }
