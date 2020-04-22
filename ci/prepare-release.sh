@@ -4,6 +4,28 @@
 ### If you don't work at Improbable, this may be interesting as a guide to what software versions we use for our
 ### automation, but not much more than that.
 
+runCSharpTool () {
+  local REPO_NAME="${1}"
+  local SOURCE_BRANCH="${2}"
+  local CANDIDATE_BRANCH="${3}"
+  local TARGET_BRANCH="${4}"
+  
+  echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
+
+  docker run \
+    -v "${SECRETS_DIR}":/var/ssh \
+    -v "${SECRETS_DIR}":/var/github \
+    -v "$(pwd)"/logs:/var/logs \
+    local:gdk-release-tool \
+        prep "${GDK_VERSION}" \
+        --source-branch="${SOURCE_BRANCH}" \
+        --candidate-branch="${CANDIDATE_BRANCH}" \
+        --target-branch="${TARGET_BRANCH}" \
+        --git-repository-name="${REPO_NAME}" \
+        --github-key-file="/var/github/github_token" \
+        --buildkite-metadata-path="/var/logs/bk-metadata"
+}
+
 set -e -u -o pipefail
 
 if [[ -n "${DEBUG-}" ]]; then
@@ -25,47 +47,22 @@ mkdir -p ./logs
 
 # This assigns the first argument passed to this script to the variable REPO
 REPO="${1}"
+
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
+
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
 
-### TODO: ReleaseCommand.cs ingests the following:
-### "version" = "The version that is being released"
-### This always corresponds to GDK_VERSION.
+# Run the C Sharp Release Tool for each candidate we want to cut.
+runCSharpTool "UnrealGDK" "master" "${GDK_VERSION}-rc" "release"
+runCSharpTool "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release"
+runCSharpTool "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release"
 
-### "source-branch" = "The source branch name from which we are cutting the candidate."
-### In GDK, Example Project and TestGyms this is `master`
-### In UnrealEngine this is "ENGINE_VERSION", where ENGINE_VERSIONS is IFS iterated over.
-
-### "candidate-branch" = "The candidate branch name."
-### In GDK, Example Project and TestGyms this is "GDK_VERSION-rc"
-### In UnrealEngine this must be compiled from "ENGINE_VERSIONS-GDK_VERSION-rc", where ENGINE_VERSIONS is IFS iterated over.
-
-### "target-branch" = "The name of the branch into which we are merging the candidate."
-### In GDK, Example Project and TestGyms this is `release`
-### In UnrealEngine this is "ENGINE_VERSION", where ENGINE_VERSIONS is IFS iterated over.
-
-while IFS= read -r ENGINE_VERSIONS; do
-
-  docker run \
-    -v "${SECRETS_DIR}":/var/ssh \
-    -v "${SECRETS_DIR}":/var/github \
-    -v "$(pwd)"/logs:/var/logs \
-    local:gdk-release-tool \
-        prep "${GDK_VERSION}" \
-        --git-repository-name="${REPO}" \
-        --engine-versions="${ENGINE_VERSIONS}" \
-        --github-key-file="/var/github/github_token" \
-        --buildkite-metadata-path="/var/logs/bk-metadata" ${PIN_ARG}
-
+while IFS= read -r ENGINE_VERSION; do
+  runCSharpTool "UnrealEngine" "${ENGINE_VERSION}" \
+    "${ENGINE_VERSION}-${GDK_VERSION}-rc" "${ENGINE_VERSION}-release"
 done <<< "${ENGINE_VERSIONS}"
 
 echo "--- Writing metadata :pencil2:"
 writeBuildkiteMetadata "./logs/bk-metadata"
-
-if [[ "${REPO}" == "UnrealEngine" ]]; then
-echo "--- Preparing ${REPO} @ ${ENGINE_VERSIONS}, ${RELEASE_VERSION} :package:"
-else
-echo "--- Preparing ${REPO} @ ${RELEASE_VERSION} :package:"
-fi 
