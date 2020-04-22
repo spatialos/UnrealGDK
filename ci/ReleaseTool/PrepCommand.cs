@@ -10,35 +10,28 @@ namespace ReleaseTool
 {
     /// <summary>
     ///     Runs the steps required to cut a release candidate branch.
-
-    ///     * TODO: Remove this and modify our equivalent version files instead.
-    ///     * Alters all package.json.
-
-    ///     * TODO: Modify this to work with our CHANGELOG.
-    ///     * Bumps the version in the CHANGELOG.md.
-
-    ///     * TODO: Remove this and modify our equivalent version files instead.
-    ///     * Updates the hash in the gdk.pinned file.
-
-    ///     * TODO: Modify this to work with our repos.
-    ///     * Pushes the candidate and creates a Pull Request against master.
+    ///     * Checks our fork of the repo.
+    ///     * Adds the spatialos org remote to our local copy and fetch this remote.
+    ///     * Checks out the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
+    ///     * Makes repo-dependent changes for prepping the release (e.g. updating version files).
+    ///     * Pushes this to an RC branch on the forked repository.
+    ///     * Opens a PR from the fork into the source repository.
     /// </summary>
 
-    ///     * TODO: Most of the strings in this class need modification and/or deletion
     internal class PrepCommand
     {
         internal const string ChangeLogUpdateGdkTemplate = "- Upgraded to GDK for Unity version `{0}`";
 
-        private const string PackerConfigFile = "packer.config.json";
-
-        private const string PackageJsonFilename = "package.json";
-        private const string ManifestJsonFilename = "manifest.json";
-        private const string PackageJsonNameKey = "name";
-        private const string PackageJsonVersionString = "version";
-        private const string PackageJsonDependenciesString = "dependencies";
-        private const string PackageJsonDependenciesPrefix = "io.improbable";
-
         private const string CommitMessageTemplate = "Release candidate for version {0}.";
+
+        // Names of the version files that live in the UnrealEngine repository
+        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
+        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
+
+        // Plugin file configuration
+        private const string pluginFileName = "SpatialGDK.uplugin";
+        private const string VersionKey = "Version";
+        private const string VersionNameKey = "VersionName";
 
         private const string ChangeLogFilename = "CHANGELOG.md";
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
@@ -49,6 +42,7 @@ namespace ReleaseTool
         [Verb("prep", HelpText = "Prep a release candidate branch.")]
         public class Options : GitHubClient.IGitHubOptions, BuildkiteMetadataSink.IBuildkiteOptions
         {
+            // TODO: make sure that the passed in version name matches the semantic versioning convention (x.x.x)
             [Value(0, MetaName = "version", HelpText = "The release version that is being cut.", Required = true)]
             public string Version { get; set; }
 
@@ -129,7 +123,17 @@ namespace ReleaseTool
                         }
                     }
 
-                    // TODO: If we're working with the UnrealEngine repo, update UnrealGDKVersion.txt and UnrealGDKExampleProjectVersion.txt by setting their contents to options.Version (without newline)
+                    // Make any repository-specific changes here.
+                    switch (options.GitRepoName)
+                    {
+                        case "UnrealGDK":
+                            UpdatePluginFile(pluginFileName, gitClient);
+                            break;
+                        case "UnrealEngine":
+                            UpdateAndStageVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            UpdateAndStageVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
+                            break;
+                    }
 
                     // This does step 5 from above.
                     gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
@@ -204,86 +208,60 @@ namespace ReleaseTool
             return markdownLine.StartsWith(heading);
         }
 
-        // Old stuff from here on out
-
-        private void UpdateManifestJson(GitClient gitClient)
+        private static void UpdateAndStageVersionFile(GitClient gitClient, string fileContents, string filePath)
         {
-            var manifestFile = Path.Combine(Directory.GetCurrentDirectory(), "workers", "unity", "Packages",
-                ManifestJsonFilename);
+            Logger.Info($"Updating contents of version file '{0}' to '{1}'...", filePath, fileContents);
 
-            UpdatePackageJson(manifestFile, gitClient);
-        }
-
-        private void UpdateAllPackageJsons(GitClient gitClient)
-        {
-            Logger.Info("Updating all {0}...", PackageJsonFilename);
-
-            var packageFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), PackageJsonFilename,
-                SearchOption.AllDirectories);
-
-            foreach (var packageFile in packageFiles)
+            if (!File.Exists(filePath))
             {
-                UpdatePackageJson(packageFile, gitClient);
-            }
-        }
-
-        private void UpdatePackageJson(string packageFile, GitClient gitClient)
-        {
-            Logger.Info("Updating {0}...", packageFile);
-
-            JObject jsonObject;
-            using (var streamReader = new StreamReader(packageFile))
-            {
-                jsonObject = JObject.Parse(streamReader.ReadToEnd());
-
-                if (jsonObject.ContainsKey(PackageJsonNameKey))
-                {
-                    var name = (string) jsonObject[PackageJsonNameKey];
-
-                    if (name.StartsWith(PackageJsonDependenciesPrefix) &&
-                        jsonObject.ContainsKey(PackageJsonVersionString))
-                    {
-                        jsonObject[PackageJsonVersionString] = options.Version;
-                    }
-                }
-
-                if (jsonObject.ContainsKey(PackageJsonDependenciesString))
-                {
-                    var dependencies = (JObject) jsonObject[PackageJsonDependenciesString];
-
-                    foreach (var property in dependencies.Properties())
-                    // If it's an Improbable package and it's not a "file:" reference.
-                    {
-                        if (property.Name.StartsWith(PackageJsonDependenciesPrefix) &&
-                            !((string) property.Value).StartsWith("file:"))
-                        {
-                            dependencies[property.Name] = options.Version;
-                        }
-                    }
-                }
-            }
-
-            File.WriteAllText(packageFile, jsonObject.ToString());
-
-            gitClient.StageFile(packageFile);
-        }
-
-        private static void UpdateGdkVersion(GitClient gitClient, string newPinnedVersion)
-        {
-            const string gdkPinnedFilename = "gdk.pinned";
-
-            Logger.Info("Updating pinned gdk version to {0}...", newPinnedVersion);
-
-            if (!File.Exists(gdkPinnedFilename))
-            {
-                throw new InvalidOperationException("Could not upgrade gdk version as the file, " +
-                    $"{gdkPinnedFilename}, does not exist");
+                throw new InvalidOperationException("Could not update the version file as the file " +
+                    $"'{filePath}' does not exist.");
             }
 
             // Pin is always to master in this case.
-            File.WriteAllText(gdkPinnedFilename, $"{GitSourceBranch} {newPinnedVersion}");
+            File.WriteAllText(filePath, $"{fileContents}");
 
-            gitClient.StageFile(gdkPinnedFilename);
+            gitClient.StageFile(filePath);
+        }
+
+        private void UpdatePluginFile(string pluginFilePath, GitClient gitClient)
+        {
+            Logger.Info("Updating {0}...", pluginFilePath);
+
+            JObject jsonObject;
+            using (var streamReader = new StreamReader(pluginFilePath))
+            {
+                jsonObject = JObject.Parse(streamReader.ReadToEnd());
+
+                if (jsonObject.ContainsKey(VersionKey) && jsonObject.ContainsKey(VersionNameKey))
+                {
+                    var oldVersion = (string) jsonObject[VersionNameKey];
+                    if (ShouldIncrementVersion(oldVersion, options.Version))
+                    {
+                        jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
+                    }
+
+                    // Update the version name to the new one
+                    jsonObject[VersionNameKey] = options.Version;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " +
+                        $"because at least one of the two expected keys '{VersionKey}' and '{VersionNameKey}' " +
+                        $"could not be found.");
+                }
+            }
+
+            File.WriteAllText(pluginFilePath, jsonObject.ToString());
+
+            gitClient.StageFile(pluginFilePath);
+        }
+
+        private bool ShouldIncrementVersion(string oldVersionName, string newVersionName)
+        {
+            var oldMajorMinorVersions = oldVersionName.Split('.').Take(2).Select(s => int.Parse(s));
+            var newMajorMinorVersions = newVersionName.Split('.').Take(2).Select(s => int.Parse(s));
+            return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
         private static string GetPullRequestBody(string repoName)
@@ -352,96 +330,6 @@ namespace ReleaseTool
                 default:
                     throw new ArgumentException($"No PR body template found for repo {repoName}");
             }
-        }
-
-        private int OldRun()
-        {
-            var remoteUrl = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, options.GitRepoName);
-
-            try
-            {
-                var gitHubClient = new GitHubClient(options);
-
-                using (var gitClient = GitClient.FromRemote(remoteUrl))
-                {
-                    // This does step 2 from above.
-                    var spatialOsRemote =
-                        string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, options.GitRepoName);
-                    gitClient.AddRemote(Common.SpatialOsOrg, spatialOsRemote);
-                    gitClient.Fetch(Common.SpatialOsOrg);
-
-                    // This does step 3 from above.
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch, Common.SpatialOsOrg);
-
-                    // This does step 4 from above.
-                    // TODO: Remove steps that are irrelevant to the Unreal GDK repos
-                    // TODO: Add steps for the Unreal GDK repos
-                    using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-                    {
-                        UpdateManifestJson(gitClient);
-                        UpdateAllPackageJsons(gitClient);
-
-                        if (options.ShouldUpdateGdkVersion)
-                        {
-                            UpdateGdkVersion(gitClient, options.PinnedGdkVersion);
-                        }
-
-                        if (!File.Exists(ChangeLogFilename))
-                        {
-                            throw new InvalidOperationException("Could not update the change log as the file," +
-                                $" {ChangeLogFilename}, does not exist");
-                        }
-
-                        Logger.Info("Updating {0}...", ChangeLogFilename);
-
-                        var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
-                        UpdateChangeLog(changelog, options);
-                        File.WriteAllLines(ChangeLogFilename, changelog);
-                        gitClient.StageFile(ChangeLogFilename);
-                    }
-
-                    // This does step 5 from above.
-                    gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
-                    gitClient.ForcePush(options.CandidateBranch);
-
-                    // This does step 6 from above.
-                    var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
-
-                    var branchFrom = $"{Common.GithubBotUser}:{options.CandidateBranch}";
-                    var branchTo = options.SourceBranch;
-
-                    // Only open a PR if one does not exist yet.
-                    if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
-                    {
-                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                            branchFrom,
-                            branchTo,
-                            string.Format(PullRequestTemplate, options.Version),
-                            GetPullRequestBody(options.GitRepoName));
-                    }
-
-                    if (BuildkiteMetadataSink.CanWrite(options))
-                    {
-                        using (var sink = new BuildkiteMetadataSink(options))
-                        {
-                            sink.WriteMetadata($"{options.GitRepoName}-release-branch",
-                                $"pull/{pullRequest.Number}/head:{options.CandidateBranch}");
-                            sink.WriteMetadata($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
-                        }
-                    }
-
-                    Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                    Logger.Info("Successfully created release!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "ERROR: Unable to prep release candidate branch. Error: {0}", e);
-                return 1;
-            }
-
-            return 0;
         }
     }
 }

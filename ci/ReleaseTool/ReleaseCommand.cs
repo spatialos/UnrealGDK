@@ -124,9 +124,9 @@ namespace ReleaseTool
             string preamble;
 
             // TODO: Modify preambles for the UnrealGDK repos
-            switch (repoName.ToLower())
+            switch (repoName)
             {
-                case "unrealgdk":
+                case "UnrealGDK":
                     name = $"GDK for Unity Alpha Release {options.Version}";
                     preamble =
 @"In this release, we've ...
@@ -137,21 +137,21 @@ Keep giving us your feedback and/or suggestions! Check out [our Discord](https:/
 
 See the full release notes below! 👇";
                     break;
-                case "unrealengine":
+                case "UnrealEngine":
                     name = $"GDK for Unity FPS Starter Project Alpha Release {options.Version}";
                     preamble =
 $@"This release of the FPS Starter Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
                     break;
-                case "unralgdktestgyms":
+                case "UnrealGDKTestGyms":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
                     preamble =
 $@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
                     break;
-                case "unrealgdkexampleproject":
+                case "UnrealGDKExampleProject":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
                     preamble =
 $@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
