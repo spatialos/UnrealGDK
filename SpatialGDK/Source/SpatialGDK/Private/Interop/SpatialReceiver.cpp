@@ -110,7 +110,10 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		HandleActorAuthority(PendingAuthorityChange);
+		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
 	}
 
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
@@ -123,13 +126,17 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			continue;
 		}
-		if (StaticComponentView->HasAuthority(PendingAddComponent.EntityId, PendingAddComponent.ComponentId))
-		{
-			continue;
-		}
 
 		UE_LOG(LogTemp, Log, TEXT("Unhandled component being handled: compid %d entid %d"), PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
 		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
+	}
+
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	{
+		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
 	}
 
 	// Mark that we've left the critical section.
