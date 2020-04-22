@@ -1095,7 +1095,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
 	FString WebError;
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
 	bool bChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-	FString Url = bChina ? FString::Printf(TEXT("https://console.spatialoschina.com/projects/%s"), *ProjectName) : FString::Printf(TEXT("https://console.improbable.io/projects/%s"), *ProjectName);
+	FString Url = bChina ? FString::Printf(TEXT("https://%s/projects/%s"), *SpatialConstants::CONSOLE_HOST_CN, *ProjectName) : FString::Printf(TEXT("https://%s/projects/%s"), *SpatialConstants::CONSOLE_HOST, *ProjectName);
 	FPlatformProcess::LaunchURL(*Url, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
