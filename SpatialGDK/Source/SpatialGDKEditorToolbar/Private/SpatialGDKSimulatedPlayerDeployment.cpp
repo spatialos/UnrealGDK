@@ -609,6 +609,14 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									[
 										SNew(SButton)
 										.HAlign(HAlign_Center)
+										.Text(FText::FromString(FString(TEXT("Open Deployment Page"))))
+										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked)
+										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage)
+									]
+									+ SUniformGridPanel::Slot(1, 0)
+									[
+										SNew(SButton)
+										.HAlign(HAlign_Center)
 										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
 										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked)
 										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment)
@@ -1081,3 +1089,35 @@ bool SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment() const
 {
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
+{
+	FString WebError;
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+	bool bChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+	FString Url = bChina ? FString::Printf(TEXT("https://console.spatialoschina.com/projects/%s"), *ProjectName) : FString::Printf(TEXT("https://console.improbable.io/projects/%s"), *ProjectName);
+	FPlatformProcess::LaunchURL(*Url, TEXT(""), &WebError);
+	if (!WebError.IsEmpty())
+	{
+		FNotificationInfo Info(FText::FromString(WebError));
+		Info.ExpireDuration = 3.0f;
+		Info.bUseSuccessFailIcons = true;
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		NotificationItem->ExpireAndFadeout();
+	}
+
+	return FReply::Handled();
+}
+
+bool SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage() const
+{
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+	if (ProjectName.IsEmpty())
+	{
+		return false;
+	}
+
+	return true;
+}
+

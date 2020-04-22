@@ -133,4 +133,7 @@ private:
 	void OnBuildSuccess();
 
 	bool CanLaunchDeployment() const;
+
+	FReply OnOpenCloudDeploymentPageClicked();
+	bool CanOpenCloudDeploymentPage() const;
 };
