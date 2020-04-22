@@ -1,11 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
 class FLBStrategyEditorExtensionManager;
 
-class FSpatialGDKEditorModule : public IModuleInterface
+class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
 public:
 
@@ -20,6 +21,10 @@ public:
 	{
 		return true;
 	}
+
+protected:
+	virtual FString GetSpatialOSLocalDeploymentIP() const override;
+	virtual int GetSpatialOSNetFlowType() const override;
 
 private:
 	void RegisterSettings();
