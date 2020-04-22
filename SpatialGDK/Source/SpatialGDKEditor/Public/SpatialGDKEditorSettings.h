@@ -496,7 +496,7 @@ public:
 	{
 		if (Cluster.IsEmpty())
 		{
-			return "NONE";
+			return "\"\"";
 		}
 		return Cluster;
 	}

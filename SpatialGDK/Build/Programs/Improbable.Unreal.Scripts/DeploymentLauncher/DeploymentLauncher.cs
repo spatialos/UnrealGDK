@@ -107,15 +107,6 @@ namespace Improbable
             return region == "CN" ? ChinaCredentials : null;
         }
 
-        private static String ParseCluster(String Cluster)
-        {
-            if (Cluster == "NONE")
-            {
-                return "";
-            }
-            return Cluster;
-        }
-
         private static int CreateDeployment(string[] args)
         {
             bool launchSimPlayerDeployment = args.Length == 12;
@@ -127,7 +118,7 @@ namespace Improbable
             var mainDeploymentJsonPath = args[5];
             var mainDeploymentSnapshotPath = args[6];
             var mainDeploymentRegion = args[7];
-            var mainDeploymentCluster = ParseCluster(args[8]);
+            var mainDeploymentCluster = args[8];
 
             var simDeploymentName = string.Empty;
             var simDeploymentJson = string.Empty;
@@ -243,7 +234,7 @@ namespace Improbable
             var simDeploymentName = args[5];
             var simDeploymentJson = args[6];
             var simDeploymentRegion = args[7];
-            var simDeploymentCluster = ParseCluster(args[8]);
+            var simDeploymentCluster = args[8];
 
             var simNumPlayers = 0;
             if (!Int32.TryParse(args[9], out simNumPlayers))
