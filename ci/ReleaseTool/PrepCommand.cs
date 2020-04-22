@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CommandLine;
@@ -20,24 +19,23 @@ namespace ReleaseTool
 
     internal class PrepCommand
     {
-        internal const string ChangeLogUpdateGdkTemplate = "- Upgraded to GDK for Unity version `{0}`";
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CommitMessageTemplate = "Release candidate for version {0}.";
+        private const string PullRequestTemplate = "Release {0} - Pre-Validation";
 
-        // Names of the version files that live in the UnrealEngine repository
+        // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
         private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
 
-        // Plugin file configuration
+        // Plugin file configuration.
         private const string pluginFileName = "SpatialGDK.uplugin";
         private const string VersionKey = "Version";
         private const string VersionNameKey = "VersionName";
 
+        // Changelog file configuration
         private const string ChangeLogFilename = "CHANGELOG.md";
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
-
-        private const string PullRequestTemplate = "Release {0} - Pre-Validation";
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         [Verb("prep", HelpText = "Prep a release candidate branch.")]
         public class Options : GitHubClient.IGitHubOptions, BuildkiteMetadataSink.IBuildkiteOptions
@@ -85,8 +83,8 @@ namespace ReleaseTool
          *     repositories. This means that when we prep a release:
          *         1. Checkout our fork of the repo.
          *         2. Add the spatialos org remote to our local copy and fetch this remote.
-         *         3. Checkout the spatialos/master branch (the non-forked master branch).
-         *         4. Make the changes for prepping the release.
+         *         3. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
+         *         4. Make repo-dependent changes for prepping the release (e.g. updating version files).
          *         5. Push this to an RC branch on the forked repository.
          *         6. Open a PR from the fork into the source repository.
          */
@@ -110,23 +108,10 @@ namespace ReleaseTool
                     gitClient.CheckoutRemoteBranch(options.SourceBranch, Common.SpatialOsOrg);
 
                     // This does step 4 from above.
-                    using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-                    {
-                        if (File.Exists(ChangeLogFilename))
-                        {
-                            Logger.Info("Updating {0}...", ChangeLogFilename);
-
-                            var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
-                            UpdateChangeLog(changelog, options);
-                            File.WriteAllLines(ChangeLogFilename, changelog);
-                            gitClient.StageFile(ChangeLogFilename);
-                        }
-                    }
-
-                    // Make any repository-specific changes here.
                     switch (options.GitRepoName)
                     {
                         case "UnrealGDK":
+                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
                             UpdatePluginFile(pluginFileName, gitClient);
                             break;
                         case "UnrealEngine":
@@ -179,26 +164,39 @@ namespace ReleaseTool
             return 0;
         }
 
-        internal static void UpdateChangeLog(List<string> changelog, Options options)
+        internal static void UpdateChangeLog(string ChangeLogFilePath, Options options, GitClient gitClient)
         {
-            // If we already have a changelog entry for this release. Skip this step.
-            if (changelog.Any(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - ")))
+            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
-                Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilename);
-                return;
+                if (File.Exists(ChangeLogFilePath))
+                {
+                    Logger.Info("Updating {0}...", ChangeLogFilePath);
+
+                    var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
+
+                    // If we already have a changelog entry for this release. Skip this step.
+                    if (changelog.Any(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - ")))
+                    {
+                        Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilePath);
+                        return;
+                    }
+
+                    // First add the new release heading under the "## Unreleased" one.
+                    // Assuming that this is the first heading.
+                    var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
+                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
+                        DateTime.Now);
+
+                    changelog.InsertRange(unreleasedIndex + 1, new[]
+                    {
+                        string.Empty,
+                        releaseHeading
+                    });
+
+                    File.WriteAllLines(ChangeLogFilePath, changelog);
+                    gitClient.StageFile(ChangeLogFilePath);
+                }
             }
-
-            // First add the new release heading under the "## Unreleased" one.
-            // Assuming that this is the first heading.
-            var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
-            var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
-                DateTime.Now);
-
-            changelog.InsertRange(unreleasedIndex + 1, new[]
-            {
-                string.Empty,
-                releaseHeading
-            });
         }
 
         private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
@@ -236,7 +234,7 @@ namespace ReleaseTool
                 if (jsonObject.ContainsKey(VersionKey) && jsonObject.ContainsKey(VersionNameKey))
                 {
                     var oldVersion = (string) jsonObject[VersionNameKey];
-                    if (ShouldIncrementVersion(oldVersion, options.Version))
+                    if (ShouldIncrementPluginVersion(oldVersion, options.Version))
                     {
                         jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
                     }
@@ -257,13 +255,14 @@ namespace ReleaseTool
             gitClient.StageFile(pluginFilePath);
         }
 
-        private bool ShouldIncrementVersion(string oldVersionName, string newVersionName)
+        private bool ShouldIncrementPluginVersion(string oldVersionName, string newVersionName)
         {
             var oldMajorMinorVersions = oldVersionName.Split('.').Take(2).Select(s => int.Parse(s));
             var newMajorMinorVersions = newVersionName.Split('.').Take(2).Select(s => int.Parse(s));
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
+        // TODO: update this
         private static string GetPullRequestBody(string repoName)
         {
             switch (repoName)
