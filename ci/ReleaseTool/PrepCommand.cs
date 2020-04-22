@@ -115,8 +115,8 @@ namespace ReleaseTool
                             UpdatePluginFile(pluginFileName, gitClient);
                             break;
                         case "UnrealEngine":
-                            UpdateAndStageVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            UpdateAndStageVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
                             break;
                     }
 
@@ -206,7 +206,7 @@ namespace ReleaseTool
             return markdownLine.StartsWith(heading);
         }
 
-        private static void UpdateAndStageVersionFile(GitClient gitClient, string fileContents, string filePath)
+        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string filePath)
         {
             Logger.Info($"Updating contents of version file '{0}' to '{1}'...", filePath, fileContents);
 
@@ -262,12 +262,12 @@ namespace ReleaseTool
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
-        // TODO: update this
+        // TODO: Alter the PR bodies so that they reflect the Unreal GDK release process
         private static string GetPullRequestBody(string repoName)
         {
             switch (repoName)
             {
-                case "gdk-for-unity":
+                case "UnrealGDK":
                     return @"#### Description
 - Package versions
 - Changelog
@@ -288,7 +288,7 @@ namespace ReleaseTool
 - iOS
 	- [ ] local client
 	- [ ] cloud client";
-                case "gdk-for-unity-fps-starter-project":
+                case "UnrealGDKExampleProject":
                     return @"#### Description
 - Package versions
 - Changelog
@@ -307,7 +307,26 @@ namespace ReleaseTool
 - iOS
 	- [ ] local client
 	- [ ] cloud client";
-                case "gdk-for-unity-blank-project":
+                case "UnrealGDKTestGyms":
+                    return @"#### Description
+- Package versions
+- Changelog
+- pinned gdk
+
+#### Tests
+- Windows
+	- [ ] local deploy
+	- [ ] cloud client (Release QA pipeline)
+- Mac
+	- [ ] local deploy
+	- [ ] cloud client (Release QA pipeline)
+- Android
+	- [ ] local client
+	- [ ] cloud client
+- iOS
+	- [ ] local client
+	- [ ] cloud client";
+                case "UnrealEngine":
                     return @"#### Description
 - Package versions
 - Changelog
