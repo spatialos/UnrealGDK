@@ -75,6 +75,19 @@ private:
 	bool StopSpatialServiceIsVisible() const;
 	bool StopSpatialServiceCanExecute() const;
 
+	void OnToggleSpatialNetworking();
+	bool OnIsSpatialNetworkingEnabled() const;
+
+	void GDKEditorSettingsClicked() const;
+	bool IsUnrealNativeNetworkingChecked() const;
+	bool IsSpatialOSLocalNetworkingChecked() const;
+	bool IsSpatialOSCloudNetworkingChecked() const;
+	void UnrealNativeNetworkingClicked() const;
+	void SpatialOSLocalNetworkingClicked() const;
+	void SpatialOSCloudNetworkingClicked() const;
+	bool IsLocalDeploymentIPEditable() const;
+	bool IsCloudDeploymentNameEditable() const;
+
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -91,6 +104,7 @@ private:
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
+	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
 	void ShowTaskStartNotification(const FString& NotificationText);
 
