@@ -28,7 +28,7 @@
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
-#include "Engine.h"
+#include "Engine/Engine.h"
 
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 
