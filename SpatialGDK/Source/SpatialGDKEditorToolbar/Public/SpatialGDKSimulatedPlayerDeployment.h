@@ -72,6 +72,9 @@ private:
 	/** Delegate called when the user selects a region code from the dropdown for the primary deployment */
 	void OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);
 
+	/** Delegate to commit runtime version */
+	void OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType);
+
 	/** Delegate called when the user selects a region code from the dropdown for the simulated player deployment */
 	void OnSimulatedPlayerDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);
 

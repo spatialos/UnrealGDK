@@ -107,6 +107,15 @@ namespace Improbable
             return region == "CN" ? ChinaCredentials : null;
         }
 
+        private static String ParseCluster(String Cluster)
+        {
+            if (Cluster == "NONE")
+            {
+                return "";
+            }
+            return Cluster;
+        }
+
         private static int CreateDeployment(string[] args)
         {
             bool launchSimPlayerDeployment = args.Length == 12;
@@ -118,6 +127,7 @@ namespace Improbable
             var mainDeploymentJsonPath = args[5];
             var mainDeploymentSnapshotPath = args[6];
             var mainDeploymentRegion = args[7];
+            var mainDeploymentCluster = ParseCluster(args[8]);
 
             var simDeploymentName = string.Empty;
             var simDeploymentJson = string.Empty;
@@ -126,11 +136,11 @@ namespace Improbable
 
             if (launchSimPlayerDeployment)
             {
-                simDeploymentName = args[8];
-                simDeploymentJson = args[9];
-                simDeploymentRegion = args[10];
+                simDeploymentName = args[9];
+                simDeploymentJson = args[10];
+                simDeploymentRegion = args[11];
 
-                if (!Int32.TryParse(args[11], out simNumPlayers))
+                if (!Int32.TryParse(args[12], out simNumPlayers))
                 {
                     Console.WriteLine("Cannot parse the number of simulated players to connect.");
                     return 1;
@@ -146,7 +156,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, mainDeploymentName);
                 }
 
-                var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, runtimeVersion, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath, mainDeploymentRegion);
+                var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, runtimeVersion, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath, mainDeploymentRegion, mainDeploymentCluster);
 
                 if (!launchSimPlayerDeployment)
                 {
@@ -168,7 +178,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, mainDeploymentCluster, simNumPlayers);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for deployments to be ready...");
@@ -233,16 +243,17 @@ namespace Improbable
             var simDeploymentName = args[5];
             var simDeploymentJson = args[6];
             var simDeploymentRegion = args[7];
+            var simDeploymentCluster = ParseCluster(args[8]);
 
             var simNumPlayers = 0;
-            if (!Int32.TryParse(args[8], out simNumPlayers))
+            if (!Int32.TryParse(args[9], out simNumPlayers))
             {
                 Console.WriteLine("Cannot parse the number of simulated players to connect.");
                 return 1;
             }
 
             var autoConnect = false;
-            if (!Boolean.TryParse(args[9], out autoConnect))
+            if (!Boolean.TryParse(args[10], out autoConnect))
             {
                 Console.WriteLine("Cannot parse the auto-connect flag.");
                 return 1;
@@ -257,7 +268,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simDeploymentCluster, simNumPlayers);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for the simulated player deployment to be ready...");
@@ -329,7 +340,7 @@ namespace Improbable
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
-            bool launchSimPlayerDeployment, string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode)
+            bool launchSimPlayerDeployment, string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode, string clusterCode)
         {
             var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
@@ -354,6 +365,7 @@ namespace Improbable
                 ProjectName = projectName,
                 StartingSnapshotId = mainSnapshotId,
                 RegionCode = regionCode,
+                ClusterCode = clusterCode,
                 RuntimeVersion = runtimeVersion
             };
 
@@ -378,7 +390,7 @@ namespace Improbable
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
-            string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
+            string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, string clusterCode, int simNumPlayers)
         {
             var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
@@ -489,6 +501,7 @@ namespace Improbable
                 Name = simDeploymentName,
                 ProjectName = projectName,
                 RegionCode = regionCode,
+                ClusterCode = clusterCode,
                 RuntimeVersion = runtimeVersion
                 // No snapshot included for the simulated player deployment
             };
@@ -632,8 +645,8 @@ namespace Improbable
         private static int Main(string[] args)
         {
             if (args.Length == 0 ||
-                (args[0] == "create" && (args.Length != 12 && args.Length != 8)) ||
-                (args[0] == "createsim" && args.Length != 10) ||
+                (args[0] == "create" && (args.Length != 13 && args.Length != 9)) ||
+                (args[0] == "createsim" && args.Length != 11) ||
                 (args[0] == "stop" && (args.Length != 3 && args.Length != 4)) ||
                 (args[0] == "list" && args.Length != 3))
             {

@@ -331,6 +331,9 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cluster"))
+		FString Cluster;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -481,6 +484,21 @@ public:
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	void SetCluster(const FString& NewCluster);
+	FORCEINLINE FString GetCluster() const
+	{
+		return Cluster;
+	}
+
+	FORCEINLINE FString GetClusterForDeployment() const
+	{
+		if (Cluster.IsEmpty())
+		{
+			return "NONE";
+		}
+		return Cluster;
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);

@@ -223,6 +223,11 @@ void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type Reg
 	PrimaryDeploymentRegionCode = RegionCode;
 }
 
+void USpatialGDKEditorSettings::SetCluster(const FString& NewCluster)
+{
+	Cluster = NewCluster;
+}
+
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;

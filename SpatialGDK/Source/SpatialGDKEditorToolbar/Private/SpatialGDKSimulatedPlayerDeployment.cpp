@@ -295,6 +295,29 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Cluster
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Cluster"))))
+								.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetCluster()))
+								.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited)
+								.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited, ETextCommit::Default)
+								]
+							]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -505,6 +528,12 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeployment
 	}
 
 	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetCluster(InText.ToString());
 }
 
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDeploymentRegionCode()
