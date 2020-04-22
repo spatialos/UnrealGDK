@@ -37,8 +37,8 @@ namespace ReleaseTool
             [Option("candidate-branch", HelpText = "The candidate branch name.", Required = true)]
             public string CandidateBranch { get; set; }
 
-            [Option("target-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
-            public string TargetBranch { get; set; }
+            [Option("release-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
+            public string ReleaseBranch { get; set; }
 
             public string GitHubTokenFile { get; set; }
 

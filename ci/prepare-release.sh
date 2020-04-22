@@ -8,7 +8,7 @@ runCSharpTool () {
   local REPO_NAME="${1}"
   local SOURCE_BRANCH="${2}"
   local CANDIDATE_BRANCH="${3}"
-  local TARGET_BRANCH="${4}"
+  local RELEASE_BRANCH="${4}"
   
   echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
 
@@ -20,7 +20,7 @@ runCSharpTool () {
         prep "${GDK_VERSION}" \
         --source-branch="${SOURCE_BRANCH}" \
         --candidate-branch="${CANDIDATE_BRANCH}" \
-        --target-branch="${TARGET_BRANCH}" \
+        --release-branch="${RELEASE_BRANCH}" \
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
         --buildkite-metadata-path="/var/logs/bk-metadata"
