@@ -4,13 +4,13 @@
 ### If you don't work at Improbable, this may be interesting as a guide to what software versions we use for our
 ### automation, but not much more than that.
 
-runCSharpTool () {
+prepareRelease () {
   local REPO_NAME="${1}"
   local SOURCE_BRANCH="${2}"
   local CANDIDATE_BRANCH="${3}"
   local RELEASE_BRANCH="${4}"
   
-  echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
+  echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
 
   docker run \
     -v "${SECRETS_DIR}":/var/ssh \
@@ -45,9 +45,6 @@ setupReleaseTool
 
 mkdir -p ./logs
 
-# This assigns the first argument passed to this script to the variable REPO
-REPO="${1}"
-
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
@@ -55,13 +52,15 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
-runCSharpTool "UnrealGDK" "master" "${GDK_VERSION}-rc" "release"
-runCSharpTool "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release"
-runCSharpTool "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release"
+prepareRelease "UnrealGDK" "master" "${GDK_VERSION}-rc" "release"
+prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release"
+prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release"
 
 while IFS= read -r ENGINE_VERSION; do
-  runCSharpTool "UnrealEngine" "${ENGINE_VERSION}" \
-    "${ENGINE_VERSION}-${GDK_VERSION}-rc" "${ENGINE_VERSION}-release"
+  prepareRelease "UnrealEngine" \
+    "${ENGINE_VERSION}" \
+    "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
+    "${ENGINE_VERSION}-release"
 done <<< "${ENGINE_VERSIONS}"
 
 echo "--- Writing metadata :pencil2:"

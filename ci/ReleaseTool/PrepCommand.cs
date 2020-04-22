@@ -128,7 +128,7 @@ namespace ReleaseTool
                     var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
 
                     var branchFrom = $"{Common.GithubBotUser}:{options.CandidateBranch}";
-                    var branchTo = options.SourceBranch;
+                    var branchTo = options.ReleaseBranch;
 
                     // Only open a PR if one does not exist yet.
                     if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))

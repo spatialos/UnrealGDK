@@ -31,38 +31,12 @@ steps:
       - text: UnrealEngine source branches
         key: engine-versions
         required: true
-        hint: "The Unreal Engine version (or versions) that you want to branch release candidates from. Use commas to seperate engine versions. For example:
-          "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK"."
-        default: "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK" 
+        hint: "The Unreal Engine branch (or branches) that you want to branch release candidates from. Put each branch on a separate line."
+        default: "4.24-SpatialOSUnrealGDK\n4.23-SpatialOSUnrealGDK"
 
-  # Stage 1: Prepare the release candidates.
-
-  # There is one prepare step for each repo we release.
-  # Prepare steps create a PR and upload metadata but do not release anything.
-  - label: Prepare the UnrealGDK release
-    command: ci/prepare-release.sh UnrealGDK
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    retry:
-      manual:
-        permit_on_passed: true
-
-  - label: Prepare UnrealGDKExampleProject release
-    command: ci/prepare-release.sh UnrealGDKExampleProject
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    retry:
-      manual:
-        permit_on_passed: true
-
-  - label: Prepare UnrealGDKTestGyms release
-    command: ci/prepare-release.sh UnrealGDKTestGyms
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    retry:
-      manual:
-        permit_on_passed: true
-
-  # TODO: Re-write prepare-release.sh to work with our Engine branching strategy and multiple engines.
-  - label: Prepare UnrealEngine release
-    command: ci/prepare-release.sh UnrealEngine
+  # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
+  - label: Prepare the release
+    command: ci/prepare-release.sh
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     retry:
       manual:
