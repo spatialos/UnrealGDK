@@ -19,7 +19,7 @@ common: &common
 steps:
   # Stage 0: Tell Buildkite what you want to release.
 
-  # TODO: I've modified gdk-version and added engine-version & preview. I need to call these keys using "buildkite-agent meta-data get" where required.
+  # TODO: I've modified gdk-version and added engine-version. I need to call these keys using "buildkite-agent meta-data get" where required.
   - block: Configure your release.
     prompt: Fill out these details for your release.
     fields:
@@ -33,7 +33,7 @@ steps:
         required: true
         hint: "The Unreal Engine version (or versions) that you want to branch release candidates from. Use commas to seperate engine versions. For example:
           "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK"."
-        default: "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK"
+        default: "4.24-SpatialOSUnrealGDK,4.23-SpatialOSUnrealGDK" 
 
   # Stage 1: Prepare the release candidates.
 
