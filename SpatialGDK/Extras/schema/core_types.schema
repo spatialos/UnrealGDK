@@ -4,6 +4,9 @@ package unreal;
 type Void {
 }
 
+// Below, option<bool> property types are used for boolean behaviour where an empty
+// boolean indicates false. This is cheaper for having that property set to false
+// because empty options types involve no idea being sent across the network.
 type UnrealObjectRef {
     EntityId entity = 1;
     uint32 offset = 2;

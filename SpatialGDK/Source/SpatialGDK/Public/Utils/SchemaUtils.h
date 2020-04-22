@@ -129,7 +129,10 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	{
 		AddObjectRefToSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID, *ObjectRef.Outer);
 	}
-	Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID, ObjectRef.bUseClassPathToLoadObject);
+	if (ObjectRef.bUseClassPathToLoadObject)
+	{
+		Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID, ObjectRef.bUseClassPathToLoadObject);
+	}
 }
 
 FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
@@ -156,7 +159,10 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 	{
 		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID);
 	}
-	ObjectRef.bUseClassPathToLoadObject = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID);
+	if (Schema_GetBoolCount(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID) > 0)
+	{
+		ObjectRef.bUseClassPathToLoadObject = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID);
+	}
 
 	return ObjectRef;
 }

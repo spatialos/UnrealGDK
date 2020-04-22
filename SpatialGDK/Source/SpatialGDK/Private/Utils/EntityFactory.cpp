@@ -21,7 +21,7 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
-#include "Utils/InspectionColors.h"c
+#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialActorUtils.h"
