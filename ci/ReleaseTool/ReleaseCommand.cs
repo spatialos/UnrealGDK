@@ -151,6 +151,13 @@ $@"This release of the Blank Project is intended for use with the GDK for Unity 
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
                     break;
+                case "UnrealGDKEngineNetTest":
+                    name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
+                    preamble =
+$@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
+
+Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
+                    break;
                 case "UnrealGDKExampleProject":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
                     preamble =

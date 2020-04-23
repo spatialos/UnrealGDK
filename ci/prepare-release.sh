@@ -55,6 +55,7 @@ ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
 prepareRelease "UnrealGDK" "master" "${GDK_VERSION}-rc" "release"
 prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release"
 prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release"
+prepareRelease "UnrealGDKEngineNetTest" "master" "${GDK_VERSION}-rc" "release"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \

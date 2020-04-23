@@ -57,6 +57,8 @@ prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" \
   "release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)"
 prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" \
   "release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"
+prepareRelease "UnrealGDKEngineNetTest" "master" "${GDK_VERSION}-rc" \
+  "release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \

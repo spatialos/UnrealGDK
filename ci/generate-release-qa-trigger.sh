@@ -7,15 +7,6 @@
 # exit immediately on failure, or if an undefined variable is used
 set -eu
 
-if [[ -n "${DEBUG-}" ]]; then
-  set -x
-fi
-
-if [[ -z "$BUILDKITE" ]]; then
-  echo "This script is only intended to be run on Improbable CI."
-  exit 1
-fi
-
 ### TODO: Grab all candidate branches, feed them into test CI
 
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
@@ -28,21 +19,52 @@ ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
 triggerTest () {
   local REPO_NAME="${1}"
   local TEST_NAME="${2}"
-  local GDK_BRANCH_TO_TEST="${3}"
-  local ENGINE_BRANCH_TO_TEST="${4}"
+  local BRANCH_TO_TEST="${3}"
+  local ENVIRONMENT_VARIABLES="${4}"
   
-echo "--- Triggering ${REPO_NAME}-${TEST_NAME} at HEAD of ${CANDIDATE_BRANCH}"
-echo "steps:"
-echo "  - trigger: ${REPO_NAME}-${TEST_NAME}"
-echo "    label: Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${CANDIDATE_BRANCH}"
-echo "    build:"
-echo "      branch: ${GDK_BRANCH_TO_TEST}"
+steps:
+  - trigger: "${REPO_NAME}-${TEST_NAME}"
+    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}"
+    build:
+        branch: "${GDK_BRANCH_TO_TEST}"
+        commit: "HEAD"
 }
 
-### unrealgdk-premerge
-triggerTest "UnrealGDK" "premerge" "${GDK_VERSION}-rc"
+### unrealgdk-premerge with SLOW_NETWORKING_TESTS=true
+while IFS= read -r ENGINE_VERSION; do
+    triggerTest "UnrealGDK" \
+                "premerge" \
+                "${GDK_VERSION}-rc" \
+                "SLOW_NETWORKING_TESTS=true
+                TEST_REPO_BRANCH=${GDK_VERSION}-rc \n
+                ENGINE_VERSION=UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc"
+done <<< "${ENGINE_VERSIONS}"
+
+### unrealgdk-premerge with BUILD_ALL_CONFIGURATIONS=true
+while IFS= read -r ENGINE_VERSION; do
+    triggerTest "UnrealGDK" \
+                "premerge" \
+                "${GDK_VERSION}-rc" \
+                "BUILD_ALL_CONFIGURATIONS=true \n
+                TEST_REPO_BRANCH=${GDK_VERSION}-rc \n
+                ENGINE_VERSION=UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc"
+done <<< "${ENGINE_VERSIONS}"
+
 ### unrealgdkexampleproject-nightly
-triggerTest "UnrealGDKExampleProject" "nightly" "${GDK_VERSION}-rc"
+while IFS= read -r ENGINE_VERSION; do
+    triggerTest "UnrealGDK" \
+                "premerge" \
+                "${GDK_VERSION}-rc" \
+                "BUILD_ALL_CONFIGURATIONS=true \n
+                SLOW_NETWORKING_TESTS=true
+                TEST_REPO_BRANCH=${GDK_VERSION}-rc \n
+                ENGINE_VERSION=UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc"
+done <<< "${ENGINE_VERSIONS}"
+
+
+
+
+
 ### unrealgdk-nfr
 triggerTest "UnrealGDKExampleProject" "nfr" "${GDK_VERSION}-rc"
 

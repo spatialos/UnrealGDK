@@ -326,6 +326,25 @@ namespace ReleaseTool
 - iOS
 	- [ ] local client
 	- [ ] cloud client";
+                case "UnrealGDKEngineNetTest":
+                    return @"#### Description
+- Package versions
+- Changelog
+- pinned gdk
+
+#### Tests
+- Windows
+	- [ ] local deploy
+	- [ ] cloud client (Release QA pipeline)
+- Mac
+	- [ ] local deploy
+	- [ ] cloud client (Release QA pipeline)
+- Android
+	- [ ] local client
+	- [ ] cloud client
+- iOS
+	- [ ] local client
+	- [ ] cloud client";
                 case "UnrealEngine":
                     return @"#### Description
 - Package versions
