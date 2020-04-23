@@ -74,7 +74,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed. `OnConnected` and `OnConnectionFailed` are now also blueprint-assignable.
-- The GDK now uses SpatialOS 14.6.0.
+- The GDK now uses SpatialOS 14.6.1.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
