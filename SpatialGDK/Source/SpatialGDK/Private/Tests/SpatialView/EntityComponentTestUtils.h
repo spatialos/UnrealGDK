@@ -11,9 +11,9 @@ namespace SpatialGDK
 
 namespace EntityComponentTestUtils
 {
-	static const Schema_FieldId EVENT_ID = 1;
-	static const Schema_FieldId EVENT_INT_FIELD_ID = 2;
-	static const Schema_FieldId TEST_DOUBLE_FIELD_ID = 1;
+static const Schema_FieldId EVENT_ID = 1;
+static const Schema_FieldId EVENT_INT_FIELD_ID = 2;
+static const Schema_FieldId TEST_DOUBLE_FIELD_ID = 1;
 } // namespace EntityComponentTestUtils
 
 inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const double Value)
@@ -140,17 +140,7 @@ inline bool CompareEntityComponentId(const EntityComponentId& Lhs, const EntityC
 template<typename T, typename Predicate>
 bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, Predicate&& Compare)
 {
-	if (Lhs.Num() != Rhs.Num())
-	{
-		return false;
-	}
-
-	for (int i = 0; i < Lhs.Num(); i++)
-	{
-		return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
-	}
-
-	return true;
+	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
 }
 
 inline bool AreEquivalent(const TArray<EntityComponentUpdate>& Lhs, const TArray<EntityComponentUpdate>& Rhs)
