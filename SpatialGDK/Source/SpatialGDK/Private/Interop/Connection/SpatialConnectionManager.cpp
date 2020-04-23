@@ -23,14 +23,32 @@ struct ConfigureConnection
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
-		, ProtocolLogPrefix(*FormatProtocolPrefix())
+		, WorkerLogPrefix(*FormatLogFilePrefix())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
 		Params.worker_type = WorkerType.Get();
 
-		Params.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
-		Params.protocol_logging.log_prefix = ProtocolLogPrefix.Get();
+		Logsink.logsink_type = WORKER_LOGSINK_TYPE_ROTATING_FILE;
+		Logsink.rotating_logfile_parameters.log_prefix = WorkerLogPrefix.Get();
+		Logsink.rotating_logfile_parameters.max_log_files = 1;
+		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = 10485760; // 10 MB
+
+		uint32_t Categories = 0;
+		if (Config.EnableOpLogging)
+		{
+			Categories |= WORKER_LOG_CATEGORY_API;
+		}
+		if (Config.EnableProtocolLogging)
+		{
+			Categories |= WORKER_LOG_CATEGORY_NETWORK_STATUS | WORKER_LOG_CATEGORY_NETWORK_TRAFFIC;
+		}
+		Logsink.filter_parameters.categories = Categories;
+		Logsink.filter_parameters.level = WORKER_LOG_LEVEL_INFO;
+
+		Params.logsinks = &Logsink;
+		Params.logsink_count = 1;
+		Params.enable_logging_at_startup = Categories != 0;
 
 		Params.component_vtable_count = 0;
 		Params.default_component_vtable = &DefaultVtable;
@@ -77,26 +95,27 @@ struct ConfigureConnection
 		Params.enable_dynamic_components = true;
 	}
 
-	FString FormatProtocolPrefix() const
+	FString FormatLogFilePrefix() const
 	{
-		FString FinalProtocolLoggingPrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
-		if (!Config.ProtocolLoggingPrefix.IsEmpty())
+		FString FinalLogFilePrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
+		if (!Config.WorkerLoggingPrefix.IsEmpty())
 		{
-			FinalProtocolLoggingPrefix += Config.ProtocolLoggingPrefix;
+			FinalLogFilePrefix += Config.WorkerLoggingPrefix;
 		}
 		else
 		{
-			FinalProtocolLoggingPrefix += Config.WorkerId;
+			FinalLogFilePrefix += Config.WorkerId + TEXT("-");
 		}
-		return FinalProtocolLoggingPrefix;
+		return FinalLogFilePrefix;
 	}
 
 	const FConnectionConfig& Config;
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
-	FTCHARToUTF8 ProtocolLogPrefix;
+	FTCHARToUTF8 WorkerLogPrefix;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
+	Worker_LogsinkParameters Logsink{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };

@@ -15,7 +15,8 @@ struct FConnectionConfig
 {
 	FConnectionConfig()
 		: UseExternalIp(false)
-		, EnableProtocolLoggingAtStartup(false)
+		, EnableProtocolLogging(false)
+		, EnableOpLogging(false)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
@@ -27,9 +28,10 @@ struct FConnectionConfig
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
 		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
-		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
-		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
-        
+		FParse::Bool(CommandLine, TEXT("enableWorkerProtocolLogging"), EnableProtocolLogging);
+		FParse::Bool(CommandLine, TEXT("enableWorkerOpLogging"), EnableOpLogging);
+		FParse::Value(CommandLine, TEXT("workerLoggingPrefix"), WorkerLoggingPrefix);
+
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -70,8 +72,9 @@ struct FConnectionConfig
 	FString WorkerId;
 	FString WorkerType;
 	bool UseExternalIp;
-	bool EnableProtocolLoggingAtStartup;
-	FString ProtocolLoggingPrefix;
+	bool EnableProtocolLogging;
+	bool EnableOpLogging;
+	FString WorkerLoggingPrefix;
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams;
 	uint8 TcpMultiplexLevel;
