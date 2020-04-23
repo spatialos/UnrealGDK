@@ -55,6 +55,9 @@ namespace ReleaseTool
             [Option("git-repository-name", HelpText = "The Git repository that we are targeting.", Required = true)]
             public string GitRepoName { get; set; }
 
+            [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
+            public string GithubOrgName { get; set; }
+
             #region IBuildkiteOptions implementation
 
             public string MetadataFilePath { get; set; }
@@ -101,12 +104,12 @@ namespace ReleaseTool
                 {
                     // This does step 2 from above.
                     var spatialOsRemote =
-                        string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, options.GitRepoName);
-                    gitClient.AddRemote(Common.SpatialOsOrg, spatialOsRemote);
-                    gitClient.Fetch(Common.SpatialOsOrg);
+                        string.Format(Common.RemoteUrlTemplate, options.GithubOrgName, options.GitRepoName);
+                    gitClient.AddRemote(options.GithubOrgName, spatialOsRemote);
+                    gitClient.Fetch(options.GithubOrgName);
 
                     // This does step 3 from above.
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch, Common.SpatialOsOrg);
+                    gitClient.CheckoutRemoteBranch(options.SourceBranch, options.GithubOrgName);
 
                     // This does step 4 from above.
                     switch (options.GitRepoName)

@@ -43,6 +43,9 @@ namespace ReleaseTool
             [Option("release-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
             public string ReleaseBranch { get; set; }
 
+            [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
+            public string GithubOrgName { get; set; }
+
             public string GitHubTokenFile { get; set; }
 
             public string GitHubToken { get; set; }
@@ -73,7 +76,7 @@ namespace ReleaseTool
 
                 var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
 
-                var spatialOsRemote = string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, repoName);
+                var spatialOsRemote = string.Format(Common.RemoteUrlTemplate, options.GithubOrgName, repoName);
                 var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
 
                 // Merge into release
@@ -89,7 +92,7 @@ namespace ReleaseTool
                 var forkedRepoRemote = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, repoName);
                 gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromRemote(forkedRepoRemote), options.CandidateBranch);
 
-                var remoteUrl = string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, repoName);
+                var remoteUrl = string.Format(Common.RemoteUrlTemplate, options.GithubOrgName, repoName);
 
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
@@ -176,7 +179,7 @@ Keep giving us your feedback and/or suggestions! Check out [our Discord](https:/
                     break;
                 case "UnrealGDKEngineNetTest":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
-                    preamble =
+                    releaseBody =
 $@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
