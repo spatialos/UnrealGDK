@@ -36,6 +36,7 @@ public:
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; };
 	void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
@@ -57,6 +58,5 @@ public:
 	virtual FVector GetWorkerEntityPosition() const { return FVector::ZeroVector; }
 
 protected:
-
 	VirtualWorkerId LocalVirtualWorkerId;
 };
