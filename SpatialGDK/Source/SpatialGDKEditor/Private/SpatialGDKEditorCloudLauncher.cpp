@@ -26,17 +26,18 @@ bool SpatialGDKCloudLaunch()
 		*SpatialGDKSettings->GetPrimaryLaunchConfigPath(),
 		*SpatialGDKSettings->GetSnapshotPath(),
 		*SpatialGDKSettings->GetPrimaryRegionCode().ToString(),
-		*SpatialGDKSettings->GetClusterForDeployment()
+		*SpatialGDKSettings->GetMainDeploymentCluster()
 	);
 
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
 		LauncherCreateArguments = FString::Printf(
-			TEXT("%s %s \"%s\" %s %s"),
+			TEXT("%s %s \"%s\" %s %s %s"),
 			*LauncherCreateArguments,
 			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
 			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
 			*SpatialGDKSettings->GetSimulatedPlayerRegionCode().ToString(),
+			*SpatialGDKSettings->GetSimulatedPlayerCluster(),
 			*FString::FromInt(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
 		);
 	}

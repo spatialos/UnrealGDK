@@ -331,8 +331,8 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cluster"))
-		FString Cluster;
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
+		FString MainDeploymentCluster;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
@@ -352,6 +352,9 @@ public:
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
+		FString SimulatedPlayerCluster;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
 		bool bSimulatedPlayersIsEnabled;
@@ -486,19 +489,19 @@ public:
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
 	}
 
-	void SetCluster(const FString& NewCluster);
-	FORCEINLINE FString GetCluster() const
+	void SetMainDeploymentCluster(const FString& NewCluster);
+	FORCEINLINE FString GetRawMainDeploymentCluster() const
 	{
-		return Cluster;
+		return MainDeploymentCluster;
 	}
 
-	FORCEINLINE FString GetClusterForDeployment() const
+	FORCEINLINE FString GetMainDeploymentCluster() const
 	{
-		if (Cluster.IsEmpty())
+		if (MainDeploymentCluster.IsEmpty())
 		{
 			return "\"\"";
 		}
-		return Cluster;
+		return MainDeploymentCluster;
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
@@ -536,6 +539,21 @@ public:
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
 		return SimulatedPlayerDeploymentName;
+	}
+
+	void SetSimulatedPlayerCluster(const FString& NewCluster);
+	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
+	{
+		return SimulatedPlayerCluster;
+	}
+
+	FORCEINLINE FString GetSimulatedPlayerCluster() const
+	{
+		if (SimulatedPlayerCluster.IsEmpty())
+		{
+			return "\"\"";
+		}
+		return SimulatedPlayerCluster;
 	}
 
 	FORCEINLINE FString GetSimulatedPlayerLaunchConfigPath() const

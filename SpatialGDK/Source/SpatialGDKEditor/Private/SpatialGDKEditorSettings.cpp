@@ -223,14 +223,19 @@ void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type Reg
 	PrimaryDeploymentRegionCode = RegionCode;
 }
 
-void USpatialGDKEditorSettings::SetCluster(const FString& NewCluster)
+void USpatialGDKEditorSettings::SetMainDeploymentCluster(const FString& NewCluster)
 {
-	Cluster = NewCluster;
+	MainDeploymentCluster = NewCluster;
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
+}
+
+void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewCluster)
+{
+	SimulatedPlayerCluster = NewCluster;
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)

@@ -109,7 +109,7 @@ namespace Improbable
 
         private static int CreateDeployment(string[] args)
         {
-            bool launchSimPlayerDeployment = args.Length == 12;
+            bool launchSimPlayerDeployment = args.Length == 14;
 
             var projectName = args[1];
             var assemblyName = args[2];
@@ -123,6 +123,7 @@ namespace Improbable
             var simDeploymentName = string.Empty;
             var simDeploymentJson = string.Empty;
             var simDeploymentRegion = string.Empty;
+            var simDeploymentCluster = string.Empty;
             var simNumPlayers = 0;
 
             if (launchSimPlayerDeployment)
@@ -130,8 +131,9 @@ namespace Improbable
                 simDeploymentName = args[9];
                 simDeploymentJson = args[10];
                 simDeploymentRegion = args[11];
+                simDeploymentCluster = args[12];
 
-                if (!Int32.TryParse(args[12], out simNumPlayers))
+                if (!Int32.TryParse(args[13], out simNumPlayers))
                 {
                     Console.WriteLine("Cannot parse the number of simulated players to connect.");
                     return 1;
@@ -169,7 +171,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, mainDeploymentCluster, simNumPlayers);
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simDeploymentCluster, simNumPlayers);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for deployments to be ready...");
@@ -622,7 +624,7 @@ namespace Improbable
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players>]");
+            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <num-sim-players>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
             Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>");
             Console.WriteLine($"  Starts a simulated player deployment. Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
@@ -636,7 +638,7 @@ namespace Improbable
         private static int Main(string[] args)
         {
             if (args.Length == 0 ||
-                (args[0] == "create" && (args.Length != 13 && args.Length != 9)) ||
+                (args[0] == "create" && (args.Length != 14 && args.Length != 9)) ||
                 (args[0] == "createsim" && args.Length != 11) ||
                 (args[0] == "stop" && (args.Length != 3 && args.Length != 4)) ||
                 (args[0] == "list" && args.Length != 3))
