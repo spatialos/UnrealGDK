@@ -172,33 +172,32 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	TArray<UProperty*> RepNotifies;
 
-	// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
-	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
-	// However, we still want to apply this empty data, so we need to reconstruct the full
-	// list of field IDs for that component type (Data, OwnerOnly).
-	TArray<Schema_FieldId> InitialIds;
-	if (bIsInitialData)
-	{
-		const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
-		int32 SchemaType = ClassInfoManager->GetCategoryByComponentId(ComponentId);
-		for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
-		{
-			const int32 CmdIndex = BaseHandleToCmdIndex[HandleIndex].CmdIndex;
-			const FRepParentCmd& ParentCmd = Parents[Cmds[CmdIndex].ParentIndex];
-			if (GetGroupFromCondition(ParentCmd.Condition) == SchemaType)
-			{
-				InitialIds.Add(HandleIndex + 1);
-			}
-		}
-	}
-	const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ? InitialIds : UpdatedIds;
-
-	for (uint32 FieldId : IdsToIterate)
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
-		for (uint32 FieldId : UpdatedIds)
+		// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
+		// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
+		// However, we still want to apply this empty data, so we need to reconstruct the full
+		// list of field IDs for that component type (Data, OwnerOnly).
+		TArray<Schema_FieldId> InitialIds;
+		if (bIsInitialData)
+		{
+			const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
+			int32 SchemaType = ClassInfoManager->GetCategoryByComponentId(ComponentId);
+			for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
+			{
+				const int32 CmdIndex = BaseHandleToCmdIndex[HandleIndex].CmdIndex;
+				const FRepParentCmd& ParentCmd = Parents[Cmds[CmdIndex].ParentIndex];
+				if (GetGroupFromCondition(ParentCmd.Condition) == SchemaType)
+				{
+					InitialIds.Add(HandleIndex + 1);
+				}
+			}
+		}
+		const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ? InitialIds : UpdatedIds;
+
+		for (uint32 FieldId : IdsToIterate)
 		{
 			// FieldId is the same as rep handle
 			if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
