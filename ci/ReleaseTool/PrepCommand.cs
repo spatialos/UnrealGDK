@@ -22,7 +22,7 @@ namespace ReleaseTool
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CommitMessageTemplate = "Release candidate for version {0}.";
-        private const string PullRequestTemplate = "Release {0} - Pre-Validation";
+        private const string PullRequestTemplate = "Release {0}";
 
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
@@ -262,7 +262,7 @@ namespace ReleaseTool
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
-        // TODO: Alter the PR bodies so that they reflect the Unreal GDK release process
+        // TODO: Alter the PR bodies so that they reflect the Unreal GDK release process (note that these are the for the merge of the RC into release)
         private static string GetPullRequestBody(string repoName)
         {
             switch (repoName)

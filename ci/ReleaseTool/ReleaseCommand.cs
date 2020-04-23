@@ -9,16 +9,19 @@ namespace ReleaseTool
 {
     /// <summary>
     ///     Runs the commands required for releasing a candidate.
-    ///     * Does a final bump of the gdk.pinned (if needed).
-    ///     * Merges the candidate branch into master.
-    ///     * Pushes master to origin/master and origin/master.
+    ///     * Merges the candidate branch into the release branch.
+    ///     * Pushes the release branch.
     ///     * Creates a GitHub release draft.
+    ///     * Creates a PR from the release branch into the master branch.
     /// </summary>
     internal class ReleaseCommand
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private const string PackageContentType = "application/zip";
+        // TODO: Possibly change these PR messages.
+        private const string PullRequestNameTemplate = "Release {0} - Merge release into master";
+        private const string pullRequestBody = "Merging the release branch into master. This may include version updates.";
+
         private const string ChangeLogFilename = "CHANGELOG.md";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
@@ -56,11 +59,9 @@ namespace ReleaseTool
 
         /*
          *     This tool is designed to execute most of the git operations required when releasing:
-         *         1. Merge the RC PR into master.
-         *         2. Draft the release using the changelog notes.
-         *
-         *     Fast-forwarding preview and release so that they are up-to-date with master and publishing the release
-         *     are left up to the release sheriff to execute as a manual final step.
+         *         1. Merge the RC PR into the release branch.
+         *         2. Draft a GitHub release using the changelog notes.
+         *         3. Open a PR from the release branch into master
          */
         public int Run()
         {
@@ -73,7 +74,7 @@ namespace ReleaseTool
                 var spatialOsRemote = string.Format(Common.RemoteUrlTemplate, Common.SpatialOsOrg, repoName);
                 var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
 
-                // Merge into master
+                // Merge into release
                 var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
 
                 if (!mergeResult.Merged)
@@ -90,19 +91,37 @@ namespace ReleaseTool
 
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // Create release
+                    // Create GitHub release in the repo
                     gitClient.Fetch();
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
+                    gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
                     Logger.Info("Release Successful!");
                     Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
                     Logger.Info("Draft release: {0}", release.HtmlUrl);
                 }
+
+                // Open a PR for merging the release branch into master.
+                var branchFrom = $"{Common.GithubBotUser}:{options.ReleaseBranch}";
+                var branchTo = options.SourceBranch;
+
+                // Only open a PR if one does not exist yet.
+                if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
+                {
+                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                        branchFrom,
+                        branchTo,
+                        string.Format(PullRequestNameTemplate, options.Version),
+                        pullRequestBody);
+                }
+
+                Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+                Logger.Info("Successfully created PR for merging the release into master!");
+                Logger.Info("Merge hash: {0}", pullRequest.MergeCommitSha);
             }
             catch (Exception e)
             {
-                Logger.Error(e, "ERROR: Unable to release candidate branch. Error: {0}", e);
+                Logger.Error(e, "ERROR: Unable to release candidate branch or merge the release branch back into master. Error: {0}", e);
                 return 1;
             }
 
@@ -113,47 +132,49 @@ namespace ReleaseTool
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
 
-            // TODO: Changelog always exists for Unity repos, but it only exists in the GDK repo in the Unreal case
-            string changelog;
-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-            {
-                changelog = GetReleaseNotesFromChangeLog();
-            }
-
             string name;
-            string preamble;
+            string releaseBody;
 
-            // TODO: Modify preambles for the UnrealGDK repos
+            // TODO: Modify release bodies for the UnrealGDK repos
             switch (repoName)
             {
                 case "UnrealGDK":
+                    string changelog;
+                    using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+                    {
+                        changelog = GetReleaseNotesFromChangeLog();
+                    }
                     name = $"GDK for Unity Alpha Release {options.Version}";
-                    preamble =
-@"In this release, we've ...
+                    releaseBody =
+$@"In this release, we've ...
 
 We've also fixed ... 
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!
 
-See the full release notes below! 👇";
+See the full release notes below! 👇
+
+---
+
+{changelog}";
                     break;
                 case "UnrealEngine":
                     name = $"GDK for Unity FPS Starter Project Alpha Release {options.Version}";
-                    preamble =
+                    releaseBody =
 $@"This release of the FPS Starter Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
                     break;
                 case "UnrealGDKTestGyms":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
-                    preamble =
+                    releaseBody =
 $@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
                     break;
                 case "UnrealGDKExampleProject":
                     name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
-                    preamble =
+                    releaseBody =
 $@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
 
 Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
@@ -161,13 +182,6 @@ Keep giving us your feedback and/or suggestions! Check out [our Discord](https:/
                 default:
                     throw new ArgumentException("Unsupported repository.", nameof(repoName));
             }
-
-            var releaseBody =
-$@"{preamble}
-
----
-
-{changelog}";
 
             return gitHubClient.CreateDraftRelease(gitHubRepo, options.Version, releaseBody, name, headCommit);
         }
