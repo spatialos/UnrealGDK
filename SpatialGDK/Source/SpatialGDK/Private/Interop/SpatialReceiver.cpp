@@ -93,7 +93,7 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 	{
-		if (StaticComponentView->GetComponentData<UnrealMetadata>(PendingAddComponent.EntityId) == nullptr)
+		if (!StaticComponentView->HasComponent(PendingAddComponent.EntityId, UnrealMetadata::ComponentId))
 		{
 			continue;
 		}
