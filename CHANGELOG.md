@@ -76,6 +76,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `OnPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed. `OnConnected` and `OnConnectionFailed` are now also blueprint-assignable.
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- Renamed `enableProtocolLogging` command line parameter to `enableWorkerProtocolLogging` and added `enableWorkerOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerLoggingPrefix`. This prefix is used for both protocol and op logging.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
