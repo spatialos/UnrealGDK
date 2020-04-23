@@ -52,34 +52,33 @@ done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdkexampleproject-nightly
 while IFS= read -r ENGINE_VERSION; do
-    triggerTest "UnrealGDK" \
-                "premerge" \
+    triggerTest "UnrealGDKExampleProject" \
+                "nightly" \
                 "${GDK_VERSION}-rc" \
-                "BUILD_ALL_CONFIGURATIONS=true \n
-                SLOW_NETWORKING_TESTS=true
-                TEST_REPO_BRANCH=${GDK_VERSION}-rc \n
+                "GDK_BRANCH=${GDK_VERSION}-rc \n
                 ENGINE_VERSION=UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc"
 done <<< "${ENGINE_VERSIONS}"
 
-
-
-
-
+###TODO: Will this break if I only feed it 3 arguments, omitting ENVIRONMENT_VARIABLES="${4}"?
 ### unrealgdk-nfr
-triggerTest "UnrealGDKExampleProject" "nfr" "${GDK_VERSION}-rc"
+while IFS= read -r ENGINE_VERSION; do
+    triggerTest "UnrealGDK" \
+                "nfr" \
+                "${GDK_VERSION}-rc"
+done <<< "${ENGINE_VERSIONS}"
 
 ### unrealengine-premerge
 while IFS= read -r ENGINE_VERSION; do
-  triggerTest "UnrealEngine" \
-    "premerge" \
-    "${GDK_VERSION}-rc" \
-    "${ENGINE_VERSION}-${GDK_VERSION}-rc"
+  triggerTest   "UnrealEngine" \
+                "premerge" \
+                "${ENGINE_VERSION}-${GDK_VERSION}-rc"
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealengine-nightly
 while IFS= read -r ENGINE_VERSION; do
-  triggerTest "UnrealEngine" \
-    "nightly" \
-    "${GDK_VERSION}-rc" \
-    "${ENGINE_VERSION}-${GDK_VERSION}-rc"
+  triggerTest   "UnrealEngine" \
+                "nightly" \
+                "${ENGINE_VERSION}-${GDK_VERSION}-rc"
+                "GDK_BRANCH=${GDK_VERSION}-rc \n
+                EXAMPLE_PROJECT_BRANCH=${GDK_VERSION}-rc"
 done <<< "${ENGINE_VERSIONS}"
