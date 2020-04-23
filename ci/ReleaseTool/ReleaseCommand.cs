@@ -65,6 +65,8 @@ namespace ReleaseTool
          */
         public int Run()
         {
+            Common.VerifySemanticVersioningFormat(options.Version);
+
             try
             {
                 var gitHubClient = new GitHubClient(options);

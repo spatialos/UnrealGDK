@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace ReleaseTool
 {
@@ -8,6 +9,18 @@ namespace ReleaseTool
         public const string SpatialOsOrg = "spatialos";
         public const string GithubBotUser = "gdk-for-unreal-bot";
         public const string RemoteUrlTemplate = "git@github.com:{0}/{1}.git";
+
+        public static void VerifySemanticVersioningFormat(string version)
+        {
+            var majorMinorPatch = version.Split('.');
+            var hasSemanticVersion = majorMinorPatch.Length == 3 && Enumerable.All(majorMinorPatch, s => int.TryParse(s, out _));
+
+            if (!hasSemanticVersion)
+            {
+                throw new ArgumentException($"The provided version '{version}' should comply " +
+                    $"with the Semantic Versioning Specification, but does not.");
+            }
+        }
 
         public static string ReplaceHomePath(string originalPath)
         {

@@ -40,7 +40,6 @@ namespace ReleaseTool
         [Verb("prep", HelpText = "Prep a release candidate branch.")]
         public class Options : GitHubClient.IGitHubOptions, BuildkiteMetadataSink.IBuildkiteOptions
         {
-            // TODO: make sure that the passed in version name matches the semantic versioning convention (x.x.x)
             [Value(0, MetaName = "version", HelpText = "The release version that is being cut.", Required = true)]
             public string Version { get; set; }
 
@@ -90,6 +89,8 @@ namespace ReleaseTool
          */
         public int Run()
         {
+            Common.VerifySemanticVersioningFormat(options.Version);
+
             var remoteUrl = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, options.GitRepoName);
 
             try
