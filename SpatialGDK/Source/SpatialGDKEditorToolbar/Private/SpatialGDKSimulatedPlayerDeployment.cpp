@@ -600,9 +600,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
-								.HAlign(HAlign_Right)
+								.HAlign(HAlign_Left)
 								[
-									// Launch Simulated Players Deployment Button
+									// Open Deployment Page 
 									SNew(SUniformGridPanel)
 									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
 									+ SUniformGridPanel::Slot(0, 0)
@@ -613,6 +613,14 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked)
 										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage)
 									]
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								.HAlign(HAlign_Right)
+								[
+									// Launch Simulated Players Deployment Button
+									SNew(SUniformGridPanel)
+									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
 									+ SUniformGridPanel::Slot(1, 0)
 									[
 										SNew(SButton)
