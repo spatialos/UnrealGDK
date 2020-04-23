@@ -1105,6 +1105,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
 		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		NotificationItem->ExpireAndFadeout();
+		return FReply::Unhandled();
 	}
 
 	return FReply::Handled();
@@ -1112,11 +1113,5 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
 
 bool SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage() const
 {
-	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
-	if (ProjectName.IsEmpty())
-	{
-		return false;
-	}
-
-	return true;
+	return FSpatialGDKServicesModule::GetProjectName().IsEmpty() ? false : true;
 }
