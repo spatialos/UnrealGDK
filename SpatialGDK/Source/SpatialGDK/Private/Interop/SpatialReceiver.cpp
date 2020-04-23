@@ -185,7 +185,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
-		if (NetDriver->IsServer())
+		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
 		{
 			// Register system identity for a worker connection, to know when a player has disconnected.
 			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
