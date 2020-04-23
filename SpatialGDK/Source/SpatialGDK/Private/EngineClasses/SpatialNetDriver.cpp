@@ -1799,6 +1799,10 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			}
 		}
 
+		if (Connection != nullptr)
+		{
+			Connection->MaybeFlush();
+		}
 #endif // WITH_SERVER_CODE
 	}
 

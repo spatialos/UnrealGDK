@@ -447,9 +447,15 @@ void USpatialSender::FlushRPCService()
 	{
 		RPCService->PushOverflowedRPCs();
 
-		for (const SpatialRPCService::UpdateToSend& Update : RPCService->GetRPCsAndAcksToSend())
+		const TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+		for (const SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
+		}
+
+		if (RPCs.Num())
+		{
+			Connection->MaybeFlush();
 		}
 	}
 }
@@ -663,7 +669,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+	const float QueuedOutgoingRPCWaitTime = GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime;
+	if (QueuedOutgoingRPCWaitTime != 0.f && QueuedOutgoingRPCWaitTime < TimeDiff)
 	{
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::TimedOut, true };
 	}
@@ -856,6 +863,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 #if !UE_BUILD_SHIPPING
 		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
+		Connection->MaybeFlush();
 		return ERPCResult::Success;
 	}
 	default:
