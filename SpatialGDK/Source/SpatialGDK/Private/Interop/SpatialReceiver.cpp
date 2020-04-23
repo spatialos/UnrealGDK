@@ -80,11 +80,15 @@ void USpatialReceiver::LeaveCriticalSection()
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
+		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {return Component.EntityId == PendingAddEntity; });
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		HandleActorAuthority(PendingAuthorityChange);
+		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
 	}
 
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
@@ -98,6 +102,14 @@ void USpatialReceiver::LeaveCriticalSection()
 			continue;
 		}
 		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
+	}
+
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	{
+		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
 	}
 
 	// Mark that we've left the critical section.
@@ -647,17 +659,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Apply initial replicated properties.
 		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 		// Potentially we could split out the initial actor state and the initial component state
-		for (auto PendingAddComponentIt = PendingAddComponents.CreateIterator(); PendingAddComponentIt; PendingAddComponentIt++)
+		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
-			if (ClassInfoManager->IsSublevelComponent(PendingAddComponentIt->ComponentId))
+			if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
 			{
 				continue;
 			}
 
-			if (PendingAddComponentIt->EntityId == EntityId)
+			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponentIt->Data->ComponentData, Channel, ActorClassInfo);
-				PendingAddComponentIt.RemoveCurrent();
+				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, Channel, ActorClassInfo);
 			}
 		}
 
