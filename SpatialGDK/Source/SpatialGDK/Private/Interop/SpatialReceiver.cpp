@@ -185,7 +185,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
-		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
+		if (NetDriver->IsServer())
 		{
 			// Register system identity for a worker connection, to know when a player has disconnected.
 			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
@@ -245,7 +245,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	if (bInCriticalSection)
 	{
-		PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
+		PendingAddComponents.AddUnique(PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
 	}
 	else
 	{
