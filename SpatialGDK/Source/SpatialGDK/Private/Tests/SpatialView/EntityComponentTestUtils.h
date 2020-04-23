@@ -4,6 +4,8 @@
 
 #include "SpatialView/EntityComponentTypes.h"
 
+#include <algorithm>
+
 namespace SpatialGDK
 {
 
@@ -30,13 +32,15 @@ inline ComponentUpdate CreateTestComponentUpdate(const Worker_ComponentId Id, co
 	return Update;
 }
 
-inline void AddTestEvent(ComponentUpdate* Update, int Value) {
+inline void AddTestEvent(ComponentUpdate* Update, int Value)
+{
 	Schema_Object* events = Update->GetEvents();
 	Schema_Object* eventData = Schema_AddObject(events, EntityComponentTestUtils::EVENT_ID);
 	Schema_AddInt32(eventData, EntityComponentTestUtils::EVENT_INT_FIELD_ID, Value);
 }
 
-inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, int Value) {
+inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, int Value)
+{
 	ComponentUpdate Update{ Id };
 	AddTestEvent(&Update, Value);
 	return Update;
@@ -89,8 +93,7 @@ inline bool CompareComponentUpdates(const ComponentUpdate& Lhs, const ComponentU
 }
 
 /** Returns true if Lhs and Rhs have the same entity ID, component ID, and state. */
-inline bool CompareEntityComponentData(const EntityComponentData& Lhs,
-	const EntityComponentData& Rhs)
+inline bool CompareEntityComponentData(const EntityComponentData& Lhs, const EntityComponentData& Rhs)
 {
 	if (Lhs.EntityId != Rhs.EntityId)
 	{
@@ -100,8 +103,7 @@ inline bool CompareEntityComponentData(const EntityComponentData& Lhs,
 }
 
 /** Returns true if Lhs and Rhs have the same entity ID, component ID, and events. */
-inline bool CompareEntityComponentUpdateEvents(const EntityComponentUpdate& Lhs,
-	const EntityComponentUpdate& Rhs)
+inline bool CompareEntityComponentUpdateEvents(const EntityComponentUpdate& Lhs, const EntityComponentUpdate& Rhs)
 {
 	if (Lhs.EntityId != Rhs.EntityId)
 	{
@@ -111,8 +113,7 @@ inline bool CompareEntityComponentUpdateEvents(const EntityComponentUpdate& Lhs,
 }
 
 /** Returns true if Lhs and Rhs have the same entity ID, component ID, state, and events. */
-inline bool CompareEntityComponentUpdates(const EntityComponentUpdate& Lhs,
-	const EntityComponentUpdate& Rhs)
+inline bool CompareEntityComponentUpdates(const EntityComponentUpdate& Lhs, const EntityComponentUpdate& Rhs)
 {
 	if (Lhs.EntityId != Rhs.EntityId)
 	{
@@ -122,8 +123,7 @@ inline bool CompareEntityComponentUpdates(const EntityComponentUpdate& Lhs,
 }
 
 /** Returns true if Lhs and Rhs have the same ID, component ID, data, state and events. */
-inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteUpdate& Lhs,
-	const EntityComponentCompleteUpdate& Rhs)
+inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteUpdate& Lhs, const EntityComponentCompleteUpdate& Rhs)
 {
 	if (Lhs.EntityId != Rhs.EntityId)
 	{
@@ -147,10 +147,7 @@ bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, Predicate&& Compa
 
 	for (int i = 0; i < Lhs.Num(); i++)
 	{
-		if (!Compare(Lhs[i], Rhs[i]))
-		{
-			return false;
-		}
+		return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
 	}
 
 	return true;

@@ -23,7 +23,7 @@ namespace
 ENTITYCOMPONENTRECORD_TEST(GIVEN_empty_component_record_WHEN_component_added_THEN_has_component_data)
 {
 	// GIVEN
-	auto TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
+	ComponentData TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
 
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
 	TArray<EntityComponentData> ExpectedComponentsAdded;
@@ -83,7 +83,7 @@ ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_component_WHEN_that_compo
 ENTITYCOMPONENTRECORD_TEST(GIVEN_component_record_with_removed_component_WHEN_component_added_again_THEN_component_record_is_empty)
 {
 	// GIVEN
-	auto TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
+	ComponentData TestData = CreateTestComponentData(TEST_COMPONENT_ID, TEST_VALUE);
 
 	const TArray<EntityComponentData> ExpectedComponentsAdded = {};
 	const TArray<EntityComponentId> ExpectedComponentsRemoved = {};
