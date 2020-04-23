@@ -31,6 +31,7 @@ public:
 	void DestroyConnection();
 	
 	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
+	using LogCallback = TFunction<void(const Worker_LogData*)>;
     
     /// Register a callback using this function.
     /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
@@ -61,6 +62,8 @@ public:
 
 	void RequestDeploymentLoginTokens();
 
+	static void OnLogCallback(void* UserData, const Worker_LogData* Message);
+
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
@@ -87,4 +90,5 @@ private:
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
+	LogCallback SpatialLogCallback;
 };

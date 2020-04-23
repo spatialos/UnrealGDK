@@ -107,9 +107,6 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op->op.flag_update);
 			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->op.log_message.message));
-			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
 			check(SpatialMetrics.IsValid());
