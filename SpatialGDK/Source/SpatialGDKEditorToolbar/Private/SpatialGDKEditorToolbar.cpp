@@ -250,7 +250,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().UnrealNativeNetworking,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UnrealNativeNetworkingClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange),
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsUnrealNativeNetworkingChecked)
 	);
 
@@ -262,7 +262,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().SpatialOSCloudNetworking,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SpatialOSCloudNetworkingClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange),
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSCloudNetworkingChecked)
 	);
 
@@ -327,6 +327,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddComboButton(
 		FUIAction(),
 		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuContent),
@@ -335,7 +336,6 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.start"),
 		true
 	);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
@@ -850,7 +850,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible() const
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
 {
-	return !LocalDeploymentManager->IsDeploymentStarting() && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return !LocalDeploymentManager->IsDeploymentStarting() && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::SpatialOSLocalNetworking;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
@@ -917,6 +917,11 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialOSCloudNetworkingChecked() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	return SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::SpatialOSCloudNetworking;
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange() const
+{
+	return OnIsSpatialNetworkingEnabled() && !(LocalDeploymentManager->IsLocalDeploymentRunning());
 }
 
 void FSpatialGDKEditorToolbarModule::UnrealNativeNetworkingClicked() const

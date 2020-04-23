@@ -82,6 +82,7 @@ private:
 	bool IsUnrealNativeNetworkingChecked() const;
 	bool IsSpatialOSLocalNetworkingChecked() const;
 	bool IsSpatialOSCloudNetworkingChecked() const;
+	bool IsSpatialOSNetFlowCanChange() const;
 	void UnrealNativeNetworkingClicked() const;
 	void SpatialOSLocalNetworkingClicked() const;
 	void SpatialOSCloudNetworkingClicked() const;
