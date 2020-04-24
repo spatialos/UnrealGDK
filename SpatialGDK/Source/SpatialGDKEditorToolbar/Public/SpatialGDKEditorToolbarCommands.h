@@ -35,7 +35,7 @@ public:
 	TSharedPtr<FUICommandInfo> StopSpatialService;
 	TSharedPtr<FUICommandInfo> EnableSpatialNetworking;
 	TSharedPtr<FUICommandInfo> GDKEditorSettings;
-	TSharedPtr<FUICommandInfo> UnrealNativeNetworking;
+	TSharedPtr<FUICommandInfo> NoAutomaticConnection;
 	TSharedPtr<FUICommandInfo> SpatialOSLocalNetworking;
 	TSharedPtr<FUICommandInfo> SpatialOSCloudNetworking;
 };

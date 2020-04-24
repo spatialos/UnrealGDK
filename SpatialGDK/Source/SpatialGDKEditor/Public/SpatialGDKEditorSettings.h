@@ -232,7 +232,7 @@ namespace ESpatialOSNetFlow
 {
 	enum Type
 	{
-		UnrealNativeNetworking,
+		NoAutomaticConnection,
 		SpatialOSLocalNetworking,
 		SpatialOSCloudNetworking
 	};
@@ -613,5 +613,5 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
-	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::UnrealNativeNetworking;
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
 };

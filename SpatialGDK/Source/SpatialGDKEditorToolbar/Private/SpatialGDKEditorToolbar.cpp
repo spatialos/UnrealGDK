@@ -248,10 +248,10 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled)
 	);
 
-	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().UnrealNativeNetworking,
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().NoAutomaticConnection,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UnrealNativeNetworkingClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange),
-		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsUnrealNativeNetworkingChecked)
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsNoAutomaticConnectionSelected)
 	);
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().SpatialOSLocalNetworking,
@@ -262,7 +262,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().SpatialOSCloudNetworking,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SpatialOSCloudNetworkingClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable),
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSCloudNetworkingChecked)
 	);
 
@@ -402,12 +402,11 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 
-
-	MenuBuilder.BeginSection(NAME_None, LOCTEXT("", ""));
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("Game Client", "Game Client"));
 	{
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UnrealNativeNetworking);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().SpatialOSLocalNetworking);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().SpatialOSCloudNetworking);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().NoAutomaticConnection);
 	}
 	MenuBuilder.EndSection();
 
@@ -901,10 +900,10 @@ void FSpatialGDKEditorToolbarModule::GDKEditorSettingsClicked() const
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 }
 
-bool FSpatialGDKEditorToolbarModule::IsUnrealNativeNetworkingChecked() const
+bool FSpatialGDKEditorToolbarModule::IsNoAutomaticConnectionSelected() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::UnrealNativeNetworking;
+	return SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSpatialOSLocalNetworkingChecked() const
@@ -919,7 +918,7 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialOSCloudNetworkingChecked() const
 	return SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::SpatialOSCloudNetworking;
 }
 
-bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange() const
+bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable() const
 {
 	return OnIsSpatialNetworkingEnabled() && !(LocalDeploymentManager->IsLocalDeploymentRunning());
 }
@@ -927,7 +926,7 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowCanChange() const
 void FSpatialGDKEditorToolbarModule::UnrealNativeNetworkingClicked() const
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::UnrealNativeNetworking;
+	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
 	SpatialGDKEditorSettings->SaveConfig();
 }
 
