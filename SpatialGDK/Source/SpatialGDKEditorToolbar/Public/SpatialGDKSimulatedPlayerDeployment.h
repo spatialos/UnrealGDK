@@ -43,8 +43,6 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
-	TFuture<bool> AttemptSpatialAuthResult;
-
 	/** Delegate to commit project name */
 	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
 

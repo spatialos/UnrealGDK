@@ -49,6 +49,9 @@ public:
 	void OnShowFailedNotification(const FString& NotificationText);
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
+	FReply OnLaunchDeployment();
+	void OnBuildSuccess();
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -144,4 +147,6 @@ private:
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
+
+	TFuture<bool> AttemptSpatialAuthResult;
 };

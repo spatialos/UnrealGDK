@@ -32,6 +32,9 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 #include "Utils/LaunchConfigEditor.h"
 
@@ -1112,6 +1115,120 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	{
 		return TEXT("");
 	}
+}
+
+FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	if (!SpatialGDKSettings->IsDeploymentConfigurationValid())
+	{
+		OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
+
+		return FReply::Handled();
+	}
+
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	if (SpatialGDKEditorSettings->IsGenerateSchemaEnabled())
+	{
+		SpatialGDKEditorInstance->GenerateSchema(false);
+	}
+
+	if (SpatialGDKEditorSettings->IsGenerateSnapshotEnabled())
+	{
+		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKEditorSettings->GetSpatialOSSnapshotToSave());
+	}
+
+	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
+	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
+	PackageAssembly->BuildAllAndUpload(
+		SpatialGDKEditorSettings->GetAssemblyName(),
+		SpatialGDKEditorSettings->AssemblyWindowsPlatform,
+		SpatialGDKEditorSettings->AssemblyBuildConfiguration,
+		TEXT(""),
+		SpatialGDKEditorSettings->bForceAssemblyOverwrite
+	);
+
+	return FReply::Handled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
+		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
+		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
+
+		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
+		{
+			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded.\n\nWould you still like to continue with the deployment?"), *BuiltSimPlayersName);
+			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
+			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
+			{
+				return;
+			}
+		}
+	}
+
+	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+	if (ToolbarPtr)
+	{
+		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+	}
+
+	auto LaunchCloudDeployment = [this, ToolbarPtr]()
+	{
+		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorInstance)
+		{
+			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
+				FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
+				}
+			}),
+
+				FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+				}
+			})
+				);
+
+			return;
+		}
+
+		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
+		Info.bUseSuccessFailIcons = true;
+		Info.ExpireDuration = 3.0f;
+
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	};
+
+#if ENGINE_MINOR_VERSION <= 22
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#else
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#endif
+		[this, LaunchCloudDeployment, ToolbarPtr]()
+	{
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			LaunchCloudDeployment();
+		}
+		else
+		{
+			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+		}
+	});
 }
 
 #undef LOCTEXT_NAMESPACE
