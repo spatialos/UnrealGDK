@@ -39,6 +39,18 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	}
 }
 
+FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->ExposedRuntimeIP;
+}
+
+int FSpatialGDKEditorModule::GetSpatialOSNetFlowType() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->SpatialOSNetFlowType;
+}
+
 void FSpatialGDKEditorModule::RegisterSettings()
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))

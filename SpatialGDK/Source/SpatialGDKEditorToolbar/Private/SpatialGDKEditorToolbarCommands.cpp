@@ -17,6 +17,11 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(OpenLaunchConfigurationEditorAction, "Create Launch Configuration", "Opens an editor to create SpatialOS Launch configurations", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartSpatialService, "Start Service", "Starts the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialService, "Stop Service", "Stops the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(EnableSpatialNetworking, "Spatial Networking", "If checked, the SpatialOS networking is used. Otherwise, native Unreal networking is used.", EUserInterfaceActionType::ToggleButton, FInputChord());
+	UI_COMMAND(GDKEditorSettings, "Editor Settings", "Open the SpatialOS GDK Editor Settings", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(UnrealNativeNetworking, "Do not connect", "Don't connect automatically using SpatialOS", EUserInterfaceActionType::RadioButton, FInputChord());
+	UI_COMMAND(SpatialOSLocalNetworking, "Connect to local deployment", "Automatically connect to a local deployment", EUserInterfaceActionType::RadioButton, FInputChord());
+	UI_COMMAND(SpatialOSCloudNetworking, "SpatialOS Cloud Networking", "Connect to spatial cloud deployment", EUserInterfaceActionType::RadioButton, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE
