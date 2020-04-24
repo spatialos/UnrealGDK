@@ -17,7 +17,7 @@ namespace ReleaseTool
 
         private const string RemoteUrlRegex = @"(?:https:\/\/github\.com\/|git@github\.com\:)([^\/\.]*)\/([^\/\.]*)\.git";
 
-        private static readonly ProductHeaderValue ProductHeader = new ProductHeaderValue("improbable-unity-gdk-release-tool");
+        private static readonly ProductHeaderValue ProductHeader = new ProductHeaderValue("improbable-unreal-gdk-release-tool");
 
         public interface IGitHubOptions
         {
