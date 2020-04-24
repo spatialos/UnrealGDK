@@ -947,7 +947,7 @@ void FSpatialGDKEditorToolbarModule::SpatialOSCloudNetworkingClicked() const
 	FString DevAuthToken;
 	if (!SpatialCommandUtils::GenerateDevAuthToken(SpatialGDKSettings->IsRunningInChina(), DevAuthToken))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Genenrate Dev Auth Token failed."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to generate a development authentication token."));
 	}
 	SpatialGDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
 	SpatialGDKEditorSettings->SaveConfig();
