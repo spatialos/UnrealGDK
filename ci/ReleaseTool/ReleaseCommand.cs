@@ -76,8 +76,8 @@ namespace ReleaseTool
 
                 var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
 
-                var spatialOsRemote = string.Format(Common.RemoteUrlTemplate, options.GithubOrgName, repoName);
-                var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
+                var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
+                var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
 
                 // Merge into release
                 var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
@@ -88,13 +88,10 @@ namespace ReleaseTool
                         $"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                 }
 
-                // Delete remote on the forked repository.
-                var forkedRepoRemote = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, repoName);
-                gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromRemote(forkedRepoRemote), options.CandidateBranch);
+                // Delete candidate branch.
+                gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
 
-                var remoteUrl = string.Format(Common.RemoteUrlTemplate, options.GithubOrgName, repoName);
-
-                using (var gitClient = GitClient.FromRemote(remoteUrl))
+                using (var gitClient = GitClient.FromRemote(repoUrl))
                 {
                     // Create GitHub release in the repo
                     gitClient.Fetch();

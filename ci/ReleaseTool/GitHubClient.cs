@@ -39,13 +39,13 @@ namespace ReleaseTool
             LoadCredentials();
         }
 
-        public Repository GetRepositoryFromRemote(string remote)
+        public Repository GetRepositoryFromUrl(string url)
         {
-            var matches = Regex.Match(remote, RemoteUrlRegex);
+            var matches = Regex.Match(url, RemoteUrlRegex);
 
             if (!matches.Success)
             {
-                throw new ArgumentException($"Failed to parse remote {remote}. Not a valid github repository.");
+                throw new ArgumentException($"Failed to parse remote {url}. Not a valid github repository.");
             }
 
             var owner = matches.Groups[1].Value;

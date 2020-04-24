@@ -9,12 +9,11 @@ namespace ReleaseTool
 {
     /// <summary>
     ///     Runs the steps required to cut a release candidate branch.
-    ///     * Checks our fork of the repo.
     ///     * Adds the spatialos org remote to our local copy and fetch this remote.
     ///     * Checks out the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
     ///     * Makes repo-dependent changes for prepping the release (e.g. updating version files).
-    ///     * Pushes this to an RC branch on the forked repository.
-    ///     * Opens a PR from the fork into the source repository.
+    ///     * Pushes this to an RC branch.
+    ///     * Opens a PR for merging the RC branch into the release branch.
     /// </summary>
 
     internal class PrepCommand
@@ -81,20 +80,18 @@ namespace ReleaseTool
         }
 
         /*
-         *     This tool is designed to be used with a robot Github account which has its own fork of the GDK
-         *     repositories. This means that when we prep a release:
-         *         1. Checkout our fork of the repo.
-         *         2. Add the spatialos org remote to our local copy and fetch this remote.
-         *         3. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
-         *         4. Make repo-dependent changes for prepping the release (e.g. updating version files).
-         *         5. Push this to an RC branch on the forked repository.
-         *         6. Open a PR from the fork into the source repository.
+         *     This tool is designed to be used with a robot Github account. When we prep a release:
+         *         1. Checkout of the repo.
+         *         2. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
+         *         3. Make repo-dependent changes for prepping the release (e.g. updating version files).
+         *         4. Push this to an RC branch.
+         *         5. Open a PR for merging the RC branch into the release branch.
          */
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
 
-            var remoteUrl = string.Format(Common.RemoteUrlTemplate, Common.GithubBotUser, options.GitRepoName);
+            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, options.GitRepoName);
 
             try
             {
@@ -103,15 +100,9 @@ namespace ReleaseTool
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
                     // This does step 2 from above.
-                    var spatialOsRemote =
-                        string.Format(Common.RemoteUrlTemplate, options.GithubOrgName, options.GitRepoName);
-                    gitClient.AddRemote(options.GithubOrgName, spatialOsRemote);
-                    gitClient.Fetch(options.GithubOrgName);
-
-                    // This does step 3 from above.
                     gitClient.CheckoutRemoteBranch(options.SourceBranch, options.GithubOrgName);
 
-                    // This does step 4 from above.
+                    // This does step 3 from above.
                     switch (options.GitRepoName)
                     {
                         case "UnrealGDK":
@@ -124,14 +115,13 @@ namespace ReleaseTool
                             break;
                     }
 
-                    // This does step 5 from above.
+                    // This does step 4 from above.
                     gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
                     gitClient.ForcePush(options.CandidateBranch);
 
-                    // This does step 6 from above.
-                    var gitHubRepo = gitHubClient.GetRepositoryFromRemote(spatialOsRemote);
-
-                    var branchFrom = $"{Common.GithubBotUser}:{options.CandidateBranch}";
+                    // This does step 5 from above.
+                    var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
+                    var branchFrom = options.SourceBranch;
                     var branchTo = options.ReleaseBranch;
 
                     // Only open a PR if one does not exist yet.

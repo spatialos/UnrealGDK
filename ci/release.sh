@@ -10,6 +10,7 @@ release () {
   local CANDIDATE_BRANCH="${3}"
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
+  local GITHUB_ORG="${6}"
   
   # TODO: update this logging.
   echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
@@ -26,7 +27,8 @@ release () {
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
         --buildkite-metadata-path="/var/logs/bk-metadata" \
-        --pull-request-url="${PR_URL}"
+        --pull-request-url="${PR_URL}" \
+        --github-organization="${GITHUB_ORG}"
 }
 
 set -e -u -o pipefail
@@ -52,20 +54,21 @@ mkdir -p ./logs
 
 # Run the C Sharp Release Tool for each candidate we want to release.
 prepareRelease "UnrealGDK" "master" "${GDK_VERSION}-rc" \
-  "release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"
+  "release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)" "spatialos"
 prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" \
-  "release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)"
-prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" \
-  "release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"
+  "release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
+prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" \ 
+  "release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)" "spatialos"
 prepareRelease "UnrealGDKEngineNetTest" "master" "${GDK_VERSION}-rc" \
-  "release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"
+  "release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)" "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "${ENGINE_VERSION}-release" \
-    "$(buildkite-agent meta-data get UnrealEngine-pr-url)"
+    "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
+    "improbableio"
 done <<< "${ENGINE_VERSIONS}"
 
 echo "--- Writing metadata :pencil2:"

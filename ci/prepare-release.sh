@@ -9,6 +9,7 @@ prepareRelease () {
   local SOURCE_BRANCH="${2}"
   local CANDIDATE_BRANCH="${3}"
   local RELEASE_BRANCH="${4}"
+  local GITHUB_ORG="${5}"
   
   echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
 
@@ -23,7 +24,8 @@ prepareRelease () {
         --release-branch="${RELEASE_BRANCH}" \
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
-        --buildkite-metadata-path="/var/logs/bk-metadata"
+        --buildkite-metadata-path="/var/logs/bk-metadata" \
+        --github-organization="${GITHUB_ORG}"
 }
 
 set -e -u -o pipefail
@@ -52,16 +54,17 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
-prepareRelease "UnrealGDK" "master" "${GDK_VERSION}-rc" "release"
-prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release"
-prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release"
-prepareRelease "UnrealGDKEngineNetTest" "master" "${GDK_VERSION}-rc" "release"
+prepareRelease "UnrealGDK" "master" "${GDK_VERSION}-rc" "release" "spatialos"
+prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release" "spatialos"
+prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release" "spatialos"
+prepareRelease "UnrealGDKEngineNetTest" "master" "${GDK_VERSION}-rc" "release" "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "${ENGINE_VERSION}-release"
+    "${ENGINE_VERSION}-release" \
+    "improbableio"
 done <<< "${ENGINE_VERSIONS}"
 
 echo "--- Writing metadata :pencil2:"
