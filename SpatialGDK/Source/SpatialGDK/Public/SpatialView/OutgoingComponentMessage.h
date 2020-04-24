@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 #include "SpatialView/EntityComponentId.h"
