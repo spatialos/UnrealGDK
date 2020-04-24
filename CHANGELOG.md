@@ -76,6 +76,11 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `OnPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed. `OnConnected` and `OnConnectionFailed` are now also blueprint-assignable.
 - `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
 - You can now edit the project name field in the `Cloud Deployment` window.
+- Create dropdown menu for choosing connection flow in the Start toolbar button.
+- Move Spatial Networking checkbox to start dropdown menu.
+- Add `Connect to local deployment`, `Connect to cloud deployment`, `Do not connect` options in start dropdown menu.
+- Add `Local Deployment IP`, `Cloud Deployment Name` text editor in start dropdown menu to config the target deployment info.
+- Add `Editor Settings` field in start dropdown menu to link to the Editor settings.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
