@@ -6,7 +6,6 @@ namespace ReleaseTool
 {
     internal static class Common
     {
-        public const string GithubBotUser = "gdk-for-unreal-bot";
         public const string RepoUrlTemplate = "git@github.com:{0}/{1}.git";
 
         public static void VerifySemanticVersioningFormat(string version)
