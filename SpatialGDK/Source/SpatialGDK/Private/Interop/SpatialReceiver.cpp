@@ -126,6 +126,10 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			continue;
 		}
+		if (StaticComponentView->HasAuthority(PendingAddComponent.EntityId, PendingAddComponent.ComponentId))
+		{
+			continue; // Hack to allow servers to change state if they are going to be authoritative
+		}
 
 		UE_LOG(LogTemp, Log, TEXT("Unhandled component being handled: compid %d entid %d"), PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
 		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
