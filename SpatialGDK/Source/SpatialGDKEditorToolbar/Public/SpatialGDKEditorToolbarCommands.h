@@ -36,6 +36,6 @@ public:
 	TSharedPtr<FUICommandInfo> EnableSpatialNetworking;
 	TSharedPtr<FUICommandInfo> GDKEditorSettings;
 	TSharedPtr<FUICommandInfo> NoAutomaticConnection;
-	TSharedPtr<FUICommandInfo> SpatialOSLocalNetworking;
-	TSharedPtr<FUICommandInfo> SpatialOSCloudNetworking;
+	TSharedPtr<FUICommandInfo> LocalDeployment;
+	TSharedPtr<FUICommandInfo> CloudDeployment;
 };
