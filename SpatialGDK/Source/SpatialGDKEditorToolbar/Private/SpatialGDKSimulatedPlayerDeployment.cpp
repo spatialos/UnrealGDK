@@ -600,12 +600,28 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
+								.HAlign(HAlign_Left)
+								[
+									// Open Deployment Page 
+									SNew(SUniformGridPanel)
+									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
+									+ SUniformGridPanel::Slot(0, 0)
+									[
+										SNew(SButton)
+										.HAlign(HAlign_Center)
+										.Text(FText::FromString(FString(TEXT("Open Deployment Page"))))
+										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked)
+										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage)
+									]
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
 								.HAlign(HAlign_Right)
 								[
 									// Launch Simulated Players Deployment Button
 									SNew(SUniformGridPanel)
 									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
-									+ SUniformGridPanel::Slot(0, 0)
+									+ SUniformGridPanel::Slot(1, 0)
 									[
 										SNew(SButton)
 										.HAlign(HAlign_Center)
@@ -1080,4 +1096,30 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot(ECheckBoxSt
 bool SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment() const
 {
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
+}
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
+{
+	FString WebError;
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+	bool bChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+	FString Url = bChina ? FString::Printf(TEXT("https://%s/projects/%s"), *SpatialConstants::CONSOLE_HOST_CN, *ProjectName) : FString::Printf(TEXT("https://%s/projects/%s"), *SpatialConstants::CONSOLE_HOST, *ProjectName);
+	FPlatformProcess::LaunchURL(*Url, TEXT(""), &WebError);
+	if (!WebError.IsEmpty())
+	{
+		FNotificationInfo Info(FText::FromString(WebError));
+		Info.ExpireDuration = 3.0f;
+		Info.bUseSuccessFailIcons = true;
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		NotificationItem->ExpireAndFadeout();
+		return FReply::Unhandled();
+	}
+
+	return FReply::Handled();
+}
+
+bool SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage() const
+{
+	return !FSpatialGDKServicesModule::GetProjectName().IsEmpty();
 }
