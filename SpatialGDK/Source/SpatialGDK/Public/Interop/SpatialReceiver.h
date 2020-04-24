@@ -41,7 +41,7 @@ struct PendingAddComponentWrapper
 	// will be moved into unique pointers and we cannot equate the underlying Worker_ComponentData.
 	bool operator==(const PendingAddComponentWrapper& Other) const
 	{
-		return EntityId == Other.EntityId && ComponentId && Other.ComponentId;
+		return EntityId == Other.EntityId && ComponentId == Other.ComponentId;
 	}
 
 	Worker_EntityId EntityId;
