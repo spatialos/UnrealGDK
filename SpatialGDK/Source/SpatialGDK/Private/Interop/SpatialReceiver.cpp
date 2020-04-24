@@ -2136,7 +2136,7 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 
 	ResolveIncomingOperations(Object, ObjectRef);
 
-	// When resolving a Actor that should uniquely exist in a deployment, e.g. GameMode, GameState, LevelScriptActors, we also
+	// When resolving an Actor that should uniquely exist in a deployment, e.g. GameMode, GameState, LevelScriptActors, we also
 	// resolve using class path (in case any properties were set from a server that hasn't resolved the Actor yet).
 	if (FUnrealObjectRef::ShouldLoadObjectFromClassPath(Object))
 	{
