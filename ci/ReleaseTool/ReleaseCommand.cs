@@ -136,8 +136,7 @@ namespace ReleaseTool
 
             string name;
             string releaseBody;
-
-            // TODO: Modify release bodies for the UnrealGDK repos
+            
             switch (repoName)
             {
                 case "UnrealGDK":
@@ -146,47 +145,96 @@ namespace ReleaseTool
                     {
                         changelog = GetReleaseNotesFromChangeLog();
                     }
-                    name = $"GDK for Unity Alpha Release {options.Version}";
+                    name = $"GDK for Unreal Alpha Release {options.Version}";
                     releaseBody =
-$@"In this release, we've ...
+$@"Unreal GDK version {options.Version} is go!
 
-We've also fixed ... 
+* You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
 
-Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!
+Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 
-See the full release notes below! 👇
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team
 
 ---
 
 {changelog}";
                     break;
                 case "UnrealEngine":
-                    name = $"GDK for Unity FPS Starter Project Alpha Release {options.Version}";
+                    name = $"{options.Version}";
                     releaseBody =
-$@"This release of the FPS Starter Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
+$@"Unreal GDK version {options.Version} is go!
 
-Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
+* This Engine version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+
+Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team";
                     break;
                 case "UnrealGDKTestGyms":
-                    name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
+                    name = $"{options.Version}";
                     releaseBody =
-$@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
+$@"Unreal GDK version {options.Version} is go!
 
-Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
+* This UnrealGDKTestGyms version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+
+Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team";
                     break;
                 case "UnrealGDKEngineNetTest":
-                    name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
+                    name = $"{options.Version}";
                     releaseBody =
-$@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
+$@"Unreal GDK version {options.Version} is go!
 
-Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
+* This UnrealGDKEngineNetTest version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
+* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+
+Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team";
                     break;
                 case "UnrealGDKExampleProject":
-                    name = $"GDK for Unity Blank Project Alpha Release {options.Version}";
+                    name = $"{options.Version}";
                     releaseBody =
-$@"This release of the Blank Project is intended for use with the GDK for Unity Alpha Release {options.Version}.
+$@"Unreal GDK version {options.Version} is go!
 
-Keep giving us your feedback and/or suggestions! Check out [our Discord](https://discord.gg/SCZTCYm), [our forums](https://forums.improbable.io/), or here in the [Github issues](https://github.com/spatialos/gdk-for-unity/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!";
+* This UnrealGDKExampleProject version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
+* You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+
+Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team";
                     break;
                 default:
                     throw new ArgumentException("Unsupported repository.", nameof(repoName));
