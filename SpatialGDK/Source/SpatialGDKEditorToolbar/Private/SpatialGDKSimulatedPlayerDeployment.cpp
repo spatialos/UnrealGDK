@@ -1121,5 +1121,5 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
 
 bool SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage() const
 {
-	return FSpatialGDKServicesModule::GetProjectName().IsEmpty() ? false : true;
+	return !FSpatialGDKServicesModule::GetProjectName().IsEmpty();
 }
