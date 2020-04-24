@@ -104,7 +104,7 @@ namespace ReleaseTool
                 }
 
                 // Open a PR for merging the release branch into master.
-                var branchFrom = $"{Common.GithubBotUser}:{options.ReleaseBranch}";
+                var branchFrom = options.ReleaseBranch;
                 var branchTo = options.SourceBranch;
 
                 // Only open a PR if one does not exist yet.
