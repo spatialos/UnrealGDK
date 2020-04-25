@@ -628,7 +628,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 										.HAlign(HAlign_Center)
 										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
 										.OnClicked_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::OnLaunchDeployment)
-										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment)
+										.IsEnabled_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::CanLaunchDeployment)
 									]
 								]
 							]
@@ -809,20 +809,6 @@ ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled()
 	return SpatialGDKSettings->IsSimulatedPlayersEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
-bool SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty())
-	{
-		return false;
-	}
-	if (SpatialGDKSettings->GetAssemblyName().IsEmpty())
-	{
-		return false;
-	}
-	return true;
-}
-
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsUsingGDKPinnedRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -913,17 +899,6 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
 	return FReply::Handled();
 }
 
-bool SSpatialGDKSimulatedPlayerDeployment::CanBuildAndUpload() const
-{
-	bool bEnable = false;
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
-	{
-		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
-		bEnable = PackageAssembly->CanBuild();
-	}
-	return bEnable;
-}
-
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -971,11 +946,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot(ECheckBoxSt
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetGenerateSnapshot(NewCheckedState == ECheckBoxState::Checked);
-}
-
-bool SSpatialGDKSimulatedPlayerDeployment::CanLaunchDeployment() const
-{
-	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()

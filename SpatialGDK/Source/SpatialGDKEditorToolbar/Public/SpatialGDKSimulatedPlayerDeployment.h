@@ -106,7 +106,6 @@ private:
 	void OnBuildConfigurationPicked(FString Configuration);
 
 	FReply OnBuildAndUploadClicked();
-	bool CanBuildAndUpload() const;
 
 	ECheckBoxState ForceAssemblyOverwrite() const;
 	void OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState);
@@ -115,9 +114,6 @@ private:
 	ECheckBoxState IsUsingGDKPinnedRuntimeVersion() const;
 	bool IsUsingCustomRuntimeVersion() const;
 	FText GetSpatialOSRuntimeVersionToUseText() const;
-
-	/** Delegate to determine the 'Launch Deployment' button enabled state */
-	bool IsDeploymentConfigurationValid() const;
 
 	ECheckBoxState IsBuildClientWorkerEnabled() const;
 	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
@@ -129,8 +125,6 @@ private:
 	void OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState);
 
 	void OnBuildSuccess();
-
-	bool CanLaunchDeployment() const;
 
 	FReply OnOpenCloudDeploymentPageClicked();
 	bool CanOpenCloudDeploymentPage() const;

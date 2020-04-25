@@ -222,6 +222,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment),
+		FCanExecuteAction());
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
 		FCanExecuteAction());
@@ -308,7 +313,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction);
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
@@ -341,7 +346,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction);
 	Builder.AddComboButton(
 		FUIAction(),
 		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent),
@@ -373,6 +378,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
@@ -1041,6 +1047,17 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
 }
 
+void FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment()
+{
+	if (CanLaunchDeployment())
+	{
+		OnLaunchDeployment();
+		return;
+	}
+
+	ShowSimulatedPlayerDeploymentDialog();
+}
+
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
@@ -1229,6 +1246,36 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
 		}
 	});
+}
+
+bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty())
+	{
+		return false;
+	}
+	if (SpatialGDKSettings->GetAssemblyName().IsEmpty())
+	{
+		return false;
+	}
+	return true;
+}
+
+bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
+{
+	bool bEnable = false;
+	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorInstance)
+	{
+		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
+		bEnable = PackageAssembly->CanBuild();
+	}
+	return bEnable;
+}
+
+bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
+{
+	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }
 
 #undef LOCTEXT_NAMESPACE

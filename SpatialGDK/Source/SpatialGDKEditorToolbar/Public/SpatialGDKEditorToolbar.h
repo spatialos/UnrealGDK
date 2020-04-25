@@ -51,6 +51,11 @@ public:
 
 	FReply OnLaunchDeployment();
 	void OnBuildSuccess();
+	bool CanLaunchDeployment() const;
+
+	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	bool IsDeploymentConfigurationValid() const;
+	bool CanBuildAndUpload() const;
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
@@ -101,6 +106,7 @@ private:
 
 	void ShowSimulatedPlayerDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
+	void LaunchOrShowDeployment();
 
 private:
 	bool CanExecuteSchemaGenerator() const;
