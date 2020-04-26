@@ -81,6 +81,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
   - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
+- Added `Open Deployment Page` button to the `Cloud Deployment` window.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.

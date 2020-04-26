@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#include "SpatialCommandUtils.h"
 
 #include "Logging/LogMacros.h"
 #include "Misc/MessageDialog.h"
 #include "Serialization/JsonSerializer.h"
-#include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
