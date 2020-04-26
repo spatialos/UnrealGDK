@@ -1158,26 +1158,26 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 		return FReply::Handled();
 	}
 
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	if (SpatialGDKEditorSettings->IsGenerateSchemaEnabled())
+	AddDeploymentTag(TEXT("dev_login"));
+	
+	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
 	{
 		SpatialGDKEditorInstance->GenerateSchema(false);
 	}
 
-	if (SpatialGDKEditorSettings->IsGenerateSnapshotEnabled())
+	if (SpatialGDKSettings->IsGenerateSnapshotEnabled())
 	{
-		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKEditorSettings->GetSpatialOSSnapshotToSave());
+		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKSettings->GetSpatialOSSnapshotToSave());
 	}
 
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 	PackageAssembly->BuildAllAndUpload(
-		SpatialGDKEditorSettings->GetAssemblyName(),
-		SpatialGDKEditorSettings->AssemblyWindowsPlatform,
-		SpatialGDKEditorSettings->AssemblyBuildConfiguration,
+		SpatialGDKSettings->GetAssemblyName(),
+		SpatialGDKSettings->AssemblyWindowsPlatform,
+		SpatialGDKSettings->AssemblyBuildConfiguration,
 		TEXT(""),
-		SpatialGDKEditorSettings->bForceAssemblyOverwrite
+		SpatialGDKSettings->bForceAssemblyOverwrite
 	);
 
 	return FReply::Handled();
@@ -1313,6 +1313,31 @@ void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
+}
+
+void FSpatialGDKEditorToolbarModule::AddDeploymentTag(const FString& Tag)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+
+	FString Tags = SpatialGDKSettings->GetDeploymentTags();
+	TArray<FString> OutArray;
+	Tags.ParseIntoArray(OutArray, TEXT(" "));
+	bool HasDevLoginTag = false;
+	for (INT i = 0; i < OutArray.Num(); ++i)
+	{
+		if (0 == OutArray[i].Trim().Compare(Tag))
+		{
+			HasDevLoginTag = true;
+			break;
+		}
+	}
+
+	if (false == HasDevLoginTag)
+	{
+		Tags += TEXT(" ");
+		Tags += Tag;
+		SpatialGDKSettings->SetDeploymentTags(Tags);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

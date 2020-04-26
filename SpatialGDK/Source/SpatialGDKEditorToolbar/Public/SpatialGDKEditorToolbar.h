@@ -115,6 +115,8 @@ private:
 	void OpenLaunchConfigurationEditor();
 	void LaunchOrShowDeployment();
 
+	void AddDeploymentTag(const FString& Tag);
+
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
