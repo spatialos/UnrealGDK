@@ -57,6 +57,13 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 	bool CanBuildAndUpload() const;
 
+	bool IsSimulatedPlayersEnabled() const;
+	/** Delegate called when the user either clicks the simulated players checkbox */
+	void OnCheckedSimulatedPlayers();
+
+	bool IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker();
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);

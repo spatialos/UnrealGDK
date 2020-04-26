@@ -227,6 +227,18 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
 		FCanExecuteAction());
@@ -379,6 +391,8 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
@@ -1276,6 +1290,30 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
 {
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsSimulatedPlayersEnabled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetSimulatedPlayersEnabledState(!IsSimulatedPlayersEnabled());
+}
+
+bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsBuildClientWorkerEnabled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
 }
 
 #undef LOCTEXT_NAMESPACE

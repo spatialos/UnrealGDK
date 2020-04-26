@@ -31,6 +31,8 @@ public:
 	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
 	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
 	TSharedPtr<FUICommandInfo> QuickDeployAction;
+	TSharedPtr<FUICommandInfo> EnableBuildClientWorker;
+	TSharedPtr<FUICommandInfo> EnableBuildSimulatedPlayer;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;
