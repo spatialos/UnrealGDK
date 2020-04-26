@@ -61,11 +61,23 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSchema.Small",
 		new IMAGE_BRUSH(TEXT("Schema@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment",
+	Style->Set("SpatialGDKEditorToolbar.StartNativeUnrealDeployment",
 		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment.Small",
+	Style->Set("SpatialGDKEditorToolbar.StartNativeUnrealDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartLocalSpatialDeployment",
+		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartLocalSpatialDeployment.Small",
+		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartCloudSpatialDeployment",
+		new IMAGE_BRUSH(TEXT("Cloud"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartCloudSpatialDeployment.Small",
+		new IMAGE_BRUSH(TEXT("Cloud@0.5x"), Icon20x20));
 	
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));

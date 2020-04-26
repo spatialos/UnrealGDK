@@ -10,7 +10,9 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(CreateSpatialGDKSchemaFull, "Schema (Full Scan)", "Creates SpatialOS Unreal GDK schema for all assets.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(DeleteSchemaDatabase, "Delete schema database", "Deletes the scheme database file", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(CreateSpatialGDKSnapshot, "Snapshot", "Creates SpatialOS Unreal GDK snapshot.", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StartSpatialDeployment, "Start", "Starts a local instance of SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StartNativeUnrealDeployment, "Start", "Start Unreal native network.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StartLocalSpatialDeployment, "Start", "Connect to local deployment service", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StartCloudSpatialDeployment, "Start", "Connect to cloud SpatialOS service", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialDeployment, "Stop", "Stops SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(LaunchInspectorWebPageAction, "Inspector", "Launches default web browser to SpatialOS Inspector.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(OpenSimulatedPlayerConfigurationWindowAction, "Deploy", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());

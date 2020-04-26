@@ -24,7 +24,9 @@ public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchemaFull;
 	TSharedPtr<FUICommandInfo> DeleteSchemaDatabase;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
-	TSharedPtr<FUICommandInfo> StartSpatialDeployment;
+	TSharedPtr<FUICommandInfo> StartNativeUnrealDeployment;
+	TSharedPtr<FUICommandInfo> StartLocalSpatialDeployment;
+	TSharedPtr<FUICommandInfo> StartCloudSpatialDeployment;
 	TSharedPtr<FUICommandInfo> StopSpatialDeployment;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
 	
