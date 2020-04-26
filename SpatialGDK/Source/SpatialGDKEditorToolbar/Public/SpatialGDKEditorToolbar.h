@@ -94,13 +94,13 @@ private:
 	bool OnIsSpatialNetworkingEnabled() const;
 
 	void GDKEditorSettingsClicked() const;
-	bool IsUnrealNativeNetworkingChecked() const;
-	bool IsSpatialOSLocalNetworkingChecked() const;
-	bool IsSpatialOSCloudNetworkingChecked() const;
-	bool IsSpatialOSNetFlowCanChange() const;
-	void UnrealNativeNetworkingClicked() const;
-	void SpatialOSLocalNetworkingClicked() const;
-	void SpatialOSCloudNetworkingClicked() const;
+	bool IsNoAutomaticConnectionSelected() const;
+	bool IsLocalDeploymentSelected() const;
+	bool IsCloudDeploymentSelected() const;
+	bool IsSpatialOSNetFlowConfigurable() const;
+	void NoAutomaticConnectionClicked() const;
+	void LocalDeploymentClicked() const;
+	void CloudDeploymentClicked() const;
 	bool IsLocalDeploymentIPEditable() const;
 	bool IsCloudDeploymentNameEditable() const;
 
