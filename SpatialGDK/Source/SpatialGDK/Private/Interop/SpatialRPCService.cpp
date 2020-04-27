@@ -263,11 +263,8 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 	{
 		const EntityComponentId EntityComponent = { EntityId, EndpointComponentId };
 
-		FWorkerComponentData& Component = Components.AddZeroed_GetRef();
+		FWorkerComponentData& Component = Components.Emplace_GetRef(FWorkerComponentData{});
 		Component.component_id = EndpointComponentId;
-#if TRACE_LIB_ACTIVE
-		Component.Trace = InvalidTraceKey;
-#endif
 		if (Schema_ComponentData** ComponentData = PendingRPCsOnEntityCreation.Find(EntityComponent))
 		{
 			// When sending initial multicast RPCs, write the number of RPCs into a separate field instead of
