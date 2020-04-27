@@ -1199,7 +1199,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
 			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
 			{
-				OnShowSuccessNotification("Failed to launch cloud deployment. path not exist");
+				OnShowFailedNotification("Failed to launch cloud deployment. path not exist");
 				return;
 			}
 		}
