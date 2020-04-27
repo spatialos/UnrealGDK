@@ -2261,11 +2261,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		if (ObjectReferences.Array)
 		{
 			UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
-			if (ArrayProperty == nullptr)
-			{
-				UE_LOG(LogSpatialReceiver, Error, TEXT("Failed to cast an array of properties to UArrayProperty"));
-				continue;
-			}
+			check(ArrayProperty != nullptr);
 
 			if (!bIsHandover)
 			{
