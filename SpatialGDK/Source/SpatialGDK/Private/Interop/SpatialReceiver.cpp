@@ -181,7 +181,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -230,10 +229,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			RPCService->OnCheckoutMulticastRPCComponentOnEntity(Op.entity_id);
 		}
-		return;
-	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplySingletonManagerData(Op.data);
-		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
@@ -538,7 +533,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		NetDriver->VirtualWorkerTranslationManager->AuthorityChanged(Op);
 	}
 
-	if (NetDriver->SpatialDebugger != nullptr)
+	if (NetDriver->SpatialDebugger != nullptr
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE
+		&& Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
 		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
 	}
@@ -798,8 +795,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker. "
-			"Entity ID: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+			*NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->HasAuthority(EntityId, Position::ComponentId);
@@ -813,7 +810,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		// If we're a singleton, apply the data, regardless of authority - JIRA: 736
 		return;
 	}
 
@@ -845,7 +841,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		// This could be nullptr if:
 		// a stably named actor could not be found
-		// the Actor is a singleton that has arrived over the wire before it has been created on this worker
 		// the class couldn't be loaded
 		return;
 	}
@@ -972,11 +967,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		EntityActor->DispatchBeginPlay();
 	}
 
-	if (EntityActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		GlobalStateManager->RegisterSingletonChannel(EntityActor, Channel);
-	}
-
 	EntityActor->UpdateOverlaps();
 
 	if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
@@ -1094,11 +1084,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		}
 	}
 
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		return;
-	}
-
 	DestroyActor(Actor, EntityId);
 }
 
@@ -1177,14 +1162,6 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		return nullptr;
 	}
 
-	const bool bIsServer = NetDriver->IsServer();
-
-	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
-	if (bIsServer && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		return FindSingletonActor(ActorClass);
-	}
-
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
 	const bool bCreatingPlayerController = ActorClass->IsChildOf(APlayerController::StaticClass());
@@ -1199,7 +1176,7 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
 
-	if (bIsServer && bCreatingPlayerController)
+	if (NetDriver->IsServer() && bCreatingPlayerController)
 	{
 		// If we're spawning a PlayerController, it should definitely have a net-owning client worker ID.
 		check(NetOwningClientWorkerComp->WorkerId.IsSet());
@@ -1515,7 +1492,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
@@ -1531,10 +1507,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		OnHeartbeatComponentUpdate(Op);
-		return;
-	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
-		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
@@ -2122,20 +2094,6 @@ TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Wo
 	return Channel;
 }
 
-AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
-{
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
-
-	// There should be only one singleton actor per class
-	if (FoundActors.Num() == 1)
-	{
-		return FoundActors[0];
-	}
-
-	return nullptr;
-}
-
 void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, RPCsOnEntityCreation& QueuedRPCs)
 {
 	for (auto& RPC : QueuedRPCs.RPCs)
@@ -2213,16 +2171,18 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	ResolveIncomingOperations(Object, ObjectRef);
-	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Object->IsFullNameStableForNetworking())
+
+	// When resolving an Actor that should uniquely exist in a deployment, e.g. GameMode, GameState, LevelScriptActors, we also
+	// resolve using class path (in case any properties were set from a server that hasn't resolved the Actor yet).
+	if (FUnrealObjectRef::ShouldLoadObjectFromClassPath(Object))
 	{
-		// When resolving a singleton, also resolve using class path (in case any properties
-		// were set from a server that hasn't resolved the singleton yet)
-		FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetSingletonClassRef(Object, PackageMap);
+		FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetRefFromObjectClassPath(Object, PackageMap);
 		if (ClassObjectRef.IsValid())
 		{
 			ResolveIncomingOperations(Object, ClassObjectRef);
 		}
 	}
+
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
 	IncomingRPCs.ProcessRPCs();
 }
@@ -2504,7 +2464,32 @@ void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
 
 bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 {
-	return FindObject<UClass>(nullptr, *ClassPath, false) == nullptr;
+	UObject* ClassObject = FindObject<UClass>(nullptr, *ClassPath, false);
+	if (ClassObject == nullptr)
+	{
+		return true;
+	}
+
+	FString PackagePath = GetPackagePath(ClassPath);
+	FName PackagePathName = *PackagePath;
+
+	// UNR-3320 The following test checks if the package is currently being processed in the async loading thread.
+	// Without it, we could be using an object loaded in memory, but not completely ready to be used.
+	// Looking through PackageMapClient's code, which handles asset async loading in Native unreal, checking
+	// UPackage::IsFullyLoaded, or UObject::HasAnyInternalFlag(EInternalObjectFlag::AsyncLoading) should tell us if it is the case.
+	// In practice, these tests are not enough to prevent using objects too early (symptom is RF_NeedPostLoad being set, and crash when using them later).
+	// GetAsyncLoadPercentage will actually look through the async loading thread's UAsyncPackage maps to see if there are any entries.
+	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further 
+	// what is the issue with the other flags and why they do not give us reliable information.
+
+	float Percentage = GetAsyncLoadPercentage(PackagePathName);
+	if (Percentage != -1.0f)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Class %s package is registered in async loading thread."), *ClassPath)
+		return true;
+	}
+	
+	return false;
 }
 
 FString USpatialReceiver::GetPackagePath(const FString& ClassPath)
