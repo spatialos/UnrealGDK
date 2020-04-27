@@ -6,6 +6,7 @@
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
