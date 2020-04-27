@@ -23,6 +23,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
+#include "SpatialCommandUtils.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
@@ -32,7 +33,6 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
-#include "SpatialCommandUtils.h"
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
@@ -1155,7 +1155,7 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 	{
 		OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
 
-		return FReply::Handled();
+		return FReply::Unhandled();
 	}
 
 	AddDeploymentTag(TEXT("dev_login"));
@@ -1199,48 +1199,25 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
 			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
 			{
+				OnShowSuccessNotification("Failed to launch cloud deployment. path not exist");
 				return;
 			}
 		}
 	}
 
-	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-	if (ToolbarPtr)
+	auto LaunchCloudDeployment = [this]()
 	{
-		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
-	}
-
-	auto LaunchCloudDeployment = [this, ToolbarPtr]()
-	{
-		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorInstance)
-		{
-			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-				FSimpleDelegate::CreateLambda([]()
+		SpatialGDKEditorInstance->LaunchCloudDeployment(
+			FSimpleDelegate::CreateLambda([this]()
 			{
-				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
-				{
-					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
-				}
+				this->OnShowSuccessNotification("Successfully launched cloud deployment.");
 			}),
 
-				FSimpleDelegate::CreateLambda([]()
+			FSimpleDelegate::CreateLambda([this]()
 			{
-				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
-				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
-				}
+				this->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
 			})
-				);
-
-			return;
-		}
-
-		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-		Info.bUseSuccessFailIcons = true;
-		Info.ExpireDuration = 3.0f;
-
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		);
 	};
 
 #if ENGINE_MINOR_VERSION <= 22
@@ -1248,7 +1225,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 #else
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #endif
-		[this, LaunchCloudDeployment, ToolbarPtr]()
+		[this, LaunchCloudDeployment]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
@@ -1256,7 +1233,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		}
 		else
 		{
-			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+			OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
 		}
 	});
 }
@@ -1278,12 +1255,8 @@ bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 {
 	bool bEnable = false;
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorInstance)
-	{
-		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
-		bEnable = PackageAssembly->CanBuild();
-	}
-	return bEnable;
+	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
+	return PackageAssembly->CanBuild();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
