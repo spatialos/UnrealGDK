@@ -1241,15 +1241,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty())
-	{
-		return false;
-	}
-	if (SpatialGDKSettings->GetAssemblyName().IsEmpty())
-	{
-		return false;
-	}
-	return true;
+	return SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty() || SpatialGDKSettings->GetAssemblyName().IsEmpty() ? false : true;
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
