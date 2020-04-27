@@ -451,17 +451,19 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	TArray<Schema_FieldId> ClearedIds;
 
 	uint32 BytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	OutBytesWritten += BytesWritten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
+		BytesWritten++; // Workaround so we don't drop updates that *only* contain cleared fields - JIRA UNR-3371
 	}
 
 	if (BytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
+
+	OutBytesWritten += BytesWritten;
 
 	return ComponentUpdate;
 }
@@ -477,17 +479,19 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	TArray<Schema_FieldId> ClearedIds;
 
 	uint32 BytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	OutBytesWritten += BytesWritten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
+		BytesWritten++; // Workaround so we don't drop updates that *only* contain cleared fields - JIRA UNR-3371
 	}
 
 	if (BytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
+
+	OutBytesWritten += BytesWritten;
 
 	return ComponentUpdate;
 }
