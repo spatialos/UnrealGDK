@@ -77,6 +77,12 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
 - You can now edit the project name field in the `Cloud Deployment` window.
 - Change icon of 'start' toolbar button based on selected connection flow
+- Created a new dropdown menu in the Start toolbar button. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client
+  - You can choose between `Connect to local deployment`, `Connect to cloud deployment` and `Do not connect` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
+  - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
+  - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
+  - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
+- Added `Open Deployment Page` button to the `Cloud Deployment` window.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.

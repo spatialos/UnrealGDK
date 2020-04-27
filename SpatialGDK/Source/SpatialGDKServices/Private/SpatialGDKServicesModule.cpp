@@ -160,6 +160,7 @@ void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 	{
 		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::SpatialOSConfigFileName);
 	}
+	ProjectName = InProjectName;
 }
 
 FString FSpatialGDKServicesModule::ParseProjectName()
