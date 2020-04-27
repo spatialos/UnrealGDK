@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Medallion.Shell;
 using NLog;
 
-namespace Improbable.Nfr.Runner.Buildkite
+namespace ReleaseTool
 {
     public static class BuildkiteAgentImpl
     {
