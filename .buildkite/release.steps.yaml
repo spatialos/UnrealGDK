@@ -5,7 +5,7 @@ common: &common
     - "environment=production"
     - "permission_set=builder"
     - "platform=linux"  # if you need a different platform, configure this: macos|linux|windows.
-    - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-2019-12-12-bk5225-daecba805768d787}"
+    - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-20-04-27-095849-bk10828-316979f1}"
     - "scaler_version=2"
     - "working_hours_time_zone=london"
 
@@ -26,7 +26,7 @@ steps:
       - text: UnrealGDK component release version
         key: gdk-version
         required: true
-        hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject`, `UnrealGDKEngineNetTest` and `UnrealGDKTestGyms` release candidates for. All release candidates are branched from master. For example: "0.12.2" or "1.0.1"."
+        hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject`, `UnrealGDKEngineNetTest` and `UnrealGDKTestGyms` release candidates for. All release candidates are branched from master. For example: `0.12.2` or `1.0.1`."
 
       - text: UnrealEngine source branches
         key: engine-versions
@@ -42,7 +42,8 @@ steps:
       manual:
         permit_on_passed: true
 
-  - wait
+  - wait: ~
+  
   # Stage 2: Run all tests against the release candidates.
   # TODO: Work out what generate-release-qa-trigger.sh does and re-write it to run all tests across all four repos.
   - label: "Add step for triggering release QA"

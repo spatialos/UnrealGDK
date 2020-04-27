@@ -47,6 +47,11 @@ namespace ReleaseTool
             repo?.Dispose();
         }
 
+        public bool LocalBranchExists(string branch)
+        {
+            return repo.Branches[branch] != null;
+        }
+
         public void CheckoutRemoteBranch(string branch, string remote = null)
         {
             var branchRef = string.Format(RemoteBranchRefTemplate, branch, remote ?? DefaultRemote);
