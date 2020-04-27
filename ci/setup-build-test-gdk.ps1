@@ -149,6 +149,7 @@ Foreach ($test in $tests) {
         & $PSScriptRoot"\run-tests.ps1" `
             -unreal_editor_path "$unreal_engine_symlink_dir\Engine\Binaries\Win64\UE4Editor.exe" `
             -uproject_path "$build_home\$test_project_name\$test_repo_relative_uproject_path" `
+            -test_project_name "$test_project_name" `
             -test_repo_path "$build_home\$test_project_name" `
             -log_file_path "$PSScriptRoot\$test_project_name\$test_results_dir\tests.log" `
             -report_output_path "$test_project_name\$test_results_dir" `
