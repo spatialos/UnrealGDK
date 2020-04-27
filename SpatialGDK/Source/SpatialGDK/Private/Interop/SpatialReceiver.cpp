@@ -2429,7 +2429,7 @@ void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
 bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 {
 	UObject* ClassObject = FindObject<UClass>(nullptr, *ClassPath, false);
-	if (!ClassObject)
+	if (ClassObject == nullptr)
 	{
 		return true;
 	}
@@ -2443,7 +2443,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 	// UPackage::IsFullyLoaded, or UObject::HasAnyInternalFlag(EInternalObjectFlag::AsyncLoading) should tell us if it is the case.
 	// In practice, these tests are not enough to prevent using objects too early (symptom is RF_NeedPostLoad being set, and crash when using them later).
 	// GetAsyncLoadPercentage will actually look through the async loading thread's UAsyncPackage maps to see if there are any entries.
-	// TODO : UNR-XXXX This looks like an expensive check, but it does the job. We should investigate further 
+	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further 
 	// what is the issue with the other flags and why they do not give us reliable information.
 
 	float Percentage = GetAsyncLoadPercentage(PackagePathName);
