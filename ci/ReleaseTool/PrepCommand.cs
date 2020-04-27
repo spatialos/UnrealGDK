@@ -152,6 +152,7 @@ namespace ReleaseTool
                             sink.WriteMetadata($"{options.GitRepoName}-release-branch",
                                 $"pull/{pullRequest.Number}/head:{options.CandidateBranch}");
                             sink.WriteMetadata($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
+                            SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
                         }
                     }
 
@@ -267,8 +268,9 @@ namespace ReleaseTool
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
+/// TODO: Replace {options.UnrealGDK-pr-url} with GetMetadata
         private static string GetPullRequestBody(string repoName)
-        {
+        {   UnrealGDK-pr-url.GetMetadata("UnrealGDK-pr-url");
             switch (repoName)
             {
                 case "UnrealGDK":
