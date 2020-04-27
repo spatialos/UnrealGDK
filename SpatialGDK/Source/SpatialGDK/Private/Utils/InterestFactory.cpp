@@ -34,13 +34,13 @@ InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, U
 void InterestFactory::CreateAndCacheInterestState()
 {
 	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
-	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
-	ClientAuthInterestResultType = CreateClientAuthInterestResultType(ClassInfoManager);
-	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
+	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType();
+	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
+	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
 
-ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+ResultType InterestFactory::CreateClientNonAuthInterestResultType()
 {
 	ResultType ClientNonAuthResultType;
 
@@ -48,17 +48,12 @@ ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassI
 	ClientNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
-	ClientNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-
-	// In direct disagreement with the above comment, we add the owner only components as well.
-	// This is because GDK workers currently make assumptions about information being available at the point of possession.
-	// TODO(jacques): fix (unr-2865)
-	ClientNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
 	return ClientNonAuthResultType;
 }
 
-ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+ResultType InterestFactory::CreateClientAuthInterestResultType()
 {
 	ResultType ClientAuthResultType;
 
@@ -73,7 +68,7 @@ ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfo
 	return ClientAuthResultType;
 }
 
-ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+ResultType InterestFactory::CreateServerNonAuthInterestResultType()
 {
 	ResultType ServerNonAuthResultType;
 
@@ -81,9 +76,9 @@ ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassI
 	ServerNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
 	// Add all data, owner only, and handover components
-	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
-	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
+	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
 
 	return ServerNonAuthResultType;
 }
@@ -146,7 +141,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 	{
 		check(LBStrategy != nullptr);
-		
+
 		// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
 		// to wait for the virtual worker mappings to be replicated.
 		// This function will be called again when that is the case in order to update the interest on the server entity.

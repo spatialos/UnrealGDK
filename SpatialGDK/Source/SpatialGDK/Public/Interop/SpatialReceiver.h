@@ -124,13 +124,14 @@ private:
 
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
-	
+
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
 	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
 	void HandleIndividualAddComponent_Internal(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data);
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
+	void ApplyOwnerOnlyComponents(Worker_EntityId EntityId);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
@@ -176,7 +177,7 @@ private:
 	void QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op);
 	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
 
-	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
+	TArray<PendingAddComponentWrapper> ExtractAddComponents(TArray<PendingAddComponentWrapper>* QueuedComponents, Worker_EntityId Entity);
 	TArray<QueuedOpForAsyncLoad> ExtractAuthorityOps(Worker_EntityId Entity);
 
 	struct CriticalSectionSaveState
@@ -239,6 +240,7 @@ private:
 	TArray<Worker_EntityId> PendingAddActors;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
+	TArray<PendingAddComponentWrapper> PendingOwnerOnlyComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;

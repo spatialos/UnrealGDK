@@ -131,7 +131,7 @@ void USpatialReceiver::LeaveCriticalSection()
 			continue; // Hack to allow servers to change state if they are going to be authoritative
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Unhandled component being handled: compid %d entid %d"), PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
+		UE_LOG(LogTemp, Log, TEXT("Unhandled component being handled: compid %d entid %lld"), PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
 		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
@@ -274,6 +274,14 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
+	// UNR-3066: Queue owner-only components until we have authority
+	if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly &&
+		!StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID))
+	{
+		PendingOwnerOnlyComponents.AddUnique(PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
+		return;
+	}
+
 	if (bInCriticalSection)
 	{
 		PendingAddComponents.AddUnique(PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
@@ -330,6 +338,12 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 	{
 		return;
 	}
+
+	// UNR-3066 Remove all queued owner only components for which we haven't received ownership yet
+	PendingOwnerOnlyComponents.RemoveAll([&Op](const PendingAddComponentWrapper& Queued)
+	{
+		return Queued.EntityId == Op.entity_id && Queued.ComponentId == Op.component_id;
+	});
 
 	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
 	{
@@ -715,6 +729,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
+				ApplyOwnerOnlyComponents(Op.entity_id);
+
 				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
@@ -1018,6 +1034,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 			}
 		}
 	}
+	PendingOwnerOnlyComponents.RemoveAll([&EntityId](const PendingAddComponentWrapper& Queued)
+	{
+		return Queued.EntityId == EntityId;
+	});
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (Actor == nullptr || Actor->IsPendingKill())
@@ -1929,6 +1949,16 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	}
 }
 
+void USpatialReceiver::ApplyOwnerOnlyComponents(Worker_EntityId EntityId)
+{
+	TArray<PendingAddComponentWrapper> OwnerOnlyComponents = ExtractAddComponents(&PendingOwnerOnlyComponents, EntityId);
+
+	for (auto& Wrapper : OwnerOnlyComponents)
+	{
+		HandleIndividualAddComponent_Internal(Wrapper.EntityId, Wrapper.ComponentId, MoveTemp(Wrapper.Data));
+	}
+}
+
 ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
 {
 	ERPCResult Result = ERPCResult::Unknown;
@@ -2528,7 +2558,7 @@ void USpatialReceiver::StartAsyncLoadingClass(const FString& ClassPath, Worker_E
 
 	EntityWaitingForAsyncLoad AsyncLoadEntity;
 	AsyncLoadEntity.ClassPath = ClassPath;
-	AsyncLoadEntity.InitialPendingAddComponents = ExtractAddComponents(EntityId);
+	AsyncLoadEntity.InitialPendingAddComponents = ExtractAddComponents(&PendingAddComponents, EntityId);
 	AsyncLoadEntity.PendingOps = ExtractAuthorityOps(EntityId);
 
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId, MoveTemp(AsyncLoadEntity));
@@ -2649,12 +2679,13 @@ void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_Component
 	AsyncLoadEntity.PendingOps.Add(NewOp);
 }
 
-TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker_EntityId Entity)
+TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(TArray<PendingAddComponentWrapper>* QueuedComponents, Worker_EntityId Entity)
 {
 	TArray<PendingAddComponentWrapper> ExtractedAddComponents;
 	TArray<PendingAddComponentWrapper> RemainingAddComponents;
+	RemainingAddComponents.Reserve(QueuedComponents->Num());
 
-	for (PendingAddComponentWrapper& AddComponent : PendingAddComponents)
+	for (PendingAddComponentWrapper& AddComponent : *QueuedComponents)
 	{
 		if (AddComponent.EntityId == Entity)
 		{
@@ -2665,7 +2696,7 @@ TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker
 			RemainingAddComponents.Add(MoveTemp(AddComponent));
 		}
 	}
-	PendingAddComponents = MoveTemp(RemainingAddComponents);
+	*QueuedComponents = MoveTemp(RemainingAddComponents);
 	return ExtractedAddComponents;
 }
 
