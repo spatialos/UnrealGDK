@@ -256,108 +256,39 @@ namespace ReleaseTool
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
-        // TODO: Alter the PR bodies so that they reflect the Unreal GDK release process (note that these are the for the merge of the RC into release)
         private static string GetPullRequestBody(string repoName)
         {
             switch (repoName)
             {
                 case "UnrealGDK":
-                    return @"#### Description
-- Package versions
-- Changelog
-- Upgrade guide
+                    return $@"#### Description
+- This PR merged `{options.CandidateBranch}` into `{options.SourceBranch}.
+- It was created by the [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release) Buildkite pipeline.
+- Your human labour is now required to unblock the pipeline and resume the release:
 
-#### Tests
-- Windows
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-	- [ ] editor tooling
-- Mac
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-	- [ ] editor tooling
-- Android
-	- [ ] local client
-	- [ ] cloud client
-- iOS
-	- [ ] local client
-	- [ ] cloud client";
+#### Next Steps
+- [ ] *Release Sheriff* - Delegate the tasks below.
+- [ ] *Tech writers*: Review and translate `[CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{options.CandidateBranch}/CHANGELOG.md)`. Merge the translation and edits into `{options.CandidateBranch}`. 
+- [ ] *QA*: Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
+- [ ] *Release Sheriff:* If any blocking defects are discovered, merge the fixes into `{options.CandidateBranch}`.
+- [ ] *Release Sheriff* - When the above tasks are complete, unblock the pipeline. This action will merge all release candidates into their respective release branches.
+";
                 case "UnrealGDKExampleProject":
-                    return @"#### Description
-- Package versions
-- Changelog
-- Pinned gdk
-
-#### Tests
-- Windows
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Mac
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Android
-	- [ ] local client
-	- [ ] cloud client
-- iOS
-	- [ ] local client
-	- [ ] cloud client";
+                    return $@"#### Description
+- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 case "UnrealGDKTestGyms":
-                    return @"#### Description
-- Package versions
-- Changelog
-- pinned gdk
-
-#### Tests
-- Windows
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Mac
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Android
-	- [ ] local client
-	- [ ] cloud client
-- iOS
-	- [ ] local client
-	- [ ] cloud client";
+                    return $@"#### Description
+- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 case "UnrealGDKEngineNetTest":
-                    return @"#### Description
-- Package versions
-- Changelog
-- pinned gdk
-
-#### Tests
-- Windows
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Mac
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Android
-	- [ ] local client
-	- [ ] cloud client
-- iOS
-	- [ ] local client
-	- [ ] cloud client";
+                    return $@"#### Description
+- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 case "UnrealEngine":
-                    return @"#### Description
-- Package versions
-- Changelog
-- pinned gdk
-
-#### Tests
-- Windows
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Mac
-	- [ ] local deploy
-	- [ ] cloud client (Release QA pipeline)
-- Android
-	- [ ] local client
-	- [ ] cloud client
-- iOS
-	- [ ] local client
-	- [ ] cloud client";
+                    return $@"#### Description
+- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 default:
                     throw new ArgumentException($"No PR body template found for repo {repoName}");
             }
