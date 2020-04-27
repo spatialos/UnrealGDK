@@ -5,10 +5,11 @@ param (
 
 $project_absolute_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\$project_name" ## This should ultimately resolve to "C:\b\<number>\NetworkTestProject".
 
+. "$PSScriptRoot\common.ps1"
+
 # Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
 # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-& spatial "service" "stop"
-Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
+Stop-Runtime
 
 # Clean up the symlinks
 if (Test-Path "$unreal_path") {
