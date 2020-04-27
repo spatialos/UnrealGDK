@@ -43,46 +43,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	}
 
 #if TRACE_LIB_ACTIVE
-	if (SpatialLatencyTracer != nullptr && Payload.Trace != InvalidTraceKey)
-	{
-		bool bEndTrace = false;
-		FString TraceMsg;
-		switch (Result)
-		{
-		case SpatialGDK::EPushRPCResult::Success:
-			// No further action
-			break;
-		case SpatialGDK::EPushRPCResult::QueueOverflowed:
-			TraceMsg = TEXT("Overflowed");
-			break;
-		case SpatialGDK::EPushRPCResult::DropOverflowed:
-			TraceMsg = TEXT("OverflowedAndDropped");
-			bEndTrace = true;
-			break;
-		case SpatialGDK::EPushRPCResult::HasAckAuthority:
-			TraceMsg = TEXT("NoAckAuth");
-			bEndTrace = true;
-			break;
-		case SpatialGDK::EPushRPCResult::NoRingBufferAuthority:
-			TraceMsg = TEXT("NoRingBufferAuth");
-			bEndTrace = true;
-			break;
-		default:
-			TraceMsg = TEXT("UnrecognisedResult");
-			break;
-		}
-
-		if (bEndTrace)
-		{
-			// This RPC has been dropped, end the trace
-			SpatialLatencyTracer->WriteAndEndTrace(Payload.Trace, TraceMsg, false);
-		}
-		else if (!TraceMsg.IsEmpty())
-		{
-			// This RPC will be sent later
-			SpatialLatencyTracer->WriteToLatencyTrace(Payload.Trace, TraceMsg);
-		}
-	}
+	ProcessResultToLatencyTrace(Result, Payload.Trace);
 #endif
 
 	return Result;
@@ -201,6 +162,10 @@ void SpatialRPCService::PushOverflowedRPCs()
 				bShouldDrop = true;
 				break;
 			}
+
+#if TRACE_LIB_ACTIVE
+			ProcessResultToLatencyTrace(Result, Payload.Trace);
+#endif
 
 			// This includes the valid case of RPCs still overflowing (EPushRPCResult::QueueOverflowed), as well as the error cases.
 			if (Result != EPushRPCResult::Success)
@@ -565,6 +530,50 @@ Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponen
 		ComponentDataPtr = &PendingRPCsOnEntityCreation.Add(EntityComponentIdPair, Schema_CreateComponentData());
 	}
 	return *ComponentDataPtr;
+}
+
+void SpatialRPCService::ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace)
+{
+	if (SpatialLatencyTracer != nullptr && Trace != InvalidTraceKey)
+	{
+		bool bEndTrace = false;
+		FString TraceMsg;
+		switch (Result)
+		{
+		case SpatialGDK::EPushRPCResult::Success:
+			// No further action
+			break;
+		case SpatialGDK::EPushRPCResult::QueueOverflowed:
+			TraceMsg = TEXT("Overflowed");
+			break;
+		case SpatialGDK::EPushRPCResult::DropOverflowed:
+			TraceMsg = TEXT("OverflowedAndDropped");
+			bEndTrace = true;
+			break;
+		case SpatialGDK::EPushRPCResult::HasAckAuthority:
+			TraceMsg = TEXT("NoAckAuth");
+			bEndTrace = true;
+			break;
+		case SpatialGDK::EPushRPCResult::NoRingBufferAuthority:
+			TraceMsg = TEXT("NoRingBufferAuth");
+			bEndTrace = true;
+			break;
+		default:
+			TraceMsg = TEXT("UnrecognisedResult");
+			break;
+		}
+
+		if (bEndTrace)
+		{
+			// This RPC has been dropped, end the trace
+			SpatialLatencyTracer->WriteAndEndTrace(Trace, TraceMsg, false);
+		}
+		else if (!TraceMsg.IsEmpty())
+		{
+			// This RPC will be sent later
+			SpatialLatencyTracer->WriteToLatencyTrace(Trace, TraceMsg);
+		}
+	}
 }
 
 } // namespace SpatialGDK
