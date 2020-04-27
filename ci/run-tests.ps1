@@ -87,6 +87,6 @@ catch {
     Stop-Process -Force -InputObject $run_tests_proc # kill the dangling process
     buildkite-agent artifact upload "$log_file_path" # If the tests timed out, upload the log and throw an error
     # Looks like BuildKite doesn't like this failure and a dangling runtime will prevent the job from ever timing out, adding cleanup workaround for now
-    & cleanup.ps1 -project_name "$test_repo_path"
+    & cleanup.ps1 -project_name "$test_project_name"
     throw $_
 }
