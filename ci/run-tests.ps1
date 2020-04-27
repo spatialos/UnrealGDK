@@ -1,7 +1,6 @@
 param(
     [string] $unreal_editor_path,
     [string] $uproject_path,
-    [string] $test_project_name,
     [string] $test_repo_path,
     [string] $log_file_path,
     [string] $test_repo_map,
