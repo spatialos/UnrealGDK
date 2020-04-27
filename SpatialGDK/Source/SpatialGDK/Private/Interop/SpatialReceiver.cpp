@@ -2276,7 +2276,8 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (ObjectReferences.Array)
 		{
-			check(Property->IsA<UArrayProperty>());
+			UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+			check(ArrayProperty != nullptr);
 
 			if (!bIsHandover)
 			{
@@ -2286,7 +2287,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + StoredDataOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
-			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
+			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
 			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, bIsHandover ? nullptr : (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
 			continue;
