@@ -1,12 +1,11 @@
 ---
-# TODO: Put back     - "capable_of_building=gdk-for-unreal"
 common: &common
   agents:
-    - "capable_of_building=platform"
+    - "capable_of_building=gdk-for-unreal"
     - "environment=production"
     - "permission_set=builder"
     - "platform=linux"  # if you need a different platform, configure this: macos|linux|windows.
-    - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-2019-12-12-bk5225-daecba805768d787}"
+    - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-20-04-27-095849-bk10828-316979f1}"
     - "scaler_version=2"
     - "working_hours_time_zone=london"
 
