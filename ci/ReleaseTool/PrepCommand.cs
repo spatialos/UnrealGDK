@@ -273,7 +273,7 @@ namespace ReleaseTool
             {
                 case "UnrealGDK":
                     return $@"#### Description
-- This PR merged `{options.CandidateBranch}` into `{options.SourceBranch}.
+- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
 - It was created by the [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release) Buildkite pipeline.
 - Your human labour is now required to unblock the pipeline and resume the release:
 
@@ -286,19 +286,19 @@ namespace ReleaseTool
 ";
                 case "UnrealGDKExampleProject":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
 - It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 case "UnrealGDKTestGyms":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
 - It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 case "UnrealGDKEngineNetTest":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
 - It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 case "UnrealEngine":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.SourceBranch}.
+- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
 - It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
                 default:
                     throw new ArgumentException($"No PR body template found for repo {repoName}");
