@@ -532,6 +532,7 @@ Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponen
 	return *ComponentDataPtr;
 }
 
+#if TRACE_LIB_ACTIVE
 void SpatialRPCService::ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace)
 {
 	if (SpatialLatencyTracer != nullptr && Trace != InvalidTraceKey)
@@ -575,5 +576,6 @@ void SpatialRPCService::ProcessResultToLatencyTrace(const EPushRPCResult Result,
 		}
 	}
 }
+#endif // TRACE_LIB_ACTIVE
 
 } // namespace SpatialGDK
