@@ -42,7 +42,7 @@ steps:
       manual:
         permit_on_passed: true
 
-  - wait
+  - wait ~
   # Stage 2: Run all tests against the release candidates.
   # TODO: Work out what generate-release-qa-trigger.sh does and re-write it to run all tests across all four repos.
   - label: "Add step for triggering release QA"
