@@ -5,7 +5,7 @@ using NLog;
 
 namespace ReleaseTool
 {
-    public static class BuildkiteAgentImpl
+    public static class BuildkiteAgent
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 

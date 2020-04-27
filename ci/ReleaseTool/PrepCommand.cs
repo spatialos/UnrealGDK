@@ -39,7 +39,7 @@ namespace ReleaseTool
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
         [Verb("prep", HelpText = "Prep a release candidate branch.")]
-        public class Options : GitHubClient.IGitHubOptions, BuildkiteMetadataSink.IBuildkiteOptions
+        public class Options : GitHubClient.IGitHubOptions
         {
             [Value(0, MetaName = "version", HelpText = "The release version that is being cut.", Required = true)]
             public string Version { get; set; }
@@ -142,19 +142,10 @@ namespace ReleaseTool
                             branchFrom,
                             branchTo,
                             string.Format(PullRequestTemplate, options.Version),
-                            GetPullRequestBody(options.GitRepoName));
+                            GetPullRequestBody(options.GitRepoName, options.CandidateBranch, options.ReleaseBranch));
                     }
 
-                    if (BuildkiteMetadataSink.CanWrite(options))
-                    {
-                        using (var sink = new BuildkiteMetadataSink(options))
-                        {
-                            sink.WriteMetadata($"{options.GitRepoName}-release-branch",
-                                $"pull/{pullRequest.Number}/head:{options.CandidateBranch}");
-                            sink.WriteMetadata($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
-                            SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
-                        }
-                    }
+                    BuildkiteAgent.SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
 
                     Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
                     Logger.Info("Successfully created release!");
@@ -268,40 +259,43 @@ namespace ReleaseTool
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
+
+
 /// TODO: Replace {options.UnrealGDK-pr-url} with GetMetadata
-        private static string GetPullRequestBody(string repoName)
-        {   UnrealGDK-pr-url.GetMetadata("UnrealGDK-pr-url");
+        private static string GetPullRequestBody(string repoName, string candidateBranch, string releaseBranch)
+        {
+            var unrealGdkPrUrl = BuildkiteAgent.GetMetadata("UnrealGDK-pr-url");
             switch (repoName)
             {
                 case "UnrealGDK":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
+- This PR merges `{candidateBranch}` into `{releaseBranch}.
 - It was created by the [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release) Buildkite pipeline.
 - Your human labour is now required to unblock the pipeline and resume the release:
 
 #### Next Steps
 - [ ] *Release Sheriff* - Delegate the tasks below.
-- [ ] *Tech writers*: Review and translate `[CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{options.CandidateBranch}/CHANGELOG.md)`. Merge the translation and edits into `{options.CandidateBranch}`. 
+- [ ] *Tech writers*: Review and translate `[CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{candidateBranch}/CHANGELOG.md)`. Merge the translation and edits into `{candidateBranch}`. 
 - [ ] *QA*: Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
-- [ ] *Release Sheriff:* If any blocking defects are discovered, merge the fixes into `{options.CandidateBranch}`.
+- [ ] *Release Sheriff:* If any blocking defects are discovered, merge the fixes into `{releaseBranch}`.
 - [ ] *Release Sheriff* - When the above tasks are complete, unblock the pipeline. This action will merge all release candidates into their respective release branches.
 ";
                 case "UnrealGDKExampleProject":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
-- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
+- This PR merges `{candidateBranch}` into `{releaseBranch}.
+- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
                 case "UnrealGDKTestGyms":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
-- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
+- This PR merges `{candidateBranch}` into `{releaseBranch}.
+- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
                 case "UnrealGDKEngineNetTest":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
-- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
+- This PR merges `{candidateBranch}` into `{releaseBranch}.
+- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
                 case "UnrealEngine":
                     return $@"#### Description
-- This PR merges `{options.CandidateBranch}` into `{options.ReleaseBranch}.
-- It corresponds to `{options.UnrealGDK-pr-url}`, where you can find more information about this release.";
+- This PR merges `{candidateBranch}` into `{releaseBranch}.
+- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
                 default:
                     throw new ArgumentException($"No PR body template found for repo {repoName}");
             }

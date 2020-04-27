@@ -24,7 +24,6 @@ prepareRelease () {
         --release-branch="${RELEASE_BRANCH}" \
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
-        --buildkite-metadata-path="/var/logs/bk-metadata" \
         --github-organization="${GITHUB_ORG}"
 }
 
@@ -66,6 +65,3 @@ while IFS= read -r ENGINE_VERSION; do
     "${ENGINE_VERSION}-release" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
-
-echo "--- Writing metadata :pencil2:"
-writeBuildkiteMetadata "./logs/bk-metadata"

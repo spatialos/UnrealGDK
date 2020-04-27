@@ -25,7 +25,7 @@ namespace ReleaseTool
         private const string ChangeLogFilename = "CHANGELOG.md";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
-        public class Options : GitHubClient.IGitHubOptions, BuildkiteMetadataSink.IBuildkiteOptions
+        public class Options : GitHubClient.IGitHubOptions
         {
             [Value(0, MetaName = "version", HelpText = "The version that is being released.")]
             public string Version { get; set; }

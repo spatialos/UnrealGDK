@@ -26,7 +26,6 @@ release () {
         --release-branch="${RELEASE_BRANCH}" \
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
-        --buildkite-metadata-path="/var/logs/bk-metadata" \
         --pull-request-url="${PR_URL}" \
         --github-organization="${GITHUB_ORG}"
 }
@@ -70,6 +69,3 @@ while IFS= read -r ENGINE_VERSION; do
     "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
-
-echo "--- Writing metadata :pencil2:"
-writeBuildkiteMetadata "./logs/bk-metadata"
