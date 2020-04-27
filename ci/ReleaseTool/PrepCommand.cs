@@ -13,6 +13,7 @@ namespace ReleaseTool
     ///     * Checks out the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
     ///     * Makes repo-dependent changes for prepping the release (e.g. updating version files).
     ///     * Pushes this to an RC branch.
+    ///     * Creates a release branch if it doesn't exist.
     ///     * Opens a PR for merging the RC branch into the release branch.
     /// </summary>
 
@@ -20,7 +21,8 @@ namespace ReleaseTool
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        private const string CommitMessageTemplate = "Release candidate for version {0}.";
+        private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
+        private const string ReleaseBranchCreationCommitMessageTemplate = "Create release branch off {0} release candidate."; // TODO: modify this line if we create the RC off master isntead
         private const string PullRequestTemplate = "Release {0}";
 
         // Names of the version files that live in the UnrealEngine repository.
@@ -85,7 +87,8 @@ namespace ReleaseTool
          *         2. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
          *         3. Make repo-dependent changes for prepping the release (e.g. updating version files).
          *         4. Push this to an RC branch.
-         *         5. Open a PR for merging the RC branch into the release branch.
+         *         5. Create a release branch if it doesn't exist
+         *         6. Open a PR for merging the RC branch into the release branch.
          */
         public int Run()
         {
@@ -116,10 +119,18 @@ namespace ReleaseTool
                     }
 
                     // This does step 4 from above.
-                    gitClient.Commit(string.Format(CommitMessageTemplate, options.Version));
+                    gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                     gitClient.ForcePush(options.CandidateBranch);
 
                     // This does step 5 from above.
+                    if (!gitClient.LocalBranchExists(options.ReleaseBranch))
+                    {
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch, options.GithubOrgName); // TODO: Remove this line if we want to create release from master
+                        gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
+                        gitClient.ForcePush(options.ReleaseBranch);
+                    }
+
+                    // This does step 6 from above.
                     var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
                     var branchFrom = options.SourceBranch;
                     var branchTo = options.ReleaseBranch;
