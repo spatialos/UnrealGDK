@@ -16,13 +16,12 @@
  * At runtime, all unreal workers will:
  * 1. Instantiate an instance of the strategy class specified in TODO: where are we adding this?
  * 2. Call the Init method, passing the current USpatialNetDriver.
- * 3. (Translator / Enforcer only): Initialize Worker to VirtualWorkerId mapping with
- *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assinging workers.
+ * 3. (Translator authoritative worker only): Initialize Worker to VirtualWorkerId mapping with
+ *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assigning workers.
  *    (Other Workers): SetLocalVirtualWorkerId when assigned a VirtualWorkerId.
  * 4. For each Actor being replicated:
  *   a) Check if authority should be relinquished by calling ShouldHaveAuthority
- *   b) If true: Send authority change request to Translator/Enforcer passing in new
- *        VirtualWorkerId returned by WhoShouldHaveAuthority
+ *   b) If true: Update AuthorityDelegation mapping.
  */
 UCLASS(abstract)
 class SPATIALGDK_API UAbstractLBStrategy : public UObject

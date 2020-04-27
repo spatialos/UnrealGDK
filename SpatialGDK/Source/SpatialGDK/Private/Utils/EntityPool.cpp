@@ -81,6 +81,12 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 			bIsReady = true;
 			EntityPoolReadyDelegate.Broadcast();
 		}
+
+		if (NetDriver->WorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+            const Worker_EntityId ServerWorkerEntityId = NetDriver->PackageMap->AllocateNewEntityId();
+            NetDriver->Sender->CreateServerWorkerEntity(ServerWorkerEntityId);
+        }
 	});
 
 	// Reserve the Entity IDs

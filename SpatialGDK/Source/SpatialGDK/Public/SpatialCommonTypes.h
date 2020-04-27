@@ -12,6 +12,8 @@
 using Worker_EntityId_Key = int64;
 using Worker_RequestId_Key = int64;
 
+using Worker_PartitionId = Worker_EntityId_Key;
+
 using VirtualWorkerId = uint32;
 using PhysicalWorkerName = FString;
 using ActorLockToken = int64;
@@ -27,6 +29,8 @@ using FObjectReferencesMap = TMap<int32, struct FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRPCForRetry>>;
 
 using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;
+
+using AuthorityDelegationMap = TMap<Worker_ComponentId, Worker_PartitionId>;
 
 template<typename T>
 struct FTrackableWorkerType : public T

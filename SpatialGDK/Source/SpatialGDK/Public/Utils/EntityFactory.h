@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
- 
+
 #pragma once
- 
+
 #include "SpatialCommonTypes.h"
 #include "Utils/SpatialStatics.h"
 
@@ -16,23 +16,32 @@ class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
- 
+
 namespace SpatialGDK
 {
-class SpatialRPCService;	
+class SpatialRPCService;
 
 struct RPCsOnEntityCreation;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
- 
+
 class SPATIALGDK_API EntityFactory
 {
 public:
 	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService);
- 
+
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
 
 	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
+
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(VirtualWorkerId VirtualWorker);
+
+	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
+	{
+		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+			|| ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+			|| ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
+	}
 
 private:
 	USpatialNetDriver* NetDriver;

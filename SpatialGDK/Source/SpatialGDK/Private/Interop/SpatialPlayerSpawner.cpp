@@ -140,7 +140,9 @@ SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const
 
 	const FName OnlinePlatformName = WorldContext->OwningGameInstance->GetOnlinePlatformName();
 
-	return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer };
+	const Worker_EntityId ClientSystemEntityId = NetDriver->Connection->GetWorkerEntityId();
+
+	return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer, ClientSystemEntityId };
 }
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponseOnClient(const Worker_CommandResponseOp& Op)
@@ -264,7 +266,7 @@ void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(const Schema_Object* Pla
 
 	// Set a prioritized PlayerStart for the new player to spawn at. Passing nullptr is a no-op.
 	GameMode->SetPrioritizedPlayerStart(PlayerStart);
-	NetDriver->AcceptNewPlayer(SpawnRequest.LoginURL, SpawnRequest.UniqueId, SpawnRequest.OnlinePlatformName);
+	NetDriver->AcceptNewPlayer(SpawnRequest.LoginURL, SpawnRequest.UniqueId, SpawnRequest.OnlinePlatformName, SpawnRequest.ClientSystemEntityId);
 	GameMode->SetPrioritizedPlayerStart(nullptr);
 }
 

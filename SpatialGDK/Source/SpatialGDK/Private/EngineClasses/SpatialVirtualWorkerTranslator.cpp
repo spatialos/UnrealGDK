@@ -1,6 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -9,27 +13,39 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
 	PhysicalWorkerName InPhysicalWorkerName)
-	: LoadBalanceStrategy(InLoadBalanceStrategy)
+	: NetDriver(nullptr)
+	, LoadBalanceStrategy(InLoadBalanceStrategy)
 	, bIsReady(false)
 	, LocalPhysicalWorkerName(InPhysicalWorkerName)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	, LocalPartitionId(SpatialConstants::INVALID_ENTITY_ID)
 {}
 
 const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const
 {
-	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	if (const SpatialVirtualWorkerTranslator::WorkerInformation* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
-		return &PhysicalWorkerInfo->Key;
+		return &PhysicalWorkerInfo->WorkerName;
 	}
 
 	return nullptr;
 }
 
-Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
+Worker_EntityId SpatialVirtualWorkerTranslator::GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const
 {
-	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	if (const SpatialVirtualWorkerTranslator::WorkerInformation* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
-		return PhysicalWorkerInfo->Value;
+		return PhysicalWorkerInfo->PartitionEntityId;
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+Worker_PartitionId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
+{
+	if (const SpatialVirtualWorkerTranslator::WorkerInformation* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	{
+		return PhysicalWorkerInfo->ServerWorkerEntityId;
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;
@@ -37,14 +53,14 @@ Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualW
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
 {
-    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%d) ApplyVirtualWorkerManagerData"), LocalVirtualWorkerId);
+    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerData"), *LocalPhysicalWorkerName);
 
-	// The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID. 
+	// The translation schema is a list of mappings, where each entry has a virtual and physical worker ID.
 	ApplyMappingFromSchema(ComponentObject);
 
 	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.Key), Entry.Value.Value);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
 	}
 }
 
@@ -53,15 +69,15 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 // after a PiE restart.
 bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 {
-	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+	const int32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 
 	for (int32 i = 0; i < TranslationCount; i++)
 	{
 		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
-		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME) == LocalPhysicalWorkerName)
+		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID) == LocalPhysicalWorkerName)
 		{
-			VirtualWorkerId ReceivedVirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
+			const VirtualWorkerId ReceivedVirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 			if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID && LocalVirtualWorkerId != ReceivedVirtualWorkerId)
 			{
 				UE_LOG(LogSpatialVirtualWorkerTranslator, Error, TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."));
@@ -87,30 +103,34 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 
 	// Resize the map to accept the new data.
 	VirtualToPhysicalWorkerMapping.Empty();
-	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+	const int32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	VirtualToPhysicalWorkerMapping.Reserve(TranslationCount);
 
 	for (int32 i = 0; i < TranslationCount; i++)
 	{
 		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
-		VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
-		PhysicalWorkerName PhysicalWorkerName = SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME);
-		Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
+		const VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
+		const PhysicalWorkerName WorkerName = SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
+		const Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
+		const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
 
 		// Insert each into the provided map.
-		UpdateMapping(VirtualWorkerId, PhysicalWorkerName, ServerWorkerEntityId);
+		UpdateMapping(VirtualWorkerId, WorkerName, PartitionEntityId, ServerWorkerEntityId);
 	}
 }
 
-void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name, Worker_EntityId ServerWorkerEntityId)
+void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId, Worker_EntityId ServerWorkerEntityId)
 {
-	VirtualToPhysicalWorkerMapping.Add(Id, MakeTuple(Name, ServerWorkerEntityId));
+	VirtualToPhysicalWorkerMapping.Add(Id, WorkerInformation{ WorkerName, ServerWorkerEntityId, PartitionEntityId });
 
-	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID && Name == LocalPhysicalWorkerName)
+	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID && WorkerName == LocalPhysicalWorkerName)
 	{
 		LocalVirtualWorkerId = Id;
+		LocalPartitionId = PartitionEntityId;
 		bIsReady = true;
+
+		NetDriver->Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerEntityId(), PartitionEntityId);
 
 		// Tell the strategy about the local virtual worker id. This is an "if" and not a "check" to allow unit tests which don't
 		// provide a strategy.

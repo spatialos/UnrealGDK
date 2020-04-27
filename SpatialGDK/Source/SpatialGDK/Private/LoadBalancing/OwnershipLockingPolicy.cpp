@@ -2,7 +2,6 @@
 
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 
-#include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
 #include "Utils/SpatialActorUtils.h"
 

@@ -8,7 +8,6 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/AuthorityIntent.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
@@ -17,6 +16,7 @@
 #include "Schema/RPCPayload.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
@@ -369,6 +369,19 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
+	// Create AuthorityDelegation from EntityACL component IDs.
+	AuthorityDelegationMap DelegationMap;
+	const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningEntityId(Actor);
+	const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->WorkerEntityId;
+	for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
+	{
+		const Worker_ComponentId ComponentId = ComponentIdIt.Key();
+		const Worker_PartitionId PartitionId = IsClientAuthoritativeComponent(ComponentId) ? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
+		DelegationMap.Add(ComponentId, PartitionId);
+	}
+	DelegationMap.Add(AuthorityDelegation::ComponentId, AuthoritativeServerPartitionId);
+	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+
 	return ComponentDatas;
 }
 
@@ -436,6 +449,26 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	{
 		Components.Add(Persistence().CreatePersistenceData());
 	}
+
+	return Components;
+}
+
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(VirtualWorkerId VirtualWorker)
+{
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+
+	TArray<FWorkerComponentData> Components;
+	Components.Add(Position().CreatePositionData());
+	Components.Add(Metadata(FString::Format(TEXT("ParitionEntity:{0}"), { VirtualWorker })).CreateMetadataData());
+	// This entity is only relevant for USLB enabled, no reason to do write ACL map.
+	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, {}).CreateEntityAclData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	Components.Add(ComponentPresence(GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	return Components;
 }

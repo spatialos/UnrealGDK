@@ -64,6 +64,7 @@ public:
 
 	// Only used on the server for client connections.
 	FString ConnectionOwningWorkerId;
+	Worker_EntityId ConnectingClientSystemEntityId;
 
 	class FTimerManager* TimerManager;
 

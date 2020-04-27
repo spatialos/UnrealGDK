@@ -10,6 +10,7 @@ type VirtualWorkerMapping {
      uint32 virtual_worker_id = 1;
      string physical_worker_name = 2;
      EntityId server_worker_entity = 3;
+     EntityId partition_id = 4;
 }
 
 component VirtualWorkerTranslation {

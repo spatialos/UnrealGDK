@@ -5,6 +5,7 @@
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 
 #include "SpatialWorkerConnection.generated.h"
 
@@ -25,6 +26,7 @@ public:
 
 	virtual PhysicalWorkerName GetWorkerId() const PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerId, return PhysicalWorkerName(););
 	virtual const TArray<FString>& GetWorkerAttributes() const PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerAttributes, return ReturnValuePlaceholder;);
+	virtual Worker_EntityId GetWorkerEntityId() const PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerEntityId, return SpatialConstants::INVALID_ENTITY_ID;);
 
 	virtual void ProcessOutgoingMessages() PURE_VIRTUAL(USpatialWorkerConnection::ProcessOutgoingMessages, return;);
 	virtual void MaybeFlush() PURE_VIRTUAL(USpatialWorkerConnection::MaybeFlush, return;);

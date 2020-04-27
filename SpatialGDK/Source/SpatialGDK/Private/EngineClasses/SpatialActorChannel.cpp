@@ -1145,6 +1145,19 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 			"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	}
+
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS)
+	{
+		// This field is valid on PlayerControllers. If valid, we want the client worker to claim the PlayerController
+		// as a partition entity ID so the client can become authoritative over relevant components (such as client
+		// RPC endpoints, heartbeat component, etc).
+		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Actor);
+		if (Actor->IsA<APlayerController>())
+		{
+			check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
+			Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
+		}
+	}
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
@@ -1271,6 +1284,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		{
 			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
 		}
+
+		Sender->SendAuthorityDelegationUpdate(EntityId, NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 
 		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
 

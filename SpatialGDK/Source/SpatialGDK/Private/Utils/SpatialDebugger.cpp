@@ -9,7 +9,6 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/WorkerRegion.h"
-#include "Schema/AuthorityIntent.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/InspectionColors.h"
@@ -308,7 +307,7 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 	NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
 }
 
-void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+void ASpatialDebugger::AuthoritativeVirtualWorkerChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
 	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 	check(DebuggingInfo != nullptr);

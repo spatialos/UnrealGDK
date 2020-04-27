@@ -72,7 +72,8 @@ enum EntityIds
 	INITIAL_SPAWNER_ENTITY_ID = 1,
 	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
 	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
-	FIRST_AVAILABLE_ENTITY_ID = 4,
+	INITIAL_SNAPSHOT_PARTITION_ENTITY_ID = 4,
+	FIRST_AVAILABLE_ENTITY_ID = 5,
 };
 
 const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
@@ -84,7 +85,8 @@ const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID							= 60;
-const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID			= 61;
+const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID					= 61;
+const Worker_ComponentId AUTHORITY_DELEGATION_COMPONENT_ID				= 65;
 
 const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
 
@@ -172,19 +174,18 @@ const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
 
 const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
-// AuthorityIntent codes and Field IDs.
-const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
-
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
-const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME_ID					= 2;
 const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID					= 3;
+const Schema_FieldId MAPPING_PARTITION_ID								= 4;
 const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID										= 1;
 const Schema_FieldId WORKER_TYPE_ID										= 2;
+const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID					= 2;
 
 // SpatialDebugger Field IDs.
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID   = 1;
@@ -203,6 +204,7 @@ const Schema_FieldId SPAWN_PLAYER_URL_ID								 = 1;
 const Schema_FieldId SPAWN_PLAYER_UNIQUE_ID								 = 2;
 const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID						 = 3;
 const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID						 = 4;
+const Schema_FieldId SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID				 = 5;
 
 // ForwardSpawnPlayerRequest type IDs.
 const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 1;

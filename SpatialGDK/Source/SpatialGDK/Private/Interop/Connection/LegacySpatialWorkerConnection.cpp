@@ -169,6 +169,11 @@ const TArray<FString>& ULegacySpatialWorkerConnection::GetWorkerAttributes() con
 	return CachedWorkerAttributes;
 }
 
+Worker_EntityId USpatialWorkerConnection::GetWorkerEntityId() const
+{
+	return Worker_Connection_GetWorkerEntityId(WorkerConnection);
+}
+
 void ULegacySpatialWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
