@@ -820,7 +820,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 void FSpatialGDKEditorToolbarModule::StartUnrealNativeNetworkingButtonClicked()
 {
-
+	//Do nothing
 }
 
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
@@ -830,7 +830,25 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentButtonClicked()
 {
+	// Create and open the cloud configuration dialog
+	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
+		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
+		.HasCloseButton(true)
+		.SupportsMaximize(false)
+		.SupportsMinimize(false)
+		.SizingRule(ESizingRule::Autosized);
 
+	SimulatedPlayerDeploymentWindowPtr->SetContent(
+		SNew(SBox)
+		.WidthOverride(700.0f)
+		[
+			SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+			.SpatialGDKEditor(SpatialGDKEditorInstance)
+		.ParentWindow(SimulatedPlayerDeploymentWindowPtr)
+		]
+	);
+
+	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
@@ -898,7 +916,7 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() const
 {
-	return false;
+	return true;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
