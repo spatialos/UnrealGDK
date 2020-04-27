@@ -220,6 +220,13 @@ void USpatialGDKEditorSettings::SetSnapshotPath(const FString& Path)
 void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type RegionCode)
 {
 	PrimaryDeploymentRegionCode = RegionCode;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetMainDeploymentCluster(const FString& NewCluster)
+{
+	MainDeploymentCluster = NewCluster;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
@@ -243,6 +250,13 @@ void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Con
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewCluster)
+{
+	SimulatedPlayerCluster = NewCluster;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)

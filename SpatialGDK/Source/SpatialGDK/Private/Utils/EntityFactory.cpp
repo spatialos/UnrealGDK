@@ -15,7 +15,6 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
@@ -29,6 +28,9 @@
 #include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
+#include "Engine/LevelScriptActor.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
 
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 
@@ -259,6 +261,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 	}
 
+#if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
 		if (SpatialSettings->bEnableUnrealLoadBalancer)
@@ -267,7 +270,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
 			FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-			FColor IntentColor = PhysicalWorkerName == nullptr ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
+			FColor IntentColor = PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
 
 			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 
@@ -277,11 +280,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
-
-	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		ComponentDatas.Add(Singleton().CreateSingletonData());
-	}
+#endif
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{

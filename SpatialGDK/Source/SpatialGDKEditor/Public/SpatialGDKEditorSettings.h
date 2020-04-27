@@ -338,6 +338,9 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
+		FString MainDeploymentCluster;
+
 	/** Tags used when launching a deployment */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
 		FString DeploymentTags;
@@ -385,6 +388,9 @@ public:
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
+		FString SimulatedPlayerCluster;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
 		bool bSimulatedPlayersIsEnabled;
@@ -519,6 +525,21 @@ public:
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
 	}
 
+	void SetMainDeploymentCluster(const FString& NewCluster);
+	FORCEINLINE FString GetRawMainDeploymentCluster() const
+	{
+		return MainDeploymentCluster;
+	}
+
+	FORCEINLINE FString GetMainDeploymentCluster() const
+	{
+		if (MainDeploymentCluster.IsEmpty())
+		{
+			return "\"\"";
+		}
+		return MainDeploymentCluster;
+	}
+
 	void SetDeploymentTags(const FString& Tags);
 	FORCEINLINE FString GetDeploymentTags() const
 	{
@@ -590,6 +611,21 @@ public:
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
 		return SimulatedPlayerDeploymentName;
+	}
+
+	void SetSimulatedPlayerCluster(const FString& NewCluster);
+	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
+	{
+		return SimulatedPlayerCluster;
+	}
+
+	FORCEINLINE FString GetSimulatedPlayerCluster() const
+	{
+		if (SimulatedPlayerCluster.IsEmpty())
+		{
+			return "\"\"";
+		}
+		return SimulatedPlayerCluster;
 	}
 
 	FORCEINLINE FString GetSimulatedPlayerLaunchConfigPath() const

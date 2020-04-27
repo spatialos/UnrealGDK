@@ -41,7 +41,7 @@ struct PendingAddComponentWrapper
 	// will be moved into unique pointers and we cannot equate the underlying Worker_ComponentData.
 	bool operator==(const PendingAddComponentWrapper& Other) const
 	{
-		return EntityId == Other.EntityId && ComponentId && Other.ComponentId;
+		return EntityId == Other.EntityId && ComponentId == Other.ComponentId;
 	}
 
 	Worker_EntityId EntityId;
@@ -147,8 +147,6 @@ private:
 	void ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
-
-	AActor* FindSingletonActor(UClass* SingletonClass);
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId);
