@@ -148,8 +148,6 @@ private:
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
-	AActor* FindSingletonActor(UClass* SingletonClass);
-
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId);
 
