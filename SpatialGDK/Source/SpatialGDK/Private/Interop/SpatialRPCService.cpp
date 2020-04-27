@@ -48,6 +48,9 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 		FString TraceMsg;
 		switch (Result)
 		{
+		case SpatialGDK::EPushRPCResult::Success:
+			// No further action
+			break;
 		case SpatialGDK::EPushRPCResult::QueueOverflowed:
 			TraceMsg = TEXT("Overflowed");
 			break;
@@ -63,6 +66,9 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 			TraceMsg = TEXT("NoRingBufferAuth");
 			bEndTrace = true;
 			break;
+		default:
+			TraceMsg = TEXT("UnrecognisedResult");
+			break;
 		}
 
 		if (bEndTrace)
@@ -74,7 +80,6 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 		{
 			// This RPC will be sent later
 			SpatialLatencyTracer->WriteToLatencyTrace(Payload.Trace, TraceMsg);
-
 		}
 	}
 #endif
@@ -260,6 +265,9 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 
 		FWorkerComponentData& Component = Components.AddZeroed_GetRef();
 		Component.component_id = EndpointComponentId;
+#if TRACE_LIB_ACTIVE
+		Component.Trace = InvalidTraceKey;
+#endif
 		if (Schema_ComponentData** ComponentData = PendingRPCsOnEntityCreation.Find(EntityComponent))
 		{
 			// When sending initial multicast RPCs, write the number of RPCs into a separate field instead of

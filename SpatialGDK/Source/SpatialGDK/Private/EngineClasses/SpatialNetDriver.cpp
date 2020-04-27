@@ -42,6 +42,7 @@
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
