@@ -1254,9 +1254,7 @@ bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 {
-	bool bEnable = false;
-	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
-	return PackageAssembly->CanBuild();
+	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
@@ -1266,26 +1264,22 @@ bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
 
 bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->IsSimulatedPlayersEnabled();
+	return GetDefault<USpatialGDKEditorSettings>()->IsSimulatedPlayersEnabled();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
 {
-	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetSimulatedPlayersEnabledState(!IsSimulatedPlayersEnabled());
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetSimulatedPlayersEnabledState(!IsSimulatedPlayersEnabled());
 }
 
 bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->IsBuildClientWorkerEnabled();
+	return GetDefault<USpatialGDKEditorSettings>()->IsBuildClientWorkerEnabled();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
 {
-	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
 }
 
 void FSpatialGDKEditorToolbarModule::AddDeploymentTag(const FString& Tag)
