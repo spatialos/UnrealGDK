@@ -1,7 +1,8 @@
 ---
+# TODO: Put back     - "capable_of_building=gdk-for-unreal"
 common: &common
   agents:
-    - "capable_of_building=gdk-for-unreal"
+    - "capable_of_building=platform"
     - "environment=production"
     - "permission_set=builder"
     - "platform=linux"  # if you need a different platform, configure this: macos|linux|windows.
