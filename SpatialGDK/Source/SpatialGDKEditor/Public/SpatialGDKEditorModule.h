@@ -12,7 +12,7 @@ public:
 
 	FSpatialGDKEditorModule();
 
-	SPATIALGDKEDITOR_API const FLBStrategyEditorExtensionManager& GetLBStrategyExtensionManager() { return *ExtensionManager; }
+	SPATIALGDKEDITOR_API FLBStrategyEditorExtensionManager& GetLBStrategyExtensionManager() { return *ExtensionManager; }
 
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
