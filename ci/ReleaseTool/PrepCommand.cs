@@ -22,7 +22,7 @@ namespace ReleaseTool
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
-        private const string ReleaseBranchCreationCommitMessageTemplate = "Create release branch off {0} release candidate."; // TODO: modify this line if we create the RC off master isntead
+        private const string ReleaseBranchCreationCommitMessageTemplate = "Create release branch off {0} release candidate."; // TODO: modify this line if we create the RC off master instead
         private const string PullRequestTemplate = "Release {0}";
         private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
             "in the repo `{1}` from `{2}` into `{3}`. " +
