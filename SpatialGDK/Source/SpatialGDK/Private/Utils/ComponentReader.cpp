@@ -180,22 +180,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
 		// However, we still want to apply this empty data, so we need to reconstruct the full
 		// list of field IDs for that component type (Data, OwnerOnly).
-		TArray<Schema_FieldId> InitialIds;
-		if (bIsInitialData)
-		{
-			const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
-			int32 SchemaType = ClassInfoManager->GetCategoryByComponentId(ComponentId);
-			for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
-			{
-				const int32 CmdIndex = BaseHandleToCmdIndex[HandleIndex].CmdIndex;
-				const FRepParentCmd& ParentCmd = Parents[Cmds[CmdIndex].ParentIndex];
-				if (GetGroupFromCondition(ParentCmd.Condition) == SchemaType)
-				{
-					InitialIds.Add(HandleIndex + 1);
-				}
-			}
-		}
-		const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ? InitialIds : UpdatedIds;
+		const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ?
+			ClassInfoManager->GetFieldIdsByComponentId(ComponentId, *Replicator->RepLayout.Get()) : UpdatedIds;
 
 		for (uint32 FieldId : IdsToIterate)
 		{
