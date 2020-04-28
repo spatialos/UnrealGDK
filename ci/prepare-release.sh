@@ -53,15 +53,15 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
-prepareRelease "UnrealGDK" "master" "${GDK_VERSION}-rc" "release" "spatialos"
-prepareRelease "UnrealGDKExampleProject" "master" "${GDK_VERSION}-rc" "release" "spatialos"
-prepareRelease "UnrealGDKTestGyms" "master" "${GDK_VERSION}-rc" "release" "spatialos"
-prepareRelease "UnrealGDKEngineNetTest" "master" "${GDK_VERSION}-rc" "release" "improbable"
+prepareRelease "UnrealGDK"                "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
+prepareRelease "UnrealGDKExampleProject"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
+prepareRelease "UnrealGDKTestGyms"        "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
+prepareRelease "UnrealGDKEngineNetTest"   "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \
-    "${ENGINE_VERSION}" \
+    "dry-run/${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "${ENGINE_VERSION}-release" \
+    "dry-run/${ENGINE_VERSION}-release" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
