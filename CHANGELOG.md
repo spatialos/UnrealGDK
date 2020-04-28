@@ -48,35 +48,35 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - We've introduced the feature flag `bEnableResultTypes` (default true). This configures interest queries to include only the set of components required for the queries to run. Depending on your game, this might save bandwidth.
 - If you set the `bEnableResultTypes` flag to `true`, this disables dynamic interest overrides.
 - We've moved the development authentication settings from the Runtime Settings panel to the Editor Settings panel.
-- Added the option to use the development authentication flow using the command line.
-- Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
-- Added a new settings section allowing you to configure the launch arguments when running a a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
-- Added settings to choose which runtime version to launch with local and cloud deployment launch command.
+- We've added the option to use the development authentication flow with the command line.
+- We've added a button to generate a development authentication token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
+- We've added a new section where you can configure the launch arguments for running a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
+- You can now choose which Runtime version to use when you launch a local or cloud deployment.
 - With the `--OverrideResultTypes` flag flipped, servers will no longer check out server RPC components on actors they do not own. This should give a bandwidth saving to server workers in offloaded and zoned games.
-- The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch you have checked out. They read `UnrealGDKVersion.txt` & `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
-- Enabling the Unreal GDK load balancer now creates a single query per server worker, depending on the defined load balancing strategy.
-- The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
+- The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch that you have checked out. They read `UnrealGDKVersion.txt` and `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
+- Enabling the GDK for Unreal load balancer now creates a single query per server-worker instance, depending on the defined load balancing strategy.
+- We've removed the `bEnableServerQBI` property and the `--OverrideServerInterest` flag.
 - SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
-- Added custom warning timeouts per RPC failure condition.
-- SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
+- We've added custom warning timeouts for each RPC failure condition.
+- `SpatialPingComponent` can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
 - The Spatial Output Log window now displays deployment startup errors.
-- Added `bEnableClientQueriesOnServer` (defaulted false) which makes the same queries on the server as on clients if the unreal load balancer is enabled. Enable this to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
-- Added log warning when AddPendingRPC fails due to ControllerChannelNotListening.
-- When running with Offloading enabled, Actors will have local authority (ROLE_Authority) on servers for longer periods of time to allow more native Unreal functionality to work without problems.
-- When running with Offloading enabled, and trying to spawn Actors on a server which will not be the Actor Group owner for them, an error is logged and the Actor is deleted.
-- The GDK now uses SpatialOS runtime version 14.5.1 by default.
-- Config setting `bPreventAutoConnectWithLocator` has been renamed to `bPreventClientCloudDeploymentAutoConnect`. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
-- USpatialMetrics::WorkerMetricsRecieved was made static.
-- Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
-- The Spatial GDK now default enables RPC Ring Buffers, and the legacy RPC mode will be removed in a subsequent release.
-- The `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
-- Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and ActorComponents. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
-- You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
-- Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
-- Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
+- We've added `bEnableClientQueriesOnServer` (default false) which makes the same queries on the server as it makes on clients, if the unreal load balancer is enabled. Enable this to avoid a situation in which clients receive updates about entities that the server doesn't receive updates about (if the server's interest query is configured incorrectly).
+- We've added log warning when `AddPendingRPC` fails due to `ControllerChannelNotListening`.
+- When offloading is enabled, Actors have local authority (`ROLE_Authority`) on servers for longer periods of time, to allow more native Unreal functionality to work without problems.
+- When offloading is enabled, if you try to spawn Actors on a server that will not be the Actor Group owner for them, we now log an error and delete the Actor.
+- The GDK now uses SpatialOS Runtime version 14.5.1 by default.
+- We've renamed the configuration setting `bPreventAutoConnectWithLocator` to `bPreventClientCloudDeploymentAutoConnect` and moved it to GDK Settings. If using this feature please update enable the setting in GDK Settings.
+- We've made `USpatialMetrics::WorkerMetricsRecieved` static.
+- You can now connect to a local deployment by selecting "Connect to a local deployment" and specifying the local IP address of your computer in the Launch drop-down menu.
+- We've enabled RPC ring buffers by default, and we'll remove the legacy RPC mode in a future release.
+- We've removed the `bPackRPCs` property and the the `--OverrideRPCPacking` flag.
+- We've added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
+- You can now generate valid schema for classes that start with a leading digit. The generated schema class are prefixed with `ZZ` internally.
+- The GDK now automatically replicates handover properties when this is required for load balancing. `bEnableHandover` is off by default.
+- We've added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you established a successful connection but the server-worker instance crashed.
 - The GDK now uses SpatialOS 14.6.1.
-- Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
-- Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- You can now disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
+- We've added `bWorkerFlushAfterOutgoingNetworkOp` (default false) which publishes changes to the GDK worker queue after RPCs and property replication, to allow for lower latencies. You can use this in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
