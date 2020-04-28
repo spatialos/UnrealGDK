@@ -26,6 +26,7 @@ protected:
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 	virtual FString GetSpatialOSLocalDeploymentIP() const override;
 	virtual int GetSpatialOSNetFlowType() const override;
+	virtual bool ShouldConnectToLocalDeployment() const override;
 	virtual bool ShouldConnectToCloudDeployment() const override;
 	virtual FString GetDevAuthToken() const override;
 

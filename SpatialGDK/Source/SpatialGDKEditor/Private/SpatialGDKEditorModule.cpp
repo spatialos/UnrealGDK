@@ -57,6 +57,11 @@ int FSpatialGDKEditorModule::GetSpatialOSNetFlowType() const
 	return SpatialGDKEditorSettings->SpatialOSNetFlowType;
 }
 
+bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
+{
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
+}
+
 bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
 {
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;

@@ -86,6 +86,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
 - Added `Open Deployment Page` button to the `Cloud Deployment` window.
+- If users choose `Connect to cloud deployment` in start dropdown menu and input correct `Cloud deployment name`, the Launch flow can start client on mobile device and connect to the specified cloud deployment.
+- If users choose `Connect to local deployment` in start dropdown menu and input correct `Local Deployment IP`, the Launch flow can start client on mobile device and connect to your local deployment.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
