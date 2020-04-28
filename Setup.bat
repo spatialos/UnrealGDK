@@ -111,7 +111,8 @@ if defined DOWNLOAD_MOBILE (
     spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
 
-REM there is a race condition between retrieve and unzip :( seen on Windows dev machines and BuildKite
+REM there is a race condition between retrieve and unzip, add version call to stall briefly
+
 call spatial version 
 
 call :MarkStartOfBlock "Unpack dependencies"

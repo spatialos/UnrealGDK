@@ -22,7 +22,7 @@ call :MarkStartOfBlock "Retrieve dependencies"
 	spatial package retrieve internal        trace-dynamic-x86_64-gcc510-linux          14.3.0-b2647-85717ee-WORKER-SNAPSHOT "%CORE_SDK_DIR%\trace_lib\trace-linux.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
-REM there is a race condition between retrieve and unzip :( seen on Windows dev machines and BuildKite
+REM there is a race condition between retrieve and unzip, add version call to stall briefly
 call spatial version 
 
 call :MarkStartOfBlock "Unpack dependencies"
