@@ -112,7 +112,6 @@ if defined DOWNLOAD_MOBILE (
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
-
 call spatial version 
 
 call :MarkStartOfBlock "Unpack dependencies"
