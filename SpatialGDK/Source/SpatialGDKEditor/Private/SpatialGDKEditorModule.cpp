@@ -2,6 +2,7 @@
 
 #include "SpatialGDKEditorModule.h"
 
+#include "GeneralProjectSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorLayoutDetails.h"
@@ -39,6 +40,11 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	}
 }
 
+FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+}
+
 FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -49,6 +55,16 @@ int FSpatialGDKEditorModule::GetSpatialOSNetFlowType() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	return SpatialGDKEditorSettings->SpatialOSNetFlowType;
+}
+
+bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
+{
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
+}
+
+FString FSpatialGDKEditorModule::GetDevAuthToken() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentAuthenticationToken;
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
