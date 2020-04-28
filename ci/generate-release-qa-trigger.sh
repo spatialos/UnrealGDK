@@ -7,8 +7,6 @@
 # exit immediately on failure, or if an undefined variable is used
 set -eu
 
-### TODO: Grab all candidate branches, feed them into test CI
-
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
@@ -62,7 +60,6 @@ while IFS= read -r ENGINE_VERSION; do
                 ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
 
-###TODO: Will this break if I only feed it 3 arguments, omitting ENVIRONMENT_VARIABLES="${4}"?
 ### unrealgdk-nfr
 while IFS= read -r ENGINE_VERSION; do
     triggerTest "UnrealGDK" \

@@ -20,7 +20,7 @@ namespace ReleaseTool
 
         // TODO: Possibly change these PR messages.
         private const string PullRequestNameTemplate = "Release {0} - Merge release into master";
-        private const string pullRequestBody = "Merging the release branch into master. This may include version updates.";
+        private const string pullRequestBody = "Merging the release branch into master.";
 
         private const string releaseAnnotationTemplate = "* Successfully created a [draft release]({0}) " +
            "in the repo `{1}`. Your human labour is now required to publish it.\n";

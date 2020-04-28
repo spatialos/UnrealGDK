@@ -18,24 +18,22 @@ common: &common
 
 steps:
   # Stage 0: Tell Buildkite what you want to release.
-
-  # TODO: I've modified gdk-version and added engine-version. I need to call these keys using "buildkite-agent meta-data get" where required.
-  - block: Configure your release.
-    prompt: Fill out these details for your release.
+  - block: "Configure your release."
+    prompt: "Fill out these details for your release."
     fields:
-      - text: UnrealGDK component release version
-        key: gdk-version
+      - text: "UnrealGDK component release version"
+        key: "gdk-version"
         required: true
         hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject`, `UnrealGDKEngineNetTest` and `UnrealGDKTestGyms` release candidates for.\nAll release candidates are branched from master.\nFor example: `0.12.2` or `1.0.1`."
 
-      - text: UnrealEngine source branches
-        key: engine-versions
+      - text: "UnrealEngine source branches"
+        key: "engine-versions"
         required: true
         hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line."
         default: "4.24-SpatialOSUnrealGDK\n4.23-SpatialOSUnrealGDK"
 
   # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
-  - label: Prepare the release
+  - label: "Prepare the release"
     command: ci/prepare-release.sh
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     retry:
@@ -45,20 +43,19 @@ steps:
   - wait: ~
   
   # Stage 2: Run all tests against the release candidates.
-  # TODO: Work out what generate-release-qa-trigger.sh does and re-write it to run all tests across all four repos.
-  - label: "Add step for triggering release QA"
-    command: ci/generate-release-qa-trigger.sh UnrealGDK | buildkite-agent pipeline upload
+  - label: "Trigger all automated tests"
+    command: ci/generate-release-qa-trigger.sh | buildkite-agent pipeline upload
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     retry:
       manual:
         permit_on_passed: true
 
-  # Stage 3: Promote the release candiates to preview and/or relase branches.
+  # Stage 3: Promote the release candiates to their respective release branches.
 
   # Block steps require a human to click a button, this is a safety precaution.
-  - block: Unblock UnrealGDK release
+  - block: "Unblock the release"
+    prompt: "This action will merge all release candidates into their respective release branches."
 
-  # TODO: Re-write release.sh to function across all four repos.
-  - label: Release UnrealGDK
-    command: ci/release.sh UnrealGDK
+  - label: Release
+    command: ci/release.sh
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.

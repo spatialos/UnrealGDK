@@ -22,11 +22,11 @@ namespace ReleaseTool
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
-        private const string ReleaseBranchCreationCommitMessageTemplate = "Create release branch off {0} release candidate."; // TODO: modify this line if we create the RC off master instead
+        private const string ReleaseBranchCreationCommitMessageTemplate = "Created a release branch based on {0} release candidate.";
         private const string PullRequestTemplate = "Release {0}";
         private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
             "in the repo `{1}` from `{2}` into `{3}`. " +
-            "Your human labour is now required to merge these PRs.\n";
+            "Your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline and resume the release.\n";
 
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
@@ -128,7 +128,7 @@ namespace ReleaseTool
                     // This does step 5 from above.
                     if (!gitClient.LocalBranchExists(options.ReleaseBranch))
                     {
-                        gitClient.CheckoutRemoteBranch(options.CandidateBranch, options.GithubOrgName); // TODO: Remove this line if we want to create release from master
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch, options.GithubOrgName);
                         gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.ReleaseBranch);
                     }
@@ -282,6 +282,7 @@ namespace ReleaseTool
 - [ ] *Tech writers*: Review and translate `[CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{candidateBranch}/CHANGELOG.md)`. Merge the translation and edits into `{candidateBranch}`. 
 - [ ] *QA*: Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
 - [ ] *Release Sheriff:* If any blocking defects are discovered, merge the fixes into `{releaseBranch}`.
+- [ ] *Release Sheriff:* Get approving reviews on *all* release candidate PRs.
 - [ ] *Release Sheriff* - When the above tasks are complete, unblock the pipeline. This action will merge all release candidates into their respective release branches.
 ";
                 case "UnrealGDKExampleProject":
