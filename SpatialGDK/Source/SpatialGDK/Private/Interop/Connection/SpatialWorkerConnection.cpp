@@ -396,6 +396,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
 			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
 			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
+			WorkerHistogramMetricBuckets.SetNum(Message->Metrics.HistogramMetrics.Num());
 			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
 			{
 				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
