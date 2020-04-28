@@ -41,8 +41,6 @@
 *.xcodeproj
 *.xcworkspace
 *.sln
-# But we use this Visual Studio Solution for the Release Tool.
-!*\ci\Tools.sln
 *.suo
 *.opensdf
 *.sdf
@@ -82,6 +80,9 @@ Generated/
 logs/
 
 Scripts/spatialos.*.build.json
+
+# Docker needs this sln to build the Release Tool
+!ci\Tools.sln
 
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln
