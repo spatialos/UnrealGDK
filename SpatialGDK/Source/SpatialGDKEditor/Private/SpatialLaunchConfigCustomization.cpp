@@ -48,8 +48,8 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 		}
 
 		// Layout ServerWorkers map in a way that does not allow resizing and key edition.
-		uint32 numEntries;
-		ChildProperty->GetNumChildren(numEntries);
+		uint32 NumEntries;
+		ChildProperty->GetNumChildren(NumEntries);
 
 		IDetailGroup& NewGroup = StructBuilder.AddGroup("ServerWorkersMap", ChildProperty->GetPropertyDisplayName());
 		NewGroup.HeaderRow()
@@ -59,7 +59,7 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 		]
 		.ValueContent()
 		[
-			SNew(STextBlock).Text(FText::FromString(FString::Printf(TEXT("%i Elements"), numEntries)))
+			SNew(STextBlock).Text(FText::FromString(FString::Printf(TEXT("%i Elements"), NumEntries)))
 		];
 
 		const TMap<FName, FWorkerTypeLaunchSection>* CustomizedMap = reinterpret_cast<TMap<FName, FWorkerTypeLaunchSection>*>(ChildProperty->GetValueBaseAddress(reinterpret_cast<uint8*>(EditedObject[0])));
@@ -67,17 +67,17 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 		// Assume that the properties as listed in the same order as the map's iterator.
 		auto Iterator = CustomizedMap->CreateConstIterator();
 
-		for (uint32 entryIdx = 0; entryIdx < numEntries; ++entryIdx, ++Iterator)
+		for (uint32 EntryIdx = 0; EntryIdx < NumEntries; ++EntryIdx, ++Iterator)
 		{
-			TSharedPtr<IPropertyHandle> EntryProp = ChildProperty->GetChildHandle(entryIdx);
+			TSharedPtr<IPropertyHandle> EntryProp = ChildProperty->GetChildHandle(EntryIdx);
 
 			IDetailGroup& Entry = NewGroup.AddGroup(Iterator->Key, FText::FromName(Iterator->Key));
-			uint32 numEntryFields;
-			EntryProp->GetNumChildren(numEntryFields);
+			uint32 NumEntryFields;
+			EntryProp->GetNumChildren(NumEntryFields);
 
-			for (uint32 entryField = 0; entryField < numEntryFields; ++entryField)
+			for (uint32 EntryField = 0; EntryField < NumEntryFields; ++EntryField)
 			{
-				TSharedPtr<IPropertyHandle> EntryFieldProp = EntryProp->GetChildHandle(entryField);
+				TSharedPtr<IPropertyHandle> EntryFieldProp = EntryProp->GetChildHandle(EntryField);
 
 				// Skip the load balancing property in the Editor settings.
 				if (bIsInSettings && EntryFieldProp->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, WorkerLoadBalancing))

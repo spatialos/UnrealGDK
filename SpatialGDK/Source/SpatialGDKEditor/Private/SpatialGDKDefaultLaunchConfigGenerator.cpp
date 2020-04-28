@@ -10,6 +10,7 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
 
+#include "Editor.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
