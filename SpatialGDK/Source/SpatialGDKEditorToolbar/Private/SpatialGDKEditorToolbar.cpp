@@ -1291,7 +1291,7 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTag(const FString& Tag)
 		}
 	}
 
-	if (false == HasDevLoginTag)
+	if (!HasDevLoginTag)
 	{
 		Tags += TEXT(" ");
 		Tags += Tag;
