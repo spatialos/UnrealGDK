@@ -32,7 +32,7 @@ public:
 		return false;
 	}
 
-	VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const
+	VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override
 	{
 		return 0;
 	}

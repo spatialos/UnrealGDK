@@ -56,7 +56,7 @@ private:
 
 	SPATIALGDKEDITOR_API void UnregisterExtension(UClass* StrategyClass);
 
-	using ExtensionArray = TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>>;
+	using ExtensionArray = TMap<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>;
 
 	ExtensionArray Extensions;
 };

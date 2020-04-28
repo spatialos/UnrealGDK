@@ -10,7 +10,7 @@ class FTestLBStrategyEditorExtension : public FLBStrategyEditorExtensionTemplate
 public:
 	bool GetDefaultLaunchConfiguration(const UDummyLoadBalancingStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const
 	{
-		if (!Strategy)
+		if (Strategy == nullptr)
 		{
 			return false;
 		}
@@ -29,7 +29,7 @@ public:
 
 	bool GetDefaultLaunchConfiguration(const UDerivedDummyLoadBalancingStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const
 	{
-		if (!Strategy)
+		if (Strategy == nullptr)
 		{
 			return false;
 		}

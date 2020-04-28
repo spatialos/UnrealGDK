@@ -42,7 +42,7 @@ LB_EXTENSION_TEST(GIVEN_not_registered_strategy_WHEN_looking_for_extension_THEN_
 
 	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
 
-	TestTrue("Non registered strategy are properly handled", !bResult);
+	TestTrue("Non registered strategy is properly handled", !bResult);
 	return true;
 }
 
@@ -57,7 +57,7 @@ LB_EXTENSION_TEST(GIVEN_registered_strategy_WHEN_looking_for_extension_THEN_exte
 	FIntPoint WorldSize;
 	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
 
-	TestTrue("Registered strategy are properly handled", bResult);
+	TestTrue("Registered strategy is properly handled", bResult);
 
 	return true;
 }
@@ -76,7 +76,7 @@ LB_EXTENSION_TEST(GIVEN_registered_strategy_WHEN_getting_launch_settings_THEN_la
 	FIntPoint WorldSize;
 	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
 
-	TestTrue("Registered strategy are properly handled", bResult);
+	TestTrue("Registered strategy is properly handled", bResult);
 	TestTrue("Launch settings are extracted", LaunchSection.NumEditorInstances == 10);
 
 	DummyStrategy->RemoveFromRoot();
@@ -99,7 +99,7 @@ LB_EXTENSION_TEST(GIVEN_registered_derived_strategy_WHEN_looking_for_extension_T
 	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
 	bResult &= Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DerivedDummyStrategy, LaunchSection, WorldSizeDerived);
 
-	TestTrue("Registered strategy are properly handled", bResult);
+	TestTrue("Registered strategies are properly handled", bResult);
 	TestTrue("Common extension used", WorldSize == WorldSizeDerived && WorldSize.X == 0);
 
 	Fixture.ExtensionManager.RegisterExtension<FTestDerivedLBStrategyEditorExtension>();
@@ -107,7 +107,7 @@ LB_EXTENSION_TEST(GIVEN_registered_derived_strategy_WHEN_looking_for_extension_T
 	bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
 	bResult &= Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DerivedDummyStrategy, LaunchSection, WorldSizeDerived);
 
-	TestTrue("Registered strategy are properly handled", bResult);
+	TestTrue("Registered strategies are properly handled", bResult);
 	TestTrue("Most derived extension used", WorldSize != WorldSizeDerived && WorldSize.X == 0 && WorldSizeDerived.X == 4242);
 
 	return true;
