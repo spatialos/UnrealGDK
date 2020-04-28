@@ -1276,23 +1276,28 @@ void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
 
 void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Tag)
 {
+	if (Tag.IsEmpty())
+	{
+		return;
+	}
+
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 
 	FString Tags = SpatialGDKSettings->GetDeploymentTags();
 	TArray<FString> OutArray;
 	Tags.ParseIntoArray(OutArray, TEXT(" "));
-	bool HasDevLoginTag = false;
+	bool bFoundSpecifiedTag = false;
 
 	for (TArray<FString>::TIterator it(OutArray); it; ++it)
 	{
 		if (it->Trim().Compare(Tag) == 0)
 		{
-			HasDevLoginTag = true;
+			bFoundSpecifiedTag = true;
 			break;
 		}
 	}
 
-	if (false == HasDevLoginTag)
+	if (!bFoundSpecifiedTag)
 	{
 		Tags += TEXT(" ");
 		Tags += Tag;
