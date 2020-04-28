@@ -17,11 +17,7 @@ struct TestFixture
 {
 	TestFixture()
 		: ExtensionManager(FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetLBStrategyExtensionManager())
-	{
-		// Make sure extension is not registered
-		ExtensionManager.UnregisterExtension<FTestLBStrategyEditorExtension>();
-		ExtensionManager.UnregisterExtension<FTestDerivedLBStrategyEditorExtension>();
-	}
+	{	}
 
 	~TestFixture()
 	{
