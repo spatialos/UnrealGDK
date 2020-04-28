@@ -1,30 +1,28 @@
 # Changelog
-All notable changes to the SpatialOS Game Development Kit for Unreal will be documented in this file.
+All notable changes to the SpatialOS Game Development Kit for Unreal are documented in this file.
 
-The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format of this changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
-### New Known Issues:
-- After upgrading to Unreal Engine `4.24.3` using `git pull`, you may be left in a state where several `.isph` and `.ispc` files are missing. This state produces [compile errors](https://forums.unrealengine.com/unreal-engine/announcements-and-releases/1695917-unreal-engine-4-24-released?p=1715142#post1715142) when you build the engine. You can fix this by running `git restore .` in the root of your `UnrealEngine` repository.
+### New known issues:
+- After you upgrade to Unreal Engine `4.24.3` using `git pull`, you might be left in a state where several `.isph` and `.ispc` files are missing. This state produces [compile errors](https://forums.unrealengine.com/unreal-engine/announcements-and-releases/1695917-unreal-engine-4-24-released?p=1715142#post1715142) when you build the engine. You can fix this by running `git restore .` in the root of your `UnrealEngine` repository.
 
-### Breaking Changes:
-- Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
-- Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
-- `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
+### Breaking changes:
+- Simulated player worker configurations now require a development authentication token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
+- We have removed singletons as a class specifier, so you need to remove this if you use it. To replicate the behavior of former singletons, ensure that your Actor is spawned once by a single server-side worker in your deployment.
+- We have renamed `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 
 ### Features:
-- Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK-preview).
-- Added a new variable `QueuedOutgoingRPCWaitTime`. Outgoing RPCs will now be dropped if: more than `QueuedOutgoingRPCWaitTime` time has passed; the worker is never expected to become authoritative in zoning/offloading scenario; the Actor is being destroyed.
-- In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
-- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
-- Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
-- Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
-- Added partial framework for use in future UnrealGDK controlled loadbalancing.
-- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
-- Enabled compression in modular-udp networking stack
-- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
+- We now support Unreal Engine `4.24.3`. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK-preview).
+- We've added a new variable: `QueuedOutgoingRPCWaitTime`. Outgoing RPCs are now dropped in the following three scenarios: more than `QueuedOutgoingRPCWaitTime` time has passed, the worker instance is never expected to become authoritative in zoning/offloading scenario, or the Actor is being destroyed.
+- In local deployments of the Example Project, you can now launch simulated players in one click. Running `LaunchSimPlayerClient.bat` launches a single simulated player client. Running `Launch10SimPlayerClients.bat` launches ten simulated player clients.
+- We've added an `AuthorityIntent` component, a `VirtualWorkerTranslation` component, and a partial framework. We'll use these in the future to control load balancing.
+- We've added support for the UE4 Network Profiler to measure relative size of RPC and Actor replication data.
+- We've added a `SpatialToggleMetricsDisplay` console command. You must enable `bEnableMetricsDisplay` in order for the display to be available. You must then must call `SpatialToggleMetricsDisplay` on each client that wants to view the metrics display.
+- We've enabled compression in the Modular UDP networking stack.
+- We've switched off default rpc-packing. You can re-enable this in `SpatialGDKSettings.ini`.
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 - The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. This switch's value should be a subset of the arguments that can be passed to the schema compiler directly (e.g., `--bundle_out="path/to/bundle.sb"`). A full list of possibles values is available via the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
