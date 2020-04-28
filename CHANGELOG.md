@@ -38,16 +38,16 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - We've added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
 - We've added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. We've remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
 - We've extracted the logic responsible for taking an Actor and generating the array of SpatialOS components that represents it as an entity in SpatialOS. This logic is now in `EntityFactory`.
-- Clients will now validate schema against the server and log a warning if they do not match.
-- Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
+- Clients now validate schema against the server, and log a warning if they do not match.
+- Entries in the schema database are now sorted to improve efficiency when searching for assets in the Unreal Editor.
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
 - Batch Spatial Position Updates now defaults to false.
-- Added `bEnableNetCullDistanceInterest` (defaulted true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
-- Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
-- Added support for Android.
-- Introduced feature flag `bEnableResultTypes` (defaulted true). This configures Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game.
-- Dynamic interest overrides are disabled if the `bEnableResultTypes` flag is set to true.
-- Moved Dev Auth settings from runtime settings to editor settings.
+- We've added `bEnableNetCullDistanceInterest` (default true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native Unreal client interest.
+- We've added `bEnableNetCullDistanceFrequency` (default false) to enable client interest queries to use frequency. You can configure this functionality using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
+- We've added support for Android.
+- We've introduced the feature flag `bEnableResultTypes` (default true). This configures interest queries to include only the set of components required for the queries to run. Depending on your game, this might save bandwidth.
+- If you set the `bEnableResultTypes` flag to `true`, this disables dynamic interest overrides.
+- We've moved the development authentication settings from the Runtime Settings panel to the Editor Settings panel.
 - Added the option to use the development authentication flow using the command line.
 - Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
 - Added a new settings section allowing you to configure the launch arguments when running a a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
