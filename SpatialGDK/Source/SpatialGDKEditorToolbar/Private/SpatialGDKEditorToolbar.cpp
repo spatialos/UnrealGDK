@@ -1158,7 +1158,7 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 		return FReply::Unhandled();
 	}
 
-	AddDeploymentTag(DEVELOPMENT_DEV_LOGIN);
+	AddDeploymentTagIfMissing(SpatialConstants::DEVELOPMENT_DEV_LOGIN);
 	
 	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
 	{
@@ -1274,7 +1274,7 @@ void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
 	GetMutableDefault<USpatialGDKEditorSettings>()->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
 }
 
-void FSpatialGDKEditorToolbarModule::AddDeploymentTag(const FString& Tag)
+void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Tag)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 
@@ -1282,9 +1282,10 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTag(const FString& Tag)
 	TArray<FString> OutArray;
 	Tags.ParseIntoArray(OutArray, TEXT(" "));
 	bool HasDevLoginTag = false;
-	for (INT i = 0; i < OutArray.Num(); ++i)
+
+	for (TArray<FString>::TIterator it(OutArray); it; ++it)
 	{
-		if (0 == OutArray[i].Trim().Compare(Tag))
+		if (it->Trim().Compare(Tag) == 0)
 		{
 			HasDevLoginTag = true;
 			break;
