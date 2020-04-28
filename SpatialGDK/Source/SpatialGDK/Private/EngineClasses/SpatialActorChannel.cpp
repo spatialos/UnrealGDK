@@ -652,7 +652,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			//  - load balancing is enabled AND our lb strategy says this worker should have authority AND the Actor isn't locked.
 			if (!USpatialStatics::IsSpatialOffloadingEnabled() &&
 				(!SpatialGDKSettings->bEnableUnrealLoadBalancer
-					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)) && !NetDriver->LockingPolicy->IsLocked(Actor)))
+					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))))
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
