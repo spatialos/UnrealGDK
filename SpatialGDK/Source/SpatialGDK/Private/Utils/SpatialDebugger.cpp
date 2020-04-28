@@ -273,35 +273,30 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 
 void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
 {
-	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
+	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 
-	if (bAuthoritative && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{
-		if (NetDriver->VirtualWorkerTranslator == nullptr)
-		{
-			// Currently, there's nothing to display in the debugger other than load balancing information.
-			return;
-		}
-
-		VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-		FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
-
-		SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
-		if (DebuggingInfo == nullptr)
-		{
-			// Some entities won't have debug info, so create it now.
-			SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
-			NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
-			return;
-		}
-		else
-		{
-			DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
-			DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
-			FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-			NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
-		}
+		// Currently, there's nothing to display in the debugger other than load balancing information.
+		return;
 	}
+
+	VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+	FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+
+	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
+	if (DebuggingInfo == nullptr)
+	{
+		// Some entities won't have debug info, so create it now.
+		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
+		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
+		return;
+	}
+		 
+	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
+	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
+	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
 }
 
 void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
