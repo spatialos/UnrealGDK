@@ -57,7 +57,7 @@ private:
 
 	void VerifyAndStartDeployment();
 
-	void StartUnrealNativeNetworkingButtonClicked();
+	void StartNoAutomaticConnectionButtonClicked();
 	void StartLocalSpatialDeploymentButtonClicked();
 	void StartCloudSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
@@ -65,8 +65,8 @@ private:
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
-	bool StartUnrealNativeNetworkingIsVisible() const;
-	bool StartUnrealNativeNetworkingCanExecute() const;
+	bool StartNoAutomaticConnectionIsVisible() const;
+	bool StartNoAutomaticConnectionCanExecute() const;
 
 	bool StartLocalSpatialDeploymentIsVisible() const;
 	bool StartLocalSpatialDeploymentCanExecute() const;
