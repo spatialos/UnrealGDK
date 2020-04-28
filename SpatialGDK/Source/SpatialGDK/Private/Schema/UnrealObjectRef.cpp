@@ -206,7 +206,6 @@ bool FUnrealObjectRef::ShouldLoadObjectFromClassPath(UObject* Object)
 {
 	return Object->IsA(AGameStateBase::StaticClass())
 		|| Object->IsA(AGameModeBase::StaticClass())
-		|| Object->IsA(ALevelScriptActor::StaticClass())
 		|| Object->IsA(ASpatialMetricsDisplay::StaticClass())
 		|| Object->IsA(ASpatialDebugger::StaticClass());
 }
