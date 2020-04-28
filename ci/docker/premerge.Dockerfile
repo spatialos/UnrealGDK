@@ -1,6 +1,6 @@
 FROM microsoft/dotnet:2.2-sdk as build
 WORKDIR /app
-COPY ./tools ./tools/
+COPY ./ci ./ci/
 COPY ./ci/docker/entrypoint.sh ./entrypoint.sh
 
 RUN apt-get update && \

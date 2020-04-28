@@ -11,8 +11,7 @@ release () {
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
-  
-  # TODO: update this logging.
+
   echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
 
   docker run \
