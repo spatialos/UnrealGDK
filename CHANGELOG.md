@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes:
 - Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
+- Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
 
 ### Features:
 - Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK-preview).
@@ -113,6 +114,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed crash when shadow data was uninitialized when resolving unresolved objects.
 - Fixed sending component RPCs on a recently created actor.
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
+- Fix to avoid using packages still being processed in the async loading thread.
 - OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 
 ### External contributors:
