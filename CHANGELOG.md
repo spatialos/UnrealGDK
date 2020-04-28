@@ -79,41 +79,41 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - We've added `bWorkerFlushAfterOutgoingNetworkOp` (default false) which publishes changes to the GDK worker queue after RPCs and property replication, to allow for lower latencies. You can use this in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 
 ## Bug fixes:
-- Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
-- Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
-- Servers maintain interest in AlwaysRelevant Actors.
-- GetActorSpatialPosition now returns last spectator sync location while player is spectating.
+- Queued RPCs no longer spam logs when an entity is deleted.
+- We now take the `OverrideSpatialNetworking` command line argument into account as early as possible (previously, `LocalDeploymentManager` queried `bSpatialNetworking` before the command line was parsed).
+- Servers now maintain interest in `AlwaysRelevant` Actors.
+- `GetActorSpatialPosition` now returns the last spectator sync location while the player is spectating.
 - The default cloud launch configuration is now empty.
-- Fixed an crash caused by attempting to read schema from an unloaded class.
-- Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
-- Fix tombstone-related assert that could fire and bring down the editor.
-- Actors placed in the level with bNetLoadOnClient=false that go out of view will now be reloaded if they come back into view.
-- Fix crash in SpatialDebugger caused by dereference of invalid weak pointer.
-- Fixed connection error when using spatial cloud connect external.
-- The command line argument "receptionistHost <URL>" will now not override connections to "127.0.0.1".
-- The receptionist will now be used for appropriate URLs after connecting to a locator URL.
+- We've fixed a crash that happened when the GDK attempted to read schema from an unloaded class.
+- We now properly handle (and eventually resolve) unresolved object references in replicated arrays of structs.
+- We've fixed a tombstone-related assert that could fire and bring down the editor.
+- If an Actor that is placed in the level with `bNetLoadOnClient=false` goes out of view, it is now reloaded if it comes back into view.
+- We've fixed a crash in `SpatialDebugger` that was caused by the dereference of an invalid weak pointer.
+- We've fixed a connection error that occurred when using `spatial cloud connect external`.
+- The command line argument `receptionistHost <URL>` no longer overrides connections to `127.0.0.1`.
+- The Receptionist will now be used for appropriate URLs after connecting to a locator URL.
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
-- Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
-- Fixed issue where schema database failed to load previous saved state when working in editor.
-- Attempting to launch a cloud deployment will now run the spatial auth process as it is required. Previously the deployment would simply fail.
-- Minor spelling fix to connection log message.
+- We've fixed a crash in `SpatialDebugger` when GDK-space load balancing is disabled.
+- The schema database no longer fails to load previous saved state when working in the Unreal Editor.
+- If you attempt to launch a cloud deployment, this now runs the `spatial auth` process as required. Previously the deployment would simply fail.
+- We've made a minor spelling fix to the connection log message.
 - Added %s token to debug strings in GlobalStateManager to display actor class name in log.
-- The server no longer crashes, when received RPCs are processed recursively.
+- The server no longer crashes when received RPCs are processed recursively.
 - Fix to serialize SoftObjectPointers when they are not resolved yet.
 - Fix to handle replicated properties depending on asynchronously loaded packages.
 - Fix to component interest constraints constructed from schema.
-- Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
-- Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint.
-- Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
-- Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
-- Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
-- Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
-- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
-- Fixed crash when starting + stopping PIE multiple times.
-- Fixed crash when shadow data was uninitialized when resolving unresolved objects.
+- The GDK now tracks properties that contain references to replicated Actors, so that it can resolve them again if the Actor that they reference moves out of and back into relevance.
+- PIE sessions no longer occasionally fail to start due to missing schema for the `SpatialDebugger` Blueprint.
+- We've fixed an issue where a newly-created subobject had empty state when `RepNotify` was called for a property pointing to that subobject.
+- We've fixed an issue where deleted, initially dormant startup Actors would still be present on other worker instances.
+- We now force-activate the RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes.
+- We've fixed a race condition where a client that was leaving the deployment could leave its Actor behind on the server, to be cleaned up after a long timeout.
+- We've fixed a crash that was caused by state persisting across a transition from one deployment to another in `SpatialGameInstance`.
+- The GDK no longer crashes when you start and stop PIE clients multiple times.
+- The GDK no longer crashes when shadow data is uninitialized when resolving unresolved objects.
 - Fixed sending component RPCs on a recently created actor.
-- Fix problem where load balanced cloud deploys could fail to start while under heavy load.
-- Fix to avoid using packages still being processed in the async loading thread.
+- Load-balanced cloud deploymentss no longer fail to start while under heavy load.
+- We now avoid using packages that are still being processed in the async loading thread.
 
 ### External contributors:
 @DW-Sebastien
