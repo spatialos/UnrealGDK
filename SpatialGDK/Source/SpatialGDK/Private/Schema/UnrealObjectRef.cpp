@@ -8,7 +8,6 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
-#include "Engine/LevelScriptActor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 
