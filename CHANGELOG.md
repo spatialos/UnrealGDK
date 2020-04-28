@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes:
 - Simulated player worker configurations now require a development authentication token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
-- We have removed singletons as a class specifier, so you need to remove this if you use it. To replicate the behavior of former singletons, ensure that your Actor is spawned once by a single server-side worker in your deployment.
-- We have renamed `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
+- We've removed singletons as a class specifier, so you need to remove this if you use it. To replicate the behavior of former singletons, ensure that your Actor is spawned once by a single server-side worker in your deployment.
+- We've renamed `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 
 ### Features:
 - We now support Unreal Engine `4.24.3`. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK-preview).
@@ -24,20 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We've enabled compression in the Modular UDP networking stack.
 - We've switched off default rpc-packing. You can re-enable this in `SpatialGDKSettings.ini`.
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
-- A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
-- The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. This switch's value should be a subset of the arguments that can be passed to the schema compiler directly (e.g., `--bundle_out="path/to/bundle.sb"`). A full list of possibles values is available via the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
-- Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
-- A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
-- Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
-- Enabled the SpatialOS toolbar for MacOS.
-- Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
-- DeploymentLauncher can parse a .pb.json launch configuration.
-- DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
+- A configurable Actor component 'SpatialPingComponent' is now available for PlayerControllers to measure round-trip ping to their current authoritative server-worker instance. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+- You can invoke the `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If you don't provide this switch, the output contains only the schema descriptor. This switch's value should be a subset of the arguments that you can pass to the schema compiler directly (for example `--bundle_out="path/to/bundle.sb"`). You can see a full list of possible values in the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
+- We've added the `AllowUnresolvedParameters` function flag that disables warnings for processing RPCs with unresolved parameters. To enable this flag, use Blueprints, or add a tag to the `UFUNCTION` macro.
+- There is now a warning if you launch a cloud deployment with the `manual_worker_connection_only` flag set to true.
+- We now support server travel for single server game worlds. Does not currently support zoning or off-loading.
+- We've enabled the SpatialOS toolbar for MacOS.
+- We've improved the workflow relating to schema generation issues and launching local builds. There is now a warning if you try to run a local deployment after a schema error.
+- `DeploymentLauncher` can now parse a .pb.json launch configuration.
+- `DeploymentLauncher` can now launch a simulated player deployment independently from the target deployment.
 Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
 - Added `HeartbeatTimeoutWithEditorSeconds` and use it if WITH_EDITOR is defined to prevent workers disconnecting when debugging while running in editor.
-- Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
-- Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
-- The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
+- We've added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
+- We've added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. We've remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
+- We've extracted the logic responsible for taking an Actor and generating the array of SpatialOS components that represents it as an entity in SpatialOS. This logic is now in `EntityFactory`.
 - Clients will now validate schema against the server and log a warning if they do not match.
 - Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
