@@ -1299,7 +1299,11 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Ta
 
 	if (!bFoundSpecifiedTag)
 	{
-		Tags += TEXT(" ");
+		if (OutArray.Num() > 0)
+		{
+			Tags += TEXT(" ");
+		}
+
 		Tags += Tag;
 		SpatialGDKSettings->SetDeploymentTags(Tags);
 	}
