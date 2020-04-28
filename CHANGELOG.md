@@ -79,6 +79,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The GDK now uses SpatialOS 14.6.1.
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- Added buttons to the Mobile section in SpatialGDK Editor settings to remove the command line file from mobile devices.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
