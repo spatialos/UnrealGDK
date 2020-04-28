@@ -18,7 +18,6 @@ namespace ReleaseTool
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        // TODO: Possibly change these PR messages.
         private const string PullRequestNameTemplate = "Release {0} - Merge release into master";
         private const string pullRequestBody = "Merging the release branch into master.";
 
