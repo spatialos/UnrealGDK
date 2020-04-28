@@ -41,6 +41,8 @@
 *.xcodeproj
 *.xcworkspace
 *.sln
+# But we use this Visual Studio Solution for the Release Tool.
+!*\ci\Tools.sln
 *.suo
 *.opensdf
 *.sdf
