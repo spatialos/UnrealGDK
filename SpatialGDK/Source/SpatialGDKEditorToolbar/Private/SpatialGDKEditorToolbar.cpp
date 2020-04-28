@@ -1158,7 +1158,7 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 		return FReply::Unhandled();
 	}
 
-	AddDeploymentTag(TEXT("dev_login"));
+	AddDeploymentTag(DEVELOPMENT_DEV_LOGIN);
 	
 	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
 	{
