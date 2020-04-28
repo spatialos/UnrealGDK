@@ -17,6 +17,8 @@ private:
 	FReply GenerateDevAuthToken();
 	FReply PushCommandLineArgsToIOSDevice();
 	FReply PushCommandLineArgsToAndroidDevice();
+	FReply RemoveCommandLineArgsFromIOSDevice();
+	FReply RemoveCommandLineArgsFromAndroidDevice();
 
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();
