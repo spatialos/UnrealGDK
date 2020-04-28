@@ -82,7 +82,7 @@ logs/
 Scripts/spatialos.*.build.json
 
 # Docker needs this sln to build the Release Tool
-!ci\Tools.sln
+!ci/Tools.sln
 
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln
