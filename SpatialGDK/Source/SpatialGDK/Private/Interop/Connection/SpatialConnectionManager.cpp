@@ -205,17 +205,18 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 		return;
 	}
 
-	const FString& DeploymentToConnect = DevAuthConfig.Deployment;
+	FString DeploymentToConnect = DevAuthConfig.Deployment;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{
 		DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+		DeploymentToConnect = UTF8_TO_TCHAR(LoginTokens->login_tokens[0].deployment_name);
 	}
 	else
 	{
 		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
 		{
-			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
+			FString DeploymentName = UTF8_TO_TCHAR(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
 				DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
@@ -223,6 +224,8 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 			}
 		}
 	}
+
+	UE_LOG(LogSpatialConnectionManager, Log, TEXT("Dev auth flow: connecting to deployment \"%s\""), *DeploymentToConnect);
 	ConnectToLocator(&DevAuthConfig);
 }
 

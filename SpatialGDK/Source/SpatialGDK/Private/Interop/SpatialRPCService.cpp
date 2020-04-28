@@ -6,15 +6,17 @@
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
 namespace SpatialGDK
 {
 
-SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View)
+SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
+	, SpatialLatencyTracer(SpatialLatencyTracer)
 {
 }
 
@@ -22,19 +24,27 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
+	EPushRPCResult Result = EPushRPCResult::Success;
+
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
 		AddOverflowedRPC(EntityType, MoveTemp(Payload));
-		return EPushRPCResult::QueueOverflowed;
+		Result = EPushRPCResult::QueueOverflowed;
 	}
-
-	EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
-
-	if (Result == EPushRPCResult::QueueOverflowed)
+	else
 	{
-		AddOverflowedRPC(EntityType, MoveTemp(Payload));
+		Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+
+		if (Result == EPushRPCResult::QueueOverflowed)
+		{
+			AddOverflowedRPC(EntityType, MoveTemp(Payload));
+		}
 	}
+
+#if TRACE_LIB_ACTIVE
+	ProcessResultToLatencyTrace(Result, Payload.Trace);
+#endif
 
 	return Result;
 }
@@ -89,6 +99,20 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	{
 		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
 
+#if TRACE_LIB_ACTIVE
+		if (SpatialLatencyTracer != nullptr && Payload.Trace != InvalidTraceKey)
+		{
+			if (PendingTraces.Find(EntityComponent) == nullptr)
+			{
+				PendingTraces.Add(EntityComponent, Payload.Trace);
+			}
+			else
+			{
+				SpatialLatencyTracer->WriteAndEndTrace(Payload.Trace, TEXT("Multiple rpc updates in single update, ending further stack tracing"), true);
+			}
+		}
+#endif
+
 		LastSentRPCIds.Add(EntityType, NewRPCId);
 	}
 	else
@@ -139,6 +163,10 @@ void SpatialRPCService::PushOverflowedRPCs()
 				break;
 			}
 
+#if TRACE_LIB_ACTIVE
+			ProcessResultToLatencyTrace(Result, Payload.Trace);
+#endif
+
 			// This includes the valid case of RPCs still overflowing (EPushRPCResult::QueueOverflowed), as well as the error cases.
 			if (Result != EPushRPCResult::Success)
 			{
@@ -175,6 +203,11 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.EntityId = It.Key.EntityId;
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
 		UpdateToSend.Update.schema_type = It.Value;
+#if TRACE_LIB_ACTIVE
+		TraceKey Trace = InvalidTraceKey;
+		PendingTraces.RemoveAndCopyValue(It.Key, Trace);
+		UpdateToSend.Update.Trace = Trace;
+#endif
 	}
 
 	PendingComponentUpdatesToSend.Empty();
@@ -182,7 +215,7 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 	return UpdatesToSend;
 }
 
-TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId)
+TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId)
 {
 	static Worker_ComponentId EndpointComponentIds[] = {
 		SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
@@ -190,13 +223,13 @@ TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 		SpatialConstants::MULTICAST_RPCS_COMPONENT_ID
 	};
 
-	TArray<Worker_ComponentData> Components;
+	TArray<FWorkerComponentData> Components;
 
 	for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
 	{
 		const EntityComponentId EntityComponent = { EntityId, EndpointComponentId };
 
-		Worker_ComponentData& Component = Components.AddZeroed_GetRef();
+		FWorkerComponentData& Component = Components.Emplace_GetRef(FWorkerComponentData{});
 		Component.component_id = EndpointComponentId;
 		if (Schema_ComponentData** ComponentData = PendingRPCsOnEntityCreation.Find(EntityComponent))
 		{
@@ -214,6 +247,11 @@ TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 			}
 
 			Component.schema_type = *ComponentData;
+#if TRACE_LIB_ACTIVE
+			TraceKey Trace = InvalidTraceKey;
+			PendingTraces.RemoveAndCopyValue(EntityComponent, Trace);
+			Component.Trace = Trace;
+#endif
 			PendingRPCsOnEntityCreation.Remove(EntityComponent);
 		}
 		else
@@ -493,5 +531,51 @@ Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponen
 	}
 	return *ComponentDataPtr;
 }
+
+#if TRACE_LIB_ACTIVE
+void SpatialRPCService::ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace)
+{
+	if (SpatialLatencyTracer != nullptr && Trace != InvalidTraceKey)
+	{
+		bool bEndTrace = false;
+		FString TraceMsg;
+		switch (Result)
+		{
+		case SpatialGDK::EPushRPCResult::Success:
+			// No further action
+			break;
+		case SpatialGDK::EPushRPCResult::QueueOverflowed:
+			TraceMsg = TEXT("Overflowed");
+			break;
+		case SpatialGDK::EPushRPCResult::DropOverflowed:
+			TraceMsg = TEXT("OverflowedAndDropped");
+			bEndTrace = true;
+			break;
+		case SpatialGDK::EPushRPCResult::HasAckAuthority:
+			TraceMsg = TEXT("NoAckAuth");
+			bEndTrace = true;
+			break;
+		case SpatialGDK::EPushRPCResult::NoRingBufferAuthority:
+			TraceMsg = TEXT("NoRingBufferAuth");
+			bEndTrace = true;
+			break;
+		default:
+			TraceMsg = TEXT("UnrecognisedResult");
+			break;
+		}
+
+		if (bEndTrace)
+		{
+			// This RPC has been dropped, end the trace
+			SpatialLatencyTracer->WriteAndEndTrace(Trace, TraceMsg, false);
+		}
+		else if (!TraceMsg.IsEmpty())
+		{
+			// This RPC will be sent later
+			SpatialLatencyTracer->WriteToLatencyTrace(Trace, TraceMsg);
+		}
+	}
+}
+#endif // TRACE_LIB_ACTIVE
 
 } // namespace SpatialGDK

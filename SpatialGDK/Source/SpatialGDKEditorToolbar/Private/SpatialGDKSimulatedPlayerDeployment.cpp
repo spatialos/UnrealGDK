@@ -295,6 +295,29 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Main Deployment Cluster
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
+								.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetRawMainDeploymentCluster()))
+								.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited)
+								.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited, ETextCommit::Default)
+								]
+							]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -423,6 +446,30 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Simulated Player Cluster
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
+								.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetRawSimulatedPlayerCluster()))
+								.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerClusterCommited)
+								.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerClusterCommited, ETextCommit::Default)
+								.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
+								]
+							]
 							// Buttons
 							+ SVerticalBox::Slot()
 							.FillHeight(1.0f)
@@ -507,6 +554,12 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeployment
 	return MenuBuilder.MakeWidget();
 }
 
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetMainDeploymentCluster(InText.ToString());
+}
+
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDeploymentRegionCode()
 {
 	FMenuBuilder MenuBuilder(true, NULL);
@@ -523,6 +576,12 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDe
 	}
 	
 	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetSimulatedPlayerCluster(InText.ToString());
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue)
@@ -575,8 +634,12 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
 		{
-			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded."), *BuiltSimPlayersName);
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(MissingSimPlayerBuildText));
+			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded.\n\nWould you still like to continue with the deployment?"), *BuiltSimPlayersName);
+			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
+			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
+			{
+				return FReply::Handled();
+			}
 		}
 	}
 
@@ -720,5 +783,6 @@ bool SSpatialGDKSimulatedPlayerDeployment::IsUsingCustomRuntimeVersion() const
 FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return FText::FromString(SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud());
+	const FString& RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
+	return FText::FromString(RuntimeVersion);
 }

@@ -44,10 +44,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(true)
+	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
-	, QueuedOutgoingRPCWaitTime(1.0f)
+	, QueuedOutgoingRPCWaitTime(30.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -69,10 +69,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
-	, UdpServerUpstreamUpdateIntervalMS(1)
 	, UdpServerDownstreamUpdateIntervalMS(1)
-	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
+	, bWorkerFlushAfterOutgoingNetworkOp(false)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
@@ -104,14 +103,9 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
-
-	if (bEnableUnrealLoadBalancer)
-	{
-		if (bEnableHandover == false)
-		{
-			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
-		}
-	}
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+	
+	
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();

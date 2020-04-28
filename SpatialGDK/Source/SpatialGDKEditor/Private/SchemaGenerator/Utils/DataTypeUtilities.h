@@ -12,7 +12,7 @@ extern TMap<FString, FString> ClassPathToSchemaName;
 FString GetEnumDataType(const UEnumProperty* EnumProperty);
 
 // Given a class or function name, generates the name used for naming schema components and types. Removes all non-alphanumeric characters.
-FString UnrealNameToSchemaName(const FString& UnrealName);
+FString UnrealNameToSchemaName(const FString& UnrealName, bool bWarnAboutRename = false);
 
 // Given an object name, generates the name used for naming schema components. Removes all non-alphanumeric characters and capitalizes the first letter.
 FString UnrealNameToSchemaComponentName(const FString& UnrealName);

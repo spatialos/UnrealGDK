@@ -32,7 +32,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName);
 
-		SPATIALGDKEDITOR_API bool IsAssetReadOnly(FString FileName);
+		SPATIALGDKEDITOR_API bool IsAssetReadOnly(const FString& FileName);
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 		

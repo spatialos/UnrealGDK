@@ -36,6 +36,7 @@ public:
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; };
 	void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
@@ -48,12 +49,14 @@ public:
 	*/
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
 
+	/** True if this load balancing strategy requires handover data to be transmitted. */
+	virtual bool RequiresHandoverData() const PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;)
+
 	/**
 	* Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy. Optional- otherwise returns the origin.
 	*/
 	virtual FVector GetWorkerEntityPosition() const { return FVector::ZeroVector; }
 
 protected:
-
 	VirtualWorkerId LocalVirtualWorkerId;
 };

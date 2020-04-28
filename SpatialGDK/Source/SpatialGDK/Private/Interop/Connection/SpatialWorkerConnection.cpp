@@ -20,6 +20,9 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	{
 		if (OpsProcessingThread == nullptr)
 		{
+			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterOutgoingNetworkOp;
+			ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
+
 			InitializeOpsProcessingThread();
 		}
 	}
@@ -42,6 +45,8 @@ void USpatialWorkerConnection::DestroyConnection()
 		OpsProcessingThread->WaitForCompletion();
 		OpsProcessingThread = nullptr;
 	}
+
+	ThreadWaitCondition.Reset(); // Set TOptional value to null
 
 	if (WorkerConnection)
 	{
@@ -181,7 +186,7 @@ uint32 USpatialWorkerConnection::Run()
 
 	while (KeepRunning)
 	{
-		FPlatformProcess::Sleep(OpsUpdateInterval);
+		ThreadWaitCondition->Wait();
 		QueueLatestOpList();
 		ProcessOutgoingMessages();
 	}
@@ -217,8 +222,11 @@ void USpatialWorkerConnection::QueueLatestOpList()
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
+	bool bSentData = false;
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
+		bSentData = true;
+
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
@@ -388,6 +396,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
 			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
 			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
+			WorkerHistogramMetricBuckets.SetNum(Message->Metrics.HistogramMetrics.Num());
 			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
 			{
 				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
@@ -416,6 +425,35 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			break;
 		}
 		}
+	}
+
+	// Flush worker API calls
+	if (bSentData)
+	{
+		Worker_Connection_Alpha_Flush(WorkerConnection);
+	}
+}
+
+void USpatialWorkerConnection::MaybeFlush()
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bWorkerFlushAfterOutgoingNetworkOp)
+	{
+		Flush();
+	}
+}
+
+void USpatialWorkerConnection::Flush()
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		ProcessOutgoingMessages();
+	}
+	else
+	{
+		check(ThreadWaitCondition.IsSet());
+		ThreadWaitCondition->Wake(); // No-op if wake is not enabled.
 	}
 }
 

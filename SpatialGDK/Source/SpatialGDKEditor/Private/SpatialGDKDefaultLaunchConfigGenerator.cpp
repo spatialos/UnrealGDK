@@ -192,21 +192,6 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 		}
 	}
 
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-	{
-		return (Section.Rows * Section.Columns) > 1;
-	}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
 	if (LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
 	{
 		return (Section.Rows * Section.Columns) < Section.NumEditorInstances;

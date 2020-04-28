@@ -3,11 +3,12 @@
 #pragma once
 
 #include "Containers/Queue.h"
+#include "HAL/Event.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
-
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
+#include "Interop/Connection/WorkerConnectionCoordinator.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/WeakObjectPtr.h"
 
@@ -55,6 +56,8 @@ public:
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
+	void MaybeFlush();
+	void Flush();
 
 private:
 	void CacheWorkerAttributes();
@@ -70,7 +73,6 @@ private:
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
 
-private:
 	Worker_Connection* WorkerConnection;
 
 	TArray<FString> CachedWorkerAttributes;
@@ -84,4 +86,7 @@ private:
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
+
+	// Coordinates the async worker ops thread.
+	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
 };
