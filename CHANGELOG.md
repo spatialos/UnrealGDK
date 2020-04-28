@@ -82,6 +82,10 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
 - Added `Open Deployment Page` button to the `Cloud Deployment` window.
+- The Deploy button now can launch the deployment directly if necessary fields are filled previously in the `Deployment Configuration` window
+- Added Deployment Configuration to the dropdown of Deploy button which can open the deployment configuration window
+- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button
+- Automatically add `dev_login` tag to cloud deployment when clicking launch deployment button
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
