@@ -2243,7 +2243,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (AbsOffset >= MaxAbsOffset)
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
+			UE_LOG(LogSpatialReceiver, Error, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
 			It.RemoveCurrent();
 			continue;
 		}
