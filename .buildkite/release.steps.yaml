@@ -26,12 +26,12 @@ steps:
       - text: UnrealGDK component release version
         key: gdk-version
         required: true
-        hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject`, `UnrealGDKEngineNetTest` and `UnrealGDKTestGyms` release candidates for. All release candidates are branched from master. For example: `0.12.2` or `1.0.1`."
+        hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject`, `UnrealGDKEngineNetTest` and `UnrealGDKTestGyms` release candidates for.\nAll release candidates are branched from master.\nFor example: `0.12.2` or `1.0.1`."
 
       - text: UnrealEngine source branches
         key: engine-versions
         required: true
-        hint: "The Unreal Engine branch (or branches) that you want to branch release candidates from. Put each branch on a separate line."
+        hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line."
         default: "4.24-SpatialOSUnrealGDK\n4.23-SpatialOSUnrealGDK"
 
   # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
