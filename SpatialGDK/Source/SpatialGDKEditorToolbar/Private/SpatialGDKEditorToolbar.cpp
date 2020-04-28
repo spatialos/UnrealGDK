@@ -1281,7 +1281,7 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTag(const FString& Tag)
 	FString Tags = SpatialGDKSettings->GetDeploymentTags();
 	TArray<FString> OutArray;
 	Tags.ParseIntoArray(OutArray, TEXT(" "));
-	bool HasDevLoginTag = false;
+	bool bFoundSpecifiedTag = false;
 	for (INT i = 0; i < OutArray.Num(); ++i)
 	{
 		if (0 == OutArray[i].Trim().Compare(Tag))
