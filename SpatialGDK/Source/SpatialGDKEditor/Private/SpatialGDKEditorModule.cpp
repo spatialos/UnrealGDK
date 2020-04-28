@@ -40,6 +40,11 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	}
 }
 
+FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+}
+
 FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
