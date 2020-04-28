@@ -4,18 +4,21 @@
 
 #include "EditorExtension/LBStrategyEditorExtension.h"
 #include "TestLoadBalancingStrategy.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 class FTestLBStrategyEditorExtension : public FLBStrategyEditorExtensionTemplate<UDummyLoadBalancingStrategy, FTestLBStrategyEditorExtension>
 {
 public:
-	bool GetDefaultLaunchConfiguration(const UDummyLoadBalancingStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const
+	bool GetDefaultLaunchConfiguration(const UDummyLoadBalancingStrategy* Strategy, UAbstractRuntimeLoadBalancingStrategy*& OutConfiguration, FIntPoint& OutWorldDimensions) const
 	{
 		if (Strategy == nullptr)
 		{
 			return false;
 		}
 
-		OutConfiguration.NumEditorInstances = Strategy->NumberOfWorkers;
+		UEntityShardingRuntimeLoadBalancingStrategy* Conf = NewObject<UEntityShardingRuntimeLoadBalancingStrategy>();
+		Conf->NumWorkers = Strategy->NumberOfWorkers;
+		OutConfiguration = Conf;
 
 		OutWorldDimensions.X = OutWorldDimensions.Y = 0;
 
@@ -27,14 +30,16 @@ class FTestDerivedLBStrategyEditorExtension : public FLBStrategyEditorExtensionT
 {
 public:
 
-	bool GetDefaultLaunchConfiguration(const UDerivedDummyLoadBalancingStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const
+	bool GetDefaultLaunchConfiguration(const UDerivedDummyLoadBalancingStrategy* Strategy, UAbstractRuntimeLoadBalancingStrategy*& OutConfiguration, FIntPoint& OutWorldDimensions) const
 	{
 		if (Strategy == nullptr)
 		{
 			return false;
 		}
 
-		OutConfiguration.NumEditorInstances = Strategy->NumberOfWorkers;
+		UEntityShardingRuntimeLoadBalancingStrategy* Conf = NewObject<UEntityShardingRuntimeLoadBalancingStrategy>();
+		Conf->NumWorkers = Strategy->NumberOfWorkers;
+		OutConfiguration = Conf;
 
 		OutWorldDimensions.X = OutWorldDimensions.Y = 4242;
 

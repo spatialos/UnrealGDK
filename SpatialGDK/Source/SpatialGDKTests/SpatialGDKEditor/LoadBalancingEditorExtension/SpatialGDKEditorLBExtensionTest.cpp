@@ -21,12 +21,36 @@ struct TestFixture
 
 	~TestFixture()
 	{
-		// Cleanup
+		CleanupRuntimeStrategy();
+
+		// Cleanup registered strategies for tests.
 		ExtensionManager.UnregisterExtension<FTestLBStrategyEditorExtension>();
 		ExtensionManager.UnregisterExtension<FTestDerivedLBStrategyEditorExtension>();
 	}
 
+	bool GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, UAbstractRuntimeLoadBalancingStrategy*& OutConfiguration, FIntPoint& OutWorldDimensions)
+	{
+		CleanupRuntimeStrategy();
+		bool bResult = ExtensionManager.GetDefaultLaunchConfiguration(Strategy, OutConfiguration, OutWorldDimensions);
+
+		if (OutConfiguration)
+		{
+			OutConfiguration->AddToRoot();
+		}
+
+		return bResult;
+	}
+
+	void CleanupRuntimeStrategy()
+	{
+		if (RuntimeStrategy)
+		{
+			RuntimeStrategy->RemoveFromRoot();
+		}
+	}
+
 	FLBStrategyEditorExtensionManager& ExtensionManager;
+	UAbstractRuntimeLoadBalancingStrategy* RuntimeStrategy = nullptr;
 };
 
 }
@@ -35,14 +59,15 @@ LB_EXTENSION_TEST(GIVEN_not_registered_strategy_WHEN_looking_for_extension_THEN_
 	TestFixture Fixture;
 	UAbstractLBStrategy* DummyStrategy = UDummyLoadBalancingStrategy::StaticClass()->GetDefaultObject<UAbstractLBStrategy>();
 
-	FWorkerTypeLaunchSection LaunchSection;
+	UAbstractRuntimeLoadBalancingStrategy* RuntimeStrategy = nullptr;
 	FIntPoint WorldSize;
 
 	AddExpectedError(TEXT("Could not find editor extension for load balancing strategy"));
 
-	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
+	bool bResult = Fixture.GetDefaultLaunchConfiguration(DummyStrategy, RuntimeStrategy, WorldSize);
 
 	TestTrue("Non registered strategy is properly handled", !bResult);
+
 	return true;
 }
 
@@ -53,9 +78,9 @@ LB_EXTENSION_TEST(GIVEN_registered_strategy_WHEN_looking_for_extension_THEN_exte
 
 	UAbstractLBStrategy* DummyStrategy = UDummyLoadBalancingStrategy::StaticClass()->GetDefaultObject<UAbstractLBStrategy>();
 
-	FWorkerTypeLaunchSection LaunchSection;
+	UAbstractRuntimeLoadBalancingStrategy* RuntimeStrategy = nullptr;
 	FIntPoint WorldSize;
-	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
+	bool bResult = Fixture.GetDefaultLaunchConfiguration(DummyStrategy, RuntimeStrategy, WorldSize);
 
 	TestTrue("Registered strategy is properly handled", bResult);
 
@@ -72,12 +97,15 @@ LB_EXTENSION_TEST(GIVEN_registered_strategy_WHEN_getting_launch_settings_THEN_la
 	DummyStrategy->AddToRoot();
 	DummyStrategy->NumberOfWorkers = 10;
 
-	FWorkerTypeLaunchSection LaunchSection;
+	UAbstractRuntimeLoadBalancingStrategy* RuntimeStrategy = nullptr;
 	FIntPoint WorldSize;
-	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
+	bool bResult = Fixture.GetDefaultLaunchConfiguration(DummyStrategy, RuntimeStrategy, WorldSize);
 
 	TestTrue("Registered strategy is properly handled", bResult);
-	TestTrue("Launch settings are extracted", LaunchSection.NumEditorInstances == 10);
+
+	UEntityShardingRuntimeLoadBalancingStrategy* EntityShardingStrategy = Cast<UEntityShardingRuntimeLoadBalancingStrategy>(RuntimeStrategy);
+
+	TestTrue("Launch settings are extracted", EntityShardingStrategy && EntityShardingStrategy->NumWorkers == 10);
 
 	DummyStrategy->RemoveFromRoot();
 
@@ -93,19 +121,19 @@ LB_EXTENSION_TEST(GIVEN_registered_derived_strategy_WHEN_looking_for_extension_T
 	UAbstractLBStrategy* DummyStrategy = UDummyLoadBalancingStrategy::StaticClass()->GetDefaultObject<UAbstractLBStrategy>();
 	UAbstractLBStrategy* DerivedDummyStrategy = UDerivedDummyLoadBalancingStrategy::StaticClass()->GetDefaultObject<UAbstractLBStrategy>();
 
-	FWorkerTypeLaunchSection LaunchSection;
+	UAbstractRuntimeLoadBalancingStrategy* RuntimeStrategy = nullptr;
 	FIntPoint WorldSize;
 	FIntPoint WorldSizeDerived;
-	bool bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
-	bResult &= Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DerivedDummyStrategy, LaunchSection, WorldSizeDerived);
+	bool bResult = Fixture.GetDefaultLaunchConfiguration(DummyStrategy, RuntimeStrategy, WorldSize);
+	bResult &= Fixture.GetDefaultLaunchConfiguration(DerivedDummyStrategy, RuntimeStrategy, WorldSizeDerived);
 
 	TestTrue("Registered strategies are properly handled", bResult);
 	TestTrue("Common extension used", WorldSize == WorldSizeDerived && WorldSize.X == 0);
 
 	Fixture.ExtensionManager.RegisterExtension<FTestDerivedLBStrategyEditorExtension>();
 
-	bResult = Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DummyStrategy, LaunchSection, WorldSize);
-	bResult &= Fixture.ExtensionManager.GetDefaultLaunchConfiguration(DerivedDummyStrategy, LaunchSection, WorldSizeDerived);
+	bResult = Fixture.GetDefaultLaunchConfiguration(DummyStrategy, RuntimeStrategy, WorldSize);
+	bResult &= Fixture.GetDefaultLaunchConfiguration(DerivedDummyStrategy, RuntimeStrategy, WorldSizeDerived);
 
 	TestTrue("Registered strategies are properly handled", bResult);
 	TestTrue("Most derived extension used", WorldSize != WorldSizeDerived && WorldSize.X == 0 && WorldSizeDerived.X == 4242);
