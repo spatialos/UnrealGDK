@@ -23,6 +23,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
+#include "SpatialCommandUtils.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
@@ -32,6 +33,8 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 #include "Utils/LaunchConfigEditor.h"
 
@@ -219,6 +222,23 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment),
+		FCanExecuteAction());
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
 		FCanExecuteAction());
@@ -305,7 +325,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction);
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
@@ -338,7 +358,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction);
 	Builder.AddComboButton(
 		FUIAction(),
 		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent),
@@ -370,6 +390,9 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
@@ -1037,6 +1060,17 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
 }
 
+void FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment()
+{
+	if (CanLaunchDeployment())
+	{
+		OnLaunchDeployment();
+		return;
+	}
+
+	ShowSimulatedPlayerDeploymentDialog();
+}
+
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
@@ -1110,6 +1144,168 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	else
 	{
 		return TEXT("");
+	}
+}
+
+FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	if (!SpatialGDKSettings->IsDeploymentConfigurationValid())
+	{
+		OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
+
+		return FReply::Unhandled();
+	}
+
+	AddDeploymentTagIfMissing(SpatialConstants::DEVELOPMENT_DEV_LOGIN);
+	
+	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
+	{
+		SpatialGDKEditorInstance->GenerateSchema(false);
+	}
+
+	if (SpatialGDKSettings->IsGenerateSnapshotEnabled())
+	{
+		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKSettings->GetSpatialOSSnapshotToSave());
+	}
+
+	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
+	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
+	PackageAssembly->BuildAllAndUpload(
+		SpatialGDKSettings->GetAssemblyName(),
+		SpatialGDKSettings->AssemblyWindowsPlatform,
+		SpatialGDKSettings->AssemblyBuildConfiguration,
+		TEXT(""),
+		SpatialGDKSettings->bForceAssemblyOverwrite
+	);
+
+	return FReply::Handled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
+		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
+		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
+
+		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
+		{
+			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded.\n\nWould you still like to continue with the deployment?"), *BuiltSimPlayersName);
+			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
+			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
+			{
+				OnShowFailedNotification("Failed to launch cloud deployment. SimulatedPlayer archive is missing.");
+				return;
+			}
+		}
+	}
+
+	auto LaunchCloudDeployment = [this]()
+	{
+		SpatialGDKEditorInstance->LaunchCloudDeployment(
+			FSimpleDelegate::CreateLambda([this]()
+			{
+				this->OnShowSuccessNotification("Successfully launched cloud deployment.");
+			}),
+
+			FSimpleDelegate::CreateLambda([this]()
+			{
+				this->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+			})
+		);
+	};
+
+#if ENGINE_MINOR_VERSION <= 22
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#else
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#endif
+		[this, LaunchCloudDeployment]()
+	{
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			LaunchCloudDeployment();
+		}
+		else
+		{
+			OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+		}
+	});
+}
+
+bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty() || SpatialGDKSettings->GetAssemblyName().IsEmpty() ? false : true;
+}
+
+bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
+{
+	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
+}
+
+bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
+{
+	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->IsSimulatedPlayersEnabled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
+{
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetSimulatedPlayersEnabledState(!IsSimulatedPlayersEnabled());
+}
+
+bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->IsBuildClientWorkerEnabled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
+{
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
+}
+
+void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Tag)
+{
+	if (Tag.IsEmpty())
+	{
+		return;
+	}
+
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+
+	FString Tags = SpatialGDKSettings->GetDeploymentTags();
+	TArray<FString> OutArray;
+	Tags.ParseIntoArray(OutArray, TEXT(" "));
+	bool bFoundSpecifiedTag = false;
+
+	for (TArray<FString>::TIterator it(OutArray); it; ++it)
+	{
+		if (it->Trim().Compare(Tag) == 0)
+		{
+			bFoundSpecifiedTag = true;
+			break;
+		}
+	}
+
+	if (!bFoundSpecifiedTag)
+	{
+		if (OutArray.Num() > 0)
+		{
+			Tags += TEXT(" ");
+		}
+
+		Tags += Tag;
+		SpatialGDKSettings->SetDeploymentTags(Tags);
 	}
 }
 
