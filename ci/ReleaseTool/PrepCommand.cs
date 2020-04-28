@@ -24,6 +24,9 @@ namespace ReleaseTool
         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
         private const string ReleaseBranchCreationCommitMessageTemplate = "Create release branch off {0} release candidate."; // TODO: modify this line if we create the RC off master isntead
         private const string PullRequestTemplate = "Release {0}";
+        private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
+            "in the repo `{1}` from `{2}` into `{3}`. " +
+            "Your human labour is now required to merge these PRs.\n";
 
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
@@ -147,6 +150,10 @@ namespace ReleaseTool
 
                     BuildkiteAgent.SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
 
+                    var prAnnotation = string.Format(prAnnotationTemplate,
+                        pullRequest.HtmlUrl, options.GitRepoName, options.CandidateBranch, options.ReleaseBranch);
+                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", prAnnotation, true);
+
                     Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
                     Logger.Info("Successfully created release!");
                     Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
@@ -259,9 +266,6 @@ namespace ReleaseTool
             return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
-
-
-/// TODO: Replace {options.UnrealGDK-pr-url} with GetMetadata
         private static string GetPullRequestBody(string repoName, string candidateBranch, string releaseBranch)
         {
             var unrealGdkPrUrl = BuildkiteAgent.GetMetadata("UnrealGDK-pr-url");

@@ -22,6 +22,12 @@ namespace ReleaseTool
         private const string PullRequestNameTemplate = "Release {0} - Merge release into master";
         private const string pullRequestBody = "Merging the release branch into master. This may include version updates.";
 
+        private const string releaseAnnotationTemplate = "* Successfully created a [draft release]({0}) " +
+           "in the repo `{1}`. Your human labour is now required to publish it.\n";
+        private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
+            "in the repo `{1}` from `{2}` into `{3}`. " +
+            "Your human labour is now required to merge these PRs.\n";
+
         private const string ChangeLogFilename = "CHANGELOG.md";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
@@ -98,6 +104,9 @@ namespace ReleaseTool
                     gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
+                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
+                        string.Format(releaseAnnotationTemplate, release.HtmlUrl, repoName), true);
+
                     Logger.Info("Release Successful!");
                     Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
                     Logger.Info("Draft release: {0}", release.HtmlUrl);
@@ -116,6 +125,10 @@ namespace ReleaseTool
                         string.Format(PullRequestNameTemplate, options.Version),
                         pullRequestBody);
                 }
+
+                var prAnnotation = string.Format(prAnnotationTemplate,
+                    pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
+                BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
 
                 Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
                 Logger.Info("Successfully created PR for merging the release into master!");

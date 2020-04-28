@@ -24,7 +24,6 @@ release () {
         --source-branch="${SOURCE_BRANCH}" \
         --candidate-branch="${CANDIDATE_BRANCH}" \
         --release-branch="${RELEASE_BRANCH}" \
-        --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
         --pull-request-url="${PR_URL}" \
         --github-organization="${GITHUB_ORG}"
