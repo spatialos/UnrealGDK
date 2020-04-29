@@ -20,7 +20,7 @@ private:
 
 	void ForceRefreshLayout();
 
-	IDetailLayoutBuilder* MyLayout = nullptr;
+	IDetailLayoutBuilder* CurrentLayout = nullptr;
 
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();

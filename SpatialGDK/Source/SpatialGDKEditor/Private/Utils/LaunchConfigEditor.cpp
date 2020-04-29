@@ -37,6 +37,11 @@ void ULaunchConfigurationEditor::OnWorkerTypesChanged()
 
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
+	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkersMap))
+	{
+		return;
+	}
+
 	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 
 	FString DefaultOutPath = SpatialGDKServicesConstants::SpatialOSDirectory;
@@ -53,10 +58,8 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		if (ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkersMap))
+		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkersMap))
 		{
-			GenerateDefaultLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkersMap);
-
 			OnConfigurationSaved.ExecuteIfBound(this, Filenames[0]);
 		}
 	}

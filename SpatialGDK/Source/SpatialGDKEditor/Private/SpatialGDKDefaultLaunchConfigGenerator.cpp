@@ -181,7 +181,7 @@ bool FillWorkerConfigurationFromCurrentMap(TMap<FName, FWorkerTypeLaunchSection>
 	return true;
 }
 
-bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers)
+bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers)
 {
 	if (InLaunchConfigDescription != nullptr)
 	{
@@ -219,19 +219,20 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 				Writer->WriteArrayStart("layer_configurations");
 				for (const auto& Worker : InWorkers)
 				{
-					if (Worker.Value.WorkerLoadBalancing == nullptr)
+					if (Worker.Value.WorkerLoadBalancing != nullptr)
 					{
-						UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Worker type '%s' is missing a load balancing setting."), *Worker.Key.ToString());
-						return false;
+						WriteLoadbalancingSection(Writer, Worker.Key, *Worker.Value.WorkerLoadBalancing, Worker.Value.bManualWorkerConnectionOnly);
 					}
-					WriteLoadbalancingSection(Writer, Worker.Key, *Worker.Value.WorkerLoadBalancing, Worker.Value.bManualWorkerConnectionOnly);
 				}
 				Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
 			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
 				for (const auto& Worker : InWorkers)
 				{
-					WriteWorkerSection(Writer, Worker.Key, Worker.Value);
+					if (Worker.Value.WorkerLoadBalancing != nullptr)
+					{
+						WriteWorkerSection(Writer, Worker.Key, Worker.Value);
+					}
 				}
 				// Write the client worker section
 				FWorkerTypeLaunchSection ClientWorker;

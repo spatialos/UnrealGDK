@@ -27,23 +27,23 @@ TSharedRef<IDetailCustomization> FSpatialGDKEditorLayoutDetails::MakeInstance()
 
 void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 {
-	if (MyLayout != nullptr)
+	if (CurrentLayout != nullptr)
 	{
 		TArray<TWeakObjectPtr<UObject>> Objects;
-		MyLayout->GetObjectsBeingCustomized(Objects);
+		CurrentLayout->GetObjectsBeingCustomized(Objects);
 		USpatialGDKEditorSettings* Settings = Objects.Num() > 0 ? Cast<USpatialGDKEditorSettings>(Objects[0].Get()) : nullptr;
 		if (Settings != nullptr)
 		{
 			// Force layout to happen in the right order, as delegates may not be ordered.
 			Settings->OnWorkerTypesChanged();
 		}
-		MyLayout->ForceRefreshDetails();
+		CurrentLayout->ForceRefreshDetails();
 	}
 }
 
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
-	MyLayout = &DetailBuilder;
+	CurrentLayout = &DetailBuilder;
 	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
 	GDKSettings->OnWorkerTypesChangedDelegate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 

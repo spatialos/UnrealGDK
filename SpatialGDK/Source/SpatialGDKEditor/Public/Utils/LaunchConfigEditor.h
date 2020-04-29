@@ -23,11 +23,11 @@ public:
 
 	void OnWorkerTypesChanged();
 
-protected:
-	void PostInitProperties() override;
-
 	UPROPERTY(EditAnywhere, Category = "Launch Configuration")
 	FSpatialLaunchConfigDescription LaunchConfiguration;
+
+protected:
+	void PostInitProperties() override;
 
 	UFUNCTION(Exec)
 	void SaveConfiguration();

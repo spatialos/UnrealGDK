@@ -19,6 +19,6 @@ bool SPATIALGDKEDITOR_API GetLoadBalancingStrategyFromWorldSettings(const UWorld
 
 bool SPATIALGDKEDITOR_API FillWorkerConfigurationFromCurrentMap(TMap<FName, FWorkerTypeLaunchSection>& OutWorkers, FIntPoint& OutWorldDimensions);
 
-bool SPATIALGDKEDITOR_API GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers);
+bool SPATIALGDKEDITOR_API GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers);
 
 bool SPATIALGDKEDITOR_API ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers);

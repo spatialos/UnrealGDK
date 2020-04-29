@@ -865,7 +865,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap()
 
 	FillWorkerConfigurationFromCurrentMap(ServerWorkers, LaunchConfiguration.World.Dimensions);
 
-	GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkers);
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkers);
 
 	OnPrimaryLaunchConfigPathPicked(LaunchConfig);
 
@@ -874,11 +874,17 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap()
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenLaunchConfigEditor()
 {
-	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor");
+	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor", ParentWindowPtr.Pin());
+
+	// Set the defaults launch setting to cloud-friendly ones.
+	for (auto& WorkerEntry : Editor->LaunchConfiguration.ServerWorkersMap)
+	{
+		WorkerEntry.Value.bManualWorkerConnectionOnly = false;
+	}
 
 	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
 	{
-		if (auto This = WeakThis.Pin())
+		if (TSharedPtr<SWidget> This = WeakThis.Pin())
 		{
 			static_cast<SSpatialGDKSimulatedPlayerDeployment*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
 		}

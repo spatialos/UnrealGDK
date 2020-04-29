@@ -599,7 +599,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
-		GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkersMap);
+		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkersMap);
 		SetLevelEditorPlaySettingsWorkerTypes(WorkersMap);
 
 		// Also create default launch config for cloud deployments.
@@ -610,7 +610,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			}
 
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
-			GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, WorkersMap);
+			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, WorkersMap);
 		}
 
 		if (LoadBalancingStrat != DefaultStrategy)
@@ -816,7 +816,7 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 
 void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 {
-	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
+	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"), nullptr);
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)

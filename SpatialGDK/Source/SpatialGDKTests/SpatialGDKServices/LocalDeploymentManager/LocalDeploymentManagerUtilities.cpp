@@ -83,7 +83,7 @@ bool FStartDeployment::Update()
 			Conf.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
 			WorkerConfigMap.Add(AutomationWorkerType, Conf);
 
-			if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkerConfigMap))
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkerConfigMap))
 			{
 				return;
 			}
