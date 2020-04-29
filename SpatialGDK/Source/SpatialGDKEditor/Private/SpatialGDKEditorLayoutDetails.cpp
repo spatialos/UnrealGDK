@@ -279,25 +279,27 @@ bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgsToDevice(const FStrin
 
 namespace
 {
-	static FString GetAdbExePath()
+
+FString GetAdbExePath()
+{
+	FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
+	if (AndroidHome.IsEmpty())
 	{
-		FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
-		if (AndroidHome.IsEmpty())
-		{
-			UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this.")));
-			return TEXT("");
-		}
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this.")));
+		return TEXT("");
+	}
 
 #if PLATFORM_WINDOWS
-		const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb.exe")));
+	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb.exe")));
 #else
-		const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
+	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
 #endif
 
-		return AdbExe;
-	}
+	return AdbExe;
 }
+
+} // anonymous namespace
 
 FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 {
