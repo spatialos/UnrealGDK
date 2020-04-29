@@ -45,6 +45,11 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
+	ProjectNameEdit = SNew(SEditableTextBox)
+		.Text(FText::FromString(ProjectName))
+		.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+		.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted);
+
 	ChildSlot
 		[
 			SNew(SBorder)
@@ -120,11 +125,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(SEditableTextBox)
-									.Text(FText::FromString(ProjectName))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted, ETextCommit::Default)
+									ProjectNameEdit.ToSharedRef()
 								]
 							]
 							// Assembly Name 
@@ -509,7 +510,18 @@ void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FT
 
 void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
 {
-	FSpatialGDKServicesModule::SetProjectName(InText.ToString());
+	FString NewProjectName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsProjectNameValid(NewProjectName))
+	{
+		ProjectNameEdit->SetError(TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long."));
+		return;
+	}
+	else
+	{
+		ProjectNameEdit->SetError(TEXT(""));
+	}
+
+	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
