@@ -110,11 +110,20 @@ void SetLevelEditorPlaySettingsWorkerTypes(const TMap<FName, FWorkerTypeLaunchSe
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 
 	PlayInSettings->WorkerTypesToLaunch.Empty(InWorkers.Num());
+
+	if (InWorkers.Num() == 0)
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Warning, TEXT("No workers specified in SetLevelEditorPlaySettingsWorkerType."));
+	}
+
 	for (const auto& Worker : InWorkers)
 	{
 		if (Worker.Value.bAutoNumEditorInstances)
 		{
-			PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, Worker.Value.WorkerLoadBalancing->GetNumberOfWorkersForPIE());
+			if (Worker.Value.WorkerLoadBalancing != nullptr)
+			{
+				PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, Worker.Value.WorkerLoadBalancing->GetNumberOfWorkersForPIE());
+			}
 		}
 		else
 		{
