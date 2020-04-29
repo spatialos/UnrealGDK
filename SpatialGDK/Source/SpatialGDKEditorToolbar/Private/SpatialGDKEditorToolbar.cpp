@@ -870,7 +870,7 @@ bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionIsVisible() const
 
 bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionCanExecute() const
 {
-	return GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
+	return false;
 }
 	 
 bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentIsVisible() const
