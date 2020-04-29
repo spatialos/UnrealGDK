@@ -12,7 +12,7 @@ release () {
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
 
-  echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${TARGET_BRANCH} :package:"
+  echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
 
   docker run \
     -v "${SECRETS_DIR}":/var/ssh \
