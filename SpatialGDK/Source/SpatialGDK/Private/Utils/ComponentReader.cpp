@@ -183,16 +183,15 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ?
 			ClassInfoManager->GetFieldIdsByComponentId(ComponentId, *Replicator->RepLayout.Get()) : UpdatedIds;
 #if DO_GUARD_SLOW
-		auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
-			for (Schema_FieldId Field : Subset) {
-				if (!Superset.Contains(Field)) return false;
-			}
-			return true;
-		};
 		if (bIsInitialData)
 		{
-			const TArray<Schema_FieldId>& AllIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId, *Replicator->RepLayout.Get());
-			checkfSlow(CheckSubsetLambda(UpdatedIds, AllIds),
+			auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
+				for (Schema_FieldId Field : Subset) {
+					if (!Superset.Contains(Field)) return false;
+				}
+				return true;
+			};
+			checkfSlow(CheckSubsetLambda(UpdatedIds, IdsToIterate),
 				TEXT("The entire list of field IDs associated with the component is not a subset of the updated IDs, this should not happen."));
 		}
 #endif
