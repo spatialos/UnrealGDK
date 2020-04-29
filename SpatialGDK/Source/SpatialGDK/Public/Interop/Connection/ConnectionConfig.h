@@ -175,6 +175,9 @@ public:
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
+		// Get command line options first since the URL handling will modify the CommandLine string
+		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+
 		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
 		FString Host;
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), Host))
@@ -202,7 +205,6 @@ public:
 			SetReceptionistHost(Host);
 		}
 
-		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 		return true;
 	}
 

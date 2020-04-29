@@ -27,11 +27,12 @@ private:
 
 CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
+	const FURL URL(nullptr, TEXT("10.20.30.40?locator?customLocator?playeridentity=foo?login=bar"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const FURL URL(nullptr, TEXT("10.20.30.40?locator?customLocator?playeridentity=foo?login=bar"), TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -45,11 +46,12 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator)
 
 CONNECTIONMANAGER_TEST(SetupFromURL_Locator_LocatorHost)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
+	const FURL URL(nullptr, TEXT("10.20.30.40?locator?playeridentity=foo?login=bar"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const FURL URL(nullptr, TEXT("10.20.30.40?locator?playeridentity=foo?login=bar"), TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -63,13 +65,14 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Locator_LocatorHost)
 
 CONNECTIONMANAGER_TEST(SetupFromURL_DevAuth)
 {
-	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
-
-	// WHEN
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
 	const FURL URL(nullptr,
 		TEXT("10.20.30.40?devauth?customLocator?devauthtoken=foo?deployment=bar?playerid=666?displayname=n00bkilla?metadata=important"),
 		TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -86,11 +89,12 @@ CONNECTIONMANAGER_TEST(SetupFromURL_DevAuth)
 
 CONNECTIONMANAGER_TEST(SetupFromURL_DevAuth_LocatorHost)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
+	const FURL URL(nullptr, TEXT("10.20.30.40?devauth"),TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const FURL URL(nullptr, TEXT("10.20.30.40?devauth"),TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -101,11 +105,12 @@ CONNECTIONMANAGER_TEST(SetupFromURL_DevAuth_LocatorHost)
 
 CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_Localhost)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("");
+	const FURL URL(nullptr, TEXT("127.0.0.1"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const FURL URL(nullptr, TEXT("127.0.0.1"), TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("");
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -118,11 +123,12 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_Localhost)
 
 CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalHost)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("");
+	const FURL URL(nullptr, TEXT("10.20.30.40"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const FURL URL(nullptr, TEXT("10.20.30.40"), TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("");
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -135,11 +141,12 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalHost)
 
 CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridge)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("");
+	const FURL URL(nullptr, TEXT("127.0.0.1?useExternalIpForBridge"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const FURL URL(nullptr, TEXT("127.0.0.1?useExternalIpForBridge"), TRAVEL_Absolute);
-	FTemporaryCommandLine TemporaryCommandLine("");
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
@@ -152,10 +159,11 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridge)
 
 CONNECTIONMANAGER_TEST(SetupFromCommandLine_Locator)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 10.20.30.40 -playerIdentityToken foo -loginToken bar");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 10.20.30.40 -playerIdentityToken foo -loginToken bar");
 	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
 
 	// THEN
@@ -170,10 +178,11 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Locator)
 
 CONNECTIONMANAGER_TEST(SetupFromCommandLine_DevAuth)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 10.20.30.40 -devAuthToken foo -deployment bar -playerId 666 -displayName n00bkilla -metadata important");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 10.20.30.40 -devAuthToken foo -deployment bar -playerId 666 -displayName n00bkilla -metadata important");
 	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
 
 	// THEN
@@ -191,10 +200,11 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_DevAuth)
 
 CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHost)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-receptionistHost 10.20.30.40 -receptionistPort 666");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	FTemporaryCommandLine TemporaryCommandLine("-receptionistHost 10.20.30.40 -receptionistPort 666");
 	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
 
 	// THEN
@@ -207,12 +217,51 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHost)
 	return true;
 }
 
-CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URL)
+CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHostLocal)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-receptionistPort 666");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
+	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
+
+	// THEN
+	TestEqual("Success", bSuccess, true);
+	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
+	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
+
+	return true;
+}
+
+CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHostLocalExternalBridge)
+{
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-receptionistPort 666 -useExternalIpForBridge true");
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
+	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
+
+	// THEN
+	TestEqual("Success", bSuccess, true);
+	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
+	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
+
+	return true;
+}
+
+CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URL)
+{
+	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("10.20.30.40?someUnknownFlag?otherFlag -receptionistPort 666");
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
 	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
 
 	// THEN
@@ -227,10 +276,11 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URL)
 
 CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URLAndExternalBridge)
 {
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("127.0.0.1?useExternalIpForBridge -receptionistPort 666");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	FTemporaryCommandLine TemporaryCommandLine("127.0.0.1?useExternalIpForBridge -receptionistPort 666");
 	Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
 
 	// THEN
