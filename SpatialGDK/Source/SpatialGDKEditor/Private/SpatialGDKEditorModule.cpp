@@ -51,12 +51,6 @@ FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
 	return SpatialGDKEditorSettings->ExposedRuntimeIP;
 }
 
-int FSpatialGDKEditorModule::GetSpatialOSNetFlowType() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKEditorSettings->SpatialOSNetFlowType;
-}
-
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
 {
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
