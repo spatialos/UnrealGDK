@@ -2,15 +2,14 @@
 
 #include "Utils/LaunchConfigEditor.h"
 
-#include "DesktopPlatformModule.h"
-#include "Editor.h"
-#include "Framework/Application/SlateApplication.h"
-#include "IDesktopPlatform.h"
-
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
+
+#include "DesktopPlatformModule.h"
+#include "Framework/Application/SlateApplication.h"
+#include "IDesktopPlatform.h"
 
 void ULaunchConfigurationEditor::PostInitProperties()
 {

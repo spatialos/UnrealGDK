@@ -62,16 +62,16 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 			SNew(STextBlock).Text(FText::FromString(FString::Printf(TEXT("%i Elements"), NumEntries)))
 		];
 
-		const TMap<FName, FWorkerTypeLaunchSection>* CustomizedMap = reinterpret_cast<TMap<FName, FWorkerTypeLaunchSection>*>(ChildProperty->GetValueBaseAddress(reinterpret_cast<uint8*>(EditedObject[0])));
-
-		// Assume that the properties as listed in the same order as the map's iterator.
-		auto Iterator = CustomizedMap->CreateConstIterator();
-
-		for (uint32 EntryIdx = 0; EntryIdx < NumEntries; ++EntryIdx, ++Iterator)
+		for (uint32 EntryIdx = 0; EntryIdx < NumEntries; ++EntryIdx)
 		{
 			TSharedPtr<IPropertyHandle> EntryProp = ChildProperty->GetChildHandle(EntryIdx);
+			check(EntryProp != nullptr);
+			TSharedPtr<IPropertyHandle> EntryKeyProp = EntryProp->GetKeyHandle();
+			check(EntryKeyProp != nullptr);
+			
+			FName* KeyPtr = reinterpret_cast<FName*>(EntryKeyProp->GetValueBaseAddress(reinterpret_cast<uint8*>(EditedObject[0])));
 
-			IDetailGroup& Entry = NewGroup.AddGroup(Iterator->Key, FText::FromName(Iterator->Key));
+			IDetailGroup& Entry = NewGroup.AddGroup(*KeyPtr, FText::FromName(*KeyPtr));
 			uint32 NumEntryFields;
 			EntryProp->GetNumChildren(NumEntryFields);
 
