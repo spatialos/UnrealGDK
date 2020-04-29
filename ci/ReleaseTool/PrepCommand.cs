@@ -226,8 +226,10 @@ namespace ReleaseTool
             gitClient.StageFile(filePath);
         }
 
-        private void UpdatePluginFile(string pluginFilePath, GitClient gitClient)
+        private void UpdatePluginFile(string pluginFileName, GitClient gitClient)
         {
+            var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
+
             Logger.Info("Updating {0}...", pluginFilePath);
 
             JObject jsonObject;
