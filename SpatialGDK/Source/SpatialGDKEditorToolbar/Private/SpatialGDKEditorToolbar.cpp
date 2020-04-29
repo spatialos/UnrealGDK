@@ -955,7 +955,7 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked() const
 	SpatialGDKEditorSettings->SaveConfig();
 }
 
-void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked() const
+void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
@@ -964,7 +964,7 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked() const
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
-			const_cast<FSpatialGDKEditorToolbarModule*>(this)->VerifyAndStartDeployment();
+			VerifyAndStartDeployment();
 		});
 	}
 	SpatialGDKEditorSettings->SaveConfig();
