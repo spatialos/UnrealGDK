@@ -8,7 +8,6 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
-#include "Engine/LevelScriptActor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 
@@ -204,11 +203,15 @@ FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& Objec
 
 bool FUnrealObjectRef::ShouldLoadObjectFromClassPath(UObject* Object)
 {
-	return Object->IsA(AGameStateBase::StaticClass())
+	// We don't want to add objects to this list which are stably-named. This is because:
+	// - stably-named Actors are already handled correctly by the GDK and don't need additional special casing,
+	// - stably-named Actors then follow two different logic paths at various points in the GDK which results in 
+	//   inconsistent package map entries.
+	// The ensure statement below is a sanity check that we don't inadvertently add a stably-name Actor to this list.
+	return (Object->IsA(AGameStateBase::StaticClass())
 		|| Object->IsA(AGameModeBase::StaticClass())
-		|| Object->IsA(ALevelScriptActor::StaticClass())
 		|| Object->IsA(ASpatialMetricsDisplay::StaticClass())
-		|| Object->IsA(ASpatialDebugger::StaticClass());
+		|| Object->IsA(ASpatialDebugger::StaticClass())) && ensure(!Object->IsNameStableForNetworking());
 }
 
 FUnrealObjectRef FUnrealObjectRef::GetRefFromObjectClassPath(UObject* Object, USpatialPackageMapClient* PackageMap)
