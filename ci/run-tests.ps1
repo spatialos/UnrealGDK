@@ -19,6 +19,8 @@ function Force-ResolvePath {
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
 }
 
+. "$PSScriptRoot\common.ps1"
+
 if ($run_with_spatial) {
     # Generate schema and snapshots
     Write-Output "Generating snapshot and schema for testing project"
@@ -81,9 +83,13 @@ try {
     # Give the Unreal Editor 30 minutes to run the tests, otherwise kill it
     # This is so we can get some logs out of it, before we are cancelled by buildkite
     Wait-Process -Timeout 1800 -InputObject $run_tests_proc
+    # If the Editor crashes, these processes can stay lingering and prevent the job from ever timing out
+    Stop-Runtime
 }
 catch {
     Stop-Process -Force -InputObject $run_tests_proc # kill the dangling process
     buildkite-agent artifact upload "$log_file_path" # If the tests timed out, upload the log and throw an error
+    # Looks like BuildKite doesn't like this failure and a dangling runtime will prevent the job from ever timing out
+    Stop-Runtime
     throw $_
 }
