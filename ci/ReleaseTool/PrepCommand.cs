@@ -88,7 +88,7 @@ namespace ReleaseTool
          *     This tool is designed to be used with a robot Github account. When we prep a release:
          *         1. Checkout of the repo.
          *         2. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
-         *         3. Make repo-dependent changes for prepping the release (e.g. updating version files).
+         *         3. Make repo-specific changes for prepping the release (e.g. updating version files).
          *         4. Push this to an RC branch.
          *         5. Create a release branch if it doesn't exist
          *         6. Open a PR for merging the RC branch into the release branch.
@@ -106,7 +106,7 @@ namespace ReleaseTool
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
                     // This does step 2 from above.
-                    gitClient.CheckoutLocalBranch(options.SourceBranch);
+                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
                     // This does step 3 from above.
                     switch (options.GitRepoName)
