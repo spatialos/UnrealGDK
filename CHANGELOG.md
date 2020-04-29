@@ -76,7 +76,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `OnPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed. `OnConnected` and `OnConnectionFailed` are now also blueprint-assignable.
 - `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
 - You can now edit the project name field in the `Cloud Deployment` window.
-- Change icon of 'start' toolbar button based on selected connection flow
+- Change the icon of the 'Start' toolbar button based on the selected connection flow.
 - Created a new dropdown menu in the Start toolbar button. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client
   - You can choose between `Connect to local deployment`, `Connect to cloud deployment` and `Do not connect` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
   - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
