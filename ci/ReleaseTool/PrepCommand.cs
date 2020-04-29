@@ -106,7 +106,7 @@ namespace ReleaseTool
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
                     // This does step 2 from above.
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch, options.GithubOrgName);
+                    gitClient.CheckoutLocalBranch(options.SourceBranch);
 
                     // This does step 3 from above.
                     switch (options.GitRepoName)
@@ -128,7 +128,7 @@ namespace ReleaseTool
                     // This does step 5 from above.
                     if (!gitClient.LocalBranchExists(options.ReleaseBranch))
                     {
-                        gitClient.CheckoutRemoteBranch(options.CandidateBranch, options.GithubOrgName);
+                        gitClient.CheckoutLocalBranch(options.CandidateBranch);
                         gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.ReleaseBranch);
                     }

@@ -100,7 +100,7 @@ namespace ReleaseTool
                 {
                     // Create GitHub release in the repo
                     gitClient.Fetch();
-                    gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                    gitClient.CheckoutLocalBranch(options.ReleaseBranch);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",

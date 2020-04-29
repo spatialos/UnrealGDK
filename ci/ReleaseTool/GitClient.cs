@@ -59,6 +59,11 @@ namespace ReleaseTool
             Commands.Checkout(repo, branchRef);
         }
 
+        public void CheckoutLocalBranch(string branch)
+        {
+            Logger.Info("Checking out branch... {0}", branch);
+            Commands.Checkout(repo, branch);
+        }
 
         public void StageFile(string filePath)
         {
