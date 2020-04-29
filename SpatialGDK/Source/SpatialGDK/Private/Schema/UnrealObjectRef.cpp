@@ -210,7 +210,6 @@ bool FUnrealObjectRef::ShouldLoadObjectFromClassPath(UObject* Object)
 	// The ensure statement below is a sanity check that we don't inadvertently add a stably-name Actor to this list.
 	return (Object->IsA(AGameStateBase::StaticClass())
 		|| Object->IsA(AGameModeBase::StaticClass())
-		|| Object->IsA(ALevelScriptActor::StaticClass())
 		|| Object->IsA(ASpatialMetricsDisplay::StaticClass())
 		|| Object->IsA(ASpatialDebugger::StaticClass())) && ensure(!Object->IsNameStableForNetworking());
 }
