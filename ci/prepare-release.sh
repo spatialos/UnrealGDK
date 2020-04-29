@@ -50,7 +50,7 @@ mkdir -p ./logs
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
-ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-version)"
+ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-versions)"
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
 prepareRelease "UnrealGDK"                "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
