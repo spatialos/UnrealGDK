@@ -116,6 +116,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed sending component RPCs on a recently created actor.
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
+- Fixed a bug where bNetLoadOnClient actors would not be updated if a list (such as a TArray) was cleared while the actor was not in view.
 
 ### External contributors:
 @DW-Sebastien
