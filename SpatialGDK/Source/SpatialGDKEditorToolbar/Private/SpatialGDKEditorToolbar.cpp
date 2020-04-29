@@ -829,25 +829,7 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentButtonClicked()
 {
-	// Create and open the cloud configuration dialog
-	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
-		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
-		.HasCloseButton(true)
-		.SupportsMaximize(false)
-		.SupportsMinimize(false)
-		.SizingRule(ESizingRule::Autosized);
-
-	SimulatedPlayerDeploymentWindowPtr->SetContent(
-		SNew(SBox)
-		.WidthOverride(700.0f)
-		[
-			SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
-			.SpatialGDKEditor(SpatialGDKEditorInstance)
-		.ParentWindow(SimulatedPlayerDeploymentWindowPtr)
-		]
-	);
-
-	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
+	ShowSimulatedPlayerDeploymentDialog();
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
