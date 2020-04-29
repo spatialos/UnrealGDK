@@ -409,6 +409,10 @@ void OnLocalDeploymentIPChanged(const FText& InText, ETextCommit::Type InCommitT
 
 void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommitType)
 {
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKEditorSettings->DevelopmentDeploymentToConnect = InText.ToString();
+	SpatialGDKEditorSettings->SaveConfig();
+
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->DevelopmentDeploymentToConnect = InText.ToString();
 	SpatialGDKSettings->SaveConfig();
@@ -418,7 +422,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 {
 	FMenuBuilder MenuBuilder(false /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("SpatialOSSettings", "SpatialOS Settings"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableSpatialNetworking);
@@ -450,7 +454,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 		MenuBuilder.AddWidget(SNew(SEditableText)
 			.OnTextChanged_Static(OnCloudDeploymentNameChanged, ETextCommit::Default)
 			.OnTextCommitted_Static(OnCloudDeploymentNameChanged)
-			.Text(FText::FromString(SpatialGDKSettings->DevelopmentDeploymentToConnect))
+			.Text(FText::FromString(SpatialGDKEditorSettings->DevelopmentDeploymentToConnect))
 			.SelectAllTextWhenFocused(true)
 			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Raw(this, &FSpatialGDKEditorToolbarModule::IsCloudDeploymentNameEditable)
