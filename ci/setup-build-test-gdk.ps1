@@ -69,7 +69,7 @@ else{
         # $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")$user_gdk_settings", $True)
     }
 
-    if ($env:SLOW_NETWORKING_TESTS) {
+    if ($env:SLOW_NETWORKING_TESTS -like "true") {
         $tests[0].tests_path += "+/Game/NetworkingMap"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
     }
