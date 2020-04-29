@@ -127,6 +127,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed sending component RPCs on a recently created actor.
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
+- Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
 
 ### External contributors:
 @DW-Sebastien

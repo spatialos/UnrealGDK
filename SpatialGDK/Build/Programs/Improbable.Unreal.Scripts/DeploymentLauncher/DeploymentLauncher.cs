@@ -208,18 +208,16 @@ namespace Improbable
             {
                 if (e.Status.StatusCode == Grpc.Core.StatusCode.NotFound)
                 {
-                    Console.WriteLine(
-                        $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
+                    Console.WriteLine($"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
+                    Console.WriteLine($"Detail: '{e.Status.Detail}'");
                 }
                 else if (e.Status.StatusCode == Grpc.Core.StatusCode.ResourceExhausted)
                 {
-                    Console.WriteLine(
-                        $"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'" );
+                    Console.WriteLine($"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'" );
                 }
                 else
                 {
-                    Console.WriteLine(
-                        $"Unable to launch the deployment(s). Detail: '{e.Status.Detail}'");
+                    Console.WriteLine($"Unable to launch the deployment(s). Detail: '{e.Status.Detail}'");
                 }
 
                 return 1;
