@@ -33,7 +33,7 @@ namespace ReleaseTool
         private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
 
         // Plugin file configuration.
-        private const string pluginFileName = GitRepoName+="/SpatialGDK.uplugin";
+        private const string pluginFileName = "UnrealGDK/SpatialGDK.uplugin";
         private const string VersionKey = "Version";
         private const string VersionNameKey = "VersionName";
 
