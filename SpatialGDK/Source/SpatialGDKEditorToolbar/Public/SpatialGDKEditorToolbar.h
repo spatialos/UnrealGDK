@@ -99,7 +99,7 @@ private:
 	bool IsCloudDeploymentSelected() const;
 	bool IsSpatialOSNetFlowConfigurable() const;
 	void NoAutomaticConnectionClicked() const;
-	void LocalDeploymentClicked() const;
+	void LocalDeploymentClicked();
 	void CloudDeploymentClicked() const;
 	bool IsLocalDeploymentIPEditable() const;
 	bool IsCloudDeploymentNameEditable() const;

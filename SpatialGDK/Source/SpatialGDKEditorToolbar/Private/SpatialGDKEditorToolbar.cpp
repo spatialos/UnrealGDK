@@ -94,7 +94,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
 
 	// Bind the play button delegate to starting a local spatial deployment.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
@@ -950,13 +950,23 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked() const
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
+	// Unbind the TryStartSpatialDeployment if not in local deployment mode.
+	UEditorEngine::TryStartSpatialDeployment.Unbind();
 	SpatialGDKEditorSettings->SaveConfig();
 }
 
-void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked() const
+void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
+	// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
+	{
+		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
+		{
+			VerifyAndStartDeployment();
+		});
+	}
 	SpatialGDKEditorSettings->SaveConfig();
 }
 
@@ -965,6 +975,8 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	// Unbind the TryStartSpatialDeployment if not in local deployment mode.
+	UEditorEngine::TryStartSpatialDeployment.Unbind();
 
 	FString DevAuthToken;
 	if (!SpatialCommandUtils::GenerateDevAuthToken(SpatialGDKSettings->IsRunningInChina(), DevAuthToken))
