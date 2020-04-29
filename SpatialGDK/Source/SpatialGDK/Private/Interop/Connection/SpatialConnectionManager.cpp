@@ -459,11 +459,9 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 
 		ReceptionistConfig.WorkerType = SpatialWorkerType;
 
-		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
-		if (URL.HasOption(UseExternalIpForBridge))
+		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
-			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
-			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
+			ReceptionistConfig.UseExternalIp = true;
 		}
 	}
 }
