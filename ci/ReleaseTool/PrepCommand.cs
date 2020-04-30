@@ -128,7 +128,7 @@ namespace ReleaseTool
                     // This does step 5 from above.
                     if (!gitClient.LocalBranchExists(options.ReleaseBranch))
                     {
-                        gitClient.Pull();
+                        gitClient.Fetch();
                         gitClient.CheckoutLocalBranch(options.CandidateBranch);
                         gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.ReleaseBranch);
