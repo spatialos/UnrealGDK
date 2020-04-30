@@ -92,6 +92,13 @@ namespace ReleaseTool
             RunGitCommand("fetch", string.Format(FetchArguments, remote ?? DefaultRemote), RepositoryPath);
         }
 
+        public void Pull(string remote = null)
+        {
+            Logger.Info("Pulling from remote...");
+
+            RunGitCommand("pull", string.Format(PullArguments, remote ?? DefaultRemote), RepositoryPath);
+        }
+
         public void ForcePush(string remoteBranchName)
         {
             Logger.Info("Pushing to remote...");
