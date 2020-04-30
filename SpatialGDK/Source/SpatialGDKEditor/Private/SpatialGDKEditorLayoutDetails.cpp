@@ -319,13 +319,15 @@ FString GetAdbExePath()
 
 void GetDeploymentServerExecutableAndArgs(FString& OutExe, FString& OutArgs, const FString& DeploymentServerArguments)
 {
-	OutExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	OutArgs = DeploymentServerArguments;
+	const FString& DeploymentServerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
 
 #if PLATFORM_MAC
 	// On Mac we need to run mono as the executable and pass the deployment server as the first argument to that.
-	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *OutExe, *DeploymentServerArguments);
 	OutExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
+	OutArgs = FString::Printf(TEXT("%s %s"), *DeploymentServerExe, *DeploymentServerArguments);
+#else
+	OutExe = DeploymentServerExe;
+	OutArgs = DeploymentServerArguments;
 #endif
 }
 
