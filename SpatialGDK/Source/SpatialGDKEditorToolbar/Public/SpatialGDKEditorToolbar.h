@@ -72,14 +72,22 @@ private:
 
 	void VerifyAndStartDeployment();
 
-	void StartSpatialDeploymentButtonClicked();
+	void StartNoAutomaticConnectionButtonClicked();
+	void StartLocalSpatialDeploymentButtonClicked();
+	void StartCloudSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
-	bool StartSpatialDeploymentIsVisible() const;
-	bool StartSpatialDeploymentCanExecute() const;
+	bool StartNoAutomaticConnectionIsVisible() const;
+	bool StartNoAutomaticConnectionCanExecute() const;
+
+	bool StartLocalSpatialDeploymentIsVisible() const;
+	bool StartLocalSpatialDeploymentCanExecute() const;
+
+	bool StartCloudSpatialDeploymentIsVisible() const;
+	bool StartCloudSpatialDeploymentCanExecute() const;
 
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
