@@ -195,6 +195,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
+	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
@@ -2279,7 +2280,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (AbsOffset >= MaxAbsOffset)
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
+			UE_LOG(LogSpatialReceiver, Error, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
 			It.RemoveCurrent();
 			continue;
 		}
@@ -2296,7 +2297,8 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (ObjectReferences.Array)
 		{
-			check(Property->IsA<UArrayProperty>());
+			UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+			check(ArrayProperty != nullptr);
 
 			if (!bIsHandover)
 			{
@@ -2306,7 +2308,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + StoredDataOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
-			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
+			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
 			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, bIsHandover ? nullptr : (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
 			continue;

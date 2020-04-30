@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorLBExtension, Log, All);
+
 class UAbstractLBStrategy;
 class FLBStrategyEditorExtensionManager;
 struct FWorkerTypeLaunchSection;
@@ -41,12 +43,20 @@ public:
 		RegisterExtension(Extension::ExtendedStrategy::StaticClass(), MakeUnique<Extension>());
 	}
 
+	template <typename Extension>
+	void UnregisterExtension()
+	{
+		UnregisterExtension(Extension::ExtendedStrategy::StaticClass());
+	}
+
 	void Cleanup();
 
 private:
-	void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension);
+	SPATIALGDKEDITOR_API void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension);
 
-	using ExtensionArray = TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>>;
+	SPATIALGDKEDITOR_API void UnregisterExtension(UClass* StrategyClass);
+
+	using ExtensionArray = TMap<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>;
 
 	ExtensionArray Extensions;
 };
