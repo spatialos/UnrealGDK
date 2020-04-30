@@ -101,17 +101,33 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	TArray<uint32> UpdatedIds;
-	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+	// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
+	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
+	// However, we still want to apply this empty data, so we need to reconstruct the full
+	// list of field IDs for that component type (Data, OwnerOnly).
+	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentData.component_id, Channel.GetObjectRepLayout(&Object));
+#if DO_GUARD_SLOW
+	TArray<uint32> ReceivedIds;
+	ReceivedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, ReceivedIds.GetData());
+
+	auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
+		for (Schema_FieldId Field : Subset) {
+			if (!Superset.Contains(Field)) return false;
+		}
+		return true;
+	};
+	checkfSlow(CheckSubsetLambda(ReceivedIds, InitialIds),
+		TEXT("The entire list of field IDs associated with the component is not a subset of the received IDs, this should not happen."));
+#endif
 
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentData.component_id, bOutReferencesChanged);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentData.component_id, bOutReferencesChanged);
 	}
 }
 
@@ -176,27 +192,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
-		// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
-		// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
-		// However, we still want to apply this empty data, so we need to reconstruct the full
-		// list of field IDs for that component type (Data, OwnerOnly).
-		const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ?
-			ClassInfoManager->GetFieldIdsByComponentId(ComponentId, *Replicator->RepLayout.Get()) : UpdatedIds;
-#if DO_GUARD_SLOW
-		if (bIsInitialData)
-		{
-			auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
-				for (Schema_FieldId Field : Subset) {
-					if (!Superset.Contains(Field)) return false;
-				}
-				return true;
-			};
-			checkfSlow(CheckSubsetLambda(UpdatedIds, IdsToIterate),
-				TEXT("The entire list of field IDs associated with the component is not a subset of the updated IDs, this should not happen."));
-		}
-#endif
-
-		for (uint32 FieldId : IdsToIterate)
+		for (uint32 FieldId : UpdatedIds)
 		{
 			// FieldId is the same as rep handle
 			if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
