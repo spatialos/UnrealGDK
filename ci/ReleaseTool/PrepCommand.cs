@@ -89,7 +89,7 @@ namespace ReleaseTool
          *         1. Clons the source repo.
          *         2. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
          *         3. Make repo-specific changes for prepping the release (e.g. updating version files).
-         *         4. Push this to an RC branch.
+         *         4. Commit changes and push them to a remote candidate branch.
          *         5. If a release branch doesn't exist, create one and push it to the remote.
          *         6. Open a PR for merging the RC branch into the release branch.
          */
@@ -121,14 +121,14 @@ namespace ReleaseTool
                             break;
                     }
 
-                    // 4. Commit changes and push them to a release candidate branch.
+                    // 4. Commit changes and push them to a remote candidate branch.
                     gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                     gitClient.ForcePush(options.CandidateBranch);
 
                     // 5. If a release branch doesn't exist, create one and push it to the remote.
                     if (!gitClient.LocalBranchExists(options.ReleaseBranch))
                     {
-                        gitClient.Fetch();
+                        gitClient.Pull();
                         gitClient.CheckoutLocalBranch(options.CandidateBranch);
                         gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.ReleaseBranch);
