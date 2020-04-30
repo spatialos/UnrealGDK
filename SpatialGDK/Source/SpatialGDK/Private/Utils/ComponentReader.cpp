@@ -101,7 +101,6 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
 	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
 	// However, we still want to apply this empty data, so we need to reconstruct the full
 	// list of field IDs for that component type (Data, OwnerOnly).
