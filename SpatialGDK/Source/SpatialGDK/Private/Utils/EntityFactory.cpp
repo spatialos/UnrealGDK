@@ -367,15 +367,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 	}
 
-	ComponentWriteAcl.Add(AuthorityDelegation::ComponentId, AuthoritativeWorkerRequirementSet);
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
 	// Create AuthorityDelegation from EntityACL component IDs.
 	AuthorityDelegationMap DelegationMap;
 	const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningEntityId(Actor);
-	const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->LockingPolicy->IsLocked(Actor) ?
-		NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() :
-		NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+	const Worker_EntityId AuthoritativeServerPartitionId = SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID;
 
 	for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
 	{
@@ -457,14 +454,15 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker)
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+	const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker)
 {
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
