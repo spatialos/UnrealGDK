@@ -865,8 +865,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionIsVisible() const
 {
-	auto settings = GetDefault<UGeneralProjectSettings>();
-	return (false == settings->UsesSpatialNetworking()) || GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
+	return (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()) || GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionCanExecute() const
