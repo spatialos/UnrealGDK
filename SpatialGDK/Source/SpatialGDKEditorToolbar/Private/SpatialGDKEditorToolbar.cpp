@@ -1011,6 +1011,8 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked() const
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
 	SpatialGDKSettings->SaveConfig();
+
+	FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices").GetLocalDeploymentManager()->SetAutoDeploy(false);
 }
 
 void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
@@ -1032,6 +1034,8 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
 	SpatialGDKSettings->SaveConfig();
+
+	FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices").GetLocalDeploymentManager()->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
 }
 
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
@@ -1056,6 +1060,8 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
 	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = true;
 	SpatialGDKSettings->DevelopmentAuthenticationToken = DevAuthToken;
 	SpatialGDKSettings->SaveConfig();
+
+	FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices").GetLocalDeploymentManager()->SetAutoDeploy(false);
 }
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable() const
