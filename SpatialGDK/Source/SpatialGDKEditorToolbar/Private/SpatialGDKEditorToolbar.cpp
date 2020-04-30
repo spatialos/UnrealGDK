@@ -1097,7 +1097,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
 			LocalDeploymentManager->SetAutoDeploy(Settings->bAutoStartLocalDeployment);
 
-			if (Settings->bAutoStartLocalDeployment)
+			if (Settings->bAutoStartLocalDeployment && Settings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment)
 			{
 				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 				UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
