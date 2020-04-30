@@ -128,11 +128,13 @@ void USpatialReceiver::LeaveCriticalSection()
 		}
 		if (StaticComponentView->HasAuthority(PendingAddComponent.EntityId, PendingAddComponent.ComponentId))
 		{
-			continue; // Hack to allow servers to change state if they are going to be authoritative
+			continue; // Hacky, allows servers to change state if they are going to be authoritative, without us overwriting it with old data
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Unhandled component being handled: compid %d entid %d"), PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
-		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
+		UE_LOG(LogSpatialReceiver, Verbose,
+			TEXT("Add component inside of a critical section, outside of an add entity, being handled: component id: %d, entity id: %d"),
+			PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
+		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
@@ -276,7 +278,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 	else
 	{
-		HandleIndividualAddComponent(Op);
+		HandleIndividualAddComponent(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
 	}
 }
 
@@ -1255,7 +1257,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
 }
 
-void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data)
+void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
@@ -1317,11 +1319,6 @@ void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId Ent
 	{
 		AttachDynamicSubobject(Actor, EntityId, Info);
 	}
-}
-
-void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
-{
-	HandleIndividualAddComponent_Internal(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info)
