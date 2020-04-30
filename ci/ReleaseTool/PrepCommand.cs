@@ -86,11 +86,11 @@ namespace ReleaseTool
 
         /*
          *     This tool is designed to be used with a robot Github account. When we prep a release:
-         *         1. Checkout of the repo.
+         *         1. Clons the source repo.
          *         2. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
          *         3. Make repo-specific changes for prepping the release (e.g. updating version files).
          *         4. Push this to an RC branch.
-         *         5. Create a release branch if it doesn't exist
+         *         5. If a release branch doesn't exist, create one and push it to the remote.
          *         6. Open a PR for merging the RC branch into the release branch.
          */
         public int Run()
@@ -102,13 +102,13 @@ namespace ReleaseTool
             try
             {
                 var gitHubClient = new GitHubClient(options);
-
+                    // 1. Clone the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // This does step 2 from above.
+                    // 2. Checkout the source branch (by default, master or 4.xx-SpatialOSUnrealGDK for the engine repo).
                     gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
-                    // This does step 3 from above.
+                    // 3. Make repo-specific changes for prepping the release (e.g. updating version files).
                     switch (options.GitRepoName)
                     {
                         case "UnrealGDK":
@@ -121,11 +121,11 @@ namespace ReleaseTool
                             break;
                     }
 
-                    // This does step 4 from above.
+                    // 4. Commit changes and push them to a release candidate branch.
                     gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                     gitClient.ForcePush(options.CandidateBranch);
 
-                    // This does step 5 from above.
+                    // 5. If a release branch doesn't exist, create one and push it to the remote.
                     if (!gitClient.LocalBranchExists(options.ReleaseBranch))
                     {
                         gitClient.Fetch();
@@ -134,7 +134,7 @@ namespace ReleaseTool
                         gitClient.ForcePush(options.ReleaseBranch);
                     }
 
-                    // This does step 6 from above.
+                    // 6. Open a PR for merging the RC branch into the release branch.
                     var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
                     var branchFrom = options.SourceBranch;
                     var branchTo = options.ReleaseBranch;
