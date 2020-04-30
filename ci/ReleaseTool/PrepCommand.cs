@@ -128,8 +128,8 @@ namespace ReleaseTool
                     // 5. If a release branch doesn't exist, create one and push it to the remote.
                     if (!gitClient.LocalBranchExists(options.ReleaseBranch))
                     {
-                        gitClient.Pull();
-                        gitClient.CheckoutLocalBranch(options.CandidateBranch);
+                        gitClient.Fetch();
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
                         gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.ReleaseBranch);
                     }
