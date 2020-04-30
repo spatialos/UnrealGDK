@@ -331,6 +331,9 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
+		FString MainDeploymentCluster;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -350,6 +353,9 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
+		FString SimulatedPlayerCluster;
+
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
 		bool bSimulatedPlayersIsEnabled;
 
@@ -360,7 +366,6 @@ private:
 		uint32 NumberOfSimulatedPlayers;
 
 	static bool IsAssemblyNameValid(const FString& Name);
-	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
@@ -483,6 +488,21 @@ public:
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
 	}
 
+	void SetMainDeploymentCluster(const FString& NewCluster);
+	FORCEINLINE FString GetRawMainDeploymentCluster() const
+	{
+		return MainDeploymentCluster;
+	}
+
+	FORCEINLINE FString GetMainDeploymentCluster() const
+	{
+		if (MainDeploymentCluster.IsEmpty())
+		{
+			return "\"\"";
+		}
+		return MainDeploymentCluster;
+	}
+
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
 	FORCEINLINE FText GetSimulatedPlayerRegionCode() const
 	{
@@ -520,6 +540,21 @@ public:
 		return SimulatedPlayerDeploymentName;
 	}
 
+	void SetSimulatedPlayerCluster(const FString& NewCluster);
+	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
+	{
+		return SimulatedPlayerCluster;
+	}
+
+	FORCEINLINE FString GetSimulatedPlayerCluster() const
+	{
+		if (SimulatedPlayerCluster.IsEmpty())
+		{
+			return "\"\"";
+		}
+		return SimulatedPlayerCluster;
+	}
+
 	FORCEINLINE FString GetSimulatedPlayerLaunchConfigPath() const
 	{
 		return SimulatedPlayerLaunchConfigPath;
@@ -539,4 +574,6 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 
 	void SetRuntimeDevelopmentAuthenticationToken();
+
+	static bool IsProjectNameValid(const FString& Name);
 };

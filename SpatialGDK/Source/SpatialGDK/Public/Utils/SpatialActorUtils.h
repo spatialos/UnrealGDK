@@ -34,11 +34,11 @@ inline AActor* GetHierarchyRoot(const AActor* Actor)
 	return Owner;
 }
 
-inline FString GetOwnerWorkerAttribute(AActor* Actor)
+inline FString GetConnectionOwningWorkerId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->WorkerAttribute;
+		return NetConnection->ConnectionOwningWorkerId;
 	}
 
 	return FString();

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "EngineClasses/AbstractVirtualWorkerTranslator.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -16,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
 class UAbstractLBStrategy;
 
-class SPATIALGDK_API SpatialVirtualWorkerTranslator : public AbstractVirtualWorkerTranslator
+class SPATIALGDK_API SpatialVirtualWorkerTranslator
 {
 public:
 	SpatialVirtualWorkerTranslator() = delete;
@@ -27,7 +26,7 @@ public:
 	// Currently that is only the number of virtual workers desired.
 	bool IsReady() const { return bIsReady; }
 
-	virtual VirtualWorkerId GetLocalVirtualWorkerId() const override { return LocalVirtualWorkerId; }
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
 	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return LocalPhysicalWorkerName; }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is

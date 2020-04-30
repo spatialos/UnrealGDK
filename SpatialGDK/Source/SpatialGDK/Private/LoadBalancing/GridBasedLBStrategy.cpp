@@ -13,8 +13,8 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 	: Super()
 	, Rows(1)
 	, Cols(1)
-	, WorldWidth(10000.f)
-	, WorldHeight(10000.f)
+	, WorldWidth(1000000.f)
+	, WorldHeight(1000000.f)
 	, InterestBorder(0.f)
 {
 }

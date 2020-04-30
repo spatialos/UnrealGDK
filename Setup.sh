@@ -80,9 +80,9 @@ spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios      "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-    spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk16b-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk16b-android.zip
-    spatial package retrieve worker_sdk  c-dynamic-armv7a-clang_ndk16b-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk16b-android.zip
-    spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk16b-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk16b-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk21-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-armv7a-clang_ndk21-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk21-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21-android.zip
 fi
 
 spatial package retrieve worker_sdk  csharp                                  "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
@@ -98,9 +98,9 @@ unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip         
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip      -d "${BINARIES_DIR}"/IOS/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk16b-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk16b-android.zip   -d "${BINARIES_DIR}"/Android/armeabi-v7a/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk16b-android.zip   -d "${BINARIES_DIR}"/Android/x86_64/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21-android.zip   -d "${BINARIES_DIR}"/Android/armeabi-v7a/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21-android.zip   -d "${BINARIES_DIR}"/Android/x86_64/
 fi
 
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/csharp.zip                                  -d "${BINARIES_DIR}"/Programs/worker_sdk/csharp/
@@ -108,10 +108,10 @@ cp -R "${BINARIES_DIR}"/Headers/include/ "${WORKER_SDK_DIR}"
 
 if [[ -d "${SPATIAL_DIR}" ]]; then
     echo "Copying standard library schemas to ${SCHEMA_STD_COPY_DIR}"
-    cp -R "${BINARIES_DIR}/Programs/schema" "${SCHEMA_STD_COPY_DIR}"
+    cp -R "${BINARIES_DIR}/Programs/schema/." "${SCHEMA_STD_COPY_DIR}"
 
     echo "Copying schemas to ${SCHEMA_COPY_DIR}"
-    cp -R SpatialGDK/Extras/schema "${SCHEMA_COPY_DIR}"
+    cp -R SpatialGDK/Extras/schema/. "${SCHEMA_COPY_DIR}"
 fi
 
 popd

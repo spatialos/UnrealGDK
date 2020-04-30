@@ -109,10 +109,23 @@ public:
 	static FColor GetInspectorColorForWorkerName(const FString& WorkerName);
 
 	/**
-	 * Returns the entity ID of a given actor, or an empty string if we are not using spatial networking or actor is nullptr.
+	 * Returns the entity ID of a given actor, or 0 if we are not using spatial networking or Actor is nullptr.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
-	static FString GetActorEntityIDString(const AActor* Actor);
+	static int64 GetActorEntityId(const AActor* Actor);
+
+	/**
+	 * Returns the entity ID as a string if the ID is valid, or "Invalid" if not
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
+	static FString EntityIdToString(int64 EntityId);
+
+	/**
+	 * Returns the entity ID of a given actor as a string, or "Invalid" if we are not using spatial networking or Actor is nullptr.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
+	static FString GetActorEntityIdAsString(const AActor* Actor);
+
 
 private:
 

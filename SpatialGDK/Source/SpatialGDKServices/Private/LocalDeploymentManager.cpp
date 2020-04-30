@@ -27,19 +27,6 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 static const FString SpatialServiceVersion(TEXT("20200311.145308.ef0fc31004"));
 
-namespace
-{
-	FString GetDomainEnvironmentStr(bool bIsInChina)
-	{
-		FString DomainEnvironmentStr;
-		if (bIsInChina)
-		{
-			DomainEnvironmentStr = TEXT("--environment=cn-production");
-		}
-		return DomainEnvironmentStr;
-	}
-} // anonymous namespace
-
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bSpatialServiceRunning(false)
@@ -49,11 +36,16 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	, bStartingSpatialService(false)
 	, bStoppingSpatialService(false)
 {
+}
+
+void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
+{
+	bIsInChina = bChinaEnabled;
 	// Don't kick off background processes when running commandlets
 	const bool bCommandletRunning = IsRunningCommandlet();
 
 	// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes.
-	const bool bSpatialServicesAvailable = FSpatialGDKServicesModule::SpatialPreRunChecks();
+	const bool bSpatialServicesAvailable = FSpatialGDKServicesModule::SpatialPreRunChecks(bIsInChina);
 
 	if (bCommandletRunning || !bSpatialServicesAvailable)
 	{
@@ -100,11 +92,6 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 	}
 }
 
-void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
-{
-	bIsInChina = bChinaEnabled;
-}
-
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
@@ -135,12 +122,11 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString BuildConfigArgs = FString::Printf(TEXT("worker build build-config %s"), *GetDomainEnvironmentStr(bIsInChina));
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs, SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
+		bool bSuccess = SpatialCommandUtils::BuildWorkerConfig(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
 
-		if (ExitCode == ExitCodeSuccess)
+		if (bSuccess)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Display, TEXT("Building worker configurations succeeded!"));
 		}
@@ -349,7 +335,10 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 			FDateTime SpotCreateEnd = FDateTime::Now();
 			FTimespan Span = SpotCreateEnd - SpotCreateStart;
 
-			OnDeploymentStart.Broadcast();
+			AsyncTask(ENamedThreads::GameThread, [this]
+			{
+				OnDeploymentStart.Broadcast();
+			});
 
 			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
 			bSuccess = true;
@@ -446,6 +435,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
 		}
+		bStartingDeployment = false;
 
 		if (CallBack)
 		{
@@ -539,23 +529,14 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 
 	bStartingSpatialService = true;
 
-	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s %s"), *SpatialServiceVersion, *GetDomainEnvironmentStr(bIsInChina));
-
-	// Pass exposed runtime IP if one has been specified
-	if (!RuntimeIPToExpose.IsEmpty())
-	{
-		SpatialServiceStartArgs.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *RuntimeIPToExpose));
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Trying to start spatial service with exposed runtime ip: %s"), *RuntimeIPToExpose);
-	}
-
 	FString ServiceStartResult;
 	int32 ExitCode;
-
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, SpatialServiceStartArgs, SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStartResult, ExitCode);
+	bool bSuccess = SpatialCommandUtils::StartSpatialService(*SpatialServiceVersion, *RuntimeIPToExpose, bIsInChina,
+		SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStartResult, ExitCode);
 
 	bStartingSpatialService = false;
 
-	if (ExitCode == ExitCodeSuccess && ServiceStartResult.Contains(TEXT("RUNNING")))
+	if (bSuccess && ServiceStartResult.Contains(TEXT("RUNNING")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service started!"));
 		ExposedRuntimeIP = RuntimeIPToExpose;
@@ -587,14 +568,13 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 
 	bStoppingSpatialService = true;
 
-	FString SpatialServiceStartArgs = FString::Printf(TEXT("service stop %s"), *GetDomainEnvironmentStr(bIsInChina));
 	FString ServiceStopResult;
 	int32 ExitCode;
+	bool bSuccess = SpatialCommandUtils::StopSpatialService(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStopResult, ExitCode);
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, SpatialServiceStartArgs, SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStopResult, ExitCode);
 	bStoppingSpatialService = false;
 
-	if (ExitCode == ExitCodeSuccess)
+	if (bSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
 		ExposedRuntimeIP = TEXT("");
@@ -602,10 +582,6 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 		bSpatialServiceInProjectDirectory = true;
 		bLocalDeploymentRunning = false;
 		return true;
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to stop! %s"), *ServiceStopResult);
 	}
 
 	return false;

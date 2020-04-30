@@ -173,16 +173,27 @@ void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText 
 	PrintStringSpatial(WorldContextObject, InText.ToString(), bPrintToScreen, TextColor, Duration);
 }
 
-FString USpatialStatics::GetActorEntityIDString(const AActor* Actor)
+int64 USpatialStatics::GetActorEntityId(const AActor* Actor)
 {
-	if (Actor != nullptr)
+	check(Actor);
+	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
 	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
-		{
-			const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
-			return FString::Printf(TEXT("%lld"), EntityId);
-		}
+		return static_cast<int64>(SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor));
+	}
+	return 0;
+}
+
+FString USpatialStatics::EntityIdToString(int64 EntityId)
+{
+	if (EntityId <= SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return FString("Invalid");
 	}
 
-	return FString();
+	return FString::Printf(TEXT("%lld"), EntityId);
+}
+
+FString USpatialStatics::GetActorEntityIdAsString(const AActor* Actor)
+{
+	return EntityIdToString(GetActorEntityId(Actor));
 }

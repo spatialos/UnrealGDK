@@ -51,7 +51,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForLocal() const
 {
-	if (bUseGDKPinnedRuntimeVersion)
+	if (bUseGDKPinnedRuntimeVersion || LocalRuntimeVersion.IsEmpty())
 	{
 		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
 	}
@@ -60,7 +60,7 @@ const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForLocal() c
 
 const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForCloud() const
 {
-	if (bUseGDKPinnedRuntimeVersion)
+	if (bUseGDKPinnedRuntimeVersion || CloudRuntimeVersion.IsEmpty())
 	{
 		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
 	}
@@ -223,9 +223,19 @@ void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type Reg
 	PrimaryDeploymentRegionCode = RegionCode;
 }
 
+void USpatialGDKEditorSettings::SetMainDeploymentCluster(const FString& NewCluster)
+{
+	MainDeploymentCluster = NewCluster;
+}
+
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
+}
+
+void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewCluster)
+{
+	SimulatedPlayerCluster = NewCluster;
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)

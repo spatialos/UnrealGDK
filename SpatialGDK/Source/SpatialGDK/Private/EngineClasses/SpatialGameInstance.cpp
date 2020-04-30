@@ -4,6 +4,8 @@
 
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
+#include "Misc/Guid.h"
+
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
@@ -109,6 +111,14 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialConnectionManager();
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
@@ -123,23 +133,28 @@ void USpatialGameInstance::TryConnectToSpatial()
 
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
-		// If a developer wants to use the Launcher and NOT automatically connect they will have to set the `PreventAutoConnectWithLocator` flag to true.
-		if (!bPreventAutoConnectWithLocator)
+
+		// Initialize a locator configuration which will parse command line arguments.
+		FLocatorConfig LocatorConfig;
+		if (LocatorConfig.TryLoadCommandLineArgs())
 		{
-			// Initialize a locator configuration which will parse command line arguments.
-			FLocatorConfig LocatorConfig;
-			if (LocatorConfig.TryLoadCommandLineArgs())
-			{
-				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
-				const TCHAR* CommandLineArgs = FCommandLine::Get();
+			// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+			const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-				FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
-				NewCommandLineArgs.Append(FString(CommandLineArgs));
+			FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+			NewCommandLineArgs.Append(FString(CommandLineArgs));
 
-				FCommandLine::Set(*NewCommandLineArgs);
-			}
+			FCommandLine::Set(*NewCommandLineArgs);
 		}
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 }
 
 void USpatialGameInstance::StartGameInstance()
@@ -204,7 +219,7 @@ void USpatialGameInstance::HandleOnConnected()
 	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
 	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
-	OnConnected.Broadcast();
+	OnSpatialConnected.Broadcast();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
@@ -213,7 +228,13 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->ResetWorkerId();
 #endif
-	OnConnectionFailed.Broadcast(Reason);
+	OnSpatialConnectionFailed.Broadcast(Reason);
+}
+
+void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player on SpatialOS. Reason: %s"), *Reason);
+	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)

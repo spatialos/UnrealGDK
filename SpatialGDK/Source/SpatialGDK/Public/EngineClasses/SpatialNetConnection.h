@@ -2,11 +2,12 @@
 
 #pragma once
 
+#include "Schema/Interest.h"
+
 #include "CoreMinimal.h"
+#include "Misc/Optional.h"
 #include "IpConnection.h"
 #include "Runtime/Launch/Resources/Version.h"
-
-#include "Schema/Interest.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -61,8 +62,8 @@ public:
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 
-	UPROPERTY()
-	FString WorkerAttribute;
+	// Only used on the server for client connections.
+	FString ConnectionOwningWorkerId;
 
 	class FTimerManager* TimerManager;
 

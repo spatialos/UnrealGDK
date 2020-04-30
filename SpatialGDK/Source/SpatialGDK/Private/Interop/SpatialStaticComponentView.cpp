@@ -6,13 +6,14 @@
 #include "Schema/ClientEndpoint.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/MulticastRPCs.h"
+#include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
-#include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
@@ -47,6 +48,13 @@ bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_
 
 void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
+	// With dynamic components enabled, it's possible to get duplicate AddComponent ops which need handling idempotently.
+	// For the sake of efficiency we just exit early here.
+	if (HasComponent(Op.entity_id, Op.data.component_id))
+	{
+		return;
+	}
+
 	TUniquePtr<SpatialGDK::Component> Data;
 	switch (Op.data.component_id)
 	{
@@ -67,9 +75,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpawnData>(Op.data);
-		break;
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Singleton>(Op.data);
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::UnrealMetadata>(Op.data);
@@ -103,6 +108,12 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpatialDebugging>(Op.data);
+		break;
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentPresence>(Op.data);
+		break;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::NetOwningClientWorker>(Op.data);
 		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
@@ -157,6 +168,12 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::SpatialDebugging>(Op.entity_id);
+		break;
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::ComponentPresence>(Op.entity_id);
+		break;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::NetOwningClientWorker>(Op.entity_id);
 		break;
 	default:
 		return;

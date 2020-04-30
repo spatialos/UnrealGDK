@@ -27,9 +27,10 @@ public:
 
 	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 
+	bool HandlesComponent(Worker_ComponentId ComponentId) const;
 
-	void OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op);
 	void OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op);
+	void OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op);
 	void OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op);
 	void OnEntityRemoved(const Worker_RemoveEntityOp& Op);
 	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
@@ -41,7 +42,6 @@ public:
 	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
 
 private:
-
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
 	bool CanEnforce(Worker_EntityId EntityId) const;
 

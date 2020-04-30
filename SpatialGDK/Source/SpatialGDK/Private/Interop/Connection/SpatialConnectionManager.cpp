@@ -205,17 +205,18 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 		return;
 	}
 
-	const FString& DeploymentToConnect = DevAuthConfig.Deployment;
+	FString DeploymentToConnect = DevAuthConfig.Deployment;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{
 		DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+		DeploymentToConnect = UTF8_TO_TCHAR(LoginTokens->login_tokens[0].deployment_name);
 	}
 	else
 	{
 		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
 		{
-			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
+			FString DeploymentName = UTF8_TO_TCHAR(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
 				DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
@@ -223,6 +224,8 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 			}
 		}
 	}
+
+	UE_LOG(LogSpatialConnectionManager, Log, TEXT("Dev auth flow: connecting to deployment \"%s\""), *DeploymentToConnect);
 	ConnectToLocator(&DevAuthConfig);
 }
 
@@ -335,6 +338,13 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection]
 		{
+			if (!WeakSpatialConnectionManager.IsValid())
+			{
+				// The game instance was destroyed before the connection finished, so just clean up the connection.
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
+				return;
+			}
+
 			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
@@ -397,31 +407,56 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 
 void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
 {
-	if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("locator")))
+	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
-		SetConnectionType(ESpatialConnectionType::Locator);
-		// TODO: UNR-2811 We might add a feature whereby we get the locator host from the URL option.
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
-		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
-		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
-		LocatorConfig.WorkerType = SpatialWorkerType;
-	}
-	else if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("devauth")))
-	{
-		SetConnectionType(ESpatialConnectionType::DevAuthFlow);
-		// TODO: UNR-2811 Also set the locator host of DevAuthConfig from URL.
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), DevAuthConfig.LocatorHost);
-		DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
-		DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
-		DevAuthConfig.PlayerId = URL.GetOption(*SpatialConstants::URL_PLAYER_ID_OPTION, *SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
-		DevAuthConfig.DisplayName = URL.GetOption(*SpatialConstants::URL_DISPLAY_NAME_OPTION, TEXT(""));
-		DevAuthConfig.MetaData = URL.GetOption(*SpatialConstants::URL_METADATA_OPTION, TEXT(""));
-		DevAuthConfig.WorkerType = SpatialWorkerType;
+		FString LocatorHostOverride;
+		if (URL.HasOption(TEXT("customLocator")))
+		{
+			LocatorHostOverride = URL.Host;
+		}
+		else
+		{
+			FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorHostOverride);
+		}
+
+		if (URL.HasOption(TEXT("devauth")))
+		{
+			// Use devauth login flow.
+			SetConnectionType(ESpatialConnectionType::DevAuthFlow);
+			if (LocatorHostOverride != "")
+			{
+				DevAuthConfig.LocatorHost = LocatorHostOverride;
+			}
+			DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
+			DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
+			DevAuthConfig.PlayerId = URL.GetOption(*SpatialConstants::URL_PLAYER_ID_OPTION, *SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+			DevAuthConfig.DisplayName = URL.GetOption(*SpatialConstants::URL_DISPLAY_NAME_OPTION, TEXT(""));
+			DevAuthConfig.MetaData = URL.GetOption(*SpatialConstants::URL_METADATA_OPTION, TEXT(""));
+			DevAuthConfig.WorkerType = SpatialWorkerType;
+		}
+		else
+		{
+			// Use locator login flow.
+			SetConnectionType(ESpatialConnectionType::Locator);
+			if (LocatorHostOverride != "")
+			{
+				LocatorConfig.LocatorHost = LocatorHostOverride;
+			}
+			LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
+			LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
+			LocatorConfig.WorkerType = SpatialWorkerType;
+		}
 	}
 	else
 	{
 		SetConnectionType(ESpatialConnectionType::Receptionist);
-		ReceptionistConfig.SetReceptionistHost(URL.Host);
+
+		// If we have a non-empty host then use this to connect. If not - use the default configured in FReceptionistConfig initialisation.
+		if (!URL.Host.IsEmpty())
+		{
+			ReceptionistConfig.SetReceptionistHost(URL.Host);
+		}
+
 		ReceptionistConfig.WorkerType = SpatialWorkerType;
 
 		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");

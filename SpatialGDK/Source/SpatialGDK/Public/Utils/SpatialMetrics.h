@@ -21,8 +21,7 @@ class SPATIALGDK_API USpatialMetrics : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialWorkerConnection* Connection,
-		float MaxServerTickRate, bool bIsServer);
+	void Init(USpatialWorkerConnection* Connection, float MaxServerTickRate, bool bIsServer);
 
 	void TickMetrics(float NetDriverTime);
 
@@ -50,7 +49,7 @@ public:
 	// The user can bind their own delegate to handle worker metrics.
 	typedef TMap<FString, double> WorkerMetrics;
 	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, WorkerMetrics);
-	WorkerMetricsDelegate WorkerMetricsRecieved;
+	static WorkerMetricsDelegate WorkerMetricsRecieved;
 
 	// Delegate used to poll for the current player controller's reference
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);

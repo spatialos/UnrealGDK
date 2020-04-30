@@ -12,11 +12,3 @@ type UnrealRPCPayload {
     bytes rpc_payload = 3;
     option<TracePayload> rpc_trace = 4;
 }
-
-type UnrealPackedRPCPayload {
-    uint32 offset = 1;
-    uint32 rpc_index = 2;
-    bytes rpc_payload = 3;
-    option<TracePayload> rpc_trace = 4;
-    EntityId entity = 5;
-}

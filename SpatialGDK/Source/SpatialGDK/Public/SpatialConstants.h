@@ -88,9 +88,7 @@ const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
 
 const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
-const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 9996;
-const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 9995;
 const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
@@ -116,10 +114,10 @@ const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
 const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID					= 9975;
 const Worker_ComponentId SERVER_WORKER_COMPONENT_ID						= 9974;
 const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
+const Worker_ComponentId COMPONENT_PRESENCE_COMPONENT_ID				= 9972;
+const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID			= 9971;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
-
-const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
@@ -154,15 +152,13 @@ const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
 const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
 const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
 const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
-const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
+const Schema_FieldId UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID		= 6;
 
 // UnrealRPCPayload Field IDs
 const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
 const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID					= 2;
 const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID					= 3;
 const Schema_FieldId UNREAL_RPC_PAYLOAD_TRACE_ID						= 4;
-// UnrealPackedRPCPayload additional Field ID
-const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID				= 5;
 
 const Schema_FieldId UNREAL_RPC_TRACE_ID								= 1;
 const Schema_FieldId UNREAL_RPC_SPAN_ID									= 2;
@@ -170,7 +166,6 @@ const Schema_FieldId UNREAL_RPC_SPAN_ID									= 2;
 // Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
 const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID 						= 1;
 const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID						= 1;
-const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID				= 2;
 const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
 
 const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
@@ -212,6 +207,17 @@ const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 1;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 2;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID				 = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
+
+// ComponentPresence Field IDs.
+const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
+
+// NetOwningClientWorker Field IDs.
+const Schema_FieldId NET_OWNING_CLIENT_WORKER_FIELD_ID					 = 1;
+
+// UnrealMetadata Field IDs.
+const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID				 = 1;
+const Schema_FieldId UNREAL_METADATA_CLASS_PATH_ID						 = 2;
+const Schema_FieldId UNREAL_METADATA_NET_STARTUP_ID						 = 3;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
@@ -283,13 +289,14 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
+	TOMBSTONE_COMPONENT_ID,
+	DORMANT_COMPONENT_ID,
 
 	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID,
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
 	// Global state components
-	SINGLETON_MANAGER_COMPONENT_ID,
 	DEPLOYMENT_MAP_COMPONENT_ID,
 	STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 	GSM_SHUTDOWN_COMPONENT_ID,
@@ -314,13 +321,15 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
+	TOMBSTONE_COMPONENT_ID,
+	DORMANT_COMPONENT_ID,
+	NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
 	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID,
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
 	// Global state components
-	SINGLETON_MANAGER_COMPONENT_ID,
 	DEPLOYMENT_MAP_COMPONENT_ID,
 	STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 	GSM_SHUTDOWN_COMPONENT_ID,

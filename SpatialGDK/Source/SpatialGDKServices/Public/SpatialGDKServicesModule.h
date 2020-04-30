@@ -22,12 +22,15 @@ public:
 	FLocalDeploymentManager* GetLocalDeploymentManager();
 
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
-	static bool SpatialPreRunChecks();
+	
+	static bool SpatialPreRunChecks(bool bIsInChina);
 
 	FORCEINLINE static FString GetProjectName()
 	{
 		return ProjectName;
 	}
+
+	static void SetProjectName(const FString& InProjectName);
 
 	static bool ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
 	static void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
@@ -35,4 +38,5 @@ public:
 private:
 	FLocalDeploymentManager LocalDeploymentManager;
 	static FString ParseProjectName();
+	static TSharedPtr<FJsonObject> ParseProjectFile();
 };
