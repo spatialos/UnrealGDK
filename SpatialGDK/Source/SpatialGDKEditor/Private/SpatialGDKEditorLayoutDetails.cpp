@@ -277,6 +277,23 @@ bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgsToDevice(const FStrin
 	return true;
 }
 
+bool FSpatialGDKEditorLayoutDetails::TryRemoveCommandLineArgsFromDevice(const FString& Executable, const FString& ExeArguments)
+{
+	FString ExeOutput;
+	FString StdErr;
+	int32 ExitCode;
+
+	FPlatformProcess::ExecProcess(*Executable, *ExeArguments, &ExitCode, &ExeOutput, &StdErr);
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to remove settings from the mobile client. %s %s"), *ExeOutput, *StdErr);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Failed to remove settings from the mobile client. See the Output log for more information.")));
+		return false;
+	}
+
+	return true;
+}
+
 namespace
 {
 
@@ -299,6 +316,18 @@ FString GetAdbExePath()
 	return AdbExe;
 }
 
+void GetDeploymentServerExecutableAndArgs(FString& OutExe, FString& OutArgs, const FString& DeploymentServerArguments)
+{
+	OutExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
+	OutArgs = DeploymentServerArguments;
+
+#if PLATFORM_MAC
+	// On Mac we need to run mono as the executable and pass the deployment server as the first argument to that.
+	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *OutExe, *DeploymentServerArguments);
+	OutExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
+#endif
+}
+
 } // anonymous namespace
 
 FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
@@ -319,7 +348,11 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *FString(FApp::GetProjectName()));
 	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
 
-	TryPushCommandLineArgsToDevice(AdbExe, AdbArguments, OutCommandLineArgsFile);
+	if (!TryPushCommandLineArgsToDevice(AdbExe, AdbArguments, OutCommandLineArgsFile))
+	{
+		return FReply::Unhandled();
+	}
+
 	return FReply::Handled();
 }
 
@@ -333,15 +366,15 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
 		return FReply::Unhandled();
 	}
 
-	FString Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())), *OutCommandLineArgsFile);
+	FString Executable;
+	FString DeploymentServerArguments;
+	GetDeploymentServerExecutableAndArgs(Executable, DeploymentServerArguments, FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName()), *OutCommandLineArgsFile));
 
-#if PLATFORM_MAC
-	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *Executable, *DeploymentServerArguments);
-	Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
-#endif
+	if (!TryPushCommandLineArgsToDevice(Executable, DeploymentServerArguments, OutCommandLineArgsFile))
+	{
+		return FReply::Unhandled();
+	}
 
-	TryPushCommandLineArgsToDevice(Executable, DeploymentServerArguments, OutCommandLineArgsFile);
 	return FReply::Handled();
 }
 
@@ -349,23 +382,12 @@ FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromIOSDevice()
 {
 	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
 
-	FString Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	FString DeploymentServerArguments = FString::Printf(TEXT("removefile -bundle \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())));
+	FString Executable;
+	FString DeploymentServerArguments;
+	GetDeploymentServerExecutableAndArgs(Executable, DeploymentServerArguments, FString::Printf(TEXT("removefile -bundle \"%s\" -file \"/Documents/ue4commandline.txt\""), *IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())));
 
-#if PLATFORM_MAC
-	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *Executable, *DeploymentServerArguments);
-	Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
-#endif
-
-	FString ExeOutput;
-	FString StdErr;
-	int32 ExitCode;
-
-	FPlatformProcess::ExecProcess(*Executable, *DeploymentServerArguments, &ExitCode, &ExeOutput, &StdErr);
-	if (ExitCode != 0)
+	if (!TryRemoveCommandLineArgsFromDevice(Executable, DeploymentServerArguments))
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to remove settings from the mobile client. %s %s"), *ExeOutput, *StdErr);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Failed to remove settings from the mobile client. See the Output log for more information.")));
 		return FReply::Unhandled();
 	}
 
@@ -380,17 +402,10 @@ FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromAndroidDevice()
 		return FReply::Unhandled();
 	}
 
-	FString ExeOutput;
-	FString StdErr;
-	int32 ExitCode;
-
 	FString ExeArguments = FString::Printf(TEXT("shell rm -f /mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), FApp::GetProjectName());
 
-	FPlatformProcess::ExecProcess(*AdbExe, *ExeArguments, &ExitCode, &ExeOutput, &StdErr);
-	if (ExitCode != 0)
+	if (!TryRemoveCommandLineArgsFromDevice(AdbExe, ExeArguments))
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to remove settings from the mobile client. %s %s"), *ExeOutput, *StdErr);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Failed to remove settings from the mobile client. See the Output log for more information.")));
 		return FReply::Unhandled();
 	}
 
