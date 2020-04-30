@@ -53,11 +53,11 @@ public:
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
 	const TArray<PartitionInfo>& GetAllPartitions() { return Partitions; };
 
+	SpatialVirtualWorkerTranslator* Translator;
+
 private:
 	SpatialOSDispatcherInterface* Receiver;
 	SpatialOSWorkerInterface* Connection;
-
-	SpatialVirtualWorkerTranslator* Translator;
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TArray<PartitionInfo> Partitions;
@@ -76,7 +76,7 @@ private:
 	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate();
 
-	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId, PartitionInfo Partition);
+	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId, const Worker_EntityId& SystemEntityId, PartitionInfo Partition);
 
 	void SpawnPartitionEntity(VirtualWorkerId VirtualWorker);
 	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);

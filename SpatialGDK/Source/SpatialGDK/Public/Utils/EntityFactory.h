@@ -8,9 +8,12 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "InterestFactory.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogEntityFactory, Log, All);
 
 class AActor;
+class UAbstractLBStrategy;
 class USpatialActorChannel;
 class USpatialNetDriver;
 class USpatialPackageMap;
@@ -34,7 +37,7 @@ public:
 
 	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
 
-	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(VirtualWorkerId VirtualWorker);
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker);
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{

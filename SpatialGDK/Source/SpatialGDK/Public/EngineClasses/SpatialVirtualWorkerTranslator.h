@@ -51,11 +51,11 @@ public:
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
 
-private:
 	USpatialNetDriver* NetDriver;
 
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 
+private:
 	TMap<VirtualWorkerId, WorkerInformation> VirtualToPhysicalWorkerMapping;
 
 	bool bIsReady;

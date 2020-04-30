@@ -367,12 +367,16 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 	}
 
+	ComponentWriteAcl.Add(AuthorityDelegation::ComponentId, AuthoritativeWorkerRequirementSet);
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
 	// Create AuthorityDelegation from EntityACL component IDs.
 	AuthorityDelegationMap DelegationMap;
 	const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningEntityId(Actor);
-	const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->WorkerEntityId;
+	const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->LockingPolicy->IsLocked(Actor) ?
+		NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() :
+		NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+
 	for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
 	{
 		const Worker_ComponentId ComponentId = ComponentIdIt.Key();
@@ -453,7 +457,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(VirtualWorkerId VirtualWorker)
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker)
 {
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
@@ -467,6 +471,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(Virt
 	Components.Add(Metadata(FString::Format(TEXT("ParitionEntity:{0}"), { VirtualWorker })).CreateMetadataData());
 	// This entity is only relevant for USLB enabled, no reason to do write ACL map.
 	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, {}).CreateEntityAclData());
+	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker).CreateInterestData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	Components.Add(ComponentPresence(GetComponentPresenceList(Components)).CreateComponentPresenceData());
 

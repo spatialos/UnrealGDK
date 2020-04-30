@@ -34,7 +34,6 @@ namespace SpatialGDK
 class SPATIALGDK_API NetCullDistanceInterest
 {
 public:
-
 	static FrequencyConstraints CreateCheckoutRadiusConstraints(USpatialClassInfoManager* InClassInfoManager);
 
 	// visible for testing

@@ -461,7 +461,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 	VirtualWorkerTranslator->SetNetDriver(this);
-	
+
 	LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
@@ -2473,16 +2473,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<OpList>& In
 	// To correctly initialize the ServerWorkerEntity on each server during op queueing, we need to catch several ops here.
 	// Note that this will break if any other CreateEntity requests are issued during the startup flow.
 	{
-		Worker_Op* CreateEntityResponseOp = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE);
+		AppendAllOpsOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, FoundOps);
 
 		Worker_Op* AddComponentOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
 
 		Worker_Op* AuthorityChangedOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-
-		if (CreateEntityResponseOp != nullptr)
-		{
-			FoundOps.Add(CreateEntityResponseOp);
-		}
 
 		if (AddComponentOp != nullptr)
 		{

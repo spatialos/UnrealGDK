@@ -130,8 +130,6 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 		LocalPartitionId = PartitionEntityId;
 		bIsReady = true;
 
-		NetDriver->Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerEntityId(), PartitionEntityId);
-
 		// Tell the strategy about the local virtual worker id. This is an "if" and not a "check" to allow unit tests which don't
 		// provide a strategy.
 		if (LoadBalanceStrategy.IsValid())
