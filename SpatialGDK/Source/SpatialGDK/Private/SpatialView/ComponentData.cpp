@@ -48,7 +48,7 @@ bool ComponentData::ApplyUpdate(const ComponentUpdate& Update)
 	check(Update.GetComponentId() == GetComponentId());
 	check(Update.GetUnderlying() != nullptr);
 
-	return Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get());
+	return Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
 }
 
 Schema_Object* ComponentData::GetFields() const
