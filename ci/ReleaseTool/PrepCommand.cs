@@ -228,37 +228,40 @@ namespace ReleaseTool
 
         private void UpdatePluginFile(string pluginFileName, GitClient gitClient)
         {
-            var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
-
-            Logger.Info("Updating {0}...", pluginFilePath);
-
-            JObject jsonObject;
-            using (var streamReader = new StreamReader(pluginFilePath))
+            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
-                jsonObject = JObject.Parse(streamReader.ReadToEnd());
+                var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
 
-                if (jsonObject.ContainsKey(VersionKey) && jsonObject.ContainsKey(VersionNameKey))
+                Logger.Info("Updating {0}...", pluginFilePath);
+
+                JObject jsonObject;
+                using (var streamReader = new StreamReader(pluginFilePath))
                 {
-                    var oldVersion = (string) jsonObject[VersionNameKey];
-                    if (ShouldIncrementPluginVersion(oldVersion, options.Version))
+                    jsonObject = JObject.Parse(streamReader.ReadToEnd());
+
+                    if (jsonObject.ContainsKey(VersionKey) && jsonObject.ContainsKey(VersionNameKey))
                     {
-                        jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
+                        var oldVersion = (string)jsonObject[VersionNameKey];
+                        if (ShouldIncrementPluginVersion(oldVersion, options.Version))
+                        {
+                            jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
+                        }
+
+                        // Update the version name to the new one
+                        jsonObject[VersionNameKey] = options.Version;
                     }
+                    else
+                    {
+                        throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " +
+                            $"because at least one of the two expected keys '{VersionKey}' and '{VersionNameKey}' " +
+                            $"could not be found.");
+                    }
+                }
 
-                    // Update the version name to the new one
-                    jsonObject[VersionNameKey] = options.Version;
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " +
-                        $"because at least one of the two expected keys '{VersionKey}' and '{VersionNameKey}' " +
-                        $"could not be found.");
-                }
+                File.WriteAllText(pluginFilePath, jsonObject.ToString());
+
+                gitClient.StageFile(pluginFilePath);
             }
-
-            File.WriteAllText(pluginFilePath, jsonObject.ToString());
-
-            gitClient.StageFile(pluginFilePath);
         }
 
         private bool ShouldIncrementPluginVersion(string oldVersionName, string newVersionName)
