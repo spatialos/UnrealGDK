@@ -113,9 +113,9 @@ Features listed in this section are not ready to use. However, in the spirit of 
 
 - We've enabled the SpatialOS toolbar for MacOS.
 - We've added support for Android.
-- SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
+- `SpatialDebugger` worker regions are now cuboids rather than planes, and can have their `WorkerRegionVerticalScale` adjusted via a setting in the `SpatialDebugger`.
 - We've added an `AuthorityIntent` component, a `VirtualWorkerTranslation` component, and a partial framework. We'll use these in the future to control load balancing.
-- Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
+- Load balancing strategies and locking strategies can be set per-level using `SpatialWorldSettings`.
 - Enabling the GDK for Unreal load balancer now creates a single query per server-worker instance, depending on the defined load balancing strategy.
 - We've extracted the logic responsible for taking an Actor and generating the array of SpatialOS components that represents it as an entity in SpatialOS. This logic is now in `EntityFactory`.
 - `DeploymentLauncher` can now parse a .pb.json launch configuration.
