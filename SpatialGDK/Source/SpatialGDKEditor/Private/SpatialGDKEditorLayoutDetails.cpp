@@ -291,6 +291,7 @@ bool FSpatialGDKEditorLayoutDetails::TryRemoveCommandLineArgsFromDevice(const FS
 		return false;
 	}
 
+	UE_LOG(LogSpatialGDKEditorLayoutDetails, Log, TEXT("Successfully removed command line args from device!"));
 	return true;
 }
 
