@@ -136,7 +136,7 @@ namespace ReleaseTool
 
                     // 6. Open a PR for merging the RC branch into the release branch.
                     var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
-                    var branchFrom = options.SourceBranch;
+                    var branchFrom = options.CandidateBranch;
                     var branchTo = options.ReleaseBranch;
 
                     // Only open a PR if one does not exist yet.
