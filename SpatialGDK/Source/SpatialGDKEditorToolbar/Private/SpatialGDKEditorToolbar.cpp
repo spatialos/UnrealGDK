@@ -1005,6 +1005,11 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked() const
 	// Unbind the TryStartSpatialDeployment if not in local deployment mode.
 	UEditorEngine::TryStartSpatialDeployment.Unbind();
 	SpatialGDKEditorSettings->SaveConfig();
+
+	// Ensure we disable bUseDevelopmentAuthenticationFlow when we don't connect to spatial deployment.
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
+	SpatialGDKSettings->SaveConfig();
 }
 
 void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
@@ -1020,6 +1025,11 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 		});
 	}
 	SpatialGDKEditorSettings->SaveConfig();
+
+	// Ensure we disable bUseDevelopmentAuthenticationFlow when using local deployment flow.
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
+	SpatialGDKSettings->SaveConfig();
 }
 
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
@@ -1038,6 +1048,10 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
 	SpatialGDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
 	SpatialGDKEditorSettings->SaveConfig();
 	SpatialGDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+
+	// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
+	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = true;
+	SpatialGDKSettings->SaveConfig();
 }
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable() const
