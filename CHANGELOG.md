@@ -104,8 +104,9 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The GDK no longer crashes when you start and stop PIE clients multiple times.
 - The GDK no longer crashes when shadow data is uninitialized when resolving unresolved objects.
 - Fixed sending component RPCs on a recently created actor.
-- Load-balanced cloud deploymentss no longer fail to start while under heavy load.
+- Load-balanced cloud deployments no longer fail to start while under heavy load.
 - We now avoid using packages that are still being processed in the async loading thread.
+- Running GDK setup scripts no longer occasionally fails to unzip dependencies.
 
 ### Internal:
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
