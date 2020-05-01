@@ -229,7 +229,7 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 
 		if (!bFoundDeployment)
 		{
-			OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_NETWORK_ERROR, FString::Printf(TEXT("Deployment '%s' not found!"), *DeploymentToConnect));
+			OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_NETWORK_ERROR, FString::Printf(TEXT("Deployment not found! Make sure that the deployment with name '%s' is running and has the 'dev_login' deployment tag."), *DeploymentToConnect));
 			return;
 		}
 	}
