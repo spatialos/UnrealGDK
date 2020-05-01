@@ -43,6 +43,9 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
+	// Project name edit box
+	TSharedPtr<SEditableTextBox> ProjectNameEdit;
+
 	/** Delegate to commit project name */
 	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
 

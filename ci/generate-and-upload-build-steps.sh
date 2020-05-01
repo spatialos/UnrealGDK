@@ -52,7 +52,9 @@ generate_build_configuration_steps () {
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
 
             # Linux Development NoEditor build configuration
-            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
+            if [[ "${ENGINE_NET_TEST:-false}" != "true" ]]; then
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
+            fi
         else
             echo "Building for all supported configurations. Generating the appropriate steps..."
 
