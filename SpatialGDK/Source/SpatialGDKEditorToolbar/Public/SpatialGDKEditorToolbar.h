@@ -106,9 +106,9 @@ private:
 	bool IsLocalDeploymentSelected() const;
 	bool IsCloudDeploymentSelected() const;
 	bool IsSpatialOSNetFlowConfigurable() const;
-	void NoAutomaticConnectionClicked() const;
+	void NoAutomaticConnectionClicked();
 	void LocalDeploymentClicked();
-	void CloudDeploymentClicked() const;
+	void CloudDeploymentClicked();
 	bool IsLocalDeploymentIPEditable() const;
 	bool IsCloudDeploymentNameEditable() const;
 
@@ -147,6 +147,8 @@ private:
 	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
+
+	void RefreshAutoStartLocalDeployment();
 
 	static void ShowCompileLog();
 

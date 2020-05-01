@@ -91,16 +91,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
-	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
-
-	// Bind the play button delegate to starting a local spatial deployment.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
-	{
-		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-		{
-			VerifyAndStartDeployment();
-		});
-	}
+	RefreshAutoStartLocalDeployment();
 
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
@@ -998,20 +989,18 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable() const
 	return OnIsSpatialNetworkingEnabled() && !(LocalDeploymentManager->IsLocalDeploymentRunning());
 }
 
-void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked() const
+void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = false;
-	// Unbind the TryStartSpatialDeployment if not in local deployment mode.
-	UEditorEngine::TryStartSpatialDeployment.Unbind();
 	SpatialGDKEditorSettings->SaveConfig();
 
 	// Ensure we disable bUseDevelopmentAuthenticationFlow when we don't connect to spatial deployment.
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
 
-	FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices").GetLocalDeploymentManager()->SetAutoDeploy(false);
+	RefreshAutoStartLocalDeployment();
 }
 
 void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
@@ -1019,31 +1008,21 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = false;
-	// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
-	{
-		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-		{
-			VerifyAndStartDeployment();
-		});
-	}
 	SpatialGDKEditorSettings->SaveConfig();
 
 	// Ensure we disable bUseDevelopmentAuthenticationFlow when using local deployment flow.
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
 
-	FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices").GetLocalDeploymentManager()->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
+	RefreshAutoStartLocalDeployment();
 }
 
-void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
+void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	// Unbind the TryStartSpatialDeployment if not in local deployment mode.
-	UEditorEngine::TryStartSpatialDeployment.Unbind();
 
 	FString DevAuthToken;
 	if (!SpatialCommandUtils::GenerateDevAuthToken(SpatialGDKSettings->IsRunningInChina(), DevAuthToken))
@@ -1058,7 +1037,7 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked() const
 	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = true;
 	SpatialGDKSettings->DevelopmentAuthenticationToken = DevAuthToken;
 
-	FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices").GetLocalDeploymentManager()->SetAutoDeploy(false);
+	RefreshAutoStartLocalDeployment();
 }
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable() const
@@ -1097,22 +1076,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
 		{
-			// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
-			LocalDeploymentManager->SetAutoDeploy(Settings->bAutoStartLocalDeployment);
-
-			if (Settings->bAutoStartLocalDeployment && Settings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment)
-			{
-				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-				UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-				{
-					VerifyAndStartDeployment();
-				});
-			}
-			else
-			{
-				// Unbind the TryStartSpatialDeployment if autostart is disabled.
-				UEditorEngine::TryStartSpatialDeployment.Unbind();
-			}
+			RefreshAutoStartLocalDeployment();
 		}
 	}
 }
@@ -1229,6 +1193,37 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	else
 	{
 		return TEXT("");
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::RefreshAutoStartLocalDeployment()
+{
+	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+
+	// Only auto start local deployment when the setting is checked AND local deployment connection flow is selected.
+	bool bShouldAutoStartLocalDeployment = (Settings->bAutoStartLocalDeployment && Settings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment);
+
+	// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
+	LocalDeploymentManager->SetAutoDeploy(bShouldAutoStartLocalDeployment);
+
+	if (bShouldAutoStartLocalDeployment)
+	{
+		if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
+		{
+			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
+			UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
+			{
+				VerifyAndStartDeployment();
+			});
+		}
+	}
+	else
+	{
+		if (UEditorEngine::TryStartSpatialDeployment.IsBound())
+		{
+			// Unbind the TryStartSpatialDeployment if autostart is disabled.
+			UEditorEngine::TryStartSpatialDeployment.Unbind();
+		}
 	}
 }
 
