@@ -402,7 +402,6 @@ private:
 		uint32 NumberOfSimulatedPlayers;
 
 	static bool IsAssemblyNameValid(const FString& Name);
-	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
@@ -647,6 +646,8 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 
 	void SetRuntimeDevelopmentAuthenticationToken();
+
+	static bool IsProjectNameValid(const FString& Name);
 
 	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
 	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;

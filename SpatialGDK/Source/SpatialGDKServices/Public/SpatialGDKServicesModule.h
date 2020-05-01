@@ -38,4 +38,5 @@ public:
 private:
 	FLocalDeploymentManager LocalDeploymentManager;
 	static FString ParseProjectName();
+	static TSharedPtr<FJsonObject> ParseProjectFile();
 };
