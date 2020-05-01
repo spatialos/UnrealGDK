@@ -128,11 +128,13 @@ void USpatialReceiver::LeaveCriticalSection()
 		}
 		if (StaticComponentView->HasAuthority(PendingAddComponent.EntityId, PendingAddComponent.ComponentId))
 		{
-			continue; // Hack to allow servers to change state if they are going to be authoritative
+			continue; // Hacky, allows servers to change state if they are going to be authoritative, without us overwriting it with old data
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Unhandled component being handled: compid %d entid %lld"), PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
-		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
+		UE_LOG(LogSpatialReceiver, Verbose,
+			TEXT("Add component inside of a critical section, outside of an add entity, being handled: component id: %d, entity id: %d"),
+			PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
+		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
@@ -195,6 +197,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
+	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
@@ -283,7 +286,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 	else
 	{
-		HandleIndividualAddComponent(Op);
+		HandleIndividualAddComponent(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
 	}
 }
 
@@ -1274,7 +1277,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
 }
 
-void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data)
+void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
@@ -1336,11 +1339,6 @@ void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId Ent
 	{
 		AttachDynamicSubobject(Actor, EntityId, Info);
 	}
-}
-
-void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
-{
-	HandleIndividualAddComponent_Internal(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info)
@@ -2309,7 +2307,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (AbsOffset >= MaxAbsOffset)
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
+			UE_LOG(LogSpatialReceiver, Error, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
 			It.RemoveCurrent();
 			continue;
 		}
@@ -2326,7 +2324,8 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (ObjectReferences.Array)
 		{
-			check(Property->IsA<UArrayProperty>());
+			UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+			check(ArrayProperty != nullptr);
 
 			if (!bIsHandover)
 			{
@@ -2336,7 +2335,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + StoredDataOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
-			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
+			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
 			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, bIsHandover ? nullptr : (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
 			continue;
@@ -2509,7 +2508,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 	// UPackage::IsFullyLoaded, or UObject::HasAnyInternalFlag(EInternalObjectFlag::AsyncLoading) should tell us if it is the case.
 	// In practice, these tests are not enough to prevent using objects too early (symptom is RF_NeedPostLoad being set, and crash when using them later).
 	// GetAsyncLoadPercentage will actually look through the async loading thread's UAsyncPackage maps to see if there are any entries.
-	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further 
+	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further
 	// what is the issue with the other flags and why they do not give us reliable information.
 
 	float Percentage = GetAsyncLoadPercentage(PackagePathName);
@@ -2518,7 +2517,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Class %s package is registered in async loading thread."), *ClassPath)
 		return true;
 	}
-	
+
 	return false;
 }
 
