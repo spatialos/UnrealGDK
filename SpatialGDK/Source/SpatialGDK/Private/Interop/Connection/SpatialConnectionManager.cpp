@@ -234,14 +234,23 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 	}
 	else
 	{
+		bool bFoundDeployment = false;
+
 		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
 		{
 			FString DeploymentName = UTF8_TO_TCHAR(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
 				DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				bFoundDeployment = true;
 				break;
 			}
+		}
+
+		if (!bFoundDeployment)
+		{
+			OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_NETWORK_ERROR, FString::Printf(TEXT("Deployment not found! Make sure that the deployment with name '%s' is running and has the 'dev_login' deployment tag."), *DeploymentToConnect));
+			return;
 		}
 	}
 
