@@ -116,7 +116,7 @@ SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& En
 		StaticComponentView = CreateStaticComponentView(EntityIdArray, RPCEndpointType);
 	}
 
-	SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(RPCDelegate, StaticComponentView);
+	SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(RPCDelegate, StaticComponentView, nullptr);
 
 	for (Worker_EntityId EntityId : EntityIdArray)
 	{
@@ -154,17 +154,17 @@ bool CompareUpdateToSendAndEntityPayload(SpatialGDK::SpatialRPCService::UpdateTo
 		Update.EntityId == EntityPayloadItem.EntityId;
 }
 
-bool CompareComponentDataAndEntityPayload(const Worker_ComponentData& ComponentData, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
+bool CompareComponentDataAndEntityPayload(const FWorkerComponentData& ComponentData, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
 {
 	return CompareSchemaObjectToSendAndPayload(Schema_GetComponentDataFields(ComponentData.schema_type), EntityPayloadItem.Payload, RPCType, RPCId);
 }
 
-Worker_ComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::SpatialRPCService& RPCService, Worker_EntityId EntityID, ERPCType RPCType)
+FWorkerComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::SpatialRPCService& RPCService, Worker_EntityId EntityID, ERPCType RPCType)
 {
 	Worker_ComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
-	TArray<Worker_ComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);
+	TArray<FWorkerComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);
 
-	const Worker_ComponentData* ComponentData = ComponentDataArray.FindByPredicate([ExpectedUpdateComponentId](const Worker_ComponentData& CompData) {
+	const FWorkerComponentData* ComponentData = ComponentDataArray.FindByPredicate([ExpectedUpdateComponentId](const FWorkerComponentData& CompData) {
 		return CompData.component_id == ExpectedUpdateComponentId;
 	});
 
@@ -391,7 +391,7 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_
 
 	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
 
-	Worker_ComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::ClientReliable);
+	FWorkerComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::ClientReliable);
 	bool bTestPassed = CompareComponentDataAndEntityPayload(ComponentData, EntityPayload(RPCTestEntityId_1, SimplePayload), ERPCType::ClientReliable, 1);
 	TestTrue("Entity creation test returned expected results", bTestPassed);
 	return true;
@@ -405,7 +405,7 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_t
 	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
 	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
 
-	Worker_ComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::NetMulticast);
+	FWorkerComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::NetMulticast);
 	const Schema_Object* SchemaObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 	uint32 InitiallyPresent = Schema_GetUint32(SchemaObject, SpatialGDK::RPCRingBufferUtils::GetInitiallyPresentMulticastRPCsCountFieldId());
 	TestTrue("Entity creation multicast test returned expected results", (InitiallyPresent == 2));

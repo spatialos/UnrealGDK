@@ -5,6 +5,11 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialMetricsDisplay.h"
+
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
 
@@ -19,16 +24,17 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 	}
 	else
 	{
-		if (ObjectRef.bUseSingletonClassPath)
+		if (ObjectRef.bUseClassPathToLoadObject)
 		{
-			// This is a singleton ref, which means it's just the UnrealObjectRef of the singleton class, with this boolean set.
-			// Unset it to get the original UnrealObjectRef of its singleton class, and look it up in the PackageMap.
-			FUnrealObjectRef SingletonClassRef = ObjectRef;
-			SingletonClassRef.bUseSingletonClassPath = false;
 
-			UObject* Value = PackageMap->GetSingletonByClassRef(SingletonClassRef);
+			FUnrealObjectRef ClassRef = ObjectRef;
+			ClassRef.bUseClassPathToLoadObject = false;
+
+			UObject* Value = PackageMap->GetUniqueActorInstanceByClassRef(ClassRef);
 			if (Value == nullptr)
 			{
+				// This could happen if we no longer spawn all of these Actors before starting replication.
+				UE_LOG(LogUnrealObjectRef, Warning, TEXT("Could not load object reference by class path: %s"), **ClassRef.Path);
 				bOutUnresolved = true;
 			}
 			return Value;
@@ -121,10 +127,11 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					}
 				}
 
-				// If this is a singleton that hasn't been resolved yet, send its class path instead.
-				if (ObjectValue->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+				// If this is an Actor that should exist once per Worker (e.g. GameMode, GameState) and hasn't been resolved yet,
+				// send its class path instead.
+				if (ShouldLoadObjectFromClassPath(ObjectValue))
 				{
-					ObjectRef = GetSingletonClassRef(ObjectValue, PackageMap);
+					ObjectRef = GetRefFromObjectClassPath(ObjectValue, PackageMap);
 					if (ObjectRef.IsValid())
 					{
 						return ObjectRef;
@@ -194,12 +201,25 @@ FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& Objec
 	return FSoftObjectPath(MoveTemp(FullPackagePath));
 }
 
-FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)
+bool FUnrealObjectRef::ShouldLoadObjectFromClassPath(UObject* Object)
 {
-	FUnrealObjectRef ClassObjectRef = FromObjectPtr(SingletonObject->GetClass(), PackageMap);
+	// We don't want to add objects to this list which are stably-named. This is because:
+	// - stably-named Actors are already handled correctly by the GDK and don't need additional special casing,
+	// - stably-named Actors then follow two different logic paths at various points in the GDK which results in 
+	//   inconsistent package map entries.
+	// The ensure statement below is a sanity check that we don't inadvertently add a stably-name Actor to this list.
+	return (Object->IsA(AGameStateBase::StaticClass())
+		|| Object->IsA(AGameModeBase::StaticClass())
+		|| Object->IsA(ASpatialMetricsDisplay::StaticClass())
+		|| Object->IsA(ASpatialDebugger::StaticClass())) && ensure(!Object->IsNameStableForNetworking());
+}
+
+FUnrealObjectRef FUnrealObjectRef::GetRefFromObjectClassPath(UObject* Object, USpatialPackageMapClient* PackageMap)
+{
+	FUnrealObjectRef ClassObjectRef = FromObjectPtr(Object->GetClass(), PackageMap);
 	if (ClassObjectRef.IsValid())
 	{
-		ClassObjectRef.bUseSingletonClassPath = true;
+		ClassObjectRef.bUseClassPathToLoadObject = true;
 	}
 	return ClassObjectRef;
 }

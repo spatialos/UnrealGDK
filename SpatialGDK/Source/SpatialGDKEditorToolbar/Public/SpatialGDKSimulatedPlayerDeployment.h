@@ -43,7 +43,13 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
+	// Project name edit box
+	TSharedPtr<SEditableTextBox> ProjectNameEdit;
+
 	TFuture<bool> AttemptSpatialAuthResult;
+
+	/** Delegate to commit project name */
+	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
@@ -71,6 +77,12 @@ private:
 
 	/** Delegate called when the user selects a region code from the dropdown for the primary deployment */
 	void OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);
+
+	/** Delegate to commit main deployment cluster */
+	void OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType);
+
+	/** Delegate to commit simulated player cluster */
+	void OnSimulatedPlayerClusterCommited(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate called when the user selects a region code from the dropdown for the simulated player deployment */
 	void OnSimulatedPlayerDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);

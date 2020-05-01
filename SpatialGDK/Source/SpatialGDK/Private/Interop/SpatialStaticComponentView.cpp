@@ -14,7 +14,6 @@
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
-#include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
@@ -76,9 +75,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpawnData>(Op.data);
-		break;
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Singleton>(Op.data);
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::UnrealMetadata>(Op.data);
