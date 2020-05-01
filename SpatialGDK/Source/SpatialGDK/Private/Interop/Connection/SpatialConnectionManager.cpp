@@ -23,28 +23,29 @@ struct ConfigureConnection
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
-		, WorkerLogPrefix(*FormatLogFilePrefix())
+		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
 		Params.worker_type = WorkerType.Get();
 
 		Logsink.logsink_type = WORKER_LOGSINK_TYPE_ROTATING_FILE;
-		Logsink.rotating_logfile_parameters.log_prefix = WorkerLogPrefix.Get();
+		Logsink.rotating_logfile_parameters.log_prefix = WorkerSDKLogFilePrefix.Get();
 		Logsink.rotating_logfile_parameters.max_log_files = 1;
-		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = 10485760; // 10 MB
+		// TODO: When upgrading to Worker SDK 14.6.2, remove the WorkerSDKLogFileSize parameter and set this to 0 for infinite file size
+		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = Config.WorkerSDKLogFileSize;
 
 		uint32_t Categories = 0;
-		if (Config.EnableOpLogging)
+		if (Config.EnableWorkerSDKOpLogging)
 		{
 			Categories |= WORKER_LOG_CATEGORY_API;
 		}
-		if (Config.EnableProtocolLogging)
+		if (Config.EnableWorkerSDKProtocolLogging)
 		{
 			Categories |= WORKER_LOG_CATEGORY_NETWORK_STATUS | WORKER_LOG_CATEGORY_NETWORK_TRAFFIC;
 		}
 		Logsink.filter_parameters.categories = Categories;
-		Logsink.filter_parameters.level = WORKER_LOG_LEVEL_INFO;
+		Logsink.filter_parameters.level = Config.WorkerSDKLogLevel;
 
 		Params.logsinks = &Logsink;
 		Params.logsink_count = 1;
@@ -95,12 +96,12 @@ struct ConfigureConnection
 		Params.enable_dynamic_components = true;
 	}
 
-	FString FormatLogFilePrefix() const
+	FString FormatWorkerSDKLogFilePrefix() const
 	{
 		FString FinalLogFilePrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
-		if (!Config.WorkerLoggingPrefix.IsEmpty())
+		if (!Config.WorkerSDKLogPrefix.IsEmpty())
 		{
-			FinalLogFilePrefix += Config.WorkerLoggingPrefix;
+			FinalLogFilePrefix += Config.WorkerSDKLogPrefix;
 		}
 		else
 		{
@@ -112,7 +113,7 @@ struct ConfigureConnection
 	const FConnectionConfig& Config;
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
-	FTCHARToUTF8 WorkerLogPrefix;
+	FTCHARToUTF8 WorkerSDKLogFilePrefix;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};

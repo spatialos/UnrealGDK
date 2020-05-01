@@ -80,7 +80,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 - You can now edit the project name field in the `Cloud Deployment` window.
-- Renamed `enableProtocolLogging` command line parameter to `enableWorkerProtocolLogging` and added `enableWorkerOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerLoggingPrefix`. This prefix is used for both protocol and op logging.
+- Renamed `enableProtocolLogging` command line parameter to `enableWorkerSDKProtocolLogging` and added `enableWorkerSDKOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerSDKLogPrefix`. This prefix is used for both protocol and op logging. Added `workerSDKLogLevel` parameter that takes "debug", "info", "warning" or "error". Added `workerSDKLogFileSize` to control the maximum file size of the worker SDK log file.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.

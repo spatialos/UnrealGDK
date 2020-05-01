@@ -15,8 +15,10 @@ struct FConnectionConfig
 {
 	FConnectionConfig()
 		: UseExternalIp(false)
-		, EnableProtocolLogging(false)
-		, EnableOpLogging(false)
+		, EnableWorkerSDKProtocolLogging(false)
+		, EnableWorkerSDKOpLogging(false)
+		, WorkerSDKLogFileSize(10 * 1024 * 1024)
+		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
@@ -28,17 +30,42 @@ struct FConnectionConfig
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
 		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
-		FParse::Bool(CommandLine, TEXT("enableWorkerProtocolLogging"), EnableProtocolLogging);
-		FParse::Bool(CommandLine, TEXT("enableWorkerOpLogging"), EnableOpLogging);
-		FParse::Value(CommandLine, TEXT("workerLoggingPrefix"), WorkerLoggingPrefix);
+		FParse::Bool(CommandLine, TEXT("enableWorkerSDKProtocolLogging"), EnableWorkerSDKProtocolLogging);
+		FParse::Bool(CommandLine, TEXT("enableWorkerSDKOpLogging"), EnableWorkerSDKOpLogging);
+		FParse::Value(CommandLine, TEXT("workerSDKLogPrefix"), WorkerSDKLogPrefix);
+		// TODO: When upgrading to Worker SDK 14.6.2, remove this parameter and set it to 0 for infinite file size
+		FParse::Value(CommandLine, TEXT("workerSDKLogFileSize"), WorkerSDKLogFileSize);
+
+		FString LogLevelString;
+		FParse::Value(CommandLine, TEXT("workerSDKLogLevel"), LogLevelString);
+		if (LogLevelString.Compare(TEXT("debug"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_DEBUG;
+		}
+		else if (LogLevelString.Compare(TEXT("info"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_INFO;
+		}
+		else if (LogLevelString.Compare(TEXT("warning"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_WARN;
+		}
+		else if (LogLevelString.Compare(TEXT("error"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_ERROR;
+		}
+		else if (!LogLevelString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+		}
 
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
-		if (LinkProtocolString == TEXT("Tcp"))
+		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
 		}
-		else if (LinkProtocolString == TEXT("Kcp"))
+		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
 		}
@@ -72,9 +99,11 @@ struct FConnectionConfig
 	FString WorkerId;
 	FString WorkerType;
 	bool UseExternalIp;
-	bool EnableProtocolLogging;
-	bool EnableOpLogging;
-	FString WorkerLoggingPrefix;
+	bool EnableWorkerSDKProtocolLogging;
+	bool EnableWorkerSDKOpLogging;
+	FString WorkerSDKLogPrefix;
+	uint32 WorkerSDKLogFileSize;
+	Worker_LogLevel WorkerSDKLogLevel;
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams;
 	uint8 TcpMultiplexLevel;
