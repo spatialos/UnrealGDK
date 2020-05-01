@@ -69,7 +69,7 @@ struct SpatialActivationFlagTestFixture
 	{
 		ProjectPath = FPaths::GetProjectFilePath();
 		CommandLineArgs = ProjectPath;
-		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
+		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDKSlow.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
 		CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
 		CommandLineArgs.Append(TEXT(" -nopause"));
 		CommandLineArgs.Append(TEXT(" -nosplash"));
