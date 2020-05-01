@@ -23,6 +23,8 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 	FramesSinceLastReport = 0;
 	TimeOfLastReport = 0.0f;
 
+	WorkerLoad = 0.0;
+
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
 }
@@ -40,7 +42,10 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
-	WorkerLoad = CalculateLoad();
+	if (!GetDefault<USpatialGDKSettings>()->bUserSuppliedLoad)
+	{
+		WorkerLoad = CalculateLoad();
+	}
 
 	SpatialGDK::GaugeMetric DynamicFPSGauge;
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
@@ -54,6 +59,17 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	FramesSinceLastReport = 0;
 
 	Connection->SendMetrics(DynamicFPSMetrics);
+}
+
+void USpatialMetrics::SetUserSuppliedLoad(double UserSuppliedLoad)
+{
+	if (!GetDefault<USpatialGDKSettings>()->bUserSuppliedLoad)
+	{
+		UE_LOG(LogSpatialMetrics, Log, TEXT("Supplying user load but USpatialGDKSettings::bUserSuppliedLoad is not enabled"));
+		return;
+	}
+
+	WorkerLoad = UserSuppliedLoad;
 }
 
 // Load defined as performance relative to target frame time or just frame time based on config value.

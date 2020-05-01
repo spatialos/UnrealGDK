@@ -29,6 +29,7 @@ public:
 
 	double GetAverageFPS() const { return AverageFPS; }
 	double GetWorkerLoad() const { return WorkerLoad; }
+	void SetUserSuppliedLoad(double UserSuppliedLoad);
 
 	UFUNCTION(Exec)
 	void SpatialStartRPCMetrics();
