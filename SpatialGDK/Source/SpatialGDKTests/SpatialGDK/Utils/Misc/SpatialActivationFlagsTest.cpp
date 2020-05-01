@@ -19,7 +19,7 @@ void InitializeSpatialFlagEarlyValues()
 	bEarliestFlag = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
 {
 	const UGeneralProjectSettings* ProjectSettings = GetDefault<UGeneralProjectSettings>();
 
