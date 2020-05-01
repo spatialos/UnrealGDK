@@ -60,6 +60,7 @@ while IFS= read -r ENGINE_VERSION; do
                 ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
 
+### TODO: I think we need to add more environment variables to this, as by default the unrealgdk-nfr pipeline runs no tests (you must opt into each one).
 ### unrealgdk-nfr
 while IFS= read -r ENGINE_VERSION; do
     triggerTest "UnrealGDK" \
