@@ -131,7 +131,7 @@ bool FRunSubProcessCommand::Update()
 }
 
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(false);
@@ -141,7 +141,7 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
 	return true;
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(true);
@@ -151,7 +151,7 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
 	return true;
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(false);
@@ -165,7 +165,7 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
 	return true;
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_False)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_False)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(false);
