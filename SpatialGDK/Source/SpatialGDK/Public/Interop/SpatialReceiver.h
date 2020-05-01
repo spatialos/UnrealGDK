@@ -35,7 +35,7 @@ struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
 	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
-		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)) {}
+		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)), Timestamp(FDateTime::UtcNow()) {}
 
 	// We define equality to cover just entity and component IDs since duplicated AddComponent ops
 	// will be moved into unique pointers and we cannot equate the underlying Worker_ComponentData.
@@ -47,6 +47,7 @@ struct PendingAddComponentWrapper
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
+	FDateTime Timestamp;
 };
 
 UCLASS()
@@ -99,6 +100,8 @@ public:
 
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
+
+	void ClearPendingOwnerOnlyComponentsForEntity(Worker_EntityId EntityId);
 
 private:
 	void EnterCriticalSection();

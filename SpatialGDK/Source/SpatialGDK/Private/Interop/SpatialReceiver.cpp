@@ -1925,7 +1925,7 @@ void USpatialReceiver::ApplyOwnerOnlyComponents(Worker_EntityId EntityId)
 
 	for (auto& Wrapper : OwnerOnlyComponents)
 	{
-		HandleIndividualAddComponent_Internal(Wrapper.EntityId, Wrapper.ComponentId, MoveTemp(Wrapper.Data));
+		HandleIndividualAddComponent(Wrapper.EntityId, Wrapper.ComponentId, MoveTemp(Wrapper.Data));
 	}
 }
 
@@ -2600,6 +2600,19 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 				}
 			}
 		}
+	}
+}
+
+void USpatialReceiver::ClearPendingOwnerOnlyComponentsForEntity(Worker_EntityId EntityId)
+{
+	TArray<PendingAddComponentWrapper> QueuedComponents = ExtractAddComponents(&PendingOwnerOnlyComponents, EntityId);
+
+	const FDateTime Now = FDateTime::UtcNow();
+	for (const auto& Component : QueuedComponents)
+	{
+		FTimespan QueueTime = Now - Component.Timestamp;
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removed queued OwnerOnly component %d for entity %lld after %f seconds"),
+			Component.ComponentId, Component.EntityId, QueueTime.GetTotalSeconds());
 	}
 }
 
