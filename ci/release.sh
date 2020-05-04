@@ -15,6 +15,8 @@ release () {
   echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
 
   docker run \
+    -v "${BUILDKITE_ARGS[@]}" \
+    -e "LOCAL_USER_ID=${USER_ID}" "${IMAGE}" "${@}" | tee logs/docker-run.log
     -v "${SECRETS_DIR}":/var/ssh \
     -v "${SECRETS_DIR}":/var/github \
     -v "$(pwd)"/logs:/var/logs \
@@ -85,6 +87,7 @@ RELEASE_VERSION="$(buildkite-agent meta-data get release-version)"
 setupReleaseTool
 
 mkdir -p ./logs
+USER_ID=$(id -u)
 
 # Run the C Sharp Release Tool for each candidate we want to release.
 prepareRelease "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" \

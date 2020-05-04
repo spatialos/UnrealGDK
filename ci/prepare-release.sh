@@ -14,6 +14,8 @@ prepareRelease () {
   echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
 
   docker run \
+    -v "${BUILDKITE_ARGS[@]}" \
+    -e "LOCAL_USER_ID=${USER_ID}" "${IMAGE}" "${@}" | tee logs/docker-run.log
     -v "${SECRETS_DIR}":/var/ssh \
     -v "${SECRETS_DIR}":/var/github \
     -v "$(pwd)"/logs:/var/logs \
@@ -82,6 +84,7 @@ fi
 setupReleaseTool
 
 mkdir -p ./logs
+USER_ID=$(id -u)
 
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
