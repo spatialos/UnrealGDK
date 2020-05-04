@@ -57,7 +57,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - When offloading is enabled, Actors have local authority (`ROLE_Authority`) on servers for longer periods of time, to allow more native Unreal functionality to work without problems.
 - When offloading is enabled, if you try to spawn Actors on a server that will not be the Actor Group owner for them, we now log an error and delete the Actor.
 - The GDK now uses SpatialOS Runtime version 14.5.1 by default.
-- We've renamed the configuration setting `bPreventAutoConnectWithLocator` to `bPreventClientCloudDeploymentAutoConnect` and moved it to `GDKSettings`. To use this feature, enable the setting in `GDKSettings`.
+- We've renamed the configuration setting `bPreventAutoConnectWithLocator` to `bPreventClientCloudDeploymentAutoConnect` and moved it to `SpatialGDKSettings`. To use this feature, enable the setting in `SpatialGDKSettings`.
 - We've made `USpatialMetrics::WorkerMetricsRecieved` static.
 - You can now connect to a local deployment by selecting "Connect to a local deployment" and specifying the local IP address of your computer in the Launch drop-down menu.
 - We've enabled RPC ring buffers by default, and we'll remove the legacy RPC mode in a future release.
