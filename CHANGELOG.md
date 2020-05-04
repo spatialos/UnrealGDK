@@ -80,6 +80,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 - You can now edit the project name field in the `Cloud Deployment` window.
+- RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
