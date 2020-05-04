@@ -274,7 +274,8 @@ namespace ReleaseTool
 
         private static string GetPullRequestBody(string repoName, string candidateBranch, string releaseBranch)
         {
-            var unrealGdkPrUrl = BuildkiteAgent.GetMetadata("UnrealGDK-pr-url");
+            // If repoName is UnrealGDK do nothing, otherwise get the UnrealGDK-pr-url
+            var unrealGdkPrUrl = repoName == "UnrealGDK" ? "" : BuildkiteAgent.GetMetadata("UnrealGDK-pr-url");
             switch (repoName)
             {
                 case "UnrealGDK":
