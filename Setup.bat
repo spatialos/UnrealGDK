@@ -23,7 +23,7 @@ call :MarkStartOfBlock "Setup the git hooks"
     echo check_run() {>>.git\hooks\post-merge
     echo echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2>>.git\hooks\post-merge
     echo }>>.git\hooks\post-merge
-    echo check_run RequireSetup "cmd.exe /c Setup.bat">>.git\hooks\post-merge
+    echo check_run RequireSetup "cmd.exe /c Setup.bat %*">>.git\hooks\post-merge
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"
@@ -110,6 +110,9 @@ if defined DOWNLOAD_MOBILE (
     spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
     spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
+
+REM There is a race condition between retrieve and unzip, add version call to stall briefly
+call spatial version 
 
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
