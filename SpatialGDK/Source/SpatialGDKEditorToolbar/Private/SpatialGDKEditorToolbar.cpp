@@ -621,6 +621,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	else
 	{
 		LaunchConfig = SpatialGDKEditorSettings->GetSpatialOSLaunchConfig();
+
+		SetLevelEditorPlaySettingsWorkerTypes(SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap);
 	}
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();

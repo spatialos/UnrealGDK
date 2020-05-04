@@ -3,8 +3,8 @@
 #pragma once
 
 #include "EditorExtension/LBStrategyEditorExtension.h"
-#include "TestLoadBalancingStrategy.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
+#include "TestLoadBalancingStrategy.h"
 
 class FTestLBStrategyEditorExtension : public FLBStrategyEditorExtensionTemplate<UDummyLoadBalancingStrategy, FTestLBStrategyEditorExtension>
 {

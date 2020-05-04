@@ -31,11 +31,12 @@ struct TestFixture
 	bool GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, UAbstractRuntimeLoadBalancingStrategy*& OutConfiguration, FIntPoint& OutWorldDimensions)
 	{
 		CleanupRuntimeStrategy();
-		bool bResult = ExtensionManager.GetDefaultLaunchConfiguration(Strategy, OutConfiguration, OutWorldDimensions);
+		const bool bResult = ExtensionManager.GetDefaultLaunchConfiguration(Strategy, OutConfiguration, OutWorldDimensions);
 
 		if (OutConfiguration)
 		{
 			OutConfiguration->AddToRoot();
+			RuntimeStrategy = OutConfiguration;
 		}
 
 		return bResult;
@@ -46,6 +47,7 @@ struct TestFixture
 		if (RuntimeStrategy)
 		{
 			RuntimeStrategy->RemoveFromRoot();
+			RuntimeStrategy = nullptr;
 		}
 	}
 
