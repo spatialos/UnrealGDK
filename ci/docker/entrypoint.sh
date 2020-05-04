@@ -18,9 +18,9 @@ chown -R user:user "/var/ssh"
 chown -R user:user "/var/github"
 chown -R user:user "/var/logs"
 
-gosu git config --global user.name "UnrealGDK Bot"
-gosu git config --global user.email "gdk-for-unreal-bot@improbable.io"
-gosu git config --global core.sshCommand "ssh -i /var/ssh/id_rsa"
+gosu user git config --global user.name "UnrealGDK Bot"
+gosu user git config --global user.email "gdk-for-unreal-bot@improbable.io"
+gosu user git config --global core.sshCommand "ssh -i /var/ssh/id_rsa"
 
 mkdir -p /${HOME}/.ssh
     touch /${HOME}/.ssh/known_hosts
