@@ -28,24 +28,7 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
 
-	// Load defined as performance relative to target frame time or just frame time based on config value.
-	if (GetDefault<USpatialGDKSettings>()->bUseFrameTimeAsLoad)
-	{
-		WorkerLoadFunction = [this]() -> double
-		{
-			float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
-		};
-	}
-	else
-	{
-		WorkerLoadFunction = [this]() -> double
-		{
-			float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
-			float TargetFrameTime = 1.0f / NetServerMaxTickRate;
-
-			return AverageFrameTime / TargetFrameTime;
-		};
-	}
+	WorkerLoadDelegate.BindUObject(this, &USpatialMetrics::CalculateLoad);
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
@@ -77,9 +60,19 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	Connection->SendMetrics(DynamicFPSMetrics);
 }
 
-void USpatialMetrics::SetWorkerLoadFunction(const TFunction<double()>& Func)
+// Load defined as performance relative to target frame time or just frame time based on config value
+double USpatialMetrics::CalculateLoad() const
 {
-	WorkerLoadFunction = Func;
+	float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
+
+	if (GetDefault<USpatialGDKSettings>()->bUseFrameTimeAsLoad)
+	{
+		return AverageFrameTime;
+	}
+
+	float TargetFrameTime = 1.0f / NetServerMaxTickRate;
+
+	return AverageFrameTime / TargetFrameTime;
 }
 
 void USpatialMetrics::SpatialStartRPCMetrics()
