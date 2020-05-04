@@ -18,6 +18,6 @@ chown -R user:user "/var/ssh"
 chown -R user:user "/var/github"
 chown -R user:user "/var/logs"
 chown -R user:user "/root/.ssh"
-ln -s /root/.ssh "${HOME}/.ssh"
+cp -R /root/.ssh "${HOME}/.ssh"
 
 gosu user dotnet ReleaseTool.dll "$@"
