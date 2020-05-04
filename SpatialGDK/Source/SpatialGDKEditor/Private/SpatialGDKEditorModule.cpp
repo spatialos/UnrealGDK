@@ -2,17 +2,19 @@
 
 #include "SpatialGDKEditorModule.h"
 
+#include "EditorExtension/GridLBStrategyEditorExtension.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorLayoutDetails.h"
+#include "SpatialLaunchConfigCustomization.h"
+#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigEditorLayoutDetails.h"
+#include "WorkerTypeCustomization.h"
 
 #include "ISettingsModule.h"
 #include "ISettingsContainer.h"
 #include "ISettingsSection.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-#include "WorkerTypeCustomization.h"
-
-#include "EditorExtension/GridLBStrategyEditorExtension.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
@@ -71,7 +73,9 @@ void FSpatialGDKEditorModule::RegisterSettings()
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout("SpatialLaunchConfigDescription", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialLaunchConfigCustomization::MakeInstance));
 	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(ULaunchConfigurationEditor::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FLaunchConfigEditorLayoutDetails::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()
