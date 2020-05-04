@@ -718,7 +718,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
-					RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
+					// If we have just received authority over the client endpoint, then we are a client.  In that case,
+					// we want to scrape the server endpoint for any server -> client RPCs that are waiting to be called.
+					const Worker_ComponentId ComponentToExtractFrom = Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+					RPCService->ExtractRPCsForEntity(Op.entity_id, ComponentToExtractFrom);
 				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)

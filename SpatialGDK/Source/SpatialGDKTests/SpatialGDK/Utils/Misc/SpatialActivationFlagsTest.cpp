@@ -19,7 +19,7 @@ void InitializeSpatialFlagEarlyValues()
 	bEarliestFlag = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
 {
 	const UGeneralProjectSettings* ProjectSettings = GetDefault<UGeneralProjectSettings>();
 
@@ -69,7 +69,7 @@ struct SpatialActivationFlagTestFixture
 	{
 		ProjectPath = FPaths::GetProjectFilePath();
 		CommandLineArgs = ProjectPath;
-		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
+		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDKSlow.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
 		CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
 		CommandLineArgs.Append(TEXT(" -nopause"));
 		CommandLineArgs.Append(TEXT(" -nosplash"));
@@ -131,7 +131,7 @@ bool FRunSubProcessCommand::Update()
 }
 
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(false);
@@ -141,7 +141,7 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
 	return true;
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(true);
@@ -151,7 +151,7 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
 	return true;
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(false);
@@ -165,7 +165,7 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
 	return true;
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_False)
+GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_False)
 {
 	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
 	TestFixture->ChangeSetting(false);
