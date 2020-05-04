@@ -77,7 +77,6 @@ if [[ -n "${BUILDKITE:-}" ]]; then
     "-e=BUILDKITE_PIPELINE_SLUG=${BUILDKITE_PIPELINE_SLUG}"
     "--volume=/usr/bin/buildkite-agent:/usr/bin/buildkite-agent"
     "--volume=/usr/local/bin/imp-tool-bootstrap:/usr/local/bin/imp-tool-bootstrap"
-    "--volume=${BUILDKITE_BUILD_CHECKOUT_PATH}/app/results:/app/results"
     )
 fi
 

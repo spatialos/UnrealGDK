@@ -14,9 +14,6 @@ export HOME=/home/user
 # Change ownership of directories to the "user" user.
 chown -R user:user "${HOME}"
 chown -R user:user "$(pwd)"
-
-chown -R user:user "/app/results"
-
 chown -R user:user "/var/ssh"
 chown -R user:user "/var/github"
 chown -R user:user "/var/logs"
