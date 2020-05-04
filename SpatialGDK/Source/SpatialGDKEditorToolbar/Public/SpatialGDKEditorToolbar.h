@@ -21,6 +21,7 @@ class SWindow;
 class USoundBase;
 
 struct FWorkerTypeLaunchSection;
+class UAbstractRuntimeLoadBalancingStrategy;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -97,8 +98,6 @@ private:
 	void ShowSuccessNotification(const FString& NotificationText);
 
 	void ShowFailedNotification(const FString& NotificationText);
-
-	bool FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint& OutWorldDimension);
 
 	void GenerateSchema(bool bFullScan);
 
