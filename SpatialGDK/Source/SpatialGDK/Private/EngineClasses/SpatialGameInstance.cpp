@@ -280,7 +280,7 @@ void USpatialGameInstance::CleanupLevelInitializedNetworkActors()
 				}
 				else
 				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, setting role to SimulatedProxy"), *WorkerType, *GetPathNameSafe(Actor));
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
 					ENetRole Temp = Actor->Role;
 					Actor->Role = Actor->RemoteRole;
 					Actor->RemoteRole = Temp;
