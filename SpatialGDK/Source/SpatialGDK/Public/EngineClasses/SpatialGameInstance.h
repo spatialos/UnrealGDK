@@ -71,7 +71,7 @@ public:
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
-	void CleanupLevelInitializedNetworkActors();
+	void CleanupLevelInitializedNetworkActors() const;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

@@ -240,7 +240,7 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
-void USpatialGameInstance::CleanupLevelInitializedNetworkActors()
+void USpatialGameInstance::CleanupLevelInitializedNetworkActors() const
 {
 	const FString WorkerType = GetSpatialWorkerType().ToString();
 
