@@ -13,7 +13,7 @@ namespace ReleaseTool
     ///     * Checks out the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
     ///     * Makes repo-dependent changes for prepping the release (e.g. updating version files).
     ///     * Pushes this to an RC branch.
-    ///     * Creates a release branch i it doesn't exist.
+    ///     * Creates a release branch if it doesn't exist.
     ///     * Opens a PR for merging the RC branch into the release branch.
     /// </summary>
 
