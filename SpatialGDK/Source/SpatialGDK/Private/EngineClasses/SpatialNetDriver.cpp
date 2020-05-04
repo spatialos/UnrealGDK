@@ -237,6 +237,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
 		}
+		Connection->ReceptionistConfig.ReceptionistPort = URL.Port;
 
 		bool bHasUseExternalIpOption = URL.HasOption(TEXT("useExternalIpForBridge"));
 

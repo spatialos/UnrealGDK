@@ -69,7 +69,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		return false;
 	}
 
-	if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH)) // pre-port of https://github.com/spatialos/UnrealGDK/pull/1638
 	{
 		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
 	}
