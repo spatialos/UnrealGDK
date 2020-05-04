@@ -17,7 +17,15 @@ chown -R user:user "$(pwd)"
 chown -R user:user "/var/ssh"
 chown -R user:user "/var/github"
 chown -R user:user "/var/logs"
-chown -R user:user "/root/.ssh"
-cp -R /root/.ssh "${HOME}/.ssh"
+chown -R user:user "/${HOME}/.ssh"
+cp -R /${HOME}/.ssh "${HOME}/.ssh"
+
+git config --global user.name "UnrealGDK Bot" && \
+git config --global user.email "gdk-for-unreal-bot@improbable.io" && \
+git config --global core.sshCommand "ssh -i /var/ssh/id_rsa" && \
+
+mkdir -p /${HOME}/.ssh && \
+    touch /${HOME}/.ssh/known_hosts && \
+    ssh-keyscan github.com >> /${HOME}/.ssh/known_hosts && \
 
 gosu user dotnet ReleaseTool.dll "$@"

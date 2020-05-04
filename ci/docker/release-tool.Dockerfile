@@ -14,12 +14,6 @@ COPY --from=build /app/*/out ./
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y git && \
-    git config --global user.name "UnrealGDK Bot" && \
-    git config --global user.email "gdk-for-unreal-bot@improbable.io" && \
-    git config --global core.sshCommand "ssh -i /var/ssh/id_rsa" && \
-    mkdir -p /root/.ssh && \
-    touch /root/.ssh/known_hosts && \
-    ssh-keyscan github.com >> /root/.ssh/known_hosts && \
     curl -LSs -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.4/gosu-$(dpkg --print-architecture)" && \	
     chmod +x /usr/local/bin/gosu
 
