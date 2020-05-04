@@ -263,8 +263,10 @@ void USpatialGameInstance::CleanupLevelInitializedNetworkActors()
 	for (FActorIterator It(World); It; ++It)
 	{
 		AActor* Actor = *It;
-		if (Actor == nullptr)
+		if (Actor == nullptr || Actor->HasActorBegunPlay())
 		{
+			// Only cleanup if the actor has not yet begun play.
+			// This prevents this from being run multiple times on the same actor.
 			continue;
 		}
 
@@ -280,8 +282,8 @@ void USpatialGameInstance::CleanupLevelInitializedNetworkActors()
 				{
 					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, setting role to SimulatedProxy"), *WorkerType, *GetPathNameSafe(Actor));
 					ENetRole Temp = Actor->Role;
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
+					Actor->Role = Actor->RemoteRole;
+					Actor->RemoteRole = Temp;
 				}
 			}
 		}
