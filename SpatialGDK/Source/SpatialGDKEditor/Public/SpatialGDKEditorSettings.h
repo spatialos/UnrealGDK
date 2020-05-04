@@ -298,7 +298,7 @@ private:
 
 public:
 	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", DisplayName = "Exposed local runtime IP address"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
