@@ -22,7 +22,7 @@ function Force-ResolvePath {
 
 function Parse-UnrealOptions {
     param (
-        [string] $raw_options
+        [string] $raw_options,
         [string] $category
     )
     $options_arr = $raw_options.Split(";")
