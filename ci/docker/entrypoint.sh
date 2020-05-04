@@ -19,4 +19,4 @@ chown -R user:user "/var/ssh"
 chown -R user:user "/var/github"
 chown -R user:user "/var/logs"
 
-gosu user dotnet ReleaseTool.dll
+gosu user dotnet ReleaseTool.dll "$@"
