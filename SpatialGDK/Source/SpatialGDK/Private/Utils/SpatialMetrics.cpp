@@ -27,6 +27,25 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
+
+	// Load defined as performance relative to target frame time or just frame time based on config value.
+	if (GetDefault<USpatialGDKSettings>()->bUseFrameTimeAsLoad)
+	{
+		WorkerLoadFunction = [this]() -> double
+		{
+			float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
+		};
+	}
+	else
+	{
+		WorkerLoadFunction = [this]() -> double
+		{
+			float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
+			float TargetFrameTime = 1.0f / NetServerMaxTickRate;
+
+			return AverageFrameTime / TargetFrameTime;
+		};
+	}
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
@@ -42,10 +61,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
-	if (!GetDefault<USpatialGDKSettings>()->bUserSuppliedLoad)
-	{
-		WorkerLoad = CalculateLoad();
-	}
+	WorkerLoad = EvaluateLoad();  
 
 	SpatialGDK::GaugeMetric DynamicFPSGauge;
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
@@ -61,30 +77,9 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	Connection->SendMetrics(DynamicFPSMetrics);
 }
 
-void USpatialMetrics::SetUserSuppliedLoad(double UserSuppliedLoad)
+void USpatialMetrics::SetWorkerLoadFunction(const TFunction<double()>& Func)
 {
-	if (!GetDefault<USpatialGDKSettings>()->bUserSuppliedLoad)
-	{
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Supplying user load but USpatialGDKSettings::bUserSuppliedLoad is not enabled"));
-		return;
-	}
-
-	WorkerLoad = UserSuppliedLoad;
-}
-
-// Load defined as performance relative to target frame time or just frame time based on config value.
-double USpatialMetrics::CalculateLoad() const
-{
-	float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
-
-	if (GetDefault<USpatialGDKSettings>()->bUseFrameTimeAsLoad)
-	{
-		return AverageFrameTime;
-	}
-
-	float TargetFrameTime = 1.0f / NetServerMaxTickRate;
-
-	return AverageFrameTime / TargetFrameTime;
+	WorkerLoadFunction = Func;
 }
 
 void USpatialMetrics::SpatialStartRPCMetrics()

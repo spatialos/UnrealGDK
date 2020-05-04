@@ -185,12 +185,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics")
 	bool bUseFrameTimeAsLoad;
 
-	/**
-	* By default the load is reported by FPS. Enabling this allows user supplied worker load.
-	*/
-	UPROPERTY(config)
-	bool bUserSuppliedLoad;
-
 	/** Batch entity position updates to be processed on a single frame.*/
 	UPROPERTY(config)
 	bool bBatchSpatialPositionUpdates;

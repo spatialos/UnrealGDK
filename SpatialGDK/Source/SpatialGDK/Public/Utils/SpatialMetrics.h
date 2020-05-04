@@ -25,11 +25,10 @@ public:
 
 	void TickMetrics(float NetDriverTime);
 
-	double CalculateLoad() const;
+	double EvaluateLoad() const { return WorkerLoadFunction(); }
 
 	double GetAverageFPS() const { return AverageFPS; }
 	double GetWorkerLoad() const { return WorkerLoad; }
-	void SetUserSuppliedLoad(double UserSuppliedLoad);
 
 	UFUNCTION(Exec)
 	void SpatialStartRPCMetrics();
@@ -56,6 +55,7 @@ public:
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
 	FControllerRefProviderDelegate ControllerRefProvider;
 
+	void SetWorkerLoadFunction(const TFunction<double()>& Func);
 private:
 
 	UPROPERTY()
@@ -71,6 +71,7 @@ private:
 
 	double AverageFPS;
 	double WorkerLoad;
+	TFunction<double()> WorkerLoadFunction;
 
 	// RPC tracking is activated with "SpatialStartRPCMetrics" and stopped with "SpatialStopRPCMetrics"
 	// console command. It will record every sent RPC as well as the size of its payload, and then display
