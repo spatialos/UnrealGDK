@@ -16,7 +16,6 @@ release () {
 
   docker run \
     -v "${BUILDKITE_ARGS[@]}" \
-    -e "LOCAL_USER_ID=${USER_ID}" "${IMAGE}" "${@}" | tee logs/docker-run.log
     -v "${SECRETS_DIR}":/var/ssh \
     -v "${SECRETS_DIR}":/var/github \
     -v "$(pwd)"/logs:/var/logs \
