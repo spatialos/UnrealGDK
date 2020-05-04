@@ -65,14 +65,14 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_map = "EmptyGym"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK", "bEnableUnrealLoadBalancer=false;$user_gdk_settings", "$user_gdk_editor_settings", $True)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK.", "bEnableUnrealLoadBalancer=false;$user_gdk_settings", "$user_gdk_editor_settings", $True)
 }
 else{
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", "$user_gdk_editor_settings", $False)
     }
     else {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True)
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True)
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
             "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`");$user_gdk_settings",
             "LaunchConfigDesc=(Template=`"w2_r0500_e5`",World=(Dimensions=(X=2000,Y=2000),ChunkEdgeLengthMeters=50,SnapshotWritePeriodSeconds=0,LegacyFlags=((`"bridge_qos_max_timeout`",`"0`"),(`"bridge_soft_handover_enabled`",`"false`"),(`"bridge_single_port_max_heartbeat_timeout_ms`",`"3600000`")),LegacyJavaParams=()),ServerWorkers=((WorkerTypeName=`"UnrealWorker`"),(WorkerTypeName=`"UnrealWorker`")));$user_gdk_editor_settings",
@@ -81,6 +81,9 @@ else{
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         $tests[0].tests_path += "+/Game/NetworkingMap"
+        if($env:TEST_CONFIG -ne "Native") {
+            $tests[0].tests_path += "+SpatialGDKSlow."
+        }
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
     }
 }
