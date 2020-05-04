@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
+#include "EngineUtils.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/Guid.h"
@@ -200,7 +201,6 @@ void USpatialGameInstance::Init()
 	Super::Init();
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
-	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
@@ -219,6 +219,9 @@ void USpatialGameInstance::HandleOnConnected()
 	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
 	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
+	// Cleanup any actors which were created during level load.
+	CleanupLevelInitializedNetworkActors();
+
 	OnSpatialConnected.Broadcast();
 }
 
@@ -237,24 +240,29 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
-void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
+void USpatialGameInstance::CleanupLevelInitializedNetworkActors()
 {
 	const FString WorkerType = GetSpatialWorkerType().ToString();
 
-	if (OwningWorld != GetWorld()
-		|| !OwningWorld->IsServer()
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	if (!World->IsServer()
 		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
-		|| (OwningWorld->WorldType != EWorldType::PIE
-			&& OwningWorld->WorldType != EWorldType::Game
-			&& OwningWorld->WorldType != EWorldType::GamePreview))
+		|| (World->WorldType != EWorldType::PIE
+			&& World->WorldType != EWorldType::Game
+			&& World->WorldType != EWorldType::GamePreview))
 	{
 		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
 		return;
 	}
 
-	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
+	for (FActorIterator It(World); It; ++It)
 	{
-		AActor* Actor = LoadedLevel->Actors[ActorIndex];
+		AActor* Actor = *It;
 		if (Actor == nullptr)
 		{
 			continue;
@@ -270,10 +278,10 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 				else
 				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, setting role to SimulatedProxy"), *WorkerType, *GetPathNameSafe(Actor));
 					ENetRole Temp = Actor->Role;
-					Actor->Role = Actor->RemoteRole;
-					Actor->RemoteRole = Temp;
+					Actor->Role = ROLE_SimulatedProxy;
+					Actor->RemoteRole = ROLE_Authority;
 				}
 			}
 		}
