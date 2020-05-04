@@ -19,10 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We've added a new variable: `QueuedOutgoingRPCWaitTime`. Outgoing RPCs are now dropped in the following three scenarios: more than `QueuedOutgoingRPCWaitTime` time has passed since the RPC was sent; the worker instance is never expected to have the authority required to receive the RPC (if you're using offloading or zoning); or the Actor that the RPC is sent to is being destroyed.
 - In local deployments of the Example Project, you can now launch simulated players in one click. Running `LaunchSimPlayerClient.bat` launches a single simulated player client. Running `Launch10SimPlayerClients.bat` launches ten simulated player clients.
 - We've added support for the UE4 Network Profiler to measure relative size of RPC and Actor replication data.
-- We've added a `SpatialToggleMetricsDisplay` console command. You must enable `bEnableMetricsDisplay` in order for the display to be available. You must then must call `SpatialToggleMetricsDisplay` on each client that wants to view the metrics display.
+- We've added a `SpatialToggleMetricsDisplay` console command. You must enable `bEnableMetricsDisplay` in order for the display to be available. You must then must call `SpatialToggleMetricsDisplay` on each client that you want the metrics display to be visible for.
 - We've enabled compression in the Modular UDP networking stack.
-- We've switched off default rpc-packing. You can re-enable this in `SpatialGDKSettings.ini`.
-- Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
+- We've switched off default RPC-packing. You can re-enable this in `SpatialGDKSettings`.
+- When you start a local deployment, we now check to see if the required Runtime port is blocked. If it is, we display a dialog box that asks whether you want to kill the process that is blocking the port.
 - A configurable Actor component 'SpatialPingComponent' is now available for PlayerControllers to measure the ping time to their current authoritative server-worker instance. You can access the latest raw ping value via `GetPing()`, or access the rolling average, which is stored in `PlayerState`.
 - You can invoke the `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If you don't provide this switch, the output contains only the schema descriptor. This switch's value should be a subset of the arguments that you can pass to the schema compiler directly (for example `--bundle_out="path/to/bundle.sb"`). You can see a full list of possible values in the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
 - We've added the `AllowUnresolvedParameters` function flag. This flag disables warnings that occur during processing of RPCs that have unresolved parameters. To enable this flag, use Blueprints, or add a tag to the `UFUNCTION` macro.
@@ -31,12 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We've improved the workflow relating to schema generation issues and launching local builds. There is now a warning if you try to run a local deployment after a schema error.
 - `DeploymentLauncher` can now launch a simulated player deployment independently from the target deployment.
 Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
-- Added `HeartbeatTimeoutWithEditorSeconds` and use it if WITH_EDITOR is defined to prevent workers disconnecting when debugging while running in editor.
-- We've added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
+- We now use `HeartbeatTimeoutWithEditorSeconds` if `WITH_EDITOR` is defined. This prevents worker instances from disconnecting when you're running them from the Unreal Editor for debugging.
+- We've added the `bAsyncLoadNewClassesOnEntityCheckout` setting to `SpatialGDKSettings`. This allows worker instances to load new classes asynchronously when they are receiving the initial updates about an entity. It is off by default.
 - We've added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. We've remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
 - Clients now validate their schema files against the schema files on the server, and log a warning if the files do not match.
 - Entries in the schema database are now sorted to improve efficiency when searching for assets in the Unreal Editor. (DW-Sebastien)
-- Batch Spatial Position Updates now defaults to false.
+- `BatchSpatialPositionUpdates` in `SpatialGDKSettings` now defaults to false.
 - We've added `bEnableNetCullDistanceInterest` (default true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native Unreal client interest.
 - We've added `bEnableNetCullDistanceFrequency` (default false) to enable client interest queries to use frequency. You can configure this functionality using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 - We've introduced the feature flag `bEnableResultTypes` (default true). This configures interest queries to include only the set of components required for the queries to run. Depending on your game, this might save bandwidth.
@@ -83,7 +83,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - We've fixed a crash in `SpatialDebugger` that was caused by the dereference of an invalid weak pointer.
 - We've fixed a connection error that occurred when using `spatial cloud connect external`.
 - The command line argument `receptionistHost <URL>` no longer overrides connections to `127.0.0.1`.
-- The Receptionist will now be used for appropriate URLs after connecting to a locator URL.
+- If you connect a worker instance to a deployment using the Locator, and you initiate a `ClientTravel` using a URL that requires the Receptionist, this now works correctly.
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
 - We've fixed a crash in `SpatialDebugger` that occurs when GDK-space load balancing is disabled.
 - The schema database no longer fails to load previous saved state when working in the Unreal Editor.
