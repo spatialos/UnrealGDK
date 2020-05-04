@@ -19,7 +19,9 @@ RUN apt-get update && \
     git config --global core.sshCommand "ssh -i /var/ssh/id_rsa" && \
     mkdir -p /root/.ssh && \
     touch /root/.ssh/known_hosts && \
-    ssh-keyscan github.com >> /root/.ssh/known_hosts
+    ssh-keyscan github.com >> /root/.ssh/known_hosts && \
+    curl -LSs -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.4/gosu-$(dpkg --print-architecture)" && \	
+    chmod +x /usr/local/bin/gosu
 
 # Create a volume to mount our SSH key into and configure git to use it.
 VOLUME /var/ssh
@@ -28,4 +30,8 @@ VOLUME /var/github
 # Volume to output logs & Buildkite metadata to
 VOLUME /var/logs
 
-ENTRYPOINT ["dotnet", "ReleaseTool.dll"]
+COPY ./ci/docker/entrypoint.sh ./
+
+RUN ["chmod", "+x", "./entrypoint.sh"]
+
+ENTRYPOINT ["./entrypoint.sh"]

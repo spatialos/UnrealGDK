@@ -13,16 +13,10 @@ export HOME=/home/user
 
 # Change ownership of directories to the "user" user.
 chown -R user:user "${HOME}"
-chown -R user:user "$(pwd)/tools"
+chown -R user:user "$(pwd)"
 
-TEST_RESULTS_DIR="/var/logs/nunit"
-gosu user mkdir -p "${TEST_RESULTS_DIR}"
+chown -R user:user "/var/ssh"
+chown -R user:user "/var/github"
+chown -R user:user "/var/logs"
 
-echo "--- Build Tools.sln :construction:"
-gosu user dotnet build tools/Tools.sln
-
-echo "--- Test DocsLinter.csproj :link:"
-gosu user dotnet test --logger:"nunit;LogFilePath=${TEST_RESULTS_DIR}/docslinter-test-results.xml" "tools/DocsLinter/DocsLinter.csproj"
-
-echo "--- Test ReleaseTool.csproj :fork:"
-#gosu user dotnet test --logger:"nunit;LogFilePath=${TEST_RESULTS_DIR}/releasetool-test-results.xml" "tools/ReleaseTool.Tests/ReleaseTool.Tests.csproj" TODO: Re-enable tests
+gosu user dotnet ReleaseTool.dll
