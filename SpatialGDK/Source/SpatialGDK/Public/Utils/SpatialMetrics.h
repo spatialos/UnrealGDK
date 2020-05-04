@@ -28,7 +28,6 @@ public:
 	void TickMetrics(float NetDriverTime);
 
 	double CalculateLoad() const;
-	double EvaluateLoad() const { return WorkerLoadDelegate.Execute(); }
 
 	double GetAverageFPS() const { return AverageFPS; }
 	double GetWorkerLoad() const { return WorkerLoad; }

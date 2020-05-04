@@ -44,7 +44,14 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
-	WorkerLoad = EvaluateLoad();  
+	if (WorkerLoadDelegate.IsBound())
+	{
+		WorkerLoad = WorkerLoadDelegate.Execute();
+	}
+	else
+	{
+		WorkerLoad = CalculateLoad();
+	}
 
 	SpatialGDK::GaugeMetric DynamicFPSGauge;
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
