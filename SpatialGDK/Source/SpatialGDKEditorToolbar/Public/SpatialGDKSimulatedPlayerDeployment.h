@@ -124,6 +124,10 @@ private:
 	bool IsUsingCustomRuntimeVersion() const;
 	FText GetSpatialOSRuntimeVersionToUseText() const;
 
+	FReply OnGenerateConfigFromCurrentMap();
+
+	FReply OnOpenLaunchConfigEditor();
+
 	ECheckBoxState IsBuildClientWorkerEnabled() const;
 	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
 

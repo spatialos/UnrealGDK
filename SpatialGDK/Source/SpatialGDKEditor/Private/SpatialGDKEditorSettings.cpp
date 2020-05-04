@@ -2,15 +2,15 @@
 
 #include "SpatialGDKEditorSettings.h"
 
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
+
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
 
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -18,14 +18,24 @@
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
-void FSpatialLaunchConfigDescription::SetLevelEditorPlaySettingsWorkerTypes()
+void FSpatialLaunchConfigDescription::OnWorkerTypesChanged()
 {
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	USpatialGDKSettings const* RuntimeSettings = GetDefault<USpatialGDKSettings>();
 
-	PlayInSettings->WorkerTypesToLaunch.Empty(ServerWorkers.Num());
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : ServerWorkers)
+	for (const FName& WorkerType : RuntimeSettings->ServerWorkerTypes)
 	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+		if (!ServerWorkersMap.Contains(WorkerType))
+		{
+			ServerWorkersMap.Add(WorkerType, FWorkerTypeLaunchSection());
+		}
+	}
+
+	for (auto Iterator = ServerWorkersMap.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (!RuntimeSettings->ServerWorkerTypes.Contains(Iterator->Key))
+		{
+			Iterator.RemoveCurrent();
+		}
 	}
 }
 
@@ -81,10 +91,6 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
-	{
-		SetRuntimeWorkerTypes();
-	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
 	{
 		SetRuntimeUseDevelopmentAuthenticationFlow();
@@ -99,6 +105,12 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	}
 }
 
+void USpatialGDKEditorSettings::OnWorkerTypesChanged()
+{
+	LaunchConfigDesc.OnWorkerTypesChanged();
+	PostEditChange();
+}
+
 void USpatialGDKEditorSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
@@ -108,32 +120,28 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 
-	SetRuntimeWorkerTypes();
 	SetRuntimeUseDevelopmentAuthenticationFlow();
 	SetRuntimeDevelopmentAuthenticationToken();
 	SetRuntimeDevelopmentDeploymentToConnect();
-}
 
-void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
-{
-	TSet<FName> WorkerTypes;
-	
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
+
+	if (LaunchConfigDesc.ServerWorkers_DEPRECATED.Num() > 0)
 	{
-		if (WorkerLaunch.WorkerTypeName != NAME_None)
+		for (FWorkerTypeLaunchSection& LaunchConfig : LaunchConfigDesc.ServerWorkers_DEPRECATED)
 		{
-			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+			if (LaunchConfig.WorkerTypeName_DEPRECATED.IsValid() && GDKSettings->ServerWorkerTypes.Contains(LaunchConfig.WorkerTypeName_DEPRECATED))
+			{
+				LaunchConfigDesc.ServerWorkersMap.Add(LaunchConfig.WorkerTypeName_DEPRECATED, LaunchConfig);
+			}
 		}
+		LaunchConfigDesc.ServerWorkers_DEPRECATED.Empty();
+		SaveConfig();
 	}
 
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	if (RuntimeSettings != nullptr)
-	{
-		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
-		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
-		RuntimeSettings->PostEditChange();
-		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
-	}
+	LaunchConfigDesc.OnWorkerTypesChanged();
+
+	GDKSettings->OnWorkerTypesChangedDelegate.AddUObject(this, &USpatialGDKEditorSettings::OnWorkerTypesChanged);
 }
 
 void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
