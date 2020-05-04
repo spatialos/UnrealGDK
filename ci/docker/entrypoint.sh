@@ -17,8 +17,6 @@ chown -R user:user "$(pwd)"
 chown -R user:user "/var/ssh"
 chown -R user:user "/var/github"
 chown -R user:user "/var/logs"
-chown -R user:user "/${HOME}/.ssh"
-cp -R /${HOME}/.ssh "${HOME}/.ssh"
 
 gosu git config --global user.name "UnrealGDK Bot"
 gosu git config --global user.email "gdk-for-unreal-bot@improbable.io"
