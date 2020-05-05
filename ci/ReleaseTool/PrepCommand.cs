@@ -280,34 +280,34 @@ namespace ReleaseTool
             {
                 case "UnrealGDK":
                     return $@"#### Description
-- This PR merges `{candidateBranch}` into `{releaseBranch}.
+- This PR merges `{candidateBranch}` into `{releaseBranch}`.
 - It was created by the [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release) Buildkite pipeline.
-- Your human labour is now required to unblock the pipeline and resume the release:
+- Your human labour is now required to unblock the pipeline and resume the release.
 
 #### Next Steps
-- [ ] *Release Sheriff* - Delegate the tasks below.
-- [ ] *Tech writers*: Review and translate `[CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{candidateBranch}/CHANGELOG.md)`. Merge the translation and edits into `{candidateBranch}`. 
-- [ ] *QA*: Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
-- [ ] *Release Sheriff:* If any blocking defects are discovered, merge the fixes into `{releaseBranch}`.
-- [ ] *Release Sheriff:* Get approving reviews on *all* release candidate PRs.
-- [ ] *Release Sheriff* - When the above tasks are complete, unblock the pipeline. This action will merge all release candidates into their respective release branches.
+- [ ] **Release Sheriff** - Delegate the tasks below.
+- [ ] **Tech writers** - Review and translate [CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{candidateBranch}/CHANGELOG.md). Merge the translation and any edits into `{candidateBranch}`. 
+- [ ] **QA* - Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
+- [ ] **Release Sheriff** - If any blocking defects are discovered, merge the fixes into `{candidateBranch}`.
+- [ ] **Release Sheriff** - Get approving reviews on *all* release candidate PRs.
+- [ ] **Release Sheriff** - When the above tasks are complete, unblock the [pipeline](https://buildkite.com/improbable/unrealgdk-release). This action will merge all release candidates into their respective release branches and create draft GitHub releases that you must then publish.
 ";
                 case "UnrealGDKExampleProject":
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}.
-- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
+- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealGDKTestGyms":
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}.
-- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
+- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealGDKEngineNetTest":
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}.
-- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
+- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealEngine":
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}.
-- It corresponds to `{unrealGdkPrUrl}`, where you can find more information about this release.";
+- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 default:
                     throw new ArgumentException($"No PR body template found for repo {repoName}");
             }
