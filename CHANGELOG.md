@@ -17,53 +17,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - We now support Unreal Engine `4.24.3`. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK-release).
-- We've added a new variable: `QueuedOutgoingRPCWaitTime`. Outgoing RPCs are now dropped in the following three scenarios: more than `QueuedOutgoingRPCWaitTime` time has passed since the RPC was sent; the worker instance is never expected to have the authority required to receive the RPC (if you're using offloading or zoning); or the Actor that the RPC is sent to is being destroyed.
+- Added a new variable: `QueuedOutgoingRPCWaitTime`. Outgoing RPCs are now dropped in the following three scenarios: more than `QueuedOutgoingRPCWaitTime` time has passed since the RPC was sent; the worker instance is never expected to have the authority required to receive the RPC (if you're using offloading or zoning); or the Actor that the RPC is sent to is being destroyed.
 - In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
-- We've added support for the UE4 Network Profiler to measure relative size of RPC and Actor replication data.
-- We've added a `SpatialToggleMetricsDisplay` console command. You must enable `bEnableMetricsDisplay` in order for the display to be available. You must then must call `SpatialToggleMetricsDisplay` on each client that you want the metrics display to be visible for.
-- We've enabled compression in the Modular UDP networking stack.
-- We've switched off default RPC-packing. You can re-enable this in `SpatialGDKSettings`.
+- Added support for the UE4 Network Profiler to measure relative size of RPC and Actor replication data.
+- Added a `SpatialToggleMetricsDisplay` console command. You must enable `bEnableMetricsDisplay` in order for the display to be available. You must then must call `SpatialToggleMetricsDisplay` on each client that you want the metrics display to be visible for.
+- Enabled compression in the Modular UDP networking stack.
+- Switched off default RPC-packing. You can re-enable this in `SpatialGDKSettings`.
 - When you start a local deployment, we now check to see if the required Runtime port is blocked. If it is, we display a dialog box that asks whether you want to kill the process that is blocking the port.
 - A configurable Actor component 'SpatialPingComponent' is now available for PlayerControllers to measure the ping time to their current authoritative server-worker instance. You can access the latest raw ping value via `GetPing()`, or access the rolling average, which is stored in `PlayerState`.
 - You can invoke the `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If you don't provide this switch, the output contains only the schema descriptor. This switch's value should be a subset of the arguments that you can pass to the schema compiler directly (for example `--bundle_out="path/to/bundle.sb"`). You can see a full list of possible values in the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
-- We've added the `AllowUnresolvedParameters` function flag. This flag disables warnings that occur during processing of RPCs that have unresolved parameters. To enable this flag, use Blueprints, or add a tag to the `UFUNCTION` macro.
+- Added the `AllowUnresolvedParameters` function flag. This flag disables warnings that occur during processing of RPCs that have unresolved parameters. To enable this flag, use Blueprints, or add a tag to the `UFUNCTION` macro.
 - There is now a warning if you launch a cloud deployment with the `manual_worker_connection_only` flag set to `true`.
 - We now support server travel for single-server game worlds. We don't support server travel for game worlds that use zoning or offloading.
-- We've improved the workflow relating to schema generation issues and launching local builds. There is now a warning if you try to run a local deployment after a schema error.
+- Improved the workflow relating to schema generation issues and launching local builds. There is now a warning if you try to run a local deployment after a schema error.
 - `DeploymentLauncher` can now launch a simulated player deployment independently from the target deployment.
 Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
 - We now use `HeartbeatTimeoutWithEditorSeconds` if `WITH_EDITOR` is defined. This prevents worker instances from disconnecting when you're running them from the Unreal Editor for debugging.
-- We've added the `bAsyncLoadNewClassesOnEntityCheckout` setting to `SpatialGDKSettings`. This allows worker instances to load new classes asynchronously when they are receiving the initial updates about an entity. It is off by default.
-- We've added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. We've remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
+- Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to `SpatialGDKSettings`. This allows worker instances to load new classes asynchronously when they are receiving the initial updates about an entity. It is off by default.
+- Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. We've remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
 - Clients now validate their schema files against the schema files on the server, and log a warning if the files do not match.
 - Entries in the schema database are now sorted to improve efficiency when searching for assets in the Unreal Editor. (DW-Sebastien)
 - `BatchSpatialPositionUpdates` in `SpatialGDKSettings` now defaults to false.
-- We've added `bEnableNetCullDistanceInterest` (default true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native Unreal client interest.
-- We've added `bEnableNetCullDistanceFrequency` (default false) to enable client interest queries to use frequency. You can configure this functionality using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
-- We've introduced the feature flag `bEnableResultTypes` (default true). This configures interest queries to include only the set of components required for the queries to run. Depending on your game, this might save bandwidth.
+- Added `bEnableNetCullDistanceInterest` (default true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native Unreal client interest.
+- Added `bEnableNetCullDistanceFrequency` (default false) to enable client interest queries to use frequency. You can configure this functionality using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
+- Introduced the feature flag `bEnableResultTypes` (default true). This configures interest queries to include only the set of components required for the queries to run. Depending on your game, this might save bandwidth.
 - If you set the `bEnableResultTypes` flag to `true`, this disables dynamic interest overrides.
-- We've moved the development authentication settings from the Runtime Settings panel to the Editor Settings panel.
-- We've added the option to use the development authentication flow with the command line.
-- We've added a button to generate a development authentication token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
-- We've added a new section where you can configure the launch arguments for running a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
-- You can now choose which Runtime version to use when you launch a local or cloud deployment via the Spatial Runtime Settings.
+- Moved the development authentication settings from the Runtime Settings panel to the Editor Settings panel.
+- Added the option to use the development authentication flow with the command line.
+- Added a button to generate a development authentication token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
+- Added a new section where you can configure the launch arguments for running a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
+- You can now choose which Runtime version to use (in the Runtime Settings) when you launch a local or cloud deployment.
 - If you set the `--OverrideResultTypes` flag to `true`, server-worker instances no longer receive updates about server RPC components on Actors that they do not own. This should decrease bandwidth for server-worker instances in offloaded and zoned games.
 - The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch that you have checked out. They read `UnrealGDKVersion.txt` and `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
-- We've removed the `bEnableServerQBI` property and the `--OverrideServerInterest` flag.
-- We've added custom warning timeouts for each RPC failure condition.
+- Removed the `bEnableServerQBI` property and the `--OverrideServerInterest` flag.
+- Added custom warning timeouts for each RPC failure condition.
 - `SpatialPingComponent` can now also report average ping measurements over a specified number of recent pings. You can use `PingMeasurementsWindowSize` to specify how many measurements you want to record, and call `GetAverageData` to get the measurement data. There is also a delegate `OnRecordPing` that is broadcast whenever a new ping measurement is recorded.
 - The Spatial Output Log window now displays deployment startup errors.
-- We've added `bEnableClientQueriesOnServer` (default false) which makes the same queries on the server as it makes on clients, if the GDK for Unreal's load balancer is enabled. Enable `bEnableClientQueriesOnServer` to avoid a situation in which clients receive updates about entities that the server doesn't receive updates about (which happens if the server's interest query is configured incorrectly).
+- Added `bEnableClientQueriesOnServer` (default false) which makes the same queries on the server as it makes on clients, if the GDK for Unreal's load balancer is enabled. Enable `bEnableClientQueriesOnServer` to avoid a situation in which clients receive updates about entities that the server doesn't receive updates about (which happens if the server's interest query is configured incorrectly).
 - We now log a warning when `AddPendingRPC` fails due to `ControllerChannelNotListening`.
 - When offloading is enabled, Actors have local authority (`ROLE_Authority`) on servers for longer periods of time, to allow more native Unreal functionality to work without problems.
 - When offloading is enabled, if you try to spawn Actors on a server that will not be the Actor Group owner for them, we now log an error and delete the Actor.
 - The GDK now uses SpatialOS Runtime version 14.5.1 by default.
-- We've renamed the configuration setting `bPreventAutoConnectWithLocator` to `bPreventClientCloudDeploymentAutoConnect` and moved it to `SpatialGDKSettings`. To use this feature, enable the setting in `SpatialGDKSettings`.
-- We've made `USpatialMetrics::WorkerMetricsRecieved` static.
+- Renamed the configuration setting `bPreventAutoConnectWithLocator` to `bPreventClientCloudDeploymentAutoConnect` and moved it to `SpatialGDKSettings`. To use this feature, enable the setting in `SpatialGDKSettings`.
+- Made `USpatialMetrics::WorkerMetricsRecieved` static.
 - You can now connect to a local deployment by selecting "Connect to a local deployment" and specifying the local IP address of your computer in the Launch drop-down menu.
-- We've enabled RPC Ring Buffers by default, and we'll remove the legacy RPC mode in a future release.
-- We've removed the `bPackRPCs` property and the the `--OverrideRPCPacking` flag.
-- We've added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
+- Enabled RPC Ring Buffers by default, and we'll remove the legacy RPC mode in a future release.
+- Removed the `bPackRPCs` property and the the `--OverrideRPCPacking` flag.
+- Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
 
 ## Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
@@ -71,45 +71,45 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Servers now maintain interest in `AlwaysRelevant` Actors.
 - `GetActorSpatialPosition` now returns the last spectator sync location while the player is spectating.
 - The default cloud launch configuration is now empty.
-- We've fixed a crash that happened when the GDK attempted to read schema from an unloaded class.
+- Fixed a crash that happened when the GDK attempted to read schema from an unloaded class.
 - We now properly handle (and eventually resolve) unresolved object references in replicated arrays of structs.
-- We've fixed a tombstone-related assert that could fire and bring down the editor.
+- Fixed a tombstone-related assert that could fire and bring down the editor.
 - If an Actor that is placed in the level with `bNetLoadOnClient=false` goes out of a worker instance's view, it is now reloaded if it comes back into view.
-- We've fixed a crash in `SpatialDebugger` that was caused by the dereference of an invalid weak pointer.
-- We've fixed a connection error that occurred when using `spatial cloud connect external`.
+- Fixed a crash in `SpatialDebugger` that was caused by the dereference of an invalid weak pointer.
+- Fixed a connection error that occurred when using `spatial cloud connect external`.
 - The command line argument `receptionistHost <URL>` no longer overrides connections to `127.0.0.1`.
 - If you connect a worker instance to a deployment using the Locator, and you initiate a `ClientTravel` using a URL that requires the Receptionist, this now works correctly.
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
-- We've fixed a crash in `SpatialDebugger` that occurs when GDK-space load balancing is disabled.
+- Fixed a crash in `SpatialDebugger` that occurs when GDK-space load balancing is disabled.
 - The schema database no longer fails to load previous saved state when working in the Unreal Editor.
 - If you attempt to launch a cloud deployment, this now runs the `spatial auth` process as required. Previously the deployment would simply fail.
-- We've made a minor spelling fix to the connection log message.
+- Made a minor spelling fix to the connection log message.
 - The debug strings in `GlobalStateManager` now display the Actor class name in log files.
 - The server no longer crashes when received RPCs are processed recursively.
 - The GDK no longer crashes when `SoftObjectPointers` are not yet resolved, but instead serializes them as expected after they are resolved.
-- We've fixed an issue that occurred when replicating a property for a class that was part of an asynchronously-loaded package, when the package had not finished loading.
-- Fix to component interest constraints constructed from schema.
+- Fixed an issue that occurred when replicating a property for a class that was part of an asynchronously-loaded package, when the package had not finished loading.
+- Fixed component interest constraints that are constructed from schema.
 - The GDK now tracks properties that contain references to replicated Actors, so that it can resolve them again if the Actor that they reference moves out of and back into relevance.
 - PIE sessions no longer occasionally fail to start due to missing schema for the `SpatialDebugger` Blueprint.
-- We've fixed an issue where a newly-created subobject had empty state when `RepNotify` was called for a property pointing to that subobject.
-- We've fixed an issue where deleted, initially dormant startup Actors would still be present on other worker instances.
+- Fixed an issue where a newly-created subobject had empty state when `RepNotify` was called for a property pointing to that subobject.
+- Fixed an issue where deleted, initially dormant startup Actors would still be present on other worker instances.
 - We now force-activate the RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes.
-- We've fixed a race condition where a client that was leaving the deployment could leave its Actor behind on the server, to be cleaned up after a long timeout.
-- We've fixed a crash that was caused by state in `SpatialGameInstance` persisting across a transition from one deployment to another.
+- Fixed a race condition where a client that was leaving the deployment could leave its Actor behind on the server, to be cleaned up after a long timeout.
+- Fixed a crash that was caused by state in `SpatialGameInstance` persisting across a transition from one deployment to another.
 - The GDK no longer crashes when you start and stop PIE clients multiple times.
 - The GDK no longer crashes when shadow data is uninitialized when resolving unresolved objects.
-- We've fixed an occasional issue when sending component RPCs on a recently created actor.
+- Fixed an occasional issue when sending component RPCs on a recently-created Actor.
 
 ### Internal:
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
 
-- We've enabled the SpatialOS toolbar for MacOS.
-- We've added support for Android.
+- Enabled the SpatialOS toolbar for MacOS.
+- Added support for Android.
 - `SpatialDebugger` worker regions are now cuboids rather than planes, and can have their `WorkerRegionVerticalScale` adjusted via a setting in the `SpatialDebugger`.
-- We've added an `AuthorityIntent` component, a `VirtualWorkerTranslation` component, and a partial framework. We'll use these in the future to control load balancing.
+- Added an `AuthorityIntent` component, a `VirtualWorkerTranslation` component, and a partial framework. We'll use these in the future to control load balancing.
 - Load balancing strategies and locking strategies can be set per-level using `SpatialWorldSettings`.
-- We've added a new Runtime Settings flag to enable the GDK for Unreal load balancer. This is a feature that is in development and not yet ready for general use. Enabling the GDK for Unreal load balancer now creates a single query per server-worker instance, depending on the defined load balancing strategy.
-- We've extracted the logic responsible for taking an Actor and generating the array of SpatialOS components that represents it as an entity in SpatialOS. This logic is now in `EntityFactory`.
+- Added a new Runtime Settings flag to enable the GDK for Unreal load balancer. This is a feature that is in development and not yet ready for general use. Enabling the GDK for Unreal load balancer now creates a single query per server-worker instance, depending on the defined load balancing strategy.
+- Extracted the logic responsible for taking an Actor and generating the array of SpatialOS components that represents it as an entity in SpatialOS. This logic is now in `EntityFactory`.
 - `DeploymentLauncher` can now parse a .pb.json launch configuration.
 
 ### External contributors:
