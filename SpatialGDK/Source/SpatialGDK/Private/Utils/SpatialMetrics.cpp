@@ -27,8 +27,6 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
-
-	WorkerLoadDelegate.BindUObject(this, &USpatialMetrics::CalculateLoad);
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
