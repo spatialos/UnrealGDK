@@ -463,6 +463,30 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
+const TArray<Schema_FieldId>& USpatialClassInfoManager::GetFieldIdsByComponentId(Worker_ComponentId ComponentId, const FRepLayout& RepLayout)
+{
+	TArray<Schema_FieldId>* FieldIds = ComponentToFieldIdsMap.Find(ComponentId);
+	if (FieldIds == nullptr)
+	{
+		FieldIds = &ComponentToFieldIdsMap.Add(ComponentId);
+
+		int32 SchemaType = GetCategoryByComponentId(ComponentId);
+		check(SchemaType != SCHEMA_Invalid);
+		for (int32 HandleIndex = 0; HandleIndex < RepLayout.BaseHandleToCmdIndex.Num(); HandleIndex++)
+		{
+			const int32 CmdIndex = RepLayout.BaseHandleToCmdIndex[HandleIndex].CmdIndex;
+			const int32 ParentCmdIndex = RepLayout.Cmds[CmdIndex].ParentIndex;
+			const FRepParentCmd& ParentCmd = RepLayout.Parents[ParentCmdIndex];
+			if (GetGroupFromCondition(ParentCmd.Condition) == SchemaType)
+			{
+				FieldIds->Add(HandleIndex + 1);
+			}
+		}
+	}
+
+	return *FieldIds;
+}
+
 const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
 {
 	check(Object != nullptr && Function != nullptr);
