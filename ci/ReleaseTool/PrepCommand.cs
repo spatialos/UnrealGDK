@@ -126,7 +126,7 @@ namespace ReleaseTool
                     gitClient.ForcePush(options.CandidateBranch);
 
                     // 5. If a release branch doesn't exist, create one and push it to the remote.
-                    if (!gitClient.LocalBranchExist($"origin/{options.ReleaseBranch}"))
+                    if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
                         gitClient.Fetch();
                         gitClient.CheckoutRemoteBranch(options.CandidateBranch);
