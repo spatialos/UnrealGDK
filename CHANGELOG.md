@@ -89,7 +89,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The schema database no longer fails to load previous saved state when working in the Unreal Editor.
 - If you attempt to launch a cloud deployment, this now runs the `spatial auth` process as required. Previously the deployment would simply fail.
 - We've made a minor spelling fix to the connection log message.
-- Added %s token to debug strings in GlobalStateManager to display actor class name in log.
+- Debug strings in GlobalStateManager now display actor class name in log.
 - The server no longer crashes when received RPCs are processed recursively.
 - The GDK no longer crashes when `SoftObjectPointers` are not yet resolved, but instead serializes them as expected after they are resolved.
 - We've fixed an issue that occurred when replicating a property for a class that was part of an asynchronously-loaded package, when the package had not finished loading.
