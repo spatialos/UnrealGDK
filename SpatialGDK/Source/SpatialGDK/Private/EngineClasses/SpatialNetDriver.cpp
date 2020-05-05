@@ -8,6 +8,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
 #include "EngineGlobals.h"
+#include "EngineUtils.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Misc/MessageDialog.h"
@@ -136,7 +137,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	ActorGroupManager = GetGameInstance()->ActorGroupManager.Get();
+	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
+	ActorGroupManager->Init();
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
@@ -146,7 +148,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager.Get()))
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
@@ -303,6 +305,9 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	{
 		Sender->CreateServerWorkerEntity();
 	}
+
+	// Cleanup any actors which were created during level load.
+	CleanupLevelInitializedNetworkActors();
 
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
@@ -651,7 +656,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (IsServer())
 	{
-		GetGameInstance()->CleanupLevelInitializedNetworkActors();
+		CleanupLevelInitializedNetworkActors();
 
 		if (GlobalStateManager != nullptr &&
 			!GlobalStateManager->GetCanBeginPlay() &&
@@ -851,8 +856,6 @@ void USpatialNetDriver::BeginDestroy()
 		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 	}
 #endif
-
-	ActorGroupManager = nullptr;
 }
 
 void USpatialNetDriver::PostInitProperties()
@@ -2598,4 +2601,63 @@ void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
 	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+}
+
+void USpatialNetDriver::CleanupLevelInitializedNetworkActors() const
+{
+	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+
+	UWorld* CurrentWorld = GetWorld();
+	if (CurrentWorld == nullptr)
+	{
+		return;
+	}
+
+	if (!CurrentWorld->IsServer()
+		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+		|| (CurrentWorld->WorldType != EWorldType::PIE
+			&& CurrentWorld->WorldType != EWorldType::Game
+			&& CurrentWorld->WorldType != EWorldType::GamePreview))
+	{
+		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
+		return;
+	}
+
+	for (FActorIterator It(CurrentWorld); It; ++It)
+	{
+		AActor* Actor = *It;
+		if (Actor == nullptr || Actor->HasActorBegunPlay())
+		{
+			// Only cleanup if the actor has not yet begun play.
+			// This prevents this from being run multiple times on the same actor.
+			continue;
+		}
+
+		if (USpatialStatics::IsSpatialOffloadingEnabled())
+		{
+			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
+			{
+				if (!Actor->bNetLoadOnNonAuthServer)
+				{
+					Actor->Destroy(true);
+				}
+				else
+				{
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
+					ENetRole Temp = Actor->Role;
+					Actor->Role = Actor->RemoteRole;
+					Actor->RemoteRole = Temp;
+				}
+			}
+		}
+		else
+		{
+			if (Actor->GetIsReplicated())
+			{
+				// Always wait for authority to be delegated down from SpatialOS, if not using offloading
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+			}
+		}
+	}
 }

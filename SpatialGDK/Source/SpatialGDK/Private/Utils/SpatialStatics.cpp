@@ -9,7 +9,6 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/SpatialActorGroupManager.h"
@@ -25,10 +24,10 @@ SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* W
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
-		if (const USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			check(SpatialGameInstance->ActorGroupManager.IsValid());
-			return SpatialGameInstance->ActorGroupManager.Get();
+			check(SpatialNetDriver->ActorGroupManager.IsValid());
+			return SpatialNetDriver->ActorGroupManager.Get();
 		}
 	}
 	return nullptr;

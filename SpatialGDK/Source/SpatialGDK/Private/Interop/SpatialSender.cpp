@@ -66,8 +66,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
-	check(InNetDriver->ActorGroupManager != nullptr);
-	ActorGroupManager = InNetDriver->ActorGroupManager;
+	check(InNetDriver->ActorGroupManager.IsValid());
+	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 

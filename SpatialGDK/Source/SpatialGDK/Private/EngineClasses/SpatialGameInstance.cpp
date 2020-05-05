@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
-#include "EngineUtils.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/Guid.h"
@@ -202,9 +201,6 @@ void USpatialGameInstance::Init()
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 
-	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-	ActorGroupManager->Init();
-
 	checkf(!(GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer && USpatialStatics::IsSpatialOffloadingEnabled()), TEXT("Offloading and the Unreal Load Balancer are enabled at the same time, this is currently not supported. Please change your project settings."));
 }
 
@@ -219,8 +215,6 @@ void USpatialGameInstance::HandleOnConnected()
 	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
 	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
-	// Cleanup any actors which were created during level load.
-	CleanupLevelInitializedNetworkActors();
 
 	OnSpatialConnected.Broadcast();
 }
@@ -238,63 +232,4 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player on SpatialOS. Reason: %s"), *Reason);
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
-}
-
-void USpatialGameInstance::CleanupLevelInitializedNetworkActors() const
-{
-	const FString WorkerType = GetSpatialWorkerType().ToString();
-
-	UWorld* World = GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	if (!World->IsServer()
-		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
-		|| (World->WorldType != EWorldType::PIE
-			&& World->WorldType != EWorldType::Game
-			&& World->WorldType != EWorldType::GamePreview))
-	{
-		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
-		return;
-	}
-
-	for (FActorIterator It(World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor == nullptr || Actor->HasActorBegunPlay())
-		{
-			// Only cleanup if the actor has not yet begun play.
-			// This prevents this from being run multiple times on the same actor.
-			continue;
-		}
-
-		if (USpatialStatics::IsSpatialOffloadingEnabled())
-		{
-			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
-			{
-				if (!Actor->bNetLoadOnNonAuthServer)
-				{
-					Actor->Destroy(true);
-				}
-				else
-				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
-					ENetRole Temp = Actor->Role;
-					Actor->Role = Actor->RemoteRole;
-					Actor->RemoteRole = Temp;
-				}
-			}
-		}
-		else
-		{
-			if (Actor->GetIsReplicated())
-			{
-				// Always wait for authority to be delegated down from SpatialOS, if not using offloading
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
-		}
-	}
 }
