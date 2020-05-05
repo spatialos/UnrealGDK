@@ -123,7 +123,6 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
 - Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
-- Fixed a bug where bNetLoadOnClient actors would not be updated if a list (such as a TArray) was cleared while the actor was not in view.
 
 ### External contributors:
 @DW-Sebastien
