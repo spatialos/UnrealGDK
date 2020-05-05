@@ -287,7 +287,7 @@ namespace ReleaseTool
 #### Next Steps
 - [ ] **Release Sheriff** - Delegate the tasks below.
 - [ ] **Tech writers** - Review and translate [CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{candidateBranch}/CHANGELOG.md). Merge the translation and any edits into `{candidateBranch}`. 
-- [ ] **QA* - Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
+- [ ] **QA** - Create and complete a [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run.
 - [ ] **Release Sheriff** - If any blocking defects are discovered, merge the fixes into `{candidateBranch}`.
 - [ ] **Release Sheriff** - Get approving reviews on *all* release candidate PRs.
 - [ ] **Release Sheriff** - When the above tasks are complete, unblock the [pipeline](https://buildkite.com/improbable/unrealgdk-release). This action will merge all release candidates into their respective release branches and create draft GitHub releases that you must then publish.
