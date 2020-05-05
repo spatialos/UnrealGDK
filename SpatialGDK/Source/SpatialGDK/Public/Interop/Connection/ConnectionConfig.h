@@ -212,7 +212,10 @@ public:
 
 	void SetReceptionistHost(const FURL& URL)
 	{
-		SetReceptionistHost(URL.Host);
+		if (!URL.Host.IsEmpty())
+		{
+			SetReceptionistHost(URL.Host);
+		}
 		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
 			UseExternalIp = true;
