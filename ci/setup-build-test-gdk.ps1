@@ -36,7 +36,6 @@ class TestSuite {
 
 [string] $test_repo_url = "git@github.com:improbable/UnrealGDKEngineNetTest.git"
 [string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
-[string] $test_repo_map = "NetworkingMap"
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
 [string] $user_gdk_settings = ""
@@ -59,18 +58,17 @@ $tests = @()
 if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
-    $test_repo_map = "EmptyGym"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK.", "bEnableUnrealLoadBalancer=false;$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "bEnableUnrealLoadBalancer=false;$user_gdk_settings", $True, "$user_cmd_line_args")
 }
 else{
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
     }
     else {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
             "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`");$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 
