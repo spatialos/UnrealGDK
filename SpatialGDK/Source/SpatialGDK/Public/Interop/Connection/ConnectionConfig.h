@@ -8,6 +8,7 @@
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include <WorkerSDK/improbable/c_worker.h>
 
 struct FConnectionConfig
 {
@@ -187,17 +188,9 @@ public:
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, false);
 			const FURL URL(nullptr, *URLAddress, TRAVEL_Absolute);
-			if (URL.Valid)
+			if (URL.Valid && !URL.Host.IsEmpty())
 			{
-				if (!URL.Host.IsEmpty())
-				{
-					SetReceptionistHost(URL.Host);
-
-					if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
-					{
-						UseExternalIp = true;
-					}
-				}
+				SetReceptionistHost(URL);
 			}
 		}
 		else
@@ -212,6 +205,15 @@ public:
 	{
 		ReceptionistHost = host;
 		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		{
+			UseExternalIp = true;
+		}
+	}
+
+	void SetReceptionistHost(const FURL& URL)
+	{
+		SetReceptionistHost(URL.Host);
+		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
 			UseExternalIp = true;
 		}

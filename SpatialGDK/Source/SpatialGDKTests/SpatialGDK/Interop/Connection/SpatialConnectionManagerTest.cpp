@@ -12,18 +12,29 @@ class FTemporaryCommandLine
 public:
     FTemporaryCommandLine(const FString& NewCommandLine)
     {
-    	OldCommandLine = FCommandLine::GetOriginal();
-    	FCommandLine::Set(*NewCommandLine);
+    	if (OldCommandLine.IsEmpty())
+    	{
+    		OldCommandLine = FCommandLine::GetOriginal();
+    		FCommandLine::Set(*NewCommandLine);
+    		DidSetCommandLine = true;
+    	}
     }
 
 	~FTemporaryCommandLine()
     {
-    	FCommandLine::Set(*OldCommandLine);
+	    if (DidSetCommandLine)
+	    {
+		    FCommandLine::Set(*OldCommandLine);
+	    	OldCommandLine.Empty();
+	    }
     }
 
 private:
-    FString OldCommandLine;
+    static FString OldCommandLine;
+	bool DidSetCommandLine = false;
 };
+
+FString FTemporaryCommandLine::OldCommandLine;
 
 CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator)
 {
@@ -144,6 +155,24 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridge)
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("");
 	const FURL URL(nullptr, TEXT("127.0.0.1?useExternalIpForBridge"), TRAVEL_Absolute);
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
+	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
+
+	// THEN
+	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
+	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
+	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
+
+	return true;
+}
+
+CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridgeNoHost)
+{
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("");
+	const FURL URL(nullptr, TEXT("?useExternalIpForBridge"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
