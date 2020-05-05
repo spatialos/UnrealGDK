@@ -27,7 +27,7 @@
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
-#include "Engine.h"
+#include "Engine/Engine.h"
 #include "Engine/LevelScriptActor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
