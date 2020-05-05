@@ -214,6 +214,17 @@ namespace ERegionCode
 	};
 }
 
+UENUM()
+namespace ESpatialOSNetFlow
+{
+	enum Type
+	{
+		NoAutomaticConnection,
+		LocalDeployment,
+		CloudDeployment
+	};
+}
+
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -272,12 +283,8 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
-	/** Expose the runtime on a particular IP address when it is running on this machine. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Expose local runtime"))
-	bool bExposeRuntimeIP;
-
-	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", DisplayName = "Exposed local runtime IP address"))
+	/** Specify on which IP address the local runtime should be reachable. If empty, the local runtime will not be exposed. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
@@ -562,4 +569,7 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	static bool IsProjectNameValid(const FString& Name);
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 };
