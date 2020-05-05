@@ -2,8 +2,17 @@
 
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorToolbar.h"
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
+
 #include "Async/Async.h"
 #include "DesktopPlatformModule.h"
+#include "Editor.h"
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
@@ -12,14 +21,9 @@
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "SpatialCommandUtils.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorToolbar.h"
-#include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
+#include "Utils/LaunchConfigEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SFilePathPicker.h"
@@ -269,6 +273,46 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLaunchConfigPath)
 									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
+								]
+							]
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT(""))))
+								.ToolTipText(FText::FromString(FString(TEXT(""))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SButton)
+									.Text(FText::FromString(FString(TEXT("Generate from current map"))))
+									.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap)
+								]
+								]
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT(""))))
+								.ToolTipText(FText::FromString(FString(TEXT(""))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SButton)
+									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
+									.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnOpenLaunchConfigEditor)
 								]
 							]
 							// Primary Deployment Region Picker
@@ -803,4 +847,43 @@ FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText(
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString& RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
 	return FText::FromString(RuntimeVersion);
+}
+
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap()
+{
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
+	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	TMap<FName, FWorkerTypeLaunchSection> ServerWorkers;
+
+	FillWorkerConfigurationFromCurrentMap(ServerWorkers, LaunchConfiguration.World.Dimensions);
+
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkers);
+
+	OnPrimaryLaunchConfigPathPicked(LaunchConfig);
+
+	return FReply::Handled();
+}
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenLaunchConfigEditor()
+{
+	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor", ParentWindowPtr.Pin());
+
+	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
+	{
+		if (TSharedPtr<SWidget> This = WeakThis.Pin())
+		{
+			static_cast<SSpatialGDKSimulatedPlayerDeployment*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
+		}
+	}
+	);
+
+	return FReply::Handled();
 }
