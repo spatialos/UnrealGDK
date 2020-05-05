@@ -69,6 +69,11 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The GDK now uses SpatialOS 14.6.1.
 - You can now disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - We've added `bWorkerFlushAfterOutgoingNetworkOp` (default false) which publishes changes to the GDK worker queue after RPCs and property replication, to allow for lower latencies. You can use this in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- You can now edit the project name field in the Cloud Deployment window.
+- You now define worker types in the Runtime Settings.
+- Local deployments now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
+- We’ve added a launch configuration editor under the Deploy button on the GDK toolbar.
+- The Cloud Deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 
 ## Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
@@ -107,6 +112,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Load-balanced cloud deployments no longer fail to start while under heavy load.
 - We now avoid using packages that are still being processed in the async loading thread.
 - Running GDK setup scripts no longer occasionally fails to unzip dependencies.
+- RPCs that are called before the `CreateEntityRequest` are now processed as early as possible in the RPC ring buffer system.
 
 ### Internal:
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
