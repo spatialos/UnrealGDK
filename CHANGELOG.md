@@ -79,6 +79,11 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The GDK now uses SpatialOS 14.6.1.
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- You can now edit the project name field in the `Cloud Deployment` window.
+- Worker types are now defined in the runtime settings.
+- Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
+- A launch configuration editor has been added under the Deploy toolbar button.
+- The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 - When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
 
 ## Bug fixes:
@@ -118,6 +123,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
+- Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
 - When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
 
 ### External contributors:

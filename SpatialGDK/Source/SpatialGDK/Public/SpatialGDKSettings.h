@@ -13,6 +13,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
+DECLARE_MULTICAST_DELEGATE(FOnWorkerTypesChanged)
+
 class ASpatialDebugger;
 
 /**
@@ -229,7 +231,7 @@ public:
 	TMap<FName, FActorGroupInfo> ActorGroups;
 
 	/** Available server worker types. */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Workers")
 	TSet<FName> ServerWorkerTypes;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
@@ -347,4 +349,6 @@ public:
 	bool bUseDevelopmentAuthenticationFlow;
 	FString DevelopmentAuthenticationToken;
 	FString DevelopmentDeploymentToConnect;
+
+	mutable FOnWorkerTypesChanged OnWorkerTypesChangedDelegate;
 };
