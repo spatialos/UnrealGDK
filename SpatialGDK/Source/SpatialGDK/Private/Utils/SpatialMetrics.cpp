@@ -65,7 +65,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	Connection->SendMetrics(DynamicFPSMetrics);
 }
 
-// Load defined as performance relative to target frame time or just frame time based on config value
+// Load defined as performance relative to target frame time or just frame time based on config value.
 double USpatialMetrics::CalculateLoad() const
 {
 	float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
