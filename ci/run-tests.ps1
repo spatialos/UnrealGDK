@@ -28,10 +28,13 @@ function Parse-UnrealOptions {
     $options_arr = $raw_options.Split(";")
     $options_result = ""
     foreach ($option in $options_arr) {
+        if ($option -eq "") {
+            continue
+        }
         if ($options_result -ne "") {
             $options_result += ","
         }
-        $options_result += "${category}:${additional_gdk_option}"
+        $options_result += "${category}:${$option}"
     }
     return $options_result
 }
