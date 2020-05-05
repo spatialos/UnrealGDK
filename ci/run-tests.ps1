@@ -34,7 +34,7 @@ function Parse-UnrealOptions {
         if ($options_result -ne "") {
             $options_result += ","
         }
-        $options_result += "${category}:${$option}"
+        $options_result += "${category}:${option}"
     }
     return $options_result
 }
