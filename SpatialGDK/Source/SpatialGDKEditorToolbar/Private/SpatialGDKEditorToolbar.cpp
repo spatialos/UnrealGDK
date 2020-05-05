@@ -9,6 +9,9 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Interfaces/IProjectManager.h"
+#include "IOSRuntimeSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -26,9 +29,11 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "Utils/LaunchConfigEditor.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -38,6 +43,10 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "EditorExtension/LBStrategyEditorExtension.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "SpatialGDKEditorModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -45,6 +54,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
+, bSchemaBuildError(false)
 {
 }
 
@@ -87,6 +97,25 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			VerifyAndStartDeployment();
 		});
 	}
+
+	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
+			LocalDeploymentManager->GetLocalDeploymentStatus();
+
+			VerifyAndStartDeployment();
+		}
+	});
+
+	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			LocalDeploymentManager->TryStopLocalDeployment();
+		}
+	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
 }
@@ -192,6 +221,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
 		FCanExecuteAction());
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor),
+		FCanExecuteAction());
 	
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
@@ -241,7 +275,9 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+#if PLATFORM_WINDOWS
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+#endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 	}
@@ -264,18 +300,40 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+#if PLATFORM_WINDOWS
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+	Builder.AddComboButton(
+		FUIAction(),
+		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent),
+		LOCTEXT("GDKDeploymentCombo_Label", "Deployment Tools"),
+		TAttribute<FText>(),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Cloud"),
+		true
+	);
+#endif
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent()
 {
-	FMenuBuilder MenuBuilder(true, PluginCommands);
+	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
+}
+
+TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent()
+{
+	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
+	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -418,90 +476,6 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 	}
 }
 
-bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
-	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-
-	if (const FString* EnableChunkInterest = LaunchConfigDescription.World.LegacyFlags.Find(TEXT("enable_chunk_interest")))
-	{
-		if (*EnableChunkInterest == TEXT("true"))
-		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
-
-			if (Result == EAppReturnType::Yes)
-			{
-				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-			}
-
-			return false;
-		}
-	}
-
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-		{
-			return (Section.Rows * Section.Columns) > 1;
-		}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
-	if (SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-		{
-			return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
-		}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Attempting to launch too many servers for load balance configuration.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-		}
-
-		return false;
-	}
-
-	if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(SpatialGDKRuntimeSettings->DefaultWorkerType.WorkerTypeName))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Default Worker Type is invalid, please choose a valid worker type as the default.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
-	if (SpatialGDKRuntimeSettings->bEnableOffloading)
-	{
-		for (const TPair<FName, FActorGroupInfo>& ActorGroup : SpatialGDKRuntimeSettings->ActorGroups)
-		{
-			if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(ActorGroup.Value.OwningWorkerType.WorkerTypeName))
-			{
-				const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("Actor Group '%s' has an invalid Owning Worker Type, please choose a valid worker type.\n\nDo you want to configure your project settings now?"), *ActorGroup.Key.ToString())));
-
-				if (Result == EAppReturnType::Yes)
-				{
-					FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-				}
-
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
 void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
@@ -547,10 +521,37 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 	});
 }
 
+bool FSpatialGDKEditorToolbarModule::FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint& OutWorldDimension)
+{
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
+
+	if (!WorldSettings)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing SpatialWorldSettings on map %s"), *World.GetMapName());
+		return false;
+	}
+
+	if (!WorldSettings->LoadBalanceStrategy)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
+		return false;
+	}
+
+	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
+
+	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), *WorldSettings->LoadBalanceStrategy->GetName());
+		return false;
+	}
+
+	return true;
+}
+
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
-	if (!GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
 		return;
@@ -568,17 +569,24 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
-	// Get the latest launch config.
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	FString LaunchConfig;
-	if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
+	if (bSchemaBuildError)
 	{
-		if (!ValidateGeneratedLaunchConfig())
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Schema did not previously compile correctly, you may be running a stale build."));
+
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema compiler. Schema will most likely be out of date, which may lead to undefined behavior. Are you sure you want to continue?"));
+		if (Result == EAppReturnType::No)
 		{
 			return;
 		}
+	}
 
+	// Get the latest launch config.
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FString LaunchConfig;
+	if (SpatialGDKEditorSettings->bGenerateDefaultLaunchConfig)
+	{
 		bool bRedeployRequired = false;
 		if (!GenerateAllDefaultWorkerJsons(bRedeployRequired))
 		{
@@ -589,22 +597,64 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			LocalDeploymentManager->SetRedeployRequired();
 		}
 
-		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
-		if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+		check(EditorWorld);
+
+		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
+
+		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+		if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 		{
-			const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-			GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription);
+			FIntPoint WorldDimensions;
+			FWorkerTypeLaunchSection WorkerLaunch;
+
+			if (FillWorkerLaunchConfigFromWorldSettings(*EditorWorld, WorkerLaunch, WorldDimensions))
+			{
+				LaunchConfigDescription.World.Dimensions = WorldDimensions;
+				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->ServerWorkerTypes.Num());
+
+				for (auto WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+				{
+					LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
+					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = WorkerType;
+				}
+			}
+		}
+
+		for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
+		{
+			WorkerLaunchSection.bManualWorkerConnectionOnly = true;
+		}
+
+		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription))
+		{
+			return;
+		}
+
+		GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription);
+		LaunchConfigDescription.SetLevelEditorPlaySettingsWorkerTypes();
+
+		// Also create default launch config for cloud deployments.
+		{
+			for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
+			{
+				WorkerLaunchSection.bManualWorkerConnectionOnly = false;
+			}
+
+			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+			GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription);
 		}
 	}
 	else
 	{
-		LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
+		LaunchConfig = SpatialGDKEditorSettings->GetSpatialOSLaunchConfig();
 	}
 
-	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
-	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
+	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
+	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSpatialOSRuntimeVersionForLocal();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 	{
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
@@ -638,7 +688,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		};
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP(), CallBack);
+		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP(), CallBack);
 	});
 }
 
@@ -692,7 +742,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible() const
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
 {
-	return !LocalDeploymentManager->IsDeploymentStarting() && GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
+	return !LocalDeploymentManager->IsDeploymentStarting() && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
@@ -791,9 +841,16 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
 }
 
+void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
+{
+	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
+}
+
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
+
+	bSchemaBuildError = false;
 
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{
@@ -806,6 +863,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Initial Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else if (bFullScan)
@@ -819,6 +877,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Full Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else
@@ -832,6 +891,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Incremental Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 }
@@ -844,14 +904,26 @@ bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 
 bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 {
-	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
-	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
+	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
 }
 
 FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 {
+	const UGeneralProjectSettings* GeneralProjectSettings = GetDefault<UGeneralProjectSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (GeneralProjectSettings->bEnableSpatialLocalLauncher)
+	{
+		if (SpatialGDKEditorSettings->bExposeRuntimeIP && GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP != SpatialGDKEditorSettings->ExposedRuntimeIP)
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Local runtime IP specified from both general settings and Spatial settings! "
+				"Using IP specified in general settings: %s (Spatial settings has \"%s\")"),
+				*GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP, *SpatialGDKEditorSettings->ExposedRuntimeIP);
+		}
+		return GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP;
+	}
+
 	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
 	{
 		return SpatialGDKEditorSettings->ExposedRuntimeIP;

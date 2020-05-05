@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "Async/Future.h"
@@ -82,12 +83,14 @@ private:
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void ShowSimulatedPlayerDeploymentDialog();
+	void OpenLaunchConfigurationEditor();
 
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
+	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
 
 	void ShowTaskStartNotification(const FString& NotificationText);
 
@@ -95,7 +98,7 @@ private:
 
 	void ShowFailedNotification(const FString& NotificationText);
 
-	bool ValidateGeneratedLaunchConfig() const;
+	bool FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint& OutWorldDimension);
 
 	void GenerateSchema(bool bFullScan);
 
@@ -109,6 +112,8 @@ private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
+
+	bool bSchemaBuildError;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 

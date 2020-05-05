@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "LocalDeploymentManager.h"
@@ -20,10 +21,8 @@ public:
 
 	FLocalDeploymentManager* GetLocalDeploymentManager();
 
-	static FString GetSpatialOSDirectory(const FString& AppendPath = TEXT(""));
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
-	static const FString& GetSpotExe();
-	static const FString& GetSpatialExe();
+	
 	static bool SpatialPreRunChecks(bool bIsInChina);
 
 	FORCEINLINE static FString GetProjectName()

@@ -2,21 +2,23 @@
 
 #include "EngineClasses/SpatialNetConnection.h"
 
-#include "TimerManager.h"
-
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "GameFramework/PlayerController.h"
-#include "GameFramework/Pawn.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
+#include "TimerManager.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
+
+DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdateLevelVisibility, STATGROUP_SpatialNet);
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -28,8 +30,18 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 void USpatialNetConnection::BeginDestroy()
 {
 	DisableHeartbeat();
-
+	
 	Super::BeginDestroy();
+}
+
+void USpatialNetConnection::CleanUp()
+{
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
+	{
+		SpatialNetDriver->CleanUpClientConnection(this);
+	}
+
+	Super::CleanUp();
 }
 
 void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket /*= 0*/, int32 InPacketOverhead /*= 0*/)
@@ -69,14 +81,25 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	return true;
 }
 
+#if ENGINE_MINOR_VERSION <= 23
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+#else
+void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility)
+#endif
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
+
+#if ENGINE_MINOR_VERSION <= 23
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+#else
+	UNetConnection::UpdateLevelVisibility(LevelVisibility);
+#endif
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
-	UpdateActorInterest(Cast<AActor>(PlayerController));
-	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+
+	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
@@ -92,22 +115,6 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 	}
 }
 
-void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
-{
-	if (Actor == nullptr)
-	{
-		return;
-	}
-
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-
-	Sender->UpdateInterestComponent(Actor);
-	for (const auto& Child : Actor->Children)
-	{
-		UpdateActorInterest(Child);
-	}
-}
-
 void USpatialNetConnection::ClientNotifyClientHasQuit()
 {
 	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
@@ -118,7 +125,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 			return;
 		}
 
-		Worker_ComponentUpdate Update = {};
+		FWorkerComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -135,6 +142,8 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(), InPlayerControllerEntity);
+
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 	TimerManager = InTimerManager;
@@ -151,6 +160,11 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
+	float Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds;
+#if WITH_EDITOR
+	Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutWithEditorSeconds;
+#endif
+
 	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
@@ -158,7 +172,7 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 			// This client timed out. Disconnect it and trigger OnDisconnected logic.
 			Connection->CleanUp();
 		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
+	}, Timeout, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
@@ -167,7 +181,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
-			Worker_ComponentUpdate ComponentUpdate = {};
+			FWorkerComponentUpdate ComponentUpdate = {};
 
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -175,7 +189,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 
 			USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
-			if (WorkerConnection->IsConnected())
+			if (WorkerConnection != nullptr)
 			{
 				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
 			}

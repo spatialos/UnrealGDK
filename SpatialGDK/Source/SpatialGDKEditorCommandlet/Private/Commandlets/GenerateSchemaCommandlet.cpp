@@ -37,6 +37,8 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
 
+	TGuardValue<bool> UnattendedScriptGuard(GIsRunningUnattendedScript, GIsRunningUnattendedScript || IsRunningCommandlet());
+
 	TArray<FString> Tokens;
 	TArray<FString> Switches;
 	TMap<FString, FString> Params;

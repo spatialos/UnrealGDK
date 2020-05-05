@@ -6,7 +6,6 @@ import "unreal/gdk/core_types.schema";
 component UnrealMetadata {
     id = 9996;
     option<UnrealObjectRef> stably_named_ref = 1; // Exists when entity represents a stably named Actor (RF_WasLoaded)
-    option<string> owner_worker_attribute = 2;
-    string class_path = 3;
-    option<bool> net_startup = 4; // Exists only when entity has a stably_named_ref
+    string class_path = 2;
+    option<bool> net_startup = 3; // Exists only when entity has a stably_named_ref
 }

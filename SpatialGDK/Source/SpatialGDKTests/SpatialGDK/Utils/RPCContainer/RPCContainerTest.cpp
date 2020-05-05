@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 
 #include "ObjectDummy.h"
 #include "ObjectSpy.h"
@@ -8,6 +8,7 @@
 
 #include "Utils/RPCContainer.h"
 #include "Schema/RPCPayload.h"
+#include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
 
@@ -18,8 +19,8 @@ using namespace SpatialGDK;
 
 namespace
 {
-	ESchemaComponentType AnySchemaComponentType = ESchemaComponentType::SCHEMA_ClientReliableRPC;
-	ESchemaComponentType AnyOtherSchemaComponentType = ESchemaComponentType::SCHEMA_ClientUnreliableRPC;
+	ERPCType AnySchemaComponentType = ERPCType::ClientReliable;
+	ERPCType AnyOtherSchemaComponentType = ERPCType::ClientUnreliable;
 
 	FUnrealObjectRef GenerateObjectRef(UObject* TargetObject)
 	{
@@ -32,10 +33,10 @@ namespace
 		return FreeIndex++;
 	}
 
-	FPendingRPCParams CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
+	FPendingRPCParams CreateMockParameters(UObject* TargetObject, ERPCType Type)
 	{
 		// Use PayloadData as a place to store RPC type
-		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::SchemaTypeToByteArray(Type));
+		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::RPCTypeToByteArray(Type));
 		int ReliableRPCIndex = 0;
 
 		FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
@@ -48,18 +49,18 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
 
-    return true;
+	return true;
 }
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
@@ -74,7 +75,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
@@ -89,7 +90,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_n
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
@@ -104,7 +105,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_pr
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
@@ -122,7 +123,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
@@ -140,7 +141,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
@@ -156,10 +157,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 {
 	UObjectSpy* TargetObject = NewObject<UObjectSpy>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectSpy::ProcessRPC));
 
-	TMap<ESchemaComponentType, TArray<uint32>> RPCIndices;
+	TMap<ERPCType, TArray<uint32>> RPCIndices;
 
 	for (int i = 0; i < 4; ++i)
 	{
@@ -196,17 +197,19 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged)
+RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_RPCQueueWarningDefaultTimeout_seconds_THEN_warning_is_logged)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
-	FRPCContainer RPCs;
+	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
 	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
 
-	FPlatformProcess::Sleep(FRPCContainer::SECONDS_BEFORE_WARNING);
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	check(SpatialGDKSettings != nullptr);
+	FPlatformProcess::Sleep(SpatialGDKSettings->RPCQueueWarningDefaultTimeout);
 	RPCs.ProcessRPCs();
 
     return true;

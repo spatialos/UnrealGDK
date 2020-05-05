@@ -3,10 +3,8 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
-#include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/Interest.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -14,6 +12,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/EntityFactory.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
@@ -32,6 +31,26 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
+TArray<Worker_ComponentData> UnpackedComponentData;
+
+void SetEntityData(Worker_Entity& Entity, const TArray<FWorkerComponentData>& Components)
+{
+	Entity.component_count = Components.Num();
+
+#if TRACE_LIB_ACTIVE
+	// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
+	UnpackedComponentData.Empty();
+	UnpackedComponentData.SetNum(Components.Num());
+	for (int i = 0, Num = Components.Num(); i < Num; i++)
+	{
+		UnpackedComponentData[i] = Components[i];
+	}
+	Entity.components = UnpackedComponentData.GetData();
+#else
+	Entity.components = Components.GetData();
+#endif
+}
+
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
@@ -41,7 +60,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	PlayerSpawnerData.schema_type = Schema_CreateComponentData();
 
-	TArray<Worker_ComponentData> Components;
+	TArray<FWorkerComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
@@ -49,15 +68,17 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(PlayerSpawnerData);
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	SpawnerEntity.component_count = Components.Num();
-	SpawnerEntity.components = Components.GetData();
+	SetEntityData(SpawnerEntity, Components);
 
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
@@ -84,10 +105,10 @@ Worker_ComponentData CreateDeploymentData()
 	DeploymentData.schema_type = Schema_CreateComponentData();
 	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
 
-	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID);
-	AddStringToSchema(MapURLObject, 1, TEXT("default")); // TODO: Fill this with the map name of the map the snapshot is being generated for.
-
+	AddStringToSchema(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, "");
 	Schema_AddBool(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, false);
+	Schema_AddInt32(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, 0);
+	Schema_AddUint32(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, 0);
 
 	return DeploymentData;
 }
@@ -112,12 +133,26 @@ Worker_ComponentData CreateStartupActorManagerData()
 	return StartupActorManagerData;
 }
 
+WorkerRequirementSet CreateReadACLForAlwaysRelevantEntities()
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	WorkerRequirementSet ReadACL;
+	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+	{
+		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
+		ReadACL.Add(WorkerTypeAttributeSet);
+	}
+
+	return ReadACL;
+}
+
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
 	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
-	TArray<Worker_ComponentData> Components;
+	TArray<FWorkerComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
@@ -128,30 +163,58 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
+	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	WorkerRequirementSet ReadACL;
-	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
-	{
-		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
-		ReadACL.Add(WorkerTypeAttributeSet);
-	}
-
-	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
-
-	GSM.component_count = Components.Num();
-	GSM.components = Components.GetData();
+	SetEntityData(GSM, Components);
 
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM);
+	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
+}
+
+Worker_ComponentData CreateVirtualWorkerTranslatorData()
+{
+	Worker_ComponentData VirtualWorkerTranslatorData{};
+	VirtualWorkerTranslatorData.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+	VirtualWorkerTranslatorData.schema_type = Schema_CreateComponentData();
+	return VirtualWorkerTranslatorData;
+}
+
+bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
+{
+	Worker_Entity VirtualWorkerTranslator;
+	VirtualWorkerTranslator.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
+
+	TArray<FWorkerComponentData> Components;
+
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+
+	Components.Add(Position(DeploymentOrigin).CreatePositionData());
+	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
+	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(CreateVirtualWorkerTranslatorData());
+	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+
+	SetEntityData(VirtualWorkerTranslator, Components);
+
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &VirtualWorkerTranslator);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
@@ -205,6 +268,12 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	if (!CreateGlobalStateManager(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		return false;
+	}
+
+	if (!CreateVirtualWorkerTranslator(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating VirtualWorkerTranslator in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 

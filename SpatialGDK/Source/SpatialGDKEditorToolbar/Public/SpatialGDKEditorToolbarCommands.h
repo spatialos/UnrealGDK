@@ -29,6 +29,7 @@ public:
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
 	
 	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
+	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;

@@ -4,5 +4,5 @@
 
 FRPCErrorInfo UObjectDummy::ProcessRPC(const FPendingRPCParams& Params)
 {
-	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::Success };
+	return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::Success };
 }
