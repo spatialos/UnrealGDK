@@ -272,7 +272,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
-	// UNR-3066: Queue owner-only components until we have authority
+	// Queue owner-only components until we have authority
 	if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly &&
 		!StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID))
 	{
@@ -337,7 +337,7 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		return;
 	}
 
-	// UNR-3066 Remove all queued owner only components for which we haven't received ownership yet
+	// Remove all queued owner only components for which we haven't received ownership yet
 	PendingOwnerOnlyComponents.RemoveAll([&Op](const PendingAddComponentWrapper& Queued)
 	{
 		return Queued.EntityId == Op.entity_id && Queued.ComponentId == Op.component_id;
