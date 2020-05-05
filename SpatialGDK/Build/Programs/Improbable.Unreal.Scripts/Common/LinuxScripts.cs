@@ -18,7 +18,7 @@ shift 2
 mkdir -p /improbable/logs/UnrealWorker/
 useradd $NEW_USER -m -d /improbable/logs/UnrealWorker 2>/dev/null
 chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
-echo "Logs"
+echo ""Logs""
 chmod -R o+rw /improbable/logs 2>/dev/null
 
 # Create log file in case it doesn't exist and redirect stdout and stderr to the file.
@@ -48,7 +48,7 @@ shift 1
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-echo "Logs again"
+echo ""Logs again""
 chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 SCRIPT=""$(pwd)/{0}.sh""
 echo $SCRIPT
