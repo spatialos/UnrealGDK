@@ -71,7 +71,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - We've added `bWorkerFlushAfterOutgoingNetworkOp` (default false) which publishes changes to the GDK worker queue after RPCs and property replication, to allow for lower latencies. You can use this in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 - You can now edit the project name field in the Cloud Deployment window.
 - You now define worker types in the Runtime Settings.
-- Local deployments now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
+- Local deployments now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the `Intermediate/Improbable` folder.
 - We’ve added a launch configuration editor under the Deploy button on the GDK toolbar.
 - The Cloud Deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 
