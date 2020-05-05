@@ -53,6 +53,7 @@ public:
 	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
+	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
