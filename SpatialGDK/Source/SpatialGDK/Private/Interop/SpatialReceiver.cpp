@@ -338,10 +338,13 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 	}
 
 	// Remove all queued owner only components for which we haven't received ownership yet
-	PendingOwnerOnlyComponents.RemoveAll([&Op](const PendingAddComponentWrapper& Queued)
+	if (ClassInfoManager->GetCategoryByComponentId(Op.component_id) == SCHEMA_OwnerOnly)
 	{
-		return Queued.EntityId == Op.entity_id && Queued.ComponentId == Op.component_id;
-	});
+		PendingOwnerOnlyComponents.RemoveAll([&Op](const PendingAddComponentWrapper& Queued)
+		{
+			return Queued.EntityId == Op.entity_id && Queued.ComponentId == Op.component_id;
+		});
+	}
 
 	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
 	{
