@@ -117,7 +117,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 		return true;
 	};
 	checkfSlow(CheckSubsetLambda(ReceivedIds, InitialIds),
-		TEXT("The entire list of field IDs associated with the component is not a subset of the received IDs, this should not happen."));
+		TEXT("The list of received IDs is not a subset of the entire list of field IDs associated with the component, this should not happen."));
 #endif
 
 	if (bIsHandover)
