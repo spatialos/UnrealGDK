@@ -7,6 +7,10 @@
 
 #include "TransientUObjectEditor.generated.h"
 
+DECLARE_DELEGATE(FOnTransientUObjectEditorClosed)
+
+class SWindow;
+
 // Utility class to create Editor tools exposing a UObject Field and automatically adding Exec UFUNCTION as buttons.
 UCLASS(Blueprintable, Abstract)
 class SPATIALGDKEDITOR_API UTransientUObjectEditor : public UObject
@@ -15,11 +19,11 @@ class SPATIALGDKEDITOR_API UTransientUObjectEditor : public UObject
 public:
 
 	template <typename T>
-	static void LaunchTransientUObjectEditor(const FString& EditorName)
+	static T* LaunchTransientUObjectEditor(const FString& EditorName, TSharedPtr<SWindow> ParentWindow)
 	{
-		LaunchTransientUObjectEditor(EditorName, T::StaticClass());
+		return Cast<T>(LaunchTransientUObjectEditor(EditorName, T::StaticClass(), ParentWindow));
 	}
 
 private:
-	static void LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass);
+	static UTransientUObjectEditor* LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow);
 };

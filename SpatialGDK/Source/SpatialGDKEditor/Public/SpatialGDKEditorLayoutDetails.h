@@ -18,6 +18,10 @@ private:
 	FReply PushCommandLineArgsToIOSDevice();
 	FReply PushCommandLineArgsToAndroidDevice();
 
+	void ForceRefreshLayout();
+
+	IDetailLayoutBuilder* CurrentLayout = nullptr;
+
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;

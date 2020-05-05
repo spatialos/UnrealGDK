@@ -2537,6 +2537,12 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 		return;
 	}
 
+	if (Result != EAsyncLoadingResult::Succeeded)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package was not loaded successfully. Package: %s"), *PackageName.ToString());
+		return;
+	}
+
 	for (Worker_EntityId Entity : Entities)
 	{
 		if (IsEntityWaitingForAsyncLoad(Entity))

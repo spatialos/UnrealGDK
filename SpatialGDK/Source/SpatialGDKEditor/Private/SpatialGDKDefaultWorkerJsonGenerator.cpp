@@ -2,7 +2,7 @@
 
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 
-#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKServicesConstants.h"
 
 #include "Misc/FileHelper.h"
@@ -43,17 +43,16 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 	const FString WorkerJsonDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers/unreal"));
 	bool bAllJsonsGeneratedSuccessfully = true;
 
-	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+	if (const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>())
 	{
-		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
+		for (const FName& Worker : SpatialGDKSettings->ServerWorkerTypes)
 		{
-			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));
 			if (!FPaths::FileExists(JsonPath))
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 
-				if (!GenerateDefaultWorkerJson(JsonPath, Worker.WorkerTypeName.ToString(), bOutRedeployRequired))
+				if (!GenerateDefaultWorkerJson(JsonPath, Worker.ToString(), bOutRedeployRequired))
 				{
 					bAllJsonsGeneratedSuccessfully = false;
 				}
