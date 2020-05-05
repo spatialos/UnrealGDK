@@ -590,6 +590,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		{
 			FWorkerTypeLaunchSection Conf = WorkerType.Value;
 			Conf.WorkerLoadBalancing = LoadBalancingStrat;
+			// Force manual connection to true as this is the config for PIE.
 			Conf.bManualWorkerConnectionOnly = true;
 			WorkersMap.Add(WorkerType.Key, Conf);
 		}
@@ -604,9 +605,10 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 		// Also create default launch config for cloud deployments.
 		{
-			for (auto& WorkerLaunchSection : WorkersMap)
+			// Revert to the setting's flag value for manual connection.
+			for (auto& WorkerLaunchSectionSettings : SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap)
 			{
-				WorkerLaunchSection.Value.bManualWorkerConnectionOnly = false;
+				WorkersMap[WorkerLaunchSectionSettings.Key].bManualWorkerConnectionOnly = WorkerLaunchSectionSettings.Value.bManualWorkerConnectionOnly;
 			}
 
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
