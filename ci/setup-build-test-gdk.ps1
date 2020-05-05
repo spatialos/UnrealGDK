@@ -164,8 +164,8 @@ Foreach ($test in $tests) {
             -test_repo_map "$test_repo_map" `
             -tests_path "$tests_path" `
             -additional_gdk_options "$additional_gdk_options" `
-            -run_with_spatial $run_with_spatial
-            -additional_cmd_line_args "$additional_cmd_line_args" `
+            -run_with_spatial $run_with_spatial `
+            -additional_cmd_line_args "$additional_cmd_line_args"
         Finish-Event "test-gdk" "command"
 
         Start-Event "report-tests" "command"
