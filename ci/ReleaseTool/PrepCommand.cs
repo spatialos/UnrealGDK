@@ -119,6 +119,15 @@ namespace ReleaseTool
                             UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
                             break;
+                        case "UnrealGDKExampleProject":
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            break;
+                        case "UnrealGDKTestGyms":
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            break;
+                        case "UnrealGDKEngineNetTest":
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKEngineNetTest);
+                            break;
                     }
 
                     // 4. Commit changes and push them to a remote candidate branch.
