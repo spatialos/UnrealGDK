@@ -128,7 +128,7 @@ namespace ReleaseTool
                             UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKEngineNetTest);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                     }
 
