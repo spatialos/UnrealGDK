@@ -381,6 +381,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
+	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
+
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath;
@@ -567,7 +570,4 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	static bool IsProjectNameValid(const FString& Name);
-
-	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
-	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 };
