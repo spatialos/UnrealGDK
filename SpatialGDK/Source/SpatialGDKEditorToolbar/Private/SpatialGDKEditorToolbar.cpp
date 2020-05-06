@@ -1274,11 +1274,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		);
 	};
 
-#if ENGINE_MINOR_VERSION <= 22
-	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#else
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#endif
 		[this, LaunchCloudDeployment]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
