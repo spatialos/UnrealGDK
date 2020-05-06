@@ -8,17 +8,13 @@ using NLog;
 namespace ReleaseTool
 {
     /// <summary>
-    ///     Runs the steps required to cut release candidate branches in all five repos:
-    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms.
-    ///
-    ///     * Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
-    ///     * Checks if the release branch exists, if not, creates it from the source branch.
-    ///     * Diffs the source branch against the release branch and, if there are new commits in the soucre branch:
-    ///         * Makes repo-dependent changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-    ///         * Commits these changes to release candaidate branches.
-    ///         * Pushes the release candaidate branches to origin.
-    ///         * Opens PRs to merge the release candaidate branches into the release branches.
-    ///     * If the source branch and the release branch are identical, no release candidate or PR is created.
+    ///     Runs the steps required to cut a release candidate branch.
+    ///     * Adds the spatialos org remote to our local copy and fetch this remote.
+    ///     * Checks out the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
+    ///     * Makes repo-dependent changes for prepping the release (e.g. updating version files).
+    ///     * Pushes this to an RC branch.
+    ///     * Creates a release branch if it doesn't exist.
+    ///     * Opens a PR for merging the RC branch into the release branch.
     /// </summary>
 
     internal class PrepCommand
