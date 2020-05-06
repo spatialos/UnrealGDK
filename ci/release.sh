@@ -88,20 +88,16 @@ mkdir -p ./logs
 USER_ID=$(id -u)
 
 # Run the C Sharp Release Tool for each candidate we want to release.
-prepareRelease "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" \
-  "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"
-prepareRelease "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" \
-  "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
-prepareRelease "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" \ 
-  "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
-prepareRelease "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" \
-  "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
+release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"
+release "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
+release "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
+release "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \
-    "${ENGINE_VERSION}" \
+    "dry-run${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "${ENGINE_VERSION}-release" \
+    "dry-run${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
