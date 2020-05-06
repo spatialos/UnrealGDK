@@ -19,6 +19,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlayerSpawner, Log, All);
 class FTimerManager;
 class USpatialNetDriver;
 
+DECLARE_DELEGATE_OneParam(FOnPlayerSpawnFailed, const FString&);
+
 UCLASS()
 class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 {
@@ -31,6 +33,8 @@ public:
 	// Client
 	void SendPlayerSpawnRequest();
 	void ReceivePlayerSpawnResponseOnClient(const Worker_CommandResponseOp& Op);
+
+	FOnPlayerSpawnFailed OnPlayerSpawnFailed;
 
 	// Authoritative server worker
 	void ReceivePlayerSpawnRequestOnServer(const Worker_CommandRequestOp& Op);

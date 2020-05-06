@@ -30,10 +30,13 @@ public:
 		return ProjectName;
 	}
 
+	static void SetProjectName(const FString& InProjectName);
+
 	static bool ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
 	static void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
 
 private:
 	FLocalDeploymentManager LocalDeploymentManager;
 	static FString ParseProjectName();
+	static TSharedPtr<FJsonObject> ParseProjectFile();
 };

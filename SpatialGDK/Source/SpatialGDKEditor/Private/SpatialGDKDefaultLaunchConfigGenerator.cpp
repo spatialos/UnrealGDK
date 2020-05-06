@@ -2,15 +2,20 @@
 
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 
-#include "SpatialGDKEditorSettings.h"
-
-#include "Serialization/JsonWriter.h"
-#include "Misc/FileHelper.h"
-
-#include "Misc/MessageDialog.h"
-
-#include "ISettingsModule.h"
+#include "EditorExtension/LBStrategyEditorExtension.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "SpatialGDKEditorModule.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
+
+#include "Editor.h"
+#include "ISettingsModule.h"
+#include "Misc/FileHelper.h"
+#include "Misc/MessageDialog.h"
+#include "Serialization/JsonWriter.h"
+#include "Settings/LevelEditorPlaySettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultLaunchConfigGenerator);
 
@@ -30,54 +35,54 @@ bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, cons
 	return true;
 }
 
-bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunchSection& Worker)
+bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerTypeName, const FWorkerTypeLaunchSection& WorkerConfig)
 {
 	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
+		Writer->WriteValue(TEXT("worker_type"), *WorkerTypeName.ToString());
 		Writer->WriteArrayStart(TEXT("flags"));
-			for (const auto& Flag : Worker.Flags)
+			for (const auto& Flag : WorkerConfig.Flags)
 			{
 				WriteFlagSection(Writer, Flag.Key, Flag.Value);
 			}
 		Writer->WriteArrayEnd();
 		Writer->WriteArrayStart(TEXT("permissions"));
 			Writer->WriteObjectStart();
-			if (Worker.WorkerPermissions.bAllPermissions)
-			{
-				Writer->WriteObjectStart(TEXT("all"));
-				Writer->WriteObjectEnd();
-			}
-			else
-			{
-				Writer->WriteObjectStart(TEXT("entity_creation"));
-					Writer->WriteValue(TEXT("allow"), Worker.WorkerPermissions.bAllowEntityCreation);
-				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart(TEXT("entity_deletion"));
-					Writer->WriteValue(TEXT("allow"), Worker.WorkerPermissions.bAllowEntityDeletion);
-				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart(TEXT("entity_query"));
-					Writer->WriteValue(TEXT("allow"), Worker.WorkerPermissions.bAllowEntityQuery);
-					Writer->WriteArrayStart("components");
-					for (const FString& Component : Worker.WorkerPermissions.Components)
-					{
-						Writer->WriteValue(Component);
-					}
-					Writer->WriteArrayEnd();
-				Writer->WriteObjectEnd();
-			}
+				if (WorkerConfig.WorkerPermissions.bAllPermissions)
+				{
+					Writer->WriteObjectStart(TEXT("all"));
+					Writer->WriteObjectEnd();
+				}
+				else
+				{
+					Writer->WriteObjectStart(TEXT("entity_creation"));
+						Writer->WriteValue(TEXT("allow"), WorkerConfig.WorkerPermissions.bAllowEntityCreation);
+					Writer->WriteObjectEnd();
+					Writer->WriteObjectStart(TEXT("entity_deletion"));
+						Writer->WriteValue(TEXT("allow"), WorkerConfig.WorkerPermissions.bAllowEntityDeletion);
+					Writer->WriteObjectEnd();
+					Writer->WriteObjectStart(TEXT("entity_query"));
+						Writer->WriteValue(TEXT("allow"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
+						Writer->WriteArrayStart("components");
+							for (const FString& Component : WorkerConfig.WorkerPermissions.Components)
+							{
+								Writer->WriteValue(Component);
+							}
+						Writer->WriteArrayEnd();
+					Writer->WriteObjectEnd();
+				}
 			Writer->WriteObjectEnd();
 		Writer->WriteArrayEnd();
-		if (Worker.MaxConnectionCapacityLimit > 0)
+		if (WorkerConfig.MaxConnectionCapacityLimit > 0)
 		{
 			Writer->WriteObjectStart(TEXT("connection_capacity_limit"));
-				Writer->WriteValue(TEXT("max_capacity"), Worker.MaxConnectionCapacityLimit);
+				Writer->WriteValue(TEXT("max_capacity"), WorkerConfig.MaxConnectionCapacityLimit);
 			Writer->WriteObjectEnd();
 		}
-		if (Worker.bLoginRateLimitEnabled)
+		if (WorkerConfig.bLoginRateLimitEnabled)
 		{
 			Writer->WriteObjectStart(TEXT("login_rate_limit"));
-				Writer->WriteValue(TEXT("duration"), Worker.LoginRateLimit.Duration);
-				Writer->WriteValue(TEXT("requests_per_duration"), Worker.LoginRateLimit.RequestsPerDuration);
+				Writer->WriteValue(TEXT("duration"), WorkerConfig.LoginRateLimit.Duration);
+				Writer->WriteValue(TEXT("requests_per_duration"), WorkerConfig.LoginRateLimit.RequestsPerDuration);
 			Writer->WriteObjectEnd();
 		}
 	Writer->WriteObjectEnd();
@@ -85,14 +90,11 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	return true;
 }
 
-bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
+bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, UAbstractRuntimeLoadBalancingStrategy& Strategy, const bool ManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
-		Writer->WriteObjectStart("rectangle_grid");
-			Writer->WriteValue(TEXT("cols"), Columns);
-			Writer->WriteValue(TEXT("rows"), Rows);
-		Writer->WriteObjectEnd();
+		Strategy.WriteToConfiguration(Writer);
 		Writer->WriteObjectStart(TEXT("options"));
 			Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
 		Writer->WriteObjectEnd();
@@ -101,9 +103,94 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 	return true;
 }
 
+} // anonymous namespace
+
+void SetLevelEditorPlaySettingsWorkerTypes(const TMap<FName, FWorkerTypeLaunchSection>& InWorkers)
+{
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	PlayInSettings->WorkerTypesToLaunch.Empty(InWorkers.Num());
+
+	if (InWorkers.Num() == 0)
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Warning, TEXT("No workers specified in SetLevelEditorPlaySettingsWorkerType."));
+	}
+
+	for (const auto& Worker : InWorkers)
+	{
+		if (Worker.Value.bAutoNumEditorInstances)
+		{
+			if (Worker.Value.WorkerLoadBalancing != nullptr)
+			{
+				PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, Worker.Value.WorkerLoadBalancing->GetNumberOfWorkersForPIE());
+			}
+		}
+		else
+		{
+			PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, Worker.Value.NumEditorInstances);
+		}
+	}
 }
 
-bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription)
+bool GetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstractRuntimeLoadBalancingStrategy*& OutStrategy, FIntPoint& OutWorldDimension)
+{
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
+
+	if (WorldSettings == nullptr)
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing SpatialWorldSettings on map %s"), *World.GetMapName());
+		return false;
+	}
+
+	if (WorldSettings->LoadBalanceStrategy == nullptr)
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
+		return false;
+	}
+
+	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
+
+	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutStrategy, OutWorldDimension))
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy from %s"), *WorldSettings->LoadBalanceStrategy->GetName());
+		return false;
+	}
+
+	return true;
+}
+
+bool FillWorkerConfigurationFromCurrentMap(TMap<FName, FWorkerTypeLaunchSection>& OutWorkers, FIntPoint& OutWorldDimensions)
+{
+	if (GEditor == nullptr || GEditor->GetWorldContexts().Num() == 0)
+	{
+		return false;
+	}
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
+	USingleWorkerRuntimeStrategy* DefaultStrategy = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
+	UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = DefaultStrategy;
+
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+	{
+		GetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, OutWorldDimensions);
+	}
+
+	for (const TPair<FName, FWorkerTypeLaunchSection>& WorkerType : SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap)
+	{
+		FWorkerTypeLaunchSection Conf = WorkerType.Value;
+		Conf.WorkerLoadBalancing = LoadBalancingStrat;
+		OutWorkers.Add(WorkerType.Key, Conf);
+	}
+
+	return true;
+}
+
+bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers)
 {
 	if (InLaunchConfigDescription != nullptr)
 	{
@@ -120,42 +207,47 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 					Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
 					Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
 				Writer->WriteObjectEnd();
-			Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
-			Writer->WriteArrayStart(TEXT("legacy_flags"));
-			for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
-			{
-				WriteFlagSection(Writer, Flag.Key, Flag.Value);
-			}
-			Writer->WriteArrayEnd();
-			Writer->WriteArrayStart(TEXT("legacy_javaparams"));
-			for (auto& Parameter : LaunchConfigDescription.World.LegacyJavaParams)
-			{
-				WriteFlagSection(Writer, Parameter.Key, Parameter.Value);
-			}
-			Writer->WriteArrayEnd();
-			Writer->WriteObjectStart(TEXT("snapshots"));
-				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
-			Writer->WriteObjectEnd();
-		Writer->WriteObjectEnd(); // World section end
-		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
-			Writer->WriteArrayStart("layer_configurations");
-			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
-			{
-				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
-			}
-			Writer->WriteArrayEnd();
+				Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
+				Writer->WriteArrayStart(TEXT("legacy_flags"));
+				for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
+				{
+					WriteFlagSection(Writer, Flag.Key, Flag.Value);
+				}
+				Writer->WriteArrayEnd();
+				Writer->WriteArrayStart(TEXT("legacy_javaparams"));
+					for (auto& Parameter : LaunchConfigDescription.World.LegacyJavaParams)
+					{
+						WriteFlagSection(Writer, Parameter.Key, Parameter.Value);
+					}
+				Writer->WriteArrayEnd();
+				Writer->WriteObjectStart(TEXT("snapshots"));
+					Writer->WriteValue(TEXT("snapshot_write_period_seconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
+				Writer->WriteObjectEnd();
+			Writer->WriteObjectEnd(); // World section end
+			Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
+				Writer->WriteArrayStart("layer_configurations");
+				for (const auto& Worker : InWorkers)
+				{
+					if (Worker.Value.WorkerLoadBalancing != nullptr)
+					{
+						WriteLoadbalancingSection(Writer, Worker.Key, *Worker.Value.WorkerLoadBalancing, Worker.Value.bManualWorkerConnectionOnly);
+					}
+				}
+				Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
 			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
-			{
-				WriteWorkerSection(Writer, Worker);
-			}
-			// Write the client worker section
-			FWorkerTypeLaunchSection ClientWorker;
-			ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
-			ClientWorker.WorkerPermissions.bAllPermissions = true;
-			ClientWorker.bLoginRateLimitEnabled = false;
-			WriteWorkerSection(Writer, ClientWorker);
+				for (const auto& Worker : InWorkers)
+				{
+					if (Worker.Value.WorkerLoadBalancing != nullptr)
+					{
+						WriteWorkerSection(Writer, Worker.Key, Worker.Value);
+					}
+				}
+				// Write the client worker section
+				FWorkerTypeLaunchSection ClientWorker;
+				ClientWorker.WorkerPermissions.bAllPermissions = true;
+				ClientWorker.bLoginRateLimitEnabled = false;
+				WriteWorkerSection(Writer, SpatialConstants::DefaultClientWorkerType, ClientWorker);
 			Writer->WriteArrayEnd(); // Worker section end
 		Writer->WriteObjectEnd(); // End of json
 
@@ -173,9 +265,22 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 	return false;
 }
 
-bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc)
+bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc, const TMap<FName, FWorkerTypeLaunchSection>& InWorkers)
 {
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
+
+	if (!ensure(InWorkers.Num() == SpatialGDKRuntimeSettings->ServerWorkerTypes.Num()))
+	{
+		return false;
+	}
+
+	for (const FName& WorkerType : SpatialGDKRuntimeSettings->ServerWorkerTypes)
+	{
+		if(!ensure(InWorkers.Contains(WorkerType)))
+		{
+			return false;
+		}
+	}
 
 	if (const FString* EnableChunkInterest = LaunchConfigDesc.World.LegacyFlags.Find(TEXT("enable_chunk_interest")))
 	{
@@ -192,37 +297,7 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 		}
 	}
 
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-	{
-		return (Section.Rows * Section.Columns) > 1;
-	}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
-	if (LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-	{
-		return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
-	}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Attempting to launch too many servers for load balance configuration.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-		}
-
-		return false;
-	}
-
-	if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(SpatialGDKRuntimeSettings->DefaultWorkerType.WorkerTypeName))
+	if (!InWorkers.Contains(SpatialGDKRuntimeSettings->DefaultWorkerType.WorkerTypeName))
 	{
 		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Default Worker Type is invalid, please choose a valid worker type as the default.\n\nDo you want to configure your project settings now?")));
 
