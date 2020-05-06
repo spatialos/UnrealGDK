@@ -228,7 +228,7 @@ namespace ReleaseTool
 
         private static void UpdateVersionFile(GitClient gitClient, string fileContents, string filePath)
         {
-            Logger.Info($"Updating contents of version file '{0}' to '{1}'...", filePath, fileContents);
+            Logger.Info("Updating contents of version file '{0}' to '{1}'...", filePath, fileContents);
 
             if (!File.Exists(filePath))
             {
