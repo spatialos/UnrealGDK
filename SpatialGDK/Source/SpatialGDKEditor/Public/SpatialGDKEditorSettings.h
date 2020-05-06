@@ -320,6 +320,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
 		FString MainDeploymentCluster;
 
+	/** Tags used when launching a deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+		FString DeploymentTags;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -473,18 +477,15 @@ public:
 	}
 
 	void SetMainDeploymentCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawMainDeploymentCluster() const
+	FORCEINLINE FString GetMainDeploymentCluster() const
 	{
 		return MainDeploymentCluster;
 	}
 
-	FORCEINLINE FString GetMainDeploymentCluster() const
+	void SetDeploymentTags(const FString& Tags);
+	FORCEINLINE FString GetDeploymentTags() const
 	{
-		if (MainDeploymentCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
-		return MainDeploymentCluster;
+		return DeploymentTags;
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
@@ -525,17 +526,8 @@ public:
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
-	{
-		return SimulatedPlayerCluster;
-	}
-
 	FORCEINLINE FString GetSimulatedPlayerCluster() const
 	{
-		if (SimulatedPlayerCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
 		return SimulatedPlayerCluster;
 	}
 

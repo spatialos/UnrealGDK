@@ -1121,6 +1121,13 @@ AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp
 		}
 	}
 
+	// Handle linking received unique Actors (e.g. game state, game mode) to instances already spawned on this worker.
+	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
+	if (FUnrealObjectRef::IsUniqueActorClass(ActorClass) && NetDriver->IsServer())
+	{
+		return PackageMap->GetUniqueActorInstanceByClass(ActorClass);
+	}
+
 	return CreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
 }
 
@@ -2448,7 +2455,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 	// UPackage::IsFullyLoaded, or UObject::HasAnyInternalFlag(EInternalObjectFlag::AsyncLoading) should tell us if it is the case.
 	// In practice, these tests are not enough to prevent using objects too early (symptom is RF_NeedPostLoad being set, and crash when using them later).
 	// GetAsyncLoadPercentage will actually look through the async loading thread's UAsyncPackage maps to see if there are any entries.
-	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further 
+	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further
 	// what is the issue with the other flags and why they do not give us reliable information.
 
 	float Percentage = GetAsyncLoadPercentage(PackagePathName);
@@ -2457,7 +2464,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Class %s package is registered in async loading thread."), *ClassPath)
 		return true;
 	}
-	
+
 	return false;
 }
 
