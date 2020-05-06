@@ -31,7 +31,7 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 
 struct FRPCInfo
 {
-	ESchemaComponentType Type;
+	ERPCType Type;
 	uint32 Index;
 };
 
@@ -78,7 +78,7 @@ struct FClassInfo
 	FName WorkerType;
 };
 
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
@@ -90,7 +90,7 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 
 public:
 
-	bool TryInit(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
+	bool TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager);
 
 	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
 	// when running with an out-of-date schema database.
@@ -113,14 +113,28 @@ public:
 	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
-	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
-	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
+	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
+
+	const TMap<float, Worker_ComponentId>& GetNetCullDistanceToComponentIds() const;
+
+	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
+	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+
+	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
+
+	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
+
+	// Used to check if component is used for qbi tracking only
+	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
 
 	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
 	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
+
+	void QuitGame();
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
@@ -129,14 +143,11 @@ private:
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
-	void QuitGame();
-
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

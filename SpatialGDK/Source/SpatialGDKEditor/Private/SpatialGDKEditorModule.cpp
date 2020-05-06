@@ -4,6 +4,7 @@
 
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorLayoutDetails.h"
 
 #include "ISettingsModule.h"
 #include "ISettingsContainer.h"
@@ -11,15 +12,27 @@
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "WorkerTypeCustomization.h"
 
+#include "EditorExtension/GridLBStrategyEditorExtension.h"
+
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
+
+FSpatialGDKEditorModule::FSpatialGDKEditorModule()
+	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
+{
+
+}
 
 void FSpatialGDKEditorModule::StartupModule()
 {
 	RegisterSettings();
+
+	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
 {
+	ExtensionManager->Cleanup();
+
 	if (UObjectInitialized())
 	{
 		UnregisterSettings();
@@ -58,6 +71,7 @@ void FSpatialGDKEditorModule::RegisterSettings()
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()

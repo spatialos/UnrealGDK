@@ -1,8 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "IPropertyTypeCustomization.h"
-#include "Utils/ActorGroupManager.h"
 
 class FWorkerTypeCustomization : public IPropertyTypeCustomization
 {

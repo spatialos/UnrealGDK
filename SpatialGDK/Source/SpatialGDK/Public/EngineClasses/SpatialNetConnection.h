@@ -2,11 +2,12 @@
 
 #pragma once
 
+#include "Schema/Interest.h"
+
 #include "CoreMinimal.h"
+#include "Misc/Optional.h"
 #include "IpConnection.h"
 #include "Runtime/Launch/Resources/Version.h"
-
-#include "Schema/Interest.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -30,7 +31,11 @@ public:
 	virtual int32 IsNetReady(bool Saturate) override;
 
 	/** Called by PlayerController to tell connection about client level visibility change */
+#if ENGINE_MINOR_VERSION <= 23
 	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+#else
+	virtual void UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility) override;
+#endif
 
 	virtual void FlushDormancy(class AActor* Actor) override;
 
@@ -40,6 +45,7 @@ public:
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
 	virtual FString RemoteAddressToString() override { return TEXT(""); }
+	virtual void CleanUp() override;
 	///////
 	// End NetConnection Interface
 
@@ -50,15 +56,14 @@ public:
 	void DisableHeartbeat();
 
 	void OnHeartbeat();
-	void UpdateActorInterest(AActor* Actor);
 
 	void ClientNotifyClientHasQuit();
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 
-	UPROPERTY()
-	FString WorkerAttribute;
+	// Only used on the server for client connections.
+	FString ConnectionOwningWorkerId;
 
 	class FTimerManager* TimerManager;
 

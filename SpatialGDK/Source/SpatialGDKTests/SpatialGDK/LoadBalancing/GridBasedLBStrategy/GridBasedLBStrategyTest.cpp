@@ -1,15 +1,18 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "CoreMinimal.h"
-#include "Engine/World.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "Schema/StandardLibrary.h"
+#include "SpatialConstants.h"
+#include "TestGridBasedLBStrategy.h"
+
+#include "CoreMinimal.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
-#include "SpatialConstants.h"
-#include "TestDefinitions.h"
-#include "TestGridBasedLBStrategy.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
+#include "Tests/TestDefinitions.h"
 
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
 	GDK_TEST(Core, UGridBasedLBStrategy, TestName)
@@ -17,10 +20,10 @@
 // Test Globals
 namespace
 {
-	UWorld* TestWorld;
-	TMap<FName, AActor*> TestActors;
-	UGridBasedLBStrategy* Strat;
-}
+
+UWorld* TestWorld;
+TMap<FName, AActor*> TestActors;
+UGridBasedLBStrategy* Strat;
 
 // Copied from AutomationCommon::GetAnyGameWorld()
 UWorld* GetAnyGameWorld()
@@ -54,7 +57,7 @@ DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FCreateStrategy, uint32, Rows, u
 bool FCreateStrategy::Update()
 {
 	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
-	Strat->Init(nullptr);
+	Strat->Init();
 
 	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	Strat->SetLocalVirtualWorkerId(VirtualWorkerIds.Array()[LocalWorkerIdIndex]);
@@ -109,7 +112,7 @@ bool FWaitForActor::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckShouldRelinquishAuthority, FAutomationTestBase*, Test, FName, Handle, bool, bExpected);
 bool FCheckShouldRelinquishAuthority::Update()
 {
-	bool bActual = Strat->ShouldRelinquishAuthority(*TestActors[Handle]);
+	bool bActual = !Strat->ShouldHaveAuthority(*TestActors[Handle]);
 
 	Test->TestEqual(FString::Printf(TEXT("Should Relinquish Authority. Actual: %d, Expected: %d"), bActual, bExpected), bActual, bExpected);
 
@@ -166,7 +169,7 @@ bool FCheckVirtualWorkersMatch::Update()
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids)
 {
 	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
-	Strat->Init(nullptr);
+	Strat->Init();
 
 	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	TestEqual("Number of Virtual Workers", VirtualWorkerIds.Num(), 6);
@@ -177,7 +180,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_call
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid)
 {
 	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
-	Strat->Init(nullptr);
+	Strat->Init();
 
 	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	for (uint32 VirtualWorkerId : VirtualWorkerIds)
@@ -191,7 +194,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worke
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
 	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
-	Strat->Init(nullptr);
+	Strat->Init();
 
 	TestFalse("IsReady Before LocalVirtualWorkerId Set", Strat->IsReady());
 
@@ -201,6 +204,52 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is
 
 	return true;
 }
+
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_worker_THEN_returns_correct_constraint)
+{
+	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.0f);
+	Strat->Init();
+
+	// Take the top right corner, as then all our testing numbers can be positive.
+	Strat->SetLocalVirtualWorkerId(4);
+
+	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint();
+
+	SpatialGDK::BoxConstraint Box = StratConstraint.BoxConstraint.GetValue();
+
+	// y is the vertical axis in SpatialOS coordinates.
+	SpatialGDK::Coordinates TestCentre = SpatialGDK::Coordinates{ 25.0, 0.0, 25.0 };
+	// The constraint will be a 50x50 box around the centre, expanded by 10 in every direction because of the interest border, so +20 to x and z.
+	double TestEdgeLength = 70;
+
+	TestEqual("Centre of the interest grid is as expected", Box.Center, TestCentre);
+	TestEqual("Edge length in x is as expected", Box.EdgeLength.X, TestEdgeLength);
+	TestEqual("Edge length in z is as expected", Box.EdgeLength.Z, TestEdgeLength);
+
+	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here. 
+	TestTrue("Edge length in y is greater than 0", Box.EdgeLength.Y > 0);
+
+	return true;
+}
+
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_entity_position_for_virtual_worker_THEN_returns_correct_position)
+{
+	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.0f);
+	Strat->Init();
+
+	// Take the top right corner, as then all our testing numbers can be positive.
+	Strat->SetLocalVirtualWorkerId(4);
+
+	FVector WorkerPosition = Strat->GetWorkerEntityPosition();
+
+	FVector TestPosition = FVector{ 2500.0f, 2500.0f, 0.0f };
+
+	TestEqual("Worker entity position is as expected", WorkerPosition, TestPosition);
+
+	return true;
+}
+
+}  // anonymous namespace
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {
@@ -240,7 +289,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 0));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
@@ -275,7 +324,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_re
 	AutomationOpenMap("/Engine/Maps/Entry");
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2500.f, 0.f, 0.f)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(0.f, -2500.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 0));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));

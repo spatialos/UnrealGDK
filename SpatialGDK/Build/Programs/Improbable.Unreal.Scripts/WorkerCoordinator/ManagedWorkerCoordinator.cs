@@ -20,7 +20,6 @@ namespace Improbable.WorkerCoordinator
         private const string InitialStartDelayArg = "coordinator_start_delay_millis";
 
         // Worker flags.
-        private const string RegionFlag = "simulated_players_region";
         private const string DevAuthTokenWorkerFlag = "simulated_players_dev_auth_token";
         private const string TargetDeploymentWorkerFlag = "simulated_players_target_deployment";
         private const string DeploymentTotalNumSimulatedPlayersWorkerFlag = "total_num_simulated_players";
@@ -31,11 +30,10 @@ namespace Improbable.WorkerCoordinator
 
         // Argument placeholders for simulated players - these will be replaced by the coordinator by their actual values.
         private const string SimulatedPlayerWorkerNamePlaceholderArg = "<IMPROBABLE_SIM_PLAYER_WORKER_ID>";
-        private const string PlayerIdentityTokenPlaceholderArg = "<PLAYER_IDENTITY_TOKEN>";
-        private const string LoginTokenPlaceholderArg = "<LOGIN_TOKEN>";
+        private const string DevAuthTokenPlaceholderArg = "<DEV_AUTH_TOKEN>";
+        private const string TargetDeploymentPlaceholderArg = "<TARGET_DEPLOYMENT>";
 
         private const string CoordinatorWorkerType = "SimulatedPlayerCoordinator";
-        private const string SimulatedPlayerWorkerType = "UnrealClient";
         private const string SimulatedPlayerFilename = "StartSimulatedClient.sh";
 
         private static Random Random;
@@ -120,7 +118,6 @@ namespace Improbable.WorkerCoordinator
             var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
             // Read worker flags.
-            Option<string> region = connection.GetWorkerFlag(RegionFlag);
             Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
             Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
@@ -154,53 +151,39 @@ namespace Improbable.WorkerCoordinator
                 }
 
                 Thread.Sleep(timeToSleep);
-                StartSimulatedPlayer(clientName, region, devAuthTokenOpt, targetDeploymentOpt);
+                StartSimulatedPlayer(clientName, devAuthTokenOpt, targetDeploymentOpt);
             }
 
             // Wait for all clients to exit.
             WaitForPlayersToExit();
         }
 
-        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> region, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
+        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
         {
             try
             {
-                // Create player identity token and login token
-                string pit = "";
-                string loginToken = "";
-                if (devAuthTokenOpt.HasValue)
+                // Pass in the dev auth token and the target deployment
+                if (devAuthTokenOpt.HasValue && targetDeploymentOpt.HasValue)
                 {
-                    pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenOpt.Value, simulatedPlayerName, region.Value);
+                    string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
+                        { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
+                        { DevAuthTokenPlaceholderArg, devAuthTokenOpt.Value },
+                        { TargetDeploymentPlaceholderArg, targetDeploymentOpt.Value }
+                    });
 
-                    if (targetDeploymentOpt.HasValue)
-                    {
-                        var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit, region.Value);
-                        loginToken = Authentication.SelectLoginToken(loginTokens, targetDeploymentOpt.Value);
-                    }
-                    else
-                    {
-                        Logger.WriteLog($"Not generating a login token for player {simulatedPlayerName}, no target deployment provided through worker flag \"{TargetDeploymentWorkerFlag}\".");
-                    }
+                    // Prepend the simulated player id as an argument to the start client script.
+                    // This argument is consumed by the start client script and will not be passed to the client worker.
+                    simulatedPlayerArgs = new string[] { simulatedPlayerName }.Concat(simulatedPlayerArgs).ToArray();
+
+                    // Start the client
+                    string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
+                    Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
+                    CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs); ;
                 }
                 else
                 {
-                    Logger.WriteLog($"Not generating a player identity token and login token for player {simulatedPlayerName}, no development auth token provided through worker flag \"{DevAuthTokenWorkerFlag}\".");
+                    Logger.WriteLog($"No development auth token or target deployment provided through worker flags \"{DevAuthTokenWorkerFlag}\" and \"{TargetDeploymentWorkerFlag}\".");
                 }
-
-                string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
-                    { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
-                    { PlayerIdentityTokenPlaceholderArg, pit },
-                    { LoginTokenPlaceholderArg, loginToken }
-                });
-
-                // Prepend the simulated player id as an argument to the start client script.
-                // This argument is consumed by the start client script and will not be passed to the client worker.
-                simulatedPlayerArgs = new string[] { simulatedPlayerName }.Concat(simulatedPlayerArgs).ToArray();
-
-                // Start the client
-                string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
-                Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
-                CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs);;
             }
             catch (Exception e)
             {

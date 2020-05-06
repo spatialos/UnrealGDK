@@ -1,0 +1,23 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component SpatialDebugging {
+     id = 9975;
+
+     // Id assigned to the Unreal server worker which is authoritative for this entity.
+     // 0 is reserved as an invalid/unset value.
+     uint32 authoritative_virtual_worker_id = 1;
+
+     // The color for the authoritative virtual worker.
+     uint32 authoritative_color = 2;
+
+     // Id assigned to the Unreal server worker which should be authoritative for this entity.
+     // 0 is reserved as an invalid/unset value.
+     uint32 intent_virtual_worker_id = 3;
+
+     // The color for the intended virtual worker.
+     uint32 intent_color = 4;
+
+     // Whether or not the entity is locked.
+     bool is_locked = 5;
+}

@@ -16,7 +16,11 @@ USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectIni
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
+#if ENGINE_MINOR_VERSION <= 23
 	bReplicates = true;
+#else
+	SetIsReplicatedByDefault(true);
+#endif
 }
 
 void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -64,7 +68,7 @@ void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 	}
 
 	// Only execute on owning local client.
-	if (!OwningController->HasAuthority())
+	if (OwningController->IsNetMode(NM_Client) && OwningController->GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		if (bSetEnabled && !bIsPingEnabled)
 		{
@@ -160,6 +164,7 @@ void USpatialPingComponent::OnRep_ReplicatedPingID()
 
 		// Calculate the round trip ping
 		RoundTripPing = static_cast<float>(FPlatformTime::Seconds() - LastSentPingTimestamp);
+		RecordPing(RoundTripPing);
 		if (RoundTripPing >= MinPingInterval)
 		{
 			// If the current ping exceeds the min interval then send a new ping immediately.
@@ -175,6 +180,51 @@ void USpatialPingComponent::OnRep_ReplicatedPingID()
 			}
 		}
 	}
+}
+
+FSpatialPingAverageData USpatialPingComponent::GetAverageData() const
+{
+	FSpatialPingAverageData Data = {};
+
+	if (LastPingMeasurements.Num() > 0)
+	{
+		float Total = 0.0f;
+		for (float Ping : LastPingMeasurements)
+		{
+			Total += Ping;
+		}
+		Data.LastMeasurementsWindowAvg = Total / LastPingMeasurements.Num();
+		Data.LastMeasurementsWindowMin = FMath::Min(LastPingMeasurements);
+		Data.LastMeasurementsWindowMax = FMath::Max(LastPingMeasurements);
+	}
+	Data.WindowSize = LastPingMeasurements.Num();
+
+	if (TotalNum > 0)
+	{
+		Data.TotalAvg = TotalPing / TotalNum;
+		Data.TotalMin = TotalMin;
+		Data.TotalMax = TotalMax;
+		Data.TotalNum = TotalNum;
+	}
+
+	return Data;
+}
+
+void USpatialPingComponent::RecordPing(float Ping)
+{
+	LastPingMeasurements.Add(Ping);
+	if (LastPingMeasurements.Num() > PingMeasurementsWindowSize)
+	{
+		LastPingMeasurements.RemoveAt(0);
+	}
+
+	TotalPing += Ping;
+	TotalNum++;
+
+	TotalMin = FMath::Min(TotalMin, Ping);
+	TotalMax = FMath::Max(TotalMax, Ping);
+
+	OnRecordPing.Broadcast(Ping);
 }
 
 bool USpatialPingComponent::SendServerWorkerPingID_Validate(uint16 PingID)

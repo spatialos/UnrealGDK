@@ -2,17 +2,21 @@
 
 #pragma once
 
-#include "GameFramework/Actor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "UObject/Package.h"
-#include "UObject/UObjectHash.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
+
+#include "GameFramework/Actor.h"
+#include "UObject/UObjectHash.h"
+#include "UObject/Package.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+DEFINE_LOG_CATEGORY_STATIC(LogSpatialUnrealMetadata, Warning, All);
 
 using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
@@ -25,23 +29,22 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath, const TSchemaOption<bool>& InbNetStartup)
-		: StablyNamedRef(InStablyNamedRef), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath), bNetStartup(InbNetStartup) {}
+	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InClassPath, const TSchemaOption<bool>& InbNetStartup)
+		: StablyNamedRef(InStablyNamedRef), ClassPath(InClassPath), bNetStartup(InbNetStartup) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		if (Schema_GetObjectCount(ComponentObject, 1) == 1)
+		if (Schema_GetObjectCount(ComponentObject, SpatialConstants::UNREAL_METADATA_STABLY_NAMED_REF_ID) == 1)
 		{
-			StablyNamedRef = GetObjectRefFromSchema(ComponentObject, 1);
+			StablyNamedRef = GetObjectRefFromSchema(ComponentObject, SpatialConstants::UNREAL_METADATA_STABLY_NAMED_REF_ID);
 		}
-		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
-		ClassPath = GetStringFromSchema(ComponentObject, 3);
+		ClassPath = GetStringFromSchema(ComponentObject, SpatialConstants::UNREAL_METADATA_CLASS_PATH_ID);
 
-		if (Schema_GetBoolCount(ComponentObject, 4) == 1)
+		if (Schema_GetBoolCount(ComponentObject, SpatialConstants::UNREAL_METADATA_NET_STARTUP_ID) == 1)
 		{
-			bNetStartup = GetBoolFromSchema(ComponentObject, 4);
+			bNetStartup = GetBoolFromSchema(ComponentObject, SpatialConstants::UNREAL_METADATA_NET_STARTUP_ID);
 		}
 	}
 
@@ -54,13 +57,12 @@ struct UnrealMetadata : Component
 
 		if (StablyNamedRef.IsSet())
 		{
-			AddObjectRefToSchema(ComponentObject, 1, StablyNamedRef.GetValue());
+			AddObjectRefToSchema(ComponentObject, SpatialConstants::UNREAL_METADATA_STABLY_NAMED_REF_ID, StablyNamedRef.GetValue());
 		}
-		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
-		AddStringToSchema(ComponentObject, 3, ClassPath);
+		AddStringToSchema(ComponentObject, SpatialConstants::UNREAL_METADATA_CLASS_PATH_ID, ClassPath);
 		if (bNetStartup.IsSet())
 		{
-			Schema_AddBool(ComponentObject, 4, bNetStartup.GetValue());
+			Schema_AddBool(ComponentObject, SpatialConstants::UNREAL_METADATA_NET_STARTUP_ID, bNetStartup.GetValue());
 		}
 
 		return Data;
@@ -76,17 +78,20 @@ struct UnrealMetadata : Component
 #if !UE_BUILD_SHIPPING
 		if (NativeClass.IsStale())
 		{
-			UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
+			UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
 		}
 #endif
-		UClass* Class = nullptr;
+		UClass* Class = FindObject<UClass>(nullptr, *ClassPath, false);
 
-		if (StablyNamedRef.IsSet())
+		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see USpatialSender::CreateEntity)
+		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent loads.
+		if (Class == nullptr && !(StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue()))
 		{
-			Class = FindObject<UClass>(nullptr, *ClassPath, false);
-		}
-		else
-		{
+			if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
+			{
+				UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("Class couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it synchronously. Class: %s"), *ClassPath);
+			}
+
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}
 
@@ -100,7 +105,6 @@ struct UnrealMetadata : Component
 	}
 
 	TSchemaOption<FUnrealObjectRef> StablyNamedRef;
-	FString OwnerWorkerAttribute;
 	FString ClassPath;
 	TSchemaOption<bool> bNetStartup;
 

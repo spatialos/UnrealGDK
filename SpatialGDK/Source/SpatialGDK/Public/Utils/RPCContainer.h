@@ -18,7 +18,8 @@ struct FPendingRPCParams;
 struct FRPCErrorInfo;
 DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
 
-enum class ERPCResult : uint8_t
+UENUM()
+enum class ERPCResult : uint8
 {
 	Success,
 
@@ -26,6 +27,8 @@ enum class ERPCResult : uint8_t
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,
+	ActorPendingKill,
+	TimedOut,
 
 	// Sender specific
 	NoActorChannel,
@@ -58,14 +61,13 @@ struct FRPCErrorInfo
 
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
-	bool bIsServer = false;
-	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
+	bool bShouldDrop = false;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
 { 
-	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
+	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload);
 
 	// Moveable, not copyable.
 	FPendingRPCParams() = delete;
@@ -79,14 +81,15 @@ struct SPATIALGDK_API FPendingRPCParams
 	SpatialGDK::RPCPayload Payload;
 
 	FDateTime Timestamp;
-	ESchemaComponentType Type;
+	ERPCType Type;
 };
 
 class SPATIALGDK_API FRPCContainer
 {
 public:
 	// Moveable, not copyable.
-	FRPCContainer() = default;
+	FRPCContainer(ERPCQueueType QueueType);
+	FRPCContainer() = delete;
 	FRPCContainer(const FRPCContainer&) = delete;
 	FRPCContainer(FRPCContainer&&) = default;
 	FRPCContainer& operator=(const FRPCContainer&) = delete;
@@ -94,20 +97,22 @@ public:
 	~FRPCContainer() = default;
 
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
-	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
+	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessRPCs();
+	void DropForEntity(const Worker_EntityId& EntityId);
 
-	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
-
-	static const double SECONDS_BEFORE_WARNING;
+	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const;
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
-	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
+	using RPCContainerType = TMap<ERPCType, FRPCMap>;
 
 	void ProcessRPCs(FArrayOfParams& RPCList);
 	bool ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
+	bool bAlreadyProcessingRPCs = false;
+
+	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 };

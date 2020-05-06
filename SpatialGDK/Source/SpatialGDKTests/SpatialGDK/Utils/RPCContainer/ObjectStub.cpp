@@ -4,5 +4,5 @@
 
 FRPCErrorInfo UObjectStub::ProcessRPC(const FPendingRPCParams& Params)
 {
-	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::UnresolvedParameters };
+	return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedParameters };
 }

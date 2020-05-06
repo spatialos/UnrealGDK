@@ -2,14 +2,11 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
-TMap<FString, FString> USpatialWorkerFlags::WorkerFlags;
-FOnWorkerFlagsUpdated USpatialWorkerFlags::OnWorkerFlagsUpdated;
-
-bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue)
+bool USpatialWorkerFlags::GetWorkerFlag(const FString& InFlagName, FString& OutFlagValue) const
 {
-	if (FString* ValuePtr = WorkerFlags.Find(Name))
+	if (const FString* ValuePtr = WorkerFlags.Find(InFlagName))
 	{
-		OutValue = *ValuePtr;
+		OutFlagValue = *ValuePtr;
 		return true;
 	}
 
@@ -31,10 +28,6 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 	{
 		WorkerFlags.Remove(NewName);
 	}
-}
-FOnWorkerFlagsUpdated& USpatialWorkerFlags::GetOnWorkerFlagsUpdated()
-{
-	return OnWorkerFlagsUpdated;
 }
 
 void USpatialWorkerFlags::BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate)

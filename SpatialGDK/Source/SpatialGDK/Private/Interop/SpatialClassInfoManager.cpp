@@ -17,14 +17,17 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
 {
+	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
+
+	check(InActorGroupManager != nullptr);
 	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
@@ -67,40 +70,40 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
-ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
+ERPCType GetRPCType(UFunction* RemoteFunction)
 {
 	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
-		return SCHEMA_NetMulticastRPC;
+		return ERPCType::NetMulticast;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
 	{
-		return SCHEMA_CrossServerRPC;
+		return ERPCType::CrossServer;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientReliableRPC;
+			return ERPCType::ClientReliable;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerReliableRPC;
+			return ERPCType::ServerReliable;
 		}
 	}
 	else
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientUnreliableRPC;
+			return ERPCType::ClientUnreliable;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerUnreliableRPC;
+			return ERPCType::ServerUnreliable;
 		}
 	}
 
-	return SCHEMA_Invalid;
+	return ERPCType::Invalid;
 }
 
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
@@ -122,8 +125,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
-		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+		ERPCType RPCType = GetRPCType(RemoteFunction);
+		checkf(RPCType != ERPCType::Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
@@ -345,7 +348,17 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
 		ClassInfoMap.Remove(Info->Class);
 
-		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
+		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of TryCreateClassInfoForComponentId).
+		TryCreateClassInfoForComponentId(ComponentId);
+		TSharedRef<FClassInfo> NewInfo = ComponentToClassInfoMap.FindChecked(ComponentId);
+		if (UClass* NewClass = NewInfo->Class.Get())
+		{
+			return NewClass;
+		}
+		else
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not reload class for component %d!"), ComponentId);
+		}
 	}
 
 	return nullptr;
@@ -452,22 +465,45 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 	return *RPCInfoPtr;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath) const
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	if (const Worker_ComponentId* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
 	{
 		return *ComponentId;
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
+bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId) const
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
-const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject * Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDistanceToComponentIds() const
+{
+	return SchemaDatabase->NetCullDistanceToComponentId;
+}
+
+const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
+{
+	switch (ComponentType)
+	{
+	case ESchemaComponentType::SCHEMA_Data:
+		return SchemaDatabase->DataComponentIds;
+	case ESchemaComponentType::SCHEMA_OwnerOnly:
+		return SchemaDatabase->OwnerOnlyComponentIds;
+	case ESchemaComponentType::SCHEMA_Handover:
+		return SchemaDatabase->HandoverComponentIds;
+	default:
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
+		checkNoEntry();
+		static const TArray<Worker_ComponentId> EmptyArray;
+		return EmptyArray;
+	}
+}
+
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
 {
 	const FClassInfo* Info = nullptr;
 
@@ -495,6 +531,25 @@ const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UO
 	return Info;
 }
 
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
+{
+	if (const uint32* ComponentId = SchemaDatabase->NetCullDistanceToComponentId.Find(NetCullDistance))
+	{
+		return *ComponentId;
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const
+{
+	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
+}
+
+bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
+{
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
+}
+
 void USpatialClassInfoManager::QuitGame()
 {
 #if WITH_EDITOR
@@ -505,4 +560,44 @@ void USpatialClassInfoManager::QuitGame()
 #else
 	FGenericPlatformMisc::RequestExit(false);
 #endif
+}
+
+Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
+{
+	check(Actor);
+	const AActor* ActorForRelevancy = Actor;
+	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
+	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner() != nullptr)
+	{
+		ActorForRelevancy = ActorForRelevancy->GetOwner();
+	}
+
+	if (ActorForRelevancy->bAlwaysRelevant)
+	{
+		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+	}
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
+	{
+		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
+		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return NCDComponentId;
+		}
+
+		const AActor* DefaultActor = ActorForRelevancy->GetClass()->GetDefaultObject<AActor>();
+		if (ActorForRelevancy->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s, because its Net Cull Distance is different from its default one."),
+				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
+
+			return ComputeActorInterestComponentId(DefaultActor);
+		}
+		else
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s. Have you generated schema?"),
+				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
+		}
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
 }
