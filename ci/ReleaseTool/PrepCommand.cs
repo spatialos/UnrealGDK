@@ -222,20 +222,23 @@ namespace ReleaseTool
             return markdownLine.StartsWith(heading);
         }
 
-        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string filePath)
+        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string relativeFilePath)
         {
-            Logger.Info("Updating contents of version file '{0}' to '{1}'...", filePath, fileContents);
-
-            if (!File.Exists(filePath))
+            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
-                throw new InvalidOperationException("Could not update the version file as the file " +
-                    $"'{filePath}' does not exist.");
+                Logger.Info("Updating contents of version file '{0}' to '{1}'...", relativeFilePath, fileContents);
+
+                if (!File.Exists(relativeFilePath))
+                {
+                    throw new InvalidOperationException("Could not update the version file as the file " +
+                        $"'{relativeFilePath}' does not exist.");
+                }
+
+                // Pin is always to master in this case.
+                File.WriteAllText(relativeFilePath, $"{fileContents}");
+
+                gitClient.StageFile(relativeFilePath);
             }
-
-            // Pin is always to master in this case.
-            File.WriteAllText(filePath, $"{fileContents}");
-
-            gitClient.StageFile(filePath);
         }
 
         private void UpdatePluginFile(string pluginFileName, GitClient gitClient)
