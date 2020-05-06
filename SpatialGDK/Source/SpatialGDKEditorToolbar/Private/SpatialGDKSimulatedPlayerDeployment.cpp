@@ -113,7 +113,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							[
 								SNew(SSeparator)
 							]
-							// Project 
+							// Project
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -132,7 +132,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									ProjectNameEdit.ToSharedRef()
 								]
 							]
-							// Assembly Name 
+							// Assembly Name
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -463,7 +463,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
 								]
 							]
-							// Simulated Players Number 
+							// Simulated Players Number
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -665,7 +665,7 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDe
 			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
 		}
 	}
-	
+
 	return MenuBuilder.MakeWidget();
 }
 
@@ -772,11 +772,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 	};
 
-#if ENGINE_MINOR_VERSION <= 22
-	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#else
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#endif
 		[this, LaunchCloudDeployment, ToolbarPtr]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
