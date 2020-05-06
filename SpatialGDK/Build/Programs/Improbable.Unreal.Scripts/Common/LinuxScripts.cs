@@ -48,13 +48,13 @@ shift 1
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-echo ""Logs again""
+echo ""Logs again"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 SCRIPT=""$(pwd)/{0}.sh""
-echo $SCRIPT
+echo $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 
-echo ""Trying to launch worker {0} with id ${{WORKER_ID}}"" > ""/improbable/logs/${{WORKER_ID}}.log""
+echo ""Trying to launch worker {0} with id ${{WORKER_ID}}"" >> ""/improbable/logs/${{WORKER_ID}}.log""
 gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1";
 
         public const string SimulatedPlayerCoordinatorShellScript =
