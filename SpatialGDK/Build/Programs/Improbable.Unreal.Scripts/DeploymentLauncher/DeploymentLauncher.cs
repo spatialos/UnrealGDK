@@ -362,7 +362,7 @@ namespace Improbable
             };
 
             mainDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
-            foreach(String tag in deploymentTags.Split(' '))
+            foreach (String tag in deploymentTags.Split(' '))
             {
                 mainDeploymentConfig.Tag.Add(tag);
             }

@@ -42,20 +42,14 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	}
 }
 
-FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
+bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
 {
-	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
 }
 
 FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
 {
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKEditorSettings->ExposedRuntimeIP;
-}
-
-bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
-{
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
+	return GetDefault<USpatialGDKEditorSettings>()->ExposedRuntimeIP;
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
@@ -66,6 +60,11 @@ bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
 FString FSpatialGDKEditorModule::GetDevAuthToken() const
 {
 	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentAuthenticationToken;
+}
+
+FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()

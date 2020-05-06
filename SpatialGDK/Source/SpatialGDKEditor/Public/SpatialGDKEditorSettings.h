@@ -225,7 +225,7 @@ namespace ESpatialOSNetFlow
 	};
 }
 
-UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
+UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
 	GENERATED_BODY()
@@ -283,7 +283,7 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
-	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
+	/** Specify on which IP address the local runtime should be reachable. If empty, the local runtime will not be exposed. Changes are applied on next local deployment startup. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
@@ -410,6 +410,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
+	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
+
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath;
@@ -509,17 +512,8 @@ public:
 	}
 
 	void SetMainDeploymentCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawMainDeploymentCluster() const
-	{
-		return MainDeploymentCluster;
-	}
-
 	FORCEINLINE FString GetMainDeploymentCluster() const
 	{
-		if (MainDeploymentCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
 		return MainDeploymentCluster;
 	}
 
@@ -597,17 +591,8 @@ public:
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
-	{
-		return SimulatedPlayerCluster;
-	}
-
 	FORCEINLINE FString GetSimulatedPlayerCluster() const
 	{
-		if (SimulatedPlayerCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
 		return SimulatedPlayerCluster;
 	}
 
@@ -632,7 +617,4 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	static bool IsProjectNameValid(const FString& Name);
-
-	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
-	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
 };

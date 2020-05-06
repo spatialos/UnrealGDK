@@ -1160,7 +1160,7 @@ bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	if (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment)
 	{
 		return SpatialGDKEditorSettings->ExposedRuntimeIP;
 	}

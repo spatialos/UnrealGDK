@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Improbable/SpatialGDKSettingsBridge.h"
-#include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
 class FLBStrategyEditorExtensionManager;
@@ -23,11 +22,14 @@ public:
 	}
 
 protected:
-	virtual FString GetSpatialOSCloudDeploymentName() const override;
-	virtual FString GetSpatialOSLocalDeploymentIP() const override;
+	// Local deployment connection flow
 	virtual bool ShouldConnectToLocalDeployment() const override;
+	virtual FString GetSpatialOSLocalDeploymentIP() const override;
+
+	// Cloud deployment connection flow
 	virtual bool ShouldConnectToCloudDeployment() const override;
 	virtual FString GetDevAuthToken() const override;
+	virtual FString GetSpatialOSCloudDeploymentName() const override;
 
 private:
 	void RegisterSettings();
