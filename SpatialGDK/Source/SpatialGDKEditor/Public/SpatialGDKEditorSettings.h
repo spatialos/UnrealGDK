@@ -477,17 +477,8 @@ public:
 	}
 
 	void SetMainDeploymentCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawMainDeploymentCluster() const
-	{
-		return MainDeploymentCluster;
-	}
-
 	FORCEINLINE FString GetMainDeploymentCluster() const
 	{
-		if (MainDeploymentCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
 		return MainDeploymentCluster;
 	}
 
@@ -535,17 +526,8 @@ public:
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
-	{
-		return SimulatedPlayerCluster;
-	}
-
 	FORCEINLINE FString GetSimulatedPlayerCluster() const
 	{
-		if (SimulatedPlayerCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
 		return SimulatedPlayerCluster;
 	}
 
