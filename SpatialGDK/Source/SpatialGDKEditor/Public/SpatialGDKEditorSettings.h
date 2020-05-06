@@ -320,6 +320,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
 		FString MainDeploymentCluster;
 
+	/** Tags used when launching a deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+		FString DeploymentTags;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -476,6 +480,12 @@ public:
 	FORCEINLINE FString GetMainDeploymentCluster() const
 	{
 		return MainDeploymentCluster;
+	}
+
+	void SetDeploymentTags(const FString& Tags);
+	FORCEINLINE FString GetDeploymentTags() const
+	{
+		return DeploymentTags;
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
