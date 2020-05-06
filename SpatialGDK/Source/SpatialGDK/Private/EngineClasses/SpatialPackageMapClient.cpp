@@ -42,7 +42,7 @@ void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 		{
 			// Walk up the outer chain and ensure that no object is PendingKill. This is required because although
 			// EInternalObjectFlags::PendingKill prevents objects that are PendingKill themselves from getting added
-			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within 
+			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within
 			// FNetGUIDCache::RegisterNetGUID_Server where it again iterates up the object's owner chain, assigning
 			// ids and ensuring that no object is set to PendingKill in the process.
 			UObject* Outer = Object->GetOuter();
@@ -109,12 +109,6 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 
 	if (!Actor->GetIsReplicated())
 	{
-		return NetGUID;
-	}
-
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		// Singletons will always go through GlobalStateManager first.
 		return NetGUID;
 	}
 
@@ -265,39 +259,44 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
 }
 
-AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
-{
-	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
-	{
-		TArray<AActor*> FoundActors;
-		// USpatialPackageMapClient is an inner object of UNetConnection,
-		// which in turn contains a NetDriver and gets the UWorld it references
-		UGameplayStatics::GetAllActorsOfClass(this, SingletonClass, FoundActors);
-
-		// There should be only one singleton actor per class
-		if (FoundActors.Num() == 1)
-		{
-			return FoundActors[0];
-		}
-
-		FString FullPath;
-		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
-		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
-		return nullptr;
-	}
-	else
-	{
-		FString FullPath;
-		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *FullPath);
-		return nullptr;
-	}
-}
-
 bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 	return GuidCache->CanClientLoadObject(Object, NetGUID);
+}
+
+AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& UniqueObjectClassRef)
+{
+	if (UClass* UniqueObjectClass = Cast<UClass>(GetObjectFromUnrealObjectRef(UniqueObjectClassRef)))
+	{
+		return GetUniqueActorInstanceByClass(UniqueObjectClass);
+	}
+	else
+	{
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(UniqueObjectClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Can't resolve unique object class: %s"), *FullPath);
+		return nullptr;
+	}
+}
+
+AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClass(UClass* UniqueObjectClass) const
+{
+	check(UniqueObjectClass != nullptr);
+
+	TArray<AActor*> FoundActors;
+	// USpatialPackageMapClient is an inner object of UNetConnection,
+	// which in turn contains a NetDriver and gets the UWorld it references.
+	UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
+
+	// There should be only one Actor per class.
+	if (FoundActors.Num() == 1)
+	{
+		return FoundActors[0];
+	}
+
+	UE_LOG(LogSpatialPackageMap, Warning, TEXT("Found %d Actors for class: %s. There should only be one."), FoundActors.Num(), *UniqueObjectClass->GetName());
+	return nullptr;
 }
 
 bool USpatialPackageMapClient::IsEntityPoolReady() const

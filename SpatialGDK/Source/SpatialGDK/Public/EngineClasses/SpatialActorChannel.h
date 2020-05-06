@@ -212,8 +212,12 @@ public:
 		}
 	}
 
-	inline void SetServerAuthority(const bool IsAuth)
+	void SetServerAuthority(const bool IsAuth)
 	{
+		if (IsAuth && !bIsAuthServer)
+		{
+			AuthorityReceivedTimestamp = FPlatformTime::Cycles64();
+		}
 		bIsAuthServer = IsAuth;
 	}
 
@@ -304,6 +308,8 @@ private:
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
+
+	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
 	
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
@@ -359,4 +365,15 @@ private:
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
+
+	// Band-aid until we get Actor Sets.
+	// Used on server-side workers only.
+	// Record when this worker receives SpatialOS Position component authority over the Actor.
+	// Tracking this helps prevent authority thrashing which can happen due a replication race 
+	// between hierarchy Actors. This happens because hierarchy Actor migration using the 
+	// default load-balancing strategy depends on the position of the hierarchy root Actor,
+	// or its controlled pawn. If the hierarchy Actor data is replicated to the new worker
+	// before the actor holding the position for all the hierarchy, it can immediately attempt to migrate back.
+	// Using this timestamp, we can back off attempting migrations for a while.
+	uint64 AuthorityReceivedTimestamp;
 };

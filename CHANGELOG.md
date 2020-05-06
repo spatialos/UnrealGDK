@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes:
 - Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
+- Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
+- `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 
 ### Features:
 - Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK-preview).
@@ -72,6 +74,18 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and ActorComponents. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
+- Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
+- Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
+- The GDK now uses SpatialOS 14.6.1.
+- Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
+- Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- You can now edit the project name field in the `Cloud Deployment` window.
+- Worker types are now defined in the runtime settings.
+- Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
+- A launch configuration editor has been added under the Deploy toolbar button.
+- The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
+- Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
+- You can now specify deployment tags in the `Cloud Deployment` window.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
@@ -107,6 +121,10 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed crash when starting + stopping PIE multiple times.
 - Fixed crash when shadow data was uninitialized when resolving unresolved objects.
 - Fixed sending component RPCs on a recently created actor.
+- Fix problem where load balanced cloud deploys could fail to start while under heavy load.
+- Fix to avoid using packages still being processed in the async loading thread.
+- Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
+- Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
 
 ### External contributors:
 @DW-Sebastien
