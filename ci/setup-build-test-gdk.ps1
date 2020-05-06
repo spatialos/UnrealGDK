@@ -34,7 +34,7 @@ class TestSuite {
 [string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
 [string] $test_repo_map = "NetworkingMap"
 [string] $test_project_name = "NetworkTestProject"
-[string] $test_repo_branch = "master"
+[string] $test_repo_branch = "0.9.0"
 [string] $user_gdk_settings = ""
 
 # Allow overriding testing branch via environment variable
