@@ -18,6 +18,12 @@ extern TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 extern TMap<FString, Worker_ComponentId> LevelPathToComponentId;
 extern TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToComponents;
 extern TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
+extern TMap<Worker_ComponentId, FComponentSchemaData> ComponentIdToFieldIds;
+
+extern TMap<UClass*, TMap<EReplicatedPropertyGroup, TSet<Schema_FieldId>>> FieldIdsForComponentClassAndGroup;
+extern TMap<UClass*, TSet<Schema_FieldId>> FieldIdsForHandoverComponentClass;
+extern TMap<TPair<UClass*, EReplicatedPropertyGroup>, TArray<Worker_ComponentId>> ComponentIdsWaitingForSubobjects;
+extern TMap<UClass*, TArray<Worker_ComponentId>> ComponentIdsWaitingForHandoverSubobjects;
 
 // Generates schema for an Actor
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);

@@ -104,7 +104,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
 	// However, we still want to apply this empty data, so we need to reconstruct the full
 	// list of field IDs for that component type (Data, OwnerOnly).
-	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentData.component_id, Channel.GetObjectRepLayout(&Object));
+	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentData.component_id);
 #if DO_GUARD_SLOW
 	TArray<uint32> ReceivedIds;
 	ReceivedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));

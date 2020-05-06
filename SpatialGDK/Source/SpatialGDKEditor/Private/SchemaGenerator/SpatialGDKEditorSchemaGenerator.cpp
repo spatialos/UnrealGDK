@@ -44,6 +44,13 @@ TArray<UClass*> SchemaGeneratedClasses;
 TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 Worker_ComponentId NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+TMap<Worker_ComponentId, FComponentSchemaData> ComponentIdToFieldIds;
+
+// Helper maps when constructing ComponentIdToFieldIds
+TMap<UClass*, TMap<EReplicatedPropertyGroup, TSet<Schema_FieldId>>> FieldIdsForComponentClassAndGroup;
+TMap<UClass*, TSet<Schema_FieldId>> FieldIdsForHandoverComponentClass;
+TMap<TPair<UClass*, EReplicatedPropertyGroup>, TArray<Worker_ComponentId>> ComponentIdsWaitingForSubobjects;
+TMap<UClass*, TArray<Worker_ComponentId>> ComponentIdsWaitingForHandoverSubobjects;
 
 // Sets of data/owner only/handover components
 TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToComponents;
@@ -452,6 +459,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->NetCullDistanceToComponentId = NetCullDistanceToComponentId;
+	SchemaDatabase->ComponentIdToFieldIds = ComponentIdToFieldIds;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
 	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
@@ -465,7 +473,6 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 
 	SchemaDatabase->LevelComponentIds.Reset(LevelPathToComponentId.Num());
 	LevelPathToComponentId.GenerateValueArray(SchemaDatabase->LevelComponentIds);
-
 
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 
@@ -657,6 +664,7 @@ void ResetSchemaGeneratorState()
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 	SchemaGeneratedClasses.Empty();
 	NetCullDistanceToComponentId.Empty();
+	ComponentIdToFieldIds.Empty();
 }
 
  void ResetSchemaGeneratorStateAndCleanupFolders()
@@ -700,6 +708,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
+		ComponentIdToFieldIds = SchemaDatabase->ComponentIdToFieldIds;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
@@ -795,6 +804,11 @@ void ResetUsedNames()
 	ClassPathToSchemaName.Empty();
 	SchemaNameToClassPath.Empty();
 	PotentialSchemaNameCollisions.Empty();
+
+	FieldIdsForComponentClassAndGroup.Empty();
+	FieldIdsForHandoverComponentClass.Empty();
+	ComponentIdsWaitingForSubobjects.Empty();
+	ComponentIdsWaitingForHandoverSubobjects.Empty();
 
 	for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
 	{

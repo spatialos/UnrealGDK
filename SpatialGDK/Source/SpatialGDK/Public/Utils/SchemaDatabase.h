@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Containers/Map.h"
 #include "Containers/StaticArray.h"
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
@@ -74,6 +75,16 @@ struct FSubobjectSchemaData
 	}
 };
 
+// Schema data related to a schema component
+USTRUCT()
+struct FComponentSchemaData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> FieldIds;
+};
+
 UCLASS()
 class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
@@ -119,5 +130,8 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaDescriptorHash;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, FComponentSchemaData> ComponentIdToFieldIds;
 };
 

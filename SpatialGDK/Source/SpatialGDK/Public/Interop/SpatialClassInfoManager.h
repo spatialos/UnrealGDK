@@ -80,7 +80,6 @@ struct FClassInfo
 
 class SpatialActorGroupManager;
 class USpatialNetDriver;
-class FRepLayout;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
 
@@ -108,7 +107,7 @@ public:
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
-	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId, const FRepLayout& RepLayout);
+	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId);
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;

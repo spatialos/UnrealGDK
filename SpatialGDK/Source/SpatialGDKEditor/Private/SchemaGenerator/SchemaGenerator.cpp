@@ -174,6 +174,14 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
+		if (FieldIdsForComponentClassAndGroup.Find(ComponentClass) == nullptr)
+		{
+			ComponentIdsWaitingForSubobjects.FindOrAdd(TPair<UClass*, EReplicatedPropertyGroup>(ComponentClass, Group)).Add(ComponentId);
+		}
+		else
+		{
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds = FieldIdsForComponentClassAndGroup[ComponentClass][Group].Array();
+		}
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 	}
 
@@ -199,6 +207,14 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
+		if (FieldIdsForHandoverComponentClass.Find(ComponentClass) == nullptr)
+		{
+			ComponentIdsWaitingForHandoverSubobjects.FindOrAdd(ComponentClass).Add(ComponentId);
+		}
+		else
+		{
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds = FieldIdsForHandoverComponentClass[ComponentClass].Array();
+		}
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 	}
 
@@ -422,8 +438,22 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			WriteSchemaRepField(Writer,
 				RepProp.Value,
 				RepProp.Value->ReplicationData->Handle);
+			bool bAlreadyInSet = false;
+			FieldIdsForComponentClassAndGroup.FindOrAdd(Class).FindOrAdd(Group).Add(RepProp.Value->ReplicationData->Handle, &bAlreadyInSet);
+			check(!bAlreadyInSet);
 		}
 		Writer.Outdent().Print("}");
+
+		TPair<UClass*, EReplicatedPropertyGroup> Key(Class, Group);
+		if (ComponentIdsWaitingForSubobjects.Find(Key) != nullptr)
+		{
+			for (Worker_ComponentId Id : ComponentIdsWaitingForSubobjects[Key])
+			{
+				// FindOrAdd, because it could be empty
+				ComponentIdToFieldIds.FindOrAdd(Id).FieldIds = FieldIdsForComponentClassAndGroup.FindOrAdd(Class).FindOrAdd(Group).Array();
+			}
+			ComponentIdsWaitingForSubobjects.Remove(Key);
+		}
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -440,8 +470,20 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			WriteSchemaHandoverField(Writer,
 				Prop.Value,
 				FieldCounter);
+			bool bAlreadyInSet = false;
+			FieldIdsForHandoverComponentClass.FindOrAdd(Class).Add(FieldCounter, &bAlreadyInSet);
+			check(!bAlreadyInSet);
 		}
 		Writer.Outdent().Print("}");
+
+		if (ComponentIdsWaitingForHandoverSubobjects.Find(Class) != nullptr)
+		{
+			for (Worker_ComponentId Id : ComponentIdsWaitingForHandoverSubobjects[Class])
+			{
+				ComponentIdToFieldIds.FindOrAdd(Id).FieldIds = FieldIdsForHandoverComponentClass[Class].Array();
+			}
+			ComponentIdsWaitingForHandoverSubobjects.Remove(Class);
+		}
 	}
 
 	// Use the max number of dynamically attached subobjects per class to generate
@@ -494,6 +536,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds = FieldIdsForComponentClassAndGroup.FindOrAdd(Class).FindOrAdd(Group).Array();
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 		}
 
@@ -519,6 +562,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
 			Writer.Outdent().Print("}");
 
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds = FieldIdsForHandoverComponentClass.FindOrAdd(Class).Array();
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 		}
 
@@ -591,13 +635,12 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 
-		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
 		{
-			FieldCounter++;
 			WriteSchemaRepField(Writer,
 				RepProp.Value,
 				RepProp.Value->ReplicationData->Handle);
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds.Add(RepProp.Value->ReplicationData->Handle);
 		}
 
 		Writer.Outdent().Print("}");
@@ -632,6 +675,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			WriteSchemaHandoverField(Writer,
 				Prop.Value,
 				FieldCounter);
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds.Add(FieldCounter);
 		}
 		Writer.Outdent().Print("}");
 	}
