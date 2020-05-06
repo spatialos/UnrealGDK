@@ -25,7 +25,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "CoreUObject",
                 "DesktopPlatform",
                 "DesktopWidgets",
-                "Engine",
+				"Engine",
                 "EngineSettings",
                 "InputCore",
                 "IOSRuntimeSettings",
@@ -38,8 +38,9 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "SpatialGDK",
                 "SpatialGDKEditor",
                 "SpatialGDKServices",
-                "UnrealEd"
-            }
+                "UnrealEd",
+				"UATHelper"
+			}
         );
     }
 }
