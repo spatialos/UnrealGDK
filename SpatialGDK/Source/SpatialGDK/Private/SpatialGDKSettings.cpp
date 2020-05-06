@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
+
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
@@ -44,7 +45,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(true)
+	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedOutgoingRPCWaitTime(30.0f)
@@ -60,7 +61,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)
-	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
+	, ServerWorkerTypes( { SpatialConstants::DefaultServerWorkerType } )
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
@@ -69,10 +70,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
-	, UdpServerUpstreamUpdateIntervalMS(1)
 	, UdpServerDownstreamUpdateIntervalMS(1)
-	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
+	, bWorkerFlushAfterOutgoingNetworkOp(false)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
@@ -104,14 +104,9 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
-
-	if (bEnableUnrealLoadBalancer)
-	{
-		if (bEnableHandover == false)
-		{
-			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
-		}
-	}
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+	
+	
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
@@ -141,6 +136,10 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
 				"Failing to do will result in unintended behavior or crashes!"))));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes))
+	{
+		OnWorkerTypesChangedDelegate.Broadcast();
 	}
 }
 

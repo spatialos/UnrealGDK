@@ -12,13 +12,11 @@ namespace ReleaseTool
     ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms.
     ///
     ///     * Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
-    ///     * Checks if the release branch exists, if not, creates it from the source branch.
-    ///     * Diffs the source branch against the release branch and, if there are new commits in the soucre branch:
-    ///         * Makes repo-dependent changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-    ///         * Commits these changes to release candaidate branches.
-    ///         * Pushes the release candaidate branches to origin.
-    ///         * Opens PRs to merge the release candaidate branches into the release branches.
-    ///     * If the source branch and the release branch are identical, no release candidate or PR is created.
+    ///     * IF the release branch does not already exits, creates it from the source branch.
+    ///     * Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+    ///     * Commits these changes to release candaidate branches.
+    ///     * Pushes the release candaidate branches to origin.
+    ///     * Opens PRs to merge the release candaidate branches into the release branches.
     /// </summary>
 
     internal class PrepCommand
@@ -89,15 +87,13 @@ namespace ReleaseTool
         }
 
         /*
-         * 1. Clones the source repo.
-         * 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
-         * 3. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
-         * 4. TODO: IF the source branch and the release branch ARE NOT identical.
-         *      a. Makes repo-dependent changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-         *      b. Commits these changes to release candaidate branches.
-         *      c. Pushes the release candaidate branches to origin.
-         *      d. Opens PRs to merge the release candaidate branches into the release branches.
-         *    ELSE: The source branch and the release branch ARE identical, so no release candidate or PR is created, there is no need.
+         *     This tool is designed to be used with a robot Github account. When we prep a release:
+         *         1. Clones the source repo.
+         *         2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
+         *         3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+         *         4. Commit changes and push them to a remote candidate branch.
+         *         5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
+         *         6. Opens a PR for merging the RC branch into the release branch.
          */
         public int Run()
         {
@@ -108,31 +104,15 @@ namespace ReleaseTool
             try
             {
                 var gitHubClient = new GitHubClient(options);
-                // 1. Clones the source repo.
+                    // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
                     // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
                     gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
-                    // 3. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
-                    if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
-                        {
-                            gitClient.Fetch();
-                            gitClient.CheckoutRemoteBranch(options.SourceBranch);
-                            gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
-                            gitClient.ForcePush(options.ReleaseBranch);
-                        }
-
-                    // 4. TODO: IF the source branch and the release branch ARE NOT identical.
-                    if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
-                        {
-
-                        }
-                    else
+                    // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+                    switch (options.GitRepoName)
                     {
-                        // a. Make repo-specific changes for prepping the release (e.g. updating version files).
-                        switch (options.GitRepoName)
-                        {
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
                             UpdatePluginFile(pluginFileName, gitClient);
@@ -141,46 +121,62 @@ namespace ReleaseTool
                             UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
                             break;
-                        }
-
-                        // b. Commits these changes to release candaidate branches.
-                        gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
-                        // c. Pushes the release candaidate branches to origin.
-                        gitClient.ForcePush(options.CandidateBranch);
-
-                        // d. Opens PRs to merge the release candaidate branches into the release branches.
-                        var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
-                        var branchFrom = options.CandidateBranch;
-                            var branchTo = options.ReleaseBranch;
-
-                        // Only open a PR if one does not exist yet.
-                        if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
-                        {
-                            pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                                branchFrom,
-                                branchTo,
-                                string.Format(PullRequestTemplate, options.Version),
-                                GetPullRequestBody(options.GitRepoName, options.CandidateBranch, options.ReleaseBranch));
-                        }
-
-                        BuildkiteAgent.SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
-
-                        var prAnnotation = string.Format(prAnnotationTemplate,
-                            pullRequest.HtmlUrl, options.GitRepoName, options.CandidateBranch, options.ReleaseBranch);
-                        BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", prAnnotation, true);
-
-                        Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                        Logger.Info("Successfully created release!");
-                        Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                        case "UnrealGDKExampleProject":
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            break;
+                        case "UnrealGDKTestGyms":
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            break;
+                        case "UnrealGDKEngineNetTest":
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            break;
                     }
+
+                    // 4. Commit changes and push them to a remote candidate branch.
+                    gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+                    gitClient.ForcePush(options.CandidateBranch);
+
+                    // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
+                    if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
+                    {
+                        gitClient.Fetch();
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
+                        gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
+                        gitClient.ForcePush(options.ReleaseBranch);
+                    }
+
+                    // 6. Opens a PR for merging the RC branch into the release branch.
+                    var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
+                    var branchFrom = options.CandidateBranch;
+                    var branchTo = options.ReleaseBranch;
+
+                    // Only open a PR if one does not exist yet.
+                    if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
+                    {
+                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                            branchFrom,
+                            branchTo,
+                            string.Format(PullRequestTemplate, options.Version),
+                            GetPullRequestBody(options.GitRepoName, options.CandidateBranch, options.ReleaseBranch));
+                    }
+
+                    BuildkiteAgent.SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
+
+                    var prAnnotation = string.Format(prAnnotationTemplate,
+                        pullRequest.HtmlUrl, options.GitRepoName, options.CandidateBranch, options.ReleaseBranch);
+                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", prAnnotation, true);
+
+                    Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+                    Logger.Info("Successfully created release!");
+                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
                 }
-                    
             }
             catch (Exception e)
             {
                 Logger.Error(e, "ERROR: Unable to prep release candidate branch. Error: {0}", e);
                 return 1;
             }
+
             return 0;
         }
 

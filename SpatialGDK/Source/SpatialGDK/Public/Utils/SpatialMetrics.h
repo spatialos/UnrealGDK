@@ -15,6 +15,8 @@ class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
+DECLARE_DELEGATE_RetVal(double, WorkerLoadFunction);
+
 UCLASS()
 class SPATIALGDK_API USpatialMetrics : public UObject
 {
@@ -55,6 +57,7 @@ public:
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
 	FControllerRefProviderDelegate ControllerRefProvider;
 
+	void SetWorkerLoadDelegate(const WorkerLoadFunction& Delegate) { WorkerLoadDelegate = Delegate; }
 private:
 
 	UPROPERTY()
@@ -70,6 +73,7 @@ private:
 
 	double AverageFPS;
 	double WorkerLoad;
+	WorkerLoadFunction WorkerLoadDelegate;
 
 	// RPC tracking is activated with "SpatialStartRPCMetrics" and stopped with "SpatialStopRPCMetrics"
 	// console command. It will record every sent RPC as well as the size of its payload, and then display

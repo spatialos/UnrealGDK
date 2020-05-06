@@ -13,6 +13,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
+DECLARE_MULTICAST_DELEGATE(FOnWorkerTypesChanged)
+
 class ASpatialDebugger;
 
 /**
@@ -138,7 +140,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
-	/** Replicate handover properties between servers, required for zoned worker deployments.*/
+	/** Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will be set based on the load balancing strategy.*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication")
 	bool bEnableHandover;
 
@@ -229,7 +231,7 @@ public:
 	TMap<FName, FActorGroupInfo> ActorGroups;
 
 	/** Available server worker types. */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Workers")
 	TSet<FName> ServerWorkerTypes;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
@@ -282,21 +284,17 @@ public:
 	UPROPERTY(Config)
 	bool bTcpNoDelay;
 
-	/** Only valid on Udp connections - specifies server upstream flush interval - see c_worker.h */
-	UPROPERTY(Config)
-	uint32 UdpServerUpstreamUpdateIntervalMS;
-
 	/** Only valid on Udp connections - specifies server downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpServerDownstreamUpdateIntervalMS;
 
-	/** Only valid on Udp connections - specifies client upstream flush interval - see c_worker.h */
-	UPROPERTY(Config)
-	uint32 UdpClientUpstreamUpdateIntervalMS;
-
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
+
+	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
+	UPROPERTY(Config)
+	bool bWorkerFlushAfterOutgoingNetworkOp;
 
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
@@ -351,4 +349,6 @@ public:
 	bool bUseDevelopmentAuthenticationFlow;
 	FString DevelopmentAuthenticationToken;
 	FString DevelopmentDeploymentToConnect;
+
+	mutable FOnWorkerTypesChanged OnWorkerTypesChangedDelegate;
 };

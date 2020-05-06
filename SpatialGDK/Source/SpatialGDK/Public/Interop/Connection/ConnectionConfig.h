@@ -63,7 +63,7 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerUpstreamUpdateIntervalMS);
+		UdpUpstreamIntervalMS = 255; // This is set unreasonably large but is flushed at the rate of USpatialGDKSettings::OpsUpdateRate.
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
