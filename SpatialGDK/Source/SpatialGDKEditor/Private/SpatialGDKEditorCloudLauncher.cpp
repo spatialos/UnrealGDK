@@ -18,7 +18,7 @@ bool SpatialGDKCloudLaunch()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LauncherCreateArguments = FString::Printf(
-		TEXT("create %s %s %s %s \"%s\" \"%s\" \"%s\" %s"),
+		TEXT("create %s %s %s %s \"%s\" \"%s\" %s \"%s\""),
 		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
 		*SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud(),
