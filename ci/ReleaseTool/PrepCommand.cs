@@ -8,13 +8,15 @@ using NLog;
 namespace ReleaseTool
 {
     /// <summary>
-    ///     Runs the steps required to cut a release candidate branch.
-    ///     * Adds the spatialos org remote to our local copy and fetch this remote.
-    ///     * Checks out the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
-    ///     * Makes repo-dependent changes for prepping the release (e.g. updating version files).
-    ///     * Pushes this to an RC branch.
-    ///     * Creates a release branch if it doesn't exist.
-    ///     * Opens a PR for merging the RC branch into the release branch.
+    ///     Runs the steps required to cut release candidate branches in all five repos:
+    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms.
+    ///
+    ///     * Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
+    ///     * IF the release branch does not already exits, creates it from the source branch.
+    ///     * Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+    ///     * Commits these changes to release candaidate branches.
+    ///     * Pushes the release candaidate branches to origin.
+    ///     * Opens PRs to merge the release candaidate branches into the release branches.
     /// </summary>
 
     internal class PrepCommand
@@ -86,12 +88,12 @@ namespace ReleaseTool
 
         /*
          *     This tool is designed to be used with a robot Github account. When we prep a release:
-         *         1. Clons the source repo.
-         *         2. Checkout the source branch (master or 4.xx-SpatialOSUnrealGDK for the engine repo).
-         *         3. Make repo-specific changes for prepping the release (e.g. updating version files).
+         *         1. Clones the source repo.
+         *         2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
+         *         3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
          *         4. Commit changes and push them to a remote candidate branch.
-         *         5. If a release branch doesn't exist, create one and push it to the remote.
-         *         6. Open a PR for merging the RC branch into the release branch.
+         *         5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
+         *         6. Opens a PR for merging the RC branch into the release branch.
          */
         public int Run()
         {
@@ -102,13 +104,13 @@ namespace ReleaseTool
             try
             {
                 var gitHubClient = new GitHubClient(options);
-                    // 1. Clone the source repo.
+                    // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // 2. Checkout the source branch (by default, master or 4.xx-SpatialOSUnrealGDK for the engine repo).
+                    // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
                     gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
-                    // 3. Make repo-specific changes for prepping the release (e.g. updating version files).
+                    // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                     switch (options.GitRepoName)
                     {
                         case "UnrealGDK":
@@ -134,7 +136,7 @@ namespace ReleaseTool
                     gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                     gitClient.ForcePush(options.CandidateBranch);
 
-                    // 5. If a release branch doesn't exist, create one and push it to the remote.
+                    // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
                     if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
                         gitClient.Fetch();
@@ -143,7 +145,7 @@ namespace ReleaseTool
                         gitClient.ForcePush(options.ReleaseBranch);
                     }
 
-                    // 6. Open a PR for merging the RC branch into the release branch.
+                    // 6. Opens a PR for merging the RC branch into the release branch.
                     var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
                     var branchFrom = options.CandidateBranch;
                     var branchTo = options.ReleaseBranch;
