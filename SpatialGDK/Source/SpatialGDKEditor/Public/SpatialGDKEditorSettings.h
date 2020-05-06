@@ -120,7 +120,7 @@ struct FWorkerTypeLaunchSection
 		, LoginRateLimit()
 		, bAutoNumEditorInstances(true)
 		, NumEditorInstances(1)
-		, bManualWorkerConnectionOnly(true)
+		, bManualWorkerConnectionOnly(false)
 		, WorkerLoadBalancing(nullptr)
 	{
 	}
@@ -412,9 +412,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
-		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("default_launch.json"))
-			: SpatialOSLaunchConfig.FilePath;
+		return SpatialOSLaunchConfig.FilePath;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToSave() const
