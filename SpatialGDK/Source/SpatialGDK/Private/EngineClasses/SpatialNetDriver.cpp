@@ -273,6 +273,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 	}
 
+	ConnectionManager->ReceptionistConfig.ReceptionistPort = URL.Port;
+
 #if WITH_EDITOR
 	ConnectionManager->Connect(bConnectAsClient, PlayInEditorID);
 #else

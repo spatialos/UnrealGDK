@@ -296,6 +296,18 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ReceptionistConfig.PreConnectInit(bConnectAsClient);
 
+	if (GetDefault<USpatialGDKSettings>()->bLaunchMultipleContainerizedDeployments)
+	{
+		if (bConnectAsClient && ReceptionistConfig.ReceptionistPort == 7777)
+		{
+			ReceptionistConfig.ReceptionistPort = 7778;
+		}
+		else if (!bConnectAsClient)
+		{
+			ReceptionistConfig.ReceptionistPort += PlayInEditorID;
+		}
+	}
+
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(

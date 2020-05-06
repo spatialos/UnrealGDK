@@ -291,6 +291,12 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
 {
+	// Potentially when bLaunchMultipleContainerizedDeployments is enabled we could look at invoking docker-compose from UE4 instead of CLI, which could
+	// happen instead of using spot to create deployments.
+
+	// FString DockerArgs = FString::Printf(TEXT("up"));
+	// FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::DockerComposeExe, *DockerComposeExe, &ExitCode, &SpotCreateResult, &StdErr, *SpatialGDKServicesConstants::LocalInstancingFolder);
+
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json --starting-snapshot-id=\"%s\" --runtime-version=%s %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *RuntimeVersion, *LaunchArgs);
 
 	FDateTime SpotCreateStart = FDateTime::Now();
@@ -352,7 +358,7 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 	}
-
+	
 	return true;
 }
 

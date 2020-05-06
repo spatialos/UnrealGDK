@@ -71,6 +71,10 @@ public:
 	
 	virtual void PostInitProperties() override;
 
+	/** If checked, launch multiple containerized deployments, and shared one worker instance per deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Launch multiple containerized deployments"))
+	bool bLaunchMultipleContainerizedDeployments;
+
 	/** 
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
 	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment 
