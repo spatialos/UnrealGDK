@@ -47,16 +47,16 @@ namespace
 }
 
 // Rewrite of FPropertyEditorModule::CreateFloatingDetailsView to use the detail property view in a new window.
-void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass)
+UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow)
 {
 	if (!ObjectClass)
 	{
-		return;
+		return nullptr;
 	}
 
 	if (!ObjectClass->IsChildOf<UTransientUObjectEditor>())
 	{
-		return;
+		return nullptr;
 	}
 
 	UTransientUObjectEditor* ObjectInstance = NewObject<UTransientUObjectEditor>(GetTransientPackage(), ObjectClass);
@@ -133,18 +133,16 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 				VBoxBuilder
 			]
 		];
-
-	// If the main frame exists parent the window to it
-	TSharedPtr<SWindow> ParentWindow;
-	if (FModuleManager::Get().IsModuleLoaded("MainFrame"))
+	
+	if (!ParentWindow.IsValid() && FModuleManager::Get().IsModuleLoaded("MainFrame"))
 	{
+		// If the main frame exists parent the window to it
 		IMainFrameModule& MainFrame = FModuleManager::GetModuleChecked<IMainFrameModule>("MainFrame");
 		ParentWindow = MainFrame.GetParentWindow();
 	}
 
 	if (ParentWindow.IsValid())
 	{
-		// Parent the window to the main frame 
 		FSlateApplication::Get().AddWindowAsNativeChild(NewSlateWindow, ParentWindow.ToSharedRef());
 	}
 	else
@@ -157,4 +155,6 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 		NewSlateWindow->Resize(NewSlateWindow->GetDesiredSize());
 		return EActiveTimerReturnType::Stop;
 	}));
+
+	return ObjectInstance;
 }

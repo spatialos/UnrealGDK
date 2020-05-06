@@ -80,7 +80,12 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 - You can now edit the project name field in the `Cloud Deployment` window.
+- Worker types are now defined in the runtime settings.
+- Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
+- A launch configuration editor has been added under the Deploy toolbar button.
+- The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
+- You can now specify deployment tags in the `Cloud Deployment` window.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
