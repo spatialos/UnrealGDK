@@ -18,8 +18,8 @@ component SpatialTypeActorWithActorComponent {
 	string attachmentreplication_attachsocket = 10;
 	UnrealObjectRef attachmentreplication_attachcomponent = 11;
 	UnrealObjectRef owner = 12;
-	uint32 role = 13;
-	uint32 remoterole = 14;
+	uint32 remoterole = 13;
+	uint32 role = 14;
 	UnrealObjectRef instigator = 15;
 	UnrealObjectRef spatialactorcomponent = 16;
 }
