@@ -10,19 +10,19 @@
 class FTemporaryCommandLine
 {
 public:
-    FTemporaryCommandLine(const FString& NewCommandLine)
+	explicit FTemporaryCommandLine(const FString& NewCommandLine)
     {
     	if (OldCommandLine.IsEmpty())
     	{
     		OldCommandLine = FCommandLine::GetOriginal();
     		FCommandLine::Set(*NewCommandLine);
-    		DidSetCommandLine = true;
+    		bDidSetCommandLine = true;
     	}
     }
 
 	~FTemporaryCommandLine()
     {
-	    if (DidSetCommandLine)
+	    if (bDidSetCommandLine)
 	    {
 		    FCommandLine::Set(*OldCommandLine);
 	    	OldCommandLine.Empty();
@@ -31,7 +31,7 @@ public:
 
 private:
     static FString OldCommandLine;
-	bool DidSetCommandLine = false;
+	bool bDidSetCommandLine = false;
 };
 
 FString FTemporaryCommandLine::OldCommandLine;
