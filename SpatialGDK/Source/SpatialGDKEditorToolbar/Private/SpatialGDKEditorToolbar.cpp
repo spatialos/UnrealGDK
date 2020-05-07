@@ -997,7 +997,6 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
 	
-
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 		{
 			FString DevAuthToken;
