@@ -92,6 +92,7 @@ release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/
 release "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
 release "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
 release "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
+release "TestGymBuildKite"        "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \

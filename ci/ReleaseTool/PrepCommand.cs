@@ -8,8 +8,8 @@ using NLog;
 namespace ReleaseTool
 {
     /// <summary>
-    ///     Runs the steps required to cut release candidate branches in all five repos:
-    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms.
+    ///     Runs the steps required to cut release candidate branches in all repos:
+    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms and TestGymBuildKite.
     ///
     ///     * Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
     ///     * IF the release branch does not already exits, creates it from the source branch.
@@ -118,17 +118,20 @@ namespace ReleaseTool
                             UpdatePluginFile(pluginFileName, gitClient);
                             break;
                         case "UnrealEngine":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
+                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKExampleProjectVersionFile);
                             break;
                         case "UnrealGDKExampleProject":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKTestGyms":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
+                            break;
+                        case "TestGymBuildKite":
+                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                     }
 

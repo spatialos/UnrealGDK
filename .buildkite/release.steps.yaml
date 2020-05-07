@@ -24,7 +24,7 @@ steps:
       - text: "UnrealGDK component release version"
         key: "gdk-version"
         required: true
-        hint: "The name of component release version you want to create `UnrealGDK`, `UnrealGDKExampleProject`, `UnrealGDKEngineNetTest` and `UnrealGDKTestGyms` release candidates for.\nAll release candidates are branched from master.\nFor example: `0.12.2` or `1.0.1`."
+        hint: "The name of component release version you want to create release candidates for. For example: `0.12.2` or `1.0.1`."
 
       - text: "UnrealEngine source branches"
         key: "engine-versions"

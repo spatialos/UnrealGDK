@@ -255,6 +255,25 @@ Join the community on our [forums](https://forums.improbable.io/), or on [Discor
 Happy developing!<br>
 GDK team";
                     break;
+                case "TestGymBuildKite":
+                    name = $"{options.Version}";
+                    releaseBody =
+$@"Unreal GDK version {options.Version} is go!
+
+* This TestGymBuildKite version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
+* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+
+Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team";
+                    break;
                 case "UnrealGDKExampleProject":
                     name = $"{options.Version}";
                     releaseBody =

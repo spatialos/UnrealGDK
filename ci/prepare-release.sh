@@ -95,6 +95,7 @@ prepareRelease "UnrealGDK"                "dry-run/master" "${GDK_VERSION}-rc" "
 prepareRelease "UnrealGDKExampleProject"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
 prepareRelease "UnrealGDKTestGyms"        "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
 prepareRelease "UnrealGDKEngineNetTest"   "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
+prepareRelease "TestGymBuildKite"         "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \

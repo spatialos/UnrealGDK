@@ -1,5 +1,5 @@
 agent_queue_id: trigger-pipelines
-description: This pipeline releases UnrealGDK, UnrealEngine, UnrealGDKExampleProject, UnrealGDKTestGyms and UnrealGDKEngineNetTest from `master` branches to `release` branches.
+description: This pipeline releases UnrealGDK, UnrealEngine, UnrealGDKExampleProject, UnrealGDKTestGyms, TestGymBuildKite and UnrealGDKEngineNetTest to `release` branches.
 github:
   branch_configuration: []
   default_branch: master
