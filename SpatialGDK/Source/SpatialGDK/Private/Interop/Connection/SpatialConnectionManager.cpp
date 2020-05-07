@@ -460,7 +460,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 	{
 		SetConnectionType(ESpatialConnectionType::Receptionist);
 
-		ReceptionistConfig.SetReceptionistHost(URL);
+		ReceptionistConfig.SetupFromURL(URL);
 		ReceptionistConfig.WorkerType = SpatialWorkerType;
 	}
 }

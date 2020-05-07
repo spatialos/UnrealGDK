@@ -37,7 +37,7 @@ void StartSetupConnectionConfigFromURL(USpatialConnectionManager* ConnectionMana
 	bOutUseReceptionist = (URL.Host != SpatialConstants::LOCATOR_HOST) && !URL.HasOption(TEXT("locator"));
 	if (bOutUseReceptionist)
 	{
-		ConnectionManager->ReceptionistConfig.SetReceptionistHost(URL.Host);
+		ConnectionManager->ReceptionistConfig.SetupFromURL(URL);
 	}
 	else
 	{
@@ -57,11 +57,6 @@ void FinishSetupConnectionConfig(USpatialConnectionManager* ConnectionManager, c
 
 		FReceptionistConfig& ReceptionistConfig = ConnectionManager->ReceptionistConfig;
 		ReceptionistConfig.WorkerType = WorkerType;
-
-		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
-		{
-			ReceptionistConfig.UseExternalIp = true;
-		}
 	}
 	else
 	{

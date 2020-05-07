@@ -190,7 +190,7 @@ public:
 			const FURL URL(nullptr, *URLAddress, TRAVEL_Absolute);
 			if (URL.Valid)
 			{
-				SetReceptionistHost(URL);
+				SetupFromURL(URL);
 			}
 		}
 		else
@@ -201,19 +201,7 @@ public:
 		return true;
 	}
 
-	void SetReceptionistHost(const FString& Host)
-	{
-		if (!Host.IsEmpty())
-		{
-			ReceptionistHost = Host;
-			if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
-			{
-				UseExternalIp = true;
-			}
-		}
-	}
-
-	void SetReceptionistHost(const FURL& URL)
+	void SetupFromURL(const FURL& URL)
 	{
 		if (!URL.Host.IsEmpty())
 		{
@@ -230,5 +218,17 @@ public:
 	uint16 ReceptionistPort;
 
 private:
+	void SetReceptionistHost(const FString& Host)
+	{
+		if (!Host.IsEmpty())
+		{
+			ReceptionistHost = Host;
+			if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+			{
+				UseExternalIp = true;
+			}
+		}
+	}
+
 	FString ReceptionistHost;
 };
