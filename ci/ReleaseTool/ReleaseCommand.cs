@@ -157,27 +157,51 @@ namespace ReleaseTool
                     {
                         changelog = GetReleaseNotesFromChangeLog();
                     }
-                    name = $"GDK for Unreal Alpha Release {options.Version}";
+                    name = $"GDK for Unreal Release {options.Version}";
                     releaseBody =
-$@"Unreal GDK version {options.Version} is go!
+$@"The release notes are published in both English and Chinese. To view the Chinese version, scroll down a bit for details. Thanks!
+
+Release notes 将同时提供中英文。要浏览中文版本，向下滚动页面查看详情。感谢！
+
+# English version
+
+**Unreal GDK version {options.Version} is go!**
+
+## Release Notes
+
+* **Release sheriff:** Your human labour is required to populate this section with the headline new features and breaking changes from the CHANGELOG.
+
+## Upgrading
 
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 * You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
 
-Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+Follow **[these](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date)** steps to upgrade your GDK, Engine fork and Example Project to the latest release.
 
-You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md) or below.
 
 Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
 
-Happy developing!<br>
-GDK team
+Happy developing, 
+
+*The GDK team*
 
 ---
 
-{changelog}";
+{changelog}
+
+# 中文版本
+
+**[虚幻引擎开发套件 (GDK) {options.Version} 版本已发布！**
+
+## Release Notes
+
+* **Tech writer:** Your human labour is required to populate translate the above and include it here.
+
+";
                     break;
                 case "UnrealEngine":
+                // TODO: this name must be "{options.EngineVersion}-{options.Version}" but I don't think we've got EngineVersion in this context
                     name = $"{options.Version}";
                     releaseBody =
 $@"Unreal GDK version {options.Version} is go!
