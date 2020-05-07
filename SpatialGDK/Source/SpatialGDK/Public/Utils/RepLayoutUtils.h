@@ -162,7 +162,9 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 	// Get all remote functions from the class. This includes parents super functions and child override functions.
 	TArray<UFunction*> AllClassFunctions;
 
-	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+	TFieldIterator<UFunction> RemoteFunction(Class, EFieldIteratorFlags::IncludeSuper, EFieldIteratorFlags::IncludeDeprecated,
+		EFieldIteratorFlags::IncludeInterfaces);
+	for (; RemoteFunction; ++RemoteFunction)
 	{
 		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
 			RemoteFunction->FunctionFlags & FUNC_NetServer ||
