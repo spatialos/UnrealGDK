@@ -1228,7 +1228,6 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 	PackageAssembly->BuildAllAndUpload(
 		SpatialGDKSettings->GetAssemblyName(),
-		SpatialGDKSettings->AssemblyWindowsPlatform,
 		SpatialGDKSettings->AssemblyBuildConfiguration,
 		TEXT(""),
 		SpatialGDKSettings->bForceAssemblyOverwrite

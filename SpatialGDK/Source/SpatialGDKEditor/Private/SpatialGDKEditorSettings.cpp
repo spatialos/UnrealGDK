@@ -243,12 +243,6 @@ void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetAssemblyWindowsPlatform(const FString& Platform)
-{
-	AssemblyWindowsPlatform = Platform;
-	SaveConfig();
-}
-
 void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
 {
 	AssemblyBuildConfiguration = Configuration;

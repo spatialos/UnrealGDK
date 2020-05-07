@@ -109,8 +109,6 @@ private:
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
 
-	TSharedRef<SWidget> OnGetBuildWindowsPlatform();
-	void OnWindowsPlatformPicked(FString WindowsPlatform);
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);
 

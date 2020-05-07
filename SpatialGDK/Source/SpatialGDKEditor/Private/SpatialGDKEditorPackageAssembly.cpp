@@ -72,11 +72,11 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, boo
 	}
 }
 
-void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce)
+void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForce)
 {
 	if (AssemblyDetailsPtr == nullptr && Steps.IsEmpty())
 	{
-		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, WindowsPlatform, Configuration, bForce));
+		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, TEXT("Win64"), Configuration, bForce));
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 		Steps.Enqueue(EPackageAssemblyStep::BUILD_SERVER);
