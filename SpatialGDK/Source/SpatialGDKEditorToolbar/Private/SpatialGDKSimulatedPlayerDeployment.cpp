@@ -700,7 +700,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								.HAlign(HAlign_Left)
 								[
-									// Open Deployment Page 
+									// Open Deployment Page
 									SNew(SUniformGridPanel)
 									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
 									+ SUniformGridPanel::Slot(0, 0)
@@ -716,7 +716,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								.HAlign(HAlign_Right)
 								[
-									// Launch Simulated Players Deployment Button
+									// Launch Deployment Button
 									SNew(SUniformGridPanel)
 									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
 									+ SUniformGridPanel::Slot(1, 0)
@@ -1108,10 +1108,11 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot(ECheckBoxSt
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
 {
-	FString WebError;
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
-	bool bChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-	FString Url = bChina ? FString::Printf(TEXT("https://%s/projects/%s"), *SpatialConstants::CONSOLE_HOST_CN, *ProjectName) : FString::Printf(TEXT("https://%s/projects/%s"), *SpatialConstants::CONSOLE_HOST, *ProjectName);
+	FString ConsoleHost = GetDefault<USpatialGDKSettings>()->IsRunningInChina() ? SpatialConstants::CONSOLE_HOST_CN : SpatialConstants::CONSOLE_HOST;
+	FString Url = FString::Printf(TEXT("https://%s/projects/%s"), *ConsoleHost, *ProjectName);
+
+	FString WebError;
 	FPlatformProcess::LaunchURL(*Url, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
