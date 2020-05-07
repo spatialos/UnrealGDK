@@ -442,14 +442,14 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	// Process authority gained event immediately, so if we're in a critical section, the RPCService will
+	// be correctly configured to process RPCs sent during Actor creation
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
 			Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
 			Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 		{
-			// Process authority gained event immediately, so if we're in a critical section, the RPCService will
-			// be correctly configured to process RPCs sent during Actor creation
 			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 		}
 	}
