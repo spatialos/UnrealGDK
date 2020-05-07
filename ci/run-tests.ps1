@@ -45,6 +45,7 @@ if ($run_with_spatial) {
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=CookAndGenerateSchema", # Run the commandlet
         "-map=`"$test_repo_map`"" # Which maps to run the commandlet for
+		"-targetplatform=LinuxServer"
     )
 	
     Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
