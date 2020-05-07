@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKModule.h"
+#include "SpatialGDKSettings.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKModule"
 
@@ -14,6 +15,16 @@ void FSpatialGDKModule::StartupModule()
 
 void FSpatialGDKModule::ShutdownModule()
 {
+}
+
+bool FSpatialGDKModule::UsesSpatialNetworking() const
+{
+	return GetDefault<USpatialGDKSettings>()->bSpatialNetworking;
+}
+
+void FSpatialGDKModule::SetUsesSpatialNetworking(bool bEnabled)
+{
+	GetMutableDefault<USpatialGDKSettings>()->bSpatialNetworking = bEnabled;
 }
 
 #undef LOCTEXT_NAMESPACE
