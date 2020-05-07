@@ -206,10 +206,10 @@ public:
 		if (!Host.IsEmpty())
 		{
 			ReceptionistHost = Host;
-		}
-		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
-		{
-			UseExternalIp = true;
+			if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+			{
+				UseExternalIp = true;
+			}
 		}
 	}
 
