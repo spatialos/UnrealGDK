@@ -17,14 +17,13 @@ public:
 	{
 	}
 
-	enum SchemaGenerationMethod
+	enum ESchemaGenerationMethod
 	{
 		InMemoryAsset,
-		FullAssetScan,
-		CookAndGenerate
+		FullAssetScan
 	};
 
-	bool GenerateSchema(SchemaGenerationMethod Method);
+	bool GenerateSchema(ESchemaGenerationMethod Method);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);

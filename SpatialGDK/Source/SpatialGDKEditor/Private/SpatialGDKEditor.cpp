@@ -28,7 +28,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
-bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
+bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -52,17 +52,14 @@ bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
 		}
 	}
 
-	if (Method == FullAssetScan || Method == CookAndGenerate)
+	if (Method == FullAssetScan)
 	{
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
 		FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
 		FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
 		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
 		Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
-	}
-
-	if (Method == CookAndGenerate)
-	{
+	
 		// Make sure SchemaDatabase is not loaded.
 		if (UPackage* LoadedDatabase = FindPackage(nullptr, *FPaths::Combine(TEXT("/Game/"), *SpatialConstants::SCHEMA_DATABASE_FILE_PATH)))
 		{
@@ -100,10 +97,7 @@ bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
 			FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")),
 			[](FString ResultType, double RuntimeInSec)
 			{
-				if (ResultType == TEXT("Completed"))
-				{
-					//??
-				}
+				
 			});
 
 		return true;
@@ -112,7 +106,6 @@ bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
 	{
 		bSchemaGeneratorRunning = true;
 
-		// 80/10/10 load assets / gen schema / garbage collection.
 		FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 		Progress.MakeDialog(true);
 
@@ -136,19 +129,6 @@ bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
 			Schema::ResetSchemaGeneratorStateAndCleanupFolders();
 		}
 
-		TArray<TStrongObjectPtr<UObject>> LoadedAssets;
-		if (Method == FullAssetScan)
-		{
-			Progress.EnterProgressFrame(80.f);
-			if (!LoadPotentialAssets(LoadedAssets))
-			{
-				bSchemaGeneratorRunning = false;
-				LoadedAssets.Empty();
-				CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
-				return false;
-			}
-		}
-
 		// If running from an open editor then compile all dirty blueprints
 		TArray<UBlueprint*> ErroredBlueprints;
 		if (!IsRunningCommandlet())
@@ -157,7 +137,7 @@ bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
 			UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 		}
 
-		Progress.EnterProgressFrame(Method == FullAssetScan ? 10.f : 100.f);
+		Progress.EnterProgressFrame(100.f);
 
 		bool bResult = Schema::SpatialGDKGenerateSchema();
 
@@ -169,13 +149,6 @@ bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationMethod Method)
 			{
 				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
 			}
-		}
-
-		if (Method == FullAssetScan)
-		{
-			Progress.EnterProgressFrame(10.f);
-			LoadedAssets.Empty();
-			CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 		}
 
 #if ENGINE_MINOR_VERSION <= 22

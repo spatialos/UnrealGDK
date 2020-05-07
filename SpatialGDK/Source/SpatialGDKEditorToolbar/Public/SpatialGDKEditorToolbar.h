@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "SpatialGDKEditor.h"
-
 #include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "LocalDeploymentManager.h"
@@ -15,6 +13,7 @@
 #include "Widgets/Notifications/SNotificationList.h"
 
 class FMenuBuilder;
+class FSpatialGDKEditor;
 class FToolBarBuilder;
 class FUICommandList;
 class SSpatialGDKSimulatedPlayerDeployment;
@@ -81,7 +80,6 @@ private:
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
 	void SchemaGenerateFullButtonClicked();
-	void SchemaGenerateCookButtonClicked();
 	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
@@ -101,7 +99,7 @@ private:
 
 	void ShowFailedNotification(const FString& NotificationText);
 
-	void GenerateSchema(FSpatialGDKEditor::SchemaGenerationMethod);
+	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;
 	bool IsSchemaGenerated() const;

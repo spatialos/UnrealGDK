@@ -189,11 +189,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaCookAndGenerate,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SchemaGenerateCookButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
-
-	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked));
 
@@ -324,7 +319,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuCont
 	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaCookAndGenerate);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
 	}
@@ -376,18 +370,13 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
-	GenerateSchema(FSpatialGDKEditor::InMemoryAsset);
+	GenerateSchema(false);
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 {
-	GenerateSchema(FSpatialGDKEditor::FullAssetScan);
-}
-
-void FSpatialGDKEditorToolbarModule::SchemaGenerateCookButtonClicked()
-{
-	GenerateSchema(FSpatialGDKEditor::CookAndGenerate);
-}
+	GenerateSchema(true);
+}		
 
 void FSpatialGDKEditorToolbarModule::OnShowTaskStartNotification(const FString& NotificationText)
 {
@@ -834,7 +823,7 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"), nullptr);
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateSchema(FSpatialGDKEditor::SchemaGenerationMethod Method)
+void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
 
@@ -844,7 +833,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(FSpatialGDKEditor::SchemaGen
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::CookAndGenerate))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
 			OnShowSuccessNotification("Initial Schema Generation completed!");
 		}
@@ -854,25 +843,11 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(FSpatialGDKEditor::SchemaGen
 			bSchemaBuildError = true;
 		}
 	}
-	else if (Method == FSpatialGDKEditor::CookAndGenerate)
-	{
-		OnShowTaskStartNotification("Generating Schema (CookAndGenerate)");
-
-		if (SpatialGDKEditorInstance->GenerateSchema(Method))
-		{
-			OnShowSuccessNotification("Cook and generate Schema started !");
-		}
-		else
-		{
-			OnShowFailedNotification("Cook and generate Schema failed");
-			bSchemaBuildError = true;
-		}
-	}
-	else if (Method == FSpatialGDKEditor::FullAssetScan)
+	else if (bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Full)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(Method))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
 			OnShowSuccessNotification("Full Schema Generation completed!");
 		}
@@ -886,7 +861,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(FSpatialGDKEditor::SchemaGen
 	{
 		OnShowTaskStartNotification("Generating Schema (Incremental)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(Method))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
 		{
 			OnShowSuccessNotification("Incremental Schema Generation completed!");
 		}
