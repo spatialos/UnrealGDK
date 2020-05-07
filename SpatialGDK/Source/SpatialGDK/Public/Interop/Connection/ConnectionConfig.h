@@ -188,7 +188,7 @@ public:
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, false);
 			const FURL URL(nullptr, *URLAddress, TRAVEL_Absolute);
-			if (URL.Valid && !URL.Host.IsEmpty())
+			if (URL.Valid)
 			{
 				SetReceptionistHost(URL);
 			}
@@ -201,9 +201,12 @@ public:
 		return true;
 	}
 
-	void SetReceptionistHost(const FString& host)
+	void SetReceptionistHost(const FString& Host)
 	{
-		ReceptionistHost = host;
+		if (!Host.IsEmpty())
+		{
+			ReceptionistHost = Host;
+		}
 		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
 		{
 			UseExternalIp = true;
