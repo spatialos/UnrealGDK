@@ -382,7 +382,7 @@ public:
 
 	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
-	bool bStartPIEClientsWithLocalLaunchOnDevice = false;
+	bool bStartPIEClientsWithLocalLaunchOnDevice;
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
