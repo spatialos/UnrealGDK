@@ -86,6 +86,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
 - You can now specify deployment tags in the `Cloud Deployment` window.
+- RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
 - When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
 
 ## Bug fixes:
