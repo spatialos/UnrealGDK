@@ -94,11 +94,7 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 			FText::FromString(PlatformName),
 			LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
 			LOCTEXT("CookAndGenerateSchemaTaskName", "Generating Schema"),
-			FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")),
-			[](FString ResultType, double RuntimeInSec)
-			{
-				
-			});
+			FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")));
 
 		return true;
 	}
