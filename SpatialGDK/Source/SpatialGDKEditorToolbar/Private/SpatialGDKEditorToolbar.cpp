@@ -223,11 +223,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentButtonClicked),
-		FCanExecuteAction());
-
-	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
 		FCanExecuteAction(),
@@ -240,8 +235,8 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled));
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
+		FSpatialGDKEditorToolbarCommands::Get().OpenCloudDeploymentWindowAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog),
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
@@ -328,7 +323,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenCloudDeploymentWindowAction);
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
@@ -363,7 +358,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().QuickDeployAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenCloudDeploymentWindowAction);
 	Builder.AddComboButton(
 		FUIAction(),
 		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent),
@@ -818,11 +813,6 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 	VerifyAndStartDeployment();
 }
 
-void FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentButtonClicked()
-{
-	ShowSimulatedPlayerDeploymentDialog();
-}
-
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
@@ -1054,7 +1044,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
+void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 {
 	// Create and open the cloud configuration dialog
 	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
@@ -1090,7 +1080,7 @@ void FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment()
 		return;
 	}
 
-	ShowSimulatedPlayerDeploymentDialog();
+	ShowCloudDeploymentDialog();
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
