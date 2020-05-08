@@ -16,6 +16,7 @@
 #include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Settings/ProjectPackagingSettings.h"
+#include "SpatialGDKDevAuthTokenGenerator.h"
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
@@ -29,6 +30,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
+	, SpatialGDKDevAuthTokenGeneratorInstance(MakeShared<FSpatialGDKDevAuthTokenGenerator>())
 	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>())
 {
 }
@@ -302,6 +304,11 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			World->UpdateWorldComponents(true, true);
 		}
 	}
+}
+
+TSharedRef<FSpatialGDKDevAuthTokenGenerator> FSpatialGDKEditor::GetDevAuthTokenGeneratorRef()
+{
+	return SpatialGDKDevAuthTokenGeneratorInstance;
 }
 
 TSharedRef<FSpatialGDKPackageAssembly> FSpatialGDKEditor::GetPackageAssemblyRef()
