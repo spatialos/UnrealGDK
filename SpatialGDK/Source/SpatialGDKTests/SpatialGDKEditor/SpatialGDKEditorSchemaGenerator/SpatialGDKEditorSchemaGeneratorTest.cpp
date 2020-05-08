@@ -15,6 +15,8 @@
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 
+#include "Utils/SpatialStatics.h"
+
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
@@ -318,14 +320,16 @@ private:
 	void EnableSpatialNetworking()
 	{
 		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-		bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
-		GeneralProjectSettings->SetUsesSpatialNetworking(true);
+		bCachedSpatialNetworking = USpatialStatics::IsSpatialNetworkingEnabled();
+		GetMutableDefault<USpatialGDKSettings>()->bSpatialNetworking = true;
+		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 	}
 
 	void ResetSpatialNetworking()
 	{
 		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-		GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
+		GetMutableDefault<USpatialGDKSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 		bCachedSpatialNetworking = true;
 	}
 

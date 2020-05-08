@@ -25,6 +25,7 @@ bool FSpatialGDKModule::UsesSpatialNetworking() const
 void FSpatialGDKModule::SetUsesSpatialNetworking(bool bEnabled)
 {
 	GetMutableDefault<USpatialGDKSettings>()->bSpatialNetworking = bEnabled;
+	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 }
 
 #undef LOCTEXT_NAMESPACE

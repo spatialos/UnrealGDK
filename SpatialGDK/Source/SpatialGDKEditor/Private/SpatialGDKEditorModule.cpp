@@ -15,6 +15,7 @@
 #include "SpatialLaunchConfigCustomization.h"
 #include "Utils/LaunchConfigEditor.h"
 #include "Utils/LaunchConfigEditorLayoutDetails.h"
+#include "Utils/SpatialStatics.h"
 #include "WorkerTypeCustomization.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
@@ -44,7 +45,7 @@ void FSpatialGDKEditorModule::ShutdownModule()
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
+	return USpatialStatics::IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
 }
 
 FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
@@ -54,7 +55,7 @@ FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
 
 bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
+	return USpatialStatics::IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
 }
 
 FString FSpatialGDKEditorModule::GetDevAuthToken() const

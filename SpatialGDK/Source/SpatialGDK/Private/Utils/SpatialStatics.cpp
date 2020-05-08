@@ -18,7 +18,7 @@ DEFINE_LOG_CATEGORY(LogSpatial);
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
-    return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+    return GetDefault<USpatialGDKSettings>()->bSpatialNetworking;
 }
 
 SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)

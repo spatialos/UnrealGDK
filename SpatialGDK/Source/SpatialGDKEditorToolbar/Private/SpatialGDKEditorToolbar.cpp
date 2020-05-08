@@ -35,6 +35,7 @@
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Utils/LaunchConfigEditor.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -99,7 +100,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GIsAutomationTesting && USpatialStatics::IsSpatialNetworkingEnabled())
 		{
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
@@ -110,7 +111,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GIsAutomationTesting && USpatialStatics::IsSpatialNetworkingEnabled())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -523,7 +524,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	if (!USpatialStatics::IsSpatialNetworkingEnabled())
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
 		return;
@@ -719,7 +720,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible() const
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
 {
-	return !LocalDeploymentManager->IsDeploymentStarting() && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return !LocalDeploymentManager->IsDeploymentStarting() && USpatialStatics::IsSpatialNetworkingEnabled();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
