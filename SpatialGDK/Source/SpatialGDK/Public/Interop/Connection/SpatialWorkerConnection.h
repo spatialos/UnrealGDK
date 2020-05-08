@@ -63,7 +63,6 @@ private:
 	void CacheWorkerAttributes();
 
 	// Begin FRunnable Interface
-	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 	// End FRunnable Interface
@@ -79,7 +78,6 @@ private:
 
 	FRunnableThread* OpsProcessingThread;
 	FThreadSafeBool KeepRunning = true;
-	float OpsUpdateInterval;
 
 	TQueue<Worker_OpList*> OpListQueue;
 	TQueue<TUniquePtr<SpatialGDK::FOutgoingMessage>> OutgoingMessagesQueue;

@@ -83,13 +83,11 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
-#if ENGINE_MINOR_VERSION >= 23
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
 	// in the RepLayout, the below change forces its creation on clients, but this is a workaround
 	// TODO: UNR-2375
 	bMaySendProperties = true;
-#endif
 }
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
@@ -2305,11 +2303,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		return Channel;
 	}
 
-#if ENGINE_MINOR_VERSION <= 22
-	Channel->SetChannelActor(Actor);
-#else
 	Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
-#endif
 
 	Channel->RefreshAuthority();
 
