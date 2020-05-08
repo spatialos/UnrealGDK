@@ -340,7 +340,7 @@ public:
 
 	/** The build configuration to use when creating workers for the assembly, e.g. Development */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
-		FString AssemblyBuildConfiguration;
+		FString AssemblyBuildConfiguration = TEXT("Development");
 
 	/** Allow overwriting an assembly of the same name */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Force Assembly Overwrite"))
