@@ -37,10 +37,9 @@ private:
 
 	struct AssemblyDetails
 	{
-		AssemblyDetails(const FString& Name, const FString& WinPlat, const FString& Config, bool bForce);
+		AssemblyDetails(const FString& Name, const FString& Config, bool bForce);
 		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
 		FString AssemblyName;
-		FString WindowsPlatform;
 		FString Configuration;
 		bool bForce;
 	};
