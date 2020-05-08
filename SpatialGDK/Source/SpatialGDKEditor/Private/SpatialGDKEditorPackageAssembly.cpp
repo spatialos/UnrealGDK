@@ -21,6 +21,7 @@ namespace
 {
 	const FString SpatialBuildExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe"));
 	const FString Linux = TEXT("Linux");
+	const FString Win64 = TEXT("Win64");
 }
 
 FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
@@ -72,11 +73,11 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, boo
 	}
 }
 
-void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce)
+void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForce)
 {
 	if (AssemblyDetailsPtr == nullptr && Steps.IsEmpty())
 	{
-		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, WindowsPlatform, Configuration, bForce));
+		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, Configuration, bForce));
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 		Steps.Enqueue(EPackageAssemblyStep::BUILD_SERVER);
@@ -121,7 +122,7 @@ bool FSpatialGDKPackageAssembly::NextStep()
 		case EPackageAssemblyStep::BUILD_CLIENT:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FApp::GetProjectName(), AssemblyDetailsPtr->WindowsPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
+				this->BuildAssembly(FApp::GetProjectName(), Win64, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS:
@@ -181,9 +182,8 @@ void FSpatialGDKPackageAssembly::OnTaskCanceled()
 	});
 }
 
-FSpatialGDKPackageAssembly::AssemblyDetails::AssemblyDetails(const FString& Name, const FString& WinPlat, const FString& Config, bool bInForce)
+FSpatialGDKPackageAssembly::AssemblyDetails::AssemblyDetails(const FString& Name, const FString& Config, bool bInForce)
 	: AssemblyName(Name)
-	, WindowsPlatform(WinPlat)
 	, Configuration(Config)
 	, bForce(bInForce)
 {

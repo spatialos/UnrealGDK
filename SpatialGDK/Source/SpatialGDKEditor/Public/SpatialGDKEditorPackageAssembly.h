@@ -16,7 +16,7 @@ public:
 
 	bool CanBuild() const;
 
-	void BuildAllAndUpload(const FString& AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
+	void BuildAllAndUpload(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
 
 	FSimpleDelegate OnSuccess;
 
@@ -37,10 +37,9 @@ private:
 
 	struct AssemblyDetails
 	{
-		AssemblyDetails(const FString& Name, const FString& WinPlat, const FString& Config, bool bForce);
+		AssemblyDetails(const FString& Name, const FString& Config, bool bForce);
 		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
 		FString AssemblyName;
-		FString WindowsPlatform;
 		FString Configuration;
 		bool bForce;
 	};

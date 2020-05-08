@@ -54,10 +54,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
 
 namespace
 {
-	//Windows Platforms
-	const FString Win64(TEXT("Win64"));
-	const FString Win32(TEXT("Win32"));
-
 	//Build Configurations
 	const FString Debug(TEXT("Debug"));
 	const FString DebugGame(TEXT("DebugGame"));
@@ -588,32 +584,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot)
 								]
 							]
-							// Windows Build Platform (Win32 or Win64)
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Windows Client Platform"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The Windows platform for which to build the client."))))
-								]
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(SComboButton)
-									.OnGetMenuContent(this, &SSpatialGDKSimulatedPlayerDeployment::OnGetBuildWindowsPlatform)
-									.ContentPadding(FMargin(2.0f, 2.0f))
-									.ButtonContent()
-									[
-										SNew(STextBlock)
-										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetAssemblyWindowsPlatform)
-									]
-								]
-							]
 							// Build Configuration
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -986,27 +956,6 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenLaunchConfigEditor()
 	return FReply::Handled();
 }
 
-TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildWindowsPlatform()
-{
-	FMenuBuilder MenuBuilder(true, nullptr);
-
-	MenuBuilder.AddMenuEntry(FText::FromString(Win64), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Win64))
-	);
-
-	MenuBuilder.AddMenuEntry(FText::FromString(Win32), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Win32))
-	);
-
-	return MenuBuilder.MakeWidget();
-}
-
-void SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked(FString WindowsPlatform)
-{
-	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetAssemblyWindowsPlatform(WindowsPlatform);
-}
-
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguration()
 {
 	FMenuBuilder MenuBuilder(true, nullptr);
@@ -1048,7 +997,6 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
 		PackageAssembly->BuildAllAndUpload(
 			SpatialGDKEditorSettings->GetAssemblyName(),
-			SpatialGDKEditorSettings->AssemblyWindowsPlatform,
 			SpatialGDKEditorSettings->AssemblyBuildConfiguration,
 			TEXT(""),
 			SpatialGDKEditorSettings->bForceAssemblyOverwrite

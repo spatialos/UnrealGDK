@@ -334,10 +334,6 @@ private:
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
-	/** Windows build architecture for which to build the client assembly */
-	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Windows Build Type"))
-		FString AssemblyWindowsPlatform;
-
 	/** The build configuration to use when creating workers for the assembly, e.g. Development */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
 		FString AssemblyBuildConfiguration = TEXT("Development");
@@ -521,12 +517,6 @@ public:
 	FORCEINLINE FString GetDeploymentTags() const
 	{
 		return DeploymentTags;
-	}
-
-	void SetAssemblyWindowsPlatform(const FString& Platform);
-	FORCEINLINE FText GetAssemblyWindowsPlatform() const
-	{
-		return FText::FromString(AssemblyWindowsPlatform);
 	}
 
 	void SetAssemblyBuildConfiguration(const FString& Configuration);
