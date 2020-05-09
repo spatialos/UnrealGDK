@@ -54,7 +54,7 @@ chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 if ! mkdir /improbable/logs/lockdir 2>/dev/null
 then
     echo ""Stalling for initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-    sleep 15
+    sleep 10
 else
     echo ""Initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
     sleep 5
