@@ -252,6 +252,7 @@ const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
 const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
 const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+const FString Ipv4Pattern = TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {

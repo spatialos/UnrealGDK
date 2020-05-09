@@ -186,7 +186,7 @@ public:
 			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, 0);
-			FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
+			FRegexPattern Ipv4RegexPattern(SpatialConstants::Ipv4Pattern);
 			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *URLAddress);
 			bSuccess = IpV4RegexMatcher.FindNext();
 			if (bSuccess)
