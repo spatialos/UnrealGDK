@@ -50,8 +50,13 @@ chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 SCRIPT=""$(pwd)/{0}.sh""
 chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 
-if ! mkdir /improbable/logs/lockdir 2>/dev/null; then
+# Create a basic folder lock to ensure the worker launch script isn't run in parallel as it contains permission modifications that can fail otherwise
+if ! mkdir /improbable/logs/lockdir 2>/dev/null
+then
+    echo ""Stalling for initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
     sleep 10
+else
+    echo ""Initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 fi
 
 echo ""Trying to launch worker {0} with id ${{WORKER_ID}}"" >> ""/improbable/logs/${{WORKER_ID}}.log""
