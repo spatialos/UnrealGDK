@@ -20,7 +20,6 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "UObject/CoreNet.h"
-#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -78,7 +77,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			TryStopSpatialService();
 			// Start spatial service in the current project if spatial networking is enabled
 
-			if (USpatialStatics::IsSpatialNetworkingEnabled())
+			if (SpatialEngineHelper::UsesSpatialNetworking())
 			{
 				TryStartSpatialService(RuntimeIPToExpose);
 			}

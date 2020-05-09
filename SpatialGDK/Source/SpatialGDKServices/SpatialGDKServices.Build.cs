@@ -16,8 +16,6 @@ public class SpatialGDKServices : ModuleRules
 		}
 #pragma warning restore 0618
 
-        PrivateIncludePaths.Add("SpatialGDKServices/Private");
-
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"EditorStyle",
@@ -31,8 +29,7 @@ public class SpatialGDKServices : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"UnrealEd",
-				"Sockets",
-                "SpatialGDK"
+				"Sockets"
 			}
 		);
 	}
