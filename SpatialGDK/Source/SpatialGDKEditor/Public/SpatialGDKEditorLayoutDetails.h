@@ -4,15 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "IDetailCustomization.h"
-#include "Input/Reply.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorLayoutDetails, Log, All);
+class FReply;
+class FSpatialGDKEditorCommandLineArgsManager;
 
 class FSpatialGDKEditorLayoutDetails : public IDetailCustomization
 {
 private:
-	bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
-	bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
+	FSpatialGDKEditorCommandLineArgsManager& GetCommandLineArgsManager();
 
 	FReply GenerateDevAuthToken();
 	FReply PushCommandLineArgsToIOSDevice();

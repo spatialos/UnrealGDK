@@ -12,6 +12,7 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorLayoutDetails.h"
+#include "SpatialGDKEditorCommandLineArgsManager.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "Utils/LaunchConfigEditor.h"
 #include "Utils/LaunchConfigEditorLayoutDetails.h"
@@ -21,6 +22,7 @@
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
+	, CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
 {
 
 }
@@ -30,6 +32,7 @@ void FSpatialGDKEditorModule::StartupModule()
 	RegisterSettings();
 
 	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
+	CommandLineArgsManager->Startup();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
