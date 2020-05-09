@@ -97,6 +97,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The Deploy button will launch the deployment directly if the necessary fields were filled previously in the `Deployment Configuration` window, selecting the `Deployment Configuration` menu item from the dropdown will allow changing of deployment settings.
 - Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
 - Automatically add `dev_login` tag to cloud deployment when clicking launch deployment button.
+- Remove the UE4Commandline.txt from the device when the session ends (click Cancel button from Message window when launch game on Android or iOS)
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
