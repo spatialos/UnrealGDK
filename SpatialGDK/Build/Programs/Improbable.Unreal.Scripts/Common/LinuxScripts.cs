@@ -64,9 +64,9 @@ chmod +x StartSimulatedClient.sh
 chmod +x {0}.sh
 
 NEW_USER=unrealworker
-useradd $NEW_USER -m -d /improbable/logs/
-chown -R $NEW_USER:$NEW_USER $(pwd)
-chmod -R o+rw /improbable/logs
+useradd $NEW_USER -m -d /improbable/logs/ 2> /improbable/logs/CoordinatorErrors.log
+chown -R $NEW_USER:$NEW_USER $(pwd) 2> /improbable/logs/CoordinatorErrors.log
+chmod -R o+rw /improbable/logs 2> /improbable/logs/CoordinatorErrors.log
 
 mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
 
