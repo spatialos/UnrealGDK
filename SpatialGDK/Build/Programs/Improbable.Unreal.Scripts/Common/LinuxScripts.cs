@@ -43,12 +43,7 @@ NEW_USER=unrealworker
 WORKER_ID=$1
 shift 1
 
-# Output all logs to custom worker log file
-#useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-#chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-#chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 SCRIPT=""$(pwd)/{0}.sh""
-#chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 
 echo ""Trying to launch worker {0} with id ${{WORKER_ID}}"" >> ""/improbable/logs/${{WORKER_ID}}.log""
 gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1";
