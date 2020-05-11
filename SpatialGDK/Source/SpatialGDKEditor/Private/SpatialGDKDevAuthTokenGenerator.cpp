@@ -21,19 +21,19 @@ void FSpatialGDKDevAuthTokenGenerator::AsyncGenerateDevAuthToken()
 	bool bExpected = false;
 	if (bIsGenerating.CompareExchange(bExpected, true))
 	{
-		DevAuthToken.Empty();
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+		bool bIsRunningInChina = GetMutableDefault<USpatialGDKSettings>()->IsRunningInChina();
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina]
 			{
 				AsyncTask(ENamedThreads::GameThread, [this]()
 					{
 						this->ShowTaskStartedNotification(TEXT("Generating Developer Authentication Token"));
 					});
 
-				USpatialGDKSettings* GDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-				bool bSuccess = SpatialCommandUtils::GenerateDevAuthToken(GDKRuntimeSettings->IsRunningInChina(), DevAuthToken);
+				FString DevAuthToken;
+				bool bSuccess = SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken);
 				if (bSuccess)
 				{
-					AsyncTask(ENamedThreads::GameThread, [this]()
+					AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
 						{
 							USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 							GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;

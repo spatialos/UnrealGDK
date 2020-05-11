@@ -17,7 +17,6 @@ public:
 	void AsyncGenerateDevAuthToken();
 private:
 	TAtomic<bool> bIsGenerating;
-	FString DevAuthToken;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 	void ShowTaskStartedNotification(const FString& NotificationText);
