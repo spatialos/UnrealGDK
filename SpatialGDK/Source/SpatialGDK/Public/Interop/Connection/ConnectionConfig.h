@@ -186,8 +186,8 @@ public:
 			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
 			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
 			FString URLAddress;
-			FParse::Token(CommandLine, URLAddress, false);
-			const FURL URL(nullptr, *URLAddress, TRAVEL_Absolute);
+			FParse::Token(CommandLine, URLAddress, false /* UseEscape */);
+			const FURL URL(nullptr /* Base */, *URLAddress, TRAVEL_Absolute);
 			if (URL.Valid)
 			{
 				SetupFromURL(URL);
