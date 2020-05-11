@@ -3,6 +3,7 @@
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 
 #include "SpatialCommandUtils.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorToolbar.h"
@@ -34,8 +35,8 @@
 #include "Widgets/Layout/SSeparator.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/Layout/SWrapBox.h"
-#include "Widgets/Notifications/SErrorHint.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "Widgets/Notifications/SPopupErrorText.h"
 #include "Widgets/Text/STextBlock.h"
 
 #include "Internationalization/Regex.h"
@@ -50,13 +51,12 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
-	ProjectNameEdit = SNew(SEditableTextBox)
-		.Text(FText::FromString(ProjectName))
-		.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-		.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted);
-
-	AssemblyInputErrorReporting = SNew(SErrorHint);
-	DeploymentNameInputErrorReporting = SNew(SErrorHint);
+	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+	AssemblyNameInputErrorReporting = SNew(SPopupErrorText);
+	AssemblyNameInputErrorReporting->SetError(TEXT(""));
+	DeploymentNameInputErrorReporting = SNew(SPopupErrorText);
+	DeploymentNameInputErrorReporting->SetError(TEXT(""));
 	ChildSlot
 		[
 			SNew(SBorder)
@@ -132,7 +132,11 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									ProjectNameEdit.ToSharedRef()
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(ProjectName))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted)
+									.ErrorReporting(ProjectNameInputErrorReporting)
 								]
 							]
 							// Assembly Name
@@ -155,8 +159,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(SpatialGDKSettings->GetAssemblyName()))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited, ETextCommit::Default)
-									.ErrorReporting(AssemblyInputErrorReporting)
+									.ErrorReporting(AssemblyNameInputErrorReporting)
 								]
 							]
 							// RuntimeVersion
@@ -222,7 +225,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(SpatialGDKSettings->GetPrimaryDeploymentName()))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited, ETextCommit::Default)
 									.ErrorReporting(DeploymentNameInputErrorReporting)
 								]
 							]
@@ -595,10 +597,10 @@ void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FT
 	const FString& InputAssemblyName = InText.ToString();
 	if (!USpatialGDKEditorSettings::IsAssemblyNameValid(InputAssemblyName))
 	{
-		AssemblyInputErrorReporting->SetError(TEXT("Assembly name may only contain lowercase, uppercase, alphanumeric, '.' or '_' and must be between 5 and 64 characters long."));
+		AssemblyNameInputErrorReporting->SetError(SpatialConstants::AssemblyPatternHint);
 		return;
 	}
-	AssemblyInputErrorReporting->SetError(TEXT(""));
+	AssemblyNameInputErrorReporting->SetError(TEXT(""));
 
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetAssemblyName(InputAssemblyName);
@@ -609,13 +611,10 @@ void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted(const FText& I
 	FString NewProjectName = InText.ToString();
 	if (!USpatialGDKEditorSettings::IsProjectNameValid(NewProjectName))
 	{
-		ProjectNameEdit->SetError(TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long."));
+		ProjectNameInputErrorReporting->SetError(SpatialConstants::ProjectPatternHint);
 		return;
 	}
-	else
-	{
-		ProjectNameEdit->SetError(TEXT(""));
-	}
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
 	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
 }
@@ -625,7 +624,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const
 	const FString& InputDeploymentName = InText.ToString();
 	if (!USpatialGDKEditorSettings::IsDeploymentNameValid(InputDeploymentName))
 	{
-		DeploymentNameInputErrorReporting->SetError(TEXT("Deployment name may only contain lowercase, alphanumeric or '_' and must be between 2 and 32 characters long."));
+		DeploymentNameInputErrorReporting->SetError(SpatialConstants::DeploymentPatternHint);
 		return;
 	}
 	DeploymentNameInputErrorReporting->SetError(TEXT(""));
