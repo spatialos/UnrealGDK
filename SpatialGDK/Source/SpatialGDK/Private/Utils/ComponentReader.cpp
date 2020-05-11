@@ -101,32 +101,17 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
-	// However, we still want to apply this empty data, so we need to reconstruct the full
-	// list of field IDs for that component type (Data, OwnerOnly).
-	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentData.component_id, Channel.GetObjectRepLayout(&Object));
-#if DO_GUARD_SLOW
-	TArray<uint32> ReceivedIds;
-	ReceivedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, ReceivedIds.GetData());
-
-	auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
-		for (Schema_FieldId Field : Subset) {
-			if (!Superset.Contains(Field)) return false;
-		}
-		return true;
-	};
-	checkfSlow(CheckSubsetLambda(ReceivedIds, InitialIds),
-		TEXT("The list of received IDs is not a subset of the entire list of field IDs associated with the component, this should not happen."));
-#endif
+	TArray<uint32> UpdatedIds;
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
 	}
 }
 
@@ -215,11 +200,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				// If the property has RepNotifies, update with local data and possibly initialize the shadow data
 				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-#if ENGINE_MINOR_VERSION <= 22
-					FRepStateStaticBuffer& ShadowData = RepState->StaticBuffer;
-#else
 					FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
-#endif
 					if (ShadowData.Num() == 0)
 					{
 						Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
@@ -295,11 +276,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-	#if ENGINE_MINOR_VERSION <= 22
-					bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-	#else
 					bool bIsIdentical = Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-	#endif
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
 					if (bIsInitialData)
@@ -391,7 +368,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			{
 				InObjectReferencesMap.Remove(Offset);
 			}
-			
+
 			bOutReferencesChanged = true;
 		}
 	}

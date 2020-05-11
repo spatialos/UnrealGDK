@@ -77,6 +77,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static FUnrealObjectRef FromSoftObjectPath(const FSoftObjectPath& ObjectPath);
 	static FUnrealObjectRef GetRefFromObjectClassPath(UObject* Object, USpatialPackageMapClient* PackageMap);
 	static bool ShouldLoadObjectFromClassPath(UObject* Object);
+	static bool IsUniqueActorClass(UClass* Class);
 
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;

@@ -246,6 +246,9 @@ const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
 const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
 const uint16 LOCATOR_PORT     = 443;
 
+const FString CONSOLE_HOST    = TEXT("console.improbable.io");
+const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
+
 const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
 const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
