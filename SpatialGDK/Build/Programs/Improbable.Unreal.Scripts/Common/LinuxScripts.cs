@@ -43,21 +43,12 @@ NEW_USER=unrealworker
 WORKER_ID=$1
 shift 1
 
-# Create a basic folder lock to ensure the user permissions modifications aren't run in parallel as otherwise they can race and fail
-if ! mkdir /improbable/logs/lockdir 2>/dev/null
-then
-    echo ""Stalling for initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-    sleep 5
-else
-    echo ""Initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-fi
-
 # Output all logs to custom worker log file
-useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
+#useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
+#chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
+#chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 SCRIPT=""$(pwd)/{0}.sh""
-chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
+#chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 
 echo ""Trying to launch worker {0} with id ${{WORKER_ID}}"" >> ""/improbable/logs/${{WORKER_ID}}.log""
 gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1";
@@ -76,6 +67,11 @@ sleep 5
 chmod +x WorkerCoordinator.exe
 chmod +x StartSimulatedClient.sh
 chmod +x {0}.sh
+
+NEW_USER=unrealworker
+useradd $NEW_USER -m -d /improbable/logs/
+chown -R $NEW_USER:$NEW_USER $(pwd)
+chmod -R o+rw /improbable/logs
 
 mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
 
