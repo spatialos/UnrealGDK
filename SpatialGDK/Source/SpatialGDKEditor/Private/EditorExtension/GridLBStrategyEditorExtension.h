@@ -8,5 +8,5 @@
 class FGridLBStrategyEditorExtension : public FLBStrategyEditorExtensionTemplate<UGridBasedLBStrategy, FGridLBStrategyEditorExtension>
 {
 public:
-	bool GetDefaultLaunchConfiguration(const UGridBasedLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const;
+	bool GetDefaultLaunchConfiguration(const UGridBasedLBStrategy* Strategy, UAbstractRuntimeLoadBalancingStrategy*& OutConfiguration, FIntPoint& OutWorldDimensions) const;
 };

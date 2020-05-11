@@ -69,6 +69,9 @@ private:
 	/** Delegate called when the user has picked a path for the primary launch configuration file */
 	void OnPrimaryLaunchConfigPathPicked(const FString& PickedPath);
 
+	/** Delegate to commit deployment tags */
+	void OnDeploymentTagsCommitted(const FText& InText, ETextCommit::Type InCommitType);
+
 	/** Delegate called to populate the region codes for the primary deployment */
 	TSharedRef<SWidget> OnGetPrimaryDeploymentRegionCode();
 
@@ -115,4 +118,11 @@ private:
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
+
+	FReply OnGenerateConfigFromCurrentMap();
+
+	FReply OnOpenLaunchConfigEditor();
+
+	FReply OnOpenCloudDeploymentPageClicked();
+	bool CanOpenCloudDeploymentPage() const;
 };

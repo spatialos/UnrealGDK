@@ -42,7 +42,7 @@ void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 		{
 			// Walk up the outer chain and ensure that no object is PendingKill. This is required because although
 			// EInternalObjectFlags::PendingKill prevents objects that are PendingKill themselves from getting added
-			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within 
+			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within
 			// FNetGUIDCache::RegisterNetGUID_Server where it again iterates up the object's owner chain, assigning
 			// ids and ensuring that no object is set to PendingKill in the process.
 			UObject* Outer = Object->GetOuter();
@@ -269,21 +269,7 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnreal
 {
 	if (UClass* UniqueObjectClass = Cast<UClass>(GetObjectFromUnrealObjectRef(UniqueObjectClassRef)))
 	{
-		TArray<AActor*> FoundActors;
-		// USpatialPackageMapClient is an inner object of UNetConnection,
-		// which in turn contains a NetDriver and gets the UWorld it references.
-		UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
-
-		// There should be only one Actor per class.
-		if (FoundActors.Num() == 1)
-		{
-			return FoundActors[0];
-		}
-
-		FString FullPath;
-		SpatialGDK::GetFullPathFromUnrealObjectReference(UniqueObjectClassRef, FullPath);
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Found %d Actors for class: %s. There should only be one."), FoundActors.Num(), *FullPath);
-		return nullptr;
+		return GetUniqueActorInstanceByClass(UniqueObjectClass);
 	}
 	else
 	{
@@ -292,6 +278,25 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnreal
 		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Can't resolve unique object class: %s"), *FullPath);
 		return nullptr;
 	}
+}
+
+AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClass(UClass* UniqueObjectClass) const
+{
+	check(UniqueObjectClass != nullptr);
+
+	TArray<AActor*> FoundActors;
+	// USpatialPackageMapClient is an inner object of UNetConnection,
+	// which in turn contains a NetDriver and gets the UWorld it references.
+	UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
+
+	// There should be only one Actor per class.
+	if (FoundActors.Num() == 1)
+	{
+		return FoundActors[0];
+	}
+
+	UE_LOG(LogSpatialPackageMap, Warning, TEXT("Found %d Actors for class: %s. There should only be one."), FoundActors.Num(), *UniqueObjectClass->GetName());
+	return nullptr;
 }
 
 bool USpatialPackageMapClient::IsEntityPoolReady() const

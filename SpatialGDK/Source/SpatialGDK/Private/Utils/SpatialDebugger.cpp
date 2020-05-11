@@ -229,7 +229,7 @@ void ASpatialDebugger::LoadIcons()
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	UTexture2D* DefaultTexture = DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
+	UTexture2D* DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
 
 	const float IconWidth = 16.0f;
 	const float IconHeight = 16.0f;
@@ -329,6 +329,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	const SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 
 	static const float BaseHorizontalOffset(16.0f);
+
+	if (!FApp::CanEverRender()) // DrawIcon can attempt to use the underlying texture resource even when using nullrhi
+	{
+		return;
+	}
 
 	if (bShowLock)
 	{

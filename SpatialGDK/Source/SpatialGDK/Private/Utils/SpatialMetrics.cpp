@@ -23,6 +23,8 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 	FramesSinceLastReport = 0;
 	TimeOfLastReport = 0.0f;
 
+	WorkerLoad = 0.0;
+
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
 }
@@ -40,7 +42,14 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
-	WorkerLoad = CalculateLoad();
+	if (WorkerLoadDelegate.IsBound())
+	{
+		WorkerLoad = WorkerLoadDelegate.Execute();
+	}
+	else
+	{
+		WorkerLoad = CalculateLoad();
+	}
 
 	SpatialGDK::GaugeMetric DynamicFPSGauge;
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);

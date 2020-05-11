@@ -22,7 +22,7 @@ class WorkerConnectionCoordinator
 	float									WaitSeconds;
 public:
 	WorkerConnectionCoordinator(bool bCanWake, float InWaitSeconds)
-		: Event(FGenericPlatformProcess::GetSynchEventFromPool())
+		: Event(bCanWake ? FGenericPlatformProcess::GetSynchEventFromPool() : nullptr)
 		, WaitSeconds(InWaitSeconds)
 	{
 	}

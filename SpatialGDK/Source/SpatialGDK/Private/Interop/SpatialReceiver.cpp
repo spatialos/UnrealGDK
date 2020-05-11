@@ -737,7 +737,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
-					RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
+					// If we have just received authority over the client endpoint, then we are a client.  In that case,
+					// we want to scrape the server endpoint for any server -> client RPCs that are waiting to be called.
+					const Worker_ComponentId ComponentToExtractFrom = Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+					RPCService->ExtractRPCsForEntity(Op.entity_id, ComponentToExtractFrom);
 				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
@@ -917,11 +920,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (Channel->Actor == nullptr)
 	{
-#if ENGINE_MINOR_VERSION <= 22
-		Channel->SetChannelActor(EntityActor);
-#else
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
-#endif
 	}
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
@@ -1172,6 +1171,13 @@ AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp
 
 			return StaticActor;
 		}
+	}
+
+	// Handle linking received unique Actors (e.g. game state, game mode) to instances already spawned on this worker.
+	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
+	if (FUnrealObjectRef::IsUniqueActorClass(ActorClass) && NetDriver->IsServer())
+	{
+		return PackageMap->GetUniqueActorInstanceByClass(ActorClass);
 	}
 
 	return CreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
@@ -2564,6 +2570,12 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 	if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"), *PackageName.ToString());
+		return;
+	}
+
+	if (Result != EAsyncLoadingResult::Succeeded)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package was not loaded successfully. Package: %s"), *PackageName.ToString());
 		return;
 	}
 
