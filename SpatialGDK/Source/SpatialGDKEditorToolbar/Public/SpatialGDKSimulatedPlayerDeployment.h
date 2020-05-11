@@ -43,8 +43,10 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
-	// Project name edit box
-	TSharedPtr<SEditableTextBox> ProjectNameEdit;
+	// Error reporting
+	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> AssemblyNameInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> DeploymentNameInputErrorReporting;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
@@ -125,7 +127,4 @@ private:
 
 	FReply OnOpenCloudDeploymentPageClicked();
 	bool CanOpenCloudDeploymentPage() const;
-
-	TSharedPtr<IErrorReportingWidget> AssemblyInputErrorReporting;
-	TSharedPtr<IErrorReportingWidget> DeploymentNameInputErrorReporting;
 };
