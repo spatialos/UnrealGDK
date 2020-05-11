@@ -114,12 +114,6 @@ namespace ReleaseTool
                     gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                     gitClient.ForcePush(options.CandidateBranch);
                 }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "ERROR: Unable to prep release candidate branch. Error: {0}", e);
-                return 1;
-            }
 
                 var gitHubClient = new GitHubClient(options);
 
@@ -179,14 +173,12 @@ namespace ReleaseTool
             }
             catch (Exception e)
             {
-                Logger.Error(e, "ERROR: Unable to release candidate branch or merge the release branch back into master. Error: {0}", e);
+                Logger.Error(e, "ERROR: Unable to release candidate branch and/or merge the release branch back into master. Error: {0}", e);
                 return 1;
             }
 
             return 0;
         }
-
-        // TODO: Update "UpdateChangeLog" so that it finds the existing CHANGELOG heading and updates the date.
         internal static void UpdateChangeLog(string ChangeLogFilePath, Options options, GitClient gitClient)
         {
             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
@@ -194,28 +186,28 @@ namespace ReleaseTool
                 if (File.Exists(ChangeLogFilePath))
                 {
                     Logger.Info("Updating {0}...", ChangeLogFilePath);
-
                     var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
-
-                    // If we already have a changelog entry for this release. Skip this step.
-                    if (changelog.Any(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - ")))
+                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
+                        DateTime.Now);
+                    var releaseIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - "));
+                    // If we already have a changelog entry for this release, replace it.
+                    if (releaseIndex != -1)
                     {
+                        changelog[releaseIndex] = releaseHeading;
                         Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilePath);
                         return;
                     }
-
-                    // First add the new release heading under the "## Unreleased" one.
-                    // Assuming that this is the first heading.
-                    var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
-                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
-                        DateTime.Now);
-
-                    changelog.InsertRange(unreleasedIndex + 1, new[]
+                    else 
                     {
-                        string.Empty,
-                        releaseHeading
-                    });
-
+                        // Add the new release heading under the "## Unreleased" one.
+                        // Assuming that this is the first heading.
+                        var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
+                        changelog.InsertRange(unreleasedIndex + 1, new[]
+                        {
+                            string.Empty,
+                            releaseHeading
+                        });
+                    }
                     File.WriteAllLines(ChangeLogFilePath, changelog);
                     gitClient.StageFile(ChangeLogFilePath);
                 }
