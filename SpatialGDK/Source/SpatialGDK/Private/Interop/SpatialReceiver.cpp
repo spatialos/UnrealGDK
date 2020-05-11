@@ -118,10 +118,6 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 	{
-		if (StaticComponentView->GetComponentData<UnrealMetadata>(PendingAddComponent.EntityId) == nullptr)
-		{
-			continue;
-		}
 		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
 		{
 			continue;
