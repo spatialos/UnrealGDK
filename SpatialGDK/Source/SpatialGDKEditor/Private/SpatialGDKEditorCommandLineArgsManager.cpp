@@ -36,6 +36,16 @@ void FSpatialGDKEditorCommandLineArgsManager::Startup()
 
 void FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled(double ExecutionTime)
 {
+	RemoveFromDevice();
+}
+
+void FSpatialGDKEditorCommandLineArgsManager::OnLauncherFinished(bool Outcome, double ExecutionTime, int32 ReturnCode)
+{
+	RemoveFromDevice();
+}
+
+void FSpatialGDKEditorCommandLineArgsManager::RemoveFromDevice()
+{
 	if (bAndroidDevice)
 	{
 		RemoveFromAndroidDevice();
@@ -49,6 +59,7 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled(double Executio
 void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr LauncherWorkerPtr, ILauncherProfileRef LauncherProfileRef)
 {
 	LauncherWorkerPtr->OnCanceled().AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled);
+	LauncherWorkerPtr->OnCompleted().AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLauncherFinished);
 
 	bIOSDevice = false;
 	bAndroidDevice = false;

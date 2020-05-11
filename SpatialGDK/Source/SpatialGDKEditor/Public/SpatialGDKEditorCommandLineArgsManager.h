@@ -23,6 +23,8 @@ private:
 	void OnCreateLauncher(ILauncherRef LauncherRef);
 	void OnLaunch(ILauncherWorkerPtr LauncherWorkerPtr, ILauncherProfileRef LauncherProfileRef);
 	void OnLauncherCanceled(double ExecutionTime);
+	void OnLauncherFinished(bool Outcome, double ExecutionTime, int32 ReturnCode);
+	void RemoveFromDevice();
 
 	bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
 	bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
