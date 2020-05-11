@@ -174,6 +174,10 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 
 Congratulations, you've completed the release process!
 
+**Update public roadmap and known issues**
+1. Create a new column on the [public roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and link the release to it.
+1. Move any [known issues](https://github.com/spatialos/UnrealGDK/projects/2) that were fixed in this release into the "Fixed" column.
+
 ## Clean up
 
 1. Delete all `rc` branches.
