@@ -30,13 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
 - You can now specify deployment tags in the `Cloud Deployment` window.
 - RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
+- When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
 - Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
-- Fixed a crash when running with nullrhi and using SpatialDebugger 
+- Fixed a crash when running with nullrhi and using SpatialDebugger
+- When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
 
 ## [`0.9.0`] - 2020-05-05
 
