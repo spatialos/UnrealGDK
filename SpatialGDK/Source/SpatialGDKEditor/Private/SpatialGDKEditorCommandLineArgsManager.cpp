@@ -50,6 +50,8 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 {
 	LauncherWorkerPtr->OnCanceled().AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled);
 
+	bIOSDevice = false;
+	bAndroidDevice = false;
 	TArray<ILauncherTaskPtr> TaskList;
 	LauncherWorkerPtr->GetTasks(TaskList);
 	for (int32 idx = 0; idx < TaskList.Num(); ++idx)
@@ -57,6 +59,10 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 		if (TaskList[idx]->GetDesc().Contains(TEXT("android")))
 		{
 			bAndroidDevice = true;
+		}
+		if (TaskList[idx]->GetDesc().Contains(TEXT("ios")))
+		{
+			bIOSDevice = true;
 		}
 	}
 	if (bIOSDevice)
