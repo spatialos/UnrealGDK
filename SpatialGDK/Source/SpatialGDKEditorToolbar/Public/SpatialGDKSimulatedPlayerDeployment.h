@@ -125,4 +125,7 @@ private:
 
 	FReply OnOpenCloudDeploymentPageClicked();
 	bool CanOpenCloudDeploymentPage() const;
+
+	TSharedPtr<IErrorReportingWidget> AssemblyInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> DeploymentNameInputErrorReporting;
 };
