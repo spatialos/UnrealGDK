@@ -91,6 +91,8 @@ namespace ReleaseTool
                     {
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
+                            // TODO: Make this placeholder UpdateUnrealEngineVersion function work
+                            UpdateUnrealEngineVersion(UnrealEngineVersionFilename, options, gitClient);
                             break;
                         case "UnrealEngine":
                             UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);

@@ -88,17 +88,18 @@ mkdir -p ./logs
 USER_ID=$(id -u)
 
 # Run the C Sharp Release Tool for each candidate we want to release.
-release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"
-release "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
-release "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
-release "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
-release "TestGymBuildKite"        "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
-
+# release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
 while IFS= read -r ENGINE_VERSION; do
-  prepareRelease "UnrealEngine" \
+  release "UnrealEngine" \
     "dry-run${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "dry-run${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
+
+release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"
+release "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
+release "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
+release "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
+release "TestGymBuildKite"        "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
