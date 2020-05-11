@@ -872,14 +872,7 @@ bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentCanExecute() const
 {
-	if (LocalDeploymentManager->IsSpatialServiceRunning())
-	{
-		return !LocalDeploymentManager->IsLocalDeploymentRunning();
-	}
-	else
-	{
-		return true;
-	}
+	return !LocalDeploymentManager->IsServiceStarting() && !LocalDeploymentManager->IsDeploymentStarting();
 }
 	 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() const
