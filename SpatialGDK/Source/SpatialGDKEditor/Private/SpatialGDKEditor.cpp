@@ -59,14 +59,6 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 
 	if (Method == FullAssetScan)
 	{
-		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
-
-		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-		FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
-		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
-		Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
-
 		// Make sure SchemaDatabase is not loaded.
 		if (UPackage* LoadedDatabase = FindPackage(nullptr, *FPaths::Combine(TEXT("/Game/"), *SpatialConstants::SCHEMA_DATABASE_FILE_PATH)))
 		{
