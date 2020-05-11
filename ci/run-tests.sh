@@ -33,8 +33,8 @@ pushd "$(dirname "$0")"
                 -nullRHI \
                 -run=CookAndGenerateSchema \
                 -map="${TEST_REPO_MAP}"
-				
-			"${UNREAL_EDITOR_PATH}" \
+                
+            "${UNREAL_EDITOR_PATH}" \
                 "${UPROJECT_PATH}" \
                 -NoShaderCompile \
                 -nopause \
