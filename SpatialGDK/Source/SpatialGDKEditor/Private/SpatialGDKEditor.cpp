@@ -36,6 +36,12 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 		return false;
 	}
 
+	if (!FPaths::IsProjectFilePathSet())
+	{
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation called when no project was opened"));
+		return false;
+	}
+
 	// If this has been run from an open editor then prompt the user to save dirty packages and maps.
 	if (!IsRunningCommandlet())
 	{
@@ -80,7 +86,7 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 		FString OptionalParams = EditorSettings->GetCookAndGenerateSchemaAdditionalArgs();
 		OptionalParams += FString::Printf(TEXT(" -targetplatform=%s"), *PlatformName);
 
-		FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
+		FString ProjectPath = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
 		FString UATCommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" CookAndGenerateSchema -nocompile -nocompileeditor -server -noclient %s -nop4 -project=\"%s\" -cook -skipstage -ue4exe=\"%s\" %s -utf8output"),
 			*ProjectPath,
 			FApp::IsEngineInstalled() ? TEXT(" -installed") : TEXT(""),

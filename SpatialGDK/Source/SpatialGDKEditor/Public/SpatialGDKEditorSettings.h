@@ -304,10 +304,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
-	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Platform to target when using Cook And Generate Schema"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema"))
 	FString CookAndGeneratePlatform;
 
-	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Additional arguments passed to Cook And Generate Schema"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
 	FString CookAndGenerateAdditionalArguments;
 
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
