@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
 - You can now specify deployment tags in the `Cloud Deployment` window.
 - RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
+- When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
 - `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
 - Change the icon of the 'Start' toolbar button based on the selected connection flow.
 - Created a new dropdown menu in the Start toolbar button. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client
@@ -47,7 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
 - Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
-- Fixed a crash when running with nullrhi and using SpatialDebugger 
+- Fixed a crash when running with nullrhi and using SpatialDebugger
+- When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
 
 ## [`0.9.0`] - 2020-05-05
 
