@@ -44,22 +44,14 @@ DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, ST
 
 namespace
 {
-#if ENGINE_MINOR_VERSION <= 22
-	const int32 MaxSendingChangeHistory = FRepState::MAX_CHANGE_HISTORY;
-#else
-	const int32 MaxSendingChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
-#endif
+const int32 MaxSendingChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
 
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
 void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 {
-#if ENGINE_MINOR_VERSION <= 22
-	FRepState* SendingRepState = RepState.Get();
-#else
 	FSendingRepState* SendingRepState = RepState->GetSendingRepState();
-#endif
 
 	check(SendingRepState->HistoryEnd >= SendingRepState->HistoryStart);
 
@@ -511,9 +503,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	else if (Actor->IsPendingKillOrUnreachable())
 	{
 		bActorIsPendingKill = true;
-#if ENGINE_MINOR_VERSION > 22
 		ActorReplicator.Reset();
-#endif
 		FString Error(FString::Printf(TEXT("ReplicateActor called with PendingKill Actor! %s"), *Describe()));
 		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
 		ensureMsgf(false, TEXT("%s"), *Error);
@@ -591,13 +581,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 
-#if ENGINE_MINOR_VERSION <= 22
-	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
-	FRepState* SendingRepState = ActorReplicator->RepState.Get();
-#else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	FSendingRepState* SendingRepState = ActorReplicator->RepState->GetSendingRepState();
-#endif
 
 	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
 	FRepChangedHistory& PossibleNewHistoryItem = SendingRepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -649,7 +634,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			// We preemptively set the Actor role to SimulatedProxy if:
 			//  - offloading is disabled (with offloading we never give up authority since we're always spawning authoritatively),
 			//  - load balancing is disabled (since the legacy behaviour is to wait until Spatial tells us we have authority) OR
-			//  - load balancing is enabled AND our lb strategy says this worker should have authority AND the Actor isn't locked.
+			//  - load balancing is enabled AND our lb strategy says this worker shouldn't have authority AND the Actor isn't locked.
 			if (!USpatialStatics::IsSpatialOffloadingEnabled() &&
 				(!SpatialGDKSettings->bEnableUnrealLoadBalancer
 					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))))
@@ -694,11 +679,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-#if ENGINE_MINOR_VERSION <= 22
-	SendingRepState->OpenAckedCalled = true;
-#else
 	SendingRepState->bOpenAckedCalled = true;
-#endif
 	ActorReplicator->bLastUpdateEmpty = 1;
 
 	if (bCreatingNewEntity)
@@ -933,13 +914,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 
-#if ENGINE_MINOR_VERSION <= 22
-	Replicator.ChangelistMgr->Update(Replicator.RepState.Get(), Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
-	FRepState* SendingRepState = Replicator.RepState.Get();
-#else
 	Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	FSendingRepState* SendingRepState = Replicator.RepState->GetSendingRepState();
-#endif
 
 	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
 	FRepChangedHistory& PossibleNewHistoryItem = SendingRepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -984,11 +960,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	UpdateChangelistHistory(Replicator.RepState);
 
 	SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-#if ENGINE_MINOR_VERSION <= 22
-	SendingRepState->OpenAckedCalled = true;
-#else
 	SendingRepState->bOpenAckedCalled = true;
-#endif
 	Replicator.bLastUpdateEmpty = 1;
 
 	return RepChanged.Num() > 0;
@@ -1107,15 +1079,9 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 	return HandoverChanged;
 }
 
-#if ENGINE_MINOR_VERSION <= 22
-void USpatialActorChannel::SetChannelActor(AActor* InActor)
-{
-	Super::SetChannelActor(InActor);
-#else
 void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags)
 {
 	Super::SetChannelActor(InActor, Flags);
-#endif
 	USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
 	EntityId = PackageMap->GetEntityIdFromObject(InActor);
 
@@ -1198,11 +1164,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
-#if ENGINE_MINOR_VERSION <= 22
-	Replicator.RepState->RepNotifies = RepNotifies;
-#else
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
-#endif
 
 	Replicator.CallRepNotifies(false);
 }
@@ -1464,11 +1426,7 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 {
 	if (StaticBuffer.Num() == 0)
 	{
-#if ENGINE_MINOR_VERSION <= 22
-		RepLayout.InitShadowData(StaticBuffer, TargetObject->GetClass(), reinterpret_cast<uint8*>(TargetObject));
-#else
 		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
-#endif
 	}
 	else
 	{

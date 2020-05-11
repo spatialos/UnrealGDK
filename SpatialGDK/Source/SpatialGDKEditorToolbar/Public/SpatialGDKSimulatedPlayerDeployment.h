@@ -122,4 +122,7 @@ private:
 	FReply OnGenerateConfigFromCurrentMap();
 
 	FReply OnOpenLaunchConfigEditor();
+
+	FReply OnOpenCloudDeploymentPageClicked();
+	bool CanOpenCloudDeploymentPage() const;
 };
