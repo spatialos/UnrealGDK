@@ -1058,24 +1058,33 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 {
 	// Create and open the cloud configuration dialog
-	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
-		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
-		.HasCloseButton(true)
-		.SupportsMaximize(false)
-		.SupportsMinimize(false)
-		.SizingRule(ESizingRule::Autosized);
+	if (CloudDeploymentSettingsWindowPtr.IsValid())
+	{
+		CloudDeploymentSettingsWindowPtr->BringToFront();
+	}
+	else
+	{
+		CloudDeploymentSettingsWindowPtr = SNew(SWindow)
+			.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
+			.HasCloseButton(true)
+			.SupportsMaximize(false)
+			.SupportsMinimize(false)
+			.SizingRule(ESizingRule::Autosized);
 
-	SimulatedPlayerDeploymentWindowPtr->SetContent(
-		SNew(SBox)
-		.WidthOverride(700.0f)
-		[
-			SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
-			.SpatialGDKEditor(SpatialGDKEditorInstance)
-			.ParentWindow(SimulatedPlayerDeploymentWindowPtr)
-		]
-	);
-
-	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
+		CloudDeploymentSettingsWindowPtr->SetContent(
+			SNew(SBox)
+			.WidthOverride(700.0f)
+			[
+				SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+				.SpatialGDKEditor(SpatialGDKEditorInstance)
+			.ParentWindow(CloudDeploymentSettingsWindowPtr)
+			]
+		);
+		CloudDeploymentSettingsWindowPtr->SetOnWindowClosed(FOnWindowClosed::CreateLambda([=](const TSharedRef<SWindow>& WindowArg) {
+			CloudDeploymentSettingsWindowPtr = nullptr;
+			}));
+		FSlateApplication::Get().AddWindow(CloudDeploymentSettingsWindowPtr.ToSharedRef());
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()

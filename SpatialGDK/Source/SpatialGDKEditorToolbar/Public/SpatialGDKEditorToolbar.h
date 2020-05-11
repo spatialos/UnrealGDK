@@ -167,7 +167,7 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
+	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
