@@ -26,9 +26,7 @@ function Parse-UnrealOptions {
         [string] $category
     )
     $options_arr = $raw_options.Split(";", [System.StringSplitOptions]::RemoveEmptyEntries)
-    Foreach ($option in $options_arr) {
-        $option = "${category}:${option}"
-    }
+    $options_arr = $options_arr | ForEach-Object { "${category}:$_" }
     $options_result = $options_arr -Join ","
     return $options_result
 }
