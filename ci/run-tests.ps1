@@ -25,17 +25,11 @@ function Parse-UnrealOptions {
         [string] $raw_options,
         [string] $category
     )
-    $options_arr = $raw_options.Split(";")
-    $options_result = ""
-    foreach ($option in $options_arr) {
-        if ($option -eq "") {
-            continue
-        }
-        if ($options_result -ne "") {
-            $options_result += ","
-        }
-        $options_result += "${category}:${option}"
+    $options_arr = $raw_options.Split(";", [System.StringSplitOptions]::RemoveEmptyEntries)
+    Foreach ($option in $options_arr) {
+        $option = "${category}:${option}"
     }
+    $options_result = $options_arr -Join ","
     return $options_result
 }
 
