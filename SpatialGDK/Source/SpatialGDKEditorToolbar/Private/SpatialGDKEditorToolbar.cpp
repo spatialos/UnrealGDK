@@ -981,7 +981,7 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
 
 	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuth = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
-	DevAuth->GenerateDevAuthToken();
+	DevAuth->AsyncGenerateDevAuthToken();
 	RefreshAutoStartLocalDeployment();
 }
 

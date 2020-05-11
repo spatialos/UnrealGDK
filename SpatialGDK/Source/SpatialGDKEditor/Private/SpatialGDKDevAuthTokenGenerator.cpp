@@ -16,34 +16,35 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 {
 }
 
-void FSpatialGDKDevAuthTokenGenerator::GenerateDevAuthToken()
+void FSpatialGDKDevAuthTokenGenerator::AsyncGenerateDevAuthToken()
 {
-	if (!bIsGenerating)
+	bool bExpected = false;
+	if (bIsGenerating.CompareExchange(bExpected, true))
 	{
-		bIsGenerating = true;
+		DevAuthToken.Empty();
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 			{
 				AsyncTask(ENamedThreads::GameThread, [this]()
 					{
 						this->ShowTaskStartedNotification(TEXT("Generating Developer Authentication Token"));
 					});
-				FString DevAuthToken;
+
 				USpatialGDKSettings* GDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
 				bool bSuccess = SpatialCommandUtils::GenerateDevAuthToken(GDKRuntimeSettings->IsRunningInChina(), DevAuthToken);
-
-				USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-				GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
-				GDKEditorSettings->SaveConfig();
-				GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
-
-				// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
-				GDKRuntimeSettings->bUseDevelopmentAuthenticationFlow = true;
-				GDKRuntimeSettings->DevelopmentAuthenticationToken = DevAuthToken;
-
 				if (bSuccess)
 				{
 					AsyncTask(ENamedThreads::GameThread, [this]()
 						{
+							USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+							GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
+							GDKEditorSettings->SaveConfig();
+							GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+
+							// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
+							USpatialGDKSettings* GDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+							GDKRuntimeSettings->bUseDevelopmentAuthenticationFlow = true;
+							GDKRuntimeSettings->DevelopmentAuthenticationToken = DevAuthToken;
+
 							this->ShowTaskEndedNotification(TEXT("Developer Authentication Token Updated"), SNotificationItem::CS_Success);
 						});
 				}
@@ -54,26 +55,18 @@ void FSpatialGDKDevAuthTokenGenerator::GenerateDevAuthToken()
 						{
 							this->ShowTaskEndedNotification(TEXT("Developer Authentication Token Updated"), SNotificationItem::CS_Fail);
 						});
-
 				}
-
-				bIsGenerating = false;
 			});
-
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Display, TEXT("Developer Authentication Token requested but a previous request is still pending. New request for generation ignored."));
 	}
 }
 
 void FSpatialGDKDevAuthTokenGenerator::ShowTaskStartedNotification(const FString& NotificationText)
 {
 	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
-	//Info.ButtonDetails.Add(
-	//	FNotificationButtonInfo(
-	//		LOCTEXT("DevAuthTaskCancel", "Cancel"),
-	//		LOCTEXT("DevAuthTaskCancelToolTip", "Cancels execution of this task."),
-	//		FSimpleDelegate::CreateRaw(this, &FSpatialGDKDevAuthTokenGeneration::HandleCancelButtonClicked),
-	//		SNotificationItem::CS_Pending
-	//	)
-	//);
 	Info.ExpireDuration = 5.0f;
 	Info.bFireAndForget = false;
 
@@ -97,6 +90,7 @@ void FSpatialGDKDevAuthTokenGenerator::ShowTaskEndedNotification(const FString& 
 		Notification->SetCompletionState(CompletionState);
 		Notification->ExpireAndFadeout();
 	}
+	bIsGenerating = false;
 }
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEditorPackageAssembly"

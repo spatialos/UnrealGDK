@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
+#include "Templates/Atomic.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKDevAuthTokenGenerator, Log, All);
@@ -13,9 +14,10 @@ class SPATIALGDKEDITOR_API FSpatialGDKDevAuthTokenGenerator : public TSharedFrom
 public:
 	FSpatialGDKDevAuthTokenGenerator();
 
-	void GenerateDevAuthToken();
+	void AsyncGenerateDevAuthToken();
 private:
-	bool bIsGenerating;
+	TAtomic<bool> bIsGenerating;
+	FString DevAuthToken;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 	void ShowTaskStartedNotification(const FString& NotificationText);
