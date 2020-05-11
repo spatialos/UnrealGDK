@@ -28,6 +28,7 @@ namespace ReleaseTool
             "Your human labour is now required to merge these PRs.\n";
 
         private const string ChangeLogFilename = "CHANGELOG.md";
+        private const string CandidateCommitMessageTemplate = "{0}.";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
         public class Options : GitHubClient.IGitHubOptions
@@ -74,9 +75,52 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
+            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, options.GitRepoName);
 
             try
             {
+                var gitHubClient = new GitHubClient(options);
+                    // 1. Clones the source repo.
+                using (var gitClient = GitClient.FromRemote(remoteUrl))
+                {
+                    // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
+                    gitClient.CheckoutRemoteBranch(options.CandidateBranch);
+
+                    // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+                    switch (options.GitRepoName)
+                    {
+                        case "UnrealGDK":
+                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
+                            break;
+                        case "UnrealEngine":
+                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKExampleProjectVersionFile);
+                            break;
+                        case "UnrealGDKExampleProject":
+                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            break;
+                        case "UnrealGDKTestGyms":
+                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            break;
+                        case "UnrealGDKEngineNetTest":
+                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            break;
+                        case "TestGymBuildKite":
+                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            break;
+                    }
+
+                    // 4. Commit changes and push them to a remote candidate branch.
+                    gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+                    gitClient.ForcePush(options.CandidateBranch);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "ERROR: Unable to prep release candidate branch. Error: {0}", e);
+                return 1;
+            }
+
                 var gitHubClient = new GitHubClient(options);
 
                 var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
@@ -140,6 +184,42 @@ namespace ReleaseTool
             }
 
             return 0;
+        }
+
+        // TODO: Update "UpdateChangeLog" so that it finds the existing CHANGELOG heading and updates the date.
+        internal static void UpdateChangeLog(string ChangeLogFilePath, Options options, GitClient gitClient)
+        {
+            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+            {
+                if (File.Exists(ChangeLogFilePath))
+                {
+                    Logger.Info("Updating {0}...", ChangeLogFilePath);
+
+                    var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
+
+                    // If we already have a changelog entry for this release. Skip this step.
+                    if (changelog.Any(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - ")))
+                    {
+                        Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilePath);
+                        return;
+                    }
+
+                    // First add the new release heading under the "## Unreleased" one.
+                    // Assuming that this is the first heading.
+                    var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
+                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
+                        DateTime.Now);
+
+                    changelog.InsertRange(unreleasedIndex + 1, new[]
+                    {
+                        string.Empty,
+                        releaseHeading
+                    });
+
+                    File.WriteAllLines(ChangeLogFilePath, changelog);
+                    gitClient.StageFile(ChangeLogFilePath);
+                }
+            }
         }
 
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
