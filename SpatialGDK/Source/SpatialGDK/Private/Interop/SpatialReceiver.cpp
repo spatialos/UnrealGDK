@@ -868,11 +868,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (Channel->Actor == nullptr)
 	{
-#if ENGINE_MINOR_VERSION <= 22
-		Channel->SetChannelActor(EntityActor);
-#else
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
-#endif
 	}
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;

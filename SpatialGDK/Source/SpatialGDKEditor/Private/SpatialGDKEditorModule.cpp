@@ -2,6 +2,12 @@
 
 #include "SpatialGDKEditorModule.h"
 
+#include "GeneralProjectSettings.h"
+#include "ISettingsModule.h"
+#include "ISettingsContainer.h"
+#include "ISettingsSection.h"
+#include "PropertyEditor/Public/PropertyEditorModule.h"
+
 #include "EditorExtension/GridLBStrategyEditorExtension.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
@@ -10,11 +16,6 @@
 #include "Utils/LaunchConfigEditor.h"
 #include "Utils/LaunchConfigEditorLayoutDetails.h"
 #include "WorkerTypeCustomization.h"
-
-#include "ISettingsModule.h"
-#include "ISettingsContainer.h"
-#include "ISettingsSection.h"
-#include "PropertyEditor/Public/PropertyEditorModule.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
@@ -39,6 +40,31 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	{
 		UnregisterSettings();
 	}
+}
+
+bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
+{
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
+}
+
+FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->ExposedRuntimeIP;
+}
+
+bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
+{
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
+}
+
+FString FSpatialGDKEditorModule::GetDevAuthToken() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentAuthenticationToken;
+}
+
+FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
