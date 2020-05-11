@@ -43,17 +43,16 @@ NEW_USER=unrealworker
 WORKER_ID=$1
 shift 1
 
-# Create a basic folder lock to ensure the worker launch script isn't run in parallel as it contains permission modifications that can fail otherwise
+# Create a basic folder lock to ensure the user permissions modifications aren't run in parallel as otherwise they can race and fail
 if ! mkdir /improbable/logs/lockdir 2>/dev/null
 then
     echo ""Stalling for initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
     sleep 5
 else
     echo ""Initial run"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
-    # sleep 5
 fi
 
-# 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
+# Output all logs to custom worker log file
 useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
