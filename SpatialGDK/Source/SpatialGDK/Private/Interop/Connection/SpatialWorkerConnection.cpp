@@ -21,7 +21,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 		if (OpsProcessingThread == nullptr)
 		{
 			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterOutgoingNetworkOp;
-			ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
+			ThreadWaitCondition.Emplace(bCanWake, 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
 
 			InitializeOpsProcessingThread();
 		}
@@ -170,13 +170,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
 	}
-}
-
-bool USpatialWorkerConnection::Init()
-{
-	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
-
-	return true;
 }
 
 uint32 USpatialWorkerConnection::Run()
