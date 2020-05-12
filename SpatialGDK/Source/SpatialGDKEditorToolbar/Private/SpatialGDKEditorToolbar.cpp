@@ -412,7 +412,7 @@ void OnLocalDeploymentIPChanged(const FText& InText, ETextCommit::Type InCommitT
 	FRegexMatcher IpV4RegexMatcher(IpV4PatternRegex, InputIpAddress);
 	if (!InputIpAddress.IsEmpty() && !IpV4RegexMatcher.FindNext())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input correct IP address."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input a valid IP address."));
 		return;
 	}
 
