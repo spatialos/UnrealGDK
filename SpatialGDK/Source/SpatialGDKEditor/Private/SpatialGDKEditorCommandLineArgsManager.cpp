@@ -8,6 +8,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Serialization/JsonSerializer.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 
@@ -219,70 +220,6 @@ FReply FSpatialGDKEditorCommandLineArgsManager::RemoveFromAndroidDevice()
 	return FReply::Handled();
 }
 
-FReply FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken()
-{
-	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
-	if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-	{
-		Arguments += TEXT(" --environment cn-production");
-	}
-
-	FString CreateDevAuthTokenResult;
-	int32 ExitCode;
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, Arguments, SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
-
-	if (ExitCode != 0)
-	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult)));
-		return FReply::Unhandled();
-	};
-
-	FString AuthResult;
-	FString DevAuthTokenResult;
-	bool bFoundNewline = CreateDevAuthTokenResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &DevAuthTokenResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-	if (!bFoundNewline || DevAuthTokenResult.IsEmpty())
-	{
-		// This is necessary because depending on whether you are already authenticated against spatial, it will either return two json structs or one.
-		DevAuthTokenResult = CreateDevAuthTokenResult;
-	}
-
-	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(DevAuthTokenResult);
-	TSharedPtr<FJsonObject> JsonRootObject;
-	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
-	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
-		return FReply::Unhandled();
-	}
-
-	// We need a pointer to a shared pointer due to how the JSON API works.
-	const TSharedPtr<FJsonObject>* JsonDataObject;
-	if (!(JsonRootObject->TryGetObjectField("json_data", JsonDataObject)))
-	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult)));
-		return FReply::Unhandled();
-	}
-
-	FString TokenSecret;
-	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
-	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult)));
-		return FReply::Unhandled();
-	}
-
-	if (USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>())
-	{
-		SpatialGDKEditorSettings->DevelopmentAuthenticationToken = TokenSecret;
-		SpatialGDKEditorSettings->SaveConfig();
-		SpatialGDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
-	}
-
-	return FReply::Handled();
-}
-
 bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -334,6 +271,23 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 	}
 
 	return true;
+}
+
+FReply FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken()
+{
+	FString DevAuthToken, ErrorMessage;
+	if (!SpatialCommandUtils::GenerateDevAuthToken(GetMutableDefault<USpatialGDKSettings>()->IsRunningInChina(), DevAuthToken, ErrorMessage))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));
+		return FReply::Unhandled();
+	}
+	if (USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>())
+	{
+		SpatialGDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
+		SpatialGDKEditorSettings->SaveConfig();
+		SpatialGDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+	}
+	return FReply::Handled();
 }
 
 bool FSpatialGDKEditorCommandLineArgsManager::TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile)

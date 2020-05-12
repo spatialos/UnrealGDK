@@ -11,6 +11,7 @@
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorModule.h"
@@ -38,6 +39,15 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 			Settings->OnWorkerTypesChanged();
 		}
 		CurrentLayout->ForceRefreshDetails();
+	}
+}
+
+namespace
+{
+	FSpatialGDKEditorCommandLineArgsManager& GetCommandLineArgsManager()
+	{
+		FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
+		return EditorModule.GetCommandLineArgsManager();
 	}
 }
 
@@ -85,7 +95,9 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken)
+			.OnClicked(FOnClicked::CreateLambda([this] {
+				return GetCommandLineArgsManager().GenerateDevAuthToken();
+			}))
 			.Content()
 			[
 				SNew(STextBlock).Text(FText::FromString("Generate Dev Auth Token"))
@@ -104,7 +116,9 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
+				.OnClicked(FOnClicked::CreateLambda([this] {
+					return GetCommandLineArgsManager().PushToAndroidDevice();
+				}))
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
@@ -115,7 +129,9 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromAndroidDevice)
+				.OnClicked(FOnClicked::CreateLambda([this] {
+					return GetCommandLineArgsManager().RemoveFromAndroidDevice();
+				}))
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from Android device"))
@@ -134,7 +150,9 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
+				.OnClicked(FOnClicked::CreateLambda([this] {
+					return GetCommandLineArgsManager().PushToIOSDevice();
+				}))
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
@@ -145,7 +163,9 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(this, &FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromIOSDevice)
+				.OnClicked(FOnClicked::CreateLambda([this] {
+					return GetCommandLineArgsManager().RemoveFromIOSDevice();
+				}))
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from iOS device"))
@@ -153,35 +173,3 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			]
 		];
 }
-
-FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
-{
-	return GetCommandLineArgsManager().GenerateDevAuthToken();
-}
-
-FSpatialGDKEditorCommandLineArgsManager& FSpatialGDKEditorLayoutDetails::GetCommandLineArgsManager()
-{
-	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
-	return EditorModule.GetCommandLineArgsManager();
-}
-
-FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
-{
-	return GetCommandLineArgsManager().PushToIOSDevice();
-}
-
-FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
-{
-	return GetCommandLineArgsManager().PushToAndroidDevice();
-}
-
-FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromIOSDevice()
-{
-	return GetCommandLineArgsManager().RemoveFromIOSDevice();
-}
-
-FReply FSpatialGDKEditorLayoutDetails::RemoveCommandLineArgsFromAndroidDevice()
-{
-	return GetCommandLineArgsManager().RemoveFromAndroidDevice();
-}
-
