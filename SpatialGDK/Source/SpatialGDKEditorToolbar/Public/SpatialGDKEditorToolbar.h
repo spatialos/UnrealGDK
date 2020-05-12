@@ -50,6 +50,21 @@ public:
 	void OnShowFailedNotification(const FString& NotificationText);
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
+	FReply OnLaunchDeployment();
+	void OnBuildSuccess();
+	bool CanLaunchDeployment() const;
+
+	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	bool IsDeploymentConfigurationValid() const;
+	bool CanBuildAndUpload() const;
+
+	bool IsSimulatedPlayersEnabled() const;
+	/** Delegate called when the user either clicks the simulated players checkbox */
+	void OnCheckedSimulatedPlayers();
+
+	bool IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker();
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -83,8 +98,10 @@ private:
 	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
-	void ShowSimulatedPlayerDeploymentDialog();
+	void ShowCloudDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
+
+	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
 private:
 	bool CanExecuteSchemaGenerator() const;
@@ -124,8 +141,10 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
+	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
+
+	TFuture<bool> AttemptSpatialAuthResult;
 };

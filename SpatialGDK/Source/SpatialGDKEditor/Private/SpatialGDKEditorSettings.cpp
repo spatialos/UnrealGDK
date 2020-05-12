@@ -50,6 +50,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, AssemblyBuildConfiguration(TEXT("Development"))
 	, bUseDevelopmentAuthenticationFlow(false)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
@@ -244,6 +245,12 @@ void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
+{
+	AssemblyBuildConfiguration = Configuration;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
@@ -259,6 +266,24 @@ void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewClus
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
+{
+	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
+{
+	bGenerateSchema = bGenerate;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
+{
+	bGenerateSnapshot = bGenerate;
 	SaveConfig();
 }
 

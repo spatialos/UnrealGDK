@@ -28,8 +28,10 @@ public:
 	TSharedPtr<FUICommandInfo> StopSpatialDeployment;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
 	
-	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
+	TSharedPtr<FUICommandInfo> OpenCloudDeploymentWindowAction;
 	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
+	TSharedPtr<FUICommandInfo> EnableBuildClientWorker;
+	TSharedPtr<FUICommandInfo> EnableBuildSimulatedPlayer;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;
