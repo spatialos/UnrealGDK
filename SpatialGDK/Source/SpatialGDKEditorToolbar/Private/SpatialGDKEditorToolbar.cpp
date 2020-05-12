@@ -434,7 +434,7 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	FRegexMatcher DeploymentNameRegexMatcher(DeploymentNamePatternRegex, InputDeploymentName);
 	if (!InputDeploymentName.IsEmpty() && !DeploymentNameRegexMatcher.FindNext())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input correct deployment name. Deployment names may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input a valid deployment name. Deployment names may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long."));
 		return;
 	}
 	
