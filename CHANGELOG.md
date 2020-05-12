@@ -86,6 +86,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
 - You can now specify deployment tags in the `Cloud Deployment` window.
+- Support for metrics to be submitted by game code. Note this is only available for already approved Improbable metrics.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
