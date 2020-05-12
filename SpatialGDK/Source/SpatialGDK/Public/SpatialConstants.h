@@ -250,8 +250,11 @@ const FString CONSOLE_HOST    = TEXT("console.improbable.io");
 const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
 
 const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString AssemblyPatternHint = TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
 const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
+const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {
@@ -279,6 +282,7 @@ const FString URL_TARGET_DEPLOYMENT_OPTION = TEXT("deployment=");
 const FString URL_PLAYER_ID_OPTION = TEXT("playerid=");
 const FString URL_DISPLAY_NAME_OPTION = TEXT("displayname=");
 const FString URL_METADATA_OPTION = TEXT("metadata=");
+const FString URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION = TEXT("useExternalIpForBridge");
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
