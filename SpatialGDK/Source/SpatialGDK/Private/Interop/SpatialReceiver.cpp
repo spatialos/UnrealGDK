@@ -127,10 +127,16 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			continue;
 		}
-		if (StaticComponentView->HasAuthority(PendingAddComponent.EntityId, PendingAddComponent.ComponentId))
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PendingAddComponent.EntityId);
+		if (Channel == nullptr)
 		{
-			// Hacky, allows servers to change state if they are going to be authoritative, without us overwriting it with old data
-			// TODO: UNR-3457
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Got an add component for an entity (%lld) that doesn't have an associated actor channel."), PendingAddComponent.EntityId);
+			continue;
+		}
+		if (Channel->bCreatedEntity)
+		{
+			// Allows servers to change state if they are going to be authoritative, without us overwriting it with old data
+			// TODO: UNR-3457 to remove this workaround
 			continue;
 		}
 
