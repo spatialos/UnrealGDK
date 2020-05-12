@@ -1059,12 +1059,13 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 			[
 				SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
 				.SpatialGDKEditor(SpatialGDKEditorInstance)
-			.ParentWindow(CloudDeploymentSettingsWindowPtr)
+				.ParentWindow(CloudDeploymentSettingsWindowPtr)
 			]
 		);
-		CloudDeploymentSettingsWindowPtr->SetOnWindowClosed(FOnWindowClosed::CreateLambda([=](const TSharedRef<SWindow>& WindowArg) {
+		CloudDeploymentSettingsWindowPtr->SetOnWindowClosed(FOnWindowClosed::CreateLambda([=](const TSharedRef<SWindow>& WindowArg)
+		{
 			CloudDeploymentSettingsWindowPtr = nullptr;
-			}));
+		}));
 		FSlateApplication::Get().AddWindow(CloudDeploymentSettingsWindowPtr.ToSharedRef());
 	}
 }
