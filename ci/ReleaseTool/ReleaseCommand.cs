@@ -89,14 +89,15 @@ namespace ReleaseTool
                     // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                     switch (options.GitRepoName)
                     {
-                        case "UnrealGDK":
-                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
-                            // TODO: Make this placeholder UpdateUnrealEngineVersion function work
-                            UpdateUnrealEngineVersion(UnrealEngineVersionFilename, options, gitClient);
-                            break;
                         case "UnrealEngine":
                             UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
                             UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKExampleProjectVersionFile);
+                            break;
+                        case "UnrealGDK":
+                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
+                            // TODO: Make this placeholder UpdateUnrealEngineVersion function work
+                            BuildkiteAgent.GetMetadata("UnrealEngine-release-commits");
+                            UpdateUnrealEngineVersion(UnrealEngineVersionFilename, options, gitClient);
                             break;
                         case "UnrealGDKExampleProject":
                             UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
@@ -126,6 +127,11 @@ namespace ReleaseTool
 
                 // Merge into release
                 var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
+                
+                //TODO: Complete this.
+                // Set "{options.GitRepoName}-release-commit" BuildKite Metadate.
+                // This is used to update the commits in the unreal-engine.version file in the UnrealGDK repo.
+                BuildkiteAgent.SetMetaData($"{options.candidate-branch}-release-commit", releaseCommit.SHA1hash);
 
                 if (!mergeResult.Merged)
                 {
