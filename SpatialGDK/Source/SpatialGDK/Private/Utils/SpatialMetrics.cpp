@@ -62,7 +62,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 	// User supplied metrics
 	TArray<FString> UnboundMetrics;
-	for (TPair<FString, UserSppliedMetric> Guage : UserSuppliedMetrics)
+	for (const TPair<FString, UserSuppliedMetric>& Guage : UserSuppliedMetrics)
 	{
 		if (Guage.Value.IsBound())
 		{
@@ -348,26 +348,24 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 	}
 }
 
-void USpatialMetrics::AddCustomMetric(const TCHAR* Metric, const UserSppliedMetric& Delegate)
+void USpatialMetrics::SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate)
 {
-	FString MetricString = Metric;
-	UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Adding custom metric %s (%s)"), *MetricString, Delegate.GetUObject() ? *GetNameSafe(Delegate.GetUObject()) : TEXT("Not attached to UObject"));
-	if (UserSppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(MetricString))
+	UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Adding custom metric %s (%s)"), *Metric, Delegate.GetUObject() ? *GetNameSafe(Delegate.GetUObject()) : TEXT("Not attached to UObject"));
+	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
 	{
 		*ExistingMetric = Delegate;
 	}
 	else
 	{
-		UserSuppliedMetrics.Add(MetricString, Delegate);
+		UserSuppliedMetrics.Add(Metric, Delegate);
 	}
 }
 
-void USpatialMetrics::RemoveCustomMetric(const TCHAR* Metric)
+void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
 {
-	FString MetricString = Metric;
-	if (UserSppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(MetricString))
+	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
 	{
-		UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Removing custom metric %s (%s)"), *MetricString, ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
-		UserSuppliedMetrics.Remove(MetricString);
+		UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Removing custom metric %s (%s)"), *Metric, ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
+		UserSuppliedMetrics.Remove(Metric);
 	}
 }
