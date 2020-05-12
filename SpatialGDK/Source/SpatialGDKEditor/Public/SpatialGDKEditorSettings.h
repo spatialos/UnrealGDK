@@ -362,8 +362,6 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
 
-	static bool IsAssemblyNameValid(const FString& Name);
-	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
@@ -566,4 +564,6 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	static bool IsProjectNameValid(const FString& Name);
+	static bool IsAssemblyNameValid(const FString& Name);
+	static bool IsDeploymentNameValid(const FString& Name);
 };
