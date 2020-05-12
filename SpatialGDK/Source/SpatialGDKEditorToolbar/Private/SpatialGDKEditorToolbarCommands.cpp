@@ -15,9 +15,8 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(StartCloudSpatialDeployment, "Cloud", "Connect to cloud SpatialOS service", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialDeployment, "Stop", "Stops SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(LaunchInspectorWebPageAction, "Inspector", "Launches default web browser to SpatialOS Inspector.", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(OpenSimulatedPlayerConfigurationWindowAction, "Deployment Configuration", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(OpenCloudDeploymentWindowAction, "Deploy", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(OpenLaunchConfigurationEditorAction, "Create Launch Configuration", "Opens an editor to create SpatialOS Launch configurations", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(QuickDeployAction, "Deploy", "Launch Deployment.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(EnableBuildClientWorker, "Build Client Worker", "If checked, ClientWorker will be built and uploaded when launching the cloud deployment.", EUserInterfaceActionType::ToggleButton, FInputChord());
 	UI_COMMAND(EnableBuildSimulatedPlayer, "Build Simulated Player", "If checked, SimulatedPlayer client will be built and uploaded when launching the cloud deployment.", EUserInterfaceActionType::ToggleButton, FInputChord());
 	UI_COMMAND(StartSpatialService, "Start Service", "Starts the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
