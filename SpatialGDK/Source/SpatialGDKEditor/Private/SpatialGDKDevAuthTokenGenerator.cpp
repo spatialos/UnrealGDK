@@ -16,51 +16,60 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 {
 }
 
+void FSpatialGDKDevAuthTokenGenerator::DoUpdateSettings(FString DevAuthToken)
+{
+	AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
+		{
+			USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+			GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
+			GDKEditorSettings->SaveConfig();
+			GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+
+			// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
+			USpatialGDKSettings* GDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+			GDKRuntimeSettings->bUseDevelopmentAuthenticationFlow = true;
+			GDKRuntimeSettings->DevelopmentAuthenticationToken = DevAuthToken;
+
+			this->ShowTaskEndedNotification(TEXT("Developer Authentication Token Updated"), SNotificationItem::CS_Success);
+		});
+}
+
+void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthToken()
+{
+	bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina]
+		{
+			AsyncTask(ENamedThreads::GameThread, [this]()
+				{
+					this->ShowTaskStartedNotification(TEXT("Generating Development Authentication Token"));
+				});
+
+			FString DevAuthToken;
+			if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken))
+			{
+				DoUpdateSettings(DevAuthToken);
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token."));
+				AsyncTask(ENamedThreads::GameThread, [this]()
+					{
+						this->ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
+					});
+			}
+		});
+}
+
 void FSpatialGDKDevAuthTokenGenerator::AsyncGenerateDevAuthToken()
 {
 	bool bExpected = false;
 	if (bIsGenerating.CompareExchange(bExpected, true))
 	{
-		bool bIsRunningInChina = GetMutableDefault<USpatialGDKSettings>()->IsRunningInChina();
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina]
-			{
-				AsyncTask(ENamedThreads::GameThread, [this]()
-					{
-						this->ShowTaskStartedNotification(TEXT("Generating Developer Authentication Token"));
-					});
-
-				FString DevAuthToken;
-				bool bSuccess = SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken);
-				if (bSuccess)
-				{
-					AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
-						{
-							USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-							GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
-							GDKEditorSettings->SaveConfig();
-							GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
-
-							// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
-							USpatialGDKSettings* GDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-							GDKRuntimeSettings->bUseDevelopmentAuthenticationFlow = true;
-							GDKRuntimeSettings->DevelopmentAuthenticationToken = DevAuthToken;
-
-							this->ShowTaskEndedNotification(TEXT("Developer Authentication Token Updated"), SNotificationItem::CS_Success);
-						});
-				}
-				else
-				{
-					UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token."));
-					AsyncTask(ENamedThreads::GameThread, [this]()
-						{
-							this->ShowTaskEndedNotification(TEXT("Developer Authentication Token Updated"), SNotificationItem::CS_Fail);
-						});
-				}
-			});
+		DoGenerateDevAuthToken();
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Display, TEXT("Developer Authentication Token requested but a previous request is still pending. New request for generation ignored."));
+		UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Display, TEXT("A previous Development Authentication Token request is still pending. New request for generation ignored."));
 	}
 }
 

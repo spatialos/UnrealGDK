@@ -15,10 +15,12 @@ public:
 	FSpatialGDKDevAuthTokenGenerator();
 
 	void AsyncGenerateDevAuthToken();
+
 private:
 	TAtomic<bool> bIsGenerating;
-
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 	void ShowTaskStartedNotification(const FString& NotificationText);
 	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
+	void DoGenerateDevAuthToken();
+	void DoUpdateSettings(FString DevAuthToken);
 };
