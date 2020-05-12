@@ -27,6 +27,10 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
+
+	UserSuppliedMetric Delegate;
+	Delegate.BindUObject(this, &USpatialMetrics::GetAverageFPS);
+	SetCustomMetric(SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS, Delegate);
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
@@ -53,13 +57,6 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 
 	SpatialGDK::SpatialMetrics Metrics;
 	Metrics.Load = WorkerLoad; 
-	// Dynamic.FPS
-	{
-		SpatialGDK::GaugeMetric DynamicFPSGauge;
-		DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
-		DynamicFPSGauge.Value = AverageFPS;
-		Metrics.GaugeMetrics.Add(DynamicFPSGauge);
-	}
 	// User supplied metrics
 	TArray<FString> UnboundMetrics;
 	for (const TPair<FString, UserSuppliedMetric>& Guage : UserSuppliedMetrics)
