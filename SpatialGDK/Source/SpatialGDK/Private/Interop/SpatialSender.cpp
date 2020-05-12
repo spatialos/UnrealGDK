@@ -527,6 +527,12 @@ void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel
 {
 	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
 
+	if (!bNetOwned)
+	{
+		// Ensure we don't retain stale component data when losing ownership
+		NetDriver->Receiver->ClearPendingOwnerOnlyComponentsForEntity(EntityId);
+	}
+
 	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterestForActor(Channel, bNetOwned));
 }
 
