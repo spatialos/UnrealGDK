@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using CommandLine;
 using Octokit;
 
@@ -52,6 +55,9 @@ namespace ReleaseTool
             [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
             public string GithubOrgName { get; set; }
 
+            [Option("engine-versions", HelpText = "The set of engine versions to release against", Required = false)]
+            public string EngineVersions { get; set; }
+
             public string GitHubTokenFile { get; set; }
 
             public string GitHubToken { get; set; }
@@ -75,19 +81,30 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
-            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, options.GitRepoName);
+            var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
+            var gitHubClient = new GitHubClient(options);
+            var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
+            var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
 
+            // Check if the PR has been merged already for repeatability's sake. In the case where the release
+            // step fails for whatever reason, any PRs that were already merged should stay merged and we should
+            // just skip them.
+            if (gitHubClient.GetMergeState(gitHubRepo, pullRequestId) == GitHubClient.MergeState.AlreadyMerged)
+            {
+                return 0;
+            }
+
+            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             try
             {
-                var gitHubClient = new GitHubClient(options);
-                    // 1. Clones the source repo.
+                // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
                     // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
                     gitClient.CheckoutRemoteBranch(options.CandidateBranch);
 
                     // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                    switch (options.GitRepoName)
+                    switch (repoName)
                     {
                         case "UnrealEngine":
                             UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
@@ -95,11 +112,14 @@ namespace ReleaseTool
                             break;
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
-                            // TODO: Make this placeholder UpdateUnrealEngineVersion function work
-                            // TODO: How do we pull all UnrealEngine versions?
-                            // We need to know the name of all UnrealEngine rc branches in order to get "{options.candidate-branch}-release-commit". 
-                            BuildkiteAgent.GetMetadata($"{options.candidate-branch}-release-commit");
-                            UpdateUnrealEngineVersion(UnrealEngineVersionFilename, options, gitClient);
+
+                            var releaseHashes = options.EngineVersions.Split("\n")
+                                .Select(version => $"dry-run/{version.Trim()}-release")
+                                .Select(BuildkiteAgent.GetMetadata)
+                                .Select(hash => $"UnrealEngine-{hash}")
+                                .ToList();
+
+                            UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
                             break;
                         case "UnrealGDKExampleProject":
                             UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
@@ -120,27 +140,35 @@ namespace ReleaseTool
                     gitClient.ForcePush(options.CandidateBranch);
                 }
 
-                var gitHubClient = new GitHubClient(options);
+                // Since we've pushed changes, we need to wait for all checks to pass before attempting to merge it.
+                var startTime = DateTime.Now;
+                while (true)
+                {
+                    if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
+                    {
+                        throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
+                    }
 
-                var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
+                    if (gitHubClient.GetMergeState(gitHubRepo, pullRequestId) == GitHubClient.MergeState.ReadyToMerge)
+                    {
+                        break;
+                    }
 
-                var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
-                var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
+                    Thread.Sleep(TimeSpan.FromMinutes(1));
+                }
 
                 // Merge into release
                 var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
-                
-                //TODO: Complete this.
-                // Set "{options.GitRepoName}-release-commit" BuildKite Metadate.
-                // This is used to update the commits in the unreal-engine.version file in the UnrealGDK repo.
-                // "releaseCommit.SHA1hash" is based on the format of "pullRequest.HtmlUrl" but idk how this actually works.
-                BuildkiteAgent.SetMetaData($"{options.candidate-branch}-release-commit", releaseCommit.SHA1hash);
 
                 if (!mergeResult.Merged)
                 {
                     throw new InvalidOperationException(
                         $"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                 }
+
+                // This is used to update the commits in the unreal-engine.version file in the UnrealGDK repo.
+                // "releaseCommit.SHA1hash" is based on the format of "pullRequest.HtmlUrl" but idk how this actually works.
+                BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
 
                 // Delete candidate branch.
                 gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
@@ -208,7 +236,7 @@ namespace ReleaseTool
                         Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilePath);
                         return;
                     }
-                    else 
+                    else
                     {
                         // Add the new release heading under the "## Unreleased" one.
                         // Assuming that this is the first heading.
@@ -231,7 +259,7 @@ namespace ReleaseTool
 
             string name;
             string releaseBody;
-            
+
             switch (repoName)
             {
                 case "UnrealGDK":
@@ -265,7 +293,7 @@ You can read the full release notes [here](https://github.com/spatialos/UnrealGD
 
 Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
 
-Happy developing, 
+Happy developing,
 
 *The GDK team*
 
@@ -449,6 +477,17 @@ GDK team";
             }
 
             return releaseBody.ToString();
+        }
+
+        private static void UpdateUnrealEngineVersionFile(List<string> versions, GitClient client)
+        {
+            const string unrealEngineVersionFile = "ci/unreal-engine.version";
+
+            using (new WorkingDirectoryScope(client.RepositoryPath))
+            {
+                File.WriteAllLines(unrealEngineVersionFile, versions);
+                client.StageFile(unrealEngineVersionFile);
+            }
         }
     }
 }

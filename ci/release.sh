@@ -11,6 +11,7 @@ release () {
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
+  local ENGINE_VERSIONS="${7:-}"
 
   echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
 
@@ -26,7 +27,8 @@ release () {
         --release-branch="${RELEASE_BRANCH}" \
         --github-key-file="/var/github/github_token" \
         --pull-request-url="${PR_URL}" \
-        --github-organization="${GITHUB_ORG}"
+        --github-organization="${GITHUB_ORG}" \
+        --engine-versions="${ENGINE_VERSIONS}"
 }
 
 set -e -u -o pipefail
@@ -97,14 +99,14 @@ USER_ID=$(id -u)
 # release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
 while IFS= read -r ENGINE_VERSION; do
   release "UnrealEngine" \
-    "dry-run${ENGINE_VERSION}" \
+    "dry-run/${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "dry-run${ENGINE_VERSION}-release" \
+    "dry-run/${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
 
-release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"  ""
+release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"  "${ENGINE_VERSIONS}"
 release "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
 release "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
 release "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"

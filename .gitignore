@@ -1,6 +1,9 @@
 # Visual Studio Code user specific files
 .vscode/
 
+# IDEA user files
+.idea/
+
 # Visual Studio 2015 user specific files
 .vs/
 

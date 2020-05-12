@@ -13,6 +13,13 @@ namespace ReleaseTool
     /// </summary>
     internal class GitHubClient
     {
+        public enum MergeState
+        {
+            NotReadyToMerge,
+            ReadyToMerge,
+            AlreadyMerged
+        }
+
         private const string DefaultKeyFileLocation = "~/.ssh/github.token";
 
         private const string RemoteUrlRegex = @"(?:https:\/\/github\.com\/|git@github\.com\:)([^\/\.]*)\/([^\/\.]*)\.git";
@@ -37,6 +44,7 @@ namespace ReleaseTool
             octoClient = new OctoClient(ProductHeader);
             this.options = options;
             LoadCredentials();
+
         }
 
         public Repository GetRepositoryFromUrl(string url)
@@ -86,6 +94,23 @@ namespace ReleaseTool
             var createPullRequestTask = octoClient.PullRequest.Create(repository.Id, newPullRequest);
 
             return createPullRequestTask.Result;
+        }
+
+        public MergeState GetMergeState(Repository repository, int pullRequestId)
+        {
+            var pr = octoClient.PullRequest.Get(repository.Id, pullRequestId).Result;
+
+            if (pr.Merged)
+            {
+                return MergeState.AlreadyMerged;
+            }
+
+            if (pr.Mergeable.HasValue)
+            {
+                return pr.Mergeable.Value ? MergeState.ReadyToMerge : MergeState.NotReadyToMerge;
+            }
+
+            return MergeState.NotReadyToMerge;
         }
 
         public PullRequestMerge MergePullRequest(Repository repository, int pullRequestId)
