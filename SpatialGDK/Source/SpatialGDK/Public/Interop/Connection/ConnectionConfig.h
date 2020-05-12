@@ -8,7 +8,6 @@
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-
 #include <WorkerSDK/improbable/c_worker.h>
 
 struct FConnectionConfig
@@ -26,10 +25,10 @@ struct FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
-		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
+		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
-        
+
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -73,7 +72,7 @@ struct FConnectionConfig
 	bool EnableProtocolLoggingAtStartup;
 	FString ProtocolLoggingPrefix;
 	Worker_NetworkConnectionType LinkProtocol;
-	Worker_ConnectionParameters ConnectionParams;
+	Worker_ConnectionParameters ConnectionParams = {};
 	uint8 TcpMultiplexLevel;
 	uint8 TcpNoDelay;
 	uint8 UdpUpstreamIntervalMS;
@@ -142,14 +141,13 @@ public:
 
 	bool TryLoadCommandLineArgs()
 	{
-		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		FParse::Value(CommandLine, TEXT("deployment"), Deployment);
 		FParse::Value(CommandLine, TEXT("playerId"), PlayerId);
 		FParse::Value(CommandLine, TEXT("displayName"), DisplayName);
 		FParse::Value(CommandLine, TEXT("metaData"), MetaData);
-		bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
+		const bool bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
 		return bSuccess;
 	}
 
@@ -176,33 +174,40 @@ public:
 
 	bool TryLoadCommandLineArgs()
 	{
-		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
 
+		// Get command line options first since the URL handling will modify the CommandLine string
+		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+
 		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
-		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
+		FString Host;
+		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), Host))
 		{
 			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
 			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
 			FString URLAddress;
-			FParse::Token(CommandLine, URLAddress, 0);
-			FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
-			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *URLAddress);
-			bSuccess = IpV4RegexMatcher.FindNext();
-			if (bSuccess)
+			FParse::Token(CommandLine, URLAddress, false /* UseEscape */);
+			const FURL URL(nullptr /* Base */, *URLAddress, TRAVEL_Absolute);
+			if (URL.Valid)
 			{
-				SetReceptionistHost(URLAddress);
+				SetupFromURL(URL);
 			}
 		}
+		else
+		{
+			SetReceptionistHost(Host);
+		}
 
-		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
-		return bSuccess;
+		return true;
 	}
 
-	void SetReceptionistHost(const FString& host)
+	void SetupFromURL(const FURL& URL)
 	{
-		ReceptionistHost = host;
-		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		if (!URL.Host.IsEmpty())
+		{
+			SetReceptionistHost(URL.Host);
+		}
+		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
 			UseExternalIp = true;
 		}
@@ -213,5 +218,17 @@ public:
 	uint16 ReceptionistPort;
 
 private:
+	void SetReceptionistHost(const FString& Host)
+	{
+		if (!Host.IsEmpty())
+		{
+			ReceptionistHost = Host;
+			if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+			{
+				UseExternalIp = true;
+			}
+		}
+	}
+
 	FString ReceptionistHost;
 };
