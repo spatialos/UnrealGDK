@@ -6,12 +6,13 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
+#include "UnrealEdMisc.h"
+
 #include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
-#include "UnrealEdMisc.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
 

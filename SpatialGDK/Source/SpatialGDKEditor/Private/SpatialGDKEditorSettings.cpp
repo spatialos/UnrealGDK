@@ -2,18 +2,17 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
-
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Templates/SharedPointer.h"
-
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Templates/SharedPointer.h"
+
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"

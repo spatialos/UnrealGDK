@@ -2,24 +2,23 @@
 
 #include "SpatialGDKEditor.h"
 
-#include "Async/Async.h"
-#include "SpatialGDKEditorCloudLauncher.h"
-#include "SpatialGDKEditorSchemaGenerator.h"
-#include "SpatialGDKEditorSnapshotGenerator.h"
-
-#include "Editor.h"
-#include "FileHelpers.h"
-
 #include "AssetDataTagMap.h"
 #include "AssetRegistryModule.h"
+#include "Async/Async.h"
+#include "Editor.h"
+#include "FileHelpers.h"
 #include "GeneralProjectSettings.h"
 #include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Settings/ProjectPackagingSettings.h"
-#include "SpatialGDKEditorPackageAssembly.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKServicesConstants.h"
 #include "UObject/StrongObjectPtr.h"
+
+#include "SpatialGDKEditorCloudLauncher.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
+#include "SpatialGDKServicesConstants.h"
 
 using namespace SpatialGDKEditor;
 

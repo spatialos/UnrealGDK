@@ -933,7 +933,7 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 		return FReply::Unhandled();
 	}
 
-	AddDeploymentTagIfMissing(SpatialConstants::DEVELOPMENT_DEV_LOGIN);
+	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
 
 	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
 	{
