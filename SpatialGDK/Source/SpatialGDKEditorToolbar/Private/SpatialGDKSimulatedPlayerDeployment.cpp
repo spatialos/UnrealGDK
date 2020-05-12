@@ -1001,22 +1001,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Co
 	SpatialGDKSettings->SetAssemblyBuildConfiguration(Configuration);
 }
 
-FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
-{
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
-	{
-		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
-		PackageAssembly->BuildAllAndUpload(
-			SpatialGDKEditorSettings->GetAssemblyName(),
-			SpatialGDKEditorSettings->AssemblyBuildConfiguration,
-			TEXT(""),
-			SpatialGDKEditorSettings->bForceAssemblyOverwrite
-		);
-	}
-	return FReply::Handled();
-}
-
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
