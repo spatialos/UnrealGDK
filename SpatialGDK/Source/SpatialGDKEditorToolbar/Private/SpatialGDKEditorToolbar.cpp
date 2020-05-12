@@ -425,7 +425,7 @@ void OnLocalDeploymentIPChanged(const FText& InText, ETextCommit::Type InCommitT
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->ExposedRuntimeIP = InputIpAddress;
 	SpatialGDKEditorSettings->SaveConfig();
-	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set Exposed runtime IP address with %s"), *InputIpAddress);
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set local deployment IP address to %s"), *InputIpAddress);
 }
 
 void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommitType)
