@@ -442,6 +442,18 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	// Process authority gained event immediately, so if we're in a critical section, the RPCService will
+	// be correctly configured to process RPCs sent during Actor creation
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+		{
+			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+		}
+	}
+
 	if (bInCriticalSection)
 	{
 		// The actor receiving flow requires authority to be handled after all components have been received, so buffer those if we
@@ -682,7 +694,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
