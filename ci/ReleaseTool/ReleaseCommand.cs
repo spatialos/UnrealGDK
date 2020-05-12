@@ -96,7 +96,9 @@ namespace ReleaseTool
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
                             // TODO: Make this placeholder UpdateUnrealEngineVersion function work
-                            BuildkiteAgent.GetMetadata("UnrealEngine-release-commits");
+                            // TODO: How do we pull all UnrealEngine versions?
+                            // We need to know the name of all UnrealEngine rc branches in order to get "{options.candidate-branch}-release-commit". 
+                            BuildkiteAgent.GetMetadata($"{options.candidate-branch}-release-commit");
                             UpdateUnrealEngineVersion(UnrealEngineVersionFilename, options, gitClient);
                             break;
                         case "UnrealGDKExampleProject":
@@ -131,6 +133,7 @@ namespace ReleaseTool
                 //TODO: Complete this.
                 // Set "{options.GitRepoName}-release-commit" BuildKite Metadate.
                 // This is used to update the commits in the unreal-engine.version file in the UnrealGDK repo.
+                // "releaseCommit.SHA1hash" is based on the format of "pullRequest.HtmlUrl" but idk how this actually works.
                 BuildkiteAgent.SetMetaData($"{options.candidate-branch}-release-commit", releaseCommit.SHA1hash);
 
                 if (!mergeResult.Merged)

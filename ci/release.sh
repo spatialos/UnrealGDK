@@ -82,6 +82,12 @@ fi
 
 RELEASE_VERSION="$(buildkite-agent meta-data get release-version)"
 
+# This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
+GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
+
+# This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
+ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-versions)"
+
 setupReleaseTool
 
 mkdir -p ./logs
@@ -98,7 +104,7 @@ while IFS= read -r ENGINE_VERSION; do
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
 
-release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"
+release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"  ""
 release "UnrealGDKExampleProject" "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
 release "UnrealGDKTestGyms"       "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
 release "UnrealGDKEngineNetTest"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
