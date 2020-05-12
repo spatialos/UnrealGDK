@@ -98,7 +98,7 @@ private:
 
 	// A set of the levels which were loaded before the SpatialOS connection.
 	UPROPERTY()
-	TSet<ULevel*> Levels;
+	TSet<ULevel*> CachedLevelsForNetworkIntialize;
 
 	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);

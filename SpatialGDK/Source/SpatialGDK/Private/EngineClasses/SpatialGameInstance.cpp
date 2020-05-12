@@ -200,7 +200,11 @@ void USpatialGameInstance::Init()
 	Super::Init();
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
-	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
+
+	if (HasSpatialNetDriver())
+	{
+		FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
+	}
 
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
@@ -222,14 +226,14 @@ void USpatialGameInstance::HandleOnConnected()
 	// Cleanup any actors which were created during level load.
 	UWorld* World = GetWorld();
 	check(World != nullptr);
-	for (ULevel* Level : Levels)
+	for (ULevel* Level : CachedLevelsForNetworkIntialize)
 	{
 		if (World->ContainsLevel(Level))
 		{
 			CleanupLevelInitializedNetworkActors(Level);
 		}
 	}
-	Levels.Empty();
+	CachedLevelsForNetworkIntialize.Empty();
 
 	OnSpatialConnected.Broadcast();
 }
@@ -262,13 +266,14 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
+	check(SpatialConnectionManager != nullptr);
 	if (SpatialConnectionManager->IsConnected())
 	{
 		CleanupLevelInitializedNetworkActors(LoadedLevel);
 	}
 	else
 	{
-		Levels.Add(LoadedLevel);
+		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
 	}
 }
 
@@ -277,10 +282,8 @@ void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLe
 	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
 	{
 		AActor* Actor = LoadedLevel->Actors[ActorIndex];
-		if (Actor == nullptr || Actor->HasActorBegunPlay())
+		if (Actor == nullptr)
 		{
-			// Only cleanup if the actor has not yet begun play.
-			// This prevents this from being run multiple times on the same actor.
 			continue;
 		}
 
