@@ -321,6 +321,10 @@ namespace ReleaseTool
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}.
 - It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
+                case "TestGymBuildKite":
+                    return $@"#### Description
+- This PR merges `{candidateBranch}` into `{releaseBranch}.
+- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealEngine":
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}.
