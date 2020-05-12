@@ -651,8 +651,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (IsServer())
 	{
-		GetGameInstance()->CleanupLevelInitializedNetworkActors();
-
 		if (GlobalStateManager != nullptr &&
 			!GlobalStateManager->GetCanBeginPlay() &&
 			StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))

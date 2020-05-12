@@ -71,7 +71,7 @@ public:
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
-	void CleanupLevelInitializedNetworkActors() const;
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -95,4 +95,10 @@ private:
 	// StaticComponentView must persist when server traveling
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
+
+	// A set of the levels which were loaded before the SpatialOS connection.
+	UPROPERTY()
+	TSet<ULevel*> Levels;
+
+	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
 };
