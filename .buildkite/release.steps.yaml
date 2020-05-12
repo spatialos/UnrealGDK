@@ -30,7 +30,7 @@ steps:
         key: "engine-versions"
         required: true
         hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line with the primary Engine version at the top."
-        default: "4.24-SpatialOSUnrealGDK\n4.23-SpatialOSUnrealGDK"
+        default: "dry-run/4.24-SpatialOSUnrealGDK\ndry-run/4.23-SpatialOSUnrealGDK"
 
   # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
   - label: "Prepare the release"

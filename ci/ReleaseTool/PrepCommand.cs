@@ -118,20 +118,20 @@ namespace ReleaseTool
                             UpdatePluginFile(pluginFileName, gitClient);
                             break;
                         case "UnrealEngine":
-                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
-                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKExampleProjectVersionFile);
+                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKExampleProjectVersionFile);
                             break;
                         case "UnrealGDKExampleProject":
-                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKTestGyms":
-                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                         case "TestGymBuildKite":
-                            UpdateVersionFile(gitClient, "{options.Version}-rc", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
                             break;
                     }
 

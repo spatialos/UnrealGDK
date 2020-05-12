@@ -99,8 +99,8 @@ prepareRelease "TestGymBuildKite"         "dry-run/master" "${GDK_VERSION}-rc" "
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \
-    "dry-run/${ENGINE_VERSION}" \
+    "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "dry-run/${ENGINE_VERSION}-release" \
+    "${ENGINE_VERSION}-release" \
     "improbableio"
 done <<< "${ENGINE_VERSIONS}"
