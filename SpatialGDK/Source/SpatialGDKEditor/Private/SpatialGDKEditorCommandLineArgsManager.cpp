@@ -11,29 +11,36 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 
+#ifdef ENABLE_LAUNCHER_DELEGATE
 //need this macro before "ILauncherServicesModule.h" to prevent compile error
 #define LAUNCHERSERVICES_API
 
 #include "Developer\LauncherServices\Public\ILauncherServicesModule.h"
 #include "Developer\LauncherServices\Public\ILauncherWorker.h"
 #include "Developer\LauncherServices\Public\ILauncher.h"
+#endif
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorCommandLineArgsManager, Log, All);
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCommandLineArgsManager);
 
 FSpatialGDKEditorCommandLineArgsManager::FSpatialGDKEditorCommandLineArgsManager()
+#ifdef ENABLE_LAUNCHER_DELEGATE
 	:bAndroidDevice(false)
 	, bIOSDevice(false)
+#endif
 {
 
 }
 
 void FSpatialGDKEditorCommandLineArgsManager::Startup()
 {
+#ifdef ENABLE_LAUNCHER_DELEGATE
 	ILauncherServicesModule& LauncherServicesModule = FModuleManager::LoadModuleChecked<ILauncherServicesModule>(TEXT("LauncherServices"));
 	LauncherServicesModule.OnCreateLauncherDelegate.AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnCreateLauncher);
+#endif
 }
 
+#ifdef ENABLE_LAUNCHER_DELEGATE
 void FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled(double ExecutionTime)
 {
 	RemoveFromDevice();
@@ -90,6 +97,7 @@ void FSpatialGDKEditorCommandLineArgsManager::OnCreateLauncher(ILauncherRef Laun
 {
 	LauncherRef->FLauncherWorkerStartedDelegate.AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLaunch);
 }
+#endif
 
 namespace
 {
