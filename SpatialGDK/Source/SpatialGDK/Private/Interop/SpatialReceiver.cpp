@@ -108,6 +108,11 @@ void USpatialReceiver::LeaveCriticalSection()
 		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {return Component.EntityId == PendingAddEntity;});
 	}
 
+	// The reason the AuthorityChange processing is split according to authority is to avoid cases
+	// where we receive data while being authoritative, as that could be unintuitive to the game devs.
+	// We process Lose Auth -> Add Components -> Gain Auth. A common thing that happens is that on handover we get
+	// ComponentData -> Gain Auth, and with this split you receive data as if you were a client to get the most up-to-date state,
+	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
 		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
@@ -124,11 +129,13 @@ void USpatialReceiver::LeaveCriticalSection()
 		}
 		if (StaticComponentView->HasAuthority(PendingAddComponent.EntityId, PendingAddComponent.ComponentId))
 		{
-			continue; // Hacky, allows servers to change state if they are going to be authoritative, without us overwriting it with old data
+			// Hacky, allows servers to change state if they are going to be authoritative, without us overwriting it with old data
+			// TODO: UNR-3457
+			continue;
 		}
 
 		UE_LOG(LogSpatialReceiver, Verbose,
-			TEXT("Add component inside of a critical section, outside of an add entity, being handled: component id: %d, entity id: %d"),
+			TEXT("Add component inside of a critical section, outside of an add entity, being handled: component id: %d, entity id: %lld"),
 			PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
 		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
