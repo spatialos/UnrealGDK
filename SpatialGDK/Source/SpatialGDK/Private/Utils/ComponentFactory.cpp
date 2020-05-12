@@ -56,11 +56,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 	if (Changes.RepChanged.Num() > 0)
 	{
 		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
-#if ENGINE_MINOR_VERSION <= 22
-		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
-#else
 		FRepHandleIterator HandleIterator(static_cast<UStruct*>(Changes.RepLayout.GetOwner()), ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
-#endif
 		while (HandleIterator.NextHandle())
 		{
 			const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
@@ -133,7 +129,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 				 */
 				const uint32 ProfilerBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
 				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (ProfilerBytesEnd - ProfilerBytesStart) * CHAR_BIT, nullptr));
-#endif				
+#endif
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)

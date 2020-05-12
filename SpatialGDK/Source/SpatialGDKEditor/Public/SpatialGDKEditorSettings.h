@@ -214,6 +214,17 @@ namespace ERegionCode
 	};
 }
 
+UENUM()
+namespace ESpatialOSNetFlow
+{
+	enum Type
+	{
+		NoAutomaticConnection,
+		LocalDeployment,
+		CloudDeployment
+	};
+}
+
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -272,12 +283,8 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
-	/** Expose the runtime on a particular IP address when it is running on this machine. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Expose local runtime"))
-	bool bExposeRuntimeIP;
-
-	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", DisplayName = "Exposed local runtime IP address"))
+	/** Specify on which IP address the local runtime should be reachable. If empty, the local runtime will not be exposed. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
@@ -320,6 +327,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
 		FString MainDeploymentCluster;
 
+	/** Tags used when launching a deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+		FString DeploymentTags;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -351,8 +362,6 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
 
-	static bool IsAssemblyNameValid(const FString& Name);
-	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
@@ -369,10 +378,17 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
 	FString MobileExtraCommandLineArgs;
 
+	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
+	bool bStartPIEClientsWithLocalLaunchOnDevice;
+
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
@@ -473,18 +489,15 @@ public:
 	}
 
 	void SetMainDeploymentCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawMainDeploymentCluster() const
+	FORCEINLINE FString GetMainDeploymentCluster() const
 	{
 		return MainDeploymentCluster;
 	}
 
-	FORCEINLINE FString GetMainDeploymentCluster() const
+	void SetDeploymentTags(const FString& Tags);
+	FORCEINLINE FString GetDeploymentTags() const
 	{
-		if (MainDeploymentCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
-		return MainDeploymentCluster;
+		return DeploymentTags;
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
@@ -525,17 +538,8 @@ public:
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);
-	FORCEINLINE FString GetRawSimulatedPlayerCluster() const
-	{
-		return SimulatedPlayerCluster;
-	}
-
 	FORCEINLINE FString GetSimulatedPlayerCluster() const
 	{
-		if (SimulatedPlayerCluster.IsEmpty())
-		{
-			return "\"\"";
-		}
 		return SimulatedPlayerCluster;
 	}
 
@@ -560,4 +564,6 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	static bool IsProjectNameValid(const FString& Name);
+	static bool IsAssemblyNameValid(const FString& Name);
+	static bool IsDeploymentNameValid(const FString& Name);
 };
