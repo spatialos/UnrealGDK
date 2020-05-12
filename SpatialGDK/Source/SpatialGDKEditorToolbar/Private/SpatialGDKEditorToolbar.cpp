@@ -451,7 +451,7 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->DevelopmentDeploymentToConnect = InText.ToString();
 	SpatialGDKSettings->SaveConfig();
-	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set cloud deployment name with %s"), *InputDeploymentName);
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set cloud deployment name to %s"), *InputDeploymentName);
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuContent()
