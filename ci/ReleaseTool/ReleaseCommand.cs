@@ -30,8 +30,14 @@ namespace ReleaseTool
             "in the repo `{1}` from `{2}` into `{3}`. " +
             "Your human labour is now required to merge these PRs.\n";
 
+        // Changelog file configuration
         private const string ChangeLogFilename = "CHANGELOG.md";
         private const string CandidateCommitMessageTemplate = "{0}.";
+        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
+
+        // Names of the version files that live in the UnrealEngine repository.
+        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
+        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
         public class Options : GitHubClient.IGitHubOptions
@@ -407,6 +413,32 @@ GDK team";
             }
 
             return gitHubClient.CreateDraftRelease(gitHubRepo, options.Version, releaseBody, name, headCommit);
+        }
+
+        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string relativeFilePath)
+        {
+            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+            {
+                Logger.Info("Updating contents of version file '{0}' to '{1}'...", relativeFilePath, fileContents);
+
+                if (!File.Exists(relativeFilePath))
+                {
+                    throw new InvalidOperationException("Could not update the version file as the file " +
+                        $"'{relativeFilePath}' does not exist.");
+                }
+
+                // Pin is always to master in this case.
+                File.WriteAllText(relativeFilePath, $"{fileContents}");
+
+                gitClient.StageFile(relativeFilePath);
+            }
+        }
+
+        private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
+        {
+            var heading = $"{new string('#', level)} {startTitle ?? string.Empty}";
+
+            return markdownLine.StartsWith(heading);
         }
 
         private static (string, int) ExtractPullRequestInfo(string pullRequestUrl)
