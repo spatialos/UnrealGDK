@@ -16,6 +16,7 @@
 #include "HAL/FileManager.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Interfaces/IProjectManager.h"
+#include "Internationalization/Regex.h"
 #include "IOSRuntimeSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
@@ -401,13 +402,42 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 
 void OnLocalDeploymentIPChanged(const FText& InText, ETextCommit::Type InCommitType)
 {
+	if (InCommitType != ETextCommit::OnEnter && InCommitType != ETextCommit::OnUserMovedFocus)
+	{
+		return;
+	}
+
+	const FString& InputIpAddress = InText.ToString();
+	const FRegexPattern IpV4PatternRegex(SpatialConstants::Ipv4Pattern);
+	FRegexMatcher IpV4RegexMatcher(IpV4PatternRegex, InputIpAddress);
+	if (!InputIpAddress.IsEmpty() && !IpV4RegexMatcher.FindNext())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input a valid IP address."));
+		return;
+	}
+
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->ExposedRuntimeIP = InText.ToString();
+	SpatialGDKEditorSettings->ExposedRuntimeIP = InputIpAddress;
 	SpatialGDKEditorSettings->SaveConfig();
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set local deployment IP address to %s"), *InputIpAddress);
 }
 
 void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommitType)
 {
+	if (InCommitType != ETextCommit::OnEnter && InCommitType != ETextCommit::OnUserMovedFocus)
+	{
+		return;
+	}
+
+	const FString& InputDeploymentName = InText.ToString();
+	const FRegexPattern DeploymentNamePatternRegex(SpatialConstants::DeploymentPattern);
+	FRegexMatcher DeploymentNameRegexMatcher(DeploymentNamePatternRegex, InputDeploymentName);
+	if (!InputDeploymentName.IsEmpty() && !DeploymentNameRegexMatcher.FindNext())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input a valid deployment name. Deployment names may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long."));
+		return;
+	}
+	
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->DevelopmentDeploymentToConnect = InText.ToString();
 	SpatialGDKEditorSettings->SaveConfig();
@@ -415,6 +445,7 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->DevelopmentDeploymentToConnect = InText.ToString();
 	SpatialGDKSettings->SaveConfig();
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set cloud deployment name to %s"), *InputDeploymentName);
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuContent()
