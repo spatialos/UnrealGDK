@@ -135,8 +135,8 @@ void USpatialReceiver::LeaveCriticalSection()
 		}
 		if (Channel->bCreatedEntity)
 		{
-			// Allows servers to change state if they are going to be authoritative, without us overwriting it with old data
-			// TODO: UNR-3457 to remove this workaround
+			// Allows servers to change state if they are going to be authoritative, without us overwriting it with old data.
+			// TODO: UNR-3457 to remove this workaround.
 			continue;
 		}
 
