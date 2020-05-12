@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
-#include "EngineUtils.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/Guid.h"

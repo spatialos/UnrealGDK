@@ -100,5 +100,6 @@ private:
 	UPROPERTY()
 	TSet<ULevel*> Levels;
 
+	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
 };
