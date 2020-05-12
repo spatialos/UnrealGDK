@@ -280,6 +280,7 @@ const FString URL_TARGET_DEPLOYMENT_OPTION = TEXT("deployment=");
 const FString URL_PLAYER_ID_OPTION = TEXT("playerid=");
 const FString URL_DISPLAY_NAME_OPTION = TEXT("displayname=");
 const FString URL_METADATA_OPTION = TEXT("metadata=");
+const FString URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION = TEXT("useExternalIpForBridge");
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
