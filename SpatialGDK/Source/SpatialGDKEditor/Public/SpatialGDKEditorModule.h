@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Modules/ModuleInterface.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
 
 class FLBStrategyEditorExtensionManager;
 
-class FSpatialGDKEditorModule : public IModuleInterface
+class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
 public:
 
@@ -20,6 +20,17 @@ public:
 	{
 		return true;
 	}
+
+protected:
+	// Local deployment connection flow
+	virtual bool ShouldConnectToLocalDeployment() const override;
+	virtual FString GetSpatialOSLocalDeploymentIP() const override;
+	virtual bool ShouldStartPIEClientsWithLocalLaunchOnDevice() const override;
+
+	// Cloud deployment connection flow
+	virtual bool ShouldConnectToCloudDeployment() const override;
+	virtual FString GetDevAuthToken() const override;
+	virtual FString GetSpatialOSCloudDeploymentName() const override;
 
 private:
 	void RegisterSettings();

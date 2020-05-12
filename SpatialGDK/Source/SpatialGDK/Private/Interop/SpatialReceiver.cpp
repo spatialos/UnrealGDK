@@ -442,6 +442,18 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	// Process authority gained event immediately, so if we're in a critical section, the RPCService will
+	// be correctly configured to process RPCs sent during Actor creation
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+		{
+			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+		}
+	}
+
 	if (bInCriticalSection)
 	{
 		// The actor receiving flow requires authority to be handled after all components have been received, so buffer those if we
@@ -682,7 +694,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
@@ -868,11 +879,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (Channel->Actor == nullptr)
 	{
-#if ENGINE_MINOR_VERSION <= 22
-		Channel->SetChannelActor(EntityActor);
-#else
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
-#endif
 	}
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
@@ -1119,6 +1126,13 @@ AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp
 
 			return StaticActor;
 		}
+	}
+
+	// Handle linking received unique Actors (e.g. game state, game mode) to instances already spawned on this worker.
+	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
+	if (FUnrealObjectRef::IsUniqueActorClass(ActorClass) && NetDriver->IsServer())
+	{
+		return PackageMap->GetUniqueActorInstanceByClass(ActorClass);
 	}
 
 	return CreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
@@ -2448,7 +2462,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 	// UPackage::IsFullyLoaded, or UObject::HasAnyInternalFlag(EInternalObjectFlag::AsyncLoading) should tell us if it is the case.
 	// In practice, these tests are not enough to prevent using objects too early (symptom is RF_NeedPostLoad being set, and crash when using them later).
 	// GetAsyncLoadPercentage will actually look through the async loading thread's UAsyncPackage maps to see if there are any entries.
-	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further 
+	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further
 	// what is the issue with the other flags and why they do not give us reliable information.
 
 	float Percentage = GetAsyncLoadPercentage(PackagePathName);
@@ -2457,7 +2471,7 @@ bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Class %s package is registered in async loading thread."), *ClassPath)
 		return true;
 	}
-	
+
 	return false;
 }
 
