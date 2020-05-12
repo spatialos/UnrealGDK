@@ -7,9 +7,9 @@ typedef TSharedRef<class ILauncher> ILauncherRef;
 typedef TSharedPtr<class ILauncherWorker> ILauncherWorkerPtr;
 typedef TSharedRef<class ILauncherProfile> ILauncherProfileRef;
 
-//#if ENGINE_MAJOR_VERSION >= 4 && ENGINE_MINOR_VERSION >= 24
-//#define ENABLE_LAUNCHER_DELEGATE
-//#endif
+#if ENGINE_MAJOR_VERSION >= 4 && ENGINE_MINOR_VERSION >= 24
+#define ENABLE_LAUNCHER_DELEGATE
+#endif
 
 class FSpatialGDKEditorCommandLineArgsManager
 {
