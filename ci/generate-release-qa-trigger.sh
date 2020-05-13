@@ -25,7 +25,7 @@ echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
 echo "    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}""
 echo "    async: true"
 echo "    build:"
-echo "        branch: "${GDK_BRANCH_TO_TEST}""
+echo "        branch: "${BRANCH_TO_TEST}""
 echo "        commit: "HEAD""
 echo "    env: "${ENVIRONMENT_VARIABLE}""
 
@@ -33,7 +33,7 @@ echo "    env: "${ENVIRONMENT_VARIABLE}""
 
 ### unrealgdk-premerge with SLOW_NETWORKING_TESTS=true
 while IFS= read -r ENGINE_VERSION; do
-    triggerTest "UnrealGDK" \
+    triggerTest "unrealgdk" \
                 "premerge" \
                 "${GDK_VERSION}-rc" \
                 "SLOW_NETWORKING_TESTS: "true" \n
@@ -43,7 +43,7 @@ done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdk-premerge with BUILD_ALL_CONFIGURATIONS=true
 while IFS= read -r ENGINE_VERSION; do
-    triggerTest "UnrealGDK" \
+    triggerTest "unrealgdk" \
                 "premerge" \
                 "${GDK_VERSION}-rc" \
                 "BUILD_ALL_CONFIGURATIONS: "true" \n
@@ -53,7 +53,7 @@ done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdkexampleproject-nightly
 while IFS= read -r ENGINE_VERSION; do
-    triggerTest "UnrealGDKExampleProject" \
+    triggerTest "unrealgdkexampleproject" \
                 "nightly" \
                 "${GDK_VERSION}-rc" \
                 "GDK_BRANCH: "${GDK_VERSION}-rc" \n
@@ -63,21 +63,21 @@ done <<< "${ENGINE_VERSIONS}"
 ### TODO: I think we need to add more environment variables to this, as by default the unrealgdk-nfr pipeline runs no tests (you must opt into each one).
 ### unrealgdk-nfr
 while IFS= read -r ENGINE_VERSION; do
-    triggerTest "UnrealGDK" \
+    triggerTest "unrealgdk" \
                 "nfr" \
                 "${GDK_VERSION}-rc"
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealengine-premerge
 while IFS= read -r ENGINE_VERSION; do
-  triggerTest   "UnrealEngine" \
+  triggerTest   "unrealengine" \
                 "premerge" \
                 "${ENGINE_VERSION}-${GDK_VERSION}-rc"
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealengine-nightly
 while IFS= read -r ENGINE_VERSION; do
-  triggerTest   "UnrealEngine" \
+  triggerTest   "unrealengine" \
                 "nightly" \
                 "${ENGINE_VERSION}-${GDK_VERSION}-rc"
                 "GDK_BRANCH: "${GDK_VERSION}-rc" \n
