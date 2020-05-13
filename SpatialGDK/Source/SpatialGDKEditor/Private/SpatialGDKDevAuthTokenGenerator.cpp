@@ -16,48 +16,44 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 {
 }
 
-void FSpatialGDKDevAuthTokenGenerator::DoUpdateSettings(FString DevAuthToken)
+void FSpatialGDKDevAuthTokenGenerator::UpdateSettings(FString DevAuthToken)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
-		{
-			USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-			GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
-			GDKEditorSettings->SaveConfig();
-			GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+	{
+		USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
+		GDKEditorSettings->SaveConfig();
+		GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+		GDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
 
-			// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
-			USpatialGDKSettings* GDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-			GDKRuntimeSettings->bUseDevelopmentAuthenticationFlow = true;
-			GDKRuntimeSettings->DevelopmentAuthenticationToken = DevAuthToken;
-
-			this->ShowTaskEndedNotification(TEXT("Developer Authentication Token Updated"), SNotificationItem::CS_Success);
-		});
+		this->ShowTaskEndedNotification(TEXT("Development Authentication Token Updated"), SNotificationItem::CS_Success);
+	});
 }
 
 void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthToken()
 {
 	bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina]
+	{
+		AsyncTask(ENamedThreads::GameThread, [this]()
 		{
-			AsyncTask(ENamedThreads::GameThread, [this]()
-				{
-					this->ShowTaskStartedNotification(TEXT("Generating Development Authentication Token"));
-				});
-
-			FString DevAuthToken;
-			if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken))
-			{
-				DoUpdateSettings(DevAuthToken);
-			}
-			else
-			{
-				UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token."));
-				AsyncTask(ENamedThreads::GameThread, [this]()
-					{
-						this->ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
-					});
-			}
+			this->ShowTaskStartedNotification(TEXT("Generating Development Authentication Token"));
 		});
+
+		FString DevAuthToken;
+		if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken))
+		{
+			UpdateSettings(DevAuthToken);
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token."));
+			AsyncTask(ENamedThreads::GameThread, [this]()
+			{
+				this->ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
+			});
+		}
+	});
 }
 
 void FSpatialGDKDevAuthTokenGenerator::AsyncGenerateDevAuthToken()

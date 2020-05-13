@@ -241,7 +241,6 @@ public:
 private:
 
 	/** Set DAT in runtime settings. */
-	void SetRuntimeUseDevelopmentAuthenticationFlow();
 	void SetRuntimeDevelopmentDeploymentToConnect();
 
 public:
@@ -605,6 +604,7 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 
 	void SetRuntimeDevelopmentAuthenticationToken();
+	void SetRuntimeUseDevelopmentAuthenticationFlow();
 
 	static bool IsProjectNameValid(const FString& Name);
 };
