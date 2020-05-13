@@ -9,7 +9,6 @@ common: &common
     - "scaler_version=2"
     - "working_hours_time_zone=london"
 
-  timeout_in_minutes: 20
   retry:
     automatic:
         # This is designed to trap and retry failures because agent lost connection. Agent exits with -1 in this case.
