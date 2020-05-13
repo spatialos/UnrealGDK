@@ -54,8 +54,11 @@ class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 {
 	GENERATED_BODY()
 
+private:
+	GDKEventsToStructuredLogs* EventProcessor;
+
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor);
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;

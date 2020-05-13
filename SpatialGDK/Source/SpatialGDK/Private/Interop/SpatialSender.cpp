@@ -58,7 +58,7 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -70,6 +70,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
+
+	EventProcessor = InEventProcessor;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
@@ -87,6 +89,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
 
+	EventProcessor->SendCreateEntity(Channel->Actor, CreateEntityRequestId);
+	
 	return CreateEntityRequestId;
 }
 
@@ -609,6 +613,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
+	EventProcessor->SendAuthorityIntentUpdate(Actor, NewAuthoritativeVirtualWorkerId);
+	
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
@@ -702,6 +708,7 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 {
 	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+	EventProcessor->SendRPC(Actor, Function, Payload);
 }
 #endif
 
@@ -914,6 +921,9 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
 		TargetObjectRef.Entity, RetryRPC->ComponentId, *RetryRPC->Function->GetName(), RetryRPC->Attempts);
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
+
+	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
+	EventProcessor->SendRPCRetry(Channel->Actor, RetryRPC->Function, RetryRPC->Attempts);
 }
 
 void USpatialSender::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel)
@@ -1057,6 +1067,7 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
 	Connection->SendCommandResponse(RequestId, &Response);
+	EventProcessor->SendCommandResponse(RequestId, true);
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1067,11 +1078,13 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse();
 
 	Connection->SendCommandResponse(RequestId, &Response);
+	EventProcessor->SendCommandResponse(RequestId, true);
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
+	EventProcessor->SendCommandResponse(RequestId, false);
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
@@ -1126,7 +1139,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 		}
 		else
 		{
-			Connection->SendDeleteEntityRequest(EntityId);
+			auto RequestID = Connection->SendDeleteEntityRequest(EntityId);
+			EventProcessor->SendDeleteEntity(Actor, EntityId, RequestID);
 		}
 	}
 	else

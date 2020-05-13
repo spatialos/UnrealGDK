@@ -18,6 +18,7 @@
 
 #include "SpatialSender.generated.h"
 
+class GDKEventsToStructuredLogs;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialActorChannel;
@@ -67,8 +68,11 @@ class SPATIALGDK_API USpatialSender : public UObject
 {
 	GENERATED_BODY()
 
+private:
+	GDKEventsToStructuredLogs* EventProcessor;
+	
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);

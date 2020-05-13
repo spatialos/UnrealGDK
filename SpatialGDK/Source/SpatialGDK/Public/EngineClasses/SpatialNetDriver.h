@@ -18,6 +18,8 @@
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
+#include "EventsInstrumentation/EventLogger.h"
+#include "EventsInstrumentation/EventProcessor.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -200,6 +202,9 @@ private:
 
 	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
+	TSharedPtr<GDKStructuredEventLogger> EventLogger;
+	GDKEventsToStructuredLogs EventProcessor;
+	
 	FTimerManager TimerManager;
 
 	bool bAuthoritativeDestruction;
