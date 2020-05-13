@@ -27,7 +27,7 @@ echo "    async: true"
 echo "    build:"
 echo "        branch: "${BRANCH_TO_TEST}""
 echo "        commit: "HEAD""
-echo "    env: "${ENVIRONMENT_VARIABLE}""
+echo "    env: "${ENVIRONMENT_VARIABLES}""
 
 }
 
