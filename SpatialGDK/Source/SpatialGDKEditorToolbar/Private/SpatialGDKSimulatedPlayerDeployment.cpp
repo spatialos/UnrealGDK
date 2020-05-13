@@ -49,11 +49,11 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
 namespace
 {
 	//Build Configurations
-	const FString Debug(TEXT("Debug"));
-	const FString DebugGame(TEXT("DebugGame"));
-	const FString Development(TEXT("Development"));
-	const FString Test(TEXT("Test"));
-	const FString Shipping(TEXT("Shipping"));
+	const FString DebugConfiguration(TEXT("Debug"));
+	const FString DebugGameConfiguration(TEXT("DebugGame"));
+	const FString DevelopmentConfiguration(TEXT("Development"));
+	const FString TestConfiguration(TEXT("Test"));
+	const FString ShippingConfiguration(TEXT("Shipping"));
 } // anonymous namespace
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
@@ -958,24 +958,24 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguratio
 {
 	FMenuBuilder MenuBuilder(true, nullptr);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Debug), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Debug))
+	MenuBuilder.AddMenuEntry(FText::FromString(DebugConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(DebugGame), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugGame))
+	MenuBuilder.AddMenuEntry(FText::FromString(DebugGameConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugGameConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Development), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Development))
+	MenuBuilder.AddMenuEntry(FText::FromString(DevelopmentConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DevelopmentConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Test), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Test))
+	MenuBuilder.AddMenuEntry(FText::FromString(TestConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, TestConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Shipping), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Shipping))
+	MenuBuilder.AddMenuEntry(FText::FromString(ShippingConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, ShippingConfiguration))
 	);
 
 	return MenuBuilder.MakeWidget();

@@ -22,8 +22,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
 namespace
 {
 	const FString SpatialBuildExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe"));
-	const FString Linux = TEXT("Linux");
-	const FString Win64 = TEXT("Win64");
+	const FString LinuxPlatform = TEXT("Linux");
+	const FString Win64Platform = TEXT("Win64");
 } // anonymous namespace
 
 FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
@@ -111,19 +111,19 @@ bool FSpatialGDKPackageAssembly::NextStep()
 		case EPackageAssemblyStep::BUILD_SERVER:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
+				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), LinuxPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_CLIENT:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FApp::GetProjectName(), Win64, AssemblyDetailsPtr->Configuration, TEXT(""));
+				this->BuildAssembly(FApp::GetProjectName(), Win64Platform, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
+				this->BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
 			});
 			break;
 		case EPackageAssemblyStep::UPLOAD_ASSEMBLY:
@@ -155,8 +155,11 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 	}
 	else
 	{
-		FString NotificationMessage = FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-		AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskEndedNotification(TEXT("Assembly Failed"), SNotificationItem::CS_Fail); });
+		AsyncTask(ENamedThreads::GameThread, [this]()
+		{
+			FString NotificationMessage = FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+			this->ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
+		});
 		Steps.Empty();
 	}
 }

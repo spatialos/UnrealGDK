@@ -951,12 +951,12 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		SpatialGDKEditorInstance->LaunchCloudDeployment(
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				this->OnShowSuccessNotification("Successfully launched cloud deployment.");
+				OnShowSuccessNotification("Successfully launched cloud deployment.");
 			}),
 
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				this->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+				OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
 			})
 		);
 	};
@@ -970,7 +970,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		}
 		else
 		{
-			OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+			OnShowFailedNotification(TEXT("Failed to launch cloud deployment. Unable to authenticate with SpatialOS."));
 		}
 	});
 }
