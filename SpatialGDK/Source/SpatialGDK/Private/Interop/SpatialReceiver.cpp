@@ -56,7 +56,7 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -68,6 +68,8 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
+	EventProcessor = InEventProcessor;
+	
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
 	PeriodicallyProcessIncomingRPCs();
 }
@@ -165,6 +167,16 @@ void USpatialReceiver::LeaveCriticalSection()
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
+
+	TWeakObjectPtr<UObject> SpawnedObject = PackageMap->GetObjectFromEntityId(Op.entity_id);
+	if(SpawnedObject.IsValid())
+	{
+		EventProcessor->ReceiveAddEntity(Cast<AActor>(SpawnedObject), Op.entity_id);
+	}
+	else
+	{
+		EventProcessor->ReceiveAddEntity(nullptr, Op.entity_id);
+	}
 }
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
@@ -312,6 +324,16 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 	if (LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->OnEntityRemoved(Op);
+	}
+
+	TWeakObjectPtr<UObject> RemovedObject = PackageMap->GetObjectFromEntityId(Op.entity_id);
+	if (RemovedObject.IsValid())
+	{
+		EventProcessor->ReceiveRemoveEntity(Cast<AActor>(RemovedObject), Op.entity_id);
+	}
+	else
+	{
+		EventProcessor->ReceiveRemoveEntity(nullptr, Op.entity_id);
 	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
@@ -715,6 +737,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 					Actor->OnAuthorityLost();
 				}
+			}
+
+			if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+			{
+				EventProcessor->ReceiveAuthorityChange(Actor, Actor->Role);
 			}
 		}
 
@@ -1660,6 +1687,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"), Op.entity_id, Op.update.component_id);
 	}
+
+	EventProcessor->ReceiveComponentUpdate(Channel->Actor, TargetObject != Channel->Actor ? TargetObject : nullptr, Op.update.component_id);
 }
 
 void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
@@ -1754,23 +1783,27 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(Op);
+		EventProcessor->ReceiveNamedCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), Op.request_id);
 		return;
 	}
 	else if (Op.request.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(Op);
+		EventProcessor->ReceiveNamedCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), Op.request_id);
 		return;
 	}
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
 		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		EventProcessor->ReceiveNamedCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), Op.request_id);
 		return;
 	}
 #if WITH_EDITOR
 	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
+		EventProcessor->ReceiveNamedCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), Op.request_id);
 		return;
 	}
 #endif // WITH_EDITOR
@@ -1822,6 +1855,14 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+
+	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
+	EventProcessor->ReceiveCommandRequest(
+		TargetActor,
+		TargetActor != TargetObject ? TargetObject : nullptr,
+		Function,
+		Payload,
+		Op.request_id);
 }
 
 void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
@@ -1830,11 +1871,13 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(Op);
+		EventProcessor->ReceiveNamedCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), Op);
 		return;
 	}
 	else if (Op.response.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(Op);
+		EventProcessor->ReceiveNamedCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), Op);
 		return;
 	}
 
@@ -1848,15 +1891,24 @@ void USpatialReceiver::FlushRetryRPCs()
 
 void USpatialReceiver::ReceiveCommandResponse(const Worker_CommandResponseOp& Op)
 {
+	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
 	TSharedRef<FReliableRPCForRetry>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
 	if (ReliableRPCPtr == nullptr)
 	{
 		// We received a response for some other command, ignore.
+		EventProcessor->ReceiveCommandResponse(TargetActor, nullptr, nullptr, Op);
 		return;
 	}
 
 	TSharedRef<FReliableRPCForRetry> ReliableRPC = *ReliableRPCPtr;
 	PendingReliableRPCs.Remove(Op.request_id);
+
+	EventProcessor->ReceiveCommandResponse(
+		TargetActor,
+		ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr,
+		ReliableRPC->Function,
+		Op);
+	
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		bool bCanRetry = false;
@@ -2050,17 +2102,24 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	}
 
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
-
+	
 	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
 	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(Op);
+		EventProcessor->ReceiveCreateEntityResponse(Channel->Actor, TEXT(""),Op);
 	}
 	else if (Channel.IsStale())
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: "
 			"request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. "
 			"The entity will therefore be deleted once authority is gained."), Op.request_id, Op.entity_id);
+
+		EventProcessor->ReceiveCreateEntityResponse(Channel->Actor, TEXT("Stale Actor Channel - tried to delete entity before gaining authority"), Op);
+	}
+	else
+	{
+		EventProcessor->ReceiveCreateEntityResponse(nullptr, TEXT("Unknown Error"), Op);
 	}
 }
 
