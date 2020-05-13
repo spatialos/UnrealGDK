@@ -297,10 +297,6 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	{
 		QueryGSMToLoadMap();
 	}
-	else
-	{
-		Sender->CreateServerWorkerEntity();
-	}
 
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);

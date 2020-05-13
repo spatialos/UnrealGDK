@@ -1,5 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "Interop/SpatialSender.h"
 #include "Utils/EntityPool.h"
 
 #include "TimerManager.h"
@@ -78,6 +79,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		if (!bIsReady)
 		{
 			bIsReady = true;
+			NetDriver->Sender->CreateServerWorkerEntity(GetNextEntityId());
 		}
 	});
 

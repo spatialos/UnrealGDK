@@ -228,7 +228,7 @@ void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worke
 }
 
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
+void USpatialSender::CreateServerWorkerEntity(Worker_EntityId EntityId, int AttemptCounter)
 {
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
@@ -251,10 +251,10 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
+	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
 		if (!WeakSender.IsValid())
 		{
@@ -284,11 +284,11 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 
 		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		FTimerHandle RetryTimer;
-		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
+		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, EntityId, AttemptCounter]()
 		{
 			if (USpatialSender* SpatialSender = WeakSender.Get())
 			{
-				SpatialSender->CreateServerWorkerEntity(AttemptCounter + 1);
+				SpatialSender->CreateServerWorkerEntity(EntityId, AttemptCounter + 1);
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
