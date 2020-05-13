@@ -18,7 +18,7 @@ triggerTest () {
   local REPO_NAME="${1}"
   local TEST_NAME="${2}"
   local BRANCH_TO_TEST="${3}"
-  local ENVIRONMENT_VARIABLES="${4}"
+  local ENVIRONMENT_VARIABLES="${@:4}"
   
 echo "steps:"
 echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
@@ -27,8 +27,11 @@ echo "    async: true"
 echo "    build:"
 echo "        branch: "${BRANCH_TO_TEST}""
 echo "        commit: "HEAD""
-echo "    env: "${ENVIRONMENT_VARIABLES}""
 
+for element in "${ENVIRONMENT_VARIABLES[@]}"
+    do
+        echo "   ${element}"
+    done
 }
 
 ### unrealgdk-premerge with SLOW_NETWORKING_TESTS=true
@@ -36,9 +39,9 @@ while IFS= read -r ENGINE_VERSION; do
     triggerTest "unrealgdk" \
                 "premerge" \
                 "${GDK_VERSION}-rc" \
-                "SLOW_NETWORKING_TESTS: "true" \n
-                TEST_REPO_BRANCH: "${GDK_VERSION}-rc" \n
-                ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
+                "SLOW_NETWORKING_TESTS: "true"" \
+                "TEST_REPO_BRANCH: "${GDK_VERSION}-rc"" \
+                "ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdk-premerge with BUILD_ALL_CONFIGURATIONS=true
