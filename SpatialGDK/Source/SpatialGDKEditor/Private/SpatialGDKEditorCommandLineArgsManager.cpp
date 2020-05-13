@@ -26,7 +26,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCommandLineArgsManager);
 
 FSpatialGDKEditorCommandLineArgsManager::FSpatialGDKEditorCommandLineArgsManager()
 #ifdef ENABLE_LAUNCHER_DELEGATE
-	:bAndroidDevice(false)
+	: bAndroidDevice(false)
 	, bIOSDevice(false)
 #endif
 {
@@ -58,10 +58,6 @@ void FSpatialGDKEditorCommandLineArgsManager::RemoveFromDevice()
 	{
 		RemoveFromAndroidDevice();
 	}
-	if (bIOSDevice)
-	{
-		RemoveFromIOSDevice();
-	}
 }
 
 void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr LauncherWorkerPtr, ILauncherProfileRef LauncherProfileRef)
@@ -79,14 +75,6 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 		{
 			bAndroidDevice = true;
 		}
-		if (TaskList[idx]->GetDesc().Contains(TEXT("ios")))
-		{
-			bIOSDevice = true;
-		}
-	}
-	if (bIOSDevice)
-	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Ios device launched"));
 	}
 	if (bAndroidDevice)
 	{
