@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
 
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
@@ -44,12 +43,10 @@ public:
 		bool bSuccess = FJsonSerializer::Serialize(TopJsonObject, JsonWriter);
 		JsonWriter->Close();
 		
-		//FJsonObjectConverter::UStructToJsonObjectString<FTestEventTopLevel>(SerialiseEvent, JsonEvent, 0, 0, 0, nullptr, false);
 		Log(JsonEvent);
 	}
 
 private:
-	//TUniquePtr<std::wofstream> WriteStream;
 	TUniquePtr<IFileHandle> WriteHandle;
 	
 	FString LogDirectory;
