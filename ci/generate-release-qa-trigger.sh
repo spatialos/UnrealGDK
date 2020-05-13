@@ -20,14 +20,14 @@ triggerTest () {
   local BRANCH_TO_TEST="${3}"
   local ENVIRONMENT_VARIABLES="${4}"
   
-steps:
-  - trigger: "${REPO_NAME}-${TEST_NAME}"
-    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}"
-    async: true
-    build:
-        branch: "${GDK_BRANCH_TO_TEST}"
-        commit: "HEAD"
-    env: "${ENVIRONMENT_VARIABLE}"
+echo "steps:"
+echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
+echo "    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}""
+echo "    async: true"
+echo "    build:"
+echo "        branch: "${GDK_BRANCH_TO_TEST}""
+echo "        commit: "HEAD""
+echo "    env: "${ENVIRONMENT_VARIABLE}""
 
 }
 
