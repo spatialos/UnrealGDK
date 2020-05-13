@@ -406,7 +406,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		LoadbalancingId = [this]() -> uint32 { return VirtualWorkerTranslator->GetLocalVirtualWorkerId(); };
 	}
 	EventLogger = MakeShared<GDKStructuredEventLogger>(
-		"D:\\Projects\\UnrealGDKEngineNetTest\\Game\\Saved\\Logs\\event_logs\\",
+		"{log directory}",
 		Connection->GetWorkerId().Left(17),
 		WorkerType,
 		LoadbalancingId); //todo: injection root for file name
