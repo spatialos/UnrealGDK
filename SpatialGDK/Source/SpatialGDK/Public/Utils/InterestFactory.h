@@ -56,10 +56,10 @@ private:
 	
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
-	ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	ResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	ResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	ResultType CreateServerAuthInterestResultType();
+	InterestResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	InterestResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	InterestResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	InterestResultType CreateServerAuthInterestResultType();
 
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
@@ -93,7 +93,7 @@ private:
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	// If the result types flag is flipped, set the specified result type.
-	void SetResultType(Query& OutQuery, const ResultType& InResultType) const;
+	void SetResultType(Query& OutQuery, const InterestResultType& InResultType) const;
 
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
@@ -103,10 +103,10 @@ private:
 	FrequencyConstraints ClientCheckoutRadiusConstraint;
 
 	// Cache the result types of queries.
-	ResultType ClientNonAuthInterestResultType;
-	ResultType ClientAuthInterestResultType;
-	ResultType ServerNonAuthInterestResultType;
-	ResultType ServerAuthInterestResultType;
+	InterestResultType ClientNonAuthInterestResultType;
+	InterestResultType ClientAuthInterestResultType;
+	InterestResultType ServerNonAuthInterestResultType;
+	InterestResultType ServerAuthInterestResultType;
 };
 
 } // namespace SpatialGDK

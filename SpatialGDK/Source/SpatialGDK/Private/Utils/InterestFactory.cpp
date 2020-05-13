@@ -40,9 +40,9 @@ void InterestFactory::CreateAndCacheInterestState()
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
 
-ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+InterestResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
 {
-	ResultType ClientNonAuthResultType;
+	InterestResultType ClientNonAuthResultType;
 
 	// Add the required unreal components
 	ClientNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
@@ -58,9 +58,9 @@ ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassI
 	return ClientNonAuthResultType;
 }
 
-ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+InterestResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
 {
-	ResultType ClientAuthResultType;
+	InterestResultType ClientAuthResultType;
 
 	// Add the required known components
 	ClientAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
@@ -73,9 +73,9 @@ ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfo
 	return ClientAuthResultType;
 }
 
-ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+InterestResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
 {
-	ResultType ServerNonAuthResultType;
+	InterestResultType ServerNonAuthResultType;
 
 	// Add the required unreal components
 	ServerNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
@@ -88,7 +88,7 @@ ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassI
 	return ServerNonAuthResultType;
 }
 
-ResultType InterestFactory::CreateServerAuthInterestResultType()
+InterestResultType InterestFactory::CreateServerAuthInterestResultType()
 {
 	// Just the components that we won't have already checked out through authority
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
@@ -171,7 +171,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// TODO UNR-3042 : Migrate the VirtualWorkerTranslationManager to use the checked-out worker components instead of making a query.
 
 	ServerQuery = Query();
-	SetResultType(ServerQuery, ResultType{ SpatialConstants::WORKER_COMPONENT_ID });
+	SetResultType(ServerQuery, InterestResultType{ SpatialConstants::WORKER_COMPONENT_ID });
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
@@ -243,7 +243,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
 	Query LoadBalanceQuery;
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
-	LoadBalanceQuery.ResultComponentIds = ResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID };
+	LoadBalanceQuery.ResultComponentIds = InterestResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
@@ -582,7 +582,7 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void InterestFactory::SetResultType(Query& OutQuery, const ResultType& InResultType) const
+void InterestFactory::SetResultType(Query& OutQuery, const InterestResultType& InResultType) const
 {
 	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{
