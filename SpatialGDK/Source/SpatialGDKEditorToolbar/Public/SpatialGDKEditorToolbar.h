@@ -4,13 +4,15 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
-#include "LocalDeploymentManager.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
+
+#include "CloudDeploymentConfiguration.h"
+#include "LocalDeploymentManager.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -117,8 +119,6 @@ private:
 
 	FString GetOptionalExposedRuntimeIP() const;
 
-	static void ShowCompileLog();
-
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
@@ -141,4 +141,6 @@ private:
 	FLocalDeploymentManager* LocalDeploymentManager;
 
 	TFuture<bool> AttemptSpatialAuthResult;
+
+	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 };

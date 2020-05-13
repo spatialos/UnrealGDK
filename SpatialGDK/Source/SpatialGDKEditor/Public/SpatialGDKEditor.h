@@ -11,6 +11,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 
 class FSpatialGDKPackageAssembly;
+struct FCloudDeploymentConfiguration;
 
 class SPATIALGDKEDITOR_API FSpatialGDKEditor
 {
@@ -19,7 +20,7 @@ public:
 
 	bool GenerateSchema(bool bFullScan);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
-	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
+	void LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }

@@ -10,7 +10,6 @@
 #include "UnrealEdMisc.h"
 
 #include "SpatialGDKEditorModule.h"
-#include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
@@ -25,10 +24,6 @@ namespace
 	const FString LinuxPlatform = TEXT("Linux");
 	const FString Win64Platform = TEXT("Win64");
 } // anonymous namespace
-
-FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
-{
-}
 
 void FSpatialGDKPackageAssembly::LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir)
 {
@@ -62,25 +57,20 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, boo
 	}
 	FString Args = FString::Printf(TEXT("cloud upload %s %s"), *AssemblyName, *Flags);
 	LaunchTask(SpatialGDKServicesConstants::SpatialExe, Args, WorkingDir);
-	if (AssemblyDetailsPtr.IsValid())
-	{
-		AssemblyDetailsPtr.Reset();
-	}
 }
 
-void FSpatialGDKPackageAssembly::BuildAndUploadAssembly(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForceAssemblyOverwrite)
+void FSpatialGDKPackageAssembly::BuildAndUploadAssembly(const FCloudDeploymentConfiguration& InCloudDeploymentConfiguration)
 {
-	if (AssemblyDetailsPtr == nullptr && Steps.IsEmpty())
+	if (CanBuild())
 	{
-		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, Configuration, bForceAssemblyOverwrite));
-		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+		CloudDeploymentConfiguration = InCloudDeploymentConfiguration;
 
 		Steps.Enqueue(EPackageAssemblyStep::BUILD_SERVER);
-		if (SpatialGDKSettings->IsBuildClientWorkerEnabled())
+		if (CloudDeploymentConfiguration.bBuildClientWorker)
 		{
 			Steps.Enqueue(EPackageAssemblyStep::BUILD_CLIENT);
 		}
-		if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
+		if (CloudDeploymentConfiguration.bSimulatedPlayersEnabled)
 		{
 			Steps.Enqueue(EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS);
 		}
@@ -88,8 +78,8 @@ void FSpatialGDKPackageAssembly::BuildAndUploadAssembly(const FString& AssemblyN
 
 		AsyncTask(ENamedThreads::GameThread, [this]()
 		{
-			this->ShowTaskStartedNotification(TEXT("Building Assembly"));
-			this->NextStep();
+			ShowTaskStartedNotification(TEXT("Building Assembly"));
+			NextStep();
 		});
 	}
 }
@@ -111,25 +101,25 @@ bool FSpatialGDKPackageAssembly::NextStep()
 		case EPackageAssemblyStep::BUILD_SERVER:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), LinuxPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
+				BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), LinuxPlatform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildServerExtraArgs);
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_CLIENT:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FApp::GetProjectName(), Win64Platform, AssemblyDetailsPtr->Configuration, TEXT(""));
+				BuildAssembly(FApp::GetProjectName(), Win64Platform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildClientExtraArgs);
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform, AssemblyDetailsPtr->Configuration, TEXT(""));
+				BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildSimulatedPlayerExtraArgs);
 			});
 			break;
 		case EPackageAssemblyStep::UPLOAD_ASSEMBLY:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->AssemblyDetailsPtr->Upload(*this);
+				UploadAssembly(CloudDeploymentConfiguration.AssemblyName, CloudDeploymentConfiguration.bForceAssemblyOverwrite);
 			});
 			break;
 		default:
@@ -148,7 +138,7 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
 				FString NotificationMessage = FString::Printf(TEXT("Assembly successfully uploaded to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-				this->ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Success);
+				ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Success);
 				OnSuccess.ExecuteIfBound();
 			});
 		}
@@ -158,7 +148,7 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 		AsyncTask(ENamedThreads::GameThread, [this]()
 		{
 			FString NotificationMessage = FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-			this->ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
+			ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 		});
 		Steps.Empty();
 	}
@@ -175,21 +165,8 @@ void FSpatialGDKPackageAssembly::OnTaskCanceled()
 	FString NotificationMessage = FString::Printf(TEXT("Cancelled assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 	AsyncTask(ENamedThreads::GameThread, [this, NotificationMessage]()
 	{
-		this->ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
-		this->AssemblyDetailsPtr.Reset();
+		ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 	});
-}
-
-FSpatialGDKPackageAssembly::AssemblyDetails::AssemblyDetails(const FString& Name, const FString& Config, bool bInForce)
-	: AssemblyName(Name)
-	, Configuration(Config)
-	, bForce(bInForce)
-{
-}
-
-void FSpatialGDKPackageAssembly::AssemblyDetails::Upload(FSpatialGDKPackageAssembly& PackageAssembly)
-{
-	PackageAssembly.UploadAssembly(AssemblyName, bForce);
 }
 
 void FSpatialGDKPackageAssembly::HandleCancelButtonClicked()

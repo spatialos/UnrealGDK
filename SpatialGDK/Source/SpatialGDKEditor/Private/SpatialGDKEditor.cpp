@@ -218,9 +218,9 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+void FSpatialGDKEditor::LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
-	LaunchCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+	LaunchCloudResult = Async(EAsyncExecution::Thread, [&Configuration]() { return SpatialGDKCloudLaunch(Configuration); },
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)

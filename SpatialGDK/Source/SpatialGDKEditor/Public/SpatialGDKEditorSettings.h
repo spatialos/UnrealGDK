@@ -354,7 +354,18 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Snapshot"))
 	bool bGenerateSnapshot;
 
-public:
+	/** Extra arguments to pass when building the server worker. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly")
+	FString BuildServerExtraArgs;
+
+	/** Extra arguments to pass when building the client worker. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly")
+	FString BuildClientExtraArgs;
+
+	/** Extra arguments to pass when building the simulated player worker. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly")
+	FString BuildSimulatedPlayerExtraArgs;
+
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	bool bUseDevelopmentAuthenticationFlow;
@@ -600,7 +611,7 @@ public:
 	}
 
 	void SetNumberOfSimulatedPlayers(uint32 Number);
-	FORCEINLINE uint32 GetNumberOfSimulatedPlayer() const
+	FORCEINLINE uint32 GetNumberOfSimulatedPlayers() const
 	{
 		return NumberOfSimulatedPlayers;
 	}

@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
+#include "CloudDeploymentConfiguration.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
 
 class FMonitoredProcess;
@@ -12,11 +14,9 @@ class FMonitoredProcess;
 class SPATIALGDKEDITOR_API FSpatialGDKPackageAssembly : public TSharedFromThis<FSpatialGDKPackageAssembly>
 {
 public:
-	FSpatialGDKPackageAssembly();
-
 	bool CanBuild() const;
 
-	void BuildAndUploadAssembly(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForceAssemblyOverwrite);
+	void BuildAndUploadAssembly(const FCloudDeploymentConfiguration& InCloudDeploymentConfiguration);
 
 	FSimpleDelegate OnSuccess;
 
@@ -35,16 +35,7 @@ private:
 	TSharedPtr<FMonitoredProcess> PackageAssemblyTask;
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
-	struct AssemblyDetails
-	{
-		AssemblyDetails(const FString& Name, const FString& Config, bool bForce);
-		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
-		FString AssemblyName;
-		FString Configuration;
-		bool bForce;
-	};
-
-	TUniquePtr<AssemblyDetails> AssemblyDetailsPtr;
+	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	void LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir);
 

@@ -453,7 +453,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.ToolTipText(FText::FromString(FString(TEXT("Number of Simulated Players."))))
 									.MinValue(1)
 									.MaxValue(8192)
-									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
+									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayers())
 									.OnValueChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
 								]

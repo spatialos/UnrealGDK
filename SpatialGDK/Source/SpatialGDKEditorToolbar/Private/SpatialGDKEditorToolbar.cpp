@@ -27,6 +27,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
+#include "CloudDeploymentConfiguration.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
@@ -921,24 +922,21 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
 
-	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
+	CloudDeploymentConfiguration.InitFromSettings();
+
+	if (CloudDeploymentConfiguration.bGenerateSchema)
 	{
 		SpatialGDKEditorInstance->GenerateSchema(false);
 	}
 
-	if (SpatialGDKSettings->IsGenerateSnapshotEnabled())
+	if (CloudDeploymentConfiguration.bGenerateSnapshot)
 	{
-		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKSettings->GetSpatialOSSnapshotToSave());
+		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath);
 	}
 
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
-	PackageAssembly->BuildAndUploadAssembly(
-		SpatialGDKSettings->GetAssemblyName(),
-		SpatialGDKSettings->AssemblyBuildConfiguration,
-		TEXT(""),
-		SpatialGDKSettings->IsForceAssemblyOverwriteEnabled()
-	);
+	PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
 
 	return FReply::Handled();
 }
@@ -947,13 +945,13 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
 	auto LaunchCloudDeployment = [this]()
 	{
-		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName()));
+		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
 		SpatialGDKEditorInstance->LaunchCloudDeployment(
+			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowSuccessNotification("Successfully launched cloud deployment.");
 			}),
-
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
