@@ -162,10 +162,7 @@ public:
 	FSubobjectData Subobject;
 
 	UPROPERTY()
-	FRPCData RPC;
-
-	UPROPERTY()
-	uint8 RetryAttempt;
+	FRPCData Rpc;
 };
 
 USTRUCT()
@@ -186,14 +183,5 @@ public:
 	FSubobjectData Subobject;
 
 	UPROPERTY()
-	FRPCData RPC;
-
-	UPROPERTY()
-	bool Success;
-
-	UPROPERTY()
-	uint64 StatusCode;
-
-	UPROPERTY()
-	FString ErrorMessage;
+	FRPCData Rpc;
 };

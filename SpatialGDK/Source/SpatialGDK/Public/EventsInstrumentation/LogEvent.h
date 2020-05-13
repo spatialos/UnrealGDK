@@ -42,7 +42,7 @@ struct FActorData
 
 public:	
 	UPROPERTY()
-	uint64 EntityId;
+	int64 EntityId;
 
 	UPROPERTY()
 	FString Type;
@@ -91,4 +91,16 @@ public:
 	
 	UPROPERTY()
 	FString Name;
+
+	UPROPERTY()
+	uint8 RetryAttempt;
+
+	UPROPERTY()
+	bool Success;
+
+	UPROPERTY()
+	uint64 StatusCode;
+
+	UPROPERTY()
+	FString ErrorMessage;
 };

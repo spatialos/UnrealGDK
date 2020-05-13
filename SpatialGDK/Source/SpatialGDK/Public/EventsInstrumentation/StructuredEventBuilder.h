@@ -51,12 +51,19 @@ public:
 		return Data;
 	}
 
-	static FRPCData ConstructUserRPCData(const UFunction* Function, TraceKey TraceId, Worker_RequestId LocalRequestId)
+	static FRPCData ConstructUserRPCData(const UFunction* Function, TraceKey TraceId, Worker_RequestId LocalRequestId, FString ErrorMessage, uint64 StatusCode, uint8 RetryAttempt)
 	{
 		FRPCData Data;
 		Data.Type = TEXT("USER");
 		Data.LocalRequestId = LocalRequestId;
 		Data.TraceKey = TraceId;
+		Data.ErrorMessage = ErrorMessage;
+		Data.StatusCode = StatusCode;
+		Data.RetryAttempt = RetryAttempt;
+		if(StatusCode != 0)
+		{
+			Data.Success = StatusCode == WORKER_STATUS_CODE_SUCCESS;
+		}
 		if (Function != nullptr)
 		{
 			Data.Name = Function->GetName();
@@ -64,12 +71,19 @@ public:
 		
 		return Data;
 	}
-	static FRPCData ConstructGdkRPCData(FString CommandName, Worker_RequestId LocalRequestId)
+	static FRPCData ConstructGdkRPCData(FString CommandName, Worker_RequestId LocalRequestId, FString ErrorMessage, uint64 StatusCode, uint8 RetryAttempt)
 	{
 		FRPCData Data;
 		Data.Type = TEXT("GDK");
 		Data.LocalRequestId = LocalRequestId;
 		Data.Name = CommandName;
+		Data.ErrorMessage = ErrorMessage;
+		Data.StatusCode = StatusCode;
+		Data.RetryAttempt = RetryAttempt;
+		if (StatusCode != 0)
+		{
+			Data.Success = StatusCode == WORKER_STATUS_CODE_SUCCESS;
+		}
 
 		return Data;
 	}
