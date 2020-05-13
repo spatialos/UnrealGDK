@@ -30,16 +30,16 @@ steps:
         required: true
         hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line with the primary Engine version at the top."
         default: "dry-run/4.24-SpatialOSUnrealGDK\ndry-run/4.23-SpatialOSUnrealGDK"
-
+### TODO: Uncomment prepare when test and release are passing dry-run `git revert`
   # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
-  - label: "Prepare the release"
-    command: ci/prepare-release.sh
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    retry:
-      manual:
-        permit_on_passed: true
+  #- label: "Prepare the release"
+  #  command: ci/prepare-release.sh
+  #  <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+  #  retry:
+  #    manual:
+  #      permit_on_passed: true
 
-  - wait: ~
+ # - wait: ~
   
   # Stage 2: Run all tests against the release candidates.
   - label: "Trigger all automated tests"
