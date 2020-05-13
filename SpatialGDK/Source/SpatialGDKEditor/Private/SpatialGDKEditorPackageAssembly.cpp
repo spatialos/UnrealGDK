@@ -6,6 +6,7 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
+#include "Misc/MonitoredProcess.h"
 #include "UnrealEdMisc.h"
 
 #include "SpatialGDKEditorModule.h"
@@ -105,7 +106,7 @@ bool FSpatialGDKPackageAssembly::NextStep()
 	if (Steps.Dequeue(Target))
 	{
 		bHasStepsRemaining = true;
-		switch(Target)
+		switch (Target)
 		{
 		case EPackageAssemblyStep::BUILD_SERVER:
 			AsyncTask(ENamedThreads::GameThread, [this]()
@@ -126,13 +127,13 @@ bool FSpatialGDKPackageAssembly::NextStep()
 			});
 			break;
 		case EPackageAssemblyStep::UPLOAD_ASSEMBLY:
-		{
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
 				this->AssemblyDetailsPtr->Upload(*this);
 			});
-		}
-		break;
+			break;
+		default:
+			checkNoEntry();
 		}
 	}
 	return bHasStepsRemaining;

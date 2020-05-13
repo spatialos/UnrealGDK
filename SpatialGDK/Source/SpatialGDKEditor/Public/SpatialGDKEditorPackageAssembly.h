@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Logging/LogMacros.h"
-#include "Misc/MonitoredProcess.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
+
+class FMonitoredProcess;
 
 class SPATIALGDKEDITOR_API FSpatialGDKPackageAssembly : public TSharedFromThis<FSpatialGDKPackageAssembly>
 {
