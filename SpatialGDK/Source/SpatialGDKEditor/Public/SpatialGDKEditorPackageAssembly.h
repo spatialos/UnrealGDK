@@ -16,7 +16,7 @@ public:
 
 	bool CanBuild() const;
 
-	void BuildAllAndUpload(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
+	void BuildAndUploadAssembly(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForceAssemblyOverwrite);
 
 	FSimpleDelegate OnSuccess;
 
@@ -46,8 +46,10 @@ private:
 
 	TUniquePtr<AssemblyDetails> AssemblyDetailsPtr;
 
+	void LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir);
+
 	void BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
-	void UploadAssembly(const FString& AssemblyName, bool bForce);
+	void UploadAssembly(const FString& AssemblyName, bool bForceAssemblyOverwrite);
 
 	bool NextStep();
 

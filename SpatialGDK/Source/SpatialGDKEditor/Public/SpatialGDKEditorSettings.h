@@ -310,78 +310,78 @@ private:
 
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Assembly name"))
-		FString AssemblyName;
+	FString AssemblyName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment name"))
-		FString PrimaryDeploymentName;
+	FString PrimaryDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cloud launch configuration path"))
-		FFilePath PrimaryLaunchConfigPath;
+	FFilePath PrimaryLaunchConfigPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Snapshot path"))
-		FFilePath SnapshotPath;
+	FFilePath SnapshotPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
-		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
+	TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
-		FString MainDeploymentCluster;
+	FString MainDeploymentCluster;
 
 	/** Tags used when launching a deployment */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
-		FString DeploymentTags;
+	FString DeploymentTags;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
 	/** The build configuration to use when creating workers for the assembly, e.g. Development */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
-		FString AssemblyBuildConfiguration;
+	FString AssemblyBuildConfiguration;
 
 	/** Allow overwriting an assembly of the same name */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Force Assembly Overwrite"))
-		bool bForceAssemblyOverwrite;
+	bool bForceAssemblyOverwrite;
 
 	/** Whether to build client worker as part of the assembly */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
-		bool bBuildClientWorker;
+	bool bBuildClientWorker;
 
 	/** Whether to generate schema automatically before building an assembly */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Schema"))
-		bool bGenerateSchema;
+	bool bGenerateSchema;
 
 	/** Whether to generate a snapshot automatically before building an assembly */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Snapshot"))
-		bool bGenerateSnapshot;
+	bool bGenerateSnapshot;
 
 public:
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-		bool bUseDevelopmentAuthenticationFlow;
+	bool bUseDevelopmentAuthenticationFlow;
 
 	/** The token created using 'spatial project auth dev-auth-token' */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-		FString DevelopmentAuthenticationToken;
+	FString DevelopmentAuthenticationToken;
 
 	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-		FString DevelopmentDeploymentToConnect;
+	FString DevelopmentDeploymentToConnect;
 
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
-		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
-		FString SimulatedPlayerCluster;
+	FString SimulatedPlayerCluster;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
-		bool bSimulatedPlayersIsEnabled;
+	bool bSimulatedPlayersIsEnabled;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Deployment name"))
-		FString SimulatedPlayerDeploymentName;
+	FString SimulatedPlayerDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
-		uint32 NumberOfSimulatedPlayers;
+	uint32 NumberOfSimulatedPlayers;
 
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);

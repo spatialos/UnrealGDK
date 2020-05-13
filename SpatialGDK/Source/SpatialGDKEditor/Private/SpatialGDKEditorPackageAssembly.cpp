@@ -29,25 +29,29 @@ FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
 {
 }
 
-void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs)
+void FSpatialGDKPackageAssembly::LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir)
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	FString WorkingDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
-	FString Project = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
-	FString Args = FString::Printf(TEXT("%s %s %s %s %s"), *ProjectName, *Platform, *Configuration, *Project, *AdditionalArgs);
-	PackageAssemblyTask = MakeShareable(new FMonitoredProcess(SpatialBuildExe, Args, WorkingDir, true));
+	PackageAssemblyTask = MakeShareable(new FMonitoredProcess(Exe, Args, WorkingDir, /* Hidden */ true));
 	PackageAssemblyTask->OnCompleted().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskCompleted);
 	PackageAssemblyTask->OnOutput().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskOutput);
 	PackageAssemblyTask->OnCanceled().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskCanceled);
 	PackageAssemblyTask->Launch();
 }
 
-void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, bool bForce)
+void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs)
+{
+	FString WorkingDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+	FString Project = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
+	FString Args = FString::Printf(TEXT("%s %s %s %s %s"), *ProjectName, *Platform, *Configuration, *Project, *AdditionalArgs);
+	LaunchTask(SpatialBuildExe, Args, WorkingDir);
+}
+
+void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, bool bForceAssemblyOverwrite)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const FString& WorkingDir = SpatialGDKServicesConstants::SpatialOSDirectory;
 	FString Flags = TEXT("--no_animation");
-	if (bForce)
+	if (bForceAssemblyOverwrite)
 	{
 		Flags += TEXT(" --force");
 	}
@@ -56,22 +60,18 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, boo
 		Flags += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 	FString Args = FString::Printf(TEXT("cloud upload %s %s"), *AssemblyName, *Flags);
-	PackageAssemblyTask = MakeShareable(new FMonitoredProcess(SpatialGDKServicesConstants::SpatialExe, Args, WorkingDir, true));
-	PackageAssemblyTask->OnCompleted().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskCompleted);
-	PackageAssemblyTask->OnOutput().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskOutput);
-	PackageAssemblyTask->OnCanceled().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskCanceled);
-	PackageAssemblyTask->Launch();
+	LaunchTask(SpatialGDKServicesConstants::SpatialExe, Args, WorkingDir);
 	if (AssemblyDetailsPtr.IsValid())
 	{
 		AssemblyDetailsPtr.Reset();
 	}
 }
 
-void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForce)
+void FSpatialGDKPackageAssembly::BuildAndUploadAssembly(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForceAssemblyOverwrite)
 {
 	if (AssemblyDetailsPtr == nullptr && Steps.IsEmpty())
 	{
-		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, Configuration, bForce));
+		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, Configuration, bForceAssemblyOverwrite));
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 		Steps.Enqueue(EPackageAssemblyStep::BUILD_SERVER);
@@ -100,11 +100,11 @@ bool FSpatialGDKPackageAssembly::CanBuild() const
 
 bool FSpatialGDKPackageAssembly::NextStep()
 {
-	bool HasMoreSteps = false;
+	bool bHasStepsRemaining = false;
 	EPackageAssemblyStep Target = EPackageAssemblyStep::NONE;
 	if (Steps.Dequeue(Target))
 	{
-		HasMoreSteps = true;
+		bHasStepsRemaining = true;
 		switch(Target)
 		{
 		case EPackageAssemblyStep::BUILD_SERVER:
@@ -135,7 +135,7 @@ bool FSpatialGDKPackageAssembly::NextStep()
 		break;
 		}
 	}
-	return HasMoreSteps;
+	return bHasStepsRemaining;
 }
 
 void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)

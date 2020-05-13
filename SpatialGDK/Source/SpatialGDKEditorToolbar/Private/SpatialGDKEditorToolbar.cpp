@@ -933,7 +933,7 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
-	PackageAssembly->BuildAllAndUpload(
+	PackageAssembly->BuildAndUploadAssembly(
 		SpatialGDKSettings->GetAssemblyName(),
 		SpatialGDKSettings->AssemblyBuildConfiguration,
 		TEXT(""),
