@@ -17,7 +17,13 @@ public:
 	{
 	}
 
-	bool GenerateSchema(bool bFullScan);
+	enum ESchemaGenerationMethod
+	{
+		InMemoryAsset,
+		FullAssetScan
+	};
+
+	bool GenerateSchema(ESchemaGenerationMethod Method);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);

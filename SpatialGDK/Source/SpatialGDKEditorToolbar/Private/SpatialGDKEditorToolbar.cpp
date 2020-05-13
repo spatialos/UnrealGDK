@@ -833,7 +833,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
 			OnShowSuccessNotification("Initial Schema Generation completed!");
 		}
@@ -847,7 +847,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Full)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
 			OnShowSuccessNotification("Full Schema Generation completed!");
 		}
@@ -861,7 +861,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Incremental)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(false))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
 		{
 			OnShowSuccessNotification("Incremental Schema Generation completed!");
 		}

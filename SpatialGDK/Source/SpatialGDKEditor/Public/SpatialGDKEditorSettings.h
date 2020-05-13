@@ -304,6 +304,12 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema"))
+	FString CookAndGeneratePlatform;
+
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
+	FString CookAndGenerateAdditionalArguments;
+
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local launch"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
@@ -378,6 +384,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
 	FString MobileExtraCommandLineArgs;
 
+	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
+	bool bStartPIEClientsWithLocalLaunchOnDevice;
+
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
@@ -408,6 +418,16 @@ public:
 		return SpatialOSSnapshotToLoad.IsEmpty()
 			? FString(TEXT("default.snapshot"))
 			: SpatialOSSnapshotToLoad;
+	}
+
+	FORCEINLINE FString GetCookAndGenerateSchemaTargetPlatform() const
+	{
+		return CookAndGeneratePlatform;
+	}
+
+	FORCEINLINE FString GetCookAndGenerateSchemaAdditionalArgs() const
+	{
+		return CookAndGenerateAdditionalArguments;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
