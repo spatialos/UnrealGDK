@@ -168,6 +168,7 @@ public:
 
 	void LoadDefaults()
 	{
+		UseExternalIp = false;
 		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
