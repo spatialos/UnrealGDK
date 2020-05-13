@@ -1823,11 +1823,16 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 
 	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
+#if TRACE_LIB_ACTIVE
+	TraceKey TraceId = Payload.Trace;
+#else
+	TraceKey TraceId = InvalidTraceKey; 
+#endif
 	EventProcessor->ReceiveCommandRequest(
 		TargetActor,
 		TargetActor != TargetObject ? TargetObject : nullptr,
 		Function,
-		Payload,
+		TraceId,
 		Op.request_id);
 }
 

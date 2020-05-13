@@ -34,7 +34,7 @@ public:
 	void ReceiveComponentUpdate(AActor* Actor, UObject* SubObject, Worker_ComponentId ComponentId);
 
 	//todo: capture immediate request failures if entity async loading
-	void ReceiveCommandRequest(AActor* Actor, UObject* SubObject, UFunction* Function, SpatialGDK::RPCPayload& payload, Worker_RequestId LocalRequestId);
+	void ReceiveCommandRequest(AActor* Actor, UObject* SubObject, UFunction* Function, TraceKey TraceId, Worker_RequestId LocalRequestId);
 	void ReceiveNamedCommandRequest(const FString& CommandName, Worker_RequestId LocalRequestId);
 	void ReceiveCommandResponse(AActor* Actor, UObject* SubObject, UFunction* Function, const Worker_CommandResponseOp& Op); // pointers can be null
 	void ReceiveNamedCommandResponse(const FString& CommandName, const Worker_CommandResponseOp& Op);
@@ -52,7 +52,7 @@ public:
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
 
 	//todo: capture target subobject like we did in command receive logging
-	void SendRPC(AActor* Target, UFunction* RPCName, const SpatialGDK::RPCPayload& Payload);
+	void SendRPC(AActor* Target, UFunction* RPCName, TraceKey TraceId);
 	//todo: RPCs have some internal failure conditions before send which look interesting to capture such as target having been destroyed already
 	void SendRPCRetry(AActor* Target, UFunction* RPCName, int AttemptNumber);
 	//todo: GDK currently doesn't seem to have tracking in place for the TraceKey which lives in SpatialGDK::RPCPayload (not available for teh retry flow)
