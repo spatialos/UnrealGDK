@@ -5,19 +5,21 @@
 #include "Async/Async.h"
 #include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
-
-#include "Editor.h"
-#include "FileHelpers.h"
+#include "SpatialGDKServicesConstants.h"
 
 #include "AssetDataTagMap.h"
 #include "AssetRegistryModule.h"
+#include "Editor.h"
+#include "Editor/UATHelper/Public/IUATHelperModule.h"
+#include "FileHelpers.h"
 #include "GeneralProjectSettings.h"
 #include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
+#include "PackageTools.h"
 #include "Settings/ProjectPackagingSettings.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKServicesConstants.h"
+#include "UnrealEdMisc.h"
 #include "UObject/StrongObjectPtr.h"
 
 using namespace SpatialGDKEditor;
@@ -26,11 +28,17 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
-bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
+bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 {
 	if (bSchemaGeneratorRunning)
 	{
 		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("Schema generation is already running"));
+		return false;
+	}
+
+	if (!FPaths::IsProjectFilePathSet())
+	{
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation called when no project was opened"));
 		return false;
 	}
 
@@ -50,87 +58,100 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		}
 	}
 
-	bSchemaGeneratorRunning = true;
-
-	// 80/10/10 load assets / gen schema / garbage collection.
-	FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
-	Progress.MakeDialog(true);
-
-	RemoveEditorAssetLoadedCallback();
-
 	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
-		bSchemaGeneratorRunning = false;
 		return false;
 	}
 
-	if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
+	if (Method == FullAssetScan)
 	{
-		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
-	}
-
-	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
-	if (bFullScan)
-	{
-		Progress.EnterProgressFrame(80.f);
-		if (!LoadPotentialAssets(LoadedAssets))
+		// Make sure SchemaDatabase is not loaded.
+		if (UPackage* LoadedDatabase = FindPackage(nullptr, *FPaths::Combine(TEXT("/Game/"), *SpatialConstants::SCHEMA_DATABASE_FILE_PATH)))
 		{
-			bSchemaGeneratorRunning = false;
-			LoadedAssets.Empty();
-			CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
+			TArray<UPackage*> ToUnload;
+			ToUnload.Add(LoadedDatabase);
+			UPackageTools::UnloadPackages(ToUnload);
+		}
+
+		const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+		const FString& PlatformName = EditorSettings->GetCookAndGenerateSchemaTargetPlatform();
+
+		if (PlatformName.IsEmpty())
+		{
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Empty platform passed to CookAndGenerateSchema"));
 			return false;
 		}
-	}
 
-	// If running from an open editor then compile all dirty blueprints
-	TArray<UBlueprint*> ErroredBlueprints;
-	if (!IsRunningCommandlet())
-	{
-		const bool bPromptForCompilation = false;
-		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
-	}
+		FString OptionalParams = EditorSettings->GetCookAndGenerateSchemaAdditionalArgs();
+		OptionalParams += FString::Printf(TEXT(" -targetplatform=%s"), *PlatformName);
 
-	if (bFullScan)
-	{
-		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-		FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
-		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
-		Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
-	}
+		FString ProjectPath = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
+		FString UATCommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" CookAndGenerateSchema -nocompile -nocompileeditor -server -noclient %s -nop4 -project=\"%s\" -cook -skipstage -ue4exe=\"%s\" %s -utf8output"),
+			*ProjectPath,
+			FApp::IsEngineInstalled() ? TEXT(" -installed") : TEXT(""),
+			*ProjectPath,
+			*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
+			*OptionalParams
+		);
 
-	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
-	bool bResult = Schema::SpatialGDKGenerateSchema();
+		IUATHelperModule::Get().CreateUatTask(UATCommandLine,
+			FText::FromString(PlatformName),
+			LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
+			LOCTEXT("CookAndGenerateSchemaTaskName", "Generating Schema"),
+			FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")));
 
-	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
-	if (ErroredBlueprints.Num() > 0)
-	{
-		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
-		for (const auto& Blueprint : ErroredBlueprints)
-		{
-			UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
-		}
-	}
-
-	if (bFullScan)
-	{
-		Progress.EnterProgressFrame(10.f);
-		LoadedAssets.Empty();
-		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
-	}
-
-	bSchemaGeneratorRunning = false;
-
-	if (bResult)
-	{
-		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation succeeded!"));
+		return true;
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema Generation failed. View earlier log messages for errors."));
-	}
+		bSchemaGeneratorRunning = true;
 
-	return bResult;
+		FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
+		Progress.MakeDialog(true);
+
+		RemoveEditorAssetLoadedCallback();
+
+		if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
+		{
+			Schema::ResetSchemaGeneratorStateAndCleanupFolders();
+		}
+
+		// If running from an open editor then compile all dirty blueprints
+		TArray<UBlueprint*> ErroredBlueprints;
+		if (!IsRunningCommandlet())
+		{
+			const bool bPromptForCompilation = false;
+			UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
+		}
+
+		Progress.EnterProgressFrame(100.f);
+
+		bool bResult = Schema::SpatialGDKGenerateSchema();
+
+		// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
+		if (ErroredBlueprints.Num() > 0)
+		{
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
+			for (const auto& Blueprint : ErroredBlueprints)
+			{
+				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
+			}
+		}
+
+		bSchemaGeneratorRunning = false;
+
+		if (bResult)
+		{
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation succeeded!"));
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema Generation failed. View earlier log messages for errors."));
+		}
+
+		return bResult;
+	}
 }
 
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
