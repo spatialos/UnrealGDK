@@ -34,6 +34,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
+#include "SpatialGDKDevAuthTokenGenerator.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
@@ -1009,21 +1010,9 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 
-	FString DevAuthToken;
-	if (!SpatialCommandUtils::GenerateDevAuthToken(SpatialGDKSettings->IsRunningInChina(), DevAuthToken))
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to generate a development authentication token."));
-	}
-	SpatialGDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
-	SpatialGDKEditorSettings->SaveConfig();
-	SpatialGDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
-
-	// Ensure we enable bUseDevelopmentAuthenticationFlow when using cloud deployment flow.
-	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = true;
-	SpatialGDKSettings->DevelopmentAuthenticationToken = DevAuthToken;
-
+	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuth = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
+	DevAuth->AsyncGenerateDevAuthToken();
 	RefreshAutoStartLocalDeployment();
 }
 
