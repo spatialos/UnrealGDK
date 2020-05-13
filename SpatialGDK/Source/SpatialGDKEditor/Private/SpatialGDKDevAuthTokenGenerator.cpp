@@ -18,19 +18,14 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 
 void FSpatialGDKDevAuthTokenGenerator::UpdateSettings(FString DevAuthToken)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
-	{
-		USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-		GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
-		GDKEditorSettings->SaveConfig();
-		GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
-		GDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
-
-		this->ShowTaskEndedNotification(TEXT("Development Authentication Token Updated"), SNotificationItem::CS_Success);
-	});
+	USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
+	GDKEditorSettings->SaveConfig();
+	GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
+	GDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
 }
 
-void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthToken()
+void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 {
 	bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina]
@@ -43,7 +38,11 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthToken()
 		FString DevAuthToken;
 		if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken))
 		{
-			UpdateSettings(DevAuthToken);
+			AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
+			{
+				UpdateSettings(DevAuthToken);
+				this->ShowTaskEndedNotification(TEXT("Development Authentication Token Updated"), SNotificationItem::CS_Success);
+			});
 		}
 		else
 		{
@@ -61,7 +60,7 @@ void FSpatialGDKDevAuthTokenGenerator::AsyncGenerateDevAuthToken()
 	bool bExpected = false;
 	if (bIsGenerating.CompareExchange(bExpected, true))
 	{
-		DoGenerateDevAuthToken();
+		DoGenerateDevAuthTokenTasks();
 	}
 	else
 	{

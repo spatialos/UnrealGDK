@@ -21,6 +21,6 @@ private:
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 	void ShowTaskStartedNotification(const FString& NotificationText);
 	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
-	void DoGenerateDevAuthToken();
+	void DoGenerateDevAuthTokenTasks();
 	void UpdateSettings(FString DevAuthToken);
 };
