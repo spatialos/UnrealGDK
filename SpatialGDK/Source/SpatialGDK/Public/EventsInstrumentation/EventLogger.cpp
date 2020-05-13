@@ -2,11 +2,11 @@
 
 uint32 countLogs = 0;
 
-GDKStructuredEventLogger::GDKStructuredEventLogger(FString LogFilePrefix, FString WorkerId, FString WorkerType, uint32 LoadbalancingWorkerid)
+GDKStructuredEventLogger::GDKStructuredEventLogger(FString LogFilePrefix, FString WorkerId, FString WorkerType, const TFunction<uint32()>& LoadbalancingWorkerIdGetter)
 	: LocalWorkerId(WorkerId),
 	LogDirectory(LogFilePrefix),
 	LocalWorkerType(WorkerType),
-	LocalVirtualWorkerId(LoadbalancingWorkerid)
+	LocalVirtualWorkerIdGetter(LoadbalancingWorkerIdGetter)
 {
 	//LogDirectory = LogFilePrefix;
 }

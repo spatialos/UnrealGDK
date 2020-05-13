@@ -400,10 +400,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	//setup event logs
 	FString WorkerType = GameInstance->GetSpatialWorkerType().ToString();
-	VirtualWorkerId LoadbalancingId = 0;
+	TFunction<uint32()> LoadbalancingId = []() -> uint32 { return 0; };
 	if(VirtualWorkerTranslator != nullptr)
 	{
-		LoadbalancingId = VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+		LoadbalancingId = [this]() -> uint32 { return VirtualWorkerTranslator->GetLocalVirtualWorkerId(); };
 	}
 	EventLogger = MakeShared<GDKStructuredEventLogger>(
 		"D:\\Projects\\UnrealGDKEngineNetTest\\Game\\Saved\\Logs\\event_logs\\",
