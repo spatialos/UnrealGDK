@@ -27,7 +27,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCommandLineArgsManager);
 FSpatialGDKEditorCommandLineArgsManager::FSpatialGDKEditorCommandLineArgsManager()
 #ifdef ENABLE_LAUNCHER_DELEGATE
 	: bAndroidDevice(false)
-	, bIOSDevice(false)
 #endif
 {
 
@@ -65,7 +64,6 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 	LauncherWorkerPtr->OnCanceled().AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled);
 	LauncherWorkerPtr->OnCompleted().AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLauncherFinished);
 
-	bIOSDevice = false;
 	bAndroidDevice = false;
 	TArray<ILauncherTaskPtr> TaskList;
 	LauncherWorkerPtr->GetTasks(TaskList);

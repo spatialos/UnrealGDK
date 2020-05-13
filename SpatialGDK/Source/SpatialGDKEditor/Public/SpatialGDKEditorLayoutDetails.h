@@ -10,8 +10,10 @@ class FSpatialGDKEditorLayoutDetails : public IDetailCustomization
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
+
 private:
 	void ForceRefreshLayout();
+
 private:
 	IDetailLayoutBuilder* CurrentLayout = nullptr;
 };

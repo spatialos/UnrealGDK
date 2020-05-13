@@ -1,4 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#pragma once
+
 #include "Templates/SharedPointer.h"
 
 class FReply;
@@ -18,11 +21,11 @@ public:
 
 	void Startup();
 
-	FReply GenerateDevAuthToken();
-	FReply PushToIOSDevice();
-	FReply PushToAndroidDevice();
-	FReply RemoveFromIOSDevice();
-	FReply RemoveFromAndroidDevice();
+	static FReply GenerateDevAuthToken();
+	static FReply PushToIOSDevice();
+	static FReply PushToAndroidDevice();
+	static FReply RemoveFromIOSDevice();
+	static FReply RemoveFromAndroidDevice();
 private:
 #ifdef ENABLE_LAUNCHER_DELEGATE
 	void OnCreateLauncher(ILauncherRef LauncherRef);
@@ -31,11 +34,10 @@ private:
 	void OnLauncherFinished(bool Outcome, double ExecutionTime, int32 ReturnCode);
 	void RemoveFromDevice();
 #endif
-	bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
-	bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
+	static bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
+	static bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
 private:
 #ifdef ENABLE_LAUNCHER_DELEGATE
 	bool bAndroidDevice;
-	bool bIOSDevice;
 #endif
 };

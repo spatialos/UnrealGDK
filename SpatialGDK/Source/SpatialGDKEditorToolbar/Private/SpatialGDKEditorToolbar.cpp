@@ -998,7 +998,8 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 
-	FString DevAuthToken,ErrorMessage;
+	FString DevAuthToken;
+	FString ErrorMessage;
 	if (!SpatialCommandUtils::GenerateDevAuthToken(SpatialGDKSettings->IsRunningInChina(), DevAuthToken, ErrorMessage))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));

@@ -42,15 +42,6 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 	}
 }
 
-namespace
-{
-	FSpatialGDKEditorCommandLineArgsManager& GetCommandLineArgsManager()
-	{
-		FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
-		return EditorModule.GetCommandLineArgsManager();
-	}
-}
-
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	CurrentLayout = &DetailBuilder;
@@ -95,8 +86,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-			.OnClicked(FOnClicked::CreateLambda([] {
-				return GetCommandLineArgsManager().GenerateDevAuthToken();
+			.OnClicked(FOnClicked::CreateLambda([=] {
+				return FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken();
 			}))
 			.Content()
 			[
@@ -116,8 +107,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return GetCommandLineArgsManager().PushToAndroidDevice();
+				.OnClicked(FOnClicked::CreateLambda([=] {
+					return FSpatialGDKEditorCommandLineArgsManager::PushToAndroidDevice();
 				}))
 				.Content()
 				[
@@ -129,8 +120,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return GetCommandLineArgsManager().RemoveFromAndroidDevice();
+				.OnClicked(FOnClicked::CreateLambda([=] {
+					return FSpatialGDKEditorCommandLineArgsManager::RemoveFromAndroidDevice();
 				}))
 				.Content()
 				[
@@ -150,8 +141,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return GetCommandLineArgsManager().PushToIOSDevice();
+				.OnClicked(FOnClicked::CreateLambda([=] {
+					return FSpatialGDKEditorCommandLineArgsManager::PushToIOSDevice();
 				}))
 				.Content()
 				[
@@ -163,8 +154,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return GetCommandLineArgsManager().RemoveFromIOSDevice();
+				.OnClicked(FOnClicked::CreateLambda([=] {
+					return FSpatialGDKEditorCommandLineArgsManager::RemoveFromIOSDevice();
 				}))
 				.Content()
 				[
