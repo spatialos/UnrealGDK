@@ -32,9 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
 - When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
 - Added `Open Deployment Page` button to the `Cloud Deployment` window.
-- `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
-- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
-- Automatically add `dev_login` tag to cloud deployment when clicking launch deployment button.
+- The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
+- When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.

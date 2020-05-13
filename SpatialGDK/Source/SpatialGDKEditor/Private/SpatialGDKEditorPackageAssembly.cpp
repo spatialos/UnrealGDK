@@ -23,15 +23,10 @@ namespace
 	const FString SpatialBuildExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe"));
 	const FString Linux = TEXT("Linux");
 	const FString Win64 = TEXT("Win64");
-}
+} // anonymous namespace
 
 FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
 {
-}
-
-static FString GetStagingDir()
-{
-	return SpatialGDKServicesConstants::SpatialOSDirectory / TEXT("build/unreal");
 }
 
 void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs)
@@ -45,13 +40,12 @@ void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const
 	PackageAssemblyTask->OnOutput().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskOutput);
 	PackageAssemblyTask->OnCanceled().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskCanceled);
 	PackageAssemblyTask->Launch();
-	FString NotificationMessage = FString::Printf(TEXT("Building %s Assembly"), *ProjectName);
 }
 
 void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, bool bForce)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	FString WorkingDir = SpatialGDKServicesConstants::SpatialOSDirectory;
+	const FString& WorkingDir = SpatialGDKServicesConstants::SpatialOSDirectory;
 	FString Flags = TEXT("--no_animation");
 	if (bForce)
 	{
@@ -59,7 +53,7 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, boo
 	}
 	if (SpatialGDKSettings->IsRunningInChina())
 	{
-		Flags += TEXT(" --environment=cn-production");
+		Flags += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 	FString Args = FString::Printf(TEXT("cloud upload %s %s"), *AssemblyName, *Flags);
 	PackageAssemblyTask = MakeShareable(new FMonitoredProcess(SpatialGDKServicesConstants::SpatialExe, Args, WorkingDir, true));
@@ -67,7 +61,6 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString& AssemblyName, boo
 	PackageAssemblyTask->OnOutput().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskOutput);
 	PackageAssemblyTask->OnCanceled().BindSP(this, &FSpatialGDKPackageAssembly::OnTaskCanceled);
 	PackageAssemblyTask->Launch();
-	FString NotificationMessage = FString::Printf(TEXT("Uploading Assembly to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 	if (AssemblyDetailsPtr.IsValid())
 	{
 		AssemblyDetailsPtr.Reset();

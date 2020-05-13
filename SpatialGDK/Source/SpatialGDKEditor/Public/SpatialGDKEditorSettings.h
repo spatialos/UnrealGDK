@@ -546,6 +546,12 @@ public:
 		return bSimulatedPlayersIsEnabled;
 	}
 
+	void SetForceAssemblyOverwrite(bool bForce);
+	FORCEINLINE bool IsForceAssemblyOverwriteEnabled() const
+	{
+		return bForceAssemblyOverwrite;
+	}
+
 	void SetBuildClientWorker(bool bBuild);
 	FORCEINLINE bool IsBuildClientWorkerEnabled() const
 	{

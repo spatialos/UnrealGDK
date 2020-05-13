@@ -268,6 +268,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetForceAssemblyOverwrite(bool bForce)
+{
+	bForceAssemblyOverwrite = bForce;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
 {
 	bBuildClientWorker = bBuild;

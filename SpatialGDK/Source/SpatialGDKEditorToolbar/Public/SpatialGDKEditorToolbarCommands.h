@@ -30,8 +30,6 @@ public:
 	
 	TSharedPtr<FUICommandInfo> OpenCloudDeploymentWindowAction;
 	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
-	TSharedPtr<FUICommandInfo> EnableBuildClientWorker;
-	TSharedPtr<FUICommandInfo> EnableBuildSimulatedPlayer;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;

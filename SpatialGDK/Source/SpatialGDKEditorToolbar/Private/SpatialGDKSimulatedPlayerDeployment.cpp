@@ -54,7 +54,7 @@ namespace
 	const FString Development(TEXT("Development"));
 	const FString Test(TEXT("Test"));
 	const FString Shipping(TEXT("Shipping"));
-}
+} // anonymous namespace
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
@@ -389,38 +389,24 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(STextBlock)
 								.Text(FText::FromString(FString(TEXT("Simulated Players"))))
 							]
-							// Toggle
+							// Toggle Simulated Players
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
-							.VAlign(VAlign_Center)
 							[
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(SVerticalBox)
-									+ SVerticalBox::Slot()
-									.AutoHeight()
-									.Padding(2.0f)
-									.VAlign(VAlign_Center)
-									[
-										SNew(SHorizontalBox)
-										+ SHorizontalBox::Slot()
-										.AutoWidth()
-										[
-											SNew(SCheckBox)
-											.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
-											.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
-										]
-										+ SHorizontalBox::Slot()
-										.AutoWidth()
-										.HAlign(HAlign_Center)
-										[
-											SNew(STextBlock)
-											.Text(FText::FromString(FString(TEXT("Add simulated players"))))
-										]
-									]
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Add simulated players"))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
 								]
 							]
 							// Simulated Players Deployment Name
@@ -554,7 +540,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Generate Schema"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the schema automatically when building the assembly."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -575,7 +561,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Generate Snapshot"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the snapshot automatically when building the assembly."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -622,7 +608,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Build Client Worker"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to build the client worker as part of the assembly."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -643,7 +629,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Force Overwrite on Upload"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to overwrite an existing assembly when uploading."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -1004,14 +990,13 @@ void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Co
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->bForceAssemblyOverwrite ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	return SpatialGDKSettings->IsForceAssemblyOverwriteEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->bForceAssemblyOverwrite = NewCheckedState == ECheckBoxState::Checked;
-	SpatialGDKSettings->SaveConfig();
+	SpatialGDKSettings->SetForceAssemblyOverwrite(NewCheckedState == ECheckBoxState::Checked);
 }
 
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsBuildClientWorkerEnabled() const

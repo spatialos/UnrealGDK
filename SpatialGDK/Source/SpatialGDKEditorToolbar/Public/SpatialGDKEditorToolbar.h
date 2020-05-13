@@ -51,19 +51,7 @@ public:
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
 	FReply OnLaunchDeployment();
-	void OnBuildSuccess();
 	bool CanLaunchDeployment() const;
-
-	/** Delegate to determine the 'Launch Deployment' button enabled state */
-	bool IsDeploymentConfigurationValid() const;
-	bool CanBuildAndUpload() const;
-
-	bool IsSimulatedPlayersEnabled() const;
-	/** Delegate called when the user either clicks the simulated players checkbox */
-	void OnCheckedSimulatedPlayers();
-
-	bool IsBuildClientWorkerEnabled() const;
-	void OnCheckedBuildClientWorker();
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
@@ -100,6 +88,12 @@ private:
 
 	void ShowCloudDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
+
+	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	bool IsDeploymentConfigurationValid() const;
+	bool CanBuildAndUpload() const;
+
+	void OnBuildSuccess();
 
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 

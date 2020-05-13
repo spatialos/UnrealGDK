@@ -216,18 +216,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
-		FCanExecuteAction(),
-		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled));
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers),
-		FCanExecuteAction(),
-		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled));
-
-	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().OpenCloudDeploymentWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog),
 		FCanExecuteAction());
@@ -343,8 +331,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
@@ -951,7 +937,7 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 		SpatialGDKSettings->GetAssemblyName(),
 		SpatialGDKSettings->AssemblyBuildConfiguration,
 		TEXT(""),
-		SpatialGDKSettings->bForceAssemblyOverwrite
+		SpatialGDKSettings->IsForceAssemblyOverwriteEnabled()
 	);
 
 	return FReply::Handled();
@@ -959,26 +945,6 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
-	{
-		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
-		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
-		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
-
-		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
-		{
-			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded.\n\nWould you still like to continue with the deployment?"), *BuiltSimPlayersName);
-			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
-			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
-			{
-				OnShowFailedNotification("Failed to launch cloud deployment. SimulatedPlayer archive is missing.");
-				return;
-			}
-		}
-	}
-
 	auto LaunchCloudDeployment = [this]()
 	{
 		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName()));
@@ -1025,26 +991,6 @@ bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }
 
-bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const
-{
-	return GetDefault<USpatialGDKEditorSettings>()->IsSimulatedPlayersEnabled();
-}
-
-void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
-{
-	GetMutableDefault<USpatialGDKEditorSettings>()->SetSimulatedPlayersEnabledState(!IsSimulatedPlayersEnabled());
-}
-
-bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
-{
-	return GetDefault<USpatialGDKEditorSettings>()->IsBuildClientWorkerEnabled();
-}
-
-void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
-{
-	GetMutableDefault<USpatialGDKEditorSettings>()->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
-}
-
 void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& TagToAdd)
 {
 	if (TagToAdd.IsEmpty())
@@ -1057,18 +1003,8 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Ta
 	FString Tags = SpatialGDKSettings->GetDeploymentTags();
 	TArray<FString> ExistingTags;
 	Tags.ParseIntoArray(ExistingTags, TEXT(" "));
-	bool bFoundSpecifiedTag = false;
 
-	for (const FString& ExistingTag : ExistingTags)
-	{
-		if (ExistingTag.Equals(TagToAdd))
-		{
-			bFoundSpecifiedTag = true;
-			break;
-		}
-	}
-
-	if (!bFoundSpecifiedTag)
+	if (!ExistingTags.Contains(TagToAdd))
 	{
 		if (ExistingTags.Num() > 0)
 		{
