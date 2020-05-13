@@ -51,19 +51,17 @@ public:
 		return Data;
 	}
 
-	static FRPCData ConstructUserRPCData(const UFunction* Function, const SpatialGDK::RPCPayload* Payload, Worker_RequestId LocalRequestId)
+	static FRPCData ConstructUserRPCData(const UFunction* Function, TraceKey TraceId, Worker_RequestId LocalRequestId)
 	{
 		FRPCData Data;
 		Data.Type = TEXT("USER");
 		Data.LocalRequestId = LocalRequestId;
+		Data.TraceKey = TraceId;
 		if (Function != nullptr)
 		{
 			Data.Name = Function->GetName();
 		}
-		if (Payload != nullptr)
-		{
-			Data.TraceKey = Payload->Trace;
-		}
+		
 		return Data;
 	}
 	static FRPCData ConstructGdkRPCData(FString CommandName, Worker_RequestId LocalRequestId)

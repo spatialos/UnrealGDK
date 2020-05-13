@@ -396,12 +396,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 
 	//setup event logs
-	FString WorkerType = IsServer() ? TEXT("Server") : TEXT("Client");
+	FString WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 	VirtualWorkerId LoadbalancingId = 0;
-	if (const USpatialGameInstance* GameInstance = GetGameInstance())
-	{
-		WorkerType = GameInstance->GetSpatialWorkerType().ToString();
-	}
 	if(VirtualWorkerTranslator != nullptr)
 	{
 		LoadbalancingId = VirtualWorkerTranslator->GetLocalVirtualWorkerId();

@@ -677,7 +677,12 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 {
 	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
-	EventProcessor->SendRPC(Actor, Function, Payload);
+
+#if TRACE_LIB_ACTIVE
+	EventProcessor->SendRPC(Actor, Function, Payload.Trace);
+#else
+	EventProcessor->SendRPC(Actor, Function, InvalidTraceKey);
+#endif
 }
 #endif
 
