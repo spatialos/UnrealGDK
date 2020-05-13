@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/SpatialSender.h"
 #include "Utils/EntityPool.h"
 
-#include "TimerManager.h"
-
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialGDKSettings.h"
+
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
