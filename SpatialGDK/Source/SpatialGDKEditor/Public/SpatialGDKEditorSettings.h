@@ -304,6 +304,12 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema"))
+	FString CookAndGeneratePlatform;
+
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
+	FString CookAndGenerateAdditionalArguments;
+
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local launch"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
@@ -412,6 +418,16 @@ public:
 		return SpatialOSSnapshotToLoad.IsEmpty()
 			? FString(TEXT("default.snapshot"))
 			: SpatialOSSnapshotToLoad;
+	}
+
+	FORCEINLINE FString GetCookAndGenerateSchemaTargetPlatform() const
+	{
+		return CookAndGeneratePlatform;
+	}
+
+	FORCEINLINE FString GetCookAndGenerateSchemaAdditionalArgs() const
+	{
+		return CookAndGenerateAdditionalArguments;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
