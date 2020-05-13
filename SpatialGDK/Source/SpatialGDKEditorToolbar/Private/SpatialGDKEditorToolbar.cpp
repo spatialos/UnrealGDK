@@ -981,6 +981,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 
 	auto LaunchCloudDeployment = [this]()
 	{
+		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName()));
 		SpatialGDKEditorInstance->LaunchCloudDeployment(
 			FSimpleDelegate::CreateLambda([this]()
 			{
