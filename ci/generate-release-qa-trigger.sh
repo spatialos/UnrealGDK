@@ -27,7 +27,7 @@ echo "    async: true"
 echo "    build:"
 echo "        branch: "${BRANCH_TO_TEST}""
 echo "        commit: "HEAD""
-echo "        env:
+echo "        env:"
 
 for element in "${ENVIRONMENT_VARIABLES[@]}"
     do
@@ -50,9 +50,9 @@ while IFS= read -r ENGINE_VERSION; do
     triggerTest "unrealgdk" \
                 "premerge" \
                 "${GDK_VERSION}-rc" \
-                "BUILD_ALL_CONFIGURATIONS: "true" \n
-                TEST_REPO_BRANCH: "${GDK_VERSION}-rc" \n
-                ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
+                "BUILD_ALL_CONFIGURATIONS: "true"" \
+                "TEST_REPO_BRANCH: "${GDK_VERSION}-rc"" \
+                "ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdkexampleproject-nightly
@@ -60,11 +60,10 @@ while IFS= read -r ENGINE_VERSION; do
     triggerTest "unrealgdkexampleproject" \
                 "nightly" \
                 "${GDK_VERSION}-rc" \
-                "GDK_BRANCH: "${GDK_VERSION}-rc" \n
-                ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
+                "GDK_BRANCH: "${GDK_VERSION}-rc"" \
+                "ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
 
-### TODO: I think we need to add more environment variables to this, as by default the unrealgdk-nfr pipeline runs no tests (you must opt into each one).
 ### unrealgdk-nfr
 while IFS= read -r ENGINE_VERSION; do
     triggerTest "unrealgdk" \
@@ -84,6 +83,6 @@ while IFS= read -r ENGINE_VERSION; do
   triggerTest   "unrealengine" \
                 "nightly" \
                 "${ENGINE_VERSION}-${GDK_VERSION}-rc"
-                "GDK_BRANCH: "${GDK_VERSION}-rc" \n
-                EXAMPLE_PROJECT_BRANCH: "${GDK_VERSION}-rc""
+                "GDK_BRANCH: "${GDK_VERSION}-rc"" \
+                "EXAMPLE_PROJECT_BRANCH: "${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
