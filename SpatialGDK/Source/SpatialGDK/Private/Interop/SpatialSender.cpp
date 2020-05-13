@@ -704,7 +704,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 }
 
 #if !UE_BUILD_SHIPPING
-void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
+void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType, Worker_RequestId LocalRequestId)
 {
 	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
@@ -712,7 +712,7 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 #if TRACE_LIB_ACTIVE
 	EventProcessor->SendRPC(Actor, Function, Payload.Trace);
 #else
-	EventProcessor->SendRPC(Actor, Function, InvalidTraceKey);
+	EventProcessor->SendRPC(Actor, Function, InvalidTraceKey, LocalRequestId);
 #endif
 }
 #endif
@@ -766,7 +766,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Payload);
 #if !UE_BUILD_SHIPPING
-			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
 #endif // !UE_BUILD_SHIPPING
 			return ERPCResult::Success;
 		}
@@ -786,7 +786,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 #if !UE_BUILD_SHIPPING
-		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, RequestId);
 #endif // !UE_BUILD_SHIPPING
 
 		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
@@ -827,7 +827,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 #if !UE_BUILD_SHIPPING
 			if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
 			{
-				TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+				TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
 			}
 #endif // !UE_BUILD_SHIPPING
 
@@ -873,7 +873,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
-		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
 #endif // !UE_BUILD_SHIPPING
 		Connection->MaybeFlush();
 		return ERPCResult::Success;
@@ -928,7 +928,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
 
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
-	EventProcessor->SendRPCRetry(Channel->Actor, RetryRPC->Function, RetryRPC->Attempts);
+	EventProcessor->SendRPCRetry(Channel->Actor, RetryRPC->Function, RetryRPC->Attempts, RequestId);
 }
 
 void USpatialSender::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel)

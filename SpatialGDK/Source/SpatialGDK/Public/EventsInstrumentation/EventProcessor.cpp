@@ -124,21 +124,21 @@ void GDKEventsToStructuredLogs::SendAuthorityIntentUpdate(const AActor& Actor, V
 	Logger->LogEvent(Event);
 }
 
-void GDKEventsToStructuredLogs::SendRPC(AActor* Actor, UFunction* Function, TraceKey TraceId)
+void GDKEventsToStructuredLogs::SendRPC(AActor* Actor, UFunction* Function, TraceKey TraceId, Worker_RequestId LocalRequestId)
 {
 	FRPCRequestEvent Event = StructuredEventBuilder::ConstructNetSendEvent<FRPCRequestEvent>();
 	Event.Actor = StructuredEventBuilder::ConstructActorData(Actor, USpatialStatics::GetActorEntityId(Actor));
 	//todo: reintroduce - Event.Subobject = LogEvents::ConstructSubobjectData(SubObject);
-	Event.RPC = StructuredEventBuilder::ConstructUserRPCData(Function, TraceId, -1); //todo: pipe the local request ID
+	Event.RPC = StructuredEventBuilder::ConstructUserRPCData(Function, TraceId, LocalRequestId);
 
 	Logger->LogEvent(Event);
 }
-void GDKEventsToStructuredLogs::SendRPCRetry(AActor* Actor, UFunction* Function, int AttemptNumber)
+void GDKEventsToStructuredLogs::SendRPCRetry(AActor* Actor, UFunction* Function, int AttemptNumber, Worker_RequestId LocalRequestId)
 {
 	FRPCRequestEvent Event = StructuredEventBuilder::ConstructNetSendEvent<FRPCRequestEvent>();
 	Event.Actor = StructuredEventBuilder::ConstructActorData(Actor, USpatialStatics::GetActorEntityId(Actor));
 	//todo: reintroduce - Event.Subobject = LogEvents::ConstructSubobjectData(SubObject);
-	Event.RPC = StructuredEventBuilder::ConstructUserRPCData(Function, InvalidTraceKey, -1); //todo: pipe the local request ID; can we get payload?
+	Event.RPC = StructuredEventBuilder::ConstructUserRPCData(Function, InvalidTraceKey, LocalRequestId); //todo: can we get payload / tracekey?
 	Event.RetryAttempt = AttemptNumber;
 	
 	Logger->LogEvent(Event);
