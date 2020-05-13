@@ -11,7 +11,7 @@ class GDKStructuredEventLogger
 {
 public:
 	GDKStructuredEventLogger(){}
-	GDKStructuredEventLogger(FString LogFilePrefix, FString WorkerId, FString WorkerType, uint32 LoadbalancingWorkerid);
+	GDKStructuredEventLogger(FString LogFilePrefix, FString WorkerId, FString WorkerType, const TFunction<uint32()>& LoadbalancingWorkerIdGetter);
 	~GDKStructuredEventLogger();
 
 	void operator=(GDKStructuredEventLogger&& other) noexcept
@@ -19,7 +19,7 @@ public:
 		LogDirectory = other.LogDirectory;
 		LocalWorkerId = other.LocalWorkerId;
 		LocalWorkerType = other.LocalWorkerType;
-		LocalVirtualWorkerId = other.LocalVirtualWorkerId;
+		LocalVirtualWorkerIdGetter = other.LocalVirtualWorkerIdGetter;
 		WriteHandle.Reset(other.WriteHandle.Release());
 	}
 
@@ -34,11 +34,11 @@ public:
 		Event.Time = FDateTime::UtcNow().ToIso8601();
 		Event.WorkerId = LocalWorkerId;
 		Event.WorkerType = LocalWorkerType;
-		Event.VirtualWorkerId = LocalVirtualWorkerId;
+		Event.VirtualWorkerId = LocalVirtualWorkerIdGetter();
 		
 		FString JsonEvent;
 		TSharedRef<FJsonObject> TopJsonObject = MakeShared<FJsonObject>();
-		TopJsonObject->SetObjectField(TEXT("ue4_event"), FJsonObjectConverter::UStructToJsonObject(Event));
+		TopJsonObject->SetObjectField(TEXT("ue4"), FJsonObjectConverter::UStructToJsonObject(Event));
 
 		TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>> > JsonWriter = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&JsonEvent, 0);
 		bool bSuccess = FJsonSerializer::Serialize(TopJsonObject, JsonWriter);
@@ -55,7 +55,7 @@ private:
 	FString LogDirectory;
 	FString LocalWorkerId;
 	FString LocalWorkerType;
-	uint32 LocalVirtualWorkerId;
+	TFunction<uint32()> LocalVirtualWorkerIdGetter;
 	
 	void Log(FString& Json);
 };
