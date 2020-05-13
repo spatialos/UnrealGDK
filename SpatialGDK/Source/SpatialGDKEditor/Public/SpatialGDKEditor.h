@@ -10,6 +10,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
 DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 
+class FSpatialGDKDevAuthTokenGenerator;
 class FSpatialGDKPackageAssembly;
 
 class SPATIALGDKEDITOR_API FSpatialGDKEditor
@@ -25,6 +26,7 @@ public:
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
 
+	TSharedRef<FSpatialGDKDevAuthTokenGenerator> GetDevAuthTokenGeneratorRef();
 	TSharedRef<FSpatialGDKPackageAssembly> GetPackageAssemblyRef();
 
 private:
@@ -39,5 +41,6 @@ private:
 	void OnAssetLoaded(UObject* Asset);
 	void RemoveEditorAssetLoadedCallback();
 
+	TSharedRef<FSpatialGDKDevAuthTokenGenerator> SpatialGDKDevAuthTokenGeneratorInstance;
 	TSharedRef<FSpatialGDKPackageAssembly>SpatialGDKPackageAssemblyInstance;
 };

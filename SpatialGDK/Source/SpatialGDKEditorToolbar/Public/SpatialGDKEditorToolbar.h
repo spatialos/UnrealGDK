@@ -75,7 +75,6 @@ private:
 
 	void StartNoAutomaticConnectionButtonClicked();
 	void StartLocalSpatialDeploymentButtonClicked();
-	void StartCloudSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 
 	void StartSpatialServiceButtonClicked();
@@ -120,7 +119,7 @@ private:
 	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
-	void ShowSimulatedPlayerDeploymentDialog();
+	void ShowCloudDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
 	void LaunchOrShowDeployment();
 
@@ -167,7 +166,7 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
+	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
