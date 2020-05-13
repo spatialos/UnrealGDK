@@ -368,8 +368,6 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
 
-	static bool IsAssemblyNameValid(const FString& Name);
-	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
@@ -385,6 +383,10 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
 	FString MobileExtraCommandLineArgs;
+
+	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
+	bool bStartPIEClientsWithLocalLaunchOnDevice;
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
@@ -578,4 +580,6 @@ public:
 	void SetRuntimeDevelopmentAuthenticationToken();
 
 	static bool IsProjectNameValid(const FString& Name);
+	static bool IsAssemblyNameValid(const FString& Name);
+	static bool IsDeploymentNameValid(const FString& Name);
 };
