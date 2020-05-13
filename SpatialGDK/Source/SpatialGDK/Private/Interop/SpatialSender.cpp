@@ -268,6 +268,13 @@ void USpatialSender::CreateServerWorkerEntity(Worker_EntityId EntityId, int Atte
 			return;
 		}
 
+		// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
+		// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return;
+		}
+
 		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
 		{
 			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""),
