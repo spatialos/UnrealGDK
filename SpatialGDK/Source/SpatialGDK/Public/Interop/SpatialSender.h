@@ -159,7 +159,7 @@ private:
 
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING
-	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType);
+	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType, Worker_RequestId LocalRequestId);
 #endif
 
 	bool WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity);
