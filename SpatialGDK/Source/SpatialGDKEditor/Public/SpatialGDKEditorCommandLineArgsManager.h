@@ -26,6 +26,7 @@ public:
 	static FReply PushToAndroidDevice();
 	static FReply RemoveFromIOSDevice();
 	static FReply RemoveFromAndroidDevice();
+
 private:
 #ifdef ENABLE_LAUNCHER_DELEGATE
 	void OnCreateLauncher(ILauncherRef LauncherRef);
@@ -36,6 +37,7 @@ private:
 #endif
 	static bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
 	static bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
+
 private:
 #ifdef ENABLE_LAUNCHER_DELEGATE
 	bool bAndroidDevice;
