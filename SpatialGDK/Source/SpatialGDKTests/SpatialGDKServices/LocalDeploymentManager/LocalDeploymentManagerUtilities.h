@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#pragma once
+
 #include "Tests/TestDefinitions.h"
 
 #include "CoreMinimal.h"
