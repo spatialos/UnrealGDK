@@ -21,7 +21,7 @@ namespace
 		FString Result;
 		int32 ExitCode;
 		FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Args,
-            *SpatialGDKServicesConstants::GDKProgramPath, Result, ExitCode);
+			*SpatialGDKServicesConstants::GDKProgramPath, Result, ExitCode);
 
 		if (ExitCode != 0)
 		{

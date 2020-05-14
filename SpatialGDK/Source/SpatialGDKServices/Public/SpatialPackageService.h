@@ -34,6 +34,5 @@ public:
 	// Ensures that the specified package is downloaded and extracted from the package service.
 	// Does nothing if the package was already downloaded and extracted.
 	// Callback will be executed with a true parameter if the package (now) exists at its extracted location, otherwise with false.
-	SPATIALGDKSERVICES_API static void GetPackage(const FSpatialPackageDescriptor& Package,
-	                                              TFunction<void(bool)> Callback);
+	SPATIALGDKSERVICES_API static void GetPackage(const FSpatialPackageDescriptor& Package, TFunction<void(bool)> Callback);
 };
