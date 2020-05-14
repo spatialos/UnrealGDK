@@ -36,7 +36,8 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 		});
 
 		FString DevAuthToken;
-		if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken))
+		FString ErrorMessage;
+		if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken, ErrorMessage))
 		{
 			AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
 			{
@@ -46,7 +47,7 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token."));
+			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token: %s"), *ErrorMessage);
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
 				this->ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
