@@ -654,16 +654,7 @@ public:
 	}
 
 	void SetUseGDKPinnedRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, bool IsEnabled);
-	//FORCEINLINE bool GetUseGDKPinnedRuntimeVersion() const
-	//{
-	//	return bUseGDKPinnedRuntimeVersion;
-	//}
-	
 	void SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version);
-	//FORCEINLINE const FString& GetCustomCloudSpatialOSRuntimeVersion() const
-	//{
-	//	return CloudRuntimeVersion;
-	//}
 
 	void SetSimulatedPlayerDeploymentName(const FString& Name);
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const

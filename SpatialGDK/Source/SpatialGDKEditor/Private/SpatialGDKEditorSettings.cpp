@@ -64,7 +64,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, RuntimeVariant(ESpatialOSRuntimeVariant::Distributed)
-  , DistributedRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
+	, DistributedRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
 	, SingleNodeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
