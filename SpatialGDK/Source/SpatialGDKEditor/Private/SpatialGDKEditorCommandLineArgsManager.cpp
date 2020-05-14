@@ -9,8 +9,8 @@
 #include "Misc/MessageDialog.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialCommandUtils.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 
 #ifdef ENABLE_LAUNCHER_DELEGATE
 //need this macro before "ILauncherServicesModule.h" to prevent compile error
