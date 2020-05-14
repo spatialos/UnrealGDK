@@ -10,12 +10,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
 DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 
+class FSpatialGDKPackageAssembly;
+struct FCloudDeploymentConfiguration;
+
 class SPATIALGDKEDITOR_API FSpatialGDKEditor
 {
 public:
-	FSpatialGDKEditor() : bSchemaGeneratorRunning(false)
-	{
-	}
+	FSpatialGDKEditor();
 
 	enum ESchemaGenerationMethod
 	{
@@ -25,11 +26,13 @@ public:
 
 	bool GenerateSchema(ESchemaGenerationMethod Method);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
-	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
+	void LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
+
+	TSharedRef<FSpatialGDKPackageAssembly> GetPackageAssemblyRef();
 
 private:
 	bool bSchemaGeneratorRunning;
@@ -42,4 +45,6 @@ private:
 	FDelegateHandle OnAssetLoadedHandle;
 	void OnAssetLoaded(UObject* Asset);
 	void RemoveEditorAssetLoadedCallback();
+
+	TSharedRef<FSpatialGDKPackageAssembly> SpatialGDKPackageAssemblyInstance;
 };

@@ -6,6 +6,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorCloudLauncher, Log, All);
 
-SPATIALGDKEDITOR_API bool SpatialGDKCloudLaunch();
+struct FCloudDeploymentConfiguration;
+
+SPATIALGDKEDITOR_API bool SpatialGDKCloudLaunch(const FCloudDeploymentConfiguration& Configuration);
 
 SPATIALGDKEDITOR_API bool SpatialGDKCloudStop();

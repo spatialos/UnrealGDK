@@ -6,18 +6,13 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
-namespace
-{
-	FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
-} // anonymous namespace
-
 bool SpatialCommandUtils::SpatialVersion(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
 {
 	FString Command = TEXT("version");
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult, OutExitCode);
@@ -37,7 +32,7 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	int32 OutExitCode;
@@ -61,7 +56,7 @@ bool SpatialCommandUtils::StartSpatialService(const FString& Version, const FStr
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	if (!Version.IsEmpty())
@@ -92,7 +87,7 @@ bool SpatialCommandUtils::StopSpatialService(bool bIsRunningInChina, const FStri
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult, OutExitCode);
@@ -112,7 +107,7 @@ bool SpatialCommandUtils::BuildWorkerConfig(bool bIsRunningInChina, const FStrin
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult, OutExitCode);
