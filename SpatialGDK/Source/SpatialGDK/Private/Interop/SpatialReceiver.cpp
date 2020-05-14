@@ -1301,7 +1301,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
 }
 
-void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data)
+void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);

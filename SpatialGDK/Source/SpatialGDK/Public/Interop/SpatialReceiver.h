@@ -125,7 +125,7 @@ private:
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 
-	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& Data);
+	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data);
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
