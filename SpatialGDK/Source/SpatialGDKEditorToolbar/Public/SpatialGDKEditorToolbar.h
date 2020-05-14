@@ -4,13 +4,15 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
-#include "LocalDeploymentManager.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
+
+#include "CloudDeploymentConfiguration.h"
+#include "LocalDeploymentManager.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -50,6 +52,9 @@ public:
 	void OnShowFailedNotification(const FString& NotificationText);
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
+	FReply OnLaunchDeployment();
+	bool CanLaunchDeployment() const;
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -83,8 +88,16 @@ private:
 	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
-	void ShowSimulatedPlayerDeploymentDialog();
+	void ShowCloudDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
+
+	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	bool IsDeploymentConfigurationValid() const;
+	bool CanBuildAndUpload() const;
+
+	void OnBuildSuccess();
+
+	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
 private:
 	bool CanExecuteSchemaGenerator() const;
@@ -106,8 +119,6 @@ private:
 
 	FString GetOptionalExposedRuntimeIP() const;
 
-	static void ShowCompileLog();
-
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
@@ -124,8 +135,12 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
+	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
+
+	TFuture<bool> AttemptSpatialAuthResult;
+
+	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 };

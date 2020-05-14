@@ -32,4 +32,5 @@ namespace SpatialGDKServicesConstants
 	const FString SpatialOSDistributedRuntimePinnedVersion("14.5.1");
 	const FString SpatialOSSingleNodeRuntimePinnedVersion("0.3.1");
 	const FString SpatialOSConfigFileName = TEXT("spatialos.json");
+	const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 }
