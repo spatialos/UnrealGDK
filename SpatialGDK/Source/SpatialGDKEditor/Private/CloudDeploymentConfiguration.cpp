@@ -9,7 +9,7 @@ void FCloudDeploymentConfiguration::InitFromSettings()
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
 	AssemblyName = Settings->GetAssemblyName();
-	RuntimeVersion = Settings->GetSpatialOSRuntimeVersionForCloud();
+	RuntimeVersion = Settings->GetSelectedRuntimeVariantVersion().GetVersionForCloud();
 	PrimaryDeploymentName = Settings->GetPrimaryDeploymentName();
 	PrimaryLaunchConfigPath = Settings->GetPrimaryLaunchConfigPath();
 	SnapshotPath = Settings->GetSnapshotPath();

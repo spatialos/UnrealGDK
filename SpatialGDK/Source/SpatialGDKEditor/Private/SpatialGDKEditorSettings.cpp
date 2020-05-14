@@ -38,12 +38,34 @@ void FSpatialLaunchConfigDescription::OnWorkerTypesChanged()
 	}
 }
 
+FRuntimeVariantVersion::FRuntimeVariantVersion() = default;
+
+const FString& FRuntimeVariantVersion::GetVersionForLocal() const
+{
+	if (bUseGDKPinnedRuntimeVersion || LocalRuntimeVersion.IsEmpty())
+	{
+		return PinnedVersion;
+	}
+	return LocalRuntimeVersion;
+}
+
+const FString& FRuntimeVariantVersion::GetVersionForCloud() const
+{
+	if (bUseGDKPinnedRuntimeVersion || CloudRuntimeVersion.IsEmpty())
+	{
+		return PinnedVersion;
+	}
+	return CloudRuntimeVersion;
+}
+
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
-	, bUseGDKPinnedRuntimeVersion(true)
+	, RuntimeVariant(ESpatialOSRuntimeVariant::Distributed)
+  , DistributedRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
+	, SingleNodeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
@@ -61,22 +83,14 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 }
 
-const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForLocal() const
+FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-	if (bUseGDKPinnedRuntimeVersion || LocalRuntimeVersion.IsEmpty())
+	if (Variant == ESpatialOSRuntimeVariant::Distributed)
 	{
-		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+		return DistributedRuntimeVersion;
 	}
-	return LocalRuntimeVersion;
-}
-
-const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForCloud() const
-{
-	if (bUseGDKPinnedRuntimeVersion || CloudRuntimeVersion.IsEmpty())
-	{
-		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
-	}
-	return CloudRuntimeVersion;
+	check(Variant == ESpatialOSRuntimeVariant::SingleNode);
+	return SingleNodeRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -294,15 +308,15 @@ void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(bool Use)
+void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, bool Use)
 {
-	bUseGDKPinnedRuntimeVersion = Use;
+	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersion = Use;
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetCustomCloudSpatialOSRuntimeVersion(const FString& Version)
+void USpatialGDKEditorSettings::SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version)
 {
-	CloudRuntimeVersion = Version;
+	GetRuntimeVariantVersion(Variant).CloudRuntimeVersion = Version;
 	SaveConfig();
 }
 

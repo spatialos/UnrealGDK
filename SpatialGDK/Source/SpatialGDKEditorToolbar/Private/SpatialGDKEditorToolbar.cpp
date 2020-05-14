@@ -629,7 +629,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
-	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSpatialOSRuntimeVersionForLocal();
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 	{
