@@ -2,18 +2,17 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
-
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Templates/SharedPointer.h"
-
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Templates/SharedPointer.h"
+
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
@@ -48,8 +47,11 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
+	, CookAndGeneratePlatform("Win64")
+	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, AssemblyBuildConfiguration(TEXT("Development"))
 	, bUseDevelopmentAuthenticationFlow(false)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
@@ -265,6 +267,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewClus
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetForceAssemblyOverwrite(bool bForce)
+{
+	bForceAssemblyOverwrite = bForce;
 	SaveConfig();
 }
 

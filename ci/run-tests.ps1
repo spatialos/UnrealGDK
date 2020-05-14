@@ -38,12 +38,24 @@ if ($run_with_spatial) {
     Write-Output "Generating snapshot and schema for testing project"
     Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
+        "-SkipShaderCompile", # Skip shader compilation
+        "-nopause", # Close the unreal log window automatically on exit
+        "-nosplash", # No splash screen
+        "-unattended", # Disable anything requiring user feedback
+        "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+        "-run=CookAndGenerateSchema", # Run the commandlet
+        "-map=`"$test_repo_map`"" # Which maps to run the commandlet for
+        "-targetplatform=LinuxServer"
+    )
+    
+    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+        "$uproject_path", `
         "-NoShaderCompile", # Prevent shader compilation
         "-nopause", # Close the unreal log window automatically on exit
         "-nosplash", # No splash screen
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-        "-run=GenerateSchemaAndSnapshots", # Run the commandlet
+        "-run=GenerateSnapshot", # Run the commandlet
         "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
 

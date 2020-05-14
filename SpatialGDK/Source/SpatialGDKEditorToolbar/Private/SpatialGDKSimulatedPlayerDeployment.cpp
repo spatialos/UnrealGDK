@@ -2,15 +2,6 @@
 
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 
-#include "SpatialCommandUtils.h"
-#include "SpatialConstants.h"
-#include "SpatialGDKDefaultLaunchConfigGenerator.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorToolbar.h"
-#include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
-#include "SpatialGDKSettings.h"
-
 #include "Async/Async.h"
 #include "DesktopPlatformModule.h"
 #include "Editor.h"
@@ -19,19 +10,11 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "Editor/GameProjectGeneration/Public/GameProjectGenerationModule.h"
 #include "HAL/PlatformFilemanager.h"
 #include "InstalledPlatformInfo.h"
+#include "Internationalization/Regex.h"
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "SpatialCommandUtils.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorToolbar.h"
-#include "SpatialGDKEditorPackageAssembly.h"
-#include "SpatialGDKEditorSnapshotGenerator.h"
-#include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
@@ -50,19 +33,28 @@
 #include "Widgets/Notifications/SPopupErrorText.h"
 #include "Widgets/Text/STextBlock.h"
 
-#include "Internationalization/Regex.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialConstants.h"
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorToolbar.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
 
 namespace
 {
 	//Build Configurations
-	const FString Debug(TEXT("Debug"));
-	const FString DebugGame(TEXT("DebugGame"));
-	const FString Development(TEXT("Development"));
-	const FString Test(TEXT("Test"));
-	const FString Shipping(TEXT("Shipping"));
-}
+	const FString DebugConfiguration(TEXT("Debug"));
+	const FString DebugGameConfiguration(TEXT("DebugGame"));
+	const FString DevelopmentConfiguration(TEXT("Development"));
+	const FString TestConfiguration(TEXT("Test"));
+	const FString ShippingConfiguration(TEXT("Shipping"));
+} // anonymous namespace
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
@@ -397,38 +389,24 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(STextBlock)
 								.Text(FText::FromString(FString(TEXT("Simulated Players"))))
 							]
-							// Toggle
+							// Toggle Simulated Players
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
-							.VAlign(VAlign_Center)
 							[
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(SVerticalBox)
-									+ SVerticalBox::Slot()
-									.AutoHeight()
-									.Padding(2.0f)
-									.VAlign(VAlign_Center)
-									[
-										SNew(SHorizontalBox)
-										+ SHorizontalBox::Slot()
-										.AutoWidth()
-										[
-											SNew(SCheckBox)
-											.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
-											.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
-										]
-										+ SHorizontalBox::Slot()
-										.AutoWidth()
-										.HAlign(HAlign_Center)
-										[
-											SNew(STextBlock)
-											.Text(FText::FromString(FString(TEXT("Add simulated players"))))
-										]
-									]
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Add simulated players"))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
 								]
 							]
 							// Simulated Players Deployment Name
@@ -475,7 +453,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.ToolTipText(FText::FromString(FString(TEXT("Number of Simulated Players."))))
 									.MinValue(1)
 									.MaxValue(8192)
-									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
+									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayers())
 									.OnValueChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
 								]
@@ -549,7 +527,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(STextBlock)
 								.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
 							]
-							//Generate Schema
+							// Generate Schema
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -562,7 +540,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Generate Schema"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the schema automatically when building the assembly."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -570,7 +548,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSchema)
 								]
 							]
-							//Generate Snapshot
+							// Generate Snapshot
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -583,7 +561,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Generate Snapshot"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the snapshot automatically when building the assembly."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -617,7 +595,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
-							//Enable/Disable Build Client Worker
+							// Enable/Disable Build Client Worker
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -630,7 +608,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Build Client Worker"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to build the client worker as part of the assembly."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -638,7 +616,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedBuildClientWorker)
 								]
 							]
-							//Force Overwrite on Upload
+							// Force Overwrite on Upload
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -651,7 +629,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(FString(TEXT("Force Overwrite on Upload"))))
 									.ToolTipText(FText::FromString(FString(TEXT("Whether to overwrite an existing assembly when uploading."))))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -980,24 +958,24 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguratio
 {
 	FMenuBuilder MenuBuilder(true, nullptr);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Debug), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Debug))
+	MenuBuilder.AddMenuEntry(FText::FromString(DebugConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(DebugGame), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugGame))
+	MenuBuilder.AddMenuEntry(FText::FromString(DebugGameConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugGameConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Development), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Development))
+	MenuBuilder.AddMenuEntry(FText::FromString(DevelopmentConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DevelopmentConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Test), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Test))
+	MenuBuilder.AddMenuEntry(FText::FromString(TestConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, TestConfiguration))
 	);
 
-	MenuBuilder.AddMenuEntry(FText::FromString(Shipping), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Shipping))
+	MenuBuilder.AddMenuEntry(FText::FromString(ShippingConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, ShippingConfiguration))
 	);
 
 	return MenuBuilder.MakeWidget();
@@ -1009,33 +987,16 @@ void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Co
 	SpatialGDKSettings->SetAssemblyBuildConfiguration(Configuration);
 }
 
-FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
-{
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
-	{
-		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
-		PackageAssembly->BuildAllAndUpload(
-			SpatialGDKEditorSettings->GetAssemblyName(),
-			SpatialGDKEditorSettings->AssemblyBuildConfiguration,
-			TEXT(""),
-			SpatialGDKEditorSettings->bForceAssemblyOverwrite
-		);
-	}
-	return FReply::Handled();
-}
-
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->bForceAssemblyOverwrite ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	return SpatialGDKSettings->IsForceAssemblyOverwriteEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->bForceAssemblyOverwrite = NewCheckedState == ECheckBoxState::Checked;
-	SpatialGDKSettings->SaveConfig();
+	SpatialGDKSettings->SetForceAssemblyOverwrite(NewCheckedState == ECheckBoxState::Checked);
 }
 
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsBuildClientWorkerEnabled() const

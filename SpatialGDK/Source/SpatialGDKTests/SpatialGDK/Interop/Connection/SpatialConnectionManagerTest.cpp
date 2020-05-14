@@ -143,7 +143,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalHost)
 	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
 
 	// THEN
-	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
+	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "10.20.30.40");
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
@@ -238,7 +238,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHost)
 
 	// THEN
 	TestEqual("Success", bSuccess, true);
-	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
+	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "10.20.30.40");
 	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
@@ -295,7 +295,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URL)
 
 	// THEN
 	TestEqual("Success", bSuccess, true);
-	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
+	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "10.20.30.40");
 	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");

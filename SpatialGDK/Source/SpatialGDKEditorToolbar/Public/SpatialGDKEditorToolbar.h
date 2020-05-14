@@ -4,13 +4,15 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
-#include "LocalDeploymentManager.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
+
+#include "CloudDeploymentConfiguration.h"
+#include "LocalDeploymentManager.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -51,12 +53,7 @@ public:
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
 	FReply OnLaunchDeployment();
-	void OnBuildSuccess();
 	bool CanLaunchDeployment() const;
-
-	/** Delegate to determine the 'Launch Deployment' button enabled state */
-	bool IsDeploymentConfigurationValid() const;
-	bool CanBuildAndUpload() const;
 
 	bool IsSimulatedPlayersEnabled() const;
 	/** Delegate called when the user either clicks the simulated players checkbox */
@@ -123,7 +120,13 @@ private:
 	void OpenLaunchConfigurationEditor();
 	void LaunchOrShowDeployment();
 
-	void AddDeploymentTagIfMissing(const FString& Tag);
+	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	bool IsDeploymentConfigurationValid() const;
+	bool CanBuildAndUpload() const;
+
+	void OnBuildSuccess();
+
+	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
 private:
 	bool CanExecuteSchemaGenerator() const;
@@ -148,8 +151,6 @@ private:
 
 	void RefreshAutoStartLocalDeployment();
 
-	static void ShowCompileLog();
-
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
@@ -172,4 +173,6 @@ private:
 	FLocalDeploymentManager* LocalDeploymentManager;
 
 	TFuture<bool> AttemptSpatialAuthResult;
+
+	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 };

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes:
 - Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
+- The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
 
 ### Features:
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
@@ -30,18 +31,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
 - You can now specify deployment tags in the `Cloud Deployment` window.
 - RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
-- When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
-- `Launch Deployment` in the `Cloud Deployment` dialog will now generate schema, generate a snapshot, build the server worker, build the client, build the simulate player worker, and upload the assembly before launching the deployment all in one step, there are checkboxes to toggle generation of schema and snapshots as well as whether to build the client worker.
+- Full Schema generation now uses the CookAndGenerateSchema commandlet, which will result in faster and more stable schema generation for big projects.
+- Added `Open Deployment Page` button to the `Cloud Deployment` window.
+- The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
+- When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
 - Change the icon of the 'Start' toolbar button based on the selected connection flow.
 - Created a new dropdown menu in the Start toolbar button. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client
   - You can choose between `Connect to local deployment`, `Connect to cloud deployment` and `Do not connect` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
   - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
-- Added `Open Deployment Page` button to the `Cloud Deployment` window.
 - The Deploy button will launch the deployment directly if the necessary fields were filled previously in the `Deployment Configuration` window, selecting the `Deployment Configuration` menu item from the dropdown will allow changing of deployment settings.
 - Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
-- Automatically add `dev_login` tag to cloud deployment when clicking launch deployment button.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
@@ -160,10 +161,10 @@ Features listed in this section are not ready to use. However, in the spirit of 
 @DW-Sebastien
 
 
-## [`0.8.1`] - 2020-03-17 
+## [`0.8.1`] - 2020-03-17
 
 ### English version
-### Adapted from 0.8.1-preview 
+### Adapted from 0.8.1-preview
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.

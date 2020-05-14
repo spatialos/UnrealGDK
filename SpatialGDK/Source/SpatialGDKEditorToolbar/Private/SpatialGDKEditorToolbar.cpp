@@ -7,7 +7,6 @@
 #include "Editor.h"
 #include "Editor/EditorEngine.h"
 #include "EditorStyleSet.h"
-#include "EditorExtension/LBStrategyEditorExtension.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
@@ -29,7 +28,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
-#include "LoadBalancing/AbstractLBStrategy.h"
+#include "CloudDeploymentConfiguration.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
@@ -1116,7 +1115,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
 			OnShowSuccessNotification("Initial Schema Generation completed!");
 		}
@@ -1130,7 +1129,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Full)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
 			OnShowSuccessNotification("Full Schema Generation completed!");
 		}
@@ -1144,7 +1143,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Incremental)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(false))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
 		{
 			OnShowSuccessNotification("Incremental Schema Generation completed!");
 		}
@@ -1224,64 +1223,41 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 		return FReply::Unhandled();
 	}
 
-	AddDeploymentTagIfMissing(SpatialConstants::DEVELOPMENT_DEV_LOGIN);
-	
-	if (SpatialGDKSettings->IsGenerateSchemaEnabled())
+	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
+
+	CloudDeploymentConfiguration.InitFromSettings();
+
+	if (CloudDeploymentConfiguration.bGenerateSchema)
 	{
-		SpatialGDKEditorInstance->GenerateSchema(false);
+		SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset);
 	}
 
-	if (SpatialGDKSettings->IsGenerateSnapshotEnabled())
+	if (CloudDeploymentConfiguration.bGenerateSnapshot)
 	{
-		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), SpatialGDKSettings->GetSpatialOSSnapshotToSave());
+		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath);
 	}
 
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
-	PackageAssembly->BuildAllAndUpload(
-		SpatialGDKSettings->GetAssemblyName(),
-		SpatialGDKSettings->AssemblyBuildConfiguration,
-		TEXT(""),
-		SpatialGDKSettings->bForceAssemblyOverwrite
-	);
+	PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
 
 	return FReply::Handled();
 }
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
-	{
-		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
-		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
-		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
-
-		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
-		{
-			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded.\n\nWould you still like to continue with the deployment?"), *BuiltSimPlayersName);
-			EAppReturnType::Type UserAnswer = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(MissingSimPlayerBuildText));
-			if (UserAnswer == EAppReturnType::No || UserAnswer == EAppReturnType::Cancel)
-			{
-				OnShowFailedNotification("Failed to launch cloud deployment. SimulatedPlayer archive is missing.");
-				return;
-			}
-		}
-	}
-
 	auto LaunchCloudDeployment = [this]()
 	{
-		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName()));
+		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
 		SpatialGDKEditorInstance->LaunchCloudDeployment(
+			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				this->OnShowSuccessNotification("Successfully launched cloud deployment.");
+				OnShowSuccessNotification("Successfully launched cloud deployment.");
 			}),
-
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				this->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+				OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
 			})
 		);
 	};
@@ -1295,7 +1271,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		}
 		else
 		{
-			OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+			OnShowFailedNotification(TEXT("Failed to launch cloud deployment. Unable to authenticate with SpatialOS."));
 		}
 	});
 }
@@ -1336,9 +1312,9 @@ void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
 	GetMutableDefault<USpatialGDKEditorSettings>()->SetBuildClientWorker(!IsBuildClientWorkerEnabled());
 }
 
-void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Tag)
+void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& TagToAdd)
 {
-	if (Tag.IsEmpty())
+	if (TagToAdd.IsEmpty())
 	{
 		return;
 	}
@@ -1346,27 +1322,17 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Ta
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 
 	FString Tags = SpatialGDKSettings->GetDeploymentTags();
-	TArray<FString> OutArray;
-	Tags.ParseIntoArray(OutArray, TEXT(" "));
-	bool bFoundSpecifiedTag = false;
+	TArray<FString> ExistingTags;
+	Tags.ParseIntoArray(ExistingTags, TEXT(" "));
 
-	for (TArray<FString>::TIterator it(OutArray); it; ++it)
+	if (!ExistingTags.Contains(TagToAdd))
 	{
-		if (it->Trim().Compare(Tag) == 0)
-		{
-			bFoundSpecifiedTag = true;
-			break;
-		}
-	}
-
-	if (!bFoundSpecifiedTag)
-	{
-		if (OutArray.Num() > 0)
+		if (ExistingTags.Num() > 0)
 		{
 			Tags += TEXT(" ");
 		}
 
-		Tags += Tag;
+		Tags += TagToAdd;
 		SpatialGDKSettings->SetDeploymentTags(Tags);
 	}
 }

@@ -3,20 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Logging/LogMacros.h"
-#include "Misc/MonitoredProcess.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
+#include "CloudDeploymentConfiguration.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
+
+class FMonitoredProcess;
 
 class SPATIALGDKEDITOR_API FSpatialGDKPackageAssembly : public TSharedFromThis<FSpatialGDKPackageAssembly>
 {
 public:
-	FSpatialGDKPackageAssembly();
-
 	bool CanBuild() const;
 
-	void BuildAllAndUpload(const FString& AssemblyName, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
+	void BuildAndUploadAssembly(const FCloudDeploymentConfiguration& InCloudDeploymentConfiguration);
 
 	FSimpleDelegate OnSuccess;
 
@@ -35,19 +35,12 @@ private:
 	TSharedPtr<FMonitoredProcess> PackageAssemblyTask;
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
-	struct AssemblyDetails
-	{
-		AssemblyDetails(const FString& Name, const FString& Config, bool bForce);
-		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
-		FString AssemblyName;
-		FString Configuration;
-		bool bForce;
-	};
+	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
-	TUniquePtr<AssemblyDetails> AssemblyDetailsPtr;
+	void LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir);
 
 	void BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
-	void UploadAssembly(const FString& AssemblyName, bool bForce);
+	void UploadAssembly(const FString& AssemblyName, bool bForceAssemblyOverwrite);
 
 	bool NextStep();
 

@@ -96,9 +96,6 @@ private:
 	/** Delegate to commit the number of Simulated Players */
 	void OnNumberOfSimulatedPlayersCommited(uint32 NewValue);
 
-	/** Delegate called when the user clicks the 'Launch Simulated Player Deployment' button */
-	FReply OnLaunchClicked();
-
 	/** Delegate called when the user clicks the 'Refresh' button */
 	FReply OnRefreshClicked();
 
@@ -113,8 +110,6 @@ private:
 
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);
-
-	FReply OnBuildAndUploadClicked();
 
 	ECheckBoxState ForceAssemblyOverwrite() const;
 	void OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState);
@@ -136,8 +131,6 @@ private:
 
 	ECheckBoxState IsGenerateSnapshotEnabled() const;
 	void OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState);
-
-	void OnBuildSuccess();
 
 	FReply OnOpenCloudDeploymentPageClicked();
 	bool CanOpenCloudDeploymentPage() const;
