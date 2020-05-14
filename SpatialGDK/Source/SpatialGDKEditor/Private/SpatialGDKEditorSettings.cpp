@@ -65,7 +65,7 @@ const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForLocal() c
 {
 	if (bUseGDKPinnedRuntimeVersion || LocalRuntimeVersion.IsEmpty())
 	{
-		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+		return SpatialGDKServicesConstants::SpatialOSDistributedRuntimePinnedVersion;
 	}
 	return LocalRuntimeVersion;
 }
@@ -74,7 +74,7 @@ const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForCloud() c
 {
 	if (bUseGDKPinnedRuntimeVersion || CloudRuntimeVersion.IsEmpty())
 	{
-		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+		return SpatialGDKServicesConstants::SpatialOSDistributedRuntimePinnedVersion;
 	}
 	return CloudRuntimeVersion;
 }
