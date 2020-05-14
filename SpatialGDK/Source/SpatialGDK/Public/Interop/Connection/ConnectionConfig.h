@@ -25,7 +25,6 @@ struct FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
-		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
 
@@ -168,6 +167,7 @@ public:
 
 	void LoadDefaults()
 	{
+		UseExternalIp = false;
 		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
@@ -178,6 +178,7 @@ public:
 
 		// Get command line options first since the URL handling will modify the CommandLine string
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
 
 		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
 		FString Host;
@@ -223,10 +224,6 @@ private:
 		if (!Host.IsEmpty())
 		{
 			ReceptionistHost = Host;
-			if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
-			{
-				UseExternalIp = true;
-			}
 		}
 	}
 
