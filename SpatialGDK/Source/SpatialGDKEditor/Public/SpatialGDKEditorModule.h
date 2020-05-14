@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#pragma once
+
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
 
@@ -25,6 +27,7 @@ protected:
 	// Local deployment connection flow
 	virtual bool ShouldConnectToLocalDeployment() const override;
 	virtual FString GetSpatialOSLocalDeploymentIP() const override;
+	virtual bool ShouldStartPIEClientsWithLocalLaunchOnDevice() const override;
 
 	// Cloud deployment connection flow
 	virtual bool ShouldConnectToCloudDeployment() const override;

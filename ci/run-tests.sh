@@ -26,12 +26,22 @@ pushd "$(dirname "$0")"
             echo "Generating snapshot and schema for testing project"
             "${UNREAL_EDITOR_PATH}" \
                 "${UPROJECT_PATH}" \
+                -SkipShaderCompile \
+                -nopause \
+                -nosplash \
+                -unattended \
+                -nullRHI \
+                -run=CookAndGenerateSchema \
+                -map="${TEST_REPO_MAP}"
+                
+            "${UNREAL_EDITOR_PATH}" \
+                "${UPROJECT_PATH}" \
                 -NoShaderCompile \
                 -nopause \
                 -nosplash \
                 -unattended \
                 -nullRHI \
-                -run=GenerateSchemaAndSnapshots \
+                -run=GenerateSnapshot \
                 -MapPaths="${TEST_REPO_MAP}"
 
             cp "${TEST_REPO_PATH}/spatial/snapshots/${TEST_REPO_MAP}.snapshot" "${TEST_REPO_PATH}/spatial/snapshots/default.snapshot"
