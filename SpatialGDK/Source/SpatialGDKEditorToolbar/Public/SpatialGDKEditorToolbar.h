@@ -55,6 +55,13 @@ public:
 	FReply OnLaunchDeployment();
 	bool CanLaunchDeployment() const;
 
+	bool IsSimulatedPlayersEnabled() const;
+	/** Delegate called when the user either clicks the simulated players checkbox */
+	void OnCheckedSimulatedPlayers();
+
+	bool IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker();
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -63,14 +70,20 @@ private:
 
 	void VerifyAndStartDeployment();
 
-	void StartSpatialDeploymentButtonClicked();
+	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
-	bool StartSpatialDeploymentIsVisible() const;
-	bool StartSpatialDeploymentCanExecute() const;
+	bool StartNoAutomaticConnectionIsVisible() const;
+	bool StartNoAutomaticConnectionCanExecute() const;
+
+	bool StartLocalSpatialDeploymentIsVisible() const;
+	bool StartLocalSpatialDeploymentCanExecute() const;
+
+	bool StartCloudSpatialDeploymentIsVisible() const;
+	bool StartCloudSpatialDeploymentCanExecute() const;
 
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
@@ -81,6 +94,20 @@ private:
 	bool StopSpatialServiceIsVisible() const;
 	bool StopSpatialServiceCanExecute() const;
 
+	void OnToggleSpatialNetworking();
+	bool OnIsSpatialNetworkingEnabled() const;
+
+	void GDKEditorSettingsClicked() const;
+	bool IsNoAutomaticConnectionSelected() const;
+	bool IsLocalDeploymentSelected() const;
+	bool IsCloudDeploymentSelected() const;
+	bool IsSpatialOSNetFlowConfigurable() const;
+	void NoAutomaticConnectionClicked();
+	void LocalDeploymentClicked();
+	void CloudDeploymentClicked();
+	bool IsLocalDeploymentIPEditable() const;
+	bool AreCloudDeploymentPropertiesEditable() const;
+
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -90,6 +117,7 @@ private:
 
 	void ShowCloudDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
+	void LaunchOrShowDeployment();
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
@@ -105,6 +133,7 @@ private:
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
+	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
 	void ShowTaskStartNotification(const FString& NotificationText);
 
@@ -118,6 +147,8 @@ private:
 	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
+
+	void RefreshAutoStartLocalDeployment();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;

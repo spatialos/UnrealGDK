@@ -35,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Open Deployment Page` button to the `Cloud Deployment` window.
 - The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
 - When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
+- Change the icon of the 'Start' toolbar button based on the selected connection flow.
+- Created a new dropdown menu in the Start toolbar button. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client
+  - You can choose between `Connect to local deployment`, `Connect to cloud deployment` and `Do not connect` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
+  - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
+  - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
+  - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
+- The Deploy button will launch the deployment directly if the necessary fields were filled previously in the `Deployment Configuration` window, selecting the `Deployment Configuration` menu item from the dropdown will allow changing of deployment settings.
+- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.

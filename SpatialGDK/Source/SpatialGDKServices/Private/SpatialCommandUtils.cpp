@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 #include "SpatialCommandUtils.h"
+
+#include "Logging/LogMacros.h"
+#include "Misc/MessageDialog.h"
+#include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
@@ -134,4 +137,58 @@ FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, 
 
 	return FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, OutProcessID, 2 /*PriorityModifier*/,
 		nullptr, nullptr, nullptr);
+}
+
+bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& OutTokenSecret)
+{
+	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
+	if (IsRunningInChina)
+	{
+		Arguments += TEXT(" --environment cn-production");
+	}
+
+	FString CreateDevAuthTokenResult;
+	int32 ExitCode;
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, Arguments, SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
+
+	if (ExitCode != 0)
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult)));
+		return false;
+	};
+
+	FString AuthResult;
+	FString DevAuthTokenResult;
+	bool bFoundNewline = CreateDevAuthTokenResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &DevAuthTokenResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	if (!bFoundNewline || DevAuthTokenResult.IsEmpty())
+	{
+		// This is necessary because depending on whether you are already authenticated against spatial, it will either return two json structs or one.
+		DevAuthTokenResult = CreateDevAuthTokenResult;
+	}
+
+	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(DevAuthTokenResult);
+	TSharedPtr<FJsonObject> JsonRootObject;
+	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
+		return false;
+	}
+
+	// We need a pointer to a shared pointer due to how the JSON API works.
+	const TSharedPtr<FJsonObject>* JsonDataObject;
+	if (!(JsonRootObject->TryGetObjectField("json_data", JsonDataObject)))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult)));
+		return false;
+	}
+
+	FString TokenSecret;
+	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult)));
+		return false;
+	}
+
+	OutTokenSecret = TokenSecret;
+	return true;
 }

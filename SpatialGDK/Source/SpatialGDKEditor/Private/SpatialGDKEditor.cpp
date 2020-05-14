@@ -16,6 +16,7 @@
 #include "UnrealEdMisc.h"
 #include "UObject/StrongObjectPtr.h"
 
+#include "SpatialGDKDevAuthTokenGenerator.h"
 #include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
@@ -31,6 +32,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
+	, SpatialGDKDevAuthTokenGeneratorInstance(MakeShared<FSpatialGDKDevAuthTokenGenerator>())
 	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>())
 {
 }
@@ -325,6 +327,11 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			World->UpdateWorldComponents(true, true);
 		}
 	}
+}
+
+TSharedRef<FSpatialGDKDevAuthTokenGenerator> FSpatialGDKEditor::GetDevAuthTokenGeneratorRef()
+{
+	return SpatialGDKDevAuthTokenGeneratorInstance;
 }
 
 TSharedRef<FSpatialGDKPackageAssembly> FSpatialGDKEditor::GetPackageAssemblyRef()
