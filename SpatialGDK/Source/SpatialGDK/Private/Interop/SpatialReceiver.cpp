@@ -130,7 +130,8 @@ void USpatialReceiver::LeaveCriticalSection()
 		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PendingAddComponent.EntityId);
 		if (Channel == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Got an add component for an entity (%lld) that doesn't have an associated actor channel."), PendingAddComponent.EntityId);
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Got an add component for an entity that doesn't have an associated actor channel."
+				" Entity id: %lld, component id: %d."), PendingAddComponent.EntityId, PendingAddComponent.ComponentId);
 			continue;
 		}
 		if (Channel->bCreatedEntity)
@@ -146,8 +147,8 @@ void USpatialReceiver::LeaveCriticalSection()
 		}
 
 		UE_LOG(LogSpatialReceiver, Verbose,
-			TEXT("Add component inside of a critical section, outside of an add entity, being handled: component id: %d, entity id: %lld"),
-			PendingAddComponent.ComponentId, PendingAddComponent.EntityId);
+			TEXT("Add component inside of a critical section, outside of an add entity, being handled: entity id %lld, component id %d."),
+			PendingAddComponent.EntityId, PendingAddComponent.ComponentId);
 		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
@@ -159,6 +160,8 @@ void USpatialReceiver::LeaveCriticalSection()
 		}
 	}
 
+	// Note that this logic should probably later on be done by the SpatialView, where we can reorder these ops in
+	// a more structured manner.
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 	{
 		// Owner only components have to be applied after gaining authority, as it is possible (and indeed extremely likely),
@@ -1304,8 +1307,8 @@ void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Wo
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
 	if (!bFoundOffset)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id "
-			"when receiving dynamic AddComponent."), EntityId, ComponentId);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Could not find offset for component id when receiving dynamic AddComponent."
+			" (EntityId %lld, ComponentId %d)"), EntityId, ComponentId);
 		return;
 	}
 
