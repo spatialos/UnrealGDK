@@ -140,7 +140,7 @@ FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, 
 		nullptr, nullptr, nullptr);
 }
 
-bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& OutTokenSecret)
+bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& OutTokenSecret, FString& OutErrorMessage)
 {
 	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
 	if (IsRunningInChina)
@@ -154,7 +154,7 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& O
 
 	if (ExitCode != 0)
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult)));
+		OutErrorMessage = FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult);
 		return false;
 	};
 
@@ -171,7 +171,7 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& O
 	TSharedPtr<FJsonObject> JsonRootObject;
 	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
+		OutErrorMessage = FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
 		return false;
 	}
 
@@ -179,14 +179,14 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& O
 	const TSharedPtr<FJsonObject>* JsonDataObject;
 	if (!(JsonRootObject->TryGetObjectField("json_data", JsonDataObject)))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult)));
+		OutErrorMessage = FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
 		return false;
 	}
 
 	FString TokenSecret;
 	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult)));
+		OutErrorMessage = FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult);
 		return false;
 	}
 
