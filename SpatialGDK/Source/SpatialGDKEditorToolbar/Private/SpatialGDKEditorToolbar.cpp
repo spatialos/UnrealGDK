@@ -897,7 +897,13 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() const
 {
+#if PLATFORM_MAC
+	// Launching cloud deployments is not supported on Mac
+	// TODO: UNR-3396 - allow launching cloud deployments from mac
+	return false;
+#else
 	return CanBuildAndUpload();
+#endif
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
