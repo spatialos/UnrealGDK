@@ -22,6 +22,7 @@ class SPATIALGDK_API USpatialMetrics : public UObject
 {
 	GENERATED_BODY()
 
+	TArray<float> PerformanceCounters;
 public:
 	void Init(USpatialWorkerConnection* Connection, float MaxServerTickRate, bool bIsServer);
 
@@ -58,6 +59,14 @@ public:
 	FControllerRefProviderDelegate ControllerRefProvider;
 
 	void SetWorkerLoadDelegate(const WorkerLoadFunction& Delegate) { WorkerLoadDelegate = Delegate; }
+	void IncPerfMetric(int MetricType, float Amount)
+	{
+		if ((uint32)MetricType < (uint32)PerformanceCounters.Num())
+		{
+			PerformanceCounters[MetricType] += Amount;
+		}
+	}
+	void ResetPerfMetrics();
 private:
 
 	UPROPERTY()

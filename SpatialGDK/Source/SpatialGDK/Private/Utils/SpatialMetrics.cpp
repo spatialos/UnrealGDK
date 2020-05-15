@@ -8,6 +8,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/PerfMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
@@ -27,6 +28,9 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
+
+	PerformanceCounters.SetNum((int32)GDKMetric::Count);
+	ResetPerfMetrics();
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
@@ -55,14 +59,26 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
 	DynamicFPSGauge.Value = AverageFPS;
 
-	SpatialGDK::SpatialMetrics DynamicFPSMetrics;
-	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
-	DynamicFPSMetrics.Load = WorkerLoad;
+	SpatialGDK::SpatialMetrics Metrics;
+	Metrics.GaugeMetrics.Add(DynamicFPSGauge);
+	Metrics.Load = WorkerLoad;
 
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	Connection->SendMetrics(DynamicFPSMetrics);
+	// GDK metrics
+	if (bIsServer)
+	{
+		for (int i = 0; i < (size_t)GDKMetric::Count; i++)
+		{
+			SpatialGDK::GaugeMetric Guage;
+			Guage.Key = GetMetricName(GDKMetric(i));
+			Guage.Value = PerformanceCounters[i];
+			Metrics.GaugeMetrics.Add(Guage);
+		}
+	}
+	Connection->SendMetrics(Metrics);
+	ResetPerfMetrics();
 }
 
 // Load defined as performance relative to target frame time or just frame time based on config value.
@@ -322,5 +338,13 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 
 			WorkerMetricsRecieved.Broadcast(WorkerMetrics);
 		}
+	}
+}
+
+void USpatialMetrics::ResetPerfMetrics()
+{
+	for (int i = 0; i < (int)GDKMetric::Count; i++)
+	{
+		PerformanceCounters[i] = 0.0f;
 	}
 }

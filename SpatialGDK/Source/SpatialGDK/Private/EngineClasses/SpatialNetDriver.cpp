@@ -46,6 +46,7 @@
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
+#include "Utils/PerfMetrics.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
@@ -1367,6 +1368,9 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						{
 							LastRelevantActors.Add(Actor);
 						}
+
+						GDK_PERF_FRAME_COUNTER(SpatialMetrics, GDKMetric::NumActorsReplicated);
+						GDK_PERF_FRAME_SCOPED_TIME(SpatialMetrics, GDKMetric::ActorReplicationTime);
 
 						if (Channel->ReplicateActor())
 						{
