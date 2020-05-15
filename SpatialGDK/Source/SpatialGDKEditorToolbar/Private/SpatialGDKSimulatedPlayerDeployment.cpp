@@ -93,32 +93,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 						.Padding(1.0f)
 						[
 							SNew(SVerticalBox)
-#if PLATFORM_MAC
-							// Build explanation set
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SWrapBox)
-								.UseAllottedWidth(true)
-							+ SWrapBox::Slot()
-							.VAlign(VAlign_Bottom)
-							[
-								SNew(STextBlock)
-								.AutoWrapText(true)
-							.Text(FText::FromString(FString(TEXT("NOTE: You can launch a deployment however the assembly must be prebuilt and uploaded from a compatibile system."))))
-							]
-							]
-						// Separator
-						+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SSeparator)
-							]
-#endif
 							// Project
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -543,7 +517,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							[
 								SNew(SSeparator)
 							]
-#if PLATFORM_WINDOWS
 							// Explanation text
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -672,7 +645,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							[
 								SNew(SSeparator)
 							]
-#endif
 							// Buttons
 							+ SVerticalBox::Slot()
 							.FillHeight(1.0f)

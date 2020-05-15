@@ -902,7 +902,11 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() const
 {
+#if PLATFORM_MAC
+	return false;
+#else
 	return CanBuildAndUpload();
+#endif
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
@@ -1225,11 +1229,6 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
 
-#if PLATFORM_MAC
-	//go straight to launching the deployment
-	OnBuildSuccess();
-#else
-
 	CloudDeploymentConfiguration.InitFromSettings();
 
 	if (CloudDeploymentConfiguration.bGenerateSchema)
@@ -1245,7 +1244,6 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 	PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
-#endif
 
 	return FReply::Handled();
 }
