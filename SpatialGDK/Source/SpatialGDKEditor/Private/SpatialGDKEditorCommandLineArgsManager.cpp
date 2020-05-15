@@ -13,12 +13,9 @@
 #include "SpatialGDKSettings.h"
 
 #ifdef ENABLE_LAUNCHER_DELEGATE
-//need this macro before "ILauncherServicesModule.h" to prevent compile error
-#define LAUNCHERSERVICES_API
-
-#include "Developer/LauncherServices/Public/ILauncherServicesModule.h"
-#include "Developer/LauncherServices/Public/ILauncherWorker.h"
-#include "Developer/LauncherServices/Public/ILauncher.h"
+#include "ILauncherServicesModule.h"
+#include "ILauncherWorker.h"
+#include "ILauncher.h"
 #endif
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorCommandLineArgsManager, Log, All);
@@ -67,9 +64,9 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 	bAndroidDevice = false;
 	TArray<ILauncherTaskPtr> TaskList;
 	LauncherWorkerPtr->GetTasks(TaskList);
-	for (int32 idx = 0; idx < TaskList.Num(); ++idx)
+	for (const ILauncherTaskPtr& Task : TaskList)
 	{
-		if (TaskList[idx]->GetDesc().Contains(TEXT("android")))
+		if (Task->GetDesc().Contains(TEXT("android")))
 		{
 			bAndroidDevice = true;
 		}
@@ -84,7 +81,7 @@ void FSpatialGDKEditorCommandLineArgsManager::OnCreateLauncher(ILauncherRef Laun
 {
 	LauncherRef->FLauncherWorkerStartedDelegate.AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLaunch);
 }
-#endif
+#endif // ENABLE_LAUNCHER_DELEGATE
 
 namespace
 {

@@ -84,9 +84,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-			.OnClicked(FOnClicked::CreateLambda([] {
-				return FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken();
-			}))
+			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken)
 			.Content()
 			[
 				SNew(STextBlock).Text(FText::FromString("Generate Dev Auth Token"))
@@ -105,9 +103,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return FSpatialGDKEditorCommandLineArgsManager::PushToAndroidDevice();
-				}))
+				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushToAndroidDevice)
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
@@ -118,9 +114,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return FSpatialGDKEditorCommandLineArgsManager::RemoveFromAndroidDevice();
-				}))
+				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::RemoveFromAndroidDevice)
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from Android device"))
@@ -139,9 +133,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return FSpatialGDKEditorCommandLineArgsManager::PushToIOSDevice();
-				}))
+				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushToIOSDevice)
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
@@ -152,9 +144,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SButton)
 				.VAlign(VAlign_Center)
-				.OnClicked(FOnClicked::CreateLambda([] {
-					return FSpatialGDKEditorCommandLineArgsManager::RemoveFromIOSDevice();
-				}))
+				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::RemoveFromIOSDevice)
 				.Content()
 				[
 					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from iOS device"))

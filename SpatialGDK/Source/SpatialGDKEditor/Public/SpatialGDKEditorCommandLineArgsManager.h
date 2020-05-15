@@ -6,13 +6,13 @@
 
 class FReply;
 
-typedef TSharedRef<class ILauncher> ILauncherRef;
-typedef TSharedPtr<class ILauncherWorker> ILauncherWorkerPtr;
-typedef TSharedRef<class ILauncherProfile> ILauncherProfileRef;
+using ILauncherRef = TSharedRef<class ILauncher>;
+using ILauncherWorkerPtr = TSharedPtr<class ILauncherWorker>;
+using ILauncherProfileRef = TSharedRef<class ILauncherProfile>;
 
 #if ENGINE_MAJOR_VERSION >= 4 && ENGINE_MINOR_VERSION >= 24
 #define ENABLE_LAUNCHER_DELEGATE
-#endif
+#endif 
 
 class FSpatialGDKEditorCommandLineArgsManager
 {
