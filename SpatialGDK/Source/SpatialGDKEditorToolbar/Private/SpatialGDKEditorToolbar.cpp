@@ -477,8 +477,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 			.SelectAllTextWhenFocused(true)
 			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Raw(this, &FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable)
-			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
-			.IsReadOnly(!GeneralProjectSettings->UsesSpatialNetworking()),
+			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font"))),
 			LOCTEXT("LocalDeploymentIPLabel", "Local Deployment IP:")
 		);
 
@@ -488,8 +487,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 			.SelectAllTextWhenFocused(true)
 			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Raw(this, &FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable)
-			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
-			.IsReadOnly(!GeneralProjectSettings->UsesSpatialNetworking()),
+			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font"))),
 			LOCTEXT("CloudDeploymentNameLabel", "Cloud Deployment Name:")
 		);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
