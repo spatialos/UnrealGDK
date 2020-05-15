@@ -107,7 +107,7 @@ private:
 	void LocalDeploymentClicked();
 	void CloudDeploymentClicked();
 	bool IsLocalDeploymentIPEditable() const;
-	bool IsCloudDeploymentNameEditable() const;
+	bool AreCloudDeploymentPropertiesEditable() const;
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
