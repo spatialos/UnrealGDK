@@ -49,8 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
 - Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
-- Fixed a crash when running with nullrhi and using SpatialDebugger
+- Fixed a crash when running with nullrhi and using SpatialDebugger.
 - When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
+- Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
+- OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 
 ## [`0.9.0`] - 2020-05-05
 
