@@ -41,8 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
-- The Deploy button will launch the deployment directly if the necessary fields were filled previously in the `Deployment Configuration` window, selecting the `Deployment Configuration` menu item from the dropdown will allow changing of deployment settings.
-- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
+- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the Start dropdown to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
