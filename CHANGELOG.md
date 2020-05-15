@@ -109,7 +109,6 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabled RPC ring buffers by default. We'll remove the legacy RPC mode in a future release.
 - Removed the `bPackRPCs` property and the `--OverrideRPCPacking` flag.
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
-- Automaticly remove UE4CommandLine.txt when session ended on Android device if UnrealEngine Version >= 4.24
 
 ## Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
