@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialCommandUtils.h"
 
 #include "Logging/LogMacros.h"

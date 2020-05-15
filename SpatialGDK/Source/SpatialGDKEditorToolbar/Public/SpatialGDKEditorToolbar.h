@@ -76,6 +76,9 @@ private:
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
+	bool StartNativeIsVisible() const;
+	bool StartNativeCanExecute() const;
+
 	bool StartNoAutomaticConnectionIsVisible() const;
 	bool StartNoAutomaticConnectionCanExecute() const;
 

@@ -191,6 +191,13 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().StartNative,
+		FExecuteAction(),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNativeCanExecute),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNativeIsVisible));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartNoAutomaticConnection,
 		FExecuteAction(),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionCanExecute),
@@ -322,6 +329,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartNative);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartNoAutomaticConnection);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartLocalSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartCloudSpatialDeployment);
@@ -349,6 +357,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 		true
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartNative);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartNoAutomaticConnection);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartLocalSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartCloudSpatialDeployment);
@@ -871,9 +880,19 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 	}
 }
 
+bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const
+{
+	return !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+}
+
+bool FSpatialGDKEditorToolbarModule::StartNativeCanExecute() const
+{
+	return false;
+}
+
 bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionIsVisible() const
 {
-	return (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()) || GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionCanExecute() const
@@ -989,10 +1008,7 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked()
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = false;
 	SpatialGDKEditorSettings->SaveConfig();
-
-	// Ensure we disable bUseDevelopmentAuthenticationFlow when we don't connect to spatial deployment.
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
+	SpatialGDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
 
 	RefreshAutoStartLocalDeployment();
 }
@@ -1003,10 +1019,7 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = false;
 	SpatialGDKEditorSettings->SaveConfig();
-
-	// Ensure we disable bUseDevelopmentAuthenticationFlow when using local deployment flow.
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->bUseDevelopmentAuthenticationFlow = false;
+	SpatialGDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
 
 	RefreshAutoStartLocalDeployment();
 }
@@ -1017,8 +1030,9 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
 	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
 
-	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuth = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
-	DevAuth->AsyncGenerateDevAuthToken();
+	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuthTokenGenerator = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
+	DevAuthTokenGenerator->AsyncGenerateDevAuthToken();
+
 	RefreshAutoStartLocalDeployment();
 }
 
@@ -1106,10 +1120,11 @@ void FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment()
 	if (CanLaunchDeployment())
 	{
 		OnLaunchDeployment();
-		return;
 	}
-
-	ShowCloudDeploymentDialog();
+	else
+	{
+		ShowCloudDeploymentDialog();
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
