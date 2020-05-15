@@ -17,10 +17,12 @@ public:
 	void AsyncGenerateDevAuthToken();
 
 private:
-	TAtomic<bool> bIsGenerating;
-	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 	void ShowTaskStartedNotification(const FString& NotificationText);
 	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
 	void DoGenerateDevAuthTokenTasks();
 	void UpdateSettings(FString DevAuthToken);
+
+private:
+	TAtomic<bool> bIsGenerating;
+	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 };

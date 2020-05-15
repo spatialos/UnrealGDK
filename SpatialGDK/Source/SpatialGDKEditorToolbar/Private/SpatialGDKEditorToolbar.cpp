@@ -286,6 +286,10 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GDKEditorSettings,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GDKEditorSettingsClicked)
 	);
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GDKRuntimeSettings,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GDKRuntimeSettingsClicked)
+	);
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -352,9 +356,9 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddComboButton(
 		FUIAction(),
 		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuContent),
-		LOCTEXT("StartDropDownMenu_Lable", "SpatialOS Network Options"),
+		LOCTEXT("StartDropDownMenu_Label", "SpatialOS Network Options"),
 		TAttribute<FText>(),
-		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.start"),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Start"),
 		true
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
@@ -410,14 +414,15 @@ void OnLocalDeploymentIPChanged(const FText& InText, ETextCommit::Type InCommitT
 	FRegexMatcher IpV4RegexMatcher(IpV4PatternRegex, InputIpAddress);
 	if (!InputIpAddress.IsEmpty() && !IpV4RegexMatcher.FindNext())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input a valid IP address."));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Please input a valid IP address.")));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Invalid IP address: %s"), *InputIpAddress);
 		return;
 	}
 
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->ExposedRuntimeIP = InputIpAddress;
 	SpatialGDKEditorSettings->SaveConfig();
-	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set local deployment IP address to %s"), *InputIpAddress);
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting local deployment IP address to %s"), *InputIpAddress);
 }
 
 void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommitType)
@@ -432,18 +437,17 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	FRegexMatcher DeploymentNameRegexMatcher(DeploymentNamePatternRegex, InputDeploymentName);
 	if (!InputDeploymentName.IsEmpty() && !DeploymentNameRegexMatcher.FindNext())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Please input a valid deployment name. Deployment names may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long."));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Please input a valid deployment name. %s"), *SpatialConstants::DeploymentPatternHint)));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Invalid deployment name: %s"), *InputDeploymentName);
 		return;
 	}
 
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->DevelopmentDeploymentToConnect = InText.ToString();
+	SpatialGDKEditorSettings->DevelopmentDeploymentToConnect = InputDeploymentName;
 	SpatialGDKEditorSettings->SaveConfig();
+	SpatialGDKEditorSettings->SetRuntimeDevelopmentDeploymentToConnect();
 
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->DevelopmentDeploymentToConnect = InText.ToString();
-	SpatialGDKSettings->SaveConfig();
-	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Set cloud deployment name to %s"), *InputDeploymentName);
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting cloud deployment name to %s"), *InputDeploymentName);
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuContent()
@@ -451,13 +455,13 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	FMenuBuilder MenuBuilder(false /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	MenuBuilder.BeginSection(NAME_None, LOCTEXT("SpatialOSSettings", "SpatialOS Settings"));
+	MenuBuilder.BeginSection("SpatialOSSettings", LOCTEXT("SpatialOSSettingsLabel", "SpatialOS Settings"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableSpatialNetworking);
 	}
 	MenuBuilder.EndSection();
 
-	MenuBuilder.BeginSection(NAME_None, LOCTEXT("Game Client", "Game Client"));
+	MenuBuilder.BeginSection("ConnectionFlow", LOCTEXT("ConnectionFlowLabel", "Connection Flow"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LocalDeployment);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CloudDeployment);
@@ -465,10 +469,9 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 
-	MenuBuilder.BeginSection(NAME_None, LOCTEXT("", ""));
+	MenuBuilder.BeginSection("AdditionalProperties");
 	{
 		MenuBuilder.AddWidget(SNew(SEditableText)
-			.OnTextChanged_Static(OnLocalDeploymentIPChanged, ETextCommit::Default)
 			.OnTextCommitted_Static(OnLocalDeploymentIPChanged)
 			.Text(FText::FromString(GetDefault<USpatialGDKEditorSettings>()->ExposedRuntimeIP))
 			.SelectAllTextWhenFocused(true)
@@ -480,7 +483,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 		);
 
 		MenuBuilder.AddWidget(SNew(SEditableText)
-			.OnTextChanged_Static(OnCloudDeploymentNameChanged, ETextCommit::Default)
 			.OnTextCommitted_Static(OnCloudDeploymentNameChanged)
 			.Text(FText::FromString(SpatialGDKEditorSettings->DevelopmentDeploymentToConnect))
 			.SelectAllTextWhenFocused(true)
@@ -495,9 +497,10 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 
-	MenuBuilder.BeginSection(NAME_None, LOCTEXT("", ""));
+	MenuBuilder.BeginSection("SettingsShortcuts");
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GDKEditorSettings);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GDKRuntimeSettings);
 	}
 	MenuBuilder.EndSection();
 
@@ -952,6 +955,11 @@ bool FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled() const
 void FSpatialGDKEditorToolbarModule::GDKEditorSettingsClicked() const
 {
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+}
+
+void FSpatialGDKEditorToolbarModule::GDKRuntimeSettingsClicked() const
+{
+	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
 }
 
 bool FSpatialGDKEditorToolbarModule::IsNoAutomaticConnectionSelected() const

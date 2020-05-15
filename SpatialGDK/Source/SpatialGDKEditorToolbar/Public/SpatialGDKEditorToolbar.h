@@ -98,6 +98,7 @@ private:
 	bool OnIsSpatialNetworkingEnabled() const;
 
 	void GDKEditorSettingsClicked() const;
+	void GDKRuntimeSettingsClicked() const;
 	bool IsNoAutomaticConnectionSelected() const;
 	bool IsLocalDeploymentSelected() const;
 	bool IsCloudDeploymentSelected() const;
