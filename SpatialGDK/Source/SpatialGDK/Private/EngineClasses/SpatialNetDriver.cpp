@@ -32,6 +32,7 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -423,22 +424,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 	if (IsServer())
 	{
-		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
-		{
-			if (WorldSettings == nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy. Using a 1x1 grid."));
-			}
-			else
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-			}
-			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
-		}
-		else
-		{
-			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
-		}
+		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 		LoadBalanceStrategy->Init();
 	}
 
@@ -2589,5 +2575,5 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
-	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
 }
