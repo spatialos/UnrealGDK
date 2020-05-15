@@ -226,13 +226,13 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
-		FCanExecuteAction(),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable),
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers),
-		FCanExecuteAction(),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable),
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled));
 
 	InPluginCommands->MapAction(
@@ -391,8 +391,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
@@ -487,11 +485,13 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 			.Text(FText::FromString(SpatialGDKEditorSettings->DevelopmentDeploymentToConnect))
 			.SelectAllTextWhenFocused(true)
 			.ColorAndOpacity(FLinearColor::White * 0.8f)
-			.IsEnabled_Raw(this, &FSpatialGDKEditorToolbarModule::IsCloudDeploymentNameEditable)
+			.IsEnabled_Raw(this, &FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable)
 			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
 			.IsReadOnly(!GeneralProjectSettings->UsesSpatialNetworking()),
 			LOCTEXT("CloudDeploymentNameLabel", "Cloud Deployment Name:")
 		);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer);
 	}
 	MenuBuilder.EndSection();
 
@@ -902,7 +902,7 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() const
 {
-	return true;
+	return CanBuildAndUpload();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
@@ -1021,7 +1021,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable() const
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment);
 }
 
-bool FSpatialGDKEditorToolbarModule::IsCloudDeploymentNameEditable() const
+bool FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment);
