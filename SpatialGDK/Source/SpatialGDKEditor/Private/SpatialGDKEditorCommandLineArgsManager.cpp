@@ -13,9 +13,9 @@
 #include "SpatialGDKSettings.h"
 
 #ifdef ENABLE_LAUNCHER_DELEGATE
-#include "ILauncher.h"
-#include "ILauncherWorker.h"
 #include "ILauncherServicesModule.h"
+#include "ILauncherWorker.h"
+#include "ILauncher.h"
 #endif
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorCommandLineArgsManager, Log, All);
