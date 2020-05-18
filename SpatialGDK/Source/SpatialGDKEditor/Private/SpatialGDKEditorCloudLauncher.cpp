@@ -3,8 +3,10 @@
 #include "SpatialGDKEditorCloudLauncher.h"
 
 #include "Interfaces/IPluginManager.h"
+
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
+#include "CloudDeploymentConfiguration.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCloudLauncher);
 
@@ -13,33 +15,31 @@ namespace
 	const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
 }
 
-bool SpatialGDKCloudLaunch()
+bool SpatialGDKCloudLaunch(const FCloudDeploymentConfiguration& Configuration)
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
 	FString LauncherCreateArguments = FString::Printf(
 		TEXT("create %s %s %s %s \"%s\" \"%s\" %s \"%s\" \"%s\""),
 		*FSpatialGDKServicesModule::GetProjectName(),
-		*SpatialGDKSettings->GetAssemblyName(),
-		*SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud(),
-		*SpatialGDKSettings->GetPrimaryDeploymentName(),
-		*SpatialGDKSettings->GetPrimaryLaunchConfigPath(),
-		*SpatialGDKSettings->GetSnapshotPath(),
-		*SpatialGDKSettings->GetPrimaryRegionCode().ToString(),
-		*SpatialGDKSettings->GetMainDeploymentCluster(),
-		*SpatialGDKSettings->GetDeploymentTags()
+		*Configuration.AssemblyName,
+		*Configuration.RuntimeVersion,
+		*Configuration.PrimaryDeploymentName,
+		*Configuration.PrimaryLaunchConfigPath,
+		*Configuration.SnapshotPath,
+		*Configuration.PrimaryRegionCode,
+		*Configuration.MainDeploymentCluster,
+		*Configuration.DeploymentTags
 	);
 
-	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
+	if (Configuration.bSimulatedPlayersEnabled)
 	{
 		LauncherCreateArguments = FString::Printf(
-			TEXT("%s %s \"%s\" %s \"%s\" %s"),
+			TEXT("%s %s \"%s\" %s \"%s\" %u"),
 			*LauncherCreateArguments,
-			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
-			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
-			*SpatialGDKSettings->GetSimulatedPlayerRegionCode().ToString(),
-			*SpatialGDKSettings->GetSimulatedPlayerCluster(),
-			*FString::FromInt(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
+			*Configuration.SimulatedPlayerDeploymentName,
+			*Configuration.SimulatedPlayerLaunchConfigPath,
+			*Configuration.SimulatedPlayerRegionCode,
+			*Configuration.SimulatedPlayerCluster,
+			Configuration.NumberOfSimulatedPlayers
 		);
 	}
 
