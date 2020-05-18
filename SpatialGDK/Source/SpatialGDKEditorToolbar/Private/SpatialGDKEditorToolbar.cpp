@@ -546,12 +546,12 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 void FSpatialGDKEditorToolbarModule::OnShowSingleFailureNotification(const FString& NotificationText)
 {
 	AsyncTask(ENamedThreads::GameThread, [NotificationText]
+	{
+		if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 		{
-			if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
-			{
-				Module->ShowSingleFailureNotification(NotificationText);
-			}
-		});
+			Module->ShowSingleFailureNotification(NotificationText);
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowSingleFailureNotification(const FString& NotificationText)
@@ -568,21 +568,7 @@ void FSpatialGDKEditorToolbarModule::ShowSingleFailureNotification(const FString
 	Info.bFireAndForget = false;
 
 	TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
-	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
-	if (Notification.IsValid())
-	{
-		Notification->SetFadeInDuration(0.1f);
-		Notification->SetFadeOutDuration(0.5f);
-		Notification->SetExpireDuration(5.0f);
-		Notification->SetText(FText::AsCultureInvariant(NotificationText));
-		Notification->SetCompletionState(SNotificationItem::CS_Fail);
-		Notification->ExpireAndFadeout();
-
-		if (GEditor && ExecutionFailSound)
-		{
-			GEditor->PlayEditorSound(ExecutionFailSound);
-		}
-	}
+	ShowFailedNotification(NotificationText);
 }
 
 void FSpatialGDKEditorToolbarModule::OnShowTaskStartNotification(const FString& NotificationText)
@@ -1286,7 +1272,11 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 
 	if (CloudDeploymentConfiguration.bGenerateSnapshot)
 	{
-		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath);
+		if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath))
+		{
+			OnShowSingleFailureNotification(TEXT("Generate snapshot failed."));
+			return FReply::Unhandled();
+		}
 	}
 
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
