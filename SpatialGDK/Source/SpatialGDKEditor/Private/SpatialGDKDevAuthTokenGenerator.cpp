@@ -48,9 +48,9 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 		else
 		{
 			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a Development Authentication Token:%s"), *ErrorMessage);
-			AsyncTask(ENamedThreads::GameThread, [this,&ErrorMessage]()
+			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->ShowTaskEndedNotification(FString::Printf(TEXT("Failed to generate Development Authentication Token:%s"), *ErrorMessage), SNotificationItem::CS_Fail);
+				this->ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
 			});
 		}
 	});
