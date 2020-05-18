@@ -103,10 +103,7 @@ struct ConfigureConnection
 		{
 			FinalLogFilePrefix += Config.WorkerSDKLogPrefix;
 		}
-		else
-		{
-			FinalLogFilePrefix += Config.WorkerId + TEXT("-");
-		}
+		FinalLogFilePrefix += Config.WorkerId + TEXT("-");
 		return FinalLogFilePrefix;
 	}
 
