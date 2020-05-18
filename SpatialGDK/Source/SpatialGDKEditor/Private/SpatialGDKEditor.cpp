@@ -60,7 +60,7 @@ bool CheckAutomationToolsUpToDate()
 #if PLATFORM_WINDOWS
 	FString FullCommandLine = FString::Printf(TEXT("/c \"\"%s\" -list\""), *UatPath);
 #else
-	FString FullCommandLine = FString::Printf(TEXT("\"%s\" %s"), *UatPath, *CommandLine);
+	FString FullCommandLine = FString::Printf(TEXT("\"%s\" -list"), *UatPath);
 #endif
 
 	FString ListCommandResult;
