@@ -28,7 +28,6 @@ enum class ERPCResult : uint8
 	MissingFunctionInfo,
 	UnresolvedParameters,
 	ActorPendingKill,
-	TimedOut,
 
 	// Sender specific
 	NoActorChannel,
