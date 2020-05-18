@@ -33,7 +33,8 @@ public:
 		if (Event.IsValid())
 		{
 			FTimespan WaitTime = FTimespan::FromSeconds(WaitSeconds);
-			Event->Wait(WaitTime);
+			int32_t TimeToWaitMS = FGenericPlatformMath::Max(1, static_cast<int32>(WaitTime.GetTotalMilliseconds()));
+			Event->Wait(TimeToWaitMS);
 		}
 		else
 		{
