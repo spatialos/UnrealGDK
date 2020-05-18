@@ -543,6 +543,48 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 	GenerateSchema(true);
 }		
 
+void FSpatialGDKEditorToolbarModule::OnShowSingleFailureNotification(const FString& NotificationText)
+{
+	AsyncTask(ENamedThreads::GameThread, [NotificationText]
+		{
+			if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+			{
+				Module->ShowSingleFailureNotification(NotificationText);
+			}
+		});
+}
+
+void FSpatialGDKEditorToolbarModule::ShowSingleFailureNotification(const FString& NotificationText)
+{
+	// If a task notification already exists then expire it.
+	if (TaskNotificationPtr.IsValid())
+	{
+		TaskNotificationPtr.Pin()->ExpireAndFadeout();
+	}
+
+	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
+	Info.Image = FSpatialGDKEditorToolbarStyle::Get().GetBrush(TEXT("SpatialGDKEditorToolbar.SpatialOSLogo"));
+	Info.ExpireDuration = 5.0f;
+	Info.bFireAndForget = false;
+
+	TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+	if (Notification.IsValid())
+	{
+		Notification->SetFadeInDuration(0.1f);
+		Notification->SetFadeOutDuration(0.5f);
+		Notification->SetExpireDuration(5.0f);
+		Notification->SetText(FText::AsCultureInvariant(NotificationText));
+		Notification->SetCompletionState(SNotificationItem::CS_Fail);
+		Notification->ExpireAndFadeout();
+
+		if (GEditor && ExecutionFailSound)
+		{
+			GEditor->PlayEditorSound(ExecutionFailSound);
+		}
+	}
+}
+
 void FSpatialGDKEditorToolbarModule::OnShowTaskStartNotification(const FString& NotificationText)
 {
 	AsyncTask(ENamedThreads::GameThread, [NotificationText]
@@ -1235,7 +1277,11 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
 
 	if (CloudDeploymentConfiguration.bGenerateSchema)
 	{
-		SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset);
+		if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+		{
+			OnShowSingleFailureNotification(TEXT("Generate schema failed."));
+			return FReply::Unhandled();
+		}
 	}
 
 	if (CloudDeploymentConfiguration.bGenerateSnapshot)

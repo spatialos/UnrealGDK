@@ -48,6 +48,7 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
+	void OnShowSingleFailureNotification(const FString& NotificationText);
 	void OnShowSuccessNotification(const FString& NotificationText);
 	void OnShowFailedNotification(const FString& NotificationText);
 	void OnShowTaskStartNotification(const FString& NotificationText);
@@ -136,6 +137,7 @@ private:
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
 	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
+	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
 
 	void ShowSuccessNotification(const FString& NotificationText);
