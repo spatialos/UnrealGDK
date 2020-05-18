@@ -82,7 +82,7 @@ done <<< "${ENGINE_VERSIONS}"
 while IFS= read -r ENGINE_VERSION; do
   triggerTest   "unrealengine" \
                 "nightly" \
-                "${ENGINE_VERSION}-${GDK_VERSION}-rc"
+                "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
                 "GDK_BRANCH: "${GDK_VERSION}-rc"" \
                 "EXAMPLE_PROJECT_BRANCH: "${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
