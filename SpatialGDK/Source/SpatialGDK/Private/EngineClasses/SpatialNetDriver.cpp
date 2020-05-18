@@ -156,7 +156,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// If we're launching in PIE then ensure there is a deployment running before connecting.
 	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
 	{
-		FLocalDeploymentManager* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
+		ILocalDeploymentManagerInterface* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
 
 		// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
 		if (LocalDeploymentManager->ShouldWaitForDeployment())

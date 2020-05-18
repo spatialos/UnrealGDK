@@ -8,58 +8,57 @@
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
+#include "LocalDeploymentManagerInterface.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 
 class FJsonObject;
 
-class FLocalDeploymentManager
+class FLocalDeploymentManager : public ILocalDeploymentManagerInterface
 {
 public:
 	FLocalDeploymentManager();
 
-	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
+	void PreInit(bool bChinaEnabled) override;
 
-	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
+	void Init(FString RuntimeIPToExpose) override;
 
-	void SPATIALGDKSERVICES_API RefreshServiceStatus();
+	void RefreshServiceStatus();
 
-	bool CheckIfPortIsBound(int32 Port);
-	bool KillProcessBlockingPort(int32 Port);
-	bool LocalDeploymentPreRunChecks();
+	bool CheckIfPortIsBound(int32 Port) override;
+	bool KillProcessBlockingPort(int32 Port) override;
+	bool LocalDeploymentPreRunChecks() override;
 
-    using LocalDeploymentCallback = TFunction<void(bool)>;
-
-	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
-	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
+	void TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose, const LocalDeploymentCallback& CallBack) override;
+	bool TryStopLocalDeployment() override;
 
 	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopSpatialService();
 
-	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
+	bool GetLocalDeploymentStatus() override;
 	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory();
 
-	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
+	bool CanStartLocalDeployment() const override;
+	bool CanStopLocalDeployment() const override;
+
+	bool IsLocalDeploymentRunning() const override;
 	bool SPATIALGDKSERVICES_API IsSpatialServiceRunning() const;
 
-	bool SPATIALGDKSERVICES_API IsDeploymentStarting() const;
-	bool SPATIALGDKSERVICES_API IsDeploymentStopping() const;
+	virtual bool IsDeploymentStarting() const override;
+	virtual bool IsDeploymentStopping() const override;
 
 	bool SPATIALGDKSERVICES_API IsServiceStarting() const;
 	bool SPATIALGDKSERVICES_API IsServiceStopping() const;
 
-	bool SPATIALGDKSERVICES_API IsRedeployRequired() const;
-	void SPATIALGDKSERVICES_API SetRedeployRequired();
+	bool IsRedeployRequired() const override;
+	void SetRedeployRequired() override;
 
 	// Helper function to inform a client or server whether it should wait for a local deployment to become active.
-	bool SPATIALGDKSERVICES_API ShouldWaitForDeployment() const;
+	bool ShouldWaitForDeployment() const override;
 
-	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
+	void SetAutoDeploy(bool bAutoDeploy) override;
 
 	void WorkerBuildConfigAsync();
-
-	FSimpleMulticastDelegate OnSpatialShutdown;
-	FSimpleMulticastDelegate OnDeploymentStart;
 
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
@@ -68,7 +67,7 @@ private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
-	bool FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
+	bool FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose) override;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
@@ -79,23 +78,9 @@ private:
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial service outside of the editor.
 	static const int32 RefreshFrequency = 3;
 
-	bool bLocalDeploymentManagerEnabled = true;
-
-	bool bLocalDeploymentRunning;
 	bool bSpatialServiceRunning;
 	bool bSpatialServiceInProjectDirectory;
 
-	bool bStartingDeployment;
-	bool bStoppingDeployment;
-
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
-
-	FString ExposedRuntimeIP;
-
-	FString LocalRunningDeploymentID;
-
-	bool bRedeployRequired = false;
-	bool bAutoDeploy = false;
-	bool bIsInChina = false;
 };

@@ -101,7 +101,11 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	{
 		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
-			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
+			// Replace this with a check for new runtime
+			/*if (FLocalDeploymentManager* OldManager = dynamic_cast<FLocalDeploymentManager*>(LocalDeploymentManager))
+			{
+				OldManager->IsServiceRunningAndInCorrectDirectory();
+			}*/
 			LocalDeploymentManager->GetLocalDeploymentStatus();
 
 			VerifyAndStartDeployment();
@@ -477,7 +481,7 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	/*AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		FDateTime StartTime = FDateTime::Now();
 		OnShowTaskStartNotification(TEXT("Starting spatial service..."));
@@ -496,12 +500,12 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 
 		OnShowSuccessNotification(TEXT("Spatial service started!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started in %f seconds."), Span.GetTotalSeconds());
-	});
+	});*/
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	/*AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		FDateTime StartTime = FDateTime::Now();
 		OnShowTaskStartNotification(TEXT("Stopping spatial service..."));
@@ -517,7 +521,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 
 		OnShowSuccessNotification(TEXT("Spatial service stopped!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
-	});
+	});*/
 }
 
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
@@ -652,7 +656,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
-		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess)
+		ILocalDeploymentManagerInterface::LocalDeploymentCallback CallBack = [this](bool bSuccess)
 		{
 			if (bSuccess)
 			{
@@ -707,14 +711,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible() const
 {
-	if (LocalDeploymentManager->IsSpatialServiceRunning())
-	{
-		return !LocalDeploymentManager->IsLocalDeploymentRunning();
-	}
-	else
-	{
-		return true;
-	}
+	return LocalDeploymentManager->CanStartLocalDeployment();
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
@@ -724,7 +721,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
 {
-	return LocalDeploymentManager->IsSpatialServiceRunning() && LocalDeploymentManager->IsLocalDeploymentRunning();
+	return LocalDeploymentManager->CanStopLocalDeployment();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute() const
@@ -736,24 +733,24 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	return SpatialGDKSettings->bShowSpatialServiceButton && !LocalDeploymentManager->IsSpatialServiceRunning();
+	return SpatialGDKSettings->bShowSpatialServiceButton && !static_cast<FLocalDeploymentManager*>(LocalDeploymentManager)->IsSpatialServiceRunning();
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute() const
 {
-	return !LocalDeploymentManager->IsServiceStarting();
+	return !static_cast<FLocalDeploymentManager*>(LocalDeploymentManager)->IsServiceStarting();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	return SpatialGDKSettings->bShowSpatialServiceButton && LocalDeploymentManager->IsSpatialServiceRunning();
+	return SpatialGDKSettings->bShowSpatialServiceButton && static_cast<FLocalDeploymentManager*>(LocalDeploymentManager)->IsSpatialServiceRunning();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute() const
 {
-	return !LocalDeploymentManager->IsServiceStopping();
+	return !static_cast<FLocalDeploymentManager*>(LocalDeploymentManager)->IsServiceStopping();
 }
 
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)

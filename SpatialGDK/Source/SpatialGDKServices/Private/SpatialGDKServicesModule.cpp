@@ -55,9 +55,9 @@ void FSpatialGDKServicesModule::ShutdownModule()
 
 FString FSpatialGDKServicesModule::ProjectName = FSpatialGDKServicesModule::ParseProjectName();
 
-FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
+ILocalDeploymentManagerInterface* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 {
-	return &LocalDeploymentManager;
+	return LocalDeploymentManager;
 }
 
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)

@@ -19,7 +19,7 @@ public:
 		return true;
 	}
 
-	FLocalDeploymentManager* GetLocalDeploymentManager();
+	ILocalDeploymentManagerInterface* GetLocalDeploymentManager();
 
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
 	
@@ -36,7 +36,7 @@ public:
 	static void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
 
 private:
-	FLocalDeploymentManager LocalDeploymentManager;
+	ILocalDeploymentManagerInterface* LocalDeploymentManager = new FLocalDeploymentManager();
 	static FString ParseProjectName();
 	static TSharedPtr<FJsonObject> ParseProjectFile();
 };

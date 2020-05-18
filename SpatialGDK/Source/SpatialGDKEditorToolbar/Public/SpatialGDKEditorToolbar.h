@@ -138,7 +138,7 @@ private:
 	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
-	FLocalDeploymentManager* LocalDeploymentManager;
+	ILocalDeploymentManagerInterface* LocalDeploymentManager;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 

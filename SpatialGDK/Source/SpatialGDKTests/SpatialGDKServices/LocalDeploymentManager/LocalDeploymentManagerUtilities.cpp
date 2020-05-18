@@ -19,10 +19,10 @@ namespace
 	const FName AutomationWorkerType = TEXT("AutomationWorker");
 	const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
 
-	FLocalDeploymentManager* GetLocalDeploymentManager()
+	ILocalDeploymentManagerInterface* GetLocalDeploymentManager()
 	{
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-		FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+		ILocalDeploymentManagerInterface* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 		return LocalDeploymentManager;
 	}
 
@@ -57,7 +57,7 @@ bool FStartDeployment::Update()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
-		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+		ILocalDeploymentManagerInterface* LocalDeploymentManager = GetLocalDeploymentManager();
 		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
@@ -103,7 +103,7 @@ bool FStartDeployment::Update()
 
 bool FStopDeployment::Update()
 {
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	ILocalDeploymentManagerInterface* LocalDeploymentManager = GetLocalDeploymentManager();
 
 	if (!LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping())
 	{
@@ -123,7 +123,7 @@ bool FStopDeployment::Update()
 
 bool FWaitForDeployment::Update()
 {
-	FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
+	ILocalDeploymentManagerInterface* const LocalDeploymentManager = GetLocalDeploymentManager();
 
 	const double NewTime = FPlatformTime::Seconds();
 
@@ -153,7 +153,7 @@ bool FWaitForDeployment::Update()
 
 bool FCheckDeploymentState::Update()
 {
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	ILocalDeploymentManagerInterface* LocalDeploymentManager = GetLocalDeploymentManager();
 
 	if (ExpectedDeploymentState == EDeploymentState::IsRunning)
 	{

@@ -27,12 +27,9 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 static const FString SpatialServiceVersion(TEXT("20200311.145308.ef0fc31004"));
 
-FLocalDeploymentManager::FLocalDeploymentManager()
-	: bLocalDeploymentRunning(false)
+FLocalDeploymentManager::FLocalDeploymentManager() : ILocalDeploymentManagerInterface()
 	, bSpatialServiceRunning(false)
 	, bSpatialServiceInProjectDirectory(false)
-	, bStartingDeployment(false)
-	, bStoppingDeployment(false)
 	, bStartingSpatialService(false)
 	, bStoppingSpatialService(false)
 {
@@ -729,6 +726,23 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 	}
 
 	return false;
+}
+
+bool FLocalDeploymentManager::CanStartLocalDeployment() const
+{
+	if (IsSpatialServiceRunning())
+	{
+		return !IsLocalDeploymentRunning();
+	}
+	else
+	{
+		return true;
+	}
+}
+
+bool FLocalDeploymentManager::CanStopLocalDeployment() const
+{
+	return IsSpatialServiceRunning() && IsLocalDeploymentRunning();
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
