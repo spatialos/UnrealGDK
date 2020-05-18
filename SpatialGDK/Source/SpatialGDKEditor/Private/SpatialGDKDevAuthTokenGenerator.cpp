@@ -16,13 +16,14 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 {
 }
 
-void FSpatialGDKDevAuthTokenGenerator::UpdateSettings(FString DevAuthToken)
+void FSpatialGDKDevAuthTokenGenerator::UpdateSettings(const FString& DevAuthToken)
 {
 	USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	GDKEditorSettings->DevelopmentAuthenticationToken = DevAuthToken;
-	GDKEditorSettings->SaveConfig();
-	GDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
-	GDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
+	GDKEditorSettings->SetDevelopmentAuthenticationToken(DevAuthToken);
+	if (GDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment)
+	{
+		GDKEditorSettings->SetUseDevelopmentAuthenticationFlow(true);
+	}
 }
 
 void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
@@ -32,7 +33,7 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 	{
 		AsyncTask(ENamedThreads::GameThread, [this]()
 		{
-			this->ShowTaskStartedNotification(TEXT("Generating Development Authentication Token"));
+			ShowTaskStartedNotification(TEXT("Generating Development Authentication Token"));
 		});
 
 		FString DevAuthToken;
@@ -42,15 +43,15 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 			AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
 			{
 				UpdateSettings(DevAuthToken);
-				this->ShowTaskEndedNotification(TEXT("Development Authentication Token Updated"), SNotificationItem::CS_Success);
+				EndTask(/* bSuccess */ true);
 			});
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a development authentication token: %s"), *ErrorMessage);
+			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a Development Authentication Token: %s"), *ErrorMessage);
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				this->ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
+				EndTask(/* bSuccess */ false);
 			});
 		}
 	});
@@ -83,6 +84,20 @@ void FSpatialGDKDevAuthTokenGenerator::ShowTaskStartedNotification(const FString
 	}
 }
 
+void FSpatialGDKDevAuthTokenGenerator::EndTask(bool bSuccess)
+{
+	if (bSuccess)
+	{
+		ShowTaskEndedNotification(TEXT("Development Authentication Token Updated"), SNotificationItem::CS_Success);
+	}
+	else
+	{
+		ShowTaskEndedNotification(TEXT("Failed to generate Development Authentication Token"), SNotificationItem::CS_Fail);
+	}
+
+	bIsGenerating = false;
+}
+
 void FSpatialGDKDevAuthTokenGenerator::ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState)
 {
 	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
@@ -95,5 +110,4 @@ void FSpatialGDKDevAuthTokenGenerator::ShowTaskEndedNotification(const FString& 
 		Notification->SetCompletionState(CompletionState);
 		Notification->ExpireAndFadeout();
 	}
-	bIsGenerating = false;
 }

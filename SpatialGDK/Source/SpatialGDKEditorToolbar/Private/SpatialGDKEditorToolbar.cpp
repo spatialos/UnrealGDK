@@ -429,8 +429,7 @@ void OnLocalDeploymentIPChanged(const FText& InText, ETextCommit::Type InCommitT
 	}
 
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->ExposedRuntimeIP = InputIpAddress;
-	SpatialGDKEditorSettings->SaveConfig();
+	SpatialGDKEditorSettings->SetExposedRuntimeIP(InputIpAddress);
 	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting local deployment IP address to %s"), *InputIpAddress);
 }
 
@@ -452,9 +451,7 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	}
 
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->DevelopmentDeploymentToConnect = InputDeploymentName;
-	SpatialGDKEditorSettings->SaveConfig();
-	SpatialGDKEditorSettings->SetRuntimeDevelopmentDeploymentToConnect();
+	SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(InputDeploymentName);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting cloud deployment name to %s"), *InputDeploymentName);
 }
@@ -1006,9 +1003,7 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
-	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = false;
-	SpatialGDKEditorSettings->SaveConfig();
-	SpatialGDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
+	SpatialGDKEditorSettings->SetUseDevelopmentAuthenticationFlow(false);
 
 	RefreshAutoStartLocalDeployment();
 }
@@ -1017,9 +1012,7 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
-	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = false;
-	SpatialGDKEditorSettings->SaveConfig();
-	SpatialGDKEditorSettings->SetRuntimeUseDevelopmentAuthenticationFlow();
+	SpatialGDKEditorSettings->SetUseDevelopmentAuthenticationFlow(false);
 
 	RefreshAutoStartLocalDeployment();
 }
@@ -1028,7 +1021,6 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
-	SpatialGDKEditorSettings->bUseDevelopmentAuthenticationFlow = true;
 
 	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuthTokenGenerator = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
 	DevAuthTokenGenerator->AsyncGenerateDevAuthToken();

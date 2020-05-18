@@ -2,8 +2,6 @@
 
 #include "SpatialCommandUtils.h"
 
-#include "Logging/LogMacros.h"
-#include "Misc/MessageDialog.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -140,12 +138,12 @@ FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, 
 		nullptr, nullptr, nullptr);
 }
 
-bool SpatialCommandUtils::GenerateDevAuthToken(bool IsRunningInChina, FString& OutTokenSecret, FString& OutErrorMessage)
+bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FString& OutErrorMessage)
 {
 	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
-	if (IsRunningInChina)
+	if (bIsRunningInChina)
 	{
-		Arguments += TEXT(" --environment cn-production");
+		Arguments += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FString CreateDevAuthTokenResult;

@@ -449,3 +449,30 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 
 	return bValid;
 }
+
+void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString& Token)
+{
+	DevelopmentAuthenticationToken = Token;
+	SaveConfig();
+	SetRuntimeDevelopmentAuthenticationToken();
+}
+
+void USpatialGDKEditorSettings::SetUseDevelopmentAuthenticationFlow(bool bUseDevAuthFlow)
+{
+	bUseDevelopmentAuthenticationFlow = bUseDevAuthFlow;
+	SaveConfig();
+	SetRuntimeUseDevelopmentAuthenticationFlow();
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+{
+	DevelopmentDeploymentToConnect = Deployment;
+	SaveConfig();
+	SetRuntimeDevelopmentDeploymentToConnect();
+}
+
+void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
+{
+	ExposedRuntimeIP = RuntimeIP;
+	SaveConfig();
+}

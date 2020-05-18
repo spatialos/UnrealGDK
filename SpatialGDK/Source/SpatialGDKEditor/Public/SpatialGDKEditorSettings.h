@@ -238,6 +238,12 @@ public:
 
 	void OnWorkerTypesChanged();
 
+private:
+	/** Set DAT in runtime settings. */
+	void SetRuntimeDevelopmentAuthenticationToken();
+	void SetRuntimeUseDevelopmentAuthenticationFlow();
+	void SetRuntimeDevelopmentDeploymentToConnect();
+
 public:
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
@@ -632,10 +638,11 @@ public:
 
 	bool IsDeploymentConfigurationValid() const;
 
-	/** Set DAT in runtime settings. */
-	void SetRuntimeDevelopmentAuthenticationToken();
-	void SetRuntimeUseDevelopmentAuthenticationFlow();
-	void SetRuntimeDevelopmentDeploymentToConnect();
+	void SetDevelopmentAuthenticationToken(const FString& Token);
+	void SetUseDevelopmentAuthenticationFlow(bool bUseDevAuthFlow);
+	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
+
+	void SetExposedRuntimeIP(const FString& RuntimeIP);
 
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsAssemblyNameValid(const FString& Name);

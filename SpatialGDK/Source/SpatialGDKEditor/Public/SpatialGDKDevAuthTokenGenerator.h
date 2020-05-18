@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Logging/LogMacros.h"
 #include "Templates/Atomic.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
@@ -19,8 +18,10 @@ public:
 private:
 	void ShowTaskStartedNotification(const FString& NotificationText);
 	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
+
+	void EndTask(bool bSuccess);
 	void DoGenerateDevAuthTokenTasks();
-	void UpdateSettings(FString DevAuthToken);
+	void UpdateSettings(const FString& DevAuthToken);
 
 private:
 	TAtomic<bool> bIsGenerating;
