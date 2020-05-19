@@ -56,10 +56,11 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	SpatialGDK::SpatialMetrics Metrics;
-	Metrics.Load = WorkerLoad; 
+	Metrics.Load = WorkerLoad;
+	
 	// User supplied metrics
 	TArray<FString> UnboundMetrics;
-	for (const TPair<FString, UserSuppliedMetric>& Guage : UserSuppliedMetrics)
+	for (const TPair<FString, UserSuppliedMetric>& Gauge : UserSuppliedMetrics)
 	{
 		if (Guage.Value.IsBound())
 		{
@@ -74,7 +75,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 			UnboundMetrics.Add(Guage.Key);
 		}
 	}
-	for (FString& KeyToRemove : UnboundMetrics)
+	for (const FString& KeyToRemove : UnboundMetrics)
 	{
 		UserSuppliedMetrics.Remove(KeyToRemove);
 	}
