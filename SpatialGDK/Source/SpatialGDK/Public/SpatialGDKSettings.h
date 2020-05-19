@@ -213,7 +213,7 @@ private:
 
 public:
 
-	bool GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const;
+	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
