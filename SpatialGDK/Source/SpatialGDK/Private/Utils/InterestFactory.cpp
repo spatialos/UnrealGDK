@@ -426,7 +426,8 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 			NewQuery.Constraint.AndConstraint.Add(LevelConstraint);
 		}
 
-		NewQuery.Frequency = CheckoutRadiusConstraintFrequencyPair.Frequency;
+		//NewQuery.Frequency = CheckoutRadiusConstraintFrequencyPair.Frequency;
+		NewQuery.Frequency = 0.0f; // temp remove frequency
 
 		SetResultType(NewQuery, ClientNonAuthInterestResultType);
 
