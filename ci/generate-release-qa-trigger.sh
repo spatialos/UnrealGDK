@@ -13,7 +13,6 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-versions)"
 
-# Repurpoused from prepareRelease
 echo "steps:"
 triggerTest () {
   local REPO_NAME="${1}"
@@ -23,7 +22,12 @@ triggerTest () {
   
 echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
 echo "    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}""
+
+if [ REPO_NAME!="unrealengine" &&  TEST_NAME!="premerge"]
+then
 echo "    async: true"
+fi
+
 echo "    build:"
 echo "      branch: "${BRANCH_TO_TEST}""
 echo "      commit: "HEAD""
@@ -34,6 +38,22 @@ for element in "${ENVIRONMENT_VARIABLES[@]}"
         echo "        ${element}"
     done
 }
+
+### unrealengine-premerge
+while IFS= read -r ENGINE_VERSION; do
+  triggerTest   "unrealengine" \
+                "premerge" \
+                "${ENGINE_VERSION}-${GDK_VERSION}-rc"
+done <<< "${ENGINE_VERSIONS}"
+
+### unrealengine-nightly
+while IFS= read -r ENGINE_VERSION; do
+  triggerTest   "unrealengine" \
+                "nightly" \
+                "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
+                "GDK_BRANCH: "${GDK_VERSION}-rc"" \
+                "EXAMPLE_PROJECT_BRANCH: "${GDK_VERSION}-rc""
+done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdk-premerge with SLOW_NETWORKING_TESTS=true
 while IFS= read -r ENGINE_VERSION; do
@@ -72,19 +92,3 @@ done <<< "${ENGINE_VERSIONS}"
 ###                "nfr" \
 ###                "${GDK_VERSION}-rc"
 ###done <<< "${ENGINE_VERSIONS}"
-
-### unrealengine-premerge
-while IFS= read -r ENGINE_VERSION; do
-  triggerTest   "unrealengine" \
-                "premerge" \
-                "${ENGINE_VERSION}-${GDK_VERSION}-rc"
-done <<< "${ENGINE_VERSIONS}"
-
-### unrealengine-nightly
-while IFS= read -r ENGINE_VERSION; do
-  triggerTest   "unrealengine" \
-                "nightly" \
-                "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-                "GDK_BRANCH: "${GDK_VERSION}-rc"" \
-                "EXAMPLE_PROJECT_BRANCH: "${GDK_VERSION}-rc""
-done <<< "${ENGINE_VERSIONS}"
