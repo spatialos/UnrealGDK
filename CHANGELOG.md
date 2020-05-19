@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
 - The Deploy button will launch the deployment directly if the necessary fields were filled previously in the `Deployment Configuration` window, selecting the `Deployment Configuration` menu item from the dropdown will allow changing of deployment settings.
 - Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the dropdown list of Deploy button to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
+- Added new icons for the toolbar.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
