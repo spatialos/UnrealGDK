@@ -79,10 +79,10 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction.Small",
 		new IMAGE_BRUSH(TEXT("Inspector@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.OpenSimulatedPlayerConfigurationWindowAction",
+	Style->Set("SpatialGDKEditorToolbar.OpenCloudDeploymentWindowAction",
 		new IMAGE_BRUSH(TEXT("Cloud"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.OpenSimulatedPlayerConfigurationWindowAction.Small",
+	Style->Set("SpatialGDKEditorToolbar.OpenCloudDeploymentWindowAction.Small",
 		new IMAGE_BRUSH(TEXT("Cloud@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialService",

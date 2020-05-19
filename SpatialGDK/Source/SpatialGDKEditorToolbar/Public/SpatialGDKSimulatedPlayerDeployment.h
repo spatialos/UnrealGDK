@@ -43,10 +43,10 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
-	// Project name edit box
-	TSharedPtr<SEditableTextBox> ProjectNameEdit;
-
-	TFuture<bool> AttemptSpatialAuthResult;
+	// Error reporting
+	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> AssemblyNameInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> DeploymentNameInputErrorReporting;
 
 	/** Delegate to commit project name */
 	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
@@ -96,9 +96,6 @@ private:
 	/** Delegate to commit the number of Simulated Players */
 	void OnNumberOfSimulatedPlayersCommited(uint32 NewValue);
 
-	/** Delegate called when the user clicks the 'Launch Simulated Player Deployment' button */
-	FReply OnLaunchClicked();
-
 	/** Delegate called when the user clicks the 'Refresh' button */
 	FReply OnRefreshClicked();
 
@@ -111,15 +108,30 @@ private:
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
 
+	TSharedRef<SWidget> OnGetBuildConfiguration();
+	void OnBuildConfigurationPicked(FString Configuration);
+
+	ECheckBoxState ForceAssemblyOverwrite() const;
+	void OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState);
+
 	ECheckBoxState IsSimulatedPlayersEnabled() const;
 	ECheckBoxState IsUsingGDKPinnedRuntimeVersion() const;
 	bool IsUsingCustomRuntimeVersion() const;
 	FText GetSpatialOSRuntimeVersionToUseText() const;
 
-	/** Delegate to determine the 'Launch Deployment' button enabled state */
-	bool IsDeploymentConfigurationValid() const;
-
 	FReply OnGenerateConfigFromCurrentMap();
 
 	FReply OnOpenLaunchConfigEditor();
+
+	ECheckBoxState IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsGenerateSchemaEnabled() const;
+	void OnCheckedGenerateSchema(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsGenerateSnapshotEnabled() const;
+	void OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState);
+
+	FReply OnOpenCloudDeploymentPageClicked();
+	bool CanOpenCloudDeploymentPage() const;
 };

@@ -1,7 +1,11 @@
 {
   "FileVersion": 3,
   "Version": 6,
+<<<<<<< HEAD
   "VersionName": "0.10.0",
+=======
+  "VersionName": "0.9.0",
+>>>>>>> origin/master
   "FriendlyName": "SpatialOS GDK for Unreal",
   "Description": "The SpatialOS Game Development Kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
   "Category": "SpatialOS",
