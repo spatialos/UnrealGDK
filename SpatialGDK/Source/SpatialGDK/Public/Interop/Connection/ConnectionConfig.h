@@ -34,43 +34,8 @@ struct FConnectionConfig
 		// TODO: When upgrading to Worker SDK 14.6.2, remove this parameter and set it to 0 for infinite file size
 		FParse::Value(CommandLine, TEXT("workerSDKLogFileSize"), WorkerSDKLogFileSize);
 
-		FString LogLevelString;
-		FParse::Value(CommandLine, TEXT("workerSDKLogLevel"), LogLevelString);
-		if (LogLevelString.Compare(TEXT("debug"), ESearchCase::IgnoreCase) == 0)
-		{
-			WorkerSDKLogLevel = WORKER_LOG_LEVEL_DEBUG;
-		}
-		else if (LogLevelString.Compare(TEXT("info"), ESearchCase::IgnoreCase) == 0)
-		{
-			WorkerSDKLogLevel = WORKER_LOG_LEVEL_INFO;
-		}
-		else if (LogLevelString.Compare(TEXT("warning"), ESearchCase::IgnoreCase) == 0)
-		{
-			WorkerSDKLogLevel = WORKER_LOG_LEVEL_WARN;
-		}
-		else if (LogLevelString.Compare(TEXT("error"), ESearchCase::IgnoreCase) == 0)
-		{
-			WorkerSDKLogLevel = WORKER_LOG_LEVEL_ERROR;
-		}
-		else if (!LogLevelString.IsEmpty())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
-		}
-
-		FString LinkProtocolString;
-		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
-		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
-		}
-		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
-		}
-		else if (!LinkProtocolString.IsEmpty())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
-		}
+		GetWorkerSDKLogLevel(CommandLine);
+		GetLinkProtocol(CommandLine);
 	}
 
 	void PreConnectInit(const bool bConnectAsClient)
@@ -94,6 +59,52 @@ struct FConnectionConfig
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
+private:
+	void GetWorkerSDKLogLevel(const TCHAR* CommandLine)
+	{
+		FString LogLevelString;
+		FParse::Value(CommandLine, TEXT("workerSDKLogLevel"), LogLevelString);
+		if (LogLevelString.Compare(TEXT("debug"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_DEBUG;
+		}
+		else if (LogLevelString.Compare(TEXT("info"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_INFO;
+		}
+		else if (LogLevelString.Compare(TEXT("warning"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_WARN;
+		}
+		else if (LogLevelString.Compare(TEXT("error"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_ERROR;
+		}
+		else if (!LogLevelString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+		}
+	}
+
+	void GetLinkProtocol(const TCHAR* CommandLine)
+	{
+		FString LinkProtocolString;
+		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
+		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+		}
+		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+		}
+		else if (!LinkProtocolString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
+		}
+	}
+
+public:
 	FString WorkerId;
 	FString WorkerType;
 	bool UseExternalIp;
