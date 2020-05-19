@@ -2,31 +2,38 @@
 
 #include "SpatialGDKEditor.h"
 
-#include "Async/Async.h"
-#include "SpatialGDKEditorCloudLauncher.h"
-#include "SpatialGDKEditorSchemaGenerator.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorSnapshotGenerator.h"
-#include "SpatialGDKServicesConstants.h"
-
 #include "AssetDataTagMap.h"
 #include "AssetRegistryModule.h"
+#include "Async/Async.h"
 #include "Editor.h"
-#include "Editor/UATHelper/Public/IUATHelperModule.h"
 #include "FileHelpers.h"
 #include "GeneralProjectSettings.h"
 #include "Internationalization/Regex.h"
+#include "IUATHelperModule.h"
 #include "Misc/ScopedSlowTask.h"
 #include "PackageTools.h"
 #include "Settings/ProjectPackagingSettings.h"
 #include "UnrealEdMisc.h"
 #include "UObject/StrongObjectPtr.h"
 
+#include "SpatialGDKEditorCloudLauncher.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
+#include "SpatialGDKServicesConstants.h"
+
 using namespace SpatialGDKEditor;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
+
+FSpatialGDKEditor::FSpatialGDKEditor()
+	: bSchemaGeneratorRunning(false)
+	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>())
+{
+}
 
 bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 {
@@ -221,7 +228,9 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 
 void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
-	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SnapshotFilename);
+	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
+	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SavePath);
 
 	if (bSuccess)
 	{
@@ -233,9 +242,9 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+void FSpatialGDKEditor::LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
-	LaunchCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+	LaunchCloudResult = Async(EAsyncExecution::Thread, [&Configuration]() { return SpatialGDKCloudLaunch(Configuration); },
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
@@ -316,6 +325,11 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			World->UpdateWorldComponents(true, true);
 		}
 	}
+}
+
+TSharedRef<FSpatialGDKPackageAssembly> FSpatialGDKEditor::GetPackageAssemblyRef()
+{
+	return SpatialGDKPackageAssemblyInstance;
 }
 
 #undef LOCTEXT_NAMESPACE
