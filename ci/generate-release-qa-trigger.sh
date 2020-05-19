@@ -23,6 +23,7 @@ triggerTest () {
 echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
 echo "    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}""
 
+#TODO: Re-phrase this so it doesn't force unrealgdk-premerge to run synchronously
 if [ REPO_NAME!="unrealengine" &&  TEST_NAME!="premerge"]
 then
 echo "    async: true"
