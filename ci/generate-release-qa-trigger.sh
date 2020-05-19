@@ -14,13 +14,13 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-versions)"
 
 # Repurpoused from prepareRelease
+echo "steps:"
 triggerTest () {
   local REPO_NAME="${1}"
   local TEST_NAME="${2}"
   local BRANCH_TO_TEST="${3}"
   local ENVIRONMENT_VARIABLES=( "${@:4}" )
   
-echo "steps:"
 echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
 echo "    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}""
 echo "    async: true"
