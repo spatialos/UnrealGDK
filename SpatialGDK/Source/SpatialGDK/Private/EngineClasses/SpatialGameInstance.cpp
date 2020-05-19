@@ -149,6 +149,10 @@ void USpatialGameInstance::TryConnectToSpatial()
 				FCommandLine::Set(*NewCommandLineArgs);
 			}
 		}
+		else
+		{
+			SetFirstConnectionToSpatialOSAttempted();
+		}
 	}
 #if TRACE_LIB_ACTIVE
 	else

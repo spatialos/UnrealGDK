@@ -198,14 +198,9 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
-#if WITH_EDITOR
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("EDITOR GetPreventClientCloudDeploymentAutoConnect"));
-	return false;
-#elif WITH_SERVER_CODE
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("SERVER GetPreventClientCloudDeploymentAutoConnect"));
+#if UE_EDITOR || UE_SERVER
 	return false;
 #else
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("CLIENT GetPreventClientCloudDeploymentAutoConnect %s"), bPreventClientCloudDeploymentAutoConnect ? *TEXT("TRUE"), *TEXT("FALSE"));
 	return bPreventClientCloudDeploymentAutoConnect;
 #endif
 };

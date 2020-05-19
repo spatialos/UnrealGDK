@@ -245,13 +245,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
-		{
-			// If first time connecting but the bGetPreventClientCloudDeploymentAutoConnect flag is set then use input URL to setup connection config.
-			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
-		}
 		// Otherwise, try using command line arguments to setup connection config.
-		else if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
 			// If the command line arguments can not be used, use the input URL to setup connection config.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
