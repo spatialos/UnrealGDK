@@ -66,13 +66,13 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 		{
 			SpatialGDK::GaugeMetric Metric;
 
-			Metric.Key = TCHAR_TO_UTF8(*Guage.Key);
+			Metric.Key = TCHAR_TO_UTF8(*Gauge.Key);
 			Metric.Value = Guage.Value.Execute();
 			Metrics.GaugeMetrics.Add(Metric);
 		}
 		else
 		{
-			UnboundMetrics.Add(Guage.Key);
+			UnboundMetrics.Add(Gauge.Key);
 		}
 	}
 	for (const FString& KeyToRemove : UnboundMetrics)
