@@ -43,7 +43,7 @@ steps:
   
   # Stage 2: Run all tests against the release candidates.
   - label: "Trigger all automated tests"
-    command: ci/generate-release-qa-trigger.sh | buildkite-agent pipeline upload
+    command: ci/generate-release-qa-trigger.sh | tee /dev/fd/2 | buildkite-agent pipeline upload
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     retry:
       manual:
