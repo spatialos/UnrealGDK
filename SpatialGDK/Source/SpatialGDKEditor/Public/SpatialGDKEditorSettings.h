@@ -424,7 +424,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
+	/** Select the connection flow that should be used when starting the game with Spatial networking enabled. */
+	UPROPERTY(EditAnywhere, config, Category = "Connection Flow", meta = (DisplayName = "SpatialOS Connection Flow Type"))
 	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
