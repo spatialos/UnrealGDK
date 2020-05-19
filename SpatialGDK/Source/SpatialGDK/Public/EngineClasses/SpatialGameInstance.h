@@ -71,6 +71,8 @@ public:
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const;
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
@@ -94,6 +96,10 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	// A set of the levels which were loaded before the SpatialOS connection.
+	UPROPERTY()
+	TSet<ULevel*> CachedLevelsForNetworkIntialize;
+
 	UFUNCTION()
-	void OnLevelInitializedNetworkActors(ULevel* Level, UWorld* OwningWorld);
+	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
 };

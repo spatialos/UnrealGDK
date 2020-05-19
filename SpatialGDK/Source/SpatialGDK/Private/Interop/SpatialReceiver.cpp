@@ -105,11 +105,71 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 		}
+		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {return Component.EntityId == PendingAddEntity;});
+	}
+
+	// The reason the AuthorityChange processing is split according to authority is to avoid cases
+	// where we receive data while being authoritative, as that could be unintuitive to the game devs.
+	// We process Lose Auth -> Add Components -> Gain Auth. A common thing that happens is that on handover we get
+	// ComponentData -> Gain Auth, and with this split you receive data as if you were a client to get the most up-to-date state,
+	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	{
+		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
+	}
+
+	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	{
+		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
+		{
+			continue;
+		}
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PendingAddComponent.EntityId);
+		if (Channel == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Got an add component for an entity that doesn't have an associated actor channel."
+				" Entity id: %lld, component id: %d."), PendingAddComponent.EntityId, PendingAddComponent.ComponentId);
+			continue;
+		}
+		if (Channel->bCreatedEntity)
+		{
+			// Allows servers to change state if they are going to be authoritative, without us overwriting it with old data.
+			// TODO: UNR-3457 to remove this workaround.
+			continue;
+		}
+		if (ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) == SCHEMA_OwnerOnly)
+		{
+			// Skip owner only components here, as they will be handled after gaining authority
+			continue;
+		}
+
+		UE_LOG(LogSpatialReceiver, Verbose,
+			TEXT("Add component inside of a critical section, outside of an add entity, being handled: entity id %lld, component id %d."),
+			PendingAddComponent.EntityId, PendingAddComponent.ComponentId);
+		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		HandleActorAuthority(PendingAuthorityChange);
+		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
+	}
+
+	// Note that this logic should probably later on be done by the SpatialView, where we can reorder these ops in
+	// a more structured manner.
+	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	{
+		// Owner only components have to be applied after gaining authority, as it is possible (and indeed extremely likely),
+		// that the authority over the ClientRPCEndpoint comes in the same critical section, and we need it for applying the data
+		if (ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) == SCHEMA_OwnerOnly)
+		{
+			HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
+		}
 	}
 
 	// Mark that we've left the critical section.
@@ -245,7 +305,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 	else
 	{
-		HandleIndividualAddComponent(Op);
+		HandleIndividualAddComponent(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
 	}
 }
 
@@ -440,6 +500,18 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	{
 		QueueAuthorityOpForAsyncLoad(Op);
 		return;
+	}
+
+	// Process authority gained event immediately, so if we're in a critical section, the RPCService will
+	// be correctly configured to process RPCs sent during Actor creation
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+		{
+			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+		}
 	}
 
 	if (bInCriticalSection)
@@ -682,7 +754,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
@@ -868,11 +939,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (Channel->Actor == nullptr)
 	{
-#if ENGINE_MINOR_VERSION <= 22
-		Channel->SetChannelActor(EntityActor);
-#else
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
-#endif
 	}
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
@@ -1234,32 +1301,32 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
 }
 
-void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
+void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data)
 {
 	uint32 Offset = 0;
-	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.data.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
 	if (!bFoundOffset)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id "
-			"when receiving dynamic AddComponent."), Op.entity_id, Op.data.component_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Could not find offset for component id when receiving dynamic AddComponent."
+			" (EntityId %lld, ComponentId %d)"), EntityId, ComponentId);
 		return;
 	}
 
 	// Object already exists, we can apply data directly.
-	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get())
+	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset)).Get())
 	{
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-			ApplyComponentData(*Channel, *Object, Op.data);
+			ApplyComponentData(*Channel, *Object, *Data->ComponentData);
 		}
 		return;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
-	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get());
+	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
+	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get());
 	if (Actor == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received an add component op for subobject of type %s on entity %lld but couldn't find Actor!"), *Info.Class->GetName(), Op.entity_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received an add component op for subobject of type %s on entity %lld but couldn't find Actor!"), *Info.Class->GetName(), EntityId);
 		return;
 	}
 
@@ -1268,25 +1335,25 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 	bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
 	if (!bIsDynamicSubobject)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), Op.entity_id, Op.data.component_id, *Actor->GetPathName());
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), EntityId, ComponentId, *Actor->GetPathName());
 		return;
 	}
 
 	// Otherwise this is a dynamically attached component. We need to make sure we have all related components before creation.
-	PendingDynamicSubobjectComponents.Add(MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.data.component_id),
-		PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
+	PendingDynamicSubobjectComponents.Add(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId),
+		PendingAddComponentWrapper(EntityId, ComponentId, MoveTemp(Data)));
 
 	bool bReadyToCreate = true;
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+		Worker_ComponentId SchemaComponentId = Info.SchemaComponents[Type];
 
-		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		if (SchemaComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return;
 		}
 
-		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), ComponentId)))
+		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), SchemaComponentId)))
 		{
 			bReadyToCreate = false;
 		}
@@ -1294,7 +1361,7 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 
 	if (bReadyToCreate)
 	{
-		AttachDynamicSubobject(Actor, Op.entity_id, Info);
+		AttachDynamicSubobject(Actor, EntityId, Info);
 	}
 }
 

@@ -10,7 +10,6 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/ComponentFactory.h"
@@ -269,23 +268,21 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	return true;
 }
 
-bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
+bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotPath)
 {
-	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
-	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
+	if (!ValidateAndCreateSnapshotGenerationPath(SnapshotPath))
 	{
 		return false;
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SnapshotPath);
 
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
 	Parameters.default_component_vtable = &DefaultVtable;
 
 	bool bSuccess = true;
-	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SavePath), &Parameters);
+	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SnapshotPath), &Parameters);
 	if (const char* SchemaError = Worker_SnapshotOutputStream_GetState(OutputStream).error_message)
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error creating SnapshotOutputStream: %s"), UTF8_TO_TCHAR(SchemaError));
