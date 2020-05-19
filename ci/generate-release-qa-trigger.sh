@@ -18,7 +18,7 @@ triggerTest () {
   local REPO_NAME="${1}"
   local TEST_NAME="${2}"
   local BRANCH_TO_TEST="${3}"
-  local ENVIRONMENT_VARIABLES="${@:4}"
+  local ENVIRONMENT_VARIABLES=( "${@:4}" )
   
 echo "steps:"
 echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
