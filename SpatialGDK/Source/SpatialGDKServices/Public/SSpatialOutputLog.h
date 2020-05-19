@@ -33,6 +33,7 @@ public:
 private:
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize) const;
 	void CloseLogReader();
+	void InternalResetDirectory(const FString& LogDirectory, uint32 TriesRemaining);
 
 	void PollLogFile(const FString& LogFilePath);
 	void StartPollTimer(const FString& LogFilePath);
@@ -64,10 +65,14 @@ private:
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	void OnClearLog() override;
+	void AppendOutput(const FString& LogMessage, ELogVerbosity::Type Verbosity, const FString& Category);
 
 	void ParseLaunchLogContent(const FString& Content);
-	void FormatAndPrintRawLaunchLogLine(const FString& LogLine);
 	void FormatAndPrintRawLaunchLogErrorLine(const FString& LogLine);
+	void FormatAndPrintRawLaunchLogLine(const FString& LogLine);
+
+	void ParseSingleNodeRuntimeLogContent(const FString& Content);
+	void FormatAndPrintSingleNodeRuntimeLogLine(const FString& LogLine);
 
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;

@@ -486,7 +486,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	{
 		if (DeploymentStatus == TEXT("STOPPED"))
 		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully stopped local deplyoment"));
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully stopped local deployment"));
 			LocalRunningDeploymentID.Empty();
 			bLocalDeploymentRunning = false;
 			bSuccess = true;

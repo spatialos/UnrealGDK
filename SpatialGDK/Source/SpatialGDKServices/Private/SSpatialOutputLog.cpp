@@ -16,9 +16,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOutputLog);
 
-static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment")));
-static const FString LaunchLogFilename(TEXT("launch.log"));
-static const float PollTimeInterval(0.05f);
+namespace
+{
+	const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment")));
+	const FString LaunchLogFilename(TEXT("launch.log"));
+	const FString RuntimeLogFilename(TEXT("runtime.log"));
+	const float PollTimeInterval(0.05f);
+	const float DirChangeRetryInterval(1.5f);
+}
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
@@ -39,21 +44,10 @@ FSpatialLogFileReader::~FSpatialLogFileReader()
 void FSpatialLogFileReader::ResetLogDirectory(const FString& LogDirectory)
 {
 	CloseLogReader();
-
-	FScopeLock CreateLock(&LogReaderMutex);
-
-	// FILEREAD_AllowWrite is required as we must match the permissions of the other processes writing to our log file in order to read from it.
-	const FString LogFilePath = FPaths::Combine(LogDirectory, LogFilename);
-	LogReader = CreateLogFileReader(*LogFilePath, FILEREAD_AllowWrite, PLATFORM_FILE_READER_BUFFER_SIZE);
-
-	if (LogReader.IsValid())
+	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
 	{
-		PollLogFile(LogFilePath);
-	}
-	else
-	{
-		UE_LOG(LogSpatialOutputLog, Error, TEXT("Could not set up log file reader for %s"), *LogFilePath);
-	}
+		InternalResetDirectory(LogDirectory, 5 /* TriesRemaining */);
+	});
 }
 
 TUniquePtr<FArchiveLogFileReader> FSpatialLogFileReader::CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize) const
@@ -87,6 +81,37 @@ void FSpatialLogFileReader::CloseLogReader()
 	{
 		LogReader->Close();
 		LogReader = nullptr;
+	}
+}
+
+void FSpatialLogFileReader::InternalResetDirectory(const FString& LogDirectory, uint32 TriesRemaining)
+{
+	FScopeLock CreateLock(&LogReaderMutex);
+
+	// FILEREAD_AllowWrite is required as we must match the permissions of the other processes writing to our log file in order to read from it.
+	const FString LogFilePath = FPaths::Combine(LogDirectory, LogFilename);
+	uint32 Flags = FILEREAD_AllowWrite;
+	if (TriesRemaining)
+	{
+		Flags |= FILEREAD_NoFail;
+	}
+	LogReader = CreateLogFileReader(*LogFilePath, Flags, PLATFORM_FILE_READER_BUFFER_SIZE);
+
+	if (LogReader.IsValid())
+	{
+		PollLogFile(LogFilePath);
+	}
+	else if (TriesRemaining && GEditor)
+	{
+		// The log file isn't available (yet). Try again later. This reliably happens with the new runtime
+		GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogDirectory, TriesRemaining]()
+	    {
+			InternalResetDirectory(LogDirectory, TriesRemaining - 1);
+	    }, DirChangeRetryInterval, false);
+	}
+	else
+	{
+		UE_LOG(LogSpatialOutputLog, Error, TEXT("Could not set up log file reader for %s"), *LogFilePath);
 	}
 }
 
@@ -159,6 +184,10 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 	{
 		ParseLaunchLogContent(Content);
 	}));
+	LogFileReaders.Add(MakeUnique<FSpatialLogFileReader>(RuntimeLogFilename, [this](const FString& Content)
+	{
+		ParseSingleNodeRuntimeLogContent(Content);
+	}));
 
 	StartUpLogDirectoryWatcher(LocalDeploymentLogsDir);
 
@@ -228,6 +257,18 @@ void SSpatialOutputLog::StartUpLogDirectoryWatcher(const FString& LogDirectory)
 	});
 }
 
+void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory) const
+{
+	AsyncTask(ENamedThreads::GameThread, [LogDirectory, LogDirectoryChangedDelegateHandle = LogDirectoryChangedDelegateHandle]
+    {
+        FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+        if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
+        {
+            DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
+        }
+    });
+}
+
 void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
 	// If this is a new folder creation then switch to watching the log files in that new log folder.
@@ -235,6 +276,8 @@ void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& Fil
 	{
 		if (FileChange.Action == FFileChangeData::FCA_Added)
 		{
+			AppendOutput(FString::Printf(TEXT("Switched log directory to '%s'"), *FileChange.Filename), ELogVerbosity::Warning, TEXT("SpatialService"));
+
 			// Now we can start reading log files in the new log folder.
 			for (TUniquePtr<FSpatialLogFileReader>& Reader : LogFileReaders)
 			{
@@ -255,16 +298,13 @@ void SSpatialOutputLog::OnClearLog()
 	Filter.SelectedLogCategories.Reset();
 }
 
-void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory) const
+void SSpatialOutputLog::AppendOutput(const FString& LogMessage, ELogVerbosity::Type Verbosity, const FString& Category)
 {
-	AsyncTask(ENamedThreads::GameThread, [LogDirectory, LogDirectoryChangedDelegateHandle = LogDirectoryChangedDelegateHandle]
-	{
-		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
-		{
-			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
-		}
-	});
+	// Serialization must be done on the game thread.
+	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, Verbosity, Category]
+    {
+        Serialize(*LogMessage, Verbosity, FName(*Category));
+    });
 }
 
 void SSpatialOutputLog::ParseLaunchLogContent(const FString& Content)
@@ -302,13 +342,9 @@ void SSpatialOutputLog::FormatAndPrintRawLaunchLogErrorLine(const FString& LogLi
 	Stack = Stack.ReplaceEscapedCharWithChar();
 
 	// Format the log message to be easy to read.
-	FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode, *ErrorCodeString, *ErrorMessage, *Stack);
+	const FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode, *ErrorCodeString, *ErrorMessage, *Stack);
 
-	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage]
-	{
-		Serialize(*LogMessage, ELogVerbosity::Error, FName(TEXT("SpatialService")));
-	});
+	AppendOutput(LogMessage, ELogVerbosity::Error, TEXT("SpatialService"));
 }
 
 void SSpatialOutputLog::FormatAndPrintRawLaunchLogLine(const FString& LogLine)
@@ -373,11 +409,57 @@ void SSpatialOutputLog::FormatAndPrintRawLaunchLogLine(const FString& LogLine)
 		LogVerbosity = ELogVerbosity::Log;
 	}
 
-	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory]
+	AppendOutput(LogMessage, LogVerbosity, LogCategory);
+}
+
+void SSpatialOutputLog::ParseSingleNodeRuntimeLogContent(const FString& Content)
+{
+	TArray<FString> LogLines;
+
+	Content.ParseIntoArray(LogLines, TEXT("\n"), true);
+
+	for (const FString& LogLine : LogLines)
 	{
-		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
-	});
+		FormatAndPrintSingleNodeRuntimeLogLine(LogLine);
+	}
+}
+
+void SSpatialOutputLog::FormatAndPrintSingleNodeRuntimeLogLine(const FString& LogLine)
+{
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("\\[[0-9\\-\\.:\\s]*\\] \\[([^\\]]*)\\] (.*)"));
+	FRegexMatcher LogMatcher(LogPattern, LogLine);
+
+	if (!LogMatcher.FindNext())
+	{
+		return;
+	}
+
+	const FString LogLevelText = LogMatcher.GetCaptureGroup(1);
+	const FString LogMessage = LogMatcher.GetCaptureGroup(2);
+
+	ELogVerbosity::Type LogVerbosity;
+	if (LogLevelText.Contains(TEXT("critical")))
+	{
+		LogVerbosity = ELogVerbosity::Fatal;
+	}
+	else if (LogLevelText.Contains(TEXT("error")))
+	{
+		LogVerbosity = ELogVerbosity::Error;
+	}
+	else if (LogLevelText.Contains(TEXT("warning")))
+	{
+		LogVerbosity = ELogVerbosity::Warning;
+	}
+	else if (LogLevelText.Contains(TEXT("info")))
+	{
+		LogVerbosity = ELogVerbosity::Log;
+	}
+	else
+	{
+		LogVerbosity = ELogVerbosity::Verbose;
+	}
+
+	AppendOutput(LogMessage, LogVerbosity, TEXT("Runtime"));
 }
 
 #undef LOCTEXT_NAMESPACE
