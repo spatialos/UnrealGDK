@@ -38,6 +38,8 @@ steps:
   #  retry:
   #    manual:
   #      permit_on_passed: true
+  #  concurrency: 1
+  #  concurrency_group: 'unrealgdk-release'
 
  # - wait: ~
   
@@ -48,6 +50,8 @@ steps:
     retry:
       manual:
         permit_on_passed: true
+    concurrency: 1
+    concurrency_group: 'unrealgdk-release'
 
   # Stage 3: Promote the release candiates to their respective release branches.
 
@@ -57,4 +61,6 @@ steps:
 
   - label: Release
     command: ci/release.sh
+    concurrency: 1
+    concurrency_group: 'unrealgdk-release'
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
