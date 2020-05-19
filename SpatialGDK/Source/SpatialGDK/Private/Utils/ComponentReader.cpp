@@ -430,6 +430,24 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		{
 			bool bUnresolved = false;
 			UObject* ObjectValue = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
+			if (Property->GetName() == TEXT("PlayerState"))
+			{
+				if (ObjectValue == nullptr)
+				{
+					if(bUnresolved)
+					{
+						UE_LOG(LogSpatialComponentReader, Error, TEXT("[RACE DEBUG] Received unresolved player state pointer"));
+					}
+					else
+					{
+						UE_LOG(LogSpatialComponentReader, Error, TEXT("[RACE DEBUG] Received null player state pointer"));
+					}
+				}
+				else
+				{
+					UE_LOG(LogSpatialComponentReader, Display, TEXT("[RACE DEBUG] Map player state pointer on object %p"), Data - Offset);
+				}
+			}
 
 			const bool bHasReferences = bUnresolved || (ObjectValue && !ObjectValue->IsFullNameStableForNetworking());
 
