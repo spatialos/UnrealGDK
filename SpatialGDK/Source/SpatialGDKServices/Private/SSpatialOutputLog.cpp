@@ -166,6 +166,13 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
+SSpatialOutputLog::~SSpatialOutputLog()
+{
+	LogFileReaders.Empty();
+
+	ShutdownLogDirectoryWatcher(LocalDeploymentLogsDir);
+}
+
 void SSpatialOutputLog::ResetReadersWithLatestLogDir()
 {
 	FString LatestLogDir;
@@ -173,18 +180,18 @@ void SSpatialOutputLog::ResetReadersWithLatestLogDir()
 
 	// Go through all log directories in the spatial logs and find the most recently created (if one exists)
 	const bool bGetLatestLogDir = IFileManager::Get().IterateDirectoryStat(*LocalDeploymentLogsDir, [&LatestLogDir, &LatestLogDirTime](const TCHAR* FileName, const FFileStatData& FileStats)
-	{
-		if (FileStats.bIsDirectory)
-		{
-			if (FileStats.CreationTime > LatestLogDirTime)
-			{
-				LatestLogDir = FString(FileName);
-				LatestLogDirTime = FileStats.CreationTime;
-			}
-		}
+    {
+        if (FileStats.bIsDirectory)
+        {
+            if (FileStats.CreationTime > LatestLogDirTime)
+            {
+                LatestLogDir = FString(FileName);
+                LatestLogDirTime = FileStats.CreationTime;
+            }
+        }
 
-		return true;
-	});
+        return true;
+    });
 
 	if (bGetLatestLogDir)
 	{
@@ -193,13 +200,6 @@ void SSpatialOutputLog::ResetReadersWithLatestLogDir()
 			Reader->ResetLogDirectory(LatestLogDir);
 		}
 	}
-}
-
-SSpatialOutputLog::~SSpatialOutputLog()
-{
-	LogFileReaders.Empty();
-
-	ShutdownLogDirectoryWatcher(LocalDeploymentLogsDir);
 }
 
 void SSpatialOutputLog::StartUpLogDirectoryWatcher(const FString& LogDirectory)
@@ -276,11 +276,11 @@ void SSpatialOutputLog::ParseLaunchLogContent(const FString& Content)
 
 	for (const FString& LogLine : LogLines)
 	{
-		FormatAndPrintRawLogLine(LogLine);
+		FormatAndPrintRawLaunchLogLine(LogLine);
 	}
 }
 
-void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
+void SSpatialOutputLog::FormatAndPrintRawLaunchLogErrorLine(const FString& LogLine)
 {
 	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
 	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
@@ -311,7 +311,7 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 	});
 }
 
-void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
+void SSpatialOutputLog::FormatAndPrintRawLaunchLogLine(const FString& LogLine)
 {
 	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
 	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) loggerName=(.*\\.)?(.*)"));
@@ -320,7 +320,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	if (!LogMatcher.FindNext())
 	{
 		// If this log line did not match the log line regex then it is an error line which is parsed differently.
-		FormatAndPrintRawErrorLine(LogLine);
+		FormatAndPrintRawLaunchLogErrorLine(LogLine);
 		return;
 	}
 

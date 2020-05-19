@@ -59,16 +59,15 @@ public:
 private:
 	void ResetReadersWithLatestLogDir();
 
-	void ParseLaunchLogContent(const FString& Content);
-
-	void FormatAndPrintRawLogLine(const FString& LogLine);
-	void FormatAndPrintRawErrorLine(const FString& LogLine);
-
 	void StartUpLogDirectoryWatcher(const FString& LogDirectory);
 	void ShutdownLogDirectoryWatcher(const FString& LogDirectory) const;
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	void OnClearLog() override;
+
+	void ParseLaunchLogContent(const FString& Content);
+	void FormatAndPrintRawLaunchLogLine(const FString& LogLine);
+	void FormatAndPrintRawLaunchLogErrorLine(const FString& LogLine);
 
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
