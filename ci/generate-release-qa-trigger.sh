@@ -64,12 +64,14 @@ while IFS= read -r ENGINE_VERSION; do
                 "ENGINE_VERSION: "UnrealEngine-${ENGINE_VERSION}-${GDK_VERSION}-rc""
 done <<< "${ENGINE_VERSIONS}"
 
+### Commented this out as to not run supefluous large builds during testing.
+### TODO: uncomment this
 ### unrealgdk-nfr
-while IFS= read -r ENGINE_VERSION; do
-    triggerTest "unrealgdk" \
-                "nfr" \
-                "${GDK_VERSION}-rc"
-done <<< "${ENGINE_VERSIONS}"
+###while IFS= read -r ENGINE_VERSION; do
+###    triggerTest "unrealgdk" \
+###                "nfr" \
+###                "${GDK_VERSION}-rc"
+###done <<< "${ENGINE_VERSIONS}"
 
 ### unrealengine-premerge
 while IFS= read -r ENGINE_VERSION; do
