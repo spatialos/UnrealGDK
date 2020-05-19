@@ -31,7 +31,7 @@ echo "      env:"
 
 for element in "${ENVIRONMENT_VARIABLES[@]}"
     do
-        echo "        ${element}\n"
+        echo "        ${element}"
     done
 }
 
