@@ -436,16 +436,16 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				{
 					if(bUnresolved)
 					{
-						UE_LOG(LogSpatialComponentReader, Error, TEXT("[RACE DEBUG] Received unresolved player state pointer"));
+						UE_LOG(LogSpatialComponentReader, Error, TEXT("[MIGRATION DEBUG] Received unresolved player state pointer"));
 					}
 					else
 					{
-						UE_LOG(LogSpatialComponentReader, Error, TEXT("[RACE DEBUG] Received null player state pointer"));
+						UE_LOG(LogSpatialComponentReader, Error, TEXT("[MIGRATION DEBUG] Received null player state pointer"));
 					}
 				}
 				else
 				{
-					UE_LOG(LogSpatialComponentReader, Display, TEXT("[RACE DEBUG] Map player state pointer on object %p"), Data - Offset);
+					UE_LOG(LogSpatialComponentReader, Display, TEXT("[MIGRATION DEBUG] Map player state pointer on object %p"), Data - Offset);
 				}
 			}
 

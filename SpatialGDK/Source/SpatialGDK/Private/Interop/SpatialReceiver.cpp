@@ -501,40 +501,6 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 	}
 }
 
-void SetHierarchyRole(AActor* CurActor, ENetRole Role, const FString& DebugText)
-{
-	if (CurActor->HasAuthority())
-	{
-		if (auto Pawn = Cast<APawn>(CurActor))
-		{
-			if (Role == ROLE_AutonomousProxy && !Pawn->IsPlayerControlled())
-			{
-				AActor* TopOwner = nullptr;
-				if (CurActor->GetOwner())
-				{
-					for (TopOwner = CurActor->GetOwner(); TopOwner->GetOwner(); TopOwner = TopOwner->GetOwner())
-					{
-					}
-				}
-				SetHierarchyRole(TopOwner ? TopOwner : CurActor, ROLE_SimulatedProxy, DebugText);
-				return;
-			}
-		}
-		if(CurActor->IsA<APawn>())
-		{
-			if (CurActor->RemoteRole == ROLE_SimulatedProxy && Role == ROLE_AutonomousProxy)
-			{
-				UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Switched role to autonomous for %s from %s"), *CurActor->GetName(), *DebugText);
-			}
-		}
-		CurActor->RemoteRole = Role;
-	}
-	for (auto Child : CurActor->Children)
-	{
-		SetHierarchyRole(Child, Role, DebugText);
-	}
-};
-
 void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 {
 	if (GlobalStateManager->HandlesComponent(Op.component_id))
@@ -631,7 +597,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					if (Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
-						UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received Player Controller auth"));
+						UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received Player Controller auth"));
 					}
 					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
@@ -639,7 +605,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						if (Pawn->IsPlayerControlled())
 						{
 							Pawn->RemoteRole = ROLE_AutonomousProxy;
-							UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received Controlled Pawn auth %p"), Actor);
+							UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received Controlled Pawn auth %p"), Actor);
 						}
 						else
 						{
@@ -668,7 +634,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 														{
 															if(Refs->MappedRefs.Num() > 0)
 															{
-																UE_LOG(LogSpatialReceiver, Error, TEXT("[RACE DEBUG] No player state for %p although it is mapped to : %" PRIu64 "!", Actor, Refs->MappedRefs.Array()[0].Entity));
+																UE_LOG(LogSpatialReceiver, Error, TEXT("[MIGRATION DEBUG] No player state for %p although it is mapped to : %" PRIu64 "!", Actor, Refs->MappedRefs.Array()[0].Entity));
 															}
 															else
 															{
@@ -677,29 +643,29 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 														}
 														else
 														{
-															UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Pawn with unresolved player state, should be mapped eventually"));
+															UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Pawn with unresolved player state, should be mapped eventually"));
 														}
 													}
 													else
 													{
-														UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received non-controlled Pawn auth %p, with no ref map entry for player state"), Actor);
+														UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received non-controlled Pawn auth %p, with no ref map entry for player state"), Actor);
 													}
 												}
 											}
 										}
 										else
 										{
-											UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received non-controlled Pawn auth %p, with no rep layout"), Actor);
+											UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received non-controlled Pawn auth %p, with no rep layout"), Actor);
 										}
 									}
 									else
 									{
-										UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received non-controlled Pawn auth %p, with no rep state"), Actor);
+										UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received non-controlled Pawn auth %p, with no rep state"), Actor);
 									}
 								}
 								else
 								{
-									UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received non-controlled Pawn auth %p, with no channel"), Actor, bHasPlayerState ? TEXT("true") : TEXT("false"));
+									UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received non-controlled Pawn auth %p, with no channel"), Actor, bHasPlayerState ? TEXT("true") : TEXT("false"));
 								}
 							}
 
@@ -707,7 +673,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 							bool bHasActorComponentData = NetDriver->StaticComponentView->HasComponent(Op.entity_id, ActorComponentId);
 
-							UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received non-controlled Pawn auth %p, has player state : %s, has actor data : %s"),
+							UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received non-controlled Pawn auth %p, has player state : %s, has actor data : %s"),
 							Actor,
 							bHasPlayerState ? TEXT("true") : TEXT("false"),
 							bHasActorComponentData ? TEXT("true") : TEXT("false"));
@@ -724,7 +690,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 										{
 											bAppliedPendingData = true;
 											ApplyComponentData(*Channel, *Actor, *pendingOp.Data->ComponentData);
-											UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Applied actor data on  Pawn auth %p"), Actor);
+											UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Applied actor data on  Pawn auth %p"), Actor);
 										}
 									}
 								}
@@ -733,11 +699,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 							if (bAppliedPendingData)
 							{
 								bHasPlayerState = Pawn->GetPlayerState() != nullptr;
-								UE_LOG(LogSpatialReceiver, Warning, TEXT("[RACE DEBUG] Salvaged Controlled Pawn auth %p player state"), Actor);
+								UE_LOG(LogSpatialReceiver, Warning, TEXT("[MIGRATION DEBUG] Salvaged Controlled Pawn auth %p player state"), Actor);
 								if (Pawn->IsPlayerControlled())
 								{
 									Pawn->RemoteRole = ROLE_AutonomousProxy;
-									UE_LOG(LogSpatialReceiver, Warning, TEXT("[RACE DEBUG] Salvaged Controlled Pawn auth %p after applied pending data"), Actor);
+									UE_LOG(LogSpatialReceiver, Warning, TEXT("[MIGRATION DEBUG] Salvaged Controlled Pawn auth %p after applied pending data"), Actor);
 								}
 							}
 
@@ -753,39 +719,27 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 							if (!bIsBot && bIsLocalAuth)
 							{
 								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
-								UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received player state, update pawn"));
+								UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received player state, update pawn"));
 							}
 							else
 							{
-								UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received non controlled pawn player state -> %s"), bIsBot ? TEXT("IsBot") : TEXT("No pawn local auth"));
+								UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received non controlled pawn player state -> %s"), bIsBot ? TEXT("IsBot") : TEXT("No pawn local auth"));
 								AActor* Owner = PlayerState->GetOwner();
 								if(!Owner)
 								{
-									UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] No owner for player state"));
+									UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] No owner for player state"));
 								}
 							}
 						}
 						else
 						{
-							UE_LOG(LogSpatialReceiver, Display, TEXT("[RACE DEBUG] Received pawn-less player state"));
+							UE_LOG(LogSpatialReceiver, Display, TEXT("[MIGRATION DEBUG] Received pawn-less player state"));
 						}
 					}
 
-					//if (Actor->GetNetConnection() != nullptr)
-					//{
-					//	AActor* TopOwner = nullptr;
-					//	if (Actor->GetOwner())
-					//	{
-					//		for (TopOwner = Actor->GetOwner(); TopOwner->GetOwner(); TopOwner = TopOwner->GetOwner())
-					//		{
-					//		}
-					//	}
-					//	SetHierarchyRole(TopOwner ? TopOwner : Actor, ROLE_AutonomousProxy, TEXT("HandleAuthority"));
-					//}
-
 					if (bWasAutonomous && Actor->GetRemoteRole() != ROLE_AutonomousProxy)
 					{
-						UE_LOG(LogSpatialReceiver, Error, TEXT("[RACE DEBUG] Autonomous proxy reverted to Simulated on %s !!"), *Actor->GetName());
+						UE_LOG(LogSpatialReceiver, Error, TEXT("[MIGRATION DEBUG] Autonomous proxy reverted to Simulated on %s !!"), *Actor->GetName());
 					}
 
 					if (!bDormantActor)
@@ -971,22 +925,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor->RemoteRole = ROLE_AutonomousProxy;
 			}
 		}
-		//if(USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
-		//{
-		//	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-		//	{
-		//		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
-		//		{
-		//			continue;
-		//		}
-		//
-		//		if (PendingAddComponent.EntityId == EntityId)
-		//		{
-		//			//ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
-		//			ApplyComponentData(*Channel, *EntityActor, *PendingAddComponent.Data->ComponentData);
-		//		}
-		//	}
-		//}
 
 		return;
 	}
@@ -2472,21 +2410,6 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
 			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
 
-			//if (Object->IsA<APawn>() || Object->IsA<APlayerState>() || Object->IsA<APlayerController>())
-			//{
-			//	AActor* Actor = Cast<AActor>(Object);
-			//	if (Actor->HasAuthority() && Actor->GetNetConnection() != nullptr)
-			//	{
-			//		AActor* TopOwner = nullptr;
-			//		if (Actor->GetOwner())
-			//		{
-			//			for (TopOwner = Actor->GetOwner(); TopOwner->GetOwner(); TopOwner = TopOwner->GetOwner())
-			//			{
-			//			}
-			//		}
-			//		SetHierarchyRole(TopOwner ? TopOwner : Actor, ROLE_AutonomousProxy, TEXT("ResolveIncomingOperations"));
-			//	}
-			//}
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
