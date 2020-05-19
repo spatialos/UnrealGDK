@@ -7,6 +7,7 @@
 #include "HAL/FileManagerGeneric.h"
 #include "IDirectoryWatcher.h"
 #include "SlateFwd.h"
+#include "Engine/EngineTypes.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOutputLog, Log, All);
 
@@ -21,6 +22,29 @@ public:
 	void UpdateFileSize();
 };
 
+class FSpatialLogFileReader
+{
+public:
+	explicit FSpatialLogFileReader(const FString& LogFilename, TFunction<void(const FString&)> ContentHandler);
+	~FSpatialLogFileReader();
+
+	void ResetLogDirectory(const FString& LogDirectory);
+
+private:
+	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize) const;
+	void CloseLogReader();
+
+	void PollLogFile(const FString& LogFilePath);
+	void StartPollTimer(const FString& LogFilePath);
+
+	FString LogFilename;
+	TFunction<void(const FString&)> ContentHandler;
+
+	FTimerHandle PollTimer;
+	FCriticalSection LogReaderMutex;
+	TUniquePtr<FArchiveLogFileReader> LogReader;
+};
+
 class SSpatialOutputLog : public SOutputLog
 {
 public:
@@ -32,20 +56,16 @@ public:
 
 	void Construct(const FArguments& InArgs);
 
-	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
-
 private:
-	void ReadLatestLogFile();
-	void ResetPollingLogFile(const FString& LogFilePath);
-	void StartPollTimer(const FString& LogFilePath);
-	void PollLogFile(const FString& LogFilePath);
-	void CloseLogReader();
+	void ResetReadersWithLatestLogDir();
+
+	void ParseLaunchLogContent(const FString& Content);
 
 	void FormatAndPrintRawLogLine(const FString& LogLine);
 	void FormatAndPrintRawErrorLine(const FString& LogLine);
 
 	void StartUpLogDirectoryWatcher(const FString& LogDirectory);
-	void ShutdownLogDirectoryWatcher(const FString& LogDirectory);
+	void ShutdownLogDirectoryWatcher(const FString& LogDirectory) const;
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	void OnClearLog() override;
@@ -53,7 +73,5 @@ private:
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
 
-	FTimerHandle PollTimer;
-	TUniquePtr<FArchiveLogFileReader> LogReader;
-	FCriticalSection LogReaderMutex;
+	TArray<TUniquePtr<FSpatialLogFileReader>> LogFileReaders;
 };
