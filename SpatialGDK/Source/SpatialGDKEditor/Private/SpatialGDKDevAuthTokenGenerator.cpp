@@ -20,10 +20,6 @@ void FSpatialGDKDevAuthTokenGenerator::UpdateSettings(const FString& DevAuthToke
 {
 	USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	GDKEditorSettings->SetDevelopmentAuthenticationToken(DevAuthToken);
-	if (GDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment)
-	{
-		GDKEditorSettings->SetUseDevelopmentAuthenticationFlow(true);
-	}
 }
 
 void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()

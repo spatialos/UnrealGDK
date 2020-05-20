@@ -1003,7 +1003,6 @@ void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
-	SpatialGDKEditorSettings->SetUseDevelopmentAuthenticationFlow(false);
 
 	RefreshAutoStartLocalDeployment();
 }
@@ -1012,7 +1011,6 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
-	SpatialGDKEditorSettings->SetUseDevelopmentAuthenticationFlow(false);
 
 	RefreshAutoStartLocalDeployment();
 }
