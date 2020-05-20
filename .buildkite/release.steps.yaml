@@ -41,7 +41,7 @@ steps:
   #  concurrency: 1
   #  concurrency_group: 'unrealgdk-release'
 
- # - wait: ~
+ # - wait
   
 # Stage 2: Builds all UnrealEngine release candidates, compresses and uploads Engine artifacts to Google Cloud Storage for use by test pipelines.
   - label: "Build & upload all UnrealEngine release candidates"
@@ -52,8 +52,8 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: 'unrealgdk-release'
-
-   - wait: ~
+    
+  - wait
 
  # Stage 3: Run all tests against the release candidates.
   - label: "Trigger all automated tests"
