@@ -149,7 +149,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
 	PendingSubobjectAttachment->Subobject = Object;
-	PendingSubobjectAttachment->Channel = Channel;
 	PendingSubobjectAttachment->Info = Info;
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
