@@ -43,7 +43,19 @@ steps:
 
  # - wait: ~
   
-  # Stage 2: Run all tests against the release candidates.
+# Stage 2: Builds all UnrealEngine release candidates, compresses and uploads Engine artifacts to Google Cloud Storage for use by test pipelines.
+  - label: "Build & upload all UnrealEngine release candidates"
+    command: ci/generate-unrealengine-premerge-trigger | tee /dev/fd/2 | buildkite-agent pipeline upload
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+    concurrency: 1
+    concurrency_group: 'unrealgdk-release'
+
+   - wait: ~
+
+ # Stage 3: Run all tests against the release candidates.
   - label: "Trigger all automated tests"
     command: ci/generate-release-qa-trigger.sh | tee /dev/fd/2 | buildkite-agent pipeline upload
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
@@ -53,8 +65,7 @@ steps:
     concurrency: 1
     concurrency_group: 'unrealgdk-release'
 
-  # Stage 3: Promote the release candiates to their respective release branches.
-
+  # Stage 4: Promote the release candiates to their respective release branches.
   # Block steps require a human to click a button, this is a safety precaution.
   - block: "Unblock the release"
     prompt: "This action will merge all release candidates into their respective release branches."
