@@ -26,12 +26,6 @@ echo "    async: true"
 echo "    build:"
 echo "      branch: "${BRANCH_TO_TEST}""
 echo "      commit: "HEAD""
-echo "      env:"
-
-for element in "${ENVIRONMENT_VARIABLES[@]}"
-    do
-        echo "        ${element}"
-    done
 }
 
 ### unrealengine-premerge
