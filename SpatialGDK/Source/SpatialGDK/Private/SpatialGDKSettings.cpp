@@ -201,6 +201,9 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 #if UE_EDITOR || UE_SERVER
 	return false;
 #else
-	return bPreventClientCloudDeploymentAutoConnect;
+	bool bIsServer = false;
+	const TCHAR* CommandLine = FCommandLine::Get();
+	FParse::Bool(CommandLine, TEXT("server"), bIsServer);
+	return !bIsServer && bPreventClientCloudDeploymentAutoConnect;
 #endif
 };
