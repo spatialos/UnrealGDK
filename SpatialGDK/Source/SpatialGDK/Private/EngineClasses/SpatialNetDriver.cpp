@@ -409,6 +409,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+	PackageMap->OnEntityPoolReady([&]()
+	{
+		Sender->CreateServerWorkerEntity(PackageMap->AllocateEntityId());
+	});
 
 	// The interest factory depends on the package map, so is created last.
 	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);

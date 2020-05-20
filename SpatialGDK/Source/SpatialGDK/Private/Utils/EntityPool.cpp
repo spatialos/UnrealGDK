@@ -79,7 +79,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		if (!bIsReady)
 		{
 			bIsReady = true;
-			NetDriver->Sender->CreateServerWorkerEntity(GetNextEntityId());
+			OnEntityPoolReady.ExecuteIfBound();
 		}
 	});
 

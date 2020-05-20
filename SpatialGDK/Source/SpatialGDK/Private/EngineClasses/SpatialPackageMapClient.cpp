@@ -75,7 +75,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
-	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
+	Worker_EntityId EntityId = AllocateEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
@@ -299,9 +299,19 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClass(UClass* UniqueOb
 	return nullptr;
 }
 
+Worker_EntityId USpatialPackageMapClient::AllocateEntityId()
+{
+	return EntityPool->GetNextEntityId();
+}
+
 bool USpatialPackageMapClient::IsEntityPoolReady() const
 {
 	return (EntityPool != nullptr) && (EntityPool->IsReady());
+}
+
+void USpatialPackageMapClient::OnEntityPoolReady(const TFunction<void()>& Callback)
+{
+	EntityPool->OnEntityPoolReady.BindLambda(Callback);
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)

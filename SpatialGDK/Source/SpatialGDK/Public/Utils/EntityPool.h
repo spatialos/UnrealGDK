@@ -40,6 +40,9 @@ public:
 		return bIsReady;
 	}
 
+	DECLARE_DELEGATE(OnEntityPoolReadyDelegate)
+	OnEntityPoolReadyDelegate OnEntityPoolReady;
+
 private:
 	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);
 

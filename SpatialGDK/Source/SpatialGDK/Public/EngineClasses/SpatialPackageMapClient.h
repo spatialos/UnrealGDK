@@ -58,7 +58,9 @@ public:
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
+	Worker_EntityId AllocateEntityId();
 	bool IsEntityPoolReady() const;
+	void OnEntityPoolReady(const TFunction<void()>&);
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
