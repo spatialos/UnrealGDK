@@ -90,18 +90,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
 		check(LBStrategy != nullptr);
-		const UAbstractLockingPolicy* LockingPolicy = NetDriver->LockingPolicy;
-		check(LockingPolicy != nullptr);
 
-		IntendedVirtualWorkerId = LockingPolicy->IsLocked(Actor) ? LBStrategy->GetLocalVirtualWorkerId() : LBStrategy->WhoShouldHaveAuthority(*Actor);
-		if (IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		IntendedVirtualWorkerId = LBStrategy->GetLocalVirtualWorkerId();
+		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-			WorkerAttributeOrSpecificWorker = { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) };
-		}
-		else
-		{
-			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
+			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
 		}
 	}
 
