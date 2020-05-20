@@ -88,7 +88,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
-	RefreshAutoStartLocalDeployment();
+	OnAutoStartLocalDeploymentChanged();
 
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
@@ -213,7 +213,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartCloudSpatialDeployment,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment),
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute),
 		FIsActionChecked(),
 		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible));
@@ -992,20 +992,12 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable() const
 	return OnIsSpatialNetworkingEnabled() && !(LocalDeploymentManager->IsLocalDeploymentRunning());
 }
 
-void FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked()
-{
-	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::NoAutomaticConnection;
-
-	RefreshAutoStartLocalDeployment();
-}
-
 void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
 
-	RefreshAutoStartLocalDeployment();
+	OnAutoStartLocalDeploymentChanged();
 }
 
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
@@ -1016,7 +1008,7 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuthTokenGenerator = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
 	DevAuthTokenGenerator->AsyncGenerateDevAuthToken();
 
-	RefreshAutoStartLocalDeployment();
+	OnAutoStartLocalDeploymentChanged();
 }
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable() const
@@ -1055,7 +1047,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
 		{
-			RefreshAutoStartLocalDeployment();
+			OnAutoStartLocalDeploymentChanged();
 		}
 	}
 }
@@ -1098,11 +1090,11 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"), nullptr);
 }
 
-void FSpatialGDKEditorToolbarModule::LaunchOrShowDeployment()
+void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()
 {
-	if (CanLaunchDeployment())
+	if (CanLaunchCloudDeployment())
 	{
-		OnLaunchDeployment();
+		OnLaunchCloudDeployment();
 	}
 	else
 	{
@@ -1186,7 +1178,7 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::RefreshAutoStartLocalDeployment()
+void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 {
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -1217,7 +1209,7 @@ void FSpatialGDKEditorToolbarModule::RefreshAutoStartLocalDeployment()
 	}
 }
 
-FReply FSpatialGDKEditorToolbarModule::OnLaunchDeployment()
+FReply FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -1292,7 +1284,7 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
 
-bool FSpatialGDKEditorToolbarModule::CanLaunchDeployment() const
+bool FSpatialGDKEditorToolbarModule::CanLaunchCloudDeployment() const
 {
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }
