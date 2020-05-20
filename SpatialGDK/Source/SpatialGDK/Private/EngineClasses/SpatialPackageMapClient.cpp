@@ -311,7 +311,7 @@ bool USpatialPackageMapClient::IsEntityPoolReady() const
 
 void USpatialPackageMapClient::OnEntityPoolReady(const TFunction<void()>& Callback)
 {
-	EntityPool->OnEntityPoolReady.BindLambda(Callback);
+	EntityPool->OnEntityPoolReady.BindLambda([&]() { Callback(); });
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
