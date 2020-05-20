@@ -23,14 +23,33 @@ struct ConfigureConnection
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
-		, ProtocolLogPrefix(*FormatProtocolPrefix())
+		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
 		Params.worker_type = WorkerType.Get();
 
-		Params.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
-		Params.protocol_logging.log_prefix = ProtocolLogPrefix.Get();
+		Logsink.logsink_type = WORKER_LOGSINK_TYPE_ROTATING_FILE;
+		Logsink.rotating_logfile_parameters.log_prefix = WorkerSDKLogFilePrefix.Get();
+		Logsink.rotating_logfile_parameters.max_log_files = 1;
+		// TODO: When upgrading to Worker SDK 14.6.2, remove the WorkerSDKLogFileSize parameter and set this to 0 for infinite file size
+		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = Config.WorkerSDKLogFileSize;
+
+		uint32_t Categories = 0;
+		if (Config.EnableWorkerSDKOpLogging)
+		{
+			Categories |= WORKER_LOG_CATEGORY_API;
+		}
+		if (Config.EnableWorkerSDKProtocolLogging)
+		{
+			Categories |= WORKER_LOG_CATEGORY_NETWORK_STATUS | WORKER_LOG_CATEGORY_NETWORK_TRAFFIC;
+		}
+		Logsink.filter_parameters.categories = Categories;
+		Logsink.filter_parameters.level = Config.WorkerSDKLogLevel;
+
+		Params.logsinks = &Logsink;
+		Params.logsink_count = 1;
+		Params.enable_logging_at_startup = Categories != 0;
 
 		Params.component_vtable_count = 0;
 		Params.default_component_vtable = &DefaultVtable;
@@ -77,26 +96,24 @@ struct ConfigureConnection
 		Params.enable_dynamic_components = true;
 	}
 
-	FString FormatProtocolPrefix() const
+	FString FormatWorkerSDKLogFilePrefix() const
 	{
-		FString FinalProtocolLoggingPrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
-		if (!Config.ProtocolLoggingPrefix.IsEmpty())
+		FString FinalLogFilePrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
+		if (!Config.WorkerSDKLogPrefix.IsEmpty())
 		{
-			FinalProtocolLoggingPrefix += Config.ProtocolLoggingPrefix;
+			FinalLogFilePrefix += Config.WorkerSDKLogPrefix;
 		}
-		else
-		{
-			FinalProtocolLoggingPrefix += Config.WorkerId;
-		}
-		return FinalProtocolLoggingPrefix;
+		FinalLogFilePrefix += Config.WorkerId + TEXT("-");
+		return FinalLogFilePrefix;
 	}
 
 	const FConnectionConfig& Config;
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
-	FTCHARToUTF8 ProtocolLogPrefix;
+	FTCHARToUTF8 WorkerSDKLogFilePrefix;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
+	Worker_LogsinkParameters Logsink{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
