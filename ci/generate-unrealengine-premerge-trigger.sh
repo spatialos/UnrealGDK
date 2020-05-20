@@ -22,9 +22,17 @@ triggerTest () {
   
 echo "  - trigger: "${REPO_NAME}-${TEST_NAME}""
 echo "    label: "Run ${REPO_NAME}-${TEST_NAME} at HEAD OF ${BRANCH_TO_TEST}""
+echo "    async: true"
 echo "    build:"
 echo "      branch: "${BRANCH_TO_TEST}""
 echo "      commit: "HEAD""
+echo "      env:"
+
+for element in "${ENVIRONMENT_VARIABLES[@]}"
+    do
+        echo "        ${element}"
+    done
+}
 
 ### unrealengine-premerge
 while IFS= read -r ENGINE_VERSION; do
