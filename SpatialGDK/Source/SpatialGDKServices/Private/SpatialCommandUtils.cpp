@@ -161,7 +161,7 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 	bool bFoundNewline = CreateDevAuthTokenResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &DevAuthTokenResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 	if (!bFoundNewline || DevAuthTokenResult.IsEmpty())
 	{
-		// This is necessary because depending on whether you are already authenticated against spatial, it will either return two json structs or one.
+		// This is necessary because spatial might return multiple json structs depending on whether you are already authenticated against spatial and are on the latest version of it.
 		DevAuthTokenResult = CreateDevAuthTokenResult;
 	}
 
