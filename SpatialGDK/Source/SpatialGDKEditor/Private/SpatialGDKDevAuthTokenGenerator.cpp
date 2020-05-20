@@ -16,12 +16,6 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 {
 }
 
-void FSpatialGDKDevAuthTokenGenerator::UpdateSettings(const FString& DevAuthToken)
-{
-	USpatialGDKEditorSettings* GDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	GDKEditorSettings->SetDevelopmentAuthenticationToken(DevAuthToken);
-}
-
 void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 {
 	bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
@@ -38,7 +32,7 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 		{
 			AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
 			{
-				UpdateSettings(DevAuthToken);
+				GetMutableDefault<USpatialGDKEditorSettings>()->SetDevelopmentAuthenticationToken(DevAuthToken);
 				EndTask(/* bSuccess */ true);
 			});
 		}

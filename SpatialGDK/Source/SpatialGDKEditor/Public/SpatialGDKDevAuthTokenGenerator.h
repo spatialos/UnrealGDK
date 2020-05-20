@@ -21,7 +21,6 @@ private:
 
 	void EndTask(bool bSuccess);
 	void DoGenerateDevAuthTokenTasks();
-	void UpdateSettings(const FString& DevAuthToken);
 
 private:
 	TAtomic<bool> bIsGenerating;
