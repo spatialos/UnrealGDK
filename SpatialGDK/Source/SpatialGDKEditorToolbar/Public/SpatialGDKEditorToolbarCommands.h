@@ -41,7 +41,6 @@ public:
 	TSharedPtr<FUICommandInfo> EnableSpatialNetworking;
 	TSharedPtr<FUICommandInfo> GDKEditorSettings;
 	TSharedPtr<FUICommandInfo> GDKRuntimeSettings;
-	TSharedPtr<FUICommandInfo> NoAutomaticConnection;
 	TSharedPtr<FUICommandInfo> LocalDeployment;
 	TSharedPtr<FUICommandInfo> CloudDeployment;
 };

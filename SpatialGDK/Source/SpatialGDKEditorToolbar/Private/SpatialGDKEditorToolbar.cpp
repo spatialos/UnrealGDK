@@ -272,12 +272,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled)
 	);
 
-	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().NoAutomaticConnection,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::NoAutomaticConnectionClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable),
-		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsNoAutomaticConnectionSelected)
-	);
-
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().LocalDeployment,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LocalDeploymentClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
@@ -471,7 +465,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LocalDeployment);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CloudDeployment);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().NoAutomaticConnection);
 	}
 	MenuBuilder.EndSection();
 
