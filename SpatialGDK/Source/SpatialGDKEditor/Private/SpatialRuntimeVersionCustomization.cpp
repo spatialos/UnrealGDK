@@ -42,9 +42,14 @@ void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IProperty
 			continue;
 		}
 
+		void* StructPtr;
+		check(StructPropertyHandle->GetValueData(StructPtr) == FPropertyAccess::Success);
+
+		const FRuntimeVariantVersion* VariantVersion = reinterpret_cast<const FRuntimeVariantVersion*>(StructPtr);
+
 		IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
-		FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
+		FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *VariantVersion->GetPinnedVersion());
 
 		CustomRow.CustomWidget()
 			.NameContent()
