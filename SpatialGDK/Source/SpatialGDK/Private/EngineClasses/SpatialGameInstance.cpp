@@ -134,24 +134,17 @@ void USpatialGameInstance::TryConnectToSpatial()
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
 
-		if (!GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
+		// Initialize a locator configuration which will parse command line arguments.
+		FLocatorConfig LocatorConfig;
+		if (LocatorConfig.TryLoadCommandLineArgs())
 		{
-			// Initialize a locator configuration which will parse command line arguments.
-			FLocatorConfig LocatorConfig;
-			if (LocatorConfig.TryLoadCommandLineArgs())
-			{
-				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
-				const TCHAR* CommandLineArgs = FCommandLine::Get();
+			// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+			const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-				FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
-				NewCommandLineArgs.Append(FString(CommandLineArgs));
+			FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+			NewCommandLineArgs.Append(FString(CommandLineArgs));
 
-				FCommandLine::Set(*NewCommandLineArgs);
-			}
-		}
-		else
-		{
-			SetFirstConnectionToSpatialOSAttempted();
+			FCommandLine::Set(*NewCommandLineArgs);
 		}
 	}
 #if TRACE_LIB_ACTIVE
@@ -166,7 +159,10 @@ void USpatialGameInstance::TryConnectToSpatial()
 
 void USpatialGameInstance::StartGameInstance()
 {
-	TryConnectToSpatial();
+	if (!GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
+	{
+		TryConnectToSpatial();
+	}
 
 	Super::StartGameInstance();
 }
@@ -264,23 +260,20 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 {
 	if (OwningWorld != GetWorld()
 		|| !OwningWorld->IsServer()
+		|| SpatialConnectionManager == nullptr
 		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
 		|| (OwningWorld->WorldType != EWorldType::PIE
 			&& OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
 		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
+		// OwningWorld->IsServer() is not returning false on clients here :/
 		return;
 	}
 
-	check(SpatialConnectionManager != nullptr);
 	if (SpatialConnectionManager->IsConnected())
 	{
 		CleanupLevelInitializedNetworkActors(LoadedLevel);
-	}
-	else
-	{
-		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
 	}
 }
 
