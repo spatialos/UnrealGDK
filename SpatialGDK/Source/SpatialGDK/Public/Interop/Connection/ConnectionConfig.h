@@ -253,7 +253,7 @@ public:
 		}
 		if (URL.Port != 0)
 		{
-			ReceptionistConfig.SetReceptionistPort(URL.Port);
+			SetReceptionistPort(URL.Port);
 		}
 		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
