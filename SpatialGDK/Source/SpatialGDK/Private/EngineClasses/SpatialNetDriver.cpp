@@ -1427,7 +1427,11 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	if (IsServer())
 	{
 		// Creating channel to ensure that object will be resolvable
-		GetOrCreateSpatialActorChannel(CallingObject);
+		if (GetOrCreateSpatialActorChannel(CallingObject) == nullptr)
+		{
+			// No point processing any further since there is no channel, possibly because the actor is being destroyed.
+			return;
+		}
 	}
 
 	// If this object's class isn't present in the schema database, we will log an error and tell the
