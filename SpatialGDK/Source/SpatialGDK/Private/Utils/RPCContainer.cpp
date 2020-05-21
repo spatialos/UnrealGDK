@@ -27,9 +27,6 @@ namespace
 		case ERPCResult::UnresolvedParameters:
 			return TEXT("Unresolved Parameters");
 
-		case ERPCResult::ActorPendingKill:
-			return TEXT("Actor Pending Kill");
-
 		case ERPCResult::NoActorChannel:
 			return TEXT("No Actor Channel");
 
