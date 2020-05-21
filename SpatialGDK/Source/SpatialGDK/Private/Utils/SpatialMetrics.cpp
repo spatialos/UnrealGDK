@@ -62,7 +62,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	TArray<FString> UnboundMetrics;
 	for (const TPair<FString, UserSuppliedMetric>& Gauge : UserSuppliedMetrics)
 	{
-		if (Guage.Value.IsBound())
+		if (Gauge.Value.IsBound())
 		{
 			SpatialGDK::GaugeMetric Metric;
 
