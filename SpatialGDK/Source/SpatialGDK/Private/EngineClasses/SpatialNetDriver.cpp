@@ -14,6 +14,7 @@
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
+#include "UObject/WeakObjectPtrTemplates.h"
 #include "UObject/UObjectIterator.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
@@ -409,10 +410,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
-	PackageMap->OnEntityPoolReady([&]()
+	if (IsServer())
 	{
-		Sender->CreateServerWorkerEntity(PackageMap->AllocateEntityId());
-	});
+		PackageMap->OnEntityPoolReady([WeakSender = TWeakObjectPtr<USpatialSender>(Sender), WeakPackageMap = TWeakObjectPtr<USpatialPackageMapClient>(PackageMap)]()
+		{
+			if (!WeakSender.IsValid() || !WeakPackageMap.IsValid())
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to bind server worker entity creation to entity pool readiness because sender or package map pointers were invalid"));
+				return;
+			}
+
+			WeakSender->CreateServerWorkerEntity(WeakPackageMap->AllocateEntityId());
+		});
+	}
 
 	// The interest factory depends on the package map, so is created last.
 	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);

@@ -34,14 +34,12 @@ public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
 	void ReserveEntityIDs(int32 EntitiesToReserve);
 	Worker_EntityId GetNextEntityId();
+	void OnEntityPoolReady(const TFunction<void()> Callback);
 
 	FORCEINLINE bool IsReady() const
 	{
 		return bIsReady;
 	}
-
-	DECLARE_DELEGATE(OnEntityPoolReadyDelegate)
-	OnEntityPoolReadyDelegate OnEntityPoolReady;
 
 private:
 	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);
@@ -59,4 +57,7 @@ private:
 	bool bIsAwaitingResponse;
 
 	uint32 NextEntityRangeId;
+
+	DECLARE_DELEGATE(OnEntityPoolReadyDelegate)
+	OnEntityPoolReadyDelegate EntityPoolReadyDelegate;
 };

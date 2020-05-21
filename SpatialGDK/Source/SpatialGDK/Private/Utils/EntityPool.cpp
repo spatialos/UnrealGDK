@@ -79,7 +79,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		if (!bIsReady)
 		{
 			bIsReady = true;
-			OnEntityPoolReady.ExecuteIfBound();
+			EntityPoolReadyDelegate.ExecuteIfBound();
 		}
 	});
 
@@ -158,4 +158,9 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	}
 
 	return NextId;
+}
+
+void UEntityPool::OnEntityPoolReady(const TFunction<void()> Callback)
+{
+	EntityPoolReadyDelegate.BindLambda([Callback]() { Callback(); });
 }
