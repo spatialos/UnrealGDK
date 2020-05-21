@@ -31,16 +31,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
 - You can now specify deployment tags in the `Cloud Deployment` window.
 - RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
-- When using the `-receptionistHost` command line parameter with a non-local host, it's no longer necessary to set `-useExternalIpForBridge true` as this will be inferred automatically.
 - Full Schema generation now uses the CookAndGenerateSchema commandlet, which will result in faster and more stable schema generation for big projects.
+- Added `Open Deployment Page` button to the `Cloud Deployment` window.
+- The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
+- When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
+- Renamed `enableProtocolLogging` command line parameter to `enableWorkerSDKProtocolLogging` and added `enableWorkerSDKOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerSDKLogPrefix`. This prefix is used for both protocol and op logging. Added `workerSDKLogLevel` parameter that takes "debug", "info", "warning" or "error". Added `workerSDKLogFileSize` to control the maximum file size of the worker SDK log file.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
 - Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
-- Fixed a crash when running with nullrhi and using SpatialDebugger
+- Fixed a crash when running with nullrhi and using SpatialDebugger.
 - When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
+- Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
+- OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 
 ## [`0.9.0`] - 2020-05-05
 
@@ -151,10 +156,10 @@ Features listed in this section are not ready to use. However, in the spirit of 
 @DW-Sebastien
 
 
-## [`0.8.1`] - 2020-03-17 
+## [`0.8.1`] - 2020-03-17
 
 ### English version
-### Adapted from 0.8.1-preview 
+### Adapted from 0.8.1-preview
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.

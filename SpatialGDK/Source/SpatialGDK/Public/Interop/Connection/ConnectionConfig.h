@@ -14,7 +14,10 @@ struct FConnectionConfig
 {
 	FConnectionConfig()
 		: UseExternalIp(false)
-		, EnableProtocolLoggingAtStartup(false)
+		, EnableWorkerSDKProtocolLogging(false)
+		, EnableWorkerSDKOpLogging(false)
+		, WorkerSDKLogFileSize(10 * 1024 * 1024)
+		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
@@ -25,24 +28,14 @@ struct FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
-		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
-		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
-		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
+		FParse::Bool(CommandLine, TEXT("enableWorkerSDKProtocolLogging"), EnableWorkerSDKProtocolLogging);
+		FParse::Bool(CommandLine, TEXT("enableWorkerSDKOpLogging"), EnableWorkerSDKOpLogging);
+		FParse::Value(CommandLine, TEXT("workerSDKLogPrefix"), WorkerSDKLogPrefix);
+		// TODO: When upgrading to Worker SDK 14.6.2, remove this parameter and set it to 0 for infinite file size
+		FParse::Value(CommandLine, TEXT("workerSDKLogFileSize"), WorkerSDKLogFileSize);
 
-		FString LinkProtocolString;
-		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
-		if (LinkProtocolString == TEXT("Tcp"))
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
-		}
-		else if (LinkProtocolString == TEXT("Kcp"))
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
-		}
-		else if (!LinkProtocolString.IsEmpty())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
-		}
+		GetWorkerSDKLogLevel(CommandLine);
+		GetLinkProtocol(CommandLine);
 	}
 
 	void PreConnectInit(const bool bConnectAsClient)
@@ -66,11 +59,60 @@ struct FConnectionConfig
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
+private:
+	void GetWorkerSDKLogLevel(const TCHAR* CommandLine)
+	{
+		FString LogLevelString;
+		FParse::Value(CommandLine, TEXT("workerSDKLogLevel"), LogLevelString);
+		if (LogLevelString.Compare(TEXT("debug"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_DEBUG;
+		}
+		else if (LogLevelString.Compare(TEXT("info"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_INFO;
+		}
+		else if (LogLevelString.Compare(TEXT("warning"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_WARN;
+		}
+		else if (LogLevelString.Compare(TEXT("error"), ESearchCase::IgnoreCase) == 0)
+		{
+			WorkerSDKLogLevel = WORKER_LOG_LEVEL_ERROR;
+		}
+		else if (!LogLevelString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+		}
+	}
+
+	void GetLinkProtocol(const TCHAR* CommandLine)
+	{
+		FString LinkProtocolString;
+		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
+		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+		}
+		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+		}
+		else if (!LinkProtocolString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
+		}
+	}
+
+public:
 	FString WorkerId;
 	FString WorkerType;
 	bool UseExternalIp;
-	bool EnableProtocolLoggingAtStartup;
-	FString ProtocolLoggingPrefix;
+	bool EnableWorkerSDKProtocolLogging;
+	bool EnableWorkerSDKOpLogging;
+	FString WorkerSDKLogPrefix;
+	uint32 WorkerSDKLogFileSize;
+	Worker_LogLevel WorkerSDKLogLevel;
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams = {};
 	uint8 TcpMultiplexLevel;
@@ -168,6 +210,7 @@ public:
 
 	void LoadDefaults()
 	{
+		UseExternalIp = false;
 		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
@@ -178,6 +221,7 @@ public:
 
 		// Get command line options first since the URL handling will modify the CommandLine string
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
 
 		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
 		FString Host;
@@ -223,10 +267,6 @@ private:
 		if (!Host.IsEmpty())
 		{
 			ReceptionistHost = Host;
-			if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
-			{
-				UseExternalIp = true;
-			}
 		}
 	}
 
