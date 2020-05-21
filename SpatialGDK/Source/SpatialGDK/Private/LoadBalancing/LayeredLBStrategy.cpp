@@ -250,11 +250,7 @@ bool ULayeredLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* Ac
 	{
 		return false;
 	}
-
-	const FName& LayerA = GetLayerNameForClass(ActorA->GetClass());
-	const FName& LayerB = GetLayerNameForClass(ActorB->GetClass());
-
-	return (LayerA == LayerB);
+	return GetLayerNameForClass(ActorA->GetClass()) == GetLayerNameForClass(ActorB->GetClass());
 }
 
 // Note: this is returning whether this is one of the workers which can simulate the layer. If there are
