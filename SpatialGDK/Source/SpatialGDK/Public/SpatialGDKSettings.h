@@ -344,6 +344,9 @@ public:
 	UPROPERTY(Config)
 	bool bUseSpatialView;
 
+	UPROPERTY(EditAnywhere, config, Category = "Connection")
+	bool bSpatialNetworking;
+
 public:
 	// UI Hidden settings passed through from SpatialGDKEditorSettings
 	bool bUseDevelopmentAuthenticationFlow;

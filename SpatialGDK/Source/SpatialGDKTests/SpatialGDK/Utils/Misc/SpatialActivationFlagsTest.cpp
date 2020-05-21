@@ -5,6 +5,7 @@
 #include "Tests/TestDefinitions.h"
 #include "Tests/AutomationCommon.h"
 #include "Runtime/EngineSettings/Public/EngineSettings.h"
+#include "Utils/SpatialStatics.h"
 
 namespace
 {
@@ -16,7 +17,7 @@ namespace
 
 void InitializeSpatialFlagEarlyValues()
 {
-	bEarliestFlag = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	bEarliestFlag = USpatialStatics::IsSpatialNetworkingEnabled();
 }
 
 GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
@@ -24,7 +25,7 @@ GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
 	const UGeneralProjectSettings* ProjectSettings = GetDefault<UGeneralProjectSettings>();
 
 	UE_LOG(LogTemp, Display, TEXT("%s %i"), *EarliestFlagReport, bEarliestFlag);
-	UE_LOG(LogTemp, Display, TEXT("%s %i"), *CurrentFlagReport, ProjectSettings->UsesSpatialNetworking());
+	UE_LOG(LogTemp, Display, TEXT("%s %i"), *CurrentFlagReport, USpatialStatics::IsSpatialNetworkingEnabled());
 
 	return true;
 }
@@ -89,14 +90,14 @@ struct SpatialActivationFlagTestFixture
 
 	~SpatialActivationFlagTestFixture()
 	{
-		ProjectSettings->SetUsesSpatialNetworking(bSavedFlagValue);
-		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
+		GetMutableDefault<USpatialGDKSettings>()->bSpatialNetworking = bSavedFlagValue;
+		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 	}
 
 	void ChangeSetting(bool bEnabled)
 	{
-		ProjectSettings->SetUsesSpatialNetworking(bEnabled);
-		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
+		GetMutableDefault<USpatialGDKSettings>()->bSpatialNetworking = bSavedFlagValue;
+		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 	}
 
 	FString CommandLineArgs;
