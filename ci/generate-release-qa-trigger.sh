@@ -50,7 +50,7 @@ while IFS= read -r ENGINE_VERSION; do
                 "${GDK_VERSION}-rc" \
                 "SLOW_NETWORKING_TESTS: "true"" \
                 "TEST_REPO_BRANCH: "${GDK_VERSION}-rc"" \
-                "ENGINE_VERSION: "HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc""
+                "ENGINE_VERSION: ""HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc"""
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdk-premerge with BUILD_ALL_CONFIGURATIONS=true
@@ -60,7 +60,7 @@ while IFS= read -r ENGINE_VERSION; do
                 "${GDK_VERSION}-rc" \
                 "BUILD_ALL_CONFIGURATIONS: "true"" \
                 "TEST_REPO_BRANCH: "${GDK_VERSION}-rc"" \
-                "ENGINE_VERSION: "HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc""
+                "ENGINE_VERSION: ""HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc"""
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdkexampleproject-nightly
@@ -69,7 +69,7 @@ while IFS= read -r ENGINE_VERSION; do
                 "nightly" \
                 "${GDK_VERSION}-rc" \
                 "GDK_BRANCH: "${GDK_VERSION}-rc"" \
-                "ENGINE_VERSION: "HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc""
+                "ENGINE_VERSION: ""HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc"""
 done <<< "${ENGINE_VERSIONS}"
 
 ### Commented this out as to not run supefluous large builds during testing.
