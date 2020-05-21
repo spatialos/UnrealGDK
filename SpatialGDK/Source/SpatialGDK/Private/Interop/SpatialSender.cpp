@@ -668,26 +668,14 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
 	}
 
-	// GetOrCreateSpatialActorChannel
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
-	if (!Channel)
+	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, true };
 	}
 
 	// Check if the Actor Channel is listening
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	if (RPCInfo.Type != ERPCType::NetMulticast && RPCInfo.Type != ERPCType::CrossServer)
-	{
-		if (!Channel->IsListening())
-		{
-			// If the Entity endpoint is not yet ready to receive RPCs -
-			// treat the corresponding object as unresolved and queue RPC
-			// However, it doesn't matter in case of Multicast
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::SpatialActorChannelNotListening, false };
-		}
-	}
 
 	bool bUseRPCRingBuffer = GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer();
 
@@ -697,16 +685,30 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 	else
 	{
+		// Check if the Channel is listening
+		if (RPCInfo.Type != ERPCType::NetMulticast && RPCInfo.Type != ERPCType::CrossServer)
+		{
+			if (!Channel->IsListening())
+			{
+				// If the Entity endpoint is not yet ready to receive RPCs -
+				// treat the corresponding object as unresolved and queue RPC
+				// However, it doesn't matter in case of Multicast
+				return FRPCErrorInfo{ TargetObject, Function, ERPCResult::SpatialActorChannelNotListening, false };
+			}
+		}
+
 		// Check for Authority
 		Worker_EntityId EntityId = Params.ObjectRef.Entity;
 		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 		{
+			bool bShouldDrop = true;
 			if (AActor* TargetActor = Cast<AActor>(TargetObject))
 			{
-				bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
-				return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+				bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
 			}
+
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
 		}
 
 		SendRPCInternal(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
