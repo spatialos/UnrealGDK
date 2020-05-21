@@ -2191,6 +2191,13 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("GetOrCreateSpatialActorChannel: No channel for target object but channel already present for actor. Target object: %s, actor: %s"), *TargetObject->GetPathName(), *TargetActor->GetPathName());
 			return ActorChannel;
 		}
+
+		if (TargetActor->IsPendingKillPending())
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("A SpatialActorChannel will not be created for %s because the Actor is being destroyed."), *GetNameSafe(TargetActor));
+			return nullptr;
+		}
+
 		Channel = CreateSpatialActorChannel(TargetActor);
 	}
 #if !UE_BUILD_SHIPPING
