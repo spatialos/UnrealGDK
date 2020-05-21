@@ -250,9 +250,6 @@ public:
 		if (!URL.Host.IsEmpty())
 		{
 			SetReceptionistHost(URL.Host);
-		}
-		if (URL.Port != 0)
-		{
 			SetReceptionistPort(URL.Port);
 		}
 		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
