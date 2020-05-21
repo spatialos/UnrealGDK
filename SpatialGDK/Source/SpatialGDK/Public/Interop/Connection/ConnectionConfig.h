@@ -251,6 +251,10 @@ public:
 		{
 			SetReceptionistHost(URL.Host);
 		}
+		if (URL.Port != 0)
+		{
+			ReceptionistConfig.SetReceptionistPort(URL.Port);
+		}
 		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
 			UseExternalIp = true;
@@ -258,6 +262,8 @@ public:
 	}
 
 	FString GetReceptionistHost() const { return ReceptionistHost; }
+
+	uint16 GetReceptionistPort() const { return ReceptionistPort; }
 
 	uint16 ReceptionistPort;
 
@@ -269,6 +275,8 @@ private:
 			ReceptionistHost = Host;
 		}
 	}
+
+	void SetReceptionistPort(const uint16 port) { ReceptionistPort = port; }
 
 	FString ReceptionistHost;
 };
