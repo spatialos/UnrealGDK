@@ -227,8 +227,13 @@ void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worke
 	}
 }
 
+void USpatialSender::CreateServerWorkerEntity()
+{
+	RetryServerWorkerEntityCreation(PackageMap->AllocateEntityId(), 1);
+}
+
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-void USpatialSender::CreateServerWorkerEntity(Worker_EntityId EntityId, int AttemptCounter)
+void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
@@ -300,7 +305,7 @@ void USpatialSender::CreateServerWorkerEntity(Worker_EntityId EntityId, int Atte
 		{
 			if (USpatialSender* SpatialSender = WeakSender.Get())
 			{
-				SpatialSender->CreateServerWorkerEntity(EntityId, AttemptCounter + 1);
+				SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});

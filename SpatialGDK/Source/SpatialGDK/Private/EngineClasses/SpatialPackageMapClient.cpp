@@ -2,11 +2,6 @@
 
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-#include "EngineUtils.h"
-#include "Engine/Engine.h"
-#include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
-
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetBitReader.h"
@@ -15,8 +10,12 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityPool.h"
 #include "Utils/SchemaOption.h"
+
+#include "EngineUtils.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
@@ -309,10 +308,10 @@ bool USpatialPackageMapClient::IsEntityPoolReady() const
 	return (EntityPool != nullptr) && (EntityPool->IsReady());
 }
 
-FOnEntityPoolReadyDelegate USpatialPackageMapClient::GetEntityPoolReadyDelegate()
+FEntityPoolReadyEvent& USpatialPackageMapClient::GetEntityPoolReadyDelegate()
 {
-	check(IsServer());
-	EntityPool->GetEntityPoolReadyDelegate();
+	check(bIsServer);
+	return EntityPool->GetEntityPoolReadyDelegate();
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)

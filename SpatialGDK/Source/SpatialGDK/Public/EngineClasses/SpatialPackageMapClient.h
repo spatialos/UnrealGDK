@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
-
 #include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
+#include "Utils/EntityPool.h"
+
+#include "CoreMinimal.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -60,7 +61,7 @@ public:
 
 	Worker_EntityId AllocateEntityId();
 	bool IsEntityPoolReady() const;
-	FOnEntityPoolReadyDelegate GetEntityPoolReadyDelegate();
+	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
