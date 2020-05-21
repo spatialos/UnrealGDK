@@ -96,7 +96,7 @@ mkdir -p ./logs
 USER_ID=$(id -u)
 
 # Run the C Sharp Release Tool for each candidate we want to release.
-# release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
+# Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
 while IFS= read -r ENGINE_VERSION; do
   release "UnrealEngine" \
     "dry-run/${ENGINE_VERSION}" \

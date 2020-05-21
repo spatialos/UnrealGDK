@@ -172,8 +172,8 @@ namespace ReleaseTool
                         $"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                 }
 
-                // This is used to update the commits in the unreal-engine.version file in the UnrealGDK repo.
-                // "releaseCommit.SHA1hash" is based on the format of "pullRequest.HtmlUrl" but idk how this actually works.
+                // When run against UnrealEngine, this uploads the commit hashes of the merge into release.
+                // When run against UnrealGDK, these hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
                 BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
 
                 // Delete candidate branch.
