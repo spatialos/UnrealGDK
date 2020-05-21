@@ -54,6 +54,8 @@ public:
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
+
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 
@@ -68,6 +70,8 @@ public:
 	/* End UAbstractLBStrategy Interface */
 
 private:
+	TArray<VirtualWorkerId> VirtualWorkerIds;
+
 	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayer;
 
 	TMap<VirtualWorkerId, FName> VirtualWorkerIdToLayerName;

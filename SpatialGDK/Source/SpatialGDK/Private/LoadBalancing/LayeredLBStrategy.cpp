@@ -91,6 +91,11 @@ void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualW
 	}
 }
 
+TSet<VirtualWorkerId> ULayeredLBStrategy::GetVirtualWorkerIds() const
+{
+	return TSet<VirtualWorkerId>(VirtualWorkerIds);
+}
+
 bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
@@ -210,6 +215,12 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 		}
 
 		NextWorkerIdToAssign += MinimumRequiredWorkers;
+	}
+
+	// Keep a copy of the VirtualWorkerIds. This is temporary and will be removed in the next PR.
+	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId; CurrentVirtualWorkerId++)
+	{
+		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
 	}
 }
 
