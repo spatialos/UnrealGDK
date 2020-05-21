@@ -25,7 +25,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			int32 WaitTimeMs = static_cast<int32>(FTimespan::FromSeconds(WaitTimeS).GetTotalMilliseconds());
 			if (WaitTimeMs <= 0)
 			{
-				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Clamping wait time for worker ops thread, minimum frequency is 1 millisecond."));
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Clamping wait time for worker ops thread to the minimum rate to 1ms."));
 				WaitTimeMs = 1; 
 			}
 			ThreadWaitCondition.Emplace(bCanWake, WaitTimeMs);
