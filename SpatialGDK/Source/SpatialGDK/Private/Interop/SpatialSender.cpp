@@ -235,11 +235,6 @@ void USpatialSender::CreateServerWorkerEntity()
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		EntityId = PackageMap->AllocateEntityId();
-	}
-
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
 	WriteAclMap ComponentWriteAcl;
