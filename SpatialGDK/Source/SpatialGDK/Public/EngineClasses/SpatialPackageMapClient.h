@@ -60,7 +60,7 @@ public:
 
 	Worker_EntityId AllocateEntityId();
 	bool IsEntityPoolReady() const;
-	void OnEntityPoolReady(const TFunction<void()>& Callback);
+	FOnEntityPoolReadyDelegate GetEntityPoolReadyDelegate();
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 

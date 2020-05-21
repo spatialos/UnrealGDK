@@ -309,10 +309,10 @@ bool USpatialPackageMapClient::IsEntityPoolReady() const
 	return (EntityPool != nullptr) && (EntityPool->IsReady());
 }
 
-void USpatialPackageMapClient::OnEntityPoolReady(const TFunction<void()>& Callback)
+FOnEntityPoolReadyDelegate USpatialPackageMapClient::GetEntityPoolReadyDelegate()
 {
 	check(IsServer());
-	EntityPool->OnEntityPoolReady(Callback);
+	EntityPool->GetEntityPoolReadyDelegate();
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)

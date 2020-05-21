@@ -412,16 +412,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap->Init(this, &TimerManager);
 	if (IsServer())
 	{
-		PackageMap->OnEntityPoolReady([WeakSender = TWeakObjectPtr<USpatialSender>(Sender), WeakPackageMap = TWeakObjectPtr<USpatialPackageMapClient>(PackageMap)]()
-		{
-			if (!WeakSender.IsValid() || !WeakPackageMap.IsValid())
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to bind server worker entity creation to entity pool readiness because sender or package map pointers were invalid"));
-				return;
-			}
-
-			WeakSender->CreateServerWorkerEntity(WeakPackageMap->AllocateEntityId());
-		});
+		PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
 	}
 
 	// The interest factory depends on the package map, so is created last.

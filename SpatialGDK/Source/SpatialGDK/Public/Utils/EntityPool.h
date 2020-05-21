@@ -25,6 +25,8 @@ class FTimerManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEntityPoolReadyDelegate);
+
 UCLASS()
 class SPATIALGDK_API UEntityPool : public UObject
 {
@@ -34,7 +36,7 @@ public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
 	void ReserveEntityIDs(int32 EntitiesToReserve);
 	Worker_EntityId GetNextEntityId();
-	void OnEntityPoolReady(const TFunction<void()> Callback);
+	FOnEntityPoolReadyDelegate GetEntityPoolReadyDelegate();
 
 	FORCEINLINE bool IsReady() const
 	{
@@ -58,6 +60,5 @@ private:
 
 	uint32 NextEntityRangeId;
 
-	DECLARE_DELEGATE(OnEntityPoolReadyDelegate)
 	OnEntityPoolReadyDelegate EntityPoolReadyDelegate;
 };
