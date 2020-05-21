@@ -18,8 +18,8 @@ struct FEventDeleter
 */
 class WorkerConnectionCoordinator
 {
-	TUniquePtr<FEvent, FEventDeleter>		Event;
-	int32									WaitTime;
+	TUniquePtr<FEvent, FEventDeleter> Event;
+	int32 WaitTime;
 public:
 	WorkerConnectionCoordinator(bool bCanWake, int32 InWaitMs)
 		: Event(bCanWake ? FGenericPlatformProcess::GetSynchEventFromPool() : nullptr)
