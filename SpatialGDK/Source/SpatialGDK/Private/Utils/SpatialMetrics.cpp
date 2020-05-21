@@ -67,7 +67,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 			SpatialGDK::GaugeMetric Metric;
 
 			Metric.Key = TCHAR_TO_UTF8(*Gauge.Key);
-			Metric.Value = Guage.Value.Execute();
+			Metric.Value = Gauge.Value.Execute();
 			Metrics.GaugeMetrics.Add(Metric);
 		}
 		else
