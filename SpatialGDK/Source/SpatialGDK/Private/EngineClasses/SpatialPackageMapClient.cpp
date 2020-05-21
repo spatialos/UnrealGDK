@@ -2,11 +2,6 @@
 
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-#include "EngineUtils.h"
-#include "Engine/Engine.h"
-#include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
-
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetBitReader.h"
@@ -15,8 +10,12 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityPool.h"
 #include "Utils/SchemaOption.h"
+
+#include "EngineUtils.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
@@ -75,7 +74,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
-	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
+	Worker_EntityId EntityId = AllocateEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
@@ -299,9 +298,20 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClass(UClass* UniqueOb
 	return nullptr;
 }
 
+Worker_EntityId USpatialPackageMapClient::AllocateEntityId()
+{
+	return EntityPool->GetNextEntityId();
+}
+
 bool USpatialPackageMapClient::IsEntityPoolReady() const
 {
 	return (EntityPool != nullptr) && (EntityPool->IsReady());
+}
+
+FEntityPoolReadyEvent& USpatialPackageMapClient::GetEntityPoolReadyDelegate()
+{
+	check(bIsServer);
+	return EntityPool->GetEntityPoolReadyDelegate();
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)

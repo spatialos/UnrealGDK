@@ -14,6 +14,7 @@
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
+#include "UObject/WeakObjectPtrTemplates.h"
 #include "UObject/UObjectIterator.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
@@ -297,10 +298,6 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	{
 		QueryGSMToLoadMap();
 	}
-	else
-	{
-		Sender->CreateServerWorkerEntity();
-	}
 
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
@@ -413,6 +410,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+	if (IsServer())
+	{
+		PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
+	}
 
 	// The interest factory depends on the package map, so is created last.
 	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
