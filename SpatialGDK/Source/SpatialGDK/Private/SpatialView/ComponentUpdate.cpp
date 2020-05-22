@@ -57,6 +57,7 @@ Schema_Object* ComponentUpdate::GetEvents() const
 
 Schema_ComponentUpdate* ComponentUpdate::GetUnderlying() const
 {
+	check(Update.IsValid());
 	return Update.Get();
 }
 
