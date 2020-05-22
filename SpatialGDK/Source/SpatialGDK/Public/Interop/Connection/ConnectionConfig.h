@@ -273,7 +273,7 @@ private:
 		}
 	}
 
-	void SetReceptionistPort(const uint16 port) { ReceptionistPort = port; }
+	void SetReceptionistPort(const uint16 Port) { ReceptionistPort = Port; }
 
 	FString ReceptionistHost;
 };
