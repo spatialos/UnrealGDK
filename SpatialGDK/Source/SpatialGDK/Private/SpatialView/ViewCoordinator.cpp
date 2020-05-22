@@ -42,11 +42,6 @@ void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_Compo
 	View.SendRemoveComponent(EntityId, ComponentId);
 }
 
-const TArray<CreateEntityResponse>& ViewCoordinator::GetCreateEntityResponses() const
-{
-	return Delta->GetCreateEntityResponses();
-}
-
 const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityGained() const
 {
 	return Delta->GetAuthorityGained();
@@ -80,6 +75,11 @@ const TArray<EntityComponentUpdate>& ViewCoordinator::GetUpdates() const
 const TArray<EntityComponentCompleteUpdate>& ViewCoordinator::GetCompleteUpdates() const
 {
 	return Delta->GetCompleteUpdates();
+}
+
+const TArray<Worker_Op>& ViewCoordinator::GetWorkerMessages() const
+{
+	return Delta->GetWorkerMessages();
 }
 
 TUniquePtr<AbstractOpList> ViewCoordinator::GenerateLegacyOpList() const

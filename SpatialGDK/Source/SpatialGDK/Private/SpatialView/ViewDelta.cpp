@@ -2,44 +2,19 @@
 
 #include "SpatialView/ViewDelta.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
-#include "Containers/StringConv.h"
+#include "Containers/Set.h"
 
 namespace SpatialGDK
 {
 
-void ViewDelta::AddCreateEntityResponse(CreateEntityResponse Response)
+void ViewDelta::AddOpList(TUniquePtr<AbstractOpList> OpList, TSet<EntityComponentId>& ComponentsPresent)
 {
-	CreateEntityResponses.Push(MoveTemp(Response));
-}
-
-void ViewDelta::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority)
-{
-	AuthorityChanges.SetAuthority(EntityId, ComponentId, Authority);
-}
-
-void ViewDelta::AddComponent(Worker_EntityId EntityId, ComponentData Data)
-{
-	EntityComponentChanges.AddComponent(EntityId, MoveTemp(Data));
-}
-
-void ViewDelta::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-{
-	EntityComponentChanges.RemoveComponent(EntityId, ComponentId);
-}
-
-void ViewDelta::AddComponentAsUpdate(Worker_EntityId EntityId, ComponentData Data)
-{
-	EntityComponentChanges.AddComponentAsUpdate(EntityId, MoveTemp(Data));
-}
-
-void ViewDelta::AddUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
-{
-	EntityComponentChanges.AddUpdate(EntityId, MoveTemp(Update));
-}
-
-const TArray<CreateEntityResponse>& ViewDelta::GetCreateEntityResponses() const
-{
-	return CreateEntityResponses;
+	const uint32 OpCount = OpList->GetCount();
+	for (uint32 i = 0; i < OpCount; ++i)
+	{
+		ProcessOp((*OpList)[i], ComponentsPresent);
+	}
+	OpLists.Add(MoveTemp(OpList));
 }
 
 const TArray<EntityComponentId>& ViewDelta::GetAuthorityGained() const
@@ -77,11 +52,15 @@ const TArray<EntityComponentCompleteUpdate>& ViewDelta::GetCompleteUpdates() con
 	return EntityComponentChanges.GetCompleteUpdates();
 }
 
+const TArray<Worker_Op>& ViewDelta::GetWorkerMessages() const
+{
+	return WorkerMessages;
+}
+
 TUniquePtr<AbstractOpList> ViewDelta::GenerateLegacyOpList() const
 {
 	// Todo - refactor individual op creation to an oplist type.
 	TArray<Worker_Op> OpList;
-	OpList.Reserve(CreateEntityResponses.Num());
 
 	// todo Entity added ops get created here.
 
@@ -135,25 +114,94 @@ TUniquePtr<AbstractOpList> ViewDelta::GenerateLegacyOpList() const
 
 	// The following ops do not have ordering constraints.
 
-	for (const CreateEntityResponse& Response : CreateEntityResponses)
-	{
-		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE;
-		Op.op.create_entity_response.request_id = Response.RequestId;
-		Op.op.create_entity_response.status_code = Response.StatusCode;
-		// TODO: UNR-3163 - the string is located on a stack and gets corrupted
-		Op.op.create_entity_response.message = TCHAR_TO_UTF8(Response.Message.GetCharArray().GetData());
-		Op.op.create_entity_response.entity_id = Response.EntityId;
-		OpList.Push(Op);
-	}
-
 	return MakeUnique<ViewDeltaLegacyOpList>(MoveTemp(OpList));
 }
 
 void ViewDelta::Clear()
 {
-	CreateEntityResponses.Empty();
+	WorkerMessages.Empty();
+	OpLists.Empty();
 	AuthorityChanges.Clear();
+	EntityComponentChanges.Clear();
+}
+
+void ViewDelta::ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& ComponentsPresent)
+{
+	switch (static_cast<Worker_OpType>(Op.op_type))
+	{
+	case WORKER_OP_TYPE_DISCONNECT:
+		break;
+	case WORKER_OP_TYPE_FLAG_UPDATE:
+	case WORKER_OP_TYPE_LOG_MESSAGE:
+	case WORKER_OP_TYPE_METRICS:
+		WorkerMessages.Add(Op);
+		break;
+	case WORKER_OP_TYPE_CRITICAL_SECTION:
+		// Ignore.
+		break;
+	case WORKER_OP_TYPE_ADD_ENTITY:
+		EntityPresenceChanges.AddEntity(Op.op.add_entity.entity_id);
+		break;
+	case WORKER_OP_TYPE_REMOVE_ENTITY:
+		EntityPresenceChanges.AddEntity(Op.op.remove_entity.entity_id);
+		break;
+	case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
+	case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
+	case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+	case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+		WorkerMessages.Add(Op);
+		break;
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+		HandleAddComponent(Op.op.add_component, ComponentsPresent);
+		break;
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+		HandleRemoveComponent(Op.op.remove_component, ComponentsPresent);
+		break;
+	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		HandleAuthorityChange(Op.op.authority_change);
+		break;
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+		HandleComponentUpdate(Op.op.component_update);
+		break;
+	case WORKER_OP_TYPE_COMMAND_REQUEST:
+	case WORKER_OP_TYPE_COMMAND_RESPONSE:
+		WorkerMessages.Add(Op);
+		break;
+	}
+}
+
+void ViewDelta::HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange)
+{
+	AuthorityChanges.SetAuthority(AuthorityChange.entity_id, AuthorityChange.component_id, static_cast<Worker_Authority>(AuthorityChange.authority));
+}
+
+void ViewDelta::HandleAddComponent(const Worker_AddComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent)
+{
+	const EntityComponentId Id = { Component.entity_id, Component.data.component_id };
+	if (ComponentsPresent.Contains(Id))
+	{
+		EntityComponentChanges.AddComponentAsUpdate(Id.EntityId, ComponentData::CreateCopy(Component.data.schema_type, Id.ComponentId));
+	}
+	else
+	{
+		ComponentsPresent.Add(Id);
+		EntityComponentChanges.AddComponent(Id.EntityId, ComponentData::CreateCopy(Component.data.schema_type, Id.ComponentId));
+	}
+}
+
+void ViewDelta::HandleComponentUpdate(const Worker_ComponentUpdateOp& Update)
+{
+	EntityComponentChanges.AddUpdate(Update.entity_id, ComponentUpdate::CreateCopy(Update.update.schema_type, Update.update.component_id));
+}
+
+void ViewDelta::HandleRemoveComponent(const Worker_RemoveComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent)
+{
+	const EntityComponentId Id = { Component.entity_id, Component.component_id };
+	// If the component has been added, remove it. Otherwise drop the op.
+	if (ComponentsPresent.Remove(Id))
+	{
+		EntityComponentChanges.RemoveComponent(Id.EntityId, Id.ComponentId);
+	}
 }
 
 }  // namespace SpatialGDK

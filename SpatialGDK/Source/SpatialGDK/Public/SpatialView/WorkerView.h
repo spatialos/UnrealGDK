@@ -31,14 +31,6 @@ public:
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 
 private:
-	void ProcessOp(const Worker_Op& Op);
-
-	void HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange);
-	void HandleCreateEntityResponse(const Worker_CreateEntityResponseOp& Response);
-	void HandleAddComponent(const Worker_AddComponentOp& Component);
-	void HandleComponentUpdate(const Worker_ComponentUpdateOp& Update);
-	void HandleRemoveComponent(const Worker_RemoveComponentOp& Component);
-
 	TArray<TUniquePtr<AbstractOpList>> QueuedOps;
 
 	ViewDelta Delta;

@@ -21,7 +21,6 @@ public:
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	const TArray<CreateEntityResponse>& GetCreateEntityResponses() const;
 	const TArray<EntityComponentId>& GetAuthorityGained() const;
 	const TArray<EntityComponentId>& GetAuthorityLost() const;
 	const TArray<EntityComponentId>& GetAuthorityLostTemporarily() const;
@@ -29,6 +28,8 @@ public:
 	const TArray<EntityComponentId>& GetComponentsRemoved() const;
 	const TArray<EntityComponentUpdate>& GetUpdates() const;
 	const TArray<EntityComponentCompleteUpdate>& GetCompleteUpdates() const;
+
+	const TArray<Worker_Op>& GetWorkerMessages() const;
 
 	TUniquePtr<AbstractOpList> GenerateLegacyOpList() const;
 
