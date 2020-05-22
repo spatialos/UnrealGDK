@@ -768,7 +768,7 @@ void USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function,
 	}
 	else
 	{
-		if(RPCInfo.Type == ERPCType::CrossServer)
+		if (RPCInfo.Type == ERPCType::CrossServer)
 		{
 			Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
