@@ -37,12 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
 - Renamed `enableProtocolLogging` command line parameter to `enableWorkerSDKProtocolLogging` and added `enableWorkerSDKOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerSDKLogPrefix`. This prefix is used for both protocol and op logging. Added `workerSDKLogLevel` parameter that takes "debug", "info", "warning" or "error". Added `workerSDKLogFileSize` to control the maximum file size of the worker SDK log file.
 - Change the icon of the 'Start' toolbar button based on the selected connection flow.
-- Created a new dropdown menu in the Start toolbar button. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client
+- Created a new dropdown in the Spatial toolbar. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client:
   - You can choose between `Connect to local deployment`, `Connect to cloud deployment` and `Do not connect` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
   - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
-- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the Start dropdown to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
+- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the Connection dropdown to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
 - Added new icons for the toolbar.
 
 ## Bug fixes:
