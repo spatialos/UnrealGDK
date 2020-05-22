@@ -238,14 +238,7 @@ public:
 
 	void OnWorkerTypesChanged();
 
-private:
-
-	/** Set DAT in runtime settings. */
-	void SetRuntimeUseDevelopmentAuthenticationFlow();
-	void SetRuntimeDevelopmentDeploymentToConnect();
-
 public:
-
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
 	bool bShowSpatialServiceButton;
@@ -372,10 +365,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly")
 	FString BuildSimulatedPlayerExtraArgs;
 
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	bool bUseDevelopmentAuthenticationFlow;
-
 	/** The token created using 'spatial project auth dev-auth-token' */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
@@ -425,8 +414,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	UPROPERTY(EditAnywhere, config, Category = "SpatialGDK")
-	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
+	/** Select the connection flow that should be used when starting the game with Spatial networking enabled. */
+	UPROPERTY(EditAnywhere, config, Category = "Connection Flow", meta = (DisplayName = "SpatialOS Connection Flow Type"))
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType;
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
@@ -639,7 +629,10 @@ public:
 
 	bool IsDeploymentConfigurationValid() const;
 
-	void SetRuntimeDevelopmentAuthenticationToken();
+	void SetDevelopmentAuthenticationToken(const FString& Token);
+	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
+
+	void SetExposedRuntimeIP(const FString& RuntimeIP);
 
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsAssemblyNameValid(const FString& Name);
