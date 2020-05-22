@@ -1034,7 +1034,14 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
+	bool bHasMetadata = StaticComponentView->HasComponent(EntityId, SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
+	bool bHasPosition = StaticComponentView->HasComponent(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
+	bool bHasMulticast = StaticComponentView->HasComponent(EntityId, SpatialConstants::MULTICAST_RPCS_COMPONENT_ID);
+
 	UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+
+	UE_LOG(LogSpatialReceiver, Warning, TEXT("mcs: metadata %d position %d multicast %d"), bHasMetadata, bHasPosition, bHasMulticast);
+	UE_LOG(LogSpatialReceiver, Warning, TEXT("mcs: location %s"), *Actor->GetActorLocation().ToString());
 
 	// Cleanup pending add components if any exist.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))

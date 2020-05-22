@@ -128,6 +128,8 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 		{
 			float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
 
+			UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("mcs: frequency %f - radius %f"), DistanceFrequencyPair.Frequency, CheckoutRadius);
+
 			QueryConstraint FrequencyRadiusConstraint;
 			FrequencyRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
@@ -144,6 +146,8 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 	// De dupe across frequencies.
 	for (auto& FrequencyConstraintsPair : FrequencyToConstraints)
 	{
+		UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("mcs: frequency %f - count %d"), FrequencyConstraintsPair.Key, FrequencyConstraintsPair.Value.Num());
+
 		TSchemaOption<float> SpatialFrequency = FrequencyConstraintsPair.Key == FullFrequencyHz ? FullFrequencyOptional : TSchemaOption<float>(FrequencyConstraintsPair.Key);
 		if (FrequencyConstraintsPair.Value.Num() == 1)
 		{
