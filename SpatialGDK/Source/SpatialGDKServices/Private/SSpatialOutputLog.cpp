@@ -22,7 +22,8 @@ namespace
 	const FString LaunchLogFilename(TEXT("launch.log"));
 	const FString RuntimeLogFilename(TEXT("runtime.log"));
 	const float PollTimeInterval(0.05f);
-	const float DirChangeRetryInterval(1.5f);
+	const float DirChangeRetryInterval(1.0f);
+	const uint32 LogOpenRetries(10);
 }
 
 void FArchiveLogFileReader::UpdateFileSize()
@@ -46,7 +47,7 @@ void FSpatialLogFileReader::ResetLogDirectory(const FString& LogDirectory)
 	CloseLogReader();
 	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
 	{
-		InternalResetDirectory(LogDirectory, 5 /* TriesRemaining */);
+		InternalResetDirectory(LogDirectory, LogOpenRetries);
 	});
 }
 
