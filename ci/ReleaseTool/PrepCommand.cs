@@ -303,6 +303,7 @@ namespace ReleaseTool
 
 #### Next Steps
 - [ ] **Release Sheriff** - Delegate the tasks below.
+- [ ] **Release Sheriff** - Once the Build & upload all UnrealEngine release candidates step completes, click the [run all tests](https://buildkite.com/improbable/unrealgdk-release) button.
 - [ ] **Tech writers** - Review and translate [CHANGELOG.md](https://github.com/spatialos/UnrealGDK/blob/{candidateBranch}/CHANGELOG.md). Merge the translation and any edits into `{candidateBranch}`. 
 - [ ] **QA** - Create and complete one [component release](https://improbabletest.testrail.io/index.php?/suites/view/72) test run per Unreal Engine version you're releasing.
 - [ ] **Release Sheriff** - If any blocking defects are discovered, merge fixes into release candidate branches.
