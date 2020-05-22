@@ -686,9 +686,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, true };
 	}
 
-	// Check if the Actor Channel is listening
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
 	bool bUseRPCRingBuffer = GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer();
 
 	if (RPCInfo.Type != ERPCType::CrossServer && bUseRPCRingBuffer && RPCService != nullptr)
