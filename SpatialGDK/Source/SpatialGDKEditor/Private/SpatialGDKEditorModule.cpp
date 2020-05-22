@@ -79,6 +79,7 @@ bool FSpatialGDKEditorModule::CanExecutePlay() const
 {
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
+
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 {
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
