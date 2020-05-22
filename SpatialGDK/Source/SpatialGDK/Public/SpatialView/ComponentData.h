@@ -13,7 +13,13 @@ class ComponentUpdate;
 
 struct ComponentDataDeleter
 {
-	void operator()(Schema_ComponentData* ComponentData) const noexcept;
+	void operator()(Schema_ComponentData* ComponentData) const noexcept
+	{
+		if (ComponentData)
+		{
+			Schema_DestroyComponentData(ComponentData);
+		}
+	}
 };
 
 using OwningComponentDataPtr = TUniquePtr<Schema_ComponentData, ComponentDataDeleter>;
@@ -58,4 +64,5 @@ private:
 	Worker_ComponentId ComponentId;
 	OwningComponentDataPtr Data;
 };
+
 } // namespace SpatialGDK

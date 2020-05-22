@@ -5,15 +5,6 @@
 namespace SpatialGDK
 {
 
-void ComponentUpdateDeleter::operator()(Schema_ComponentUpdate* ComponentUpdate) const noexcept
-{
-	if (ComponentUpdate == nullptr)
-	{
-		return;
-	}
-	Schema_DestroyComponentUpdate(ComponentUpdate);
-}
-
 ComponentUpdate::ComponentUpdate(Worker_ComponentId Id)
 	: ComponentId(Id)
 	, Update(Schema_CreateComponentUpdate())
@@ -33,11 +24,13 @@ ComponentUpdate ComponentUpdate::CreateCopy(const Schema_ComponentUpdate* Update
 
 ComponentUpdate ComponentUpdate::DeepCopy() const
 {
+	check(Update.IsValid());
 	return CreateCopy(Update.Get(), ComponentId);
 }
 
 Schema_ComponentUpdate* ComponentUpdate::Release() &&
 {
+	check(Update.IsValid());
 	return Update.Release();
 }
 

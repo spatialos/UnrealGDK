@@ -6,16 +6,6 @@
 namespace SpatialGDK
 {
 
-void ComponentDataDeleter::operator()(Schema_ComponentData* ComponentData) const noexcept
-{
-	if (ComponentData == nullptr)
-	{
-		return;
-	}
-
-	Schema_DestroyComponentData(ComponentData);
-}
-
 ComponentData::ComponentData(Worker_ComponentId Id)
 	: ComponentId(Id)
 	, Data(Schema_CreateComponentData())
@@ -35,11 +25,13 @@ ComponentData ComponentData::CreateCopy(const Schema_ComponentData* Data, Worker
 
 ComponentData ComponentData::DeepCopy() const
 {
+	check(Data.IsValid());
 	return CreateCopy(Data.Get(), ComponentId);
 }
 
 Schema_ComponentData* ComponentData::Release() &&
 {
+	check(Data.IsValid());
 	return Data.Release();
 }
 
