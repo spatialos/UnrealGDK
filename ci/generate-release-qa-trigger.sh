@@ -64,13 +64,13 @@ while IFS= read -r ENGINE_VERSION; do
 done <<< "${ENGINE_VERSIONS}"
 
 ### unrealgdkexampleproject-nightly
-while IFS= read -r ENGINE_VERSION; do
+### Only runs against the primary Engine version because Example Project doesn't support legacy Engine versions.
+FIRST_VERSION=$(echo "${ENGINE_VERSIONS}" | sed -n '1p')
     triggerTest "unrealgdkexampleproject" \
                 "nightly" \
                 "${GDK_VERSION}-rc" \
                 "GDK_BRANCH: "${GDK_VERSION}-rc"" \
-                "ENGINE_VERSION: ""HEAD ${ENGINE_VERSION}-${GDK_VERSION}-rc"""
-done <<< "${ENGINE_VERSIONS}"
+                "ENGINE_VERSION: ""HEAD ${FIRST_VERSION}-${GDK_VERSION}-rc"""
 
 ### Commented this out as to not run supefluous large builds during testing.
 ### TODO: uncomment this
