@@ -155,7 +155,7 @@ private:
 
 	FString GetOptionalExposedRuntimeIP() const;
 
-	// This should be called whenever the settings determining whether a local deployment should be automatically started has changed.
+	// This should be called whenever the settings determining whether a local deployment should be automatically started have changed.
 	void OnAutoStartLocalDeploymentChanged();
 
 	TSharedPtr<FUICommandList> PluginCommands;
