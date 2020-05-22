@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Open Deployment Page` button to the `Cloud Deployment` window.
 - The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
 - When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
+- Renamed `enableProtocolLogging` command line parameter to `enableWorkerSDKProtocolLogging` and added `enableWorkerSDKOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerSDKLogPrefix`. This prefix is used for both protocol and op logging. Added `workerSDKLogLevel` parameter that takes "debug", "info", "warning" or "error". Added `workerSDKLogFileSize` to control the maximum file size of the worker SDK log file.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
