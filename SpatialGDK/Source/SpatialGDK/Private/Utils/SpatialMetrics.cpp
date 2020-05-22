@@ -27,6 +27,10 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
+
+	UserSuppliedMetric Delegate;
+	Delegate.BindUObject(this, &USpatialMetrics::GetAverageFPS);
+	SetCustomMetric(SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS, Delegate);
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
@@ -51,18 +55,35 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 		WorkerLoad = CalculateLoad();
 	}
 
-	SpatialGDK::GaugeMetric DynamicFPSGauge;
-	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
-	DynamicFPSGauge.Value = AverageFPS;
+	SpatialGDK::SpatialMetrics Metrics;
+	Metrics.Load = WorkerLoad;
+	
+	// User supplied metrics
+	TArray<FString> UnboundMetrics;
+	for (const TPair<FString, UserSuppliedMetric>& Gauge : UserSuppliedMetrics)
+	{
+		if (Gauge.Value.IsBound())
+		{
+			SpatialGDK::GaugeMetric Metric;
 
-	SpatialGDK::SpatialMetrics DynamicFPSMetrics;
-	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
-	DynamicFPSMetrics.Load = WorkerLoad;
+			Metric.Key = TCHAR_TO_UTF8(*Gauge.Key);
+			Metric.Value = Gauge.Value.Execute();
+			Metrics.GaugeMetrics.Add(Metric);
+		}
+		else
+		{
+			UnboundMetrics.Add(Gauge.Key);
+		}
+	}
+	for (const FString& KeyToRemove : UnboundMetrics)
+	{
+		UserSuppliedMetrics.Remove(KeyToRemove);
+	}
 
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	Connection->SendMetrics(DynamicFPSMetrics);
+	Connection->SendMetrics(Metrics);
 }
 
 // Load defined as performance relative to target frame time or just frame time based on config value.
@@ -322,5 +343,27 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 
 			WorkerMetricsRecieved.Broadcast(WorkerMetrics);
 		}
+	}
+}
+
+void USpatialMetrics::SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate)
+{
+	UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Adding custom metric %s (%s)"), *Metric, Delegate.GetUObject() ? *GetNameSafe(Delegate.GetUObject()) : TEXT("Not attached to UObject"));
+	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
+	{
+		*ExistingMetric = Delegate;
+	}
+	else
+	{
+		UserSuppliedMetrics.Add(Metric, Delegate);
+	}
+}
+
+void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
+{
+	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
+	{
+		UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Removing custom metric %s (%s)"), *Metric, ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
+		UserSuppliedMetrics.Remove(Metric);
 	}
 }
