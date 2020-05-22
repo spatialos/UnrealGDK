@@ -64,6 +64,9 @@ namespace ReleaseTool
             [Option("engine-versions", HelpText = "The set of engine versions to release against", Required = false)]
             public string EngineVersions { get; set; }
 
+            [Option("engine-version", HelpText = "The set of engine version to release against", Required = false)]
+            public string EngineVersion { get; set; }
+
             public string GitHubTokenFile { get; set; }
 
             public string GitHubToken { get; set; }
@@ -318,8 +321,7 @@ Happy developing,
 ";
                     break;
                 case "UnrealEngine":
-                // TODO: this name must be "{options.EngineVersion}-{options.Version}" but I don't think we've got EngineVersion in this context
-                    name = $"{options.Version}";
+                    name = $"{options.EngineVersion}-{options.Version}";
                     releaseBody =
 $@"Unreal GDK version {options.Version} is go!
 

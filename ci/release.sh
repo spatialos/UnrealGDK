@@ -29,6 +29,7 @@ release () {
         --pull-request-url="${PR_URL}" \
         --github-organization="${GITHUB_ORG}" \
         --engine-versions="${ENGINE_VERSIONS}"
+        --engine-versions="${ENGINE_VERSION}"
 }
 
 set -e -u -o pipefail
