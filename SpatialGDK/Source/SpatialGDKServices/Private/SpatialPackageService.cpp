@@ -39,7 +39,7 @@ FString FSpatialPackageDescriptor::ToString() const
 	return FString::Printf(TEXT("%s %s %s"), *Type, *Name, *Version);
 }
 
-FString FSpatialPackageDescriptor::GetExecutable() const
+FString FSpatialPackageDescriptor::GetExecutablePath() const
 {
 	return FString::Printf(TEXT("%s/%s"), *GetExecutableDir(), *GetExecutableName());
 }
@@ -65,7 +65,7 @@ FSpatialPackageDescriptor FSpatialPackageService::MakeRuntimeDescriptor(const FS
 
 void FSpatialPackageService::GetPackage(const FSpatialPackageDescriptor& Package, TFunction<void(bool)> Callback)
 {
-	if (!IFileManager::Get().FileExists(*Package.GetExecutable()))
+	if (!IFileManager::Get().FileExists(*Package.GetExecutablePath()))
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [Package, Callback]
 		{

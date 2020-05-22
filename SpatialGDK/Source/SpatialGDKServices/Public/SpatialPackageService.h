@@ -18,7 +18,7 @@ struct FSpatialPackageDescriptor
 	FString ToString() const;
 
 	// ExecutableDir + ExecutableName
-	FString GetExecutable() const;
+	FString GetExecutablePath() const;
 	// Directory that contains the package executable
 	FString GetExecutableDir() const;
 	// Name of the executable
