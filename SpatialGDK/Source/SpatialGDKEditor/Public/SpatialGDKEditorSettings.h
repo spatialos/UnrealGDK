@@ -448,10 +448,7 @@ public:
 			: SpatialOSSnapshotToLoad;
 	}
 
-	FORCEINLINE FString GetCookAndGenerateSchemaTargetPlatform() const
-	{
-		return CookAndGeneratePlatform;
-	}
+	FString GetCookAndGenerateSchemaTargetPlatform() const;
 
 	FORCEINLINE FString GetCookAndGenerateSchemaAdditionalArgs() const
 	{
