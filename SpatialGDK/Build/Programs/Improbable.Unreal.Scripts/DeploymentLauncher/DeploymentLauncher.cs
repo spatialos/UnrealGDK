@@ -169,19 +169,22 @@ namespace Improbable
 
                 Console.WriteLine("Successfully created the main deployment");
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simDeploymentCluster, simNumPlayers);
-
-                // Wait for both deployments to be created.
-                Console.WriteLine("Waiting for simulated player deployment to be ready...");
-
-                var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
-                if (simPlayerDeployment == null)
+                if (launchSimPlayerDeployment)
                 {
-                    Console.WriteLine("Failed to create the simulated player deployment");
-                    return 1;
-                }
+                    var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simDeploymentCluster, simNumPlayers);
 
-                Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+                    // Wait for both deployments to be created.
+                    Console.WriteLine("Waiting for simulated player deployment to be ready...");
+
+                    var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                    if (simPlayerDeployment == null)
+                    {
+                        Console.WriteLine("Failed to create the simulated player deployment");
+                        return 1;
+                    }
+
+                    Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+                }
             }
             catch (Grpc.Core.RpcException e)
             {
