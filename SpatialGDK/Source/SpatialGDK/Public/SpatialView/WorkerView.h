@@ -28,7 +28,14 @@ public:
 	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
+	void SendDeleteEntityRequest(DeleteEntityRequest Request);
+	void SendEntityQueryRequest(EntityQueryRequest Request);
+	void SendEntityCommandRequest(EntityCommandRequest Request);
+	void SendEntityCommandResponse(EntityCommandResponse Response);
+	void SendEntityCommandFailure(EntityCommandFailure Failure);
+	void SendMetrics(SpatialMetrics Metrics);
 
 private:
 	TArray<TUniquePtr<AbstractOpList>> QueuedOps;

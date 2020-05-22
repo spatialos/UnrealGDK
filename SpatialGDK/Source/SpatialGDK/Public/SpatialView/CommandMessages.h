@@ -24,7 +24,6 @@ struct CreateEntityRequest
 {
 	Worker_RequestId RequestId;
 	TArray<ComponentData> EntityComponents;
-	uint32 ComponentCount;
 	TOptional<Worker_EntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
 };

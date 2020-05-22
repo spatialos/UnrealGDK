@@ -51,9 +51,44 @@ void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentI
 	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);
 }
 
+void WorkerView::SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request)
+{
+	LocalChanges->ReserveEntityIdsRequests.Push(MoveTemp(Request));
+}
+
 void WorkerView::SendCreateEntityRequest(CreateEntityRequest Request)
 {
 	LocalChanges->CreateEntityRequests.Push(MoveTemp(Request));
+}
+
+void WorkerView::SendDeleteEntityRequest(DeleteEntityRequest Request)
+{
+	LocalChanges->DeleteEntityRequests.Push(MoveTemp(Request));
+}
+
+void WorkerView::SendEntityQueryRequest(EntityQueryRequest Request)
+{
+	LocalChanges->EntityQueryRequests.Push(MoveTemp(Request));
+}
+
+void WorkerView::SendEntityCommandRequest(EntityCommandRequest Request)
+{
+	LocalChanges->EntityCommandRequests.Push(MoveTemp(Request));
+}
+
+void WorkerView::SendEntityCommandResponse(EntityCommandResponse Response)
+{
+	LocalChanges->EntityCommandResponses.Push(MoveTemp(Response));
+}
+
+void WorkerView::SendEntityCommandFailure(EntityCommandFailure Failure)
+{
+	LocalChanges->EntityCommandFailures.Push(MoveTemp(Failure));
+}
+
+void WorkerView::SendMetrics(SpatialMetrics Metrics)
+{
+	LocalChanges->Metrics.Add(MoveTemp(Metrics));
 }
 
 }  // namespace SpatialGDK

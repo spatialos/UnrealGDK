@@ -20,6 +20,16 @@ public:
 	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis);
+	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
+		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis);
+	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis);
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
+		TOptional<uint32> TimeoutMillis);
+	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response);
+	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message);
+	void SendMetrics(SpatialMetrics Metrics);
 
 	const TArray<EntityComponentId>& GetAuthorityGained() const;
 	const TArray<EntityComponentId>& GetAuthorityLost() const;
@@ -37,6 +47,7 @@ private:
 	const ViewDelta* Delta;
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
+	Worker_RequestId NextRequestId;
 };
 
 } // namespace SpatialGDK
