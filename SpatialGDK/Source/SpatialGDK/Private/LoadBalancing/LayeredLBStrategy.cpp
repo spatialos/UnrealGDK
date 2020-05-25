@@ -32,7 +32,7 @@ void ULayeredLBStrategy::Init()
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	check(Settings->bEnableUnrealLoadBalancer);
+	check(Settings->bEnableMultiWorker);
 
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
@@ -44,31 +44,25 @@ void ULayeredLBStrategy::Init()
 		return;
 	}
 
-	// This will be uncommented after the next PR.
 	// For each Layer, add a LB Strategy for that layer.
-// 			TMap<FName, FLBLayerInfo> WorkerLBLayers = WorldSettings->WorkerLBLayers;
-// 
-// 			for (const TPair<FName, FLayerInfo>& Layer : Settings->WorkerLayers)
-// 			{
-// 				FName LayerName = Layer.Key;
-// 
-// 				// Look through the WorldSettings to find the LBStrategy type for this layer.
-// 				if (!WorkerLBLayers.Contains(LayerName))
-// 				{
-// 					UE_LOG(LogLayeredLBStrategy, Error, TEXT("Layer %s does not have a defined LBStrategy in the WorldSettings. It will not be simulated."), *(LayerName.ToString()));
-// 					continue;
-// 				}
-// 
-// 				UAbstractLBStrategy* LBStrategy = NewObject<UAbstractLBStrategy>(this, WorkerLBLayers[LayerName].LoadBalanceStrategy);
-// 				AddStrategyForLayer(LayerName, LBStrategy);
-// 
-// 				for (const TSoftClassPtr<AActor>& ClassPtr : Layer.Value.ActorClasses)
-// 				{
-// 					ClassPathToLayer.Add(ClassPtr, LayerName);
-// 				}
-// 			}
+	for (const TPair<FName, FLayerInfo>& Layer : WorldSettings->WorkerLayers)
+	{
+		const FName& LayerName = Layer.Key;
+		const FLayerInfo& LayerInfo = Layer.Value;
+
+		UAbstractLBStrategy* LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		AddStrategyForLayer(LayerName, LBStrategy);
+
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
+		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
+		{
+			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+			ClassPathToLayer.Add(ClassPtr, LayerName);
+		}
+	}
 
 	// Finally, add the default layer.
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
 	if (WorldSettings->LoadBalanceStrategy == nullptr)
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));

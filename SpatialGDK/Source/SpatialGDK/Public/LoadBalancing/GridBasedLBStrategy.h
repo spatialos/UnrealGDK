@@ -38,6 +38,7 @@ public:
 /* UAbstractLBStrategy Interface */
 	virtual void Init() override;
 
+	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
@@ -76,6 +77,7 @@ private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
+	uint32 LocalCellId;
 
 	static bool IsInside(const FBox2D& Box, const FVector2D& Location);
 };

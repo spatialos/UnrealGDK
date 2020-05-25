@@ -80,7 +80,8 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
-    return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
+	return IsSpatialNetworkingEnabled()
+		&& GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 }
 
 bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)

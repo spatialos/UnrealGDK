@@ -291,7 +291,7 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 	}
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bEnableUnrealLoadBalancer)
+	if (Settings->bEnableMultiWorker)
 	{
 		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
 		if (ensure(Strategy != nullptr))

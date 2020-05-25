@@ -6,6 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/WorldSettings.h"
+#include "Utils/LayerInfo.h"
 
 #include "SpatialWorldSettings.generated.h"
 
@@ -24,7 +25,11 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
-	/** Layer load balancing  configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker")
-	TMap<FName, FLBLayerInfo> WorkerLBLayers;
+	/** Enable running different server worker types to split the simulation. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
+	bool bEnableMultiWorker;
+
+	/** Layer configuration. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	TMap<FName, FLayerInfo> WorkerLayers;
 };

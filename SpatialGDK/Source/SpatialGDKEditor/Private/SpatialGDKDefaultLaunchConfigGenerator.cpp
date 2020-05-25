@@ -122,7 +122,8 @@ void SetLevelEditorPlaySettingsWorkerTypes(const TMap<FName, FWorkerTypeLaunchSe
 		{
 			if (Worker.Value.WorkerLoadBalancing != nullptr)
 			{
-				PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, Worker.Value.WorkerLoadBalancing->GetNumberOfWorkersForPIE());
+				//PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, Worker.Value.WorkerLoadBalancing->GetNumberOfWorkersForPIE());
+				PlayInSettings->WorkerTypesToLaunch.Add(Worker.Key, 5);
 			}
 		}
 		else
@@ -175,7 +176,7 @@ bool FillWorkerConfigurationFromCurrentMap(TMap<FName, FWorkerTypeLaunchSection>
 	USingleWorkerRuntimeStrategy* DefaultStrategy = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
 	UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = DefaultStrategy;
 
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+	if (SpatialGDKSettings->bEnableMultiWorker)
 	{
 		GetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, OutWorldDimensions);
 	}
@@ -309,7 +310,8 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 		return false;
 	}
 
-	if (SpatialGDKRuntimeSettings->bEnableOffloading)
+	// TODO(harkness): Rethink this
+	if (SpatialGDKRuntimeSettings->bEnableMultiWorker)
 	{
 		for (const TPair<FName, FActorGroupInfo>& ActorGroup : SpatialGDKRuntimeSettings->ActorGroups)
 		{

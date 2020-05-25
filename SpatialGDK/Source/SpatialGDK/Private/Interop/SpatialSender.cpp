@@ -720,15 +720,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 {
 	bool WillHaveAuthorityOverActor = true;
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
-	{
-		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
-		{
-			WillHaveAuthorityOverActor = false;
-		}
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
 		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{

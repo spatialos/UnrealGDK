@@ -8,7 +8,7 @@ void SpatialActorGroupManager::Init()
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
 		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
-		if (Settings->bEnableOffloading)
+		if (Settings->bEnableMultiWorker)
 		{
 			for (const TPair<FName, FActorGroupInfo>& ActorGroup : Settings->ActorGroups)
 			{

@@ -74,7 +74,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	const FName AclAuthoritativeWorkerType = SpatialSettings->bEnableOffloading ?
+	const FName AclAuthoritativeWorkerType = SpatialSettings->bEnableMultiWorker ?
 		ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor)) :
 		Info.WorkerType;
 
@@ -82,7 +82,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Load Balancer Attribute if we are using the load balancer.
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
 		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
@@ -147,7 +147,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		}
 	}
 
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		const WorkerRequirementSet ACLRequirementSet = { SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName) };
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
@@ -254,7 +254,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
 	}
 
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 	}
@@ -262,7 +262,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		if (SpatialSettings->bEnableUnrealLoadBalancer)
+		if (SpatialSettings->bEnableMultiWorker)
 		{
 			check(NetDriver->VirtualWorkerTranslator != nullptr);
 
@@ -450,7 +450,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	// Add Zoning Attribute if we are using the load balancer.
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
 		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));

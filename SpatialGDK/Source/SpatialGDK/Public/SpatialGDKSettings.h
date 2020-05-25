@@ -7,7 +7,6 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "Utils/LayerInfo.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
@@ -223,21 +222,13 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerType DefaultWorkerType;
 
-	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	bool bEnableOffloading;
-
 	/** Actor Group configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableMultiWorker"))
 	TMap<FName, FActorGroupInfo> ActorGroups;
 
 	/** Available server worker types. */
 	UPROPERTY(EditAnywhere, Config, Category = "Workers")
 	TSet<FName> ServerWorkerTypes;
-
-	/** Layer configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableOffloading"))
-	TMap<FName, FLayerInfo> WorkerLayers;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
@@ -247,11 +238,11 @@ public:
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-	bool bEnableUnrealLoadBalancer;
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
+	bool bEnableMultiWorker;
 
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableMultiWorker"))
 	FWorkerType LoadBalancingWorkerType;
 
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
