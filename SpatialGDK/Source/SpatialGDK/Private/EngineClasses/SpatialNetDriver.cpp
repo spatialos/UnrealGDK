@@ -436,14 +436,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
+		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->DefaultLayerLockingPolicy);
 		}
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 	}

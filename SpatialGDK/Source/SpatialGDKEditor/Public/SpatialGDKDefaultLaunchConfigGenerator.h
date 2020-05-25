@@ -15,6 +15,8 @@ struct FSpatialLaunchConfigDescription;
 /** Set WorkerTypesToLaunch in level editor play settings. */
 void SPATIALGDKEDITOR_API SetLevelEditorPlaySettingsWorkerTypes(const TMap<FName, FWorkerTypeLaunchSection>& InWorkers);
 
+uint32 SPATIALGDKEDITOR_API GetWorkerCountFromWorldSettings(const UWorld& World);
+
 bool SPATIALGDKEDITOR_API GetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstractRuntimeLoadBalancingStrategy*& OutStrategy, FIntPoint& OutWorldDimension);
 
 bool SPATIALGDKEDITOR_API FillWorkerConfigurationFromCurrentMap(TMap<FName, FWorkerTypeLaunchSection>& OutWorkers, FIntPoint& OutWorldDimensions);

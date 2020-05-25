@@ -19,15 +19,15 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
-
 	/** Enable running different server worker types to split the simulation. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	TSubclassOf<UAbstractLockingPolicy> DefaultLayerLockingPolicy;
 
 	/** Layer configuration. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))

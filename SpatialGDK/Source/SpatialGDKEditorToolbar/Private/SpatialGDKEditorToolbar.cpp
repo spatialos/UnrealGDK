@@ -757,6 +757,10 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			Conf.WorkerLoadBalancing = LoadBalancingStrat;
 			// Force manual connection to true as this is the config for PIE.
 			Conf.bManualWorkerConnectionOnly = true;
+			if (Conf.bAutoNumEditorInstances)
+			{
+				Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+			}
 			WorkersMap.Add(WorkerType.Key, Conf);
 		}
 
