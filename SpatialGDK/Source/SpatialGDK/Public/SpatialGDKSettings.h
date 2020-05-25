@@ -350,10 +350,5 @@ public:
 	bool bUseSpatialView;
 
 public:
-	// UI Hidden settings passed through from SpatialGDKEditorSettings
-	bool bUseDevelopmentAuthenticationFlow;
-	FString DevelopmentAuthenticationToken;
-	FString DevelopmentDeploymentToConnect;
-
 	mutable FOnWorkerTypesChanged OnWorkerTypesChangedDelegate;
 };

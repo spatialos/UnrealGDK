@@ -257,6 +257,7 @@ const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
 const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
+const FString Ipv4Pattern = TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {
