@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Tests/TestDefinitions.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
@@ -118,7 +118,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_Localhost)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("");
-	const FURL URL(nullptr, TEXT("127.0.0.1"), TRAVEL_Absolute);
+	const FURL URL(nullptr, TEXT("127.0.0.1:777"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
@@ -127,6 +127,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_Localhost)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 777);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -136,7 +137,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalHost)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("");
-	const FURL URL(nullptr, TEXT("10.20.30.40"), TRAVEL_Absolute);
+	const FURL URL(nullptr, TEXT("10.20.30.40:777"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
@@ -145,6 +146,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalHost)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "10.20.30.40");
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 777);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -154,7 +156,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridge)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("");
-	const FURL URL(nullptr, TEXT("127.0.0.1?useExternalIpForBridge"), TRAVEL_Absolute);
+	const FURL URL(nullptr, TEXT("127.0.0.1:777?useExternalIpForBridge"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
@@ -163,6 +165,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridge)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 777);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -181,6 +184,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridgeNoHost)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), SpatialConstants::DEFAULT_PORT);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -240,7 +244,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHost)
 	TestEqual("Success", bSuccess, true);
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "10.20.30.40");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -259,7 +263,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHostLocal)
 	TestEqual("Success", bSuccess, true);
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -278,7 +282,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_ReceptionistHostLocalEx
 	TestEqual("Success", bSuccess, true);
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -297,7 +301,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URL)
 	TestEqual("Success", bSuccess, true);
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, false);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "10.20.30.40");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;
@@ -315,7 +319,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URLAndExternalBridge)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.ReceptionistPort, 666);
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), 666);
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;

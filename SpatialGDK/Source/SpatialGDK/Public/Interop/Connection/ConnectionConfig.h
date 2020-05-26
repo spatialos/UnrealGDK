@@ -220,7 +220,8 @@ public:
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		// Get command line options first since the URL handling will modify the CommandLine string
-		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+		uint16 Port;
+		bool bReceptionistPortParsed = FParse::Value(CommandLine, TEXT("receptionistPort"), Port);
 		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
 
 		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
@@ -240,6 +241,12 @@ public:
 		else
 		{
 			SetReceptionistHost(Host);
+		}
+		// If the ReceptionistPort was parsed in the command-line arguments, it would be overwritten by the URL setup above.
+		// So we restore/set it here.
+		if (bReceptionistPortParsed)
+		{
+			SetReceptionistPort(Port);
 		}
 
 		return true;
@@ -262,8 +269,6 @@ public:
 
 	uint16 GetReceptionistPort() const { return ReceptionistPort; }
 
-	uint16 ReceptionistPort;
-
 private:
 	void SetReceptionistHost(const FString& Host)
 	{
@@ -276,4 +281,6 @@ private:
 	void SetReceptionistPort(const uint16 Port) { ReceptionistPort = Port; }
 
 	FString ReceptionistHost;
+
+	uint16 ReceptionistPort;
 };
