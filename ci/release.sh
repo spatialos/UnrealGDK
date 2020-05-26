@@ -13,7 +13,7 @@ release () {
   local GITHUB_ORG="${6}"
   local ENGINE_VERSIONS="${7:-}"
 
-  echo "--- Preparing ${REPO}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
+  echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
 
   docker run \
     -v "${BUILDKITE_ARGS[@]}" \
