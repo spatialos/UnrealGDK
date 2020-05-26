@@ -403,7 +403,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
 	bool bBuildClientWorker;
 
-
 	/** Whether to start Local Server Worker when connecting to cloud deployment*/
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Start Local Server Worker"))
 	bool bStartLocalServerWorker;
