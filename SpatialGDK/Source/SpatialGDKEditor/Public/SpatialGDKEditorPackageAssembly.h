@@ -30,6 +30,18 @@ private:
 		UPLOAD_ASSEMBLY,
 	};
 
+	enum class EPackageAssemblyStatus
+	{
+		NONE = 0,
+		SUCCESS,
+		CANCELED,
+		UNKOWN_ERROR,
+		BAD_PROJECT_NAME,
+		ASSEMBLY_EXISTS,
+	};
+
+	EPackageAssemblyStatus Status = EPackageAssemblyStatus::NONE;
+
 	TQueue<EPackageAssemblyStep> Steps;
 
 	TSharedPtr<FMonitoredProcess> PackageAssemblyTask;
