@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "Utils/SpatialActorGroupManager.h"
-
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
@@ -12,8 +10,6 @@
 #include "SpatialGDKSettings.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
-
-DECLARE_MULTICAST_DELEGATE(FOnWorkerTypesChanged)
 
 class ASpatialDebugger;
 
@@ -218,18 +214,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	FWorkerType DefaultWorkerType;
-
-	/** Actor Group configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableMultiWorker"))
-	TMap<FName, FActorGroupInfo> ActorGroups;
-
-	/** Available server worker types. */
-	UPROPERTY(EditAnywhere, Config, Category = "Workers")
-	TSet<FName> ServerWorkerTypes;
-
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
@@ -240,10 +224,6 @@ public:
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;
-
-	/** EXPERIMENTAL: Worker type to assign for load balancing. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableMultiWorker"))
-	FWorkerType LoadBalancingWorkerType;
 
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
@@ -341,5 +321,8 @@ public:
 	bool bUseSpatialView;
 
 public:
-	mutable FOnWorkerTypesChanged OnWorkerTypesChangedDelegate;
+	// UI Hidden settings passed through from SpatialGDKEditorSettings
+	bool bUseDevelopmentAuthenticationFlow;
+	FString DevelopmentAuthenticationToken;
+	FString DevelopmentDeploymentToConnect;
 };

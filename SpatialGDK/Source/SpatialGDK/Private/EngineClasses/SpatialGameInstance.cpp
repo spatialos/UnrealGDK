@@ -205,9 +205,6 @@ void USpatialGameInstance::Init()
 	{
 		FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 	}
-
-	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-	ActorGroupManager->Init();
 }
 
 void USpatialGameInstance::HandleOnConnected()

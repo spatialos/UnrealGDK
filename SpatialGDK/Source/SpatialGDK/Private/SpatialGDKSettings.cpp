@@ -59,10 +59,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableResultTypes(true)
 	, ServicesRegion(EServicesRegion::Default)
-	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
-	, bEnableMultiWorker(false)
-	, ServerWorkerTypes( { SpatialConstants::DefaultServerWorkerType } )
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, bEnableMultiWorker(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -104,13 +102,6 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 	
-	
-
-#if WITH_EDITOR
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->bEnableOffloading = bEnableMultiWorker;
-	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
-#endif
 }
 
 #if WITH_EDITOR
@@ -125,19 +116,12 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	{
 		GetMutableDefault<ULevelEditorPlaySettings>()->bEnableOffloading = bEnableMultiWorker;
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultWorkerType))
-	{
-		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
 				"Failing to do will result in unintended behavior or crashes!"))));
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes))
-	{
-		OnWorkerTypesChangedDelegate.Broadcast();
 	}
 }
 

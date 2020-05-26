@@ -19,18 +19,14 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 {
 	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
-
-	check(InActorGroupManager != nullptr);
-	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
@@ -239,18 +235,6 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
-
-	if (UClass* ActorClass = Info->Class.Get())
-	{
-		if (ActorClass->IsChildOf<AActor>())
-		{
-			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
-			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
-
-			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
-				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
-		}
-	}
 }
 
 void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
@@ -291,7 +275,14 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 	}
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bEnableMultiWorker)
+	const ASpatialWorldSettings* WorldSettings = GetDefault<ASpatialWorldSettings>();
+
+	if (WorldSettings == nullptr)
+	{
+		return false;
+	}
+
+	if (WorldSettings->bEnableMultiWorker)
 	{
 		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
 		if (ensure(Strategy != nullptr))

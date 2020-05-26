@@ -77,17 +77,14 @@ bool FStartDeployment::Update()
 
 			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			TMap<FName, FWorkerTypeLaunchSection> WorkerConfigMap;
-
 			FWorkerTypeLaunchSection Conf;
 			Conf.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
-			WorkerConfigMap.Add(AutomationWorkerType, Conf);
 
-			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkerConfigMap))
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
 			{
 				return;
 			}
-			SetLevelEditorPlaySettingsWorkerTypes(WorkerConfigMap);
+			SetLevelEditorPlaySettingsWorkerType(Conf);
 
 			if (LocalDeploymentManager->IsLocalDeploymentRunning())
 			{

@@ -32,8 +32,6 @@ void ULayeredLBStrategy::Init()
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	check(Settings->bEnableMultiWorker);
-
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
 	if (WorldSettings == nullptr)
@@ -43,6 +41,8 @@ void ULayeredLBStrategy::Init()
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
 	}
+
+	check(WorldSettings->bEnableMultiWorker);
 
 	// For each Layer, add a LB Strategy for that layer.
 	for (const TPair<FName, FLayerInfo>& Layer : WorldSettings->WorkerLayers)

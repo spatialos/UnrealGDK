@@ -177,7 +177,7 @@ struct FSpatialLaunchConfigDescription
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
-		ServerWorkersMap.Add(SpatialConstants::DefaultServerWorkerType, UnrealWorkerDefaultSetting);
+		ServerWorkerConfig = UnrealWorkerDefaultSetting;
 	}
 
 	/** Set WorkerTypesToLaunch in level editor play settings. */
@@ -196,7 +196,7 @@ struct FSpatialLaunchConfigDescription
 	TArray<FWorkerTypeLaunchSection> ServerWorkers_DEPRECATED;
 
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
-	TMap<FName, FWorkerTypeLaunchSection> ServerWorkersMap;
+	FWorkerTypeLaunchSection ServerWorkerConfig;
 };
 
 /**

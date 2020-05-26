@@ -30,5 +30,4 @@ void FLaunchConfigEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& De
 {
 	MyLayout = &DetailBuilder;
 	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
-	GDKSettings->OnWorkerTypesChangedDelegate.AddSP(this, &FLaunchConfigEditorLayoutDetails::ForceRefreshLayout);
 }

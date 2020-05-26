@@ -743,45 +743,35 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		USingleWorkerRuntimeStrategy* DefaultStrategy = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
 		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = DefaultStrategy;
 
-		if (SpatialGDKSettings->bEnableMultiWorker
-			&& GetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, LaunchConfigDescription.World.Dimensions))
+		if (TryGetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, LaunchConfigDescription.World.Dimensions))
 		{
 			LoadBalancingStrat->AddToRoot();
 		}
 
-		TMap<FName, FWorkerTypeLaunchSection> WorkersMap;
-
-		for (const TPair<FName, FWorkerTypeLaunchSection>& WorkerType : SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap)
+		FWorkerTypeLaunchSection Conf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
+		Conf.WorkerLoadBalancing = LoadBalancingStrat;
+		// Force manual connection to true as this is the config for PIE.
+		Conf.bManualWorkerConnectionOnly = true;
+		if (Conf.bAutoNumEditorInstances)
 		{
-			FWorkerTypeLaunchSection Conf = WorkerType.Value;
-			Conf.WorkerLoadBalancing = LoadBalancingStrat;
-			// Force manual connection to true as this is the config for PIE.
-			Conf.bManualWorkerConnectionOnly = true;
-			if (Conf.bAutoNumEditorInstances)
-			{
-				Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
-			}
-			WorkersMap.Add(WorkerType.Key, Conf);
+			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 		}
 
-		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, WorkersMap))
+		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
 		{
 			return;
 		}
 
-		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkersMap);
-		SetLevelEditorPlaySettingsWorkerTypes(WorkersMap);
+		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf);
+		SetLevelEditorPlaySettingsWorkerType(Conf);
 
 		// Also create default launch config for cloud deployments.
 		{
 			// Revert to the setting's flag value for manual connection.
-			for (auto& WorkerLaunchSectionSettings : SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap)
-			{
-				WorkersMap[WorkerLaunchSectionSettings.Key].bManualWorkerConnectionOnly = WorkerLaunchSectionSettings.Value.bManualWorkerConnectionOnly;
-			}
+			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
 
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
-			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, WorkersMap);
+			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
 		}
 
 		if (LoadBalancingStrat != DefaultStrategy)
@@ -793,7 +783,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	{
 		LaunchConfig = SpatialGDKEditorSettings->GetSpatialOSLaunchConfig();
 
-		SetLevelEditorPlaySettingsWorkerTypes(SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap);
+		SetLevelEditorPlaySettingsWorkerType(SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig);
 	}
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();

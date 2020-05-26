@@ -29,7 +29,6 @@
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -66,8 +65,6 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
-	check(InNetDriver->ActorGroupManager != nullptr);
-	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
@@ -76,7 +73,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, ActorGroupManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
 	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -172,8 +169,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
 	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-		const WorkerAttributeSet WorkerAttribute = { ActorInfo.WorkerType.ToString() };
+		const WorkerAttributeSet WorkerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
 		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
 		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
@@ -647,7 +643,8 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
+			const WorkerAttributeSet WorkerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { WorkerAttribute } );
 			continue;
 		}
 
@@ -720,7 +717,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 {
 	bool WillHaveAuthorityOverActor = true;
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
+	if (NetDriver->LoadBalanceStrategy != nullptr)
 	{
 		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
@@ -1144,7 +1141,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, ActorGroupManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
 	Components.Add(CreateLevelComponentData(Actor));
