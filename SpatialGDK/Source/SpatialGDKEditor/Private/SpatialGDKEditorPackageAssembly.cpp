@@ -172,11 +172,11 @@ void FSpatialGDKPackageAssembly::OnTaskOutput(FString Message)
 {
 	//UNR-3486 parse for assembly name conflict so we can display a message to the user
 	//because the spatial cli doesn't return error codes this is done via string matching
-	if (Message.Find("Either change the name or use the '--force' flag") >= 0)
+	if (Message.Find(TEXT("Either change the name or use the '--force' flag")) >= 0)
 	{
 		Status = EPackageAssemblyStatus::ASSEMBLY_EXISTS;
 	}
-	else if (Message.Find("Make sure the project name is correct and you have permission to upload new assemblies") >= 0)
+	else if (Message.Find(TEXT("Make sure the project name is correct and you have permission to upload new assemblies")) >= 0)
 	{
 		Status = EPackageAssemblyStatus::BAD_PROJECT_NAME;
 	}
