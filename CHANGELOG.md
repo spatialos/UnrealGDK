@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
-- Removed `QueuedOutgoingRPCWaitTime`.
+- Removed `QueuedOutgoingRPCWaitTime`, all RPC failure cases are now correctly queued or dropped.
 
 ### New Known Issues:
 
