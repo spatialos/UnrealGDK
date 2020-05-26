@@ -221,6 +221,12 @@ void USpatialGameInstance::HandleOnConnected()
 	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
 	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
+
+	OnSpatialConnected.Broadcast();
+}
+
+void USpatialGameInstance::CleanupCachedLevelsAfterConnection()
+{
 	// Cleanup any actors which were created during level load.
 	UWorld* World = GetWorld();
 	check(World != nullptr);
@@ -232,8 +238,6 @@ void USpatialGameInstance::HandleOnConnected()
 		}
 	}
 	CachedLevelsForNetworkIntialize.Empty();
-
-	OnSpatialConnected.Broadcast();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)

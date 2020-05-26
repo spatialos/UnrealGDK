@@ -56,6 +56,8 @@ public:
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
+	void CleanupCachedLevelsAfterConnection();
+
 	// Invoked when this worker has successfully connected to SpatialOS
 	UPROPERTY(BlueprintAssignable)
 	FOnConnectedEvent OnSpatialConnected;

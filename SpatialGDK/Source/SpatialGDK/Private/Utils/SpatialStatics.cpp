@@ -10,28 +10,16 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
     return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-}
-
-SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
-{
-	if (const UWorld* World = WorldContext->GetWorld())
-	{
-		if (const USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
-		{
-			check(SpatialGameInstance->ActorGroupManager.IsValid());
-			return SpatialGameInstance->ActorGroupManager.Get();
-		}
-	}
-	return nullptr;
 }
 
 FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
@@ -80,8 +68,10 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetDefault<AWorldSettings>());
 	return IsSpatialNetworkingEnabled()
-		&& GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
+		&& WorldSettings != nullptr
+		&& WorldSettings->bEnableMultiWorker;
 }
 
 bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
@@ -102,62 +92,20 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
 	{
-		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
-		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ClassWorkerType == CurrentWorkerType;
+		return false;
 	}
 
-	if (const UWorld* World = WorldContextObject->GetWorld())
+	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		return World->GetNetMode() != NM_Client;
-	}
-
-	return false;
-}
-
-bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
-		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ActorGroupWorkerType == CurrentWorkerType;
-	}
-
-	if (const UWorld* World = WorldContextObject->GetWorld())
-	{
-		return World->GetNetMode() != NM_Client;
-	}
-
-	return false;
-}
-
-FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
-	{
-		const AActor* EffectiveActor = Actor;
-		while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
 		{
-			EffectiveActor = EffectiveActor->GetOwner();
+			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
-
-		return ActorGroupManager->GetActorGroupForClass(EffectiveActor->GetClass());
 	}
-
-	return SpatialConstants::DefaultActorGroup;
-}
-
-FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
-	}
-
-	return SpatialConstants::DefaultActorGroup;
+	return false;
 }
 
 void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FString& InString /*= FString(TEXT("Hello"))*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)

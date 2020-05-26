@@ -74,9 +74,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	const FName AclAuthoritativeWorkerType = SpatialSettings->bEnableMultiWorker ?
-		ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor)) :
-		Info.WorkerType;
+	const FName AclAuthoritativeWorkerType = Info.WorkerType;
 
 	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ AclAuthoritativeWorkerType.ToString() };
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;

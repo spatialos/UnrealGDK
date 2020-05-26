@@ -606,15 +606,16 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		LoadBalanceStrategy == nullptr ||
+		LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
 	{
-		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner.
+		// We only want to delete actors which are replicated and we somehow gain local authority over, when we shouldn't have authority.
 		return;
 	}
 
 	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
-		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
+		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();
 	Actor->SetLifeSpan(0.01f);
@@ -2336,6 +2337,9 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
+			// Process levels which were loaded before the connection to Spatial was ready.
+			GetGameInstance()->CleanupCachedLevelsAfterConnection();
+
 			if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 			{
 				// We know at this point that we have all the information to set the worker's interest query.

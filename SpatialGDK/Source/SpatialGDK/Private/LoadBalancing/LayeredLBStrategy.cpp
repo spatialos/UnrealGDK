@@ -218,6 +218,12 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 	}
 }
 
+bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) const
+{
+	check(IsReady());
+	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
+}
+
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const
 {
 	if (Class == nullptr)
@@ -256,14 +262,6 @@ bool ULayeredLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* Ac
 		return false;
 	}
 	return GetLayerNameForClass(ActorA->GetClass()) == GetLayerNameForClass(ActorB->GetClass());
-}
-
-// Note: this is returning whether this is one of the workers which can simulate the layer. If there are
-// multiple workers simulating the layer, there's no concept of owner. This is left over from the way
-// ActorGroups could own entities, and will be removed in the future.
-bool ULayeredLBStrategy::IsLayerOwner(const FName& Layer) const
-{
-	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == Layer;
 }
 
 FName ULayeredLBStrategy::GetLayerNameForActor(const AActor& Actor) const
