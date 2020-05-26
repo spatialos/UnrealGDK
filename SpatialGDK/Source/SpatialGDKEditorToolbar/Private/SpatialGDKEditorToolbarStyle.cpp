@@ -61,17 +61,35 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSchema.Small",
 		new IMAGE_BRUSH(TEXT("Schema@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment",
-		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
+	Style->Set("SpatialGDKEditorToolbar.StartNative",
+		new IMAGE_BRUSH(TEXT("None"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment.Small",
-		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
+	Style->Set("SpatialGDKEditorToolbar.StartNative.Small",
+		new IMAGE_BRUSH(TEXT("None@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartNoAutomaticConnection",
+		new IMAGE_BRUSH(TEXT("None"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartNoAutomaticConnection.Small",
+		new IMAGE_BRUSH(TEXT("None@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartLocalSpatialDeployment",
+		new IMAGE_BRUSH(TEXT("StartLocal"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartLocalSpatialDeployment.Small",
+		new IMAGE_BRUSH(TEXT("StartLocal@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartCloudSpatialDeployment",
+		new IMAGE_BRUSH(TEXT("StartCloud"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartCloudSpatialDeployment.Small",
+		new IMAGE_BRUSH(TEXT("StartCloud@0.5x"), Icon20x20));
 	
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment",
-		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("StopLocal"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment.Small",
-		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("StopLocal@0.5x"), Icon20x20));
 	
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction",
 		new IMAGE_BRUSH(TEXT("Inspector"), Icon40x40));
@@ -86,16 +104,16 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 		new IMAGE_BRUSH(TEXT("Cloud@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialService",
-		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("StartLocal"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialService.Small",
-		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("StartLocal@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialService",
-		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
+		new IMAGE_BRUSH(TEXT("StopLocal"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialService.Small",
-		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
+		new IMAGE_BRUSH(TEXT("StopLocal@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.SpatialOSLogo",
 		new IMAGE_BRUSH(TEXT("SPATIALOS_LOGO_WHITE"), Icon100x22));
