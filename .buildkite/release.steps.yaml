@@ -40,8 +40,6 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: "unrealgdk-release"
-    #TODO: Remove this skip when dry-run is complete.
-    skip: true
 
   - wait
   
