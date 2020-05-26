@@ -37,7 +37,7 @@ public:
 		}
 		else
 		{
-			FPlatformProcess::Sleep(WaitTime);
+			FPlatformProcess::Sleep(WaitTime*0.001f);
 		}
 	}
 	
