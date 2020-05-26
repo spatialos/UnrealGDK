@@ -60,11 +60,11 @@ public:
 	bool IsSimulatedPlayersEnabled() const;
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers();
-
-	bool IsStartLocalServerWorkerEnabled() const;
+	
+	bool IsBuildClientWorkerEnabled() const;
 	void OnCheckedBuildClientWorker();
 
-	bool IsBuildClientWorkerEnabled() const;
+	bool IsStartLocalServerWorkerEnabled() const;
 	void OnCheckedStartLocalServerWorker();
 
 private:

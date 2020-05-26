@@ -403,10 +403,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
 	bool bBuildClientWorker;
 
-	/** Whether to start Local Server Worker when connecting to cloud deployment*/
-	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Start Local Server Worker"))
-	bool bStartLocalServerWorker;
-
 	/** Whether to generate schema automatically before building an assembly */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Schema"))
 	bool bGenerateSchema;
@@ -430,6 +426,14 @@ public:
 	/** The token created using 'spatial project auth dev-auth-token' */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
+
+	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+	FString DevelopmentDeploymentToConnect;
+
+	/** Whether to start Local Server Worker when connecting to cloud deployment*/
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Start Local Server Worker"))
+		bool bStartLocalServerWorker;
 
 private:
 	UPROPERTY(config)
@@ -653,12 +657,6 @@ public:
 		return bBuildClientWorker;
 	}
 
-	void SetStartLocalServerWorker(bool bIsEnabled);
-	FORCEINLINE bool IsStartLocalServerWorkerEnabled() const
-	{
-		return bStartLocalServerWorker;
-	}
-
 	void SetGenerateSchema(bool bGenerate);
 	FORCEINLINE bool IsGenerateSchemaEnabled() const
 	{
@@ -679,6 +677,12 @@ public:
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
 		return SimulatedPlayerDeploymentName;
+	}
+
+	void SetStartLocalServerWorker(bool bIsEnabled);
+	FORCEINLINE bool IsStartLocalServerWorkerEnabled() const
+	{
+		return bStartLocalServerWorker;
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);
