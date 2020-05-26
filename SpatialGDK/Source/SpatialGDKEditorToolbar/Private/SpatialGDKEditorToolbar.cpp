@@ -242,6 +242,12 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().EnableStartLocalServerWorker,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedStartLocalServerWorker),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsStartLocalServerWorkerEnabled));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().OpenCloudDeploymentWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog),
 		FCanExecuteAction());
@@ -484,6 +490,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 		);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableBuildSimulatedPlayer);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().EnableStartLocalServerWorker);
 	}
 	MenuBuilder.EndSection();
 
@@ -1382,6 +1389,16 @@ bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const
 void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
 {
 	GetMutableDefault<USpatialGDKEditorSettings>()->SetSimulatedPlayersEnabledState(!IsSimulatedPlayersEnabled());
+}
+
+bool FSpatialGDKEditorToolbarModule::IsStartLocalServerWorkerEnabled() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->IsStartLocalServerWorkerEnabled();
+}
+
+void FSpatialGDKEditorToolbarModule::OnCheckedStartLocalServerWorker()
+{
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetStartLocalServerWorker(!IsStartLocalServerWorkerEnabled());
 }
 
 bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const

@@ -61,8 +61,11 @@ public:
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers();
 
-	bool IsBuildClientWorkerEnabled() const;
+	bool IsStartLocalServerWorkerEnabled() const;
 	void OnCheckedBuildClientWorker();
+
+	bool IsBuildClientWorkerEnabled() const;
+	void OnCheckedStartLocalServerWorker();
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);

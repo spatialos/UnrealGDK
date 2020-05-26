@@ -266,6 +266,12 @@ void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetStartLocalServerWorker(bool IsEnabled)
+{
+	bStartLocalServerWorker = IsEnabled;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
 {
 	bGenerateSchema = bGenerate;
