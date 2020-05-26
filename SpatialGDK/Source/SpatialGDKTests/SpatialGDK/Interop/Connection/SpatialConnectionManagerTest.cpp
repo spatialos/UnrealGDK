@@ -11,26 +11,26 @@ class FTemporaryCommandLine
 {
 public:
 	explicit FTemporaryCommandLine(const FString& NewCommandLine)
-    {
-    	if (OldCommandLine.IsEmpty())
-    	{
-    		OldCommandLine = FCommandLine::GetOriginal();
-    		FCommandLine::Set(*NewCommandLine);
-    		bDidSetCommandLine = true;
-    	}
-    }
+	{
+		if (OldCommandLine.IsEmpty())
+		{
+			OldCommandLine = FCommandLine::GetOriginal();
+			FCommandLine::Set(*NewCommandLine);
+			bDidSetCommandLine = true;
+		}
+	}
 
 	~FTemporaryCommandLine()
-    {
-	    if (bDidSetCommandLine)
-	    {
-		    FCommandLine::Set(*OldCommandLine);
-	    	OldCommandLine.Empty();
-	    }
-    }
+	{
+		if (bDidSetCommandLine)
+		{
+			FCommandLine::Set(*OldCommandLine);
+			OldCommandLine.Empty();
+		}
+	}
 
 private:
-    static FString OldCommandLine;
+	static FString OldCommandLine;
 	bool bDidSetCommandLine = false;
 };
 
@@ -102,7 +102,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_DevAuth_LocatorHost)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
-	const FURL URL(nullptr, TEXT("10.20.30.40?devauth"),TRAVEL_Absolute);
+	const FURL URL(nullptr, TEXT("10.20.30.40?devauth"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
