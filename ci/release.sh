@@ -83,8 +83,6 @@ if [[ -n "${BUILDKITE:-}" ]]; then
     )
 fi
 
-RELEASE_VERSION="$(buildkite-agent meta-data get release-version)"
-
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
