@@ -29,7 +29,6 @@ release () {
         --pull-request-url="${PR_URL}" \
         --github-organization="${GITHUB_ORG}" \
         --engine-versions="${ENGINE_VERSIONS}"
-        --engine-versions="${ENGINE_VERSION}"
 }
 
 set -e -u -o pipefail
@@ -95,6 +94,16 @@ mkdir -p ./logs
 USER_ID=$(id -u)
 
 # Run the C Sharp Release Tool for each candidate we want to release.
+
+# The format is:
+# 1. REPO_NAME
+# 2. SOURCE_BRANCH
+# 3. CANDIDATE_BRANCH
+# 4. RELEASE_BRANCH
+# 5. PR_URL
+# 6. GITHUB_ORG
+# 7 onwards. ENGINE_VERSIONS
+
 # Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
 while IFS= read -r ENGINE_VERSION; do
   release "UnrealEngine" \
