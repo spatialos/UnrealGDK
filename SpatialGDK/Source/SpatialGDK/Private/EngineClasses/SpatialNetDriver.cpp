@@ -382,7 +382,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		CreateAndInitializeLoadBalancingClasses();
 	}

@@ -13,7 +13,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameModeBase.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -413,8 +412,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
-		const ASpatialWorldSettings* WorldSettings = GetDefault<ASpatialWorldSettings>();
-		if (WorldSettings != nullptr && WorldSettings->bEnableMultiWorker)
+		if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 		{
 			SetAllActorRolesBasedOnLBStrategy();
 		}

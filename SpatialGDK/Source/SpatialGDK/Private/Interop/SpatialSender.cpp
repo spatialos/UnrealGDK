@@ -717,7 +717,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 {
 	bool WillHaveAuthorityOverActor = true;
 
-	if (NetDriver->LoadBalanceStrategy != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
 		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{

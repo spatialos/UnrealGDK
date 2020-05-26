@@ -275,14 +275,8 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 	}
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	const ASpatialWorldSettings* WorldSettings = GetDefault<ASpatialWorldSettings>();
 
-	if (WorldSettings == nullptr)
-	{
-		return false;
-	}
-
-	if (WorldSettings->bEnableMultiWorker)
+	if (Settings->bEnableMultiWorker)
 	{
 		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
 		if (ensure(Strategy != nullptr))

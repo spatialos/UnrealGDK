@@ -10,7 +10,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
@@ -68,10 +67,8 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetDefault<AWorldSettings>());
 	return IsSpatialNetworkingEnabled()
-		&& WorldSettings != nullptr
-		&& WorldSettings->bEnableMultiWorker;
+		&& GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 }
 
 bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
