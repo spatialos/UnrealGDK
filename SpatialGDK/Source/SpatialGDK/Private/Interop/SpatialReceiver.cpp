@@ -418,6 +418,10 @@ USpatialActorChannel* USpatialReceiver::GetOrRecreateChannelForDomantActor(AActo
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
+	if (Channel == nullptr)
+	{
+		return nullptr;
+	}
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 

@@ -55,7 +55,7 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS = 255; // This is set unreasonably large but is flushed at the rate of USpatialGDKSettings::OpsUpdateRate.
+		UdpUpstreamIntervalMS = 10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
