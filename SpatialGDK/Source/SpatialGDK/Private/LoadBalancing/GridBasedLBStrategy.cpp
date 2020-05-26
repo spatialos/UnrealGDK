@@ -104,20 +104,13 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
+	check(VirtualWorkerIds.Num() == WorkerCells.Num());
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			if (i >= VirtualWorkerIds.Num())
-			{
-				UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy index position %d is out of range of the number of allocated VirtualWorkerIds which is %d."), i, VirtualWorkerIds.Num());
-				return 0;
-			}
-			else
-			{
-				UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %f, %f"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], Actor2DLocation.X, Actor2DLocation.Y);
-				return VirtualWorkerIds[i];
-			}
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %f, %f"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], Actor2DLocation.X, Actor2DLocation.Y);
+			return VirtualWorkerIds[i];
 		}
 	}
 

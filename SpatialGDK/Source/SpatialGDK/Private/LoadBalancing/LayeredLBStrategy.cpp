@@ -32,6 +32,8 @@ void ULayeredLBStrategy::Init()
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	check(Settings->bEnableMultiWorker);
+
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
 	if (WorldSettings == nullptr)
@@ -41,8 +43,6 @@ void ULayeredLBStrategy::Init()
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
 	}
-
-	check(WorldSettings->bEnableMultiWorker);
 
 	// For each Layer, add a LB Strategy for that layer.
 	for (const TPair<FName, FLayerInfo>& Layer : WorldSettings->WorkerLayers)
@@ -98,10 +98,16 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const FName& LayerName = GetLayerNameForActor(Actor);
+	const AActor* EffectiveActor = &Actor;
+	while (EffectiveActor->GetOwner() != nullptr)
+	{
+		EffectiveActor = EffectiveActor->GetOwner();
+	}
+
+	const FName& LayerName = GetLayerNameForActor(*EffectiveActor);
 	if (!LayerNameToLBStrategy.Contains(LayerName))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(&Actor), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(EffectiveActor), *LayerName.ToString());
 		return false;
 	}
 
@@ -122,16 +128,22 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const FName& LayerName = GetLayerNameForActor(Actor);
+	const AActor* EffectiveActor = &Actor;
+	while (EffectiveActor->GetOwner() != nullptr)
+	{
+		EffectiveActor = EffectiveActor->GetOwner();
+	}
+
+	const FName& LayerName = GetLayerNameForActor(*EffectiveActor);
 	if (!LayerNameToLBStrategy.Contains(LayerName))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(&Actor), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(EffectiveActor), *LayerName.ToString());
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(Actor);
+	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(*EffectiveActor);
 
-	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId, *AActor::GetDebugName(&Actor));
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId, *AActor::GetDebugName(EffectiveActor));
 	return ReturnedWorkerId;
 }
 

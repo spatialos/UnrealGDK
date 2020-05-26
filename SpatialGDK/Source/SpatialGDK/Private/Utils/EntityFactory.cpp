@@ -73,7 +73,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Load Balancer Attribute if we are using the load balancer.
-	bool bEnableMultiWorker = GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
+	bool bEnableMultiWorker = SpatialSettings->bEnableMultiWorker;
 	if (bEnableMultiWorker)
 	{
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
