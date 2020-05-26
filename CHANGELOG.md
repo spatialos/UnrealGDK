@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
 - Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
 - OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
+- Fixed a rare server crash that could occur when closing an actor channel right after attaching a dynamic subobject to that actor.
 
 ## [`0.9.0`] - 2020-05-05
 
