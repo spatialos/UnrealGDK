@@ -19,11 +19,11 @@ struct FEventDeleter
 class WorkerConnectionCoordinator
 {
 	TUniquePtr<FEvent, FEventDeleter> Event;
-	int32 WaitTime;
+	int32 WaitTimeMS;
 public:
 	WorkerConnectionCoordinator(bool bCanWake, int32 InWaitMs)
 		: Event(bCanWake ? FGenericPlatformProcess::GetSynchEventFromPool() : nullptr)
-		, WaitTime(InWaitMs)
+		, WaitTimeMS(InWaitMs)
 	{
 		
 	}
@@ -33,11 +33,11 @@ public:
 	{
 		if (Event.IsValid())
 		{
-			Event->Wait(WaitTime);
+			Event->Wait(WaitTimeMS);
 		}
 		else
 		{
-			FPlatformProcess::Sleep(WaitTime*0.001f);
+			FPlatformProcess::Sleep(WaitTimeMS*0.001f);
 		}
 	}
 	
