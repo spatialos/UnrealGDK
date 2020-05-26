@@ -403,6 +403,11 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
 	bool bBuildClientWorker;
 
+
+	/** Whether to start Local Server Worker when connecting to cloud deployment*/
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Start Local Server Worker"))
+	bool bStartLocalServerWorker;
+
 	/** Whether to generate schema automatically before building an assembly */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Schema"))
 	bool bGenerateSchema;
@@ -647,6 +652,12 @@ public:
 	FORCEINLINE bool IsBuildClientWorkerEnabled() const
 	{
 		return bBuildClientWorker;
+	}
+
+	void SetStartLocalServerWorker(bool bIsEnabled);
+	FORCEINLINE bool IsStartLocalServerWorkerEnabled() const
+	{
+		return bStartLocalServerWorker;
 	}
 
 	void SetGenerateSchema(bool bGenerate);
