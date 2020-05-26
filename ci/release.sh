@@ -111,7 +111,8 @@ while IFS= read -r ENGINE_VERSION; do
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "dry-run/${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
-    "improbableio"
+    "improbableio" \
+    "${ENGINE_VERSIONS}"
 done <<< "${ENGINE_VERSIONS}"
 
 release "UnrealGDK"               "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"  "${ENGINE_VERSIONS}"
