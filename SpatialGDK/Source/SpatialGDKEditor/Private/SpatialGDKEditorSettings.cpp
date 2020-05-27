@@ -64,9 +64,9 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
-	, RuntimeVariant(ESpatialOSRuntimeVariant::Distributed)
-	, DistributedRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
-	, SingleNodeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion)
+	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
+	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
+	, CompatabilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
@@ -86,12 +86,12 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-	if (Variant == ESpatialOSRuntimeVariant::Distributed)
+	if (Variant == ESpatialOSRuntimeVariant::CompatabilityMode)
 	{
-		return DistributedRuntimeVersion;
+		return StandardRuntimeVersion;
 	}
-	check(Variant == ESpatialOSRuntimeVariant::SingleNode);
-	return SingleNodeRuntimeVersion;
+	check(Variant == ESpatialOSRuntimeVariant::Standard);
+	return CompatabilityModeRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)

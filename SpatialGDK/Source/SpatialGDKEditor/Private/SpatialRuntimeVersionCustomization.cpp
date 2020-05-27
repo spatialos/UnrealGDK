@@ -28,9 +28,22 @@ void FSpatialRuntimeVersionCustomization::CustomizeHeader(TSharedRef<IPropertyHa
 void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle, IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
 	const FName& PinnedGDKPropertyName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, bUseGDKPinnedRuntimeVersion);
+	const FName& PinnedGDKPropertyVersionName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, PinnedVersion);
 
 	uint32 NumChildren;
 	StructPropertyHandle->GetNumChildren(NumChildren);
+
+	// Get the correct pinned version name
+	FString PinnedVersionString;
+	for (uint32 ChildIdx = 0; ChildIdx < NumChildren; ++ChildIdx)
+	{
+		TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(ChildIdx);
+		if (ChildProperty->GetProperty()->GetFName() == PinnedGDKPropertyVersionName)
+		{
+			ChildProperty->GetValueAsFormattedString(PinnedVersionString);
+		}
+	}
+
 	for (uint32 ChildIdx = 0; ChildIdx < NumChildren; ++ChildIdx)
 	{
 		TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(ChildIdx);
@@ -44,7 +57,7 @@ void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IProperty
 
 		IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
-		FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
+		FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *PinnedVersionString);
 
 		CustomRow.CustomWidget()
 			.NameContent()

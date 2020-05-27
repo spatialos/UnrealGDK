@@ -232,8 +232,8 @@ namespace ESpatialOSRuntimeVariant
 {
 	enum Type
 	{
-		SingleNode,
-		Distributed
+		Standard,
+		CompatabilityMode
 	};
 }
 
@@ -276,6 +276,7 @@ protected:
 
 private:
 	/** Pinned version for this variant. */
+	UPROPERTY(VisibleAnywhere, Category = "Runtime")
 	FString PinnedVersion;
 };
 
@@ -320,10 +321,10 @@ public:
 	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
 
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
-	FRuntimeVariantVersion DistributedRuntimeVersion;
+	FRuntimeVariantVersion StandardRuntimeVersion;
 
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
-	FRuntimeVariantVersion SingleNodeRuntimeVersion;
+	FRuntimeVariantVersion CompatabilityModeRuntimeVersion;
 
 private:
 
