@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewCoordinator.h"
+#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 namespace SpatialGDK
 {
@@ -25,6 +26,21 @@ void ViewCoordinator::Advance()
 void ViewCoordinator::FlushMessagesToSend()
 {
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
+}
+
+bool ViewCoordinator::HasDisconnected() const
+{
+	return Delta->HasDisconnected();
+}
+
+uint8 ViewCoordinator::GetConnectionStatus() const
+{
+	return Delta->GetConnectionStatus();
+}
+
+FString ViewCoordinator::GetConnectionReason() const
+{
+	return Delta->GetDisconnectReason();
 }
 
 void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
@@ -89,6 +105,21 @@ void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 	View.SendMetrics(MoveTemp(Metrics));
 }
 
+OpList ViewCoordinator::GetLegacyOpList() const
+{
+	return GetOpListFromViewDelta(*Delta);
+}
+
+const TArray<Worker_EntityId>& ViewCoordinator::GetEntitiesAdded() const
+{
+	return Delta->GetEntitiesAdded();
+}
+
+const TArray<Worker_EntityId>& ViewCoordinator::GetEntitiesRemoved() const
+{
+	return Delta->GetEntitiesRemoved();
+}
+
 const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityGained() const
 {
 	return Delta->GetAuthorityGained();
@@ -127,11 +158,6 @@ const TArray<EntityComponentCompleteUpdate>& ViewCoordinator::GetCompleteUpdates
 const TArray<Worker_Op>& ViewCoordinator::GetWorkerMessages() const
 {
 	return Delta->GetWorkerMessages();
-}
-
-TUniquePtr<AbstractOpList> ViewCoordinator::GenerateLegacyOpList() const
-{
-	return Delta->GenerateLegacyOpList();
 }
 
 }  // namespace SpatialGDK
