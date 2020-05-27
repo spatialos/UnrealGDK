@@ -203,7 +203,7 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 #else
 	bool bIsServer = false;
 	const TCHAR* CommandLine = FCommandLine::Get();
-	FParse::Bool(CommandLine, TEXT("server"), bIsServer);
+	FParse::Bool(CommandLine, TEXT("-server"), bIsServer);
 	return !bIsServer && bPreventClientCloudDeploymentAutoConnect;
 #endif
 };
