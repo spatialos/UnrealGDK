@@ -610,6 +610,17 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		return;
 	}
 
+	// OnActorSpawned can be called during Player spawn with an invalid position, which breaks the ShouldHaveAuthority check.
+	const AActor* EffectiveActor = Actor;
+	while (EffectiveActor->GetOwner() != nullptr)
+	{
+		EffectiveActor = EffectiveActor->GetOwner();
+	}
+	if (const APlayerController* PlayerController = Cast<APlayerController>(EffectiveActor))
+	{
+		return;
+	}
+
 	if (LoadBalanceStrategy != nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
