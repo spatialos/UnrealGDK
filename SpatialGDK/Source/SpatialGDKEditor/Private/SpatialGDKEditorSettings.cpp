@@ -7,25 +7,35 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Settings/LevelEditorPlaySettings.h"
-#include "Templates/SharedPointer.h"
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
-
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Settings/LevelEditorPlaySettings.h"
+#include "Templates/SharedPointer.h"
+
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
-void FSpatialLaunchConfigDescription::SetLevelEditorPlaySettingsWorkerTypes()
+void FSpatialLaunchConfigDescription::OnWorkerTypesChanged()
 {
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	USpatialGDKSettings const* RuntimeSettings = GetDefault<USpatialGDKSettings>();
 
-	PlayInSettings->WorkerTypesToLaunch.Empty(ServerWorkers.Num());
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : ServerWorkers)
+	for (const FName& WorkerType : RuntimeSettings->ServerWorkerTypes)
 	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+		if (!ServerWorkersMap.Contains(WorkerType))
+		{
+			ServerWorkersMap.Add(WorkerType, FWorkerTypeLaunchSection());
+		}
+	}
+
+	for (auto Iterator = ServerWorkersMap.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (!RuntimeSettings->ServerWorkerTypes.Contains(Iterator->Key))
+		{
+			Iterator.RemoveCurrent();
+		}
 	}
 }
 
@@ -35,14 +45,17 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bUseGDKPinnedRuntimeVersion(true)
-	, bExposeRuntimeIP(false)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
+	, CookAndGeneratePlatform("Win64")
+	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
-	, bUseDevelopmentAuthenticationFlow(false)
+	, AssemblyBuildConfiguration(TEXT("Development"))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
+	, bStartPIEClientsWithLocalLaunchOnDevice(false)
+	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
@@ -82,22 +95,12 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
-	{
-		SetRuntimeWorkerTypes();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
-	{
-		SetRuntimeUseDevelopmentAuthenticationFlow();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentAuthenticationToken))
-	{
-		SetRuntimeDevelopmentAuthenticationToken();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentDeploymentToConnect))
-	{
-		SetRuntimeDevelopmentDeploymentToConnect();
-	}
+}
+
+void USpatialGDKEditorSettings::OnWorkerTypesChanged()
+{
+	LaunchConfigDesc.OnWorkerTypesChanged();
+	PostEditChange();
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -109,50 +112,24 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 
-	SetRuntimeWorkerTypes();
-	SetRuntimeUseDevelopmentAuthenticationFlow();
-	SetRuntimeDevelopmentAuthenticationToken();
-	SetRuntimeDevelopmentDeploymentToConnect();
-}
+	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
 
-void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
-{
-	TSet<FName> WorkerTypes;
-	
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	if (LaunchConfigDesc.ServerWorkers_DEPRECATED.Num() > 0)
 	{
-		if (WorkerLaunch.WorkerTypeName != NAME_None)
+		for (FWorkerTypeLaunchSection& LaunchConfig : LaunchConfigDesc.ServerWorkers_DEPRECATED)
 		{
-			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+			if (LaunchConfig.WorkerTypeName_DEPRECATED.IsValid() && GDKSettings->ServerWorkerTypes.Contains(LaunchConfig.WorkerTypeName_DEPRECATED))
+			{
+				LaunchConfigDesc.ServerWorkersMap.Add(LaunchConfig.WorkerTypeName_DEPRECATED, LaunchConfig);
+			}
 		}
+		LaunchConfigDesc.ServerWorkers_DEPRECATED.Empty();
+		SaveConfig();
 	}
 
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	if (RuntimeSettings != nullptr)
-	{
-		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
-		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
-		RuntimeSettings->PostEditChange();
-		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
-	}
-}
+	LaunchConfigDesc.OnWorkerTypesChanged();
 
-void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->bUseDevelopmentAuthenticationFlow = bUseDevelopmentAuthenticationFlow;
-}
-
-void USpatialGDKEditorSettings::SetRuntimeDevelopmentAuthenticationToken()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->DevelopmentAuthenticationToken = DevelopmentAuthenticationToken;
-}
-
-void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
+	GDKSettings->OnWorkerTypesChangedDelegate.AddUObject(this, &USpatialGDKEditorSettings::OnWorkerTypesChanged);
 }
 
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
@@ -221,16 +198,66 @@ void USpatialGDKEditorSettings::SetSnapshotPath(const FString& Path)
 void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type RegionCode)
 {
 	PrimaryDeploymentRegionCode = RegionCode;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetMainDeploymentCluster(const FString& NewCluster)
+{
+	MainDeploymentCluster = NewCluster;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
+{
+	DeploymentTags = Tags;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
+{
+	AssemblyBuildConfiguration = Configuration;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewCluster)
+{
+	SimulatedPlayerCluster = NewCluster;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetForceAssemblyOverwrite(bool bForce)
+{
+	bForceAssemblyOverwrite = bForce;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
+{
+	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
+{
+	bGenerateSchema = bGenerate;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
+{
+	bGenerateSnapshot = bGenerate;
 	SaveConfig();
 }
 
@@ -388,4 +415,22 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	}
 
 	return bValid;
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString& Token)
+{
+	DevelopmentAuthenticationToken = Token;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+{
+	DevelopmentDeploymentToConnect = Deployment;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
+{
+	ExposedRuntimeIP = RuntimeIP;
+	SaveConfig();
 }

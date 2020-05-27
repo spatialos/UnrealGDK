@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
+
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
@@ -60,7 +61,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)
-	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
+	, ServerWorkerTypes( { SpatialConstants::DefaultServerWorkerType } )
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
@@ -82,7 +83,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
-	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -135,6 +135,10 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
 				"Failing to do will result in unintended behavior or crashes!"))));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes))
+	{
+		OnWorkerTypesChangedDelegate.Broadcast();
 	}
 }
 

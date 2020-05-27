@@ -21,7 +21,14 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 		if (OpsProcessingThread == nullptr)
 		{
 			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterOutgoingNetworkOp;
-			ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
+			float WaitTimeS = 1.0f / (GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
+			int32 WaitTimeMs = static_cast<int32>(FTimespan::FromSeconds(WaitTimeS).GetTotalMilliseconds());
+			if (WaitTimeMs <= 0)
+			{
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Clamping wait time for worker ops thread to the minimum rate of 1ms."));
+				WaitTimeMs = 1; 
+			}
+			ThreadWaitCondition.Emplace(bCanWake, WaitTimeMs);
 
 			InitializeOpsProcessingThread();
 		}
@@ -170,13 +177,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
 	}
-}
-
-bool USpatialWorkerConnection::Init()
-{
-	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
-
-	return true;
 }
 
 uint32 USpatialWorkerConnection::Run()
@@ -396,6 +396,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
 			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
 			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
+			WorkerHistogramMetricBuckets.SetNum(Message->Metrics.HistogramMetrics.Num());
 			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
 			{
 				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();

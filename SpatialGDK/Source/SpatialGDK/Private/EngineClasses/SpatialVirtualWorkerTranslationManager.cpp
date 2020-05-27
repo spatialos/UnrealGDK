@@ -19,14 +19,13 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	, bWorkerEntityQueryInFlight(false)
 {}
 
-void SpatialVirtualWorkerTranslationManager::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
+void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
 {
 	// Currently, this should only be called once on startup. In the future we may allow for more
 	// flexibility. 
-	check(UnassignedVirtualWorkers.IsEmpty());
-	for (VirtualWorkerId VirtualWorkerId : InVirtualWorkerIds)
+	for (uint32 i = 1; i <= NumVirtualWorkers; i++)
 	{
-		UnassignedVirtualWorkers.Enqueue(VirtualWorkerId);
+		UnassignedVirtualWorkers.Enqueue(i);
 	}
 }
 

@@ -7,11 +7,14 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/LayerInfo.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
+
+DECLARE_MULTICAST_DELEGATE(FOnWorkerTypesChanged)
 
 class ASpatialDebugger;
 
@@ -229,8 +232,12 @@ public:
 	TMap<FName, FActorGroupInfo> ActorGroups;
 
 	/** Available server worker types. */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Workers")
 	TSet<FName> ServerWorkerTypes;
+
+	/** Layer configuration. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableOffloading"))
+	TMap<FName, FLayerInfo> WorkerLayers;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
@@ -343,8 +350,5 @@ public:
 	bool bUseSpatialView;
 
 public:
-	// UI Hidden settings passed through from SpatialGDKEditorSettings
-	bool bUseDevelopmentAuthenticationFlow;
-	FString DevelopmentAuthenticationToken;
-	FString DevelopmentDeploymentToConnect;
+	mutable FOnWorkerTypesChanged OnWorkerTypesChangedDelegate;
 };

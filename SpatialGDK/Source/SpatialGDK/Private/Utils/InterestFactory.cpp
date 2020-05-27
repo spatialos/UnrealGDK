@@ -34,33 +34,28 @@ InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, U
 void InterestFactory::CreateAndCacheInterestState()
 {
 	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
-	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
-	ClientAuthInterestResultType = CreateClientAuthInterestResultType(ClassInfoManager);
-	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
+	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType();
+	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
+	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
 
-InterestResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
 {
-	InterestResultType ClientNonAuthResultType;
+	SchemaResultType ClientNonAuthResultType;
 
 	// Add the required unreal components
 	ClientNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
-	ClientNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-
-	// In direct disagreement with the above comment, we add the owner only components as well.
-	// This is because GDK workers currently make assumptions about information being available at the point of possession.
-	// TODO(jacques): fix (unr-2865)
-	ClientNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
 	return ClientNonAuthResultType;
 }
 
-InterestResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+SchemaResultType InterestFactory::CreateClientAuthInterestResultType()
 {
-	InterestResultType ClientAuthResultType;
+	SchemaResultType ClientAuthResultType;
 
 	// Add the required known components
 	ClientAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
@@ -73,22 +68,22 @@ InterestResultType InterestFactory::CreateClientAuthInterestResultType(USpatialC
 	return ClientAuthResultType;
 }
 
-InterestResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
+SchemaResultType InterestFactory::CreateServerNonAuthInterestResultType()
 {
-	InterestResultType ServerNonAuthResultType;
+	SchemaResultType ServerNonAuthResultType;
 
 	// Add the required unreal components
 	ServerNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
 	// Add all data, owner only, and handover components
-	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
-	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
+	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
 
 	return ServerNonAuthResultType;
 }
 
-InterestResultType InterestFactory::CreateServerAuthInterestResultType()
+SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 {
 	// Just the components that we won't have already checked out through authority
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
@@ -146,7 +141,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 	{
 		check(LBStrategy != nullptr);
-		
+
 		// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
 		// to wait for the virtual worker mappings to be replicated.
 		// This function will be called again when that is the case in order to update the interest on the server entity.
@@ -171,7 +166,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// TODO UNR-3042 : Migrate the VirtualWorkerTranslationManager to use the checked-out worker components instead of making a query.
 
 	ServerQuery = Query();
-	SetResultType(ServerQuery, InterestResultType{ SpatialConstants::WORKER_COMPONENT_ID });
+	SetResultType(ServerQuery, SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID });
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
@@ -243,7 +238,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
 	Query LoadBalanceQuery;
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
-	LoadBalanceQuery.ResultComponentIds = InterestResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID };
+	LoadBalanceQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
@@ -509,8 +504,6 @@ QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 	QueryConstraint AlwaysRelevantConstraint;
 
 	Worker_ComponentId ComponentIds[] = {
-		SpatialConstants::SINGLETON_COMPONENT_ID,
-		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID,
 		SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 		SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID
@@ -582,7 +575,7 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void InterestFactory::SetResultType(Query& OutQuery, const InterestResultType& InResultType) const
+void InterestFactory::SetResultType(Query& OutQuery, const SchemaResultType& InResultType) const
 {
 	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{

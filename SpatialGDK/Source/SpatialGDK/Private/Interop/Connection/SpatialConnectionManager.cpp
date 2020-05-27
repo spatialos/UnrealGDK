@@ -7,7 +7,9 @@
 
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
@@ -23,28 +25,29 @@ struct ConfigureConnection
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
-		, WorkerLogPrefix(*FormatLogFilePrefix())
+		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
 		Params.worker_type = WorkerType.Get();
 
 		Logsink.logsink_type = WORKER_LOGSINK_TYPE_ROTATING_FILE;
-		Logsink.rotating_logfile_parameters.log_prefix = WorkerLogPrefix.Get();
+		Logsink.rotating_logfile_parameters.log_prefix = WorkerSDKLogFilePrefix.Get();
 		Logsink.rotating_logfile_parameters.max_log_files = 1;
-		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = 10485760; // 10 MB
+		// TODO: When upgrading to Worker SDK 14.6.2, remove the WorkerSDKLogFileSize parameter and set this to 0 for infinite file size
+		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = Config.WorkerSDKLogFileSize;
 
 		uint32_t Categories = 0;
-		if (Config.EnableOpLogging)
+		if (Config.EnableWorkerSDKOpLogging)
 		{
 			Categories |= WORKER_LOG_CATEGORY_API;
 		}
-		if (Config.EnableProtocolLogging)
+		if (Config.EnableWorkerSDKProtocolLogging)
 		{
 			Categories |= WORKER_LOG_CATEGORY_NETWORK_STATUS | WORKER_LOG_CATEGORY_NETWORK_TRAFFIC;
 		}
 		Logsink.filter_parameters.categories = Categories;
-		Logsink.filter_parameters.level = WORKER_LOG_LEVEL_INFO;
+		Logsink.filter_parameters.level = Config.WorkerSDKLogLevel;
 
 		Params.logsinks = &Logsink;
 		Params.logsink_count = 1;
@@ -95,24 +98,21 @@ struct ConfigureConnection
 		Params.enable_dynamic_components = true;
 	}
 
-	FString FormatLogFilePrefix() const
+	FString FormatWorkerSDKLogFilePrefix() const
 	{
 		FString FinalLogFilePrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
-		if (!Config.WorkerLoggingPrefix.IsEmpty())
+		if (!Config.WorkerSDKLogPrefix.IsEmpty())
 		{
-			FinalLogFilePrefix += Config.WorkerLoggingPrefix;
+			FinalLogFilePrefix += Config.WorkerSDKLogPrefix;
 		}
-		else
-		{
-			FinalLogFilePrefix += Config.WorkerId + TEXT("-");
-		}
+		FinalLogFilePrefix += Config.WorkerId + TEXT("-");
 		return FinalLogFilePrefix;
 	}
 
 	const FConnectionConfig& Config;
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
-	FTCHARToUTF8 WorkerLogPrefix;
+	FTCHARToUTF8 WorkerSDKLogFilePrefix;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
@@ -173,13 +173,13 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 
 	bConnectAsClient = bInitAsClient;
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
+	const ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment() && bInitAsClient)
 	{
-		DevAuthConfig.Deployment = SpatialGDKSettings->DevelopmentDeploymentToConnect;
+		DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
 		DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		DevAuthConfig.UseExternalIp = true;
-		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
+		StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
 		return;
 	}
 
@@ -233,14 +233,23 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 	}
 	else
 	{
+		bool bFoundDeployment = false;
+
 		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
 		{
 			FString DeploymentName = UTF8_TO_TCHAR(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
 				DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				bFoundDeployment = true;
 				break;
 			}
+		}
+
+		if (!bFoundDeployment)
+		{
+			OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_NETWORK_ERROR, FString::Printf(TEXT("Deployment not found! Make sure that the deployment with name '%s' is running and has the 'dev_login' deployment tag."), *DeploymentToConnect));
+			return;
 		}
 	}
 
@@ -470,20 +479,8 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 	{
 		SetConnectionType(ESpatialConnectionType::Receptionist);
 
-		// If we have a non-empty host then use this to connect. If not - use the default configured in FReceptionistConfig initialisation.
-		if (!URL.Host.IsEmpty())
-		{
-			ReceptionistConfig.SetReceptionistHost(URL.Host);
-		}
-
+		ReceptionistConfig.SetupFromURL(URL);
 		ReceptionistConfig.WorkerType = SpatialWorkerType;
-
-		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
-		if (URL.HasOption(UseExternalIpForBridge))
-		{
-			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
-			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
-		}
 	}
 }
 

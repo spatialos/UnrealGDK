@@ -153,7 +153,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
 	PendingSubobjectAttachment->Subobject = Object;
-	PendingSubobjectAttachment->Channel = Channel;
 	PendingSubobjectAttachment->Info = Info;
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
@@ -231,8 +230,13 @@ void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worke
 	}
 }
 
+void USpatialSender::CreateServerWorkerEntity()
+{
+	RetryServerWorkerEntityCreation(PackageMap->AllocateEntityId(), 1);
+}
+
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
+void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
@@ -255,10 +259,10 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
+	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
 		if (!WeakSender.IsValid())
 		{
@@ -269,6 +273,13 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
+			return;
+		}
+
+		// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
+		// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
 			return;
 		}
 
@@ -288,11 +299,11 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 
 		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		FTimerHandle RetryTimer;
-		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
+		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, EntityId, AttemptCounter]()
 		{
 			if (USpatialSender* SpatialSender = WeakSender.Get())
 			{
-				SpatialSender->CreateServerWorkerEntity(AttemptCounter + 1);
+				SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});

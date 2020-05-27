@@ -75,7 +75,6 @@ struct FObjectReferences
 
 struct FPendingSubobjectAttachment
 {
-	USpatialActorChannel* Channel;
 	const FClassInfo* Info;
 	TWeakObjectPtr<UObject> Subobject;
 
@@ -195,7 +194,7 @@ public:
 				}
 			}
 		}
-	
+
 		return false;
 	}
 
@@ -235,11 +234,7 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
-#if ENGINE_MINOR_VERSION <= 22
-		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
-#else
 		return FindOrCreateReplicator(Object)->RepState->GetReceivingRepState()->StaticBuffer;
-#endif
 	}
 
 	// Begin UChannel interface
@@ -249,11 +244,7 @@ public:
 
 	// Begin UActorChannel interface
 	virtual int64 ReplicateActor() override;
-#if ENGINE_MINOR_VERSION <= 22
-	virtual void SetChannelActor(AActor* InActor) override;
-#else
 	virtual void SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags) override;
-#endif
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
 	// End UActorChannel interface
@@ -276,7 +267,7 @@ public:
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
-	
+
 	void UpdateShadowData();
 	void UpdateSpatialPositionWithFrequencyCheck();
 	void UpdateSpatialPosition();
@@ -310,7 +301,7 @@ private:
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
 	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
-	
+
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
@@ -369,8 +360,8 @@ private:
 	// Band-aid until we get Actor Sets.
 	// Used on server-side workers only.
 	// Record when this worker receives SpatialOS Position component authority over the Actor.
-	// Tracking this helps prevent authority thrashing which can happen due a replication race 
-	// between hierarchy Actors. This happens because hierarchy Actor migration using the 
+	// Tracking this helps prevent authority thrashing which can happen due a replication race
+	// between hierarchy Actors. This happens because hierarchy Actor migration using the
 	// default load-balancing strategy depends on the position of the hierarchy root Actor,
 	// or its controlled pawn. If the hierarchy Actor data is replicated to the new worker
 	// before the actor holding the position for all the hierarchy, it can immediately attempt to migrate back.

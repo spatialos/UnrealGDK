@@ -56,11 +56,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 	if (Changes.RepChanged.Num() > 0)
 	{
 		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
-#if ENGINE_MINOR_VERSION <= 22
-		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
-#else
 		FRepHandleIterator HandleIterator(static_cast<UStruct*>(Changes.RepLayout.GetOwner()), ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
-#endif
 		while (HandleIterator.NextHandle())
 		{
 			const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
@@ -82,7 +78,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 					if (*OutLatencyTraceId != InvalidTraceKey)
 					{
 						UE_LOG(LogComponentFactory, Warning, TEXT("%s property trace being dropped because too many active on this actor (%s)"), *Cmd.Property->GetName(), *Object->GetName());
-						LatencyTracer->WriteAndEndTraceIfRemote(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+						LatencyTracer->WriteAndEndTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"), true);
 					}
 					*OutLatencyTraceId = PropertyKey;
 				}
@@ -133,7 +129,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 				 */
 				const uint32 ProfilerBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
 				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (ProfilerBytesEnd - ProfilerBytesStart) * CHAR_BIT, nullptr));
-#endif				
+#endif
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
@@ -169,7 +165,7 @@ uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject
 			if (*OutLatencyTraceId != InvalidTraceKey)
 			{
 				UE_LOG(LogComponentFactory, Warning, TEXT("%s handover trace being dropped because too many active on this actor (%s)"), *PropertyInfo.Property->GetName(), *Object->GetName());
-				LatencyTracer->WriteAndEndTraceIfRemote(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+				LatencyTracer->WriteAndEndTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"), true);
 			}
 			*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
 		}
@@ -451,17 +447,19 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	TArray<Schema_FieldId> ClearedIds;
 
 	uint32 BytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	OutBytesWritten += BytesWritten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
+		BytesWritten++; // Workaround so we don't drop updates that *only* contain cleared fields - JIRA UNR-3371
 	}
 
 	if (BytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
+
+	OutBytesWritten += BytesWritten;
 
 	return ComponentUpdate;
 }
@@ -477,17 +475,19 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	TArray<Schema_FieldId> ClearedIds;
 
 	uint32 BytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	OutBytesWritten += BytesWritten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
+		BytesWritten++; // Workaround so we don't drop updates that *only* contain cleared fields - JIRA UNR-3371
 	}
 
 	if (BytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
+
+	OutBytesWritten += BytesWritten;
 
 	return ComponentUpdate;
 }
