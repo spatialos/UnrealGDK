@@ -42,7 +42,7 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled(double Executio
 	RemoveCommandLineFromDevice();
 }
 
-void FSpatialGDKEditorCommandLineArgsManager::OnLauncherFinished(bool Outcome, double ExecutionTime, int32 ReturnCode)
+void FSpatialGDKEditorCommandLineArgsManager::OnLauncherFinished(bool bSuccess, double ExecutionTime, int32 ReturnCode)
 {
 	RemoveCommandLineFromDevice();
 }

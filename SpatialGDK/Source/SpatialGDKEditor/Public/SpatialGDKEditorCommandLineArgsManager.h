@@ -33,7 +33,7 @@ private:
 	void OnCreateLauncher(ILauncherRef LauncherRef);
 	void OnLaunch(ILauncherWorkerPtr LauncherWorkerPtr, ILauncherProfileRef LauncherProfileRef);
 	void OnLauncherCanceled(double ExecutionTime);
-	void OnLauncherFinished(bool Outcome, double ExecutionTime, int32 ReturnCode);
+	void OnLauncherFinished(bool bSuccess, double ExecutionTime, int32 ReturnCode);
 
 	void RemoveCommandLineFromDevice();
 #endif // ENABLE_LAUNCHER_DELEGATE
