@@ -180,7 +180,6 @@ void FSpatialGDKPackageAssembly::OnTaskOutput(FString Message)
 	{
 		Status = EPackageAssemblyStatus::BAD_PROJECT_NAME;
 	}
-	//else if(Message.Find())
 	UE_LOG(LogSpatialGDKEditorPackageAssembly, Display, TEXT("%s"), *Message);
 }
 
