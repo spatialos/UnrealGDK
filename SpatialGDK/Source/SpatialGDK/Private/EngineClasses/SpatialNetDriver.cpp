@@ -603,23 +603,10 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		LoadBalanceStrategy == nullptr ||
-		LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+		USpatialStatics::IsActorGroupOwnerForActor(Actor))
 	{
-		// We only want to delete actors which are replicated and we somehow gain local authority over, when we shouldn't have authority.
-		return;
-	}
-
-	// OnActorSpawned can be called during Player spawn with an invalid position, which breaks the ShouldHaveAuthority check.
-	const AActor* RootOwner = Actor;
-	while (RootOwner->GetOwner() != nullptr)
-	{
-		RootOwner = RootOwner->GetOwner();
-	}
-	if (const APlayerController* PlayerController = Cast<APlayerController>(RootOwner))
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Worker spawned Player Controller %s) but should not have authority. This should happen once during player connection."),
-			*GetNameSafe(RootOwner));
+		// We only want to delete actors which are replicated and we somehow gain local authority over,
+		// when they should be in a different Layer.
 		return;
 	}
 
@@ -633,6 +620,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
 			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
 	}
+
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();
 	Actor->SetLifeSpan(0.01f);
