@@ -68,11 +68,9 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 		if (Task->GetDesc().Contains(TEXT("android")))
 		{
 			bAndroidDevice = true;
+			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Android device launched"));
+			break;
 		}
-	}
-	if (bAndroidDevice)
-	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Android device launched"));
 	}
 }
 
