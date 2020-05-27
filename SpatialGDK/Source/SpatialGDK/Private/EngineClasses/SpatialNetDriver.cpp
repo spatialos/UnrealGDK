@@ -618,6 +618,8 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	}
 	if (const APlayerController* PlayerController = Cast<APlayerController>(EffectiveActor))
 	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Worker spawned Player Controller %s) but should not have authority. This should happen once during player connection."),
+			*GetNameSafe(EffectiveActor));
 		return;
 	}
 
