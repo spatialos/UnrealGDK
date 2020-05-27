@@ -38,7 +38,7 @@ private:
 	void RemoveCommandLineFromDevice();
 #endif // ENABLE_LAUNCHER_DELEGATE
 
-	static bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
+	static bool TryConstructMobileCommandLineArgumentsFile(FString& OutCommandLineArgsFile);
 	static bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
 
 private:

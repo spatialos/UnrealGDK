@@ -184,7 +184,7 @@ FReply FSpatialGDKEditorCommandLineArgsManager::RemoveCommandLineFromAndroidDevi
 	return FReply::Handled();
 }
 
-bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile)
+bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgumentsFile(FString& OutCommandLineArgsFile)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString ProjectName = FApp::GetProjectName();
@@ -225,12 +225,12 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 	}
 
 	const FString SpatialOSCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSOptions, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
-	CommandLineArgsFile = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt")));
+	OutCommandLineArgsFile = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt")));
 
-	if (!FFileHelper::SaveStringToFile(SpatialOSCommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	if (!FFileHelper::SaveStringToFile(SpatialOSCommandLineArgs, *OutCommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to write command line args to file: %s"), *CommandLineArgsFile);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to write command line args to file: %s"), *CommandLineArgsFile)));
+		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to write command line args to file: %s"), *OutCommandLineArgsFile);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to write command line args to file: %s"), *OutCommandLineArgsFile)));
 		return false;
 	}
 
