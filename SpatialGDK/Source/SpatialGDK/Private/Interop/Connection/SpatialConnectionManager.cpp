@@ -452,6 +452,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 		if (!URL.Host.IsEmpty())
 		{
 			ReceptionistConfig.SetReceptionistHost(URL.Host);
+			ReceptionistConfig.ReceptionistPort = URL.Port;
 		}
 
 		ReceptionistConfig.WorkerType = SpatialWorkerType;
