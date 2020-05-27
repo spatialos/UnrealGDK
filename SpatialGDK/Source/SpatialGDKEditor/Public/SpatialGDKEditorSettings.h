@@ -233,7 +233,7 @@ namespace ESpatialOSRuntimeVariant
 	enum Type
 	{
 		Standard,
-		CompatabilityMode
+		CompatibilityMode
 	};
 }
 
@@ -324,7 +324,7 @@ public:
 	FRuntimeVariantVersion StandardRuntimeVersion;
 
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
-	FRuntimeVariantVersion CompatabilityModeRuntimeVersion;
+	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
 
 private:
 

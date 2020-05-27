@@ -66,7 +66,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bGenerateDefaultLaunchConfig(true)
 	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
-	, CompatabilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
+	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
@@ -87,12 +87,12 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
 #if PLATFORM_MAC
-	return CompatabilityModeRuntimeVersion;
+	return CompatibilityModeRuntimeVersion;
 #endif
 
-	if (Variant == ESpatialOSRuntimeVariant::CompatabilityMode)
+	if (Variant == ESpatialOSRuntimeVariant::CompatibilityMode)
 	{
-		return CompatabilityModeRuntimeVersion;
+		return CompatibilityModeRuntimeVersion;
 	}
 	check(Variant == ESpatialOSRuntimeVariant::Standard);
 	return StandardRuntimeVersion;
