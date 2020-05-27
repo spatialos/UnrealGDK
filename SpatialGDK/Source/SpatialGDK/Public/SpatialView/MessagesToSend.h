@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "OutgoingMessages.h"
+#include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialView/OutgoingComponentMessage.h"
 #include "SpatialView/CommandMessages.h"
 #include "Containers/Array.h"
@@ -22,6 +22,7 @@ struct MessagesToSend
 	TArray<EntityCommandFailure> EntityCommandFailures;
 	// todo should this be the metrics type from the cpp-gdk repo.
 	TArray<SpatialMetrics> Metrics;
+	// todo add flags and logs.
 };
 
 }  // namespace SpatialGDK

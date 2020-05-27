@@ -6,9 +6,9 @@
 #include "SpatialView/AuthorityRecord.h"
 #include "SpatialView/EntityComponentRecord.h"
 #include "SpatialView/EntityPresenceRecord.h"
-#include "SpatialView/OpList/AbstractOpList.h"
+#include "SpatialView/OpList/OpList.h"
 #include "Containers/Array.h"
-#include "Templates/UniquePtr.h"
+#include "Containers/UnrealString.h"
 #include <improbable/c_worker.h>
 
 
@@ -18,8 +18,14 @@ namespace SpatialGDK
 class ViewDelta
 {
 public:
-	void AddOpList(TUniquePtr<AbstractOpList> OpList, TSet<EntityComponentId>& ComponentsPresent);
+	void AddOpList(OpList Ops, TSet<EntityComponentId>& ComponentsPresent);
 
+	bool HasDisconnected() const;
+	uint8 GetConnectionStatus() const;
+	FString GetDisconnectReason() const;
+
+	const TArray<Worker_EntityId>& GetEntitiesAdded() const;
+	const TArray<Worker_EntityId>& GetEntitiesRemoved() const;
 	const TArray<EntityComponentId>& GetAuthorityGained() const;
 	const TArray<EntityComponentId>& GetAuthorityLost() const;
 	const TArray<EntityComponentId>& GetAuthorityLostTemporarily() const;
@@ -29,11 +35,6 @@ public:
 	const TArray<EntityComponentCompleteUpdate>& GetCompleteUpdates() const;
 
 	const TArray<Worker_Op>& GetWorkerMessages() const;
-
-	// Returns an array of ops equivalent to the current state of the view delta.
-	// It is expected that Clear should be called between calls to GenerateLegacyOpList.
-	// todo Remove this once the view delta is not read via a legacy op list.
-	TUniquePtr<AbstractOpList> GenerateLegacyOpList() const;
 
 	void Clear();
 
@@ -51,7 +52,10 @@ private:
 	EntityPresenceRecord EntityPresenceChanges;
 	EntityComponentRecord EntityComponentChanges;
 
-	TArray<TUniquePtr<AbstractOpList>> OpLists;
+	TArray<OpList> OpLists;
+
+	uint8 ConnectionStatus = 0;
+	FString DisconnectReason;
 };
 
 }  // namespace SpatialGDK

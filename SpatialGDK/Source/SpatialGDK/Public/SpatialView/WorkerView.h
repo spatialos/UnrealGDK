@@ -4,8 +4,8 @@
 
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/ViewDelta.h"
+#include "SpatialView/OpList/OpList.h"
 #include "Containers/Set.h"
-#include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
 {
@@ -20,7 +20,7 @@ public:
 	const ViewDelta* GenerateViewDelta();
 
 	// Add an OpList to generate the next ViewDelta.
-	void EnqueueOpList(TUniquePtr<AbstractOpList> OpList);
+	void EnqueueOpList(OpList Ops);
 
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
@@ -38,7 +38,7 @@ public:
 	void SendMetrics(SpatialMetrics Metrics);
 
 private:
-	TArray<TUniquePtr<AbstractOpList>> QueuedOps;
+	TArray<OpList> QueuedOps;
 
 	ViewDelta Delta;
 	TUniquePtr<MessagesToSend> LocalChanges;

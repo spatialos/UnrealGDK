@@ -1,20 +1,45 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewDelta.h"
-#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "Containers/Set.h"
 
 namespace SpatialGDK
 {
 
-void ViewDelta::AddOpList(TUniquePtr<AbstractOpList> OpList, TSet<EntityComponentId>& ComponentsPresent)
+void ViewDelta::AddOpList(OpList Ops, TSet<EntityComponentId>& ComponentsPresent)
 {
-	const uint32 OpCount = OpList->GetCount();
-	for (uint32 i = 0; i < OpCount; ++i)
+	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
-		ProcessOp((*OpList)[i], ComponentsPresent);
+		ProcessOp(Ops.Ops[i], ComponentsPresent);
 	}
-	OpLists.Add(MoveTemp(OpList));
+	OpLists.Add(MoveTemp(Ops));
+}
+
+bool ViewDelta::HasDisconnected() const
+{
+	return ConnectionStatus != 0;
+}
+
+uint8 ViewDelta::GetConnectionStatus() const
+{
+	check(HasDisconnected());
+	return ConnectionStatus;
+}
+
+FString ViewDelta::GetDisconnectReason() const
+{
+	check(HasDisconnected());
+	return DisconnectReason;
+}
+
+const TArray<Worker_EntityId>& ViewDelta::GetEntitiesAdded() const
+{
+	return EntityPresenceChanges.GetEntitiesAdded();
+}
+
+const TArray<Worker_EntityId>& ViewDelta::GetEntitiesRemoved() const
+{
+	return EntityPresenceChanges.GetEntitiesRemoved();
 }
 
 const TArray<EntityComponentId>& ViewDelta::GetAuthorityGained() const
@@ -57,72 +82,13 @@ const TArray<Worker_Op>& ViewDelta::GetWorkerMessages() const
 	return WorkerMessages;
 }
 
-TUniquePtr<AbstractOpList> ViewDelta::GenerateLegacyOpList() const
-{
-	// Todo - refactor individual op creation to an oplist type.
-	TArray<Worker_Op> OpList;
-
-	// todo Entity added ops get created here.
-
-	// todo Component Added ops get created here.
-
-	for (const EntityComponentId& Id : AuthorityChanges.GetAuthorityLost())
-	{
-		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-		Op.op.authority_change.entity_id = Id.EntityId;
-		Op.op.authority_change.component_id = Id.ComponentId;
-		Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
-		OpList.Push(Op);
-	}
-
-	for (const EntityComponentId& Id : AuthorityChanges.GetAuthorityLostTemporarily())
-	{
-		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-		Op.op.authority_change.entity_id = Id.EntityId;
-		Op.op.authority_change.component_id = Id.ComponentId;
-		Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
-		OpList.Push(Op);
-	}
-
-	// todo Component update and remove ops get created here.
-
-	// todo Entity removed ops get created here or below.
-
-	for (const EntityComponentId& Id : AuthorityChanges.GetAuthorityLostTemporarily())
-	{
-		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-		Op.op.authority_change.entity_id = Id.EntityId;
-		Op.op.authority_change.component_id = Id.ComponentId;
-		Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
-		OpList.Push(Op);
-	}
-
-	for (const EntityComponentId& Id : AuthorityChanges.GetAuthorityGained())
-	{
-		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-		Op.op.authority_change.entity_id = Id.EntityId;
-		Op.op.authority_change.component_id = Id.ComponentId;
-		Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
-		OpList.Push(Op);
-	}
-
-	// todo Command requests ops are created here.
-
-	// The following ops do not have ordering constraints.
-
-	return MakeUnique<ViewDeltaLegacyOpList>(MoveTemp(OpList));
-}
-
 void ViewDelta::Clear()
 {
 	WorkerMessages.Empty();
 	OpLists.Empty();
 	AuthorityChanges.Clear();
 	EntityComponentChanges.Clear();
+	ConnectionStatus = 0;
 }
 
 void ViewDelta::ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& ComponentsPresent)
@@ -130,6 +96,8 @@ void ViewDelta::ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& Componen
 	switch (static_cast<Worker_OpType>(Op.op_type))
 	{
 	case WORKER_OP_TYPE_DISCONNECT:
+		ConnectionStatus = Op.op.disconnect.connection_status_code;
+		DisconnectReason = FString(Op.op.disconnect.reason);
 		break;
 	case WORKER_OP_TYPE_FLAG_UPDATE:
 	case WORKER_OP_TYPE_LOG_MESSAGE:

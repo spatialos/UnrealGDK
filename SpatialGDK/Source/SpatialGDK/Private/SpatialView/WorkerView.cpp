@@ -14,17 +14,17 @@ WorkerView::WorkerView()
 const ViewDelta* WorkerView::GenerateViewDelta()
 {
 	Delta.Clear();
-	for (auto& OpList : QueuedOps)
+	for (auto& Ops : QueuedOps)
 	{
-		Delta.AddOpList(MoveTemp(OpList), AddedComponents);
+		Delta.AddOpList(MoveTemp(Ops), AddedComponents);
 	}
 	QueuedOps.Empty();
 	return &Delta;
 }
 
-void WorkerView::EnqueueOpList(TUniquePtr<AbstractOpList> OpList)
+void WorkerView::EnqueueOpList(OpList Ops)
 {
-	QueuedOps.Push(MoveTemp(OpList));
+	QueuedOps.Push(MoveTemp(Ops));
 }
 
 TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
