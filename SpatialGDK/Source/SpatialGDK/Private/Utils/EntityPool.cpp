@@ -2,10 +2,11 @@
 
 #include "Utils/EntityPool.h"
 
-#include "TimerManager.h"
-
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialGDKSettings.h"
+
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
@@ -78,6 +79,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		if (!bIsReady)
 		{
 			bIsReady = true;
+			EntityPoolReadyDelegate.Broadcast();
 		}
 	});
 
@@ -156,4 +158,9 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	}
 
 	return NextId;
+}
+
+FEntityPoolReadyEvent& UEntityPool::GetEntityPoolReadyDelegate()
+{
+	return EntityPoolReadyDelegate;
 }

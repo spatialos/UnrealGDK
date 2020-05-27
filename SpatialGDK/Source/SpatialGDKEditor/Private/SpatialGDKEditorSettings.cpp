@@ -9,6 +9,7 @@
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 
 #include "SpatialConstants.h"
@@ -74,9 +75,9 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, AssemblyBuildConfiguration(TEXT("Development"))
-	, bUseDevelopmentAuthenticationFlow(false)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
+	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
@@ -108,18 +109,6 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
-	{
-		SetRuntimeUseDevelopmentAuthenticationFlow();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentAuthenticationToken))
-	{
-		SetRuntimeDevelopmentAuthenticationToken();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentDeploymentToConnect))
-	{
-		SetRuntimeDevelopmentDeploymentToConnect();
-	}
 }
 
 void USpatialGDKEditorSettings::OnWorkerTypesChanged()
@@ -136,10 +125,6 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->SetDeleteDynamicEntities(bDeleteDynamicEntities);
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
-
-	SetRuntimeUseDevelopmentAuthenticationFlow();
-	SetRuntimeDevelopmentAuthenticationToken();
-	SetRuntimeDevelopmentDeploymentToConnect();
 
 	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -159,24 +144,6 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	LaunchConfigDesc.OnWorkerTypesChanged();
 
 	GDKSettings->OnWorkerTypesChangedDelegate.AddUObject(this, &USpatialGDKEditorSettings::OnWorkerTypesChanged);
-}
-
-void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->bUseDevelopmentAuthenticationFlow = bUseDevelopmentAuthenticationFlow;
-}
-
-void USpatialGDKEditorSettings::SetRuntimeDevelopmentAuthenticationToken()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->DevelopmentAuthenticationToken = DevelopmentAuthenticationToken;
-}
-
-void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
 }
 
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
@@ -462,4 +429,22 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	}
 
 	return bValid;
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString& Token)
+{
+	DevelopmentAuthenticationToken = Token;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+{
+	DevelopmentDeploymentToConnect = Deployment;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
+{
+	ExposedRuntimeIP = RuntimeIP;
+	SaveConfig();
 }

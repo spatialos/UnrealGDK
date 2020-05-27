@@ -679,8 +679,8 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 										SNew(SButton)
 										.HAlign(HAlign_Center)
 										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
-										.OnClicked_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::OnLaunchDeployment)
-										.IsEnabled_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::CanLaunchDeployment)
+										.OnClicked_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment)
+										.IsEnabled_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::CanLaunchCloudDeployment)
 									]
 								]
 							]
