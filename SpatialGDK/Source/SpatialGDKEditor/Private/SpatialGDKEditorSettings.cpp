@@ -88,10 +88,10 @@ FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpa
 {
 	if (Variant == ESpatialOSRuntimeVariant::CompatabilityMode)
 	{
-		return StandardRuntimeVersion;
+		return CompatabilityModeRuntimeVersion;
 	}
 	check(Variant == ESpatialOSRuntimeVariant::Standard);
-	return CompatabilityModeRuntimeVersion;
+	return StandardRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
