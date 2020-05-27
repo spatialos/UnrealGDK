@@ -244,10 +244,9 @@ FReply FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));
 		return FReply::Unhandled();
 	}
-	if (USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>())
-	{
-		SpatialGDKEditorSettings->SetDevelopmentAuthenticationToken(DevAuthToken);
-	}
+
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKEditorSettings->SetDevelopmentAuthenticationToken(DevAuthToken);
 	return FReply::Handled();
 }
 
