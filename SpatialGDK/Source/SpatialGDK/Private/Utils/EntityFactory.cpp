@@ -50,20 +50,15 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FString ClientWorkerAttribute = GetConnectionOwningWorkerId(Actor);
+	WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::DefaultServerWorkerType.ToString() };
 
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+	WorkerRequirementSet AnyServerRequirementSet = { ServerWorkerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { ServerWorkerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
-	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
+	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { ServerWorkerAttributeSet, OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
-
-	WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::DefaultServerWorkerType.ToString() };
-
-	AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-	AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-	AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
@@ -115,6 +110,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AnyServerRequirementSet);
 
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
@@ -137,12 +133,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	if (bEnableMultiWorker)
 	{
-		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AnyServerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	}
-	else
-	{
-		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AnyServerRequirementSet);
 	}
 
 	if (Actor->IsNetStartupActor())
@@ -421,14 +412,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	const UClass* Class = Actor->GetClass();
 
-	// Construct an ACL for a read-only entity.
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
-
 	WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::DefaultServerWorkerType.ToString() };
 
-	AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-	AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+	// Construct an ACL for a read-only entity.
+	WorkerRequirementSet AnyServerRequirementSet = { ServerWorkerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { ServerWorkerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))

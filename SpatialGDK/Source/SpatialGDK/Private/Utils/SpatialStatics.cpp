@@ -78,13 +78,13 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
-	const AActor* EffectiveActor = Actor;
-	while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+	const AActor* RootOwner = Actor;
+	while (RootOwner->bUseNetOwnerActorGroup && RootOwner->GetOwner() != nullptr)
 	{
-		EffectiveActor = EffectiveActor->GetOwner();
+		RootOwner = RootOwner->GetOwner();
 	}
 
-	return IsActorGroupOwnerForClass(EffectiveActor, EffectiveActor->GetClass());
+	return IsActorGroupOwnerForClass(RootOwner, RootOwner->GetClass());
 }
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
@@ -102,7 +102,7 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
 	}
-	return false;
+	return true;
 }
 
 void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FString& InString /*= FString(TEXT("Hello"))*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)

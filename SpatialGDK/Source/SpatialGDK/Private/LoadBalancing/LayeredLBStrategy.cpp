@@ -98,16 +98,16 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const AActor* EffectiveActor = &Actor;
-	while (EffectiveActor->GetOwner() != nullptr)
+	const AActor* RootOwner = &Actor;
+	while (RootOwner->GetOwner() != nullptr)
 	{
-		EffectiveActor = EffectiveActor->GetOwner();
+		RootOwner = RootOwner->GetOwner();
 	}
 
-	const FName& LayerName = GetLayerNameForActor(*EffectiveActor);
+	const FName& LayerName = GetLayerNameForActor(*RootOwner);
 	if (!LayerNameToLBStrategy.Contains(LayerName))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(EffectiveActor), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(RootOwner), *LayerName.ToString());
 		return false;
 	}
 
@@ -128,22 +128,22 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const AActor* EffectiveActor = &Actor;
-	while (EffectiveActor->GetOwner() != nullptr)
+	const AActor* RootOwner = &Actor;
+	while (RootOwner->GetOwner() != nullptr)
 	{
-		EffectiveActor = EffectiveActor->GetOwner();
+		RootOwner = RootOwner->GetOwner();
 	}
 
-	const FName& LayerName = GetLayerNameForActor(*EffectiveActor);
+	const FName& LayerName = GetLayerNameForActor(*RootOwner);
 	if (!LayerNameToLBStrategy.Contains(LayerName))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(EffectiveActor), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(RootOwner), *LayerName.ToString());
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(*EffectiveActor);
+	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(*RootOwner);
 
-	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId, *AActor::GetDebugName(EffectiveActor));
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId, *AActor::GetDebugName(RootOwner));
 	return ReturnedWorkerId;
 }
 
@@ -230,6 +230,9 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 	}
 }
 
+// DEPRECATED
+// This is only included because Scavengers uses the function in SpatialStatics that calls this.
+// Once they are pick up this code, they should be able to switch to another method and we can remove this.
 bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) const
 {
 	check(IsReady());

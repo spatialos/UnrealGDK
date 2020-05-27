@@ -319,10 +319,4 @@ public:
 	/** Experimental feature to use SpatialView layer when communicating with the Worker */
 	UPROPERTY(Config)
 	bool bUseSpatialView;
-
-public:
-	// UI Hidden settings passed through from SpatialGDKEditorSettings
-	bool bUseDevelopmentAuthenticationFlow;
-	FString DevelopmentAuthenticationToken;
-	FString DevelopmentDeploymentToConnect;
 };
