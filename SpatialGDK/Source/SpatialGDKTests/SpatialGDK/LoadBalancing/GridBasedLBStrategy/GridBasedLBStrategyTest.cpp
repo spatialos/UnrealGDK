@@ -53,14 +53,12 @@ bool FCleanup::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FCreateStrategy, uint32, Rows, uint32, Cols, float, WorldWidth, float, WorldHeight, uint32, LocalWorkerIdIndex);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FCreateStrategy, uint32, Rows, uint32, Cols, float, WorldWidth, float, WorldHeight, uint32, LocalWorkerId);
 bool FCreateStrategy::Update()
 {
 	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
 	Strat->Init();
-
-	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
-	Strat->SetLocalVirtualWorkerId(VirtualWorkerIds.Array()[LocalWorkerIdIndex]);
+	Strat->SetLocalVirtualWorkerId(LocalWorkerId);
 
 	return true;
 }
@@ -166,27 +164,13 @@ bool FCheckVirtualWorkersMatch::Update()
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_minimum_required_workers_is_called_THEN_it_returns_6)
 {
 	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
 	Strat->Init();
 
-	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
-	TestEqual("Number of Virtual Workers", VirtualWorkerIds.Num(), 6);
-
-	return true;
-}
-
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid)
-{
-	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
-	Strat->Init();
-
-	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
-	for (uint32 VirtualWorkerId : VirtualWorkerIds)
-	{
-		TestNotEqual("Virtual Worker Id", VirtualWorkerId, SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
-	}
+	uint32 NumVirtualWorkers = Strat->GetMinimumRequiredWorkers();
+	TestEqual("Number of Virtual Workers", NumVirtualWorkers, 6);
 
 	return true;
 }
@@ -276,7 +260,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_reli
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 1, 10000.f, 10000.f, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor", FVector::ZeroVector));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor"));
@@ -290,7 +274,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 2, 10000.f, 10000.f, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2500.f, -2500.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor2", FVector(2500.f, -2500.f, 0.f)));
@@ -310,7 +294,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
@@ -328,7 +312,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_shou
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2.f, 100.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor2", FVector(-500.f, 0.f, 0.f)));
@@ -347,9 +331,9 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_re
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(0.f, -2500.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 0));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 2));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
 
