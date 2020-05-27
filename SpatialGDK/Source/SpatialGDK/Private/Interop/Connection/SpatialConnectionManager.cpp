@@ -79,20 +79,19 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
-		if (!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
+		// Use insecure connections default.
+		Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+
+		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
+		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection) || (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
 		{
+#if WITH_EDITOR
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));
+#else
 			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-		}
-		else if (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection)
-		{
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-		}
-		else
-		{
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+#endif
 		}
 
 		Params.enable_dynamic_components = true;

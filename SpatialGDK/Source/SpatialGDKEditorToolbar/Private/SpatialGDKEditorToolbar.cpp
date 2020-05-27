@@ -885,8 +885,19 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
+	// Get the runtime variant currently being used as this affects which Inspector to use.
+	FString InspectorURL;
+	if (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Standard)
+	{
+		InspectorURL = TEXT("http://localhost:31000/inspector-v2");
+	}
+	else
+	{
+		InspectorURL = TEXT("http://localhost:31000/inspector");
+	}
+
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("http://localhost:31000/inspector"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

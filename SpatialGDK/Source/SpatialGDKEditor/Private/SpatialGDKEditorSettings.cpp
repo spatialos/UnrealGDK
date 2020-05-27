@@ -86,6 +86,10 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
+#if PLATFORM_MAC
+	return CompatabilityModeRuntimeVersion;
+#endif
+
 	if (Variant == ESpatialOSRuntimeVariant::CompatabilityMode)
 	{
 		return CompatabilityModeRuntimeVersion;
