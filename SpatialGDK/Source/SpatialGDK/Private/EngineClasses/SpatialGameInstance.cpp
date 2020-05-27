@@ -275,6 +275,10 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 	{
 		CleanupLevelInitializedNetworkActors(LoadedLevel);
 	}
+	else
+	{
+		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
+	}
 }
 
 void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const
