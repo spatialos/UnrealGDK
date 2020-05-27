@@ -16,6 +16,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
 class UAbstractRuntimeLoadBalancingStrategy;
+class USpatialGDKEditorSettings;
+class FSpatialRuntimeVersionCustomization;
 
 USTRUCT()
 struct FWorldLaunchSection
@@ -225,6 +227,59 @@ namespace ESpatialOSNetFlow
 	};
 }
 
+UENUM()
+namespace ESpatialOSRuntimeVariant
+{
+	enum Type
+	{
+		Standard,
+		CompatabilityMode
+	};
+}
+
+USTRUCT()
+struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
+{
+	friend class USpatialGDKEditorSettings;
+	friend class FSpatialRuntimeVersionCustomization;
+
+	GENERATED_BODY()
+
+	FRuntimeVariantVersion();
+
+	FRuntimeVariantVersion(const FString& InPinnedVersion) : PinnedVersion(InPinnedVersion)
+	{}
+
+	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
+	const FString& GetVersionForCloud() const;
+
+	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
+	const FString& GetVersionForLocal() const;
+
+	bool GetUseGDKPinnedRuntimeVersion() const { return bUseGDKPinnedRuntimeVersion; }
+
+	const FString& GetPinnedVersion() const { return PinnedVersion; }
+
+protected:
+
+	/** Whether to use the GDK-associated SpatialOS runtime version, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version"))
+	bool bUseGDKPinnedRuntimeVersion = true;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	FString LocalRuntimeVersion;
+
+	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	FString CloudRuntimeVersion;
+
+private:
+	/** Pinned version for this variant. */
+	UPROPERTY(VisibleAnywhere, Category = "Runtime")
+	FString PinnedVersion;
+};
+
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -251,23 +306,25 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
 	bool bGenerateDefaultLaunchConfig;
 
-	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
-	const FString& GetSpatialOSRuntimeVersionForCloud() const;
+	/** Returns which runtime variant we should use. */
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
 
-	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
-	const FString& GetSpatialOSRuntimeVersionForLocal() const;
+	/** Returns the version information for the currently set variant*/
+	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
+	{
+		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
+	}
 
-	/** Whether to use the GDK-associated SpatialOS runtime version, or to use the one specified in the RuntimeVersion field. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version"))
-	bool bUseGDKPinnedRuntimeVersion;
+	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
 
-	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
-	FString LocalRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime")
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
 
-	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
-	FString CloudRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	FRuntimeVariantVersion StandardRuntimeVersion;
+
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	FRuntimeVariantVersion CompatabilityModeRuntimeVersion;
 
 private:
 
@@ -587,17 +644,8 @@ public:
 		return bGenerateSnapshot;
 	}
 
-	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);
-	FORCEINLINE bool GetUseGDKPinnedRuntimeVersion() const
-	{
-		return bUseGDKPinnedRuntimeVersion;
-	}
-
-	void SetCustomCloudSpatialOSRuntimeVersion(const FString& Version);
-	FORCEINLINE const FString& GetCustomCloudSpatialOSRuntimeVersion() const
-	{
-		return CloudRuntimeVersion;
-	}
+	void SetUseGDKPinnedRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, bool IsEnabled);
+	void SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version);
 
 	void SetSimulatedPlayerDeploymentName(const FString& Name);
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const

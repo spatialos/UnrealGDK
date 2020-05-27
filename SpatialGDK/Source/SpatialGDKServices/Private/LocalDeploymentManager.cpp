@@ -25,7 +25,7 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
-static const FString SpatialServiceVersion(TEXT("20200311.145308.ef0fc31004"));
+static const FString SpatialServiceVersion(TEXT("20200526.163759.18e41b5703"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)

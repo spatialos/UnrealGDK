@@ -49,36 +49,6 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
 	GDKSettings->OnWorkerTypesChangedDelegate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 
-	TSharedPtr<IPropertyHandle> UsePinnedVersionProperty = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseGDKPinnedRuntimeVersion));
-
-	IDetailPropertyRow* CustomRow = DetailBuilder.EditDefaultProperty(UsePinnedVersionProperty);
-
-	FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
-
-	CustomRow->CustomWidget()
-		.NameContent()
-		[
-			UsePinnedVersionProperty->CreatePropertyNameWidget()
-		]
-		.ValueContent()
-		[
-			SNew(SHorizontalBox)
-			+SHorizontalBox::Slot()
-			.HAlign(HAlign_Left)
-			.AutoWidth()
-			[
-				UsePinnedVersionProperty->CreatePropertyValueWidget()
-			]
-			+SHorizontalBox::Slot()
-			.Padding(5)
-			.HAlign(HAlign_Center)
-			.AutoWidth()
-			[
-				SNew(STextBlock)
-				.Text(FText::FromString(PinnedVersionDisplay))
-			]
-		];
-
 	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
 	CloudConnectionCategory.AddCustomRow(FText::FromString("Generate Development Authentication Token"))
 		.ValueContent()
