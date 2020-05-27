@@ -267,7 +267,6 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
 		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
-		// OwningWorld->IsServer() is not returning false on clients here :/
 		return;
 	}
 
