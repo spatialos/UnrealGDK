@@ -28,8 +28,6 @@ public:
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
-	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
-	void TryConnectToSpatial();
 
 	virtual void StartGameInstance() override;
 
@@ -99,6 +97,9 @@ private:
 	// A set of the levels which were loaded before the SpatialOS connection.
 	UPROPERTY()
 	TSet<ULevel*> CachedLevelsForNetworkIntialize;
+
+	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
+	void TryConnectToSpatial();
 
 	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
