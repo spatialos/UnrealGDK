@@ -68,7 +68,7 @@ void FSpatialGDKEditorCommandLineArgsManager::OnLaunch(ILauncherWorkerPtr Launch
 		if (Task->GetDesc().Contains(TEXT("android")))
 		{
 			bAndroidDevice = true;
-			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Android device launched"));
+			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Launched game on Android device"));
 			break;
 		}
 	}
