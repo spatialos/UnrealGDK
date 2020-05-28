@@ -1251,6 +1251,8 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowSuccessNotification("Successfully launched cloud deployment.");
+				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(SpatialGDKEditorSettings->GetPrimaryDeploymentName());
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{

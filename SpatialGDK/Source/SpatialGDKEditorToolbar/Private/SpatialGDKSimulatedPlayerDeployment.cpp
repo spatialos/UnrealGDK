@@ -728,11 +728,8 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const
 	}
 	DeploymentNameInputErrorReporting->SetError(TEXT(""));
 	
-	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SetPrimaryDeploymentName(InputDeploymentName);
-
-	// Also overwrite DevelopmentDeploymentToConnect in SpatialGDKEditorSettings.(Request by UNR-3482)
-	SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(InputDeploymentName);
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetPrimaryDeploymentName(InputDeploymentName);
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
