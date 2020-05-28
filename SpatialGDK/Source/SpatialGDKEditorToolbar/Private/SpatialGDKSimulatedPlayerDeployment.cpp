@@ -60,6 +60,8 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+	FString AssemblyName = SpatialGDKSettings->GetAssemblyName();
+	FString DeploymentName = SpatialGDKSettings->GetPrimaryDeploymentName();
 	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 
 	ParentWindowPtr = InArgs._ParentWindow;
@@ -68,9 +70,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 	AssemblyNameInputErrorReporting = SNew(SPopupErrorText);
-	AssemblyNameInputErrorReporting->SetError(TEXT(""));
+	AssemblyNameInputErrorReporting->SetError(AssemblyName.IsEmpty() ? SpatialConstants::AssemblyPatternHint : TEXT(""));
 	DeploymentNameInputErrorReporting = SNew(SPopupErrorText);
-	DeploymentNameInputErrorReporting->SetError(TEXT(""));
+	DeploymentNameInputErrorReporting->SetError(DeploymentName.IsEmpty() ? SpatialConstants::DeploymentPatternHint : TEXT(""));
 	ChildSlot
 		[
 			SNew(SBorder)
@@ -133,7 +135,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetAssemblyName()))
+									.Text(FText::FromString(AssemblyName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited)
 									.ErrorReporting(AssemblyNameInputErrorReporting)
@@ -199,7 +201,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetPrimaryDeploymentName()))
+									.Text(FText::FromString(DeploymentName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited)
 									.ErrorReporting(DeploymentNameInputErrorReporting)
