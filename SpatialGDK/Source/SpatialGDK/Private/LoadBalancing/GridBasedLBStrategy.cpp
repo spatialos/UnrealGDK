@@ -127,6 +127,20 @@ FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 	return FVector{ Centre.X, Centre.Y, 0.f };
 }
 
+uint32 UGridBasedLBStrategy::GetMinimumRequiredWorkers() const
+{
+	return Rows * Cols;
+}
+
+void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
+{
+	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Setting VirtualWorkerIds %d to %d"), FirstVirtualWorkerId, LastVirtualWorkerId);
+	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId; CurrentVirtualWorkerId++)
+	{
+		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
+	}
+}
+
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
 {
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y

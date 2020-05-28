@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/LayerInfo.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
@@ -233,6 +234,10 @@ public:
 	/** Available server worker types. */
 	UPROPERTY(EditAnywhere, Config, Category = "Workers")
 	TSet<FName> ServerWorkerTypes;
+
+	/** Layer configuration. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableOffloading"))
+	TMap<FName, FLayerInfo> WorkerLayers;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
