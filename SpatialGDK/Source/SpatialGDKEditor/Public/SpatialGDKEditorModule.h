@@ -40,7 +40,6 @@ protected:
 	virtual FString GetDevAuthToken() const override;
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 
-	virtual bool CanExecutePlay() const override;
 	virtual bool CanExecuteLaunch() const override;
 
 private:

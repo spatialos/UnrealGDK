@@ -75,10 +75,6 @@ FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
 }
 
-bool FSpatialGDKEditorModule::CanExecutePlay() const
-{
-	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
-}
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 {
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
