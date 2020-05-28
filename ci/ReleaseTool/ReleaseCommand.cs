@@ -61,10 +61,10 @@ namespace ReleaseTool
             [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
             public string GithubOrgName { get; set; }
 
-            [Option("engine-versions", HelpText = "The set of engine versions to release against", Required = false)]
-            public string EngineVersions { get; set; }
+            [Option("engine-versions", HelpText = "An array containing every engine version source branch.", Required = false)]
+            public IEnumerable<string> EngineVersions {get;set;}
 
-            [Option("engine-version", HelpText = "The set of engine version to release against", Required = false)]
+            [Option("engine-version", HelpText = "A string, the source branch for the UnrealEngine version being released by this particular execution of the release command.", Required = false)]
             public string EngineVersion { get; set; }
 
             public string GitHubTokenFile { get; set; }
@@ -122,7 +122,7 @@ namespace ReleaseTool
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
 
-                            var releaseHashes = options.EngineVersions.Split("\n")
+                            var releaseHashes = options.EngineVersions
                                 .Select(version => $"dry-run/{version.Trim()}-release")
                                 .Select(BuildkiteAgent.GetMetadata)
                                 .Select(hash => $"UnrealEngine-{hash}")

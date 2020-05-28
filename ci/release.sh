@@ -86,7 +86,7 @@ fi
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
-ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-versions)"
+ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-versions))
 
 setupReleaseTool
 
