@@ -13,7 +13,7 @@ release () {
   local GITHUB_ORG="${6}"
   local ENGINE_VERSIONS="${7:-}"
 
-  echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
+  echo "--- Releasing ${REPO_NAME}: Merging ${CANDIDATE_BRANCH} into ${RELEASE_BRANCH} :package:"
 
   docker run \
     -v "${BUILDKITE_ARGS[@]}" \
@@ -107,9 +107,9 @@ USER_ID=$(id -u)
 # Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
 while IFS= read -r ENGINE_VERSION; do
   release "UnrealEngine" \
-    "dry-run/${ENGINE_VERSION}" \
+    "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "dry-run/${ENGINE_VERSION}-release" \
+    "${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
     "improbableio" \
     "${ENGINE_VERSIONS}"
