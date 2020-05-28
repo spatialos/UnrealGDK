@@ -157,8 +157,8 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                // HACK: Since we don't have access to dynamic worker flags with the new runtime yet,
-                // we need to wait for the main deployment to be finished starting before we can start the sim player deployment
+                // TODO: UNR-3550 - Re-add dynamic worker flags when supported with new runtime.
+                // We need to wait for the main deployment to be finished starting before we can launch the sim player deployment.
                 Console.WriteLine("Waiting for deployment to be ready...");
                 var result = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
                 if (result == null)
