@@ -153,15 +153,15 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 			ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 			if (Status == EPackageAssemblyStatus::ASSEMBLY_EXISTS)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Assembly_Exists", "The assembly has previously been uploaded enable the 'Force Overwrite on Upload' option in the Cloud Deployment dialog to overwrite the existing assembly."));
+				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Assembly_Exists", "The assembly with the specified name has previously been uploaded. Enable the 'Force Overwrite on Upload' option in the Cloud Deployment dialog to overwrite the existing assembly or specify a different assembly name."));
 			}
 			else if (Status == EPackageAssemblyStatus::BAD_PROJECT_NAME)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Bad_Project_Name", "The project name appears to be incorrect or you do not have permissions for this project, you can edit the project name from the Cloud Deployment dialog."));
+				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Bad_Project_Name", "The project name appears to be incorrect or you do not have permissions for this project. You can edit the project name from the Cloud Deployment dialog."));
 			}
-			else if(Status == EPackageAssemblyStatus::NONE)
+			else if (Status == EPackageAssemblyStatus::NONE)
 			{
-				Status = EPackageAssemblyStatus::UNKOWN_ERROR;
+				Status = EPackageAssemblyStatus::UNKNOWN_ERROR;
 			}
 		});
 		Steps.Empty();
