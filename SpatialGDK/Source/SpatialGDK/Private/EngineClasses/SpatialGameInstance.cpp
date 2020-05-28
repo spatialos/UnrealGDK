@@ -163,6 +163,10 @@ void USpatialGameInstance::StartGameInstance()
 	{
 		TryConnectToSpatial();
 	}
+	else
+	{
+		SetFirstConnectionToSpatialOSAttempted();
+	}
 
 	Super::StartGameInstance();
 }
