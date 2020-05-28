@@ -76,7 +76,7 @@ else {
     else {
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
-            "bEnableMultiWorker=True;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`");$user_gdk_settings", $True, "$user_cmd_line_args")
+            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
