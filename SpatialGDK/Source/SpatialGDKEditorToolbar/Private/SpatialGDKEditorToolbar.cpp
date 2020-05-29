@@ -795,8 +795,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		// Also create default launch config for cloud deployments.
 		{
 			// Revert to the setting's flag value for manual connection.
-			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
-
+			// Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
+			Conf.bManualWorkerConnectionOnly = false;
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
 		}

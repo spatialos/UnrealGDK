@@ -18,7 +18,6 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	LaunchConfiguration.ServerWorkerConfig.bManualWorkerConnectionOnly = false;
 	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
 }
 
