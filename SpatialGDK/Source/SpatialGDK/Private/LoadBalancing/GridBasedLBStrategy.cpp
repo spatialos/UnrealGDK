@@ -16,6 +16,8 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 	, WorldWidth(1000000.f)
 	, WorldHeight(1000000.f)
 	, InterestBorder(0.f)
+	, LocalCellId(0)
+	, bIsStrategyUsedOnLocalWorker(false)
 {
 }
 
@@ -64,10 +66,12 @@ void UGridBasedLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtua
 	{
 		// This worker is simulating a layer which is not part of the grid.
 		LocalCellId = WorkerCells.Num();
+		bIsStrategyUsedOnLocalWorker = false;
 	}
 	else
 	{
 		LocalCellId = VirtualWorkerIds.IndexOfByKey(InLocalVirtualWorkerId);
+		bIsStrategyUsedOnLocalWorker = true;
 	}
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 }
@@ -85,7 +89,7 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	if (LocalCellId == WorkerCells.Num())
+	if (!bIsStrategyUsedOnLocalWorker)
 	{
 		return false;
 	}
@@ -121,7 +125,7 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 {
 	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
 	check(IsReady());
-	check(LocalCellId != WorkerCells.Num());
+	check(bIsStrategyUsedOnLocalWorker);
 
 	const FBox2D Interest2D = WorkerCells[LocalCellId].ExpandBy(InterestBorder);
 
@@ -140,7 +144,7 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 {
 	check(IsReady());
-	check(LocalCellId != WorkerCells.Num());
+	check(bIsStrategyUsedOnLocalWorker);
 	const FVector2D Centre = WorkerCells[LocalCellId].GetCenter();
 	return FVector{ Centre.X, Centre.Y, 0.f };
 }

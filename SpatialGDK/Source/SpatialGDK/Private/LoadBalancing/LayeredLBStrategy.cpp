@@ -65,7 +65,7 @@ void ULayeredLBStrategy::Init()
 	UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
 	if (WorldSettings->DefaultLayerLoadBalanceStrategy == nullptr)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 	}

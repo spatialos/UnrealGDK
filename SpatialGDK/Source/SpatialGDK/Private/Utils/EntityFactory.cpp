@@ -50,14 +50,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FString ClientWorkerAttribute = GetConnectionOwningWorkerId(Actor);
-	WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::DefaultServerWorkerType.ToString() };
 
-	WorkerRequirementSet AnyServerRequirementSet = { ServerWorkerAttributeSet };
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { ServerWorkerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
+	WorkerRequirementSet AnyServerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
-	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { ServerWorkerAttributeSet, OwningClientAttributeSet };
+	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
@@ -412,11 +411,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	const UClass* Class = Actor->GetClass();
 
-	WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::DefaultServerWorkerType.ToString() };
-
 	// Construct an ACL for a read-only entity.
-	WorkerRequirementSet AnyServerRequirementSet = { ServerWorkerAttributeSet };
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { ServerWorkerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
+	WorkerRequirementSet AnyServerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))

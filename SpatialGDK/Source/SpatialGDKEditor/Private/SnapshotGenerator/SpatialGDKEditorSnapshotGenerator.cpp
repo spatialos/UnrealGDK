@@ -121,9 +121,7 @@ WorkerRequirementSet CreateReadACLForAlwaysRelevantEntities()
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	WorkerRequirementSet ReadACL;
-	const WorkerAttributeSet WorkerTypeAttributeSet{ { SpatialConstants::DefaultServerWorkerType.ToString() } };
-	ReadACL.Add(WorkerTypeAttributeSet);
+	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
 	return ReadACL;
 }

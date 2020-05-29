@@ -78,6 +78,7 @@ private:
 
 	TArray<FBox2D> WorkerCells;
 	uint32 LocalCellId;
+	bool bIsStrategyUsedOnLocalWorker;
 
 	static bool IsInside(const FBox2D& Box, const FVector2D& Location);
 };

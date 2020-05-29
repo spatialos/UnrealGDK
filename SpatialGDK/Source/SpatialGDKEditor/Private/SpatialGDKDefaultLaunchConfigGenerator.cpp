@@ -235,8 +235,8 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
 			Writer->WriteObjectStart(TEXT("world")); // World section begin
 				Writer->WriteObjectStart(TEXT("dimensions"));
-					Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
-					Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
+				Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
+				Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
 				Writer->WriteObjectEnd();
 				Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
 				Writer->WriteArrayStart(TEXT("legacy_flags"));
