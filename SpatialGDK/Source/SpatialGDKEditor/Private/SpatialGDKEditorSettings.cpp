@@ -449,15 +449,6 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 		return CookAndGeneratePlatform;
 	}
 
-	const FString PreferredPlatformForCookAndGenerateSchema(TEXT("Linux"));
-
-	ITargetPlatformManagerModule* TPM = GetTargetPlatformManager();
-
-	if (TPM->FindTargetPlatform(PreferredPlatformForCookAndGenerateSchema) != nullptr)
-	{
-		return PreferredPlatformForCookAndGenerateSchema;
-	}
-
 	// Return current Editor's Build variant as default.
 	return FPlatformProcess::GetBinariesSubdirectory();
 }
