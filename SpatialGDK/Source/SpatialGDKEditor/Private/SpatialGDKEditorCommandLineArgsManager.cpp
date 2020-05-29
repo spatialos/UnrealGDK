@@ -201,6 +201,7 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 		}
 
 		TravelUrl = SpatialGDKSettings->MobileRuntimeIP;
+		SpatialOSOptions += TEXT("-useExternalIpForBridge true");
 	}
 	else
 	{
