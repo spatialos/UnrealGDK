@@ -95,6 +95,7 @@ namespace ReleaseTool
             var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
 
+            // TODO: This must also check if a PR has been opened from release into master, else we risk missing that step (see https://buildkite.com/improbable/unrealgdk-release/builds/118#0beb457d-befe-4829-bd86-6b6a75cae296/364-384)
             // Check if the PR has been merged already for repeatability's sake. In the case where the release
             // step fails for whatever reason, any PRs that were already merged should stay merged and we should
             // just skip them.
@@ -175,8 +176,8 @@ namespace ReleaseTool
                         $"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                 }
 
-                // When run against UnrealEngine, this uploads the commit hashes of the merge into release.
-                // When run against UnrealGDK, these hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
+                // This uploads the commit hashes of the merge into release.
+                // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
                 BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
 
                 // Delete candidate branch.
