@@ -1023,7 +1023,7 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialOSNetFlowConfigurable() const
 void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::LocalDeployment;
+	SpatialGDKEditorSettings->SetSpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment);
 
 	OnAutoStartLocalDeploymentChanged();
 }
@@ -1031,7 +1031,7 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SpatialOSNetFlowType = ESpatialOSNetFlow::CloudDeployment;
+	SpatialGDKEditorSettings->SetSpatialOSNetFlowType(ESpatialOSNetFlow::CloudDeployment);
 
 	TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuthTokenGenerator = SpatialGDKEditorInstance->GetDevAuthTokenGeneratorRef();
 	DevAuthTokenGenerator->AsyncGenerateDevAuthToken();
@@ -1287,6 +1287,10 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowSuccessNotification("Successfully launched cloud deployment.");
+				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
+				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(DeploymentName);
+				UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName)
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
