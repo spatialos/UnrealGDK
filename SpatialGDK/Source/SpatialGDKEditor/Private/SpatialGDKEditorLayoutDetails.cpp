@@ -5,22 +5,14 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
-#include "HAL/PlatformFilemanager.h"
-#include "IOSRuntimeSettings.h"
-#include "Misc/App.h"
-#include "Misc/FileHelper.h"
-#include "Misc/MessageDialog.h"
-#include "Serialization/JsonSerializer.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 
 #include "SpatialCommandUtils.h"
+#include "SpatialGDKEditorCommandLineArgsManager.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
-
-DEFINE_LOG_CATEGORY(LogSpatialGDKEditorLayoutDetails);
 
 TSharedRef<IDetailCustomization> FSpatialGDKEditorLayoutDetails::MakeInstance()
 {
@@ -81,7 +73,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken)
+			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken)
 			.Content()
 			[
 				SNew(STextBlock).Text(FText::FromString("Generate Dev Auth Token"))
@@ -92,176 +84,44 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to Android device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
+		.MinDesiredWidth(550)
 		[
-			SNew(SButton)
-			.VAlign(VAlign_Center)
-		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
-		.Content()
-		[
-			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
-		]
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(SButton)
+				.VAlign(VAlign_Center)
+				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToAndroidDevice)
+				.Content()
+				[
+					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(SButton)
+				.VAlign(VAlign_Center)
+				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::RemoveCommandLineFromAndroidDevice)
+				.Content()
+				[
+					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from Android device"))
+				]
+			]
 		];
 
 	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to iOS device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
+		.MinDesiredWidth(275)
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
-		.Content()
-		[
-			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
-		]
+			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToIOSDevice)
+			.Content()
+			[
+				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
+			]
 		];
-}
-
-FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
-{
-	FString DevAuthToken;
-	FString ErrorMessage;
-	if (!SpatialCommandUtils::GenerateDevAuthToken(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), DevAuthToken, ErrorMessage))
-	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));
-		return FReply::Unhandled();
-	}
-
-	if (USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>())
-	{
-		SpatialGDKEditorSettings->SetDevelopmentAuthenticationToken(DevAuthToken);
-	}
-	return FReply::Handled();
-}
-
-bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile)
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString ProjectName = FApp::GetProjectName();
-
-	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
-	const FString MobileProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
-	FString TravelUrl;
-	FString SpatialOSOptions = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
-	if (SpatialGDKSettings->bMobileConnectToLocalDeployment)
-	{
-		if (SpatialGDKSettings->MobileRuntimeIP.IsEmpty())
-		{
-			UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."))));
-			return false;
-		}
-
-		TravelUrl = SpatialGDKSettings->MobileRuntimeIP;
-	}
-	else
-	{
-		TravelUrl = TEXT("connect.to.spatialos");
-
-		if (SpatialGDKSettings->DevelopmentAuthenticationToken.IsEmpty())
-		{
-			FReply GeneratedTokenReply = GenerateDevAuthToken();
-			if (!GeneratedTokenReply.IsEventHandled())
-			{
-				return false;
-			}
-		}
-
-		SpatialOSOptions += FString::Printf(TEXT(" +devauthToken %s"), *(SpatialGDKSettings->DevelopmentAuthenticationToken));
-		if (!SpatialGDKSettings->DevelopmentDeploymentToConnect.IsEmpty())
-		{
-			SpatialOSOptions += FString::Printf(TEXT(" +deployment %s"), *(SpatialGDKSettings->DevelopmentDeploymentToConnect));
-		}
-	}
-
-	const FString SpatialOSCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSOptions, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
-	CommandLineArgsFile = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt")));
-
-	if (!FFileHelper::SaveStringToFile(SpatialOSCommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
-	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to write command line args to file: %s"), *CommandLineArgsFile);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to write command line args to file: %s"), *CommandLineArgsFile)));
-		return false;
-	}
-
-	return true;
-}
-
-bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile)
-{
-	FString ExeOutput;
-	FString StdErr;
-	int32 ExitCode;
-
-	FPlatformProcess::ExecProcess(*Executable, *ExeArguments, &ExitCode, &ExeOutput, &StdErr);
-	if (ExitCode != 0)
-	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to update the mobile client. %s %s"), *ExeOutput, *StdErr);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Failed to update the mobile client. See the Output log for more information.")));
-		return false;
-	}
-
-	UE_LOG(LogSpatialGDKEditorLayoutDetails, Log, TEXT("Successfully stored command line args on device: %s"), *ExeOutput);
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (!PlatformFile.DeleteFile(*CommandLineArgsFile))
-	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to delete file %s"), *CommandLineArgsFile);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to delete file %s"), *CommandLineArgsFile)));
-		return false;
-	}
-
-	return true;
-}
-
-FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
-{
-	FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
-	if (AndroidHome.IsEmpty())
-	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this.")));
-		return FReply::Unhandled();
-	}
-
-	FString OutCommandLineArgsFile;
-
-	if (!TryConstructMobileCommandLineArgumentsFile(OutCommandLineArgsFile))
-	{
-		return FReply::Unhandled();
-	}
-
-	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *FString(FApp::GetProjectName()));
-	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
-
-#if PLATFORM_WINDOWS
-	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb.exe")));
-#else
-	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
-#endif
-
-	TryPushCommandLineArgsToDevice(AdbExe, AdbArguments, OutCommandLineArgsFile);
-	return FReply::Handled();
-}
-
-FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
-{
-	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
-	FString OutCommandLineArgsFile;
-
-	if (!TryConstructMobileCommandLineArgumentsFile(OutCommandLineArgsFile))
-	{
-		return FReply::Unhandled();
-	}
-
-	FString Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())), *OutCommandLineArgsFile);
-
-#if PLATFORM_MAC
-	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *Executable, *DeploymentServerArguments);
-	Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
-#endif
-
-	TryPushCommandLineArgsToDevice(Executable, DeploymentServerArguments, OutCommandLineArgsFile);
-	return FReply::Handled();
 }

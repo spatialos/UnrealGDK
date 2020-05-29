@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
 - Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the Connection dropdown to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
 - Added new icons for the toolbar.
+- The port is now respected when travelling via URL, translating to the receptionist port. The `-receptionistPort` command-line argument will still be used for the first connection.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
@@ -113,6 +114,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabled RPC ring buffers by default. We'll remove the legacy RPC mode in a future release.
 - Removed the `bPackRPCs` property and the `--OverrideRPCPacking` flag.
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
+- Automatically remove UE4CommandLine.txt after finishing a Launch on device session on an Android device (only UnrealEngine 4.24 or above). This is done to prevent the launch session command line from overriding the one built into the APK.
 
 ## Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.

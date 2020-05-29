@@ -543,6 +543,34 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 	GenerateSchema(true);
 }
 
+void FSpatialGDKEditorToolbarModule::OnShowSingleFailureNotification(const FString& NotificationText)
+{
+	AsyncTask(ENamedThreads::GameThread, [NotificationText]
+	{
+		if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+		{
+			Module->ShowSingleFailureNotification(NotificationText);
+		}
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::ShowSingleFailureNotification(const FString& NotificationText)
+{
+	// If a task notification already exists then expire it.
+	if (TaskNotificationPtr.IsValid())
+	{
+		TaskNotificationPtr.Pin()->ExpireAndFadeout();
+	}
+
+	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
+	Info.Image = FSpatialGDKEditorToolbarStyle::Get().GetBrush(TEXT("SpatialGDKEditorToolbar.SpatialOSLogo"));
+	Info.ExpireDuration = 5.0f;
+	Info.bFireAndForget = false;
+
+	TaskNotificationPtr = FSlateNotificationManager::Get().AddNotification(Info);
+	ShowFailedNotification(NotificationText);
+}
+
 void FSpatialGDKEditorToolbarModule::OnShowTaskStartNotification(const FString& NotificationText)
 {
 	AsyncTask(ENamedThreads::GameThread, [NotificationText]
@@ -1220,12 +1248,20 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment()
 
 	if (CloudDeploymentConfiguration.bGenerateSchema)
 	{
-		SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset);
+		if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+		{
+			OnShowSingleFailureNotification(TEXT("Generate schema failed."));
+			return FReply::Unhandled();
+		}
 	}
 
 	if (CloudDeploymentConfiguration.bGenerateSnapshot)
 	{
-		SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath);
+		if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath))
+		{
+			OnShowSingleFailureNotification(TEXT("Generate snapshot failed."));
+			return FReply::Unhandled();
+		}
 	}
 
 	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
@@ -1245,6 +1281,10 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowSuccessNotification("Successfully launched cloud deployment.");
+				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
+				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(DeploymentName);
+				UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName)
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
