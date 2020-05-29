@@ -1287,6 +1287,10 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowSuccessNotification("Successfully launched cloud deployment.");
+				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
+				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(DeploymentName);
+				UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName)
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
