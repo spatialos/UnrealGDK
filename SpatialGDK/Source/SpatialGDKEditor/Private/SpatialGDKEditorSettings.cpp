@@ -39,8 +39,6 @@ void FSpatialLaunchConfigDescription::OnWorkerTypesChanged()
 	}
 }
 
-FRuntimeVariantVersion::FRuntimeVariantVersion() = default;
-
 const FString& FRuntimeVariantVersion::GetVersionForLocal() const
 {
 	if (bUseGDKPinnedRuntimeVersion || LocalRuntimeVersion.IsEmpty())
@@ -90,12 +88,13 @@ FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpa
 	return CompatibilityModeRuntimeVersion;
 #endif
 
-	if (Variant == ESpatialOSRuntimeVariant::CompatibilityMode)
+	switch (Variant)
 	{
+	case ESpatialOSRuntimeVariant::CompatibilityMode:
 		return CompatibilityModeRuntimeVersion;
+	default:
+		return StandardRuntimeVersion;
 	}
-	check(Variant == ESpatialOSRuntimeVariant::Standard);
-	return StandardRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -279,9 +278,9 @@ void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, bool Use)
+void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, bool bUse)
 {
-	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersion = Use;
+	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersion = bUse;
 	SaveConfig();
 }
 

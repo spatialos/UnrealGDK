@@ -15,9 +15,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
+class FSpatialRuntimeVersionCustomization;
 class UAbstractRuntimeLoadBalancingStrategy;
 class USpatialGDKEditorSettings;
-class FSpatialRuntimeVersionCustomization;
 
 USTRUCT()
 struct FWorldLaunchSection
@@ -245,15 +245,15 @@ struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
 
 	GENERATED_BODY()
 
-	FRuntimeVariantVersion();
+	FRuntimeVariantVersion() = default;
 
 	FRuntimeVariantVersion(const FString& InPinnedVersion) : PinnedVersion(InPinnedVersion)
 	{}
 
-	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
+	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending on the settings. */
 	const FString& GetVersionForCloud() const;
 
-	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
+	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending on the settings. */
 	const FString& GetVersionForLocal() const;
 
 	bool GetUseGDKPinnedRuntimeVersion() const { return bUseGDKPinnedRuntimeVersion; }
@@ -315,8 +315,6 @@ public:
 		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
 	}
 
-	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
-
 	UPROPERTY(EditAnywhere, config, Category = "Runtime")
 	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
 
@@ -327,6 +325,8 @@ public:
 	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
 
 private:
+
+	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
 
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
