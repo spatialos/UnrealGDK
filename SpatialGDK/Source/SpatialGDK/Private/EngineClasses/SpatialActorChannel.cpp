@@ -634,18 +634,10 @@ int64 USpatialActorChannel::ReplicateActor()
 			// We preemptively set the Actor role to SimulatedProxy if:
 			//  - offloading is disabled (with offloading we never give up authority since we're always spawning authoritatively),
 			//  - load balancing is disabled (since the legacy behaviour is to wait until Spatial tells us we have authority) OR
-			//  - load balancing is enabled AND our lb strategy says this worker shouldn't have authority AND the Actor isn't locked.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() &&
-				(!SpatialGDKSettings->bEnableUnrealLoadBalancer
-					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))))
+			if (!USpatialStatics::IsSpatialOffloadingEnabled() && !SpatialGDKSettings->bEnableUnrealLoadBalancer)
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
-
-				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
-				{
-					UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-				}
 			}
 		}
 		else

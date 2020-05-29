@@ -7,6 +7,7 @@
 
 class FLBStrategyEditorExtensionManager;
 class FSpatialGDKEditor;
+class FSpatialGDKEditorCommandLineArgsManager;
 
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
@@ -49,6 +50,8 @@ private:
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();
 
+private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
+	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 };

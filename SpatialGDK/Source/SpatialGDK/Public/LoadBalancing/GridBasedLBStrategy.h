@@ -48,6 +48,9 @@ public:
 	virtual bool RequiresHandoverData() const override { return Rows * Cols > 1; }
 
 	virtual FVector GetWorkerEntityPosition() const override;
+
+	virtual uint32 GetMinimumRequiredWorkers() const override;
+	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
 /* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;

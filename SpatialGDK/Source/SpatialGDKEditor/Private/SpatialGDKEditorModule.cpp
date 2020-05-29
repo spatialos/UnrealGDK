@@ -3,15 +3,19 @@
 #include "SpatialGDKEditorModule.h"
 
 #include "EditorExtension/GridLBStrategyEditorExtension.h"
+#include "EditorExtension/GridLBStrategyEditorExtension.h"
 #include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandLineArgsManager.h"
 #include "SpatialGDKEditorLayoutDetails.h"
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "Utils/LaunchConfigEditor.h"
@@ -22,6 +26,7 @@
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
+	, CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
 {
 
 }
@@ -32,6 +37,7 @@ void FSpatialGDKEditorModule::StartupModule()
 
 	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
+	CommandLineArgsManager->Init();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
