@@ -445,7 +445,7 @@ GDK team";
 
         private static (string, int) ExtractPullRequestInfo(string pullRequestUrl)
         {
-            const string regexString = "github\.com\/.*\/(.*)\/pull\/([0-9]*)";
+            const string regexString = "github\\.com\\/.*\\/(.*)\\/pull\\/([0-9]*)";
 
             var match = Regex.Match(pullRequestUrl, regexString);
 
