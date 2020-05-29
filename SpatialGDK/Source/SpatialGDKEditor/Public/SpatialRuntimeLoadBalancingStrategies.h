@@ -13,8 +13,6 @@ class SPATIALGDKEDITOR_API UAbstractRuntimeLoadBalancingStrategy : public UObjec
 	GENERATED_BODY()
 
 public:
-	virtual bool WriteToConfiguration(TSharedRef<TJsonWriter<>> Writer) const PURE_VIRTUAL(UAbstractRuntimeLoadBalancingStrategy::WriteToConfiguration,return false;);
-
 	virtual int32 GetNumberOfWorkersForPIE() const PURE_VIRTUAL(UAbstractRuntimeLoadBalancingStrategy::GetNumberOfWorkersForPIE, return 0;);
 };
 
@@ -25,8 +23,6 @@ class SPATIALGDKEDITOR_API USingleWorkerRuntimeStrategy : public UAbstractRuntim
 
 public:
 	USingleWorkerRuntimeStrategy();
-
-	bool WriteToConfiguration(TSharedRef<TJsonWriter<>> Writer) const override;
 
 	int32 GetNumberOfWorkersForPIE() const override;
 };
@@ -47,8 +43,6 @@ public:
 	UPROPERTY(Category = "LoadBalancing", EditAnywhere, meta = (DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
 	
-	bool WriteToConfiguration(TSharedRef<TJsonWriter<>> Writer) const override;
-
 	int32 GetNumberOfWorkersForPIE() const override;
 };
 
@@ -63,8 +57,6 @@ public:
 	/** Number of columns in the rectangle grid load balancing config. */
 	UPROPERTY(Category = "LoadBalancing", EditAnywhere, meta = (DisplayName = "Number of workers", ClampMin = "1", UIMin = "1"))
 	int32 NumWorkers;
-
-	bool WriteToConfiguration(TSharedRef<TJsonWriter<>> Writer) const override;
 
 	int32 GetNumberOfWorkersForPIE() const override;
 };

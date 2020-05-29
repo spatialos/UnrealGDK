@@ -749,7 +749,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		FWorkerTypeLaunchSection Conf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
-		Conf.WorkerLoadBalancing = LoadBalancingStrat;
 		// Force manual connection to true as this is the config for PIE.
 		Conf.bManualWorkerConnectionOnly = true;
 		if (Conf.bAutoNumEditorInstances)

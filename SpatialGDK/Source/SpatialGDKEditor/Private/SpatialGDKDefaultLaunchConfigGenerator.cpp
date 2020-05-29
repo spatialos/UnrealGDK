@@ -90,11 +90,14 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerTyp
 	return true;
 }
 
-bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, UAbstractRuntimeLoadBalancingStrategy& Strategy, const bool ManualWorkerConnectionOnly)
+bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, uint32 NumEditorInstances, const bool ManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
-		Strategy.WriteToConfiguration(Writer);
+		Writer->WriteObjectStart("rectangle_grid");
+			Writer->WriteValue(TEXT("cols"), 1);
+			Writer->WriteValue(TEXT("rows"), (int32) NumEditorInstances);
+		Writer->WriteObjectEnd();
 		Writer->WriteObjectStart(TEXT("options"));
 			Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
 		Writer->WriteObjectEnd();
@@ -213,11 +216,9 @@ bool FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, 
 	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 	check(EditorWorld != nullptr);
 
-	USingleWorkerRuntimeStrategy* DefaultStrategy = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
-	UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = DefaultStrategy;
-	TryGetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, OutWorldDimensions);
-
 	OutWorker = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
+	OutWorker.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+
 	return true;
 }
 
@@ -257,14 +258,14 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteObjectEnd(); // World section end
 			Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 				Writer->WriteArrayStart("layer_configurations");
-				if (InWorker.WorkerLoadBalancing != nullptr)
+				if (InWorker.NumEditorInstances > 0)
 				{
-					WriteLoadbalancingSection(Writer, SpatialConstants::DefaultServerWorkerType, *InWorker.WorkerLoadBalancing, InWorker.bManualWorkerConnectionOnly);
+					WriteLoadbalancingSection(Writer, SpatialConstants::DefaultServerWorkerType, InWorker.NumEditorInstances, InWorker.bManualWorkerConnectionOnly);
 				}
 				Writer->WriteArrayEnd();
 				Writer->WriteObjectEnd(); // Load balancing section end
 				Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-				if (InWorker.WorkerLoadBalancing != nullptr)
+				if (InWorker.NumEditorInstances > 0)
 				{
 					WriteWorkerSection(Writer, SpatialConstants::DefaultServerWorkerType, InWorker);
 				}

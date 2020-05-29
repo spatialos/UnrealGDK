@@ -21,17 +21,6 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
 }
 
-void ULaunchConfigurationEditor::OnWorkerTypesChanged()
-{
-	// LaunchConfiguration.OnWorkerTypesChanged();
-	FWorkerTypeLaunchSection& LaunchSection = LaunchConfiguration.ServerWorkerConfig;
-	if (LaunchSection.WorkerLoadBalancing == nullptr)
-	{
-		LaunchSection.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<UAbstractRuntimeLoadBalancingStrategy>();
-	}
-	PostEditChange();
-}
-
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
 	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))

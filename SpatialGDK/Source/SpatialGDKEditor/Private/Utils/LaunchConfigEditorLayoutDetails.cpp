@@ -18,10 +18,6 @@ void FLaunchConfigEditorLayoutDetails::ForceRefreshLayout()
 		TArray<TWeakObjectPtr<UObject>> Objects;
 		MyLayout->GetObjectsBeingCustomized(Objects);
 		ULaunchConfigurationEditor* Editor = Objects.Num() > 0 ? Cast<ULaunchConfigurationEditor>(Objects[0].Get()) : nullptr;
-		if (Editor != nullptr)
-		{
-			Editor->OnWorkerTypesChanged();
-		}
 		MyLayout->ForceRefreshDetails();
 	}
 }

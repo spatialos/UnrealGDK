@@ -78,7 +78,6 @@ bool FStartDeployment::Update()
 			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
 			FWorkerTypeLaunchSection Conf;
-			Conf.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
 
 			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
 			{
