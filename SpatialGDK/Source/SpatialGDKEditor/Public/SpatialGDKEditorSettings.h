@@ -297,7 +297,7 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
-	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema (if empty, defaults to Editor's platform)"))
 	FString CookAndGeneratePlatform;
 
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
@@ -448,10 +448,7 @@ public:
 			: SpatialOSSnapshotToLoad;
 	}
 
-	FORCEINLINE FString GetCookAndGenerateSchemaTargetPlatform() const
-	{
-		return CookAndGeneratePlatform;
-	}
+	FString GetCookAndGenerateSchemaTargetPlatform() const;
 
 	FORCEINLINE FString GetCookAndGenerateSchemaAdditionalArgs() const
 	{
