@@ -116,7 +116,7 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	// Use MemberProperty here so we report the correct member name for nested changes
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	// TODO(harkness): Engine PR to remove bEnableOffloading from ULevelEditorPlaySettings.
+	// TODO(UNR-3569): Engine PR to remove bEnableOffloading from ULevelEditorPlaySettings.
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
