@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "LoadBalancing/LayeredLBStrategy.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/WorldSettings.h"
 
@@ -22,4 +24,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
+	/** Layer load balancing  configuration. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker")
+	TMap<FName, FLBLayerInfo> WorkerLBLayers;
 };

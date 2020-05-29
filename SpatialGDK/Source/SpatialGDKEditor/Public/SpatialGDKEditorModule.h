@@ -6,6 +6,7 @@
 #include "Modules/ModuleManager.h"
 
 class FLBStrategyEditorExtensionManager;
+class FSpatialGDKEditorCommandLineArgsManager;
 
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
@@ -41,5 +42,7 @@ private:
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();
 
+private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
+	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 };

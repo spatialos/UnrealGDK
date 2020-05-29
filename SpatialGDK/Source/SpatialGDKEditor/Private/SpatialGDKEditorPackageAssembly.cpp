@@ -6,6 +6,7 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
+#include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
 #include "UnrealEdMisc.h"
 
@@ -63,6 +64,7 @@ void FSpatialGDKPackageAssembly::BuildAndUploadAssembly(const FCloudDeploymentCo
 {
 	if (CanBuild())
 	{
+		Status = EPackageAssemblyStatus::NONE;
 		CloudDeploymentConfiguration = InCloudDeploymentConfiguration;
 
 		Steps.Enqueue(EPackageAssemblyStep::BUILD_SERVER);
@@ -149,6 +151,18 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 		{
 			FString NotificationMessage = FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 			ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
+			if (Status == EPackageAssemblyStatus::ASSEMBLY_EXISTS)
+			{
+				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Assembly_Exists", "The assembly with the specified name has previously been uploaded. Enable the 'Force Overwrite on Upload' option in the Cloud Deployment dialog to overwrite the existing assembly or specify a different assembly name."));
+			}
+			else if (Status == EPackageAssemblyStatus::BAD_PROJECT_NAME)
+			{
+				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Bad_Project_Name", "The project name appears to be incorrect or you do not have permissions for this project. You can edit the project name from the Cloud Deployment dialog."));
+			}
+			else if (Status == EPackageAssemblyStatus::NONE)
+			{
+				Status = EPackageAssemblyStatus::UNKNOWN_ERROR;
+			}
 		});
 		Steps.Empty();
 	}
@@ -156,12 +170,23 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 
 void FSpatialGDKPackageAssembly::OnTaskOutput(FString Message)
 {
+	//UNR-3486 parse for assembly name conflict so we can display a message to the user
+	//because the spatial cli doesn't return error codes this is done via string matching
+	if (Message.Find(TEXT("Either change the name or use the '--force' flag")) >= 0)
+	{
+		Status = EPackageAssemblyStatus::ASSEMBLY_EXISTS;
+	}
+	else if (Message.Find(TEXT("Make sure the project name is correct and you have permission to upload new assemblies")) >= 0)
+	{
+		Status = EPackageAssemblyStatus::BAD_PROJECT_NAME;
+	}
 	UE_LOG(LogSpatialGDKEditorPackageAssembly, Display, TEXT("%s"), *Message);
 }
 
 void FSpatialGDKPackageAssembly::OnTaskCanceled()
 {
 	Steps.Empty();
+	Status = EPackageAssemblyStatus::CANCELED;
 	FString NotificationMessage = FString::Printf(TEXT("Cancelled assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 	AsyncTask(ENamedThreads::GameThread, [this, NotificationMessage]()
 	{
