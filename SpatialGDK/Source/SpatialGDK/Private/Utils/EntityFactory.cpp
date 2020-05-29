@@ -63,7 +63,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ SpatialConstants::DefaultServerWorkerType.ToString() };
+	WorkerAttributeSet WorkerAttributeOrSpecificWorker = SpatialConstants::UnrealServerAttributeSet;
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Load Balancer Attribute if we are using the load balancer.

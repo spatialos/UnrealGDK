@@ -169,8 +169,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
 	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		const WorkerAttributeSet WorkerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
-		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
 
 		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 		for (auto& ComponentId : NewComponentIds)
