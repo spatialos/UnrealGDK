@@ -452,3 +452,9 @@ void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
 	ExposedRuntimeIP = RuntimeIP;
 	SaveConfig();
 }
+
+void USpatialGDKEditorSettings::SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType)
+{
+	SpatialOSNetFlowType = NetFlowType;
+	SaveConfig();
+}
