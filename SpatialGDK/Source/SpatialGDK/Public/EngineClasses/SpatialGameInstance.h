@@ -99,7 +99,7 @@ private:
 	TSet<ULevel*> CachedLevelsForNetworkIntialize;
 
 	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
-	void InitialiseSpatialClasses();
+	void TryCreateConnectionManager();
 	void TryAddLocatorCommandLineArg();
 
 	UFUNCTION()

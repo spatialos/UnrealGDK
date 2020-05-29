@@ -106,31 +106,34 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
-	InitialiseSpatialClasses();
+	TryCreateConnectionManager();
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
 #endif
 
 void USpatialGameInstance::TryAddLocatorCommandLineArg()
 {
-	// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
-	// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
-
-	// Initialize a locator configuration which will parse command line arguments.
-	FLocatorConfig LocatorConfig;
-	if (LocatorConfig.TryLoadCommandLineArgs())
+	if (HasSpatialNetDriver())
 	{
-		// Modify the commandline args to have a Host IP to force a NetDriver to be used.
-		const TCHAR* CommandLineArgs = FCommandLine::Get();
+		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
+		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
 
-		FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
-		NewCommandLineArgs.Append(FString(CommandLineArgs));
+		// Initialize a locator configuration which will parse command line arguments.
+		FLocatorConfig LocatorConfig;
+		if (LocatorConfig.TryLoadCommandLineArgs())
+		{
+			// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+			const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-		FCommandLine::Set(*NewCommandLineArgs);
+			FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+			NewCommandLineArgs.Append(FString(CommandLineArgs));
+
+			FCommandLine::Set(*NewCommandLineArgs);
+		}
 	}
 }
 
-void USpatialGameInstance::InitialiseSpatialClasses()
+void USpatialGameInstance::TryCreateConnectionManager()
 {
 	if (HasSpatialNetDriver())
 	{
@@ -153,7 +156,7 @@ void USpatialGameInstance::StartGameInstance()
 
 	if (!GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
 	{
-		InitialiseSpatialClasses();
+		TryCreateConnectionManager();
 	}
 	else
 	{
