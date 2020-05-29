@@ -384,11 +384,17 @@ private:
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
 public:
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
-	bool bMobileConnectToLocalDeployment;
+	/** If checked, use the connection flow override below instead of the one selected in the editor when building the command line for mobile. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Override Mobile Connection Flow (only for Push settings to device)"))
+	bool bMobileOverrideConnectionFlow;
 
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
-	FString MobileRuntimeIP;
+	/** The connection flow that should be used when pushing command line to the mobile device. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileOverrideConnectionFlow", DisplayName = "Mobile Connection Flow"))
+	TEnumAsByte<ESpatialOSNetFlow::Type> MobileConnectionFlow;
+
+	/** If specified, use this IP instead of 'Exposed local runtime IP address' when building the command line to push to the mobile device. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Local Runtime IP Override"))
+	FString MobileRuntimeIPOverride;
 
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
 	FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
