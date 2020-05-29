@@ -27,6 +27,9 @@ namespace
 		case ERPCResult::UnresolvedParameters:
 			return TEXT("Unresolved Parameters");
 
+		case ERPCResult::TimedOut:
+			return TEXT("Timed Out");
+
 		case ERPCResult::NoActorChannel:
 			return TEXT("No Actor Channel");
 

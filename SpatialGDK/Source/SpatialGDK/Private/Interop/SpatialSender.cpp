@@ -679,6 +679,15 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
 	}
 
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	const float QueuedOutgoingRPCWaitTime = 30;
+	//const float QueuedOutgoingRPCWaitTime = GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime;
+	//if (QueuedOutgoingRPCWaitTime != 0.f && QueuedOutgoingRPCWaitTime < TimeDiff)
+	if (QueuedOutgoingRPCWaitTime < TimeDiff)
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::TimedOut, true };
+	}
+
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 	if (Channel == nullptr)
 	{
