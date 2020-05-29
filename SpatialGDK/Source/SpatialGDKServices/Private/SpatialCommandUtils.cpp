@@ -152,7 +152,14 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 
 	if (ExitCode != 0)
 	{
-		OutErrorMessage = FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult);
+		FString ErrorMessage = CreateDevAuthTokenResult;
+		TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(CreateDevAuthTokenResult);
+		TSharedPtr<FJsonObject> JsonRootObject;
+		if (FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid())
+		{
+			JsonRootObject->TryGetStringField("error", ErrorMessage);
+		}
+		OutErrorMessage = FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *ErrorMessage);
 		return false;
 	};
 
