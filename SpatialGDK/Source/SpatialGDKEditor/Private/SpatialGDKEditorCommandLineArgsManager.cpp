@@ -191,19 +191,34 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 	const FString MobileProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
 	FString TravelUrl;
 	FString SpatialOSOptions = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
-	if (SpatialGDKSettings->bMobileConnectToLocalDeployment)
+
+	ESpatialOSNetFlow::Type ConnectionFlow = SpatialGDKSettings->SpatialOSNetFlowType;
+	if (SpatialGDKSettings->bMobileOverrideConnectionFlow)
 	{
-		if (SpatialGDKSettings->MobileRuntimeIP.IsEmpty())
+		ConnectionFlow = SpatialGDKSettings->MobileConnectionFlow;
+	}
+
+	if (ConnectionFlow == ESpatialOSNetFlow::LocalDeployment)
+	{
+		FString RuntimeIP = SpatialGDKSettings->ExposedRuntimeIP;
+		if (!SpatialGDKSettings->MobileRuntimeIPOverride.IsEmpty())
 		{
-			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."))));
+			RuntimeIP = SpatialGDKSettings->MobileRuntimeIPOverride;
+		}
+
+		if (RuntimeIP.IsEmpty())
+		{
+			const FString ErrorMessage = TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP.");
+			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("%s"), *ErrorMessage);
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));
 			return false;
 		}
 
-		TravelUrl = SpatialGDKSettings->MobileRuntimeIP;
-		SpatialOSOptions += TEXT("-useExternalIpForBridge true");
+		TravelUrl = RuntimeIP;
+
+		SpatialOSOptions += TEXT(" -useExternalIpForBridge true");
 	}
-	else
+	else if (ConnectionFlow == ESpatialOSNetFlow::CloudDeployment)
 	{
 		TravelUrl = TEXT("connect.to.spatialos");
 
@@ -216,10 +231,10 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 			}
 		}
 
-		SpatialOSOptions += FString::Printf(TEXT(" +devauthToken %s"), *(SpatialGDKSettings->DevelopmentAuthenticationToken));
+		SpatialOSOptions += FString::Printf(TEXT(" -devauthToken %s"), *(SpatialGDKSettings->DevelopmentAuthenticationToken));
 		if (!SpatialGDKSettings->DevelopmentDeploymentToConnect.IsEmpty())
 		{
-			SpatialOSOptions += FString::Printf(TEXT(" +deployment %s"), *(SpatialGDKSettings->DevelopmentDeploymentToConnect));
+			SpatialOSOptions += FString::Printf(TEXT(" -deployment %s"), *(SpatialGDKSettings->DevelopmentDeploymentToConnect));
 		}
 	}
 
