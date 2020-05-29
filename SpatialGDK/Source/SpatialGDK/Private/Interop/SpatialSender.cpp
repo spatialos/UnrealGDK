@@ -642,8 +642,7 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			const WorkerAttributeSet WorkerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { WorkerAttribute } );
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet } );
 			continue;
 		}
 
