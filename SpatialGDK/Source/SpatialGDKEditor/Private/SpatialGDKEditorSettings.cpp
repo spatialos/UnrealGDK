@@ -2,6 +2,7 @@
 
 #include "SpatialGDKEditorSettings.h"
 
+#include "Interfaces/ITargetPlatformManagerModule.h"
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
@@ -48,7 +49,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
-	, CookAndGeneratePlatform("Win64")
+	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
@@ -433,4 +434,21 @@ void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
 {
 	ExposedRuntimeIP = RuntimeIP;
 	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType)
+{
+	SpatialOSNetFlowType = NetFlowType;
+	SaveConfig();
+}
+
+FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() const
+{
+	if (!CookAndGeneratePlatform.IsEmpty())
+	{
+		return CookAndGeneratePlatform;
+	}
+
+	// Return current Editor's Build variant as default.
+	return FPlatformProcess::GetBinariesSubdirectory();
 }
