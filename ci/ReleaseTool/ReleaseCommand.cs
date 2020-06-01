@@ -95,12 +95,47 @@ namespace ReleaseTool
             var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
 
-            // TODO: This must also check if a PR has been opened from release into master, else we risk missing that step (see https://buildkite.com/improbable/unrealgdk-release/builds/118#0beb457d-befe-4829-bd86-6b6a75cae296/364-384)
-            // Check if the PR has been merged already for repeatability's sake. In the case where the release
-            // step fails for whatever reason, any PRs that were already merged should stay merged and we should
-            // just skip them.
+            // Check if the PR has been merged already.
+            // If it has, log the PR URL and move on.
+            // This ensures the idempotence of the pipeline.
             if (gitHubClient.GetMergeState(gitHubRepo, pullRequestId) == GitHubClient.MergeState.AlreadyMerged)
             {
+                Logger.Info("Candidate branch has already merged into release branch: {0}", pullRequest.HtmlUrl);
+
+                // Check if a PR has already been opened from release branch into source branch.
+                // If it has, log the PR URL and move on.
+                // This ensures the idempotence of the pipeline.
+                var branchFrom = options.ReleaseBranch;
+                var branchTo = options.SourceBranch;
+                if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
+                {
+                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                        branchFrom,
+                        branchTo,
+                        string.Format(PullRequestNameTemplate, options.Version),
+                        pullRequestBody);
+                }
+
+                else
+                {
+                    Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
+                }
+
+                var prAnnotation = string.Format(prAnnotationTemplate,
+                    pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
+                BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
+
+                Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+                Logger.Info("Successfully created PR from release branch into source branch.");
+                Logger.Info("Merge hash: {0}", pullRequest.MergeCommitSha);
+            }
+            
+            catch (Exception e)
+            {
+                Logger.Error(e, "ERROR: Unable to release candidate branch and/or merge the release branch back into master. Error: {0}", e);
+                return 1;
+            }
+
                 return 0;
             }
 
