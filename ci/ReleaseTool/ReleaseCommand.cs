@@ -100,7 +100,7 @@ namespace ReleaseTool
             // This ensures the idempotence of the pipeline.
             if (gitHubClient.GetMergeState(gitHubRepo, pullRequestId) == GitHubClient.MergeState.AlreadyMerged)
             {
-                Logger.Info("Candidate branch has already merged into release branch: {0}", pullRequest.HtmlUrl);
+                Logger.Info("Candidate branch has already merged into release branch. No merge operation will be attempted.");
 
                 // Check if a PR has already been opened from release branch into source branch.
                 // If it has, log the PR URL and move on.
