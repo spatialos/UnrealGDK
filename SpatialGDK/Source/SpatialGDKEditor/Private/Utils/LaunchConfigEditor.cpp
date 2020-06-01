@@ -2,13 +2,32 @@
 
 #include "Utils/LaunchConfigEditor.h"
 
+#include "SpatialGDKSettings.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
+
 #include "DesktopPlatformModule.h"
 #include "Framework/Application/SlateApplication.h"
 #include "IDesktopPlatform.h"
-#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+
+void ULaunchConfigurationEditor::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+}
 
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
+	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+	{
+		return;
+	}
+
 	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 
 	FString DefaultOutPath = SpatialGDKServicesConstants::SpatialOSDirectory;
@@ -25,6 +44,9 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		GenerateDefaultLaunchConfig(Filenames[0], &LaunchConfiguration);
+		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+		{
+			OnConfigurationSaved.ExecuteIfBound(this, Filenames[0]);
+		}
 	}
 }

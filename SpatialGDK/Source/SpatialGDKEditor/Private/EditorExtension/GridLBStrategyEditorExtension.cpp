@@ -2,6 +2,7 @@
 
 #include "GridLBStrategyEditorExtension.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 class UGridBasedLBStrategy_Spy : public UGridBasedLBStrategy
 {
@@ -12,13 +13,14 @@ public:
 	using UGridBasedLBStrategy::Cols;
 };
 
-bool FGridLBStrategyEditorExtension::GetDefaultLaunchConfiguration(const UGridBasedLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const
+bool FGridLBStrategyEditorExtension::GetDefaultLaunchConfiguration(const UGridBasedLBStrategy* Strategy, UAbstractRuntimeLoadBalancingStrategy*& OutConfiguration, FIntPoint& OutWorldDimensions) const
 {
 	const UGridBasedLBStrategy_Spy* StrategySpy = static_cast<const UGridBasedLBStrategy_Spy*>(Strategy);
 
-	OutConfiguration.Rows = StrategySpy->Rows;
-	OutConfiguration.Columns = StrategySpy->Cols;
-	OutConfiguration.NumEditorInstances = StrategySpy->Rows * StrategySpy->Cols;
+	UGridRuntimeLoadBalancingStrategy* GridStrategy = NewObject<UGridRuntimeLoadBalancingStrategy>();
+	GridStrategy->Rows = StrategySpy->Rows;
+	GridStrategy->Columns = StrategySpy->Cols;
+	OutConfiguration = GridStrategy;
 
 	// Convert from cm to m.
 	OutWorldDimensions = FIntPoint(StrategySpy->WorldWidth / 100, StrategySpy->WorldHeight / 100);

@@ -49,7 +49,7 @@ struct FWorkerRegionInfo
 	FBox2D Extents;
 };
 
-UCLASS(SpatialType=(Singleton, NotPersistent), Blueprintable, NotPlaceable)
+UCLASS(SpatialType=(NotPersistent), Blueprintable, NotPlaceable)
 class SPATIALGDK_API ASpatialDebugger :
 	public AInfo
 {
@@ -132,7 +132,6 @@ public:
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 private:
-
 	void LoadIcons();
 
 	// FOnEntityAdded/FOnEntityRemoved Delegates

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
@@ -15,8 +14,9 @@ class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-DECLARE_EVENT(USpatialGameInstance, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialGameInstance, FOnConnectionFailedEvent, const FString&);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSpawnFailedEvent, const FString&, Reason);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -53,16 +53,24 @@ public:
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
+	void HandleOnPlayerSpawnFailed(const FString& Reason);
+
+	void CleanupCachedLevelsAfterConnection();
 
 	// Invoked when this worker has successfully connected to SpatialOS
-	FOnConnectedEvent OnConnected;
+	UPROPERTY(BlueprintAssignable)
+	FOnConnectedEvent OnSpatialConnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
-	FOnConnectionFailedEvent OnConnectionFailed;
+	UPROPERTY(BlueprintAssignable)
+	FOnConnectionFailedEvent OnSpatialConnectionFailed;
+	// Invoked when the player could not be spawned
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -87,6 +95,10 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	// A set of the levels which were loaded before the SpatialOS connection.
+	UPROPERTY()
+	TSet<ULevel*> CachedLevelsForNetworkIntialize;
+
 	UFUNCTION()
-	void OnLevelInitializedNetworkActors(ULevel* Level, UWorld* OwningWorld);
+	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
 };

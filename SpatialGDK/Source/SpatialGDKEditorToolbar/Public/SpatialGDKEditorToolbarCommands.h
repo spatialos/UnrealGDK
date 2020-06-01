@@ -24,13 +24,23 @@ public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchemaFull;
 	TSharedPtr<FUICommandInfo> DeleteSchemaDatabase;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
-	TSharedPtr<FUICommandInfo> StartSpatialDeployment;
+	TSharedPtr<FUICommandInfo> StartNative;
+	TSharedPtr<FUICommandInfo> StartNoAutomaticConnection;
+	TSharedPtr<FUICommandInfo> StartLocalSpatialDeployment;
+	TSharedPtr<FUICommandInfo> StartCloudSpatialDeployment;
 	TSharedPtr<FUICommandInfo> StopSpatialDeployment;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
 	
-	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
+	TSharedPtr<FUICommandInfo> OpenCloudDeploymentWindowAction;
 	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
+	TSharedPtr<FUICommandInfo> EnableBuildClientWorker;
+	TSharedPtr<FUICommandInfo> EnableBuildSimulatedPlayer;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;
+	TSharedPtr<FUICommandInfo> EnableSpatialNetworking;
+	TSharedPtr<FUICommandInfo> GDKEditorSettings;
+	TSharedPtr<FUICommandInfo> GDKRuntimeSettings;
+	TSharedPtr<FUICommandInfo> LocalDeployment;
+	TSharedPtr<FUICommandInfo> CloudDeployment;
 };

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "Utils/SpatialActorGroupManager.h"
-
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
@@ -138,7 +136,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
-	/** Replicate handover properties between servers, required for zoned worker deployments.*/
+	/** Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will be set based on the load balancing strategy.*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication")
 	bool bEnableHandover;
 
@@ -216,22 +214,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	FWorkerType DefaultWorkerType;
-
-	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	bool bEnableOffloading;
-
-	/** Actor Group configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
-	TMap<FName, FActorGroupInfo> ActorGroups;
-
-	/** Available server worker types. */
-	UPROPERTY(Config)
-	TSet<FName> ServerWorkerTypes;
-
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
@@ -240,12 +222,8 @@ public:
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-	bool bEnableUnrealLoadBalancer;
-
-	/** EXPERIMENTAL: Worker type to assign for load balancing. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	FWorkerType LoadBalancingWorkerType;
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
+	bool bEnableMultiWorker;
 
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
@@ -282,21 +260,17 @@ public:
 	UPROPERTY(Config)
 	bool bTcpNoDelay;
 
-	/** Only valid on Udp connections - specifies server upstream flush interval - see c_worker.h */
-	UPROPERTY(Config)
-	uint32 UdpServerUpstreamUpdateIntervalMS;
-
 	/** Only valid on Udp connections - specifies server downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpServerDownstreamUpdateIntervalMS;
 
-	/** Only valid on Udp connections - specifies client upstream flush interval - see c_worker.h */
-	UPROPERTY(Config)
-	uint32 UdpClientUpstreamUpdateIntervalMS;
-
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
+
+	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
+	UPROPERTY(Config)
+	bool bWorkerFlushAfterOutgoingNetworkOp;
 
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
@@ -345,10 +319,4 @@ public:
 	/** Experimental feature to use SpatialView layer when communicating with the Worker */
 	UPROPERTY(Config)
 	bool bUseSpatialView;
-
-public:
-	// UI Hidden settings passed through from SpatialGDKEditorSettings
-	bool bUseDevelopmentAuthenticationFlow;
-	FString DevelopmentAuthenticationToken;
-	FString DevelopmentDeploymentToConnect;
 };

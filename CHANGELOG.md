@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Since GDK for Unreal v0.8.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
 **注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
+## [`x.y.z`] - Unreleased
+
+### New Known Issues:
+
+### Breaking Changes:
+- Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
+- `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
+- The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
+
+### Features:
+- You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
+- Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
+- Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
+- The GDK now uses SpatialOS 14.6.1.
+- Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
+- Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
+- You can now edit the project name field in the `Cloud Deployment` window.
+- Worker types are now defined in the runtime settings.
+- Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
+- A launch configuration editor has been added under the Deploy toolbar button.
+- The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
+- Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
+- You can now specify deployment tags in the `Cloud Deployment` window.
+- RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
+- Full Schema generation now uses the CookAndGenerateSchema commandlet, which will result in faster and more stable schema generation for big projects.
+- Added `Open Deployment Page` button to the `Cloud Deployment` window.
+- The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
+- When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
+- Renamed `enableProtocolLogging` command line parameter to `enableWorkerSDKProtocolLogging` and added `enableWorkerSDKOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerSDKLogPrefix`. This prefix is used for both protocol and op logging. Added `workerSDKLogLevel` parameter that takes "debug", "info", "warning" or "error". Added `workerSDKLogFileSize` to control the maximum file size of the worker SDK log file.
+- Change the icon of the Connection toolbar button based on the selected connection flow.
+- Created a new dropdown in the Spatial toolbar. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client:
+  - You can choose between `Connect to a local deployment` and `Connect to a cloud deployment` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
+  - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
+  - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
+  - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
+- Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the Connection dropdown to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
+- Added new icons for the toolbar.
+- The port is now respected when travelling via URL, translating to the receptionist port. The `-receptionistPort` command-line argument will still be used for the first connection.
+
+## Bug fixes:
+- Fix problem where load balanced cloud deploys could fail to start while under heavy load.
+- Fix to avoid using packages still being processed in the async loading thread.
+- Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
+- Fixed a bug where RPCs called before the CreateEntityRequest were not being processed as early as possible in the RPC Ring Buffer system, resulting in startup delays on the client.
+- Fixed a crash when running with nullrhi and using SpatialDebugger.
+- When using a URL with options in the command line, receptionist parameters will be parsed correctly, making use of the URL if necessary.
+- Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
+- OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
+- Fixed a rare server crash that could occur when closing an actor channel right after attaching a dynamic subobject to that actor.
+
 ## [`0.9.0`] - 2020-05-05
 
 ### New Known Issues:
@@ -64,6 +114,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabled RPC ring buffers by default. We'll remove the legacy RPC mode in a future release.
 - Removed the `bPackRPCs` property and the `--OverrideRPCPacking` flag.
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
+- Automatically remove UE4CommandLine.txt after finishing a Launch on device session on an Android device (only UnrealEngine 4.24 or above). This is done to prevent the launch session command line from overriding the one built into the APK.
 
 ## Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
@@ -115,10 +166,11 @@ Features listed in this section are not ready to use. However, in the spirit of 
 ### External contributors:
 @DW-Sebastien
 
-## [`0.8.1`] - 2020-03-17 
+
+## [`0.8.1`] - 2020-03-17
 
 ### English version
-### Adapted from 0.8.1-preview 
+### Adapted from 0.8.1-preview
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.

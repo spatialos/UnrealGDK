@@ -38,6 +38,7 @@ public:
 /* UAbstractLBStrategy Interface */
 	virtual void Init() override;
 
+	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
@@ -45,7 +46,12 @@ public:
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
 
+	virtual bool RequiresHandoverData() const override { return Rows * Cols > 1; }
+
 	virtual FVector GetWorkerEntityPosition() const override;
+
+	virtual uint32 GetMinimumRequiredWorkers() const override;
+	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
 /* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
@@ -71,6 +77,8 @@ private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
+	uint32 LocalCellId;
+	bool bIsStrategyUsedOnLocalWorker;
 
 	static bool IsInside(const FBox2D& Box, const FVector2D& Location);
 };

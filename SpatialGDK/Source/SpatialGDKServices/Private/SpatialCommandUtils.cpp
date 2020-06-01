@@ -1,15 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialCommandUtils.h"
+
+#include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
-
-namespace
-{
-	FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
-} // anonymous namespace
 
 bool SpatialCommandUtils::SpatialVersion(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
 {
@@ -17,7 +14,7 @@ bool SpatialCommandUtils::SpatialVersion(bool bIsRunningInChina, const FString& 
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult, OutExitCode);
@@ -37,7 +34,7 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	int32 OutExitCode;
@@ -61,7 +58,7 @@ bool SpatialCommandUtils::StartSpatialService(const FString& Version, const FStr
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	if (!Version.IsEmpty())
@@ -92,7 +89,7 @@ bool SpatialCommandUtils::StopSpatialService(bool bIsRunningInChina, const FStri
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult, OutExitCode);
@@ -112,7 +109,7 @@ bool SpatialCommandUtils::BuildWorkerConfig(bool bIsRunningInChina, const FStrin
 
 	if (bIsRunningInChina)
 	{
-		Command += ChinaEnvironmentArgument;
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult, OutExitCode);
@@ -139,4 +136,65 @@ FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, 
 
 	return FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, OutProcessID, 2 /*PriorityModifier*/,
 		nullptr, nullptr, nullptr);
+}
+
+bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FString& OutErrorMessage)
+{
+	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
+	if (bIsRunningInChina)
+	{
+		Arguments += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
+	}
+
+	FString CreateDevAuthTokenResult;
+	int32 ExitCode;
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, Arguments, SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
+
+	if (ExitCode != 0)
+	{
+		FString ErrorMessage = CreateDevAuthTokenResult;
+		TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(CreateDevAuthTokenResult);
+		TSharedPtr<FJsonObject> JsonRootObject;
+		if (FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid())
+		{
+			JsonRootObject->TryGetStringField("error", ErrorMessage);
+		}
+		OutErrorMessage = FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *ErrorMessage);
+		return false;
+	};
+
+	FString AuthResult;
+	FString DevAuthTokenResult;
+	bool bFoundNewline = CreateDevAuthTokenResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &DevAuthTokenResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	if (!bFoundNewline || DevAuthTokenResult.IsEmpty())
+	{
+		// This is necessary because spatial might return multiple json structs depending on whether you are already authenticated against spatial and are on the latest version of it.
+		DevAuthTokenResult = CreateDevAuthTokenResult;
+	}
+
+	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(DevAuthTokenResult);
+	TSharedPtr<FJsonObject> JsonRootObject;
+	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
+	{
+		OutErrorMessage = FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
+		return false;
+	}
+
+	// We need a pointer to a shared pointer due to how the JSON API works.
+	const TSharedPtr<FJsonObject>* JsonDataObject;
+	if (!(JsonRootObject->TryGetObjectField("json_data", JsonDataObject)))
+	{
+		OutErrorMessage = FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
+		return false;
+	}
+
+	FString TokenSecret;
+	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
+	{
+		OutErrorMessage = FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult);
+		return false;
+	}
+
+	OutTokenSecret = TokenSecret;
+	return true;
 }
