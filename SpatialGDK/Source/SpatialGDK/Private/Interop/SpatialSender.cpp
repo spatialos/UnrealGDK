@@ -681,7 +681,22 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, true };
 	}
 
-	ERPCResult Result = SendRPCInternal(TargetObject, Function, Channel, Params.Payload);
+	FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::UnresolvedTargetObject, false };
+	}
+
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	if (RPCInfo.Type != ERPCType::CrossServer && SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
+	{
+		SendRingBufferedRPCInternal(TargetObject, Function, Channel, TargetObjectRef, RPCInfo, Params.Payload);
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+	}
+
+	ERPCResult Result = SendRPCInternal(TargetObject, Function, TargetObjectRef, Channel, Params.Payload);
 
 	if (Result == ERPCResult::NoAuthority)
 	{
@@ -724,7 +739,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 	return WillHaveAuthorityOverActor;
 }
 
-ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload)
+ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, FUnrealObjectRef TargetObjectRef, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -774,17 +789,6 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	}
 	else
 	{
-		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
-		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-		{
-			return ERPCResult::UnresolvedTargetObject;
-		}
-
-		if (SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
-		{
-			return SendRingBufferedRPCInternal(TargetObject, Function, Channel, TargetObjectRef, RPCInfo, Payload);
-		}
-
 		if (RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
 		{
 			// If the Entity endpoint is not yet ready to receive RPCs -

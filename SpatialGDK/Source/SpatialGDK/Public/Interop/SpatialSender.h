@@ -77,7 +77,7 @@ public:
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
 	void SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
-	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload);
+	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, FUnrealObjectRef TargetObjectRef, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload);
 	ERPCResult SendRingBufferedRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, FUnrealObjectRef TargetObjectRef, const FRPCInfo& RPCInfo, const SpatialGDK::RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
