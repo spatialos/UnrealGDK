@@ -679,21 +679,6 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
 	}
 
-	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	const float QueuedOutgoingRPCWaitTime = GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime;
-	if (QueuedOutgoingRPCWaitTime < TimeDiff)
-	{
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::TimedOut, true };
-	}
-
-	if (AActor* TargetActor = Cast<AActor>(TargetObject))
-	{
-		if (TargetActor->IsPendingKillPending())
-		{
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::ActorPendingKill, true };
-		}
-	}
-
 	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
 
 	if (Result == ERPCResult::NoAuthority)
