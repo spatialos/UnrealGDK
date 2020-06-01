@@ -433,7 +433,7 @@ public:
 
 	/** Whether to start Local Server Worker when connecting to cloud deployment*/
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Start Local Server Worker"))
-		bool bStartLocalServerWorker;
+	bool bStartLocalServerWorker;
 
 private:
 	UPROPERTY(config)
