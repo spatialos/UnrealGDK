@@ -23,6 +23,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -185,9 +186,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	TombstonedEntities.Reserve(EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT);
 #endif
-
-	InitiateConnectionToSpatialOS(URL);
-
+	bool AutoConnect = true;
+	if (const ISpatialGDKEditorModule* GDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor"))
+	{
+		AutoConnect = GDKEditorModule->ShouldConnectToLocalDeployment() || GDKEditorModule->ShouldConnectToCloudDeployment();
+	}
+	if (AutoConnect)
+	{
+		InitiateConnectionToSpatialOS(URL);
+	}
 	return true;
 }
 
