@@ -6,6 +6,8 @@
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "Widgets/Input/SButton.h"
+#include "Widgets/Notifications/SPopupErrorText.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Text/STextBlock.h"
 
 #include "SpatialCommandUtils.h"
@@ -40,6 +42,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 	IDetailPropertyRow* CustomRow = DetailBuilder.EditDefaultProperty(UsePinnedVersionProperty);
 
 	FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
 
 	CustomRow->CustomWidget()
 		.NameContent()
@@ -65,7 +68,38 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			]
 		];
 
+	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+
 	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
+	CloudConnectionCategory.AddCustomRow(FText::FromString("Project Name"))
+		.NameContent()
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(FString(TEXT("Project Name"))))
+				.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+			]
+		]
+		.ValueContent()
+		.VAlign(VAlign_Center)
+		.MinDesiredWidth(250)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(SEditableTextBox)
+				.Text(FText::FromString(ProjectName))
+				.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+				.OnTextCommitted(this, &FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted)
+				.ErrorReporting(ProjectNameInputErrorReporting)
+			]
+		];
+
 	CloudConnectionCategory.AddCustomRow(FText::FromString("Generate Development Authentication Token"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
@@ -124,4 +158,17 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
 			]
 		];
+}
+
+void FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
+{
+	FString NewProjectName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsProjectNameValid(NewProjectName))
+	{
+		ProjectNameInputErrorReporting->SetError(SpatialConstants::ProjectPatternHint);
+		return;
+	}
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+
+	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
 }
