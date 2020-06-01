@@ -3,7 +3,6 @@
 #include "SpatialGDKEditorModule.h"
 
 #include "EditorExtension/GridLBStrategyEditorExtension.h"
-#include "EditorExtension/GridLBStrategyEditorExtension.h"
 #include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
@@ -14,8 +13,6 @@
 #include "SpatialGDKEditorLayoutDetails.h"
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "Utils/LaunchConfigEditor.h"
