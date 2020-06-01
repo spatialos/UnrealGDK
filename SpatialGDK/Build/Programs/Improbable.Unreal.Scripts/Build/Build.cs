@@ -341,6 +341,73 @@ exit /b !ERRORLEVEL!";
                     "-archive=" + Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip"))
                 });
             }
+            else if (gameName == baseGameName + "Client")
+            {
+                Common.WriteHeading(" > Building client.");
+                Common.RunRedirected(runUATBat, new[]
+                {
+                    "BuildCookRun",
+                    noCompile ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
+                    "-project=" + Quote(projectFile),
+                    "-noP4",
+                    "-clientconfig=" + configuration,
+                    "-serverconfig=" + configuration,
+                    "-utf8output",
+                    "-cook",
+                    "-stage",
+                    "-package",
+                    "-unversioned",
+                    "-compressed",
+                    "-stagingdirectory=" + Quote(stagingDir),
+                    "-stdout",
+                    "-FORCELOGFLUSH",
+                    "-CrashForUAT",
+                    "-unattended",
+                    "-fileopenlog",
+                    "-SkipCookingEditorContent",
+                    "-client",
+                    "-noserver",
+                    "-platform=" + platform,
+                    "-targetplatform=" + platform,
+                    additionalUATArgs
+                });
+
+                var windowsClientPath = Path.Combine(stagingDir, "WindowsClient");
+
+                if (additionalUATArgs.Contains("-pak"))
+                {
+                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
+                }
+                else
+                {
+                    ForceSpatialNetworkingInConfig(windowsClientPath, baseGameName);
+                }
+
+                // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
+                // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
+                var oldExe = Path.Combine(windowsClientPath, $"{gameName}.exe");
+                var renamedExe = Path.Combine(windowsClientPath, $"_{gameName}.exe");
+                if (File.Exists(renamedExe))
+                {
+                    File.Delete(renamedExe);
+                }
+                if (File.Exists(oldExe))
+                {
+                    File.Move(oldExe, renamedExe);
+                }
+                else
+                {
+                    Console.WriteLine("Could not find the executable to rename.");
+                }
+
+                Common.RunRedirected(runUATBat, new[]
+                {
+                    "ZipUtils",
+                    "-add=" + Quote(windowsClientPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
+                });
+            }
             else
             {
                 // Pass-through to Unreal's Build.bat.
