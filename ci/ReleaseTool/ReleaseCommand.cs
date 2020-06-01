@@ -107,6 +107,7 @@ namespace ReleaseTool
                 // This ensures the idempotence of the pipeline.
                 var branchFrom = options.ReleaseBranch;
                 var branchTo = options.SourceBranch;
+
                 if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
                 {
                     pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
@@ -128,13 +129,6 @@ namespace ReleaseTool
                 Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
                 Logger.Info("Successfully created PR from release branch into source branch.");
                 Logger.Info("Merge hash: {0}", pullRequest.MergeCommitSha);
-            }
-            
-            catch (Exception e)
-            {
-                Logger.Error(e, "ERROR: Unable to release candidate branch and/or merge the release branch back into master. Error: {0}", e);
-                return 1;
-            }
 
                 return 0;
             }
