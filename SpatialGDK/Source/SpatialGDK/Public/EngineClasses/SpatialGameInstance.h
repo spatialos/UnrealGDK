@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
@@ -56,6 +55,8 @@ public:
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
+	void CleanupCachedLevelsAfterConnection();
+
 	// Invoked when this worker has successfully connected to SpatialOS
 	UPROPERTY(BlueprintAssignable)
 	FOnConnectedEvent OnSpatialConnected;
@@ -68,8 +69,6 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
-
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
 	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const;
 
