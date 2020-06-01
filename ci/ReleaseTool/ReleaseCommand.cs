@@ -213,20 +213,17 @@ namespace ReleaseTool
                 // Delete candidate branch.
                 //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
 
-                using (var gitClient = GitClient.FromRemote(repoUrl))
-                {
-                    // Create GitHub release in the repo
-                    gitClient.Fetch();
-                    gitClient.CheckoutLocalBranch(options.ReleaseBranch);
-                    var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
+                // Create GitHub release in the repo
+                gitClient.Fetch();
+                gitClient.CheckoutLocalBranch(options.ReleaseBranch);
+                var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
-                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
-                        string.Format(releaseAnnotationTemplate, release.HtmlUrl, repoName), true);
+                BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
+                    string.Format(releaseAnnotationTemplate, release.HtmlUrl, repoName), true);
 
-                    Logger.Info("Release Successful!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
-                    Logger.Info("Draft release: {0}", release.HtmlUrl);
-                }
+                Logger.Info("Release Successful!");
+                Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                Logger.Info("Draft release: {0}", release.HtmlUrl);
 
                 // Open a PR for merging the release branch into master.
                 var branchFrom = options.ReleaseBranch;
