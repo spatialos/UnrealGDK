@@ -94,6 +94,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
 	OnAutoStartLocalDeploymentChanged();
+	OnAutoStartLocalReceptionistProxyServer();
 
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
@@ -155,6 +156,11 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 
 void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
+	if (ProxyServerProcHandle.IsValid())
+	{
+		SpatialCommandUtils::StopLocalReceptionistProxyServer(ProxyServerProcHandle);
+	}
+
 	if (bStopSpatialOnExit)
 	{
 		LocalDeploymentManager->TryStopLocalDeployment();
@@ -449,6 +455,7 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	SpatialGDKEditorSettings->SetPrimaryDeploymentName(InputDeploymentName);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting cloud deployment name to %s"), *InputDeploymentName);
+
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuContent()
@@ -866,6 +873,23 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	});
 }
 
+void FSpatialGDKEditorToolbarModule::StartLocalReceptionistProxyServer()
+{
+	OnShowTaskStartNotification(TEXT("StartLocalReceptionistProxyServer"));
+
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), SpatialGDKSettings->GetPrimaryDeploymentName());
+
+	if (ProxyServerProcHandle.IsValid())
+	{
+		OnShowSuccessNotification(TEXT("Successfully Started Local Receptionist Proxy Server"));
+	}
+	else
+	{
+		OnShowFailedNotification(TEXT("Failed to Start Local Receptionist Proxy Server!"));
+	}
+}
+
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
 	VerifyAndStartDeployment();
@@ -1025,6 +1049,8 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 	SpatialGDKEditorSettings->SetSpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment);
 
 	OnAutoStartLocalDeploymentChanged();
+
+	OnAutoStartLocalReceptionistProxyServer();
 }
 
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
@@ -1036,6 +1062,8 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 	DevAuthTokenGenerator->AsyncGenerateDevAuthToken();
 
 	OnAutoStartLocalDeploymentChanged();
+
+	OnAutoStartLocalReceptionistProxyServer();
 }
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable()
@@ -1215,6 +1243,7 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 
 	if (bShouldAutoStartLocalDeployment)
 	{
+
 		if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
@@ -1251,6 +1280,41 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 
 	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
+}
+
+void FSpatialGDKEditorToolbarModule::OnAutoStartLocalReceptionistProxyServer()
+{
+	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+
+	bool bShouldAutoStartLocalReceptionistProxyServer = (Settings->bStartLocalServerWorker && Settings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment);
+
+	// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
+	//LocalDeploymentManager->SetAutoDeploy(bShouldAutoStartLocalDeployment);
+
+	if (bShouldAutoStartLocalReceptionistProxyServer)
+	{
+		if (!UEditorEngine::TryStartLocalReceptionistProxyServer.IsBound())
+		{
+			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
+			UEditorEngine::TryStartLocalReceptionistProxyServer.BindLambda([this]
+			{
+				StartLocalReceptionistProxyServer();
+			});
+		}
+	}
+	else
+	{
+	if (UEditorEngine::TryStartLocalReceptionistProxyServer.IsBound())
+	{
+		// Unbind the TryStartSpatialDeployment if autostart is disabled.
+		UEditorEngine::TryStartLocalReceptionistProxyServer.Unbind();
+
+		if (ProxyServerProcHandle.IsValid())
+		{
+			SpatialCommandUtils::StopLocalReceptionistProxyServer(ProxyServerProcHandle);
+		}
+	}
+	}
 }
 
 FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
@@ -1399,6 +1463,8 @@ bool FSpatialGDKEditorToolbarModule::IsStartLocalServerWorkerEnabled() const
 void FSpatialGDKEditorToolbarModule::OnCheckedStartLocalServerWorker()
 {
 	GetMutableDefault<USpatialGDKEditorSettings>()->SetStartLocalServerWorker(!IsStartLocalServerWorkerEnabled());
+
+	OnAutoStartLocalReceptionistProxyServer();
 }
 
 bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
