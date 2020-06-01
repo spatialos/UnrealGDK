@@ -280,4 +280,57 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	return false;
 }
 
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName)
+{
+	FString Command = TEXT("cloud connect external ");
+
+	Command += CloudDeploymentName;
+
+	if (bIsRunningInChina)
+	{
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
+	}
+
+	int32 OutExitCode;
+	FString OutResult;
+	FProcHandle ProcHandle;
+
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
+
+	ProcHandle = FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, nullptr, 1 /*PriorityModifer*/, *SpatialGDKServicesConstants::SpatialOSDirectory, WritePipe);
+
+	if (ProcHandle.IsValid())
+	{
+		FPlatformProcess::Sleep(0.01f);
+		FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
+
+		OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+	}
+	else
+	{
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *SpatialGDKServicesConstants::SpatialExe, *Command, *SpatialGDKServicesConstants::SpatialOSDirectory);
+	}
+
+	bool bSuccess = OutExitCode == 0;
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), OutExitCode, *OutResult);
+	}
+
+	FPlatformProcess::ClosePipe(0, ReadPipe);
+	FPlatformProcess::ClosePipe(0, WritePipe);
+
+	return ProcHandle;
+}
+
+void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHandle)
+{
+	if (ProcHandle.IsValid())
+	{
+		FPlatformProcess::TerminateProc(ProcHandle, true);
+	}
+}
+
 #undef LOCTEXT_NAMESPACE
