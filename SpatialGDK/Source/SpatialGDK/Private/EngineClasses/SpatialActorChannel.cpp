@@ -631,21 +631,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			bCreatedEntity = true;
 
-			// We preemptively set the Actor role to SimulatedProxy if:
-			//  - offloading is disabled (with offloading we never give up authority since we're always spawning authoritatively),
-			//  - load balancing is disabled (since the legacy behaviour is to wait until Spatial tells us we have authority) OR
-			//  - load balancing is enabled AND our lb strategy says this worker shouldn't have authority AND the Actor isn't locked.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() &&
-				(!SpatialGDKSettings->bEnableUnrealLoadBalancer
-					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))))
+			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
+			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
+			if (NetDriver->LoadBalanceStrategy == nullptr)
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
-
-				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
-				{
-					UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-				}
 			}
 		}
 		else
@@ -739,7 +730,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
+	if (NetDriver->LoadBalanceStrategy != nullptr &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))

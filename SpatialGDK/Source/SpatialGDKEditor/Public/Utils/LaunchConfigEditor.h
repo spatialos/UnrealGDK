@@ -21,8 +21,6 @@ class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UTransientUObject
 public:
 	FOnSpatialOSLaunchConfigurationSaved OnConfigurationSaved;
 
-	void OnWorkerTypesChanged();
-
 	UPROPERTY(EditAnywhere, Category = "Launch Configuration")
 	FSpatialLaunchConfigDescription LaunchConfiguration;
 

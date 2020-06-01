@@ -226,11 +226,11 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
-const FName DefaultActorGroup = FName(TEXT("Default"));
-
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
+
+static const FName DefaultLayer = FName(TEXT("UnrealWorker"));
 
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
@@ -255,6 +255,7 @@ const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
 const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
+const FString Ipv4Pattern = TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {
@@ -389,15 +390,6 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
-
-inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
-{
-	if (LoadBalancingWorkerType == "")
-	{
-		return { DefaultServerWorkerType.ToString() };
-	}
-	return { LoadBalancingWorkerType.ToString() };
 }
 
 } // ::SpatialConstants

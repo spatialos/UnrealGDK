@@ -27,7 +27,6 @@ class USpatialPackageMapClient;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialClassInfoManager;
-class SpatialActorGroupManager;
 class USpatialWorkerConnection;
 
 struct FReliableRPCForRetry
@@ -119,7 +118,9 @@ public:
 	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
 
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-	void CreateServerWorkerEntity(int AttemptCounter = 1);
+	UFUNCTION()
+	void CreateServerWorkerEntity();
+	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounte);
 	void UpdateServerWorkerEntityInterestAndPosition();
 
 	void ClearPendingRPCs(const Worker_EntityId EntityId);
@@ -175,8 +176,6 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
-
-	SpatialActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
 

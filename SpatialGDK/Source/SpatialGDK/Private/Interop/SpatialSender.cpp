@@ -29,7 +29,6 @@
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -66,8 +65,6 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
-	check(InNetDriver->ActorGroupManager != nullptr);
-	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
@@ -76,7 +73,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, ActorGroupManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
 	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -149,7 +146,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
 	PendingSubobjectAttachment->Subobject = Object;
-	PendingSubobjectAttachment->Channel = Channel;
 	PendingSubobjectAttachment->Info = Info;
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
@@ -173,9 +169,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
 	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-		const WorkerAttributeSet WorkerAttribute = { ActorInfo.WorkerType.ToString() };
-		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
 
 		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 		for (auto& ComponentId : NewComponentIds)
@@ -227,8 +221,13 @@ void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worke
 	}
 }
 
+void USpatialSender::CreateServerWorkerEntity()
+{
+	RetryServerWorkerEntityCreation(PackageMap->AllocateEntityId(), 1);
+}
+
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
+void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
@@ -251,10 +250,10 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
+	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
 		if (!WeakSender.IsValid())
 		{
@@ -265,6 +264,13 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
+			return;
+		}
+
+		// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
+		// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
 			return;
 		}
 
@@ -284,11 +290,11 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 
 		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		FTimerHandle RetryTimer;
-		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
+		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, EntityId, AttemptCounter]()
 		{
 			if (USpatialSender* SpatialSender = WeakSender.Get())
 			{
-				SpatialSender->CreateServerWorkerEntity(AttemptCounter + 1);
+				SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
@@ -636,7 +642,7 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet } );
 			continue;
 		}
 
@@ -709,15 +715,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 {
 	bool WillHaveAuthorityOverActor = true;
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
-	{
-		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
-		{
-			WillHaveAuthorityOverActor = false;
-		}
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
 		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
@@ -1141,7 +1139,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, ActorGroupManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
 	Components.Add(CreateLevelComponentData(Actor));

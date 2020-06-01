@@ -75,7 +75,6 @@ struct FObjectReferences
 
 struct FPendingSubobjectAttachment
 {
-	USpatialActorChannel* Channel;
 	const FClassInfo* Info;
 	TWeakObjectPtr<UObject> Subobject;
 
