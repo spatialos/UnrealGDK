@@ -674,7 +674,14 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
 	}
 
-	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
+	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
+	if (!Channel)
+	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, true };
+	}
+
+	ERPCResult Result = SendRPCInternal(TargetObject, Function, Channel, Params.Payload);
 
 	if (Result == ERPCResult::NoAuthority)
 	{
@@ -717,15 +724,8 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 	return WillHaveAuthorityOverActor;
 }
 
-ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
+ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload)
 {
-	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
-
-	if (!Channel)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
-		return ERPCResult::NoActorChannel;
-	}
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -745,9 +745,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 
-	switch (RPCInfo.Type)
-	{
-	case ERPCType::CrossServer:
+	if (RPCInfo.Type == ERPCType::CrossServer)
 	{
 		Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
@@ -774,11 +772,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		return ERPCResult::Success;
 	}
-	case ERPCType::NetMulticast:
-	case ERPCType::ClientReliable:
-	case ERPCType::ServerReliable:
-	case ERPCType::ClientUnreliable:
-	case ERPCType::ServerUnreliable:
+	else
 	{
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -818,10 +812,6 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		Connection->MaybeFlush();
 		return ERPCResult::Success;
 	}
-	default:
-		checkNoEntry();
-		return ERPCResult::InvalidRPCType;
-	}
 }
 
 ERPCResult USpatialSender::SendRingBufferedRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, FUnrealObjectRef TargetObjectRef, const FRPCInfo& RPCInfo, const SpatialGDK::RPCPayload& Payload)
@@ -843,17 +833,17 @@ ERPCResult USpatialSender::SendRingBufferedRPCInternal(UObject* TargetObject, UF
 	switch (Result)
 	{
 	case EPushRPCResult::QueueOverflowed:
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRPCInternal: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPCInternal: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		break;
 	case EPushRPCResult::DropOverflowed:
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRPCInternal: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPCInternal: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		break;
 	case EPushRPCResult::HasAckAuthority:
-		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRPCInternal: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPCInternal: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		break;
 	case EPushRPCResult::NoRingBufferAuthority:
 		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRPCInternal: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPCInternal: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		break;
 	}
 
