@@ -180,8 +180,9 @@ namespace ReleaseTool
                 // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
                 BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
 
+                //TODO: GV-487 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
                 // Delete candidate branch.
-                gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
+                //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
 
                 using (var gitClient = GitClient.FromRemote(repoUrl))
                 {
