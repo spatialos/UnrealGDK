@@ -1124,6 +1124,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 		}
 		else
 		{
+			UE_LOG(LogSpatialSender, Log, TEXT("Sending retire entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(), EntityId, Actor->HasAuthority());
 			Connection->SendDeleteEntityRequest(EntityId);
 		}
 	}
