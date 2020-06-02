@@ -696,25 +696,28 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
 
-	if (RPCInfo.Type != ERPCType::CrossServer && RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
+	if (RPCInfo.Type != ERPCType::CrossServer)
 	{
-		// If the Entity endpoint is not yet ready to receive RPCs -
-		// treat the corresponding object as unresolved and queue RPC
-		// However, it doesn't matter in case of Multicast
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::SpatialActorChannelNotListening };
-	}
-
-	check(TargetObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID);
-	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
-	if (!NetDriver->StaticComponentView->HasAuthority(TargetObjectRef.Entity, ComponentId))
-	{
-		if (AActor* TargetActor = Cast<AActor>(TargetObject))
+		if (RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
 		{
-			bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+			// If the Entity endpoint is not yet ready to receive RPCs -
+			// treat the corresponding object as unresolved and queue RPC
+			// However, it doesn't matter in case of Multicast
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::SpatialActorChannelNotListening };
 		}
 
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority };
+		check(TargetObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID);
+		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
+		if (!NetDriver->StaticComponentView->HasAuthority(TargetObjectRef.Entity, ComponentId))
+		{
+			if (AActor* TargetActor = Cast<AActor>(TargetObject))
+			{
+				bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
+				return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+			}
+
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority };
+		}
 	}
 
 	SendRPCInternal(TargetObject, Function, TargetObjectRef, Channel, Params.Payload);
