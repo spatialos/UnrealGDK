@@ -366,7 +366,7 @@ Happy developing,
 ";
                     break;
                 case "UnrealEngine":
-                    name = $"{EngineVersion}-{options.Version}";
+                    name = $"{engineVersion}-{options.Version}";
                     releaseBody =
 $@"Unreal GDK version {options.Version} is go!
 
