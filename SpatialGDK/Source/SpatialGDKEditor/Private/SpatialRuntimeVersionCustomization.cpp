@@ -33,16 +33,10 @@ void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IProperty
 	uint32 NumChildren;
 	StructPropertyHandle->GetNumChildren(NumChildren);
 
-	// Get the correct pinned version name
+	// Get the correct pinned version name.
 	FString PinnedVersionString;
-	for (uint32 ChildIdx = 0; ChildIdx < NumChildren; ++ChildIdx)
-	{
-		TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(ChildIdx);
-		if (ChildProperty->GetProperty()->GetFName() == PinnedGDKPropertyVersionName)
-		{
-			ChildProperty->GetValueAsFormattedString(PinnedVersionString);
-		}
-	}
+	TSharedPtr<IPropertyHandle> PinnedVersionProperty = StructPropertyHandle->GetChildHandle(PinnedGDKPropertyVersionName);
+	PinnedVersionProperty->GetValueAsFormattedString(PinnedVersionString);
 
 	for (uint32 ChildIdx = 0; ChildIdx < NumChildren; ++ChildIdx)
 	{
