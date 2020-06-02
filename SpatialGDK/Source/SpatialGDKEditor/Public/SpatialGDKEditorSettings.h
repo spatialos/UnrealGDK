@@ -212,7 +212,6 @@ namespace ESpatialOSNetFlow
 {
 	enum Type
 	{
-		NoAutomaticConnection,
 		LocalDeployment,
 		CloudDeployment
 	};

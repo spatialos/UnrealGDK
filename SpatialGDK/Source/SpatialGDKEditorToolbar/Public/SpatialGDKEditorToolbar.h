@@ -80,9 +80,6 @@ private:
 	bool StartNativeIsVisible() const;
 	bool StartNativeCanExecute() const;
 
-	bool StartNoAutomaticConnectionIsVisible() const;
-	bool StartNoAutomaticConnectionCanExecute() const;
-
 	bool StartLocalSpatialDeploymentIsVisible() const;
 	bool StartLocalSpatialDeploymentCanExecute() const;
 
@@ -104,7 +101,6 @@ private:
 	void GDKEditorSettingsClicked() const;
 	void GDKRuntimeSettingsClicked() const;
 
-	bool IsNoAutomaticConnectionSelected() const;
 	bool IsLocalDeploymentSelected() const;
 	bool IsCloudDeploymentSelected() const;
 
