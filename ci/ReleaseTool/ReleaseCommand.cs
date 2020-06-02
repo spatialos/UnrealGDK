@@ -294,8 +294,7 @@ namespace ReleaseTool
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
 
-            var EngineVersion = options.SourceBranch
-                .Select(version => $"dry-run/{version.Trim()}-release");
+            var engineVersion = $"dry-run/{options.SourceBranch.trim()}-release";
 
             string name;
             string releaseBody;
