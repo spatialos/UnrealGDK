@@ -366,7 +366,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-#if !UE_BUILD_SHIPPING
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	// If metrics display is enabled, spawn an Actor to replicate the information to each client
 	if (IsServer())
 	{
