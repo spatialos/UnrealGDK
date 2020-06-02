@@ -45,17 +45,15 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 
 	if (const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>())
 	{
-		for (const FName& Worker : SpatialGDKSettings->ServerWorkerTypes)
+		const FName& Worker = SpatialConstants::DefaultServerWorkerType;
+		FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));
+		if (!FPaths::FileExists(JsonPath))
 		{
-			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));
-			if (!FPaths::FileExists(JsonPath))
-			{
-				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
+			UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 
-				if (!GenerateDefaultWorkerJson(JsonPath, Worker.ToString(), bOutRedeployRequired))
-				{
-					bAllJsonsGeneratedSuccessfully = false;
-				}
+			if (!GenerateDefaultWorkerJson(JsonPath, Worker.ToString(), bOutRedeployRequired))
+			{
+				bAllJsonsGeneratedSuccessfully = false;
 			}
 		}
 

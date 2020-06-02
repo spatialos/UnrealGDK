@@ -121,7 +121,6 @@ struct FWorkerTypeLaunchSection
 		, bAutoNumEditorInstances(true)
 		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(false)
-		, WorkerLoadBalancing(nullptr)
 	{
 	}
 
@@ -160,9 +159,6 @@ struct FWorkerTypeLaunchSection
 	/** Determines if the worker instance is launched manually or by SpatialOS. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Manual worker connection only"))
 	bool bManualWorkerConnectionOnly;
-
-	UPROPERTY(Transient, Category = "SpatialGDK", EditAnywhere, Instanced)
-	UAbstractRuntimeLoadBalancingStrategy* WorkerLoadBalancing;
 };
 
 USTRUCT()
@@ -177,11 +173,8 @@ struct FSpatialLaunchConfigDescription
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
-		ServerWorkersMap.Add(SpatialConstants::DefaultServerWorkerType, UnrealWorkerDefaultSetting);
+		ServerWorkerConfig = UnrealWorkerDefaultSetting;
 	}
-
-	/** Set WorkerTypesToLaunch in level editor play settings. */
-	SPATIALGDKEDITOR_API void OnWorkerTypesChanged();
 
 	/** Deployment template. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
@@ -196,7 +189,7 @@ struct FSpatialLaunchConfigDescription
 	TArray<FWorkerTypeLaunchSection> ServerWorkers_DEPRECATED;
 
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
-	TMap<FName, FWorkerTypeLaunchSection> ServerWorkersMap;
+	FWorkerTypeLaunchSection ServerWorkerConfig;
 };
 
 /**
@@ -219,7 +212,6 @@ namespace ESpatialOSNetFlow
 {
 	enum Type
 	{
-		NoAutomaticConnection,
 		LocalDeployment,
 		CloudDeployment
 	};
@@ -235,8 +227,6 @@ public:
 
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
-
-	void OnWorkerTypesChanged();
 
 public:
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
@@ -297,7 +287,7 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
-	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema (if empty, defaults to Editor's platform)"))
 	FString CookAndGeneratePlatform;
 
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
@@ -393,11 +383,17 @@ private:
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
 public:
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
-	bool bMobileConnectToLocalDeployment;
+	/** If checked, use the connection flow override below instead of the one selected in the editor when building the command line for mobile. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Override Mobile Connection Flow (only for Push settings to device)"))
+	bool bMobileOverrideConnectionFlow;
 
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
-	FString MobileRuntimeIP;
+	/** The connection flow that should be used when pushing command line to the mobile device. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileOverrideConnectionFlow", DisplayName = "Mobile Connection Flow"))
+	TEnumAsByte<ESpatialOSNetFlow::Type> MobileConnectionFlow;
+
+	/** If specified, use this IP instead of 'Exposed local runtime IP address' when building the command line to push to the mobile device. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Local Runtime IP Override"))
+	FString MobileRuntimeIPOverride;
 
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
 	FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
@@ -442,10 +438,7 @@ public:
 			: SpatialOSSnapshotToLoad;
 	}
 
-	FORCEINLINE FString GetCookAndGenerateSchemaTargetPlatform() const
-	{
-		return CookAndGeneratePlatform;
-	}
+	FString GetCookAndGenerateSchemaTargetPlatform() const;
 
 	FORCEINLINE FString GetCookAndGenerateSchemaAdditionalArgs() const
 	{
@@ -633,6 +626,8 @@ public:
 	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
 
 	void SetExposedRuntimeIP(const FString& RuntimeIP);
+
+	void SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType);
 
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsAssemblyNameValid(const FString& Name);
