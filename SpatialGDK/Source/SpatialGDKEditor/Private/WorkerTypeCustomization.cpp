@@ -41,12 +41,9 @@ void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComb
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
-		for (const FName& WorkerType : Settings->ServerWorkerTypes)
-		{
-			OutComboBoxStrings.Add(MakeShared<FString>(WorkerType.ToString()));
-			OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(WorkerType)));
-			OutRestrictedItems.Add(false);
-		}
+		OutComboBoxStrings.Add(MakeShared<FString>(SpatialConstants::DefaultServerWorkerType.ToString()));
+		OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(SpatialConstants::DefaultServerWorkerType)));
+		OutRestrictedItems.Add(false);
 	}
 }
 
@@ -64,7 +61,7 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 		WorkerTypeNameHandle->GetValue(WorkerTypeValue);
 		const FName WorkerTypeName = FName(*WorkerTypeValue);
 
-		return Settings->ServerWorkerTypes.Contains(WorkerTypeName) ? WorkerTypeValue : TEXT("INVALID");
+		return WorkerTypeName == SpatialConstants::DefaultServerWorkerType ? WorkerTypeValue : TEXT("INVALID");
 	}
 
 	return WorkerTypeValue;
