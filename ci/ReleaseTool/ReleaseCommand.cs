@@ -107,11 +107,20 @@ namespace ReleaseTool
 
                 if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
                 {
-                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                    try
+                    {
+                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
                         branchFrom,
                         branchTo,
                         string.Format(PullRequestNameTemplate, options.Version),
                         pullRequestBody);
+                    }
+                    catch (Octokit.ApiValidationException e)
+                    {
+                            // Handle the error
+                            //Logger.Info("No commits between master branch and release branch. No PR will be created.");
+                            //return 0;
+                    }
                 }
 
                 else
