@@ -64,23 +64,23 @@ void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IProperty
 			[
 				ChildProperty->CreatePropertyNameWidget()
 			]
-		.ValueContent()
+			.ValueContent()
 			[
 				SNew(SHorizontalBox)
 				+ SHorizontalBox::Slot()
-			.HAlign(HAlign_Left)
-			.AutoWidth()
-			[
-				ChildProperty->CreatePropertyValueWidget()
-			]
-		+ SHorizontalBox::Slot()
-			.Padding(5)
-			.HAlign(HAlign_Center)
-			.AutoWidth()
-			[
-				SNew(STextBlock)
-				.Text(FText::FromString(PinnedVersionDisplay))
-			]
+				.HAlign(HAlign_Left)
+				.AutoWidth()
+				[
+					ChildProperty->CreatePropertyValueWidget()
+				]
+				+ SHorizontalBox::Slot()
+				.Padding(5)
+				.HAlign(HAlign_Center)
+				.AutoWidth()
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(PinnedVersionDisplay))
+				]
 			];
 	}
 }
