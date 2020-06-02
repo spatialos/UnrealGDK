@@ -696,18 +696,30 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
 
-	ERPCResult Result = SendRPCInternal(TargetObject, Function, TargetObjectRef, Channel, Params.Payload);
+	if (RPCInfo.Type != ERPCType::CrossServer && RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
+	{
+		// If the Entity endpoint is not yet ready to receive RPCs -
+		// treat the corresponding object as unresolved and queue RPC
+		// However, it doesn't matter in case of Multicast
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::SpatialActorChannelNotListening };
+	}
 
-	if (Result == ERPCResult::NoAuthority)
+	check(TargetObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID);
+	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
+	if (!NetDriver->StaticComponentView->HasAuthority(TargetObjectRef.Entity, ComponentId))
 	{
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
 			bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
-			return FRPCErrorInfo{ TargetObject, Function, Result, bShouldDrop };
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
 		}
+
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority };
 	}
 
-	return FRPCErrorInfo{ TargetObject, Function, Result, false };
+	SendRPCInternal(TargetObject, Function, TargetObjectRef, Channel, Params.Payload);
+
+	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success, false };
 }
 
 #if !UE_BUILD_SHIPPING
@@ -739,7 +751,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 	return WillHaveAuthorityOverActor;
 }
 
-ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, FUnrealObjectRef TargetObjectRef, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload)
+void USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, FUnrealObjectRef TargetObjectRef, USpatialActorChannel* Channel, const SpatialGDK::RPCPayload& Payload)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -754,7 +766,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 #if !UE_BUILD_SHIPPING
 			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
-			return ERPCResult::Success;
+			return;
 		}
 	}
 
@@ -785,28 +797,11 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				EntityId, CommandRequest.component_id, *Function->GetName());
 		}
 
-		return ERPCResult::Success;
+		return;
 	}
 	else
 	{
-		if (RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
-		{
-			// If the Entity endpoint is not yet ready to receive RPCs -
-			// treat the corresponding object as unresolved and queue RPC
-			// However, it doesn't matter in case of Multicast
-			return ERPCResult::SpatialActorChannelNotListening;
-		}
-
-		EntityId = TargetObjectRef.Entity;
-		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
 		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
-
-		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
-		{
-			return ERPCResult::NoAuthority;
-		}
-
 		FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
 		Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
@@ -814,11 +809,11 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 		Connection->MaybeFlush();
-		return ERPCResult::Success;
+		return;
 	}
 }
 
-ERPCResult USpatialSender::SendRingBufferedRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, FUnrealObjectRef TargetObjectRef, const FRPCInfo& RPCInfo, const SpatialGDK::RPCPayload& Payload)
+void USpatialSender::SendRingBufferedRPCInternal(UObject* TargetObject, UFunction* Function, USpatialActorChannel* Channel, FUnrealObjectRef TargetObjectRef, const FRPCInfo& RPCInfo, const SpatialGDK::RPCPayload& Payload)
 {
 	EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
 
@@ -850,8 +845,6 @@ ERPCResult USpatialSender::SendRingBufferedRPCInternal(UObject* TargetObject, UF
 		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPCInternal: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		break;
 	}
-
-	return ERPCResult::Success;
 }
 
 void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
