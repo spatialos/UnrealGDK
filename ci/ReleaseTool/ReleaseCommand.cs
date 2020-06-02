@@ -117,9 +117,15 @@ namespace ReleaseTool
                     }
                     catch (Octokit.ApiValidationException e)
                     {
-                            // Handle the error
-                            //Logger.Info("No commits between master branch and release branch. No PR will be created.");
-                            //return 0;
+                            // Handle the case where master and release are identical, so there is no need to merge release back into master.
+                            if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
+                            {
+                                Logger.Info(e.ApiError.Errors[0].Message);
+                                Logger.Info("No PR will be created.");
+                                return 0;
+                            }
+
+                            throw;
                     }
                 }
 
