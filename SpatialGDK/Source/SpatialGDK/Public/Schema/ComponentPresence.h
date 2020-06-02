@@ -8,6 +8,7 @@
 #include "Utils/SchemaUtils.h"
 
 #include "Containers/Array.h"
+#include "HAL/UnrealMemory.h"
 #include "Templates/UnrealTemplate.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -43,10 +44,10 @@ struct ComponentPresence : Component
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		for (const Worker_ComponentId& InComponentId : ComponentList)
-		{
-			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, InComponentId);
-		}
+		uint32 BufferSize = ComponentList.Num();
+		uint32* Buffer = reinterpret_cast<uint32*>(Schema_AllocateBuffer(ComponentObject, BufferSize));
+		FMemory::Memcmp(ComponentList.GetData(), Buffer, BufferSize);
+		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, Buffer, BufferSize);
 
 		return Data;
 	}
@@ -63,8 +64,10 @@ struct ComponentPresence : Component
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID,
-			ComponentList.GetData(), ComponentList.Num());
+		uint32 BufferSize = ComponentList.Num();
+		uint32* Buffer = reinterpret_cast<uint32*>(Schema_AllocateBuffer(ComponentObject, BufferSize));
+		FMemory::Memcmp(ComponentList.GetData(), Buffer, BufferSize);
+		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, Buffer, BufferSize);
 
 		return Update;
 	}
