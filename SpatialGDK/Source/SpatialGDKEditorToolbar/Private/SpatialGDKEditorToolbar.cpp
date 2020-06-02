@@ -875,12 +875,14 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 void FSpatialGDKEditorToolbarModule::StartLocalReceptionistProxyServer()
 {
+	bool bSuccess = false;
+
 	OnShowTaskStartNotification(TEXT("StartLocalReceptionistProxyServer"));
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), SpatialGDKSettings->GetPrimaryDeploymentName());
+	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), SpatialGDKSettings->GetPrimaryDeploymentName(), bSuccess);
 
-	if (ProxyServerProcHandle.IsValid())
+	if (ProxyServerProcHandle.IsValid() && bSuccess)
 	{
 		OnShowSuccessNotification(TEXT("Successfully Started Local Receptionist Proxy Server"));
 	}

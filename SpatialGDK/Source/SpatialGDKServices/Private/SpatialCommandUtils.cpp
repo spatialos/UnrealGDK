@@ -280,7 +280,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	return false;
 }
 
-FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName)
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, bool &bSuccess)
 {
 	FString Command = TEXT("cloud connect external ");
 
@@ -303,17 +303,20 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 
 	if (ProcHandle.IsValid())
 	{
-		FPlatformProcess::Sleep(0.01f);
-		FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
+		for (bool bProcessFinished = false; !bProcessFinished; )
+		{
+			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
 
-		OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+			FPlatformProcess::Sleep(0.01f);
+		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *SpatialGDKServicesConstants::SpatialExe, *Command, *SpatialGDKServicesConstants::SpatialOSDirectory);
 	}
 
-	bool bSuccess = OutExitCode == 0;
+	bSuccess = OutResult.Contains("The receptionist proxy is available");
 	if (!bSuccess)
 	{
 		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), OutExitCode, *OutResult);
