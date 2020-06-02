@@ -931,11 +931,11 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	TMap<FName, FWorkerTypeLaunchSection> ServerWorkers;
+	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
 
-	FillWorkerConfigurationFromCurrentMap(ServerWorkers, LaunchConfiguration.World.Dimensions);
+	FillWorkerConfigurationFromCurrentMap(ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
 
-	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkers);
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 
 	OnPrimaryLaunchConfigPathPicked(LaunchConfig);
 

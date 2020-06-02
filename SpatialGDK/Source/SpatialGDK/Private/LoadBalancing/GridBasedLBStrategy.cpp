@@ -16,6 +16,8 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 	, WorldWidth(1000000.f)
 	, WorldHeight(1000000.f)
 	, InterestBorder(0.f)
+	, LocalCellId(0)
+	, bIsStrategyUsedOnLocalWorker(false)
 {
 }
 
@@ -24,11 +26,6 @@ void UGridBasedLBStrategy::Init()
 	Super::Init();
 
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
-
-	for (uint32 i = 1; i <= Rows * Cols; i++)
-	{
-		VirtualWorkerIds.Add(i);
-	}
 
 	const float WorldWidthMin = -(WorldWidth / 2.f);
 	const float WorldHeightMin = -(WorldHeight / 2.f);
@@ -63,6 +60,22 @@ void UGridBasedLBStrategy::Init()
 	}
 }
 
+void UGridBasedLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
+{
+	if (!VirtualWorkerIds.Contains(InLocalVirtualWorkerId))
+	{
+		// This worker is simulating a layer which is not part of the grid.
+		LocalCellId = WorkerCells.Num();
+		bIsStrategyUsedOnLocalWorker = false;
+	}
+	else
+	{
+		LocalCellId = VirtualWorkerIds.IndexOfByKey(InLocalVirtualWorkerId);
+		bIsStrategyUsedOnLocalWorker = true;
+	}
+	LocalVirtualWorkerId = InLocalVirtualWorkerId;
+}
+
 TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 {
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
@@ -76,8 +89,13 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
+	if (!bIsStrategyUsedOnLocalWorker)
+	{
+		return false;
+	}
+
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
-	return IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
+	return IsInside(WorkerCells[LocalCellId], Actor2DLocation);
 }
 
 VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
@@ -90,10 +108,12 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
+	check(VirtualWorkerIds.Num() == WorkerCells.Num());
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %f, %f"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], Actor2DLocation.X, Actor2DLocation.Y);
 			return VirtualWorkerIds[i];
 		}
 	}
@@ -105,8 +125,9 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 {
 	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
 	check(IsReady());
+	check(bIsStrategyUsedOnLocalWorker);
 
-	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
+	const FBox2D Interest2D = WorkerCells[LocalCellId].ExpandBy(InterestBorder);
 
 	const FVector2D Center2D = Interest2D.GetCenter();
 	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f};
@@ -123,7 +144,8 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 {
 	check(IsReady());
-	const FVector2D Centre = WorkerCells[LocalVirtualWorkerId - 1].GetCenter();
+	check(bIsStrategyUsedOnLocalWorker);
+	const FVector2D Centre = WorkerCells[LocalCellId].GetCenter();
 	return FVector{ Centre.X, Centre.Y, 0.f };
 }
 
