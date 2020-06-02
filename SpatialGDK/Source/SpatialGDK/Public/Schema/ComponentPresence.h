@@ -47,7 +47,7 @@ struct ComponentPresence : Component
 		uint32 BufferCount = ComponentList.Num();
 		uint32 BufferSize = BufferCount * sizeof(uint32);
 		uint32* Buffer = reinterpret_cast<uint32*>(Schema_AllocateBuffer(ComponentObject, BufferSize));
-		FMemory::Memcmp(ComponentList.GetData(), Buffer, BufferSize);
+		FMemory::Memcpy(Buffer, ComponentList.GetData(), BufferSize);
 		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, Buffer, BufferCount);
 
 		return Data;
@@ -68,7 +68,7 @@ struct ComponentPresence : Component
 		uint32 BufferCount = ComponentList.Num();
 		uint32 BufferSize = BufferCount * sizeof(uint32);
 		uint32* Buffer = reinterpret_cast<uint32*>(Schema_AllocateBuffer(ComponentObject, BufferSize));
-		FMemory::Memcmp(ComponentList.GetData(), Buffer, BufferSize);
+		FMemory::Memcpy(Buffer, ComponentList.GetData(), BufferSize);
 		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, Buffer, BufferCount);
 
 		return Update;
