@@ -309,7 +309,7 @@ namespace ReleaseTool
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
 
-            var engineVersion = $"dry-run/{options.SourceBranch.trim()}-release";
+            var engineVersion = $"dry-run/{options.SourceBranch.Trim()}-release";
 
             string name;
             string releaseBody;
