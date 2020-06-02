@@ -163,7 +163,7 @@ namespace ReleaseTool
                             GetPullRequestBody(options.GitRepoName, options.CandidateBranch, options.ReleaseBranch));
                     }
 
-                    BuildkiteAgent.SetMetaData($"{options.GitRepoName}-pr-url", pullRequest.HtmlUrl);
+                    BuildkiteAgent.SetMetaData($"{options.GitRepoName}-{options.SourceBranch}-pr-url", pullRequest.HtmlUrl);
 
                     var prAnnotation = string.Format(prAnnotationTemplate,
                         pullRequest.HtmlUrl, options.GitRepoName, options.CandidateBranch, options.ReleaseBranch);

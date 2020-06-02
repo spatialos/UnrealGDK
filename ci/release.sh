@@ -110,7 +110,7 @@ while IFS= read -r ENGINE_VERSION; do
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "${ENGINE_VERSION}-release" \
-    "$(buildkite-agent meta-data get UnrealEngine-pr-url)" \
+    "$(buildkite-agent meta-data get UnrealEngine-${ENGINE_VERSION}-pr-url)" \
     "improbableio" \
     "${ENGINE_VERSIONS}"
 done <<< "${ENGINE_VERSIONS}"
