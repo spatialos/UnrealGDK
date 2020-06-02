@@ -66,7 +66,7 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
-	if (LogSpatialLatencyTracing.GetVerbosity() >= ELogVerbosity::Verbose)
+	if (UE_GET_LOG_VERBOSITY(LogSpatialLatencyTracing) >= ELogVerbosity::Verbose)
 	{
 		std::cout.rdbuf(&UStream);
 		std::cerr.rdbuf(&UStream);
