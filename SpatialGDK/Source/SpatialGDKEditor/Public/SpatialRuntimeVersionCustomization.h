@@ -8,7 +8,6 @@
 class FSpatialRuntimeVersionCustomization :public IPropertyTypeCustomization
 {
 public:
-
 	static TSharedRef<IPropertyTypeCustomization> MakeInstance();
 
 	/** IPropertyTypeCustomization interface */
