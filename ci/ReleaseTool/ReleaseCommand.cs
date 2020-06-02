@@ -240,18 +240,39 @@ namespace ReleaseTool
                     Logger.Info("Draft release: {0}", release.HtmlUrl);
                 }
 
-                // Open a PR for merging the release branch into master.
+                // Check if a PR has already been opened from release branch into source branch.
+                // If it has, log the PR URL and move on.
+                // This ensures the idempotence of the pipeline.
                 var branchFrom = options.ReleaseBranch;
                 var branchTo = options.SourceBranch;
 
-                // Only open a PR if one does not exist yet.
                 if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
                 {
-                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                    try
+                    {
+                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
                         branchFrom,
                         branchTo,
                         string.Format(PullRequestNameTemplate, options.Version),
                         pullRequestBody);
+                    }
+                    catch (Octokit.ApiValidationException e)
+                    {
+                            // Handle the case where master and release are identical, so there is no need to merge release back into master.
+                            if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
+                            {
+                                Logger.Info(e.ApiError.Errors[0].Message);
+                                Logger.Info("No PR will be created.");
+                                return 0;
+                            }
+
+                            throw;
+                    }
+                }
+
+                else
+                {
+                    Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
                 }
 
                 var prAnnotation = string.Format(prAnnotationTemplate,
