@@ -64,9 +64,6 @@ namespace ReleaseTool
             [Option("engine-versions", HelpText = "An array containing every engine version source branch.", Required = false)]
             public IEnumerable<string> EngineVersions {get;set;}
 
-            [Option("engine-version", HelpText = "A string, the source branch for the UnrealEngine version being released by this particular execution of the release command.", Required = false)]
-            public string EngineVersion { get; set; }
-
             public string GitHubTokenFile { get; set; }
 
             public string GitHubToken { get; set; }
@@ -297,6 +294,9 @@ namespace ReleaseTool
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
 
+            var EngineVersion = options.SourceBranch
+                .Select(version => $"dry-run/{version.Trim()}-release");
+
             string name;
             string releaseBody;
 
@@ -352,7 +352,7 @@ Happy developing,
 ";
                     break;
                 case "UnrealEngine":
-                    name = $"{options.EngineVersion}-{options.Version}";
+                    name = $"{EngineVersion}-{options.Version}";
                     releaseBody =
 $@"Unreal GDK version {options.Version} is go!
 
