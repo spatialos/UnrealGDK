@@ -701,18 +701,22 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			}
 		}
 
-		// Check for Authority
-		Worker_EntityId EntityId = Params.ObjectRef.Entity;
-		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
-		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
+		// We don't need to check for authority with CrossServer RPCs
+		if (RPCInfo.Type != ERPCType::CrossServer)
 		{
-			bool bShouldDrop = true;
-			if (AActor* TargetActor = Cast<AActor>(TargetObject))
+			// Check for Authority
+			Worker_EntityId EntityId = Params.ObjectRef.Entity;
+			Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
+			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 			{
-				bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
-			}
+				bool bShouldDrop = true;
+				if (AActor* TargetActor = Cast<AActor>(TargetObject))
+				{
+					bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
+				}
 
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+				return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+			}
 		}
 
 		SendRPCInternal(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
