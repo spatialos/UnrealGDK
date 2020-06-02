@@ -6,6 +6,9 @@
 
 #include "LayerInfo.generated.h"
 
+class UAbstractLBStrategy;
+class UAbstractLockingPolicy;
+
 USTRUCT()
 struct FLayerInfo
 {
@@ -22,4 +25,10 @@ struct FLayerInfo
 	/** The Actor classes contained within this group. Children of these classes will also be included. */
 	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
-}; 
+
+	UPROPERTY(EditAnywhere, Category = "Load Balancing")
+	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
+
+	UPROPERTY(EditAnywhere, Category = "Load Balancing")
+	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
+};

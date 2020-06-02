@@ -121,7 +121,6 @@ struct FWorkerTypeLaunchSection
 		, bAutoNumEditorInstances(true)
 		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(false)
-		, WorkerLoadBalancing(nullptr)
 	{
 	}
 
@@ -160,9 +159,6 @@ struct FWorkerTypeLaunchSection
 	/** Determines if the worker instance is launched manually or by SpatialOS. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Manual worker connection only"))
 	bool bManualWorkerConnectionOnly;
-
-	UPROPERTY(Transient, Category = "SpatialGDK", EditAnywhere, Instanced)
-	UAbstractRuntimeLoadBalancingStrategy* WorkerLoadBalancing;
 };
 
 USTRUCT()
@@ -177,11 +173,8 @@ struct FSpatialLaunchConfigDescription
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
-		ServerWorkersMap.Add(SpatialConstants::DefaultServerWorkerType, UnrealWorkerDefaultSetting);
+		ServerWorkerConfig = UnrealWorkerDefaultSetting;
 	}
-
-	/** Set WorkerTypesToLaunch in level editor play settings. */
-	SPATIALGDKEDITOR_API void OnWorkerTypesChanged();
 
 	/** Deployment template. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
@@ -196,7 +189,7 @@ struct FSpatialLaunchConfigDescription
 	TArray<FWorkerTypeLaunchSection> ServerWorkers_DEPRECATED;
 
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
-	TMap<FName, FWorkerTypeLaunchSection> ServerWorkersMap;
+	FWorkerTypeLaunchSection ServerWorkerConfig;
 };
 
 /**
@@ -219,7 +212,6 @@ namespace ESpatialOSNetFlow
 {
 	enum Type
 	{
-		NoAutomaticConnection,
 		LocalDeployment,
 		CloudDeployment
 	};
@@ -235,8 +227,6 @@ public:
 
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
-
-	void OnWorkerTypesChanged();
 
 public:
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */

@@ -26,11 +26,6 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 		TArray<TWeakObjectPtr<UObject>> Objects;
 		CurrentLayout->GetObjectsBeingCustomized(Objects);
 		USpatialGDKEditorSettings* Settings = Objects.Num() > 0 ? Cast<USpatialGDKEditorSettings>(Objects[0].Get()) : nullptr;
-		if (Settings != nullptr)
-		{
-			// Force layout to happen in the right order, as delegates may not be ordered.
-			Settings->OnWorkerTypesChanged();
-		}
 		CurrentLayout->ForceRefreshDetails();
 	}
 }
@@ -39,7 +34,6 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 {
 	CurrentLayout = &DetailBuilder;
 	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
-	GDKSettings->OnWorkerTypesChangedDelegate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 
 	TSharedPtr<IPropertyHandle> UsePinnedVersionProperty = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseGDKPinnedRuntimeVersion));
 

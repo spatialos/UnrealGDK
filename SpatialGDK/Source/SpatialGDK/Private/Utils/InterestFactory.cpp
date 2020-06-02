@@ -6,9 +6,10 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #include "Engine/World.h"
@@ -119,26 +120,13 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 		ServerQuery.FullSnapshotResult = true;
 	}
 
-	if (SpatialGDKSettings->bEnableOffloading)
-	{
-		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
-		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
-		ServerQuery.Constraint = Constraint;
-
-		// No need to add any further interest as we are already interested in everything
-		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
-		return ServerInterest;
-	}
-
-	// If we aren't offloading, the server gets more granular interest.
-
 	// Ensure server worker receives always relevant entities
 	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
 
 	Constraint = AlwaysRelevantConstraint;
 
 	// If we are using the unreal load balancer, we also add the server worker interest defined by the load balancing strategy.
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+	if (SpatialGDKSettings->bEnableMultiWorker)
 	{
 		check(LBStrategy != nullptr);
 

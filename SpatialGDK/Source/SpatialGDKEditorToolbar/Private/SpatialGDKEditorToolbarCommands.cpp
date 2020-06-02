@@ -11,7 +11,6 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(DeleteSchemaDatabase, "Delete schema database", "Deletes the schema database file", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(CreateSpatialGDKSnapshot, "Snapshot", "Creates SpatialOS Unreal GDK snapshot.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartNative, "Native", "Use native Unreal networking", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StartNoAutomaticConnection, "None", "Doesn't automatically connect to SpatialOS", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartLocalSpatialDeployment, "Local", "Start a local deployment", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartCloudSpatialDeployment, "Cloud", "Start a cloud deployment (Windows-only)", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialDeployment, "Stop", "Stops SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
