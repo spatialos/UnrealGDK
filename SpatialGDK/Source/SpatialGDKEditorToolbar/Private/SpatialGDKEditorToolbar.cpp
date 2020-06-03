@@ -1246,10 +1246,10 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
-	auto LaunchCloudDeployment = [this]()
+	auto StartCloudDeployment = [this]()
 	{
 		OnShowTaskStartNotification(FString::Printf(TEXT("Starting cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
-		SpatialGDKEditorInstance->LaunchCloudDeployment(
+		SpatialGDKEditorInstance->StartCloudDeployment(
 			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
@@ -1267,11 +1267,11 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 	};
 
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-		[this, LaunchCloudDeployment]()
+		[this, StartCloudDeployment]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
-			LaunchCloudDeployment();
+			StartCloudDeployment();
 		}
 		else
 		{
