@@ -166,7 +166,7 @@ namespace ReleaseTool
                         }
                         catch (Octokit.ApiValidationException e)
                         {
-                            // Handles the case where source-branch (default master) and target-branch (default release) are identical, so there is no need to merge source-branch back into target-branch.
+                            // Handles the case where candidate-branch and target-branch (default release) are identical, so there is no need to merge source-branch back into target-branch.
                             if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
                             {
                                 Logger.Info(e.ApiError.Errors[0].Message);
