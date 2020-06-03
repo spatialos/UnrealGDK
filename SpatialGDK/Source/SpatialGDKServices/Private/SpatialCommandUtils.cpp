@@ -303,12 +303,12 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 	bool bProcessFinished = false;
 	if (ProcHandle.IsValid())
 	{
-		while(!bProcessFinished && !bProcessFinished)
+		while(!bProcessFinished && !bProcessSucessed)
 		{
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
 
 			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
-			bProcessSucessed = OutResult.Contains("available");
+			bProcessSucessed = OutResult.Contains("The receptionist proxy is available");
 
 			FPlatformProcess::Sleep(0.01f);
 		}

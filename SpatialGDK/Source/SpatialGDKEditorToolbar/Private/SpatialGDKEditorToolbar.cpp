@@ -93,6 +93,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
+	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
+
 	OnAutoStartLocalDeploymentChanged();
 	OnAutoStartLocalReceptionistProxyServer();
 
@@ -156,10 +158,7 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 
 void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
-	if (ProxyServerProcHandle.IsValid())
-	{
-		SpatialCommandUtils::StopLocalReceptionistProxyServer(ProxyServerProcHandle);
-	}
+	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 
 	if (bStopSpatialOnExit)
 	{
@@ -875,14 +874,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 void FSpatialGDKEditorToolbarModule::StartLocalReceptionistProxyServer()
 {
-	bool bSuccess = false;
-
 	OnShowTaskStartNotification(TEXT("StartLocalReceptionistProxyServer"));
 
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), SpatialGDKSettings->GetPrimaryDeploymentName(), bSuccess);
+	bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName());
 
-	if (ProxyServerProcHandle.IsValid() && bSuccess)
+	if (bSuccess)
 	{
 		OnShowSuccessNotification(TEXT("Successfully Started Local Receptionist Proxy Server"));
 	}
@@ -1308,13 +1304,10 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalReceptionistProxyServer()
 	{
 	if (UEditorEngine::TryStartLocalReceptionistProxyServer.IsBound())
 	{
-		// Unbind the TryStartSpatialDeployment if autostart is disabled.
+		// Unbind the TryStartLocalReceptionistProxyServer if autostart is disabled.
 		UEditorEngine::TryStartLocalReceptionistProxyServer.Unbind();
 
-		if (ProxyServerProcHandle.IsValid())
-		{
-			SpatialCommandUtils::StopLocalReceptionistProxyServer(ProxyServerProcHandle);
-		}
+		LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 	}
 	}
 }

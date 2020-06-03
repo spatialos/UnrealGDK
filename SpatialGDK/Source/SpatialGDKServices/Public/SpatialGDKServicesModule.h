@@ -3,6 +3,7 @@
 #pragma once
 
 #include "LocalDeploymentManager.h"
+#include "LocalReceptionistProxyServerManager.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
@@ -20,6 +21,7 @@ public:
 	}
 
 	FLocalDeploymentManager* GetLocalDeploymentManager();
+	FLocalReceptionistProxyServerManager* GetLocalReceptionistProxyServerManager();
 
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
 	
@@ -36,7 +38,10 @@ public:
 	static void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
 
 private:
+
 	FLocalDeploymentManager LocalDeploymentManager;
+	FLocalReceptionistProxyServerManager LocalReceptionistProxyServerManager;
+
 	static FString ParseProjectName();
 	static TSharedPtr<FJsonObject> ParseProjectFile();
 };
