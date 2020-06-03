@@ -6,8 +6,6 @@ github:
   pull_request_branch_filter_configuration: []
 teams:
 - name: Everyone
-  permission: READ_ONLY
+  permission: BUILD_AND_READ
 - name: gbu/develop/unreal
-  permission: MANAGE_BUILD_AND_READ
-- name: robots
   permission: MANAGE_BUILD_AND_READ
