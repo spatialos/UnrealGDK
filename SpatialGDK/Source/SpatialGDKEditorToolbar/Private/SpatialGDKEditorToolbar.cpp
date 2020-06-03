@@ -1219,27 +1219,35 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 	CloudDeploymentConfiguration.InitFromSettings();
 
-	if (CloudDeploymentConfiguration.bGenerateSchema)
+	if (CloudDeploymentConfiguration.bBuildAndUploadAssembly)
 	{
-		if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+		if (CloudDeploymentConfiguration.bGenerateSchema)
 		{
-			OnShowSingleFailureNotification(TEXT("Generate schema failed."));
-			return FReply::Unhandled();
+			if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+			{
+				OnShowSingleFailureNotification(TEXT("Generate schema failed."));
+				return FReply::Unhandled();
+			}
 		}
-	}
 
-	if (CloudDeploymentConfiguration.bGenerateSnapshot)
+		if (CloudDeploymentConfiguration.bGenerateSnapshot)
+		{
+			if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath))
+			{
+				OnShowSingleFailureNotification(TEXT("Generate snapshot failed."));
+				return FReply::Unhandled();
+			}
+		}
+
+		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
+		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
+		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
+	}
+	else
 	{
-		if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath))
-		{
-			OnShowSingleFailureNotification(TEXT("Generate snapshot failed."));
-			return FReply::Unhandled();
-		}
+		UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Skipping building and uploading assembly."));
+		OnBuildSuccess();
 	}
-
-	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
-	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
-	PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
 
 	return FReply::Handled();
 }
