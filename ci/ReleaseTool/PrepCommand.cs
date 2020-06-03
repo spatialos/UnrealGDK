@@ -156,27 +156,12 @@ namespace ReleaseTool
                     // Only open a PR if one does not exist yet.
                     if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
                     {
-                        try
-                        {
-                            pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
                             branchFrom,
                             branchTo,
                             string.Format(PullRequestTemplate, options.Version),
                             GetPullRequestBody(options.GitRepoName, options.CandidateBranch, options.ReleaseBranch));
-                        }
-                        catch (Octokit.ApiValidationException e)
-                        {
-                            // Handles the case where source-branch (default master) and target-branch (default release) are identical, so there is no need to merge source-branch back into target-branch.
-                            if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
-                            {
-                                Logger.Info(e.ApiError.Errors[0].Message);
-                                Logger.Info("No PR will be created.");
-                                return 0;
-                            }
-
-                            throw;
                     }
-
 
                     BuildkiteAgent.SetMetaData($"{options.GitRepoName}-{options.SourceBranch}-pr-url", pullRequest.HtmlUrl);
 
