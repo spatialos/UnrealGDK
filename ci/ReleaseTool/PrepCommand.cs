@@ -175,8 +175,14 @@ namespace ReleaseTool
                             }
 
                             throw;
+                        }
                     }
-
+                    
+                    else
+                    {
+                        Logger.Info("A PR has already been opened from candidate branch into release branch: {0}", pullRequest.HtmlUrl);
+                    }
+                    
 
                     BuildkiteAgent.SetMetaData($"{options.GitRepoName}-{options.SourceBranch}-pr-url", pullRequest.HtmlUrl);
 
