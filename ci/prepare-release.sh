@@ -88,14 +88,14 @@ USER_ID=$(id -u)
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
-ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-versions)"
+ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-source-branches)"
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
-prepareRelease "UnrealGDK"                "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
-prepareRelease "UnrealGDKExampleProject"  "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
-prepareRelease "UnrealGDKTestGyms"        "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
-prepareRelease "UnrealGDKEngineNetTest"   "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
-prepareRelease "TestGymBuildKite"         "dry-run/master" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
+prepareRelease "UnrealGDK"                "dry-run/$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
+prepareRelease "UnrealGDKExampleProject"  "dry-run/$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
+prepareRelease "UnrealGDKTestGyms"        "dry-run/$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
+prepareRelease "UnrealGDKEngineNetTest"   "dry-run/$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
+prepareRelease "TestGymBuildKite"         "dry-run/$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
 
 while IFS= read -r ENGINE_VERSION; do
   prepareRelease "UnrealEngine" \

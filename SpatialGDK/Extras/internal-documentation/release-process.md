@@ -11,10 +11,11 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. If nobody objects to the release, navigate to [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release/) and select the New Build button.
 1. In the Message field type "Releasing [GDK release version]".
 1. The "Commit" field is prepopulated with `HEAD`, leave it as is.
-1. The "Branch" field is prepopulated with `master`. Leave it as is if you're executing a major or minor release, change it to `release` if you're executing a patch release.
+1. The "Branch" field is prepopulated with `master`. Leave it as is. This determines which version of the unrealgdk-release pipeline is run.
 1. Select "Create Build".
 1. Wait about 20 seconds for `imp-ci steps run --from .buildkite/release.steps.yaml` to pass and then select "Configure your release."
 1. In the "UnrealGDK component release version" field enter the GDK release version.
+1. The "UnrealGDK source branch" field is prepopulated with `master`. Leave it as is if you're executing a major or minor release, change it to `release` if you're executing a patch release.
 1. The "UnrealEngine source branches" field should be prepopulated with the source branches of the latest fully supported and legacy supported Unreal Engine versions. If you're executing a patch release you'll need to suffix each branch with `-release`.<details> <summary>Wrong prepopulated branches?</summary> If the prepopulated branches are wrong, select the button with an X at the upper-right corner of the form, and then select "Cancel" to stop this build of unrealgdk-release. Then, on the UnrealGDK's `master` branch at [`.buildkite/release.steps.yaml#L32`](https://github.com/spatialos/UnrealGDK/blob/master/.buildkite/release.steps.yaml#L32), update the default branches to the latest, merge that change and restart this release process </details>
 1. Select "Continue" and move onto the next step.
 1. Wait for the "Prepare the release" step to run, it takes about 20 minutes, maybe grab a coffee?

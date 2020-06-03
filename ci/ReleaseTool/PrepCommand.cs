@@ -237,7 +237,6 @@ namespace ReleaseTool
                         $"'{relativeFilePath}' does not exist.");
                 }
 
-                // Pin is always to master in this case.
                 File.WriteAllText(relativeFilePath, $"{fileContents}");
 
                 gitClient.StageFile(relativeFilePath);

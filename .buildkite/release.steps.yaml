@@ -25,8 +25,14 @@ steps:
         required: true
         hint: "The name of component release version you want to create release candidates for. For example: `0.12.2` or `1.0.1`."
 
+        - text: "UnrealGDK source branch"
+        key: "gdk-source-branch"
+        required: true
+        hint: "The branch you want to create UnrealGDK, UnrealGDKExampleProject, UnrealGDKTestGyms, TestGymBuildKite & UnrealGDKEngineNetTest, release candidates from."
+        default: "master"
+
       - text: "UnrealEngine source branches"
-        key: "engine-versions"
+        key: "engine-source-branches"
         required: true
         hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line with the primary Engine version at the top."
         default: "dry-run/4.24-SpatialOSUnrealGDK\ndry-run/4.23-SpatialOSUnrealGDK"
