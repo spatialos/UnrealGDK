@@ -689,6 +689,16 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 	else
 	{
+		if (Channel->bCreatingNewEntity)
+		{
+			if (Function->HasAnyFunctionFlags(FUNC_NetClient))
+			{
+				check(NetDriver->IsServer());
+				OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Params.Payload);
+				return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success, false };
+			}
+		}
+
 		// Check if the Channel is listening
 		if (RPCInfo.Type != ERPCType::NetMulticast && RPCInfo.Type != ERPCType::CrossServer)
 		{
@@ -758,50 +768,39 @@ void USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function,
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	if (Channel->bCreatingNewEntity)
+	if (RPCInfo.Type == ERPCType::CrossServer)
 	{
-		if (Function->HasAnyFunctionFlags(FUNC_NetClient))
+		Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
+
+		Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
+
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{
-			check(NetDriver->IsServer());
-			OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Payload);
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
+				EntityId, CommandRequest.component_id, *Function->GetName());
+			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
+				EntityId, CommandRequest.component_id, *Function->GetName());
 		}
 	}
 	else
 	{
-		if (RPCInfo.Type == ERPCType::CrossServer)
-		{
-			Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
+		Worker_EntityId EntityId = TargetObjectRef.Entity;
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-			Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
-			Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
+		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 
-			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+		FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
-					EntityId, CommandRequest.component_id, *Function->GetName());
-				Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
-			}
-			else
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
-					EntityId, CommandRequest.component_id, *Function->GetName());
-			}
-		}
-		else
-		{
-			Worker_EntityId EntityId = TargetObjectRef.Entity;
-			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-			Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
-
-			FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
-
-			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-			Connection->MaybeFlush();
-		}
+		Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+		Connection->MaybeFlush();
 	}
 #if !UE_BUILD_SHIPPING
 	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
