@@ -32,6 +32,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
@@ -191,6 +192,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewClus
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetBuildAndUploadAssembly(bool bBuildAndUpload)
+{
+	bBuildAndUploadAssembly = bBuildAndUpload;
 	SaveConfig();
 }
 

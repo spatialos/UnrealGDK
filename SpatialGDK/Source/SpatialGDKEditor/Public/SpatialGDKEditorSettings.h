@@ -323,6 +323,10 @@ private:
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
+	/** Whether to build and upload the assembly when starting the cloud deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build and Upload Assembly"))
+	bool bBuildAndUploadAssembly;
+
 	/** The build configuration to use when creating workers for the assembly, e.g. Development */
 	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
 	FString AssemblyBuildConfiguration;
@@ -554,6 +558,12 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetBuildAndUploadAssembly(bool bBuildAndUpload);
+	FORCEINLINE bool ShouldBuildAndUploadAssembly() const
+	{
+		return bBuildAndUploadAssembly;
 	}
 
 	void SetForceAssemblyOverwrite(bool bForce);

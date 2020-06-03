@@ -526,7 +526,28 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.HAlign(HAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
+								.Text(FText::FromString(FString(TEXT("Assembly Configuration"))))
+							]
+							// Build and Upload Assembly
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to build and upload the assembly when starting the cloud deployment."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsBuildAndUploadAssemblyEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedBuildAndUploadAssembly)
+								]
 							]
 							// Generate Schema
 							+ SVerticalBox::Slot()
@@ -547,6 +568,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SCheckBox)
 									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsGenerateSchemaEnabled)
 									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedGenerateSchema)
+									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::ShouldBuildAndUploadAssembly)
 								]
 							]
 							// Generate Snapshot
@@ -568,6 +590,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SCheckBox)
 									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsGenerateSnapshotEnabled)
 									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedGenerateSnapshot)
+									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::ShouldBuildAndUploadAssembly)
 								]
 							]
 							// Build Configuration
@@ -594,6 +617,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 										SNew(STextBlock)
 										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetAssemblyBuildConfiguration)
 									]
+									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::ShouldBuildAndUploadAssembly)
 								]
 							]
 							// Enable/Disable Build Client Worker
@@ -615,6 +639,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SCheckBox)
 									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsBuildClientWorkerEnabled)
 									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedBuildClientWorker)
+									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::ShouldBuildAndUploadAssembly)
 								]
 							]
 							// Force Overwrite on Upload
@@ -636,6 +661,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SCheckBox)
 									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::ForceAssemblyOverwrite)
 									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedForceAssemblyOverwrite)
+									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::ShouldBuildAndUploadAssembly)
 								]
 							]
 							// Separator
@@ -895,6 +921,18 @@ void SSpatialGDKCloudDeploymentConfiguration::OnCheckedSimulatedPlayers(ECheckBo
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetSimulatedPlayersEnabledState(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsBuildAndUploadAssemblyEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->ShouldBuildAndUploadAssembly() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKCloudDeploymentConfiguration::OnCheckedBuildAndUploadAssembly(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetBuildAndUploadAssembly(NewCheckedState == ECheckBoxState::Checked);
 }
 
 ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayersEnabled() const
