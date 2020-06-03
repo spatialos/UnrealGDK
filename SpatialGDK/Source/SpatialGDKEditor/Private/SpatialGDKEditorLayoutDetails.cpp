@@ -6,8 +6,8 @@
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "Widgets/Input/SButton.h"
-#include "Widgets/Notifications/SPopupErrorText.h"
 #include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Notifications/SPopupErrorText.h"
 #include "Widgets/Text/STextBlock.h"
 
 #include "SpatialCommandUtils.h"
