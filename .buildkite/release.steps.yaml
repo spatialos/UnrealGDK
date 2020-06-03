@@ -25,7 +25,7 @@ steps:
         required: true
         hint: "The name of component release version you want to create release candidates for. For example: `0.12.2` or `1.0.1`."
 
-        - text: "UnrealGDK source branch"
+      - text: "UnrealGDK source branch"
         key: "gdk-source-branch"
         required: true
         hint: "The branch you want to create UnrealGDK, UnrealGDKExampleProject, UnrealGDKTestGyms, TestGymBuildKite & UnrealGDKEngineNetTest, release candidates from."
