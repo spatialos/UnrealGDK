@@ -115,8 +115,8 @@ while IFS= read -r ENGINE_VERSION; do
     "${ENGINE_VERSIONS}"
 done <<< "${ENGINE_VERSIONS}"
 
-release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-pr-url)"               "spatialos"  "${ENGINE_VERSIONS}"
-release "UnrealGDKExampleProject" "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-pr-url)" "spatialos"
-release "UnrealGDKTestGyms"       "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-pr-url)"       "spatialos"
-release "UnrealGDKEngineNetTest"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
-release "TestGymBuildKite"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-pr-url)"  "improbable"
+release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get $(buildkite-agent meta-data get gdk-source-branch)-UnrealGDK-pr-url)"               "spatialos"  "${ENGINE_VERSIONS}"
+release "UnrealGDKExampleProject" "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get $(buildkite-agent meta-data get gdk-source-branch)-UnrealGDKExampleProject-pr-url)" "spatialos"
+release "UnrealGDKTestGyms"       "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get $(buildkite-agent meta-data get gdk-source-branch)-UnrealGDKTestGyms-pr-url)"       "spatialos"
+release "UnrealGDKEngineNetTest"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get $(buildkite-agent meta-data get gdk-source-branch)-UnrealGDKEngineNetTest-pr-url)"  "improbable"
+release "TestGymBuildKite"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get $(buildkite-agent meta-data get gdk-source-branch)-UnrealGDKEngineNetTest-pr-url)"  "improbable"
