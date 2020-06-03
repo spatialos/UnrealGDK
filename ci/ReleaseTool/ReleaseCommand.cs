@@ -158,8 +158,8 @@ namespace ReleaseTool
                     switch (repoName)
                     {
                         case "UnrealEngine":
-                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
-                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKExampleProjectVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
                             break;
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
@@ -173,16 +173,16 @@ namespace ReleaseTool
                             UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
                             break;
                         case "UnrealGDKExampleProject":
-                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKTestGyms":
-                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                         case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                         case "TestGymBuildKite":
-                            UpdateVersionFile(gitClient, "{options.Version}", UnrealGDKVersionFile);
+                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                     }
 
