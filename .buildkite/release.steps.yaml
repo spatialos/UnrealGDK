@@ -29,7 +29,7 @@ steps:
         key: "gdk-source-branch"
         required: true
         hint: "The branch you want to create UnrealGDK, UnrealGDKExampleProject, UnrealGDKTestGyms, TestGymBuildKite & UnrealGDKEngineNetTest, release candidates from."
-        default: "master"
+        default: "dry-run/master"
 
       - text: "UnrealEngine source branches"
         key: "engine-source-branches"
