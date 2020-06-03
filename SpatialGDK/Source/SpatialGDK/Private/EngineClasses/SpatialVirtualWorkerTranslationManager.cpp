@@ -173,7 +173,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" Processing ServerWorker Entity query response"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Processing ServerWorker Entity query response"));
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 

@@ -38,7 +38,7 @@ void ULayeredLBStrategy::Init()
 
 	if (WorldSettings == nullptr)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
