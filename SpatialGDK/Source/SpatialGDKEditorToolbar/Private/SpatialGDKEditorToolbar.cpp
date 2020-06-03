@@ -1283,7 +1283,11 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty() || SpatialGDKSettings->GetAssemblyName().IsEmpty() ? false : true;
+	return !FSpatialGDKServicesModule::GetProjectName().IsEmpty()
+		&& !SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty()
+		&& !SpatialGDKSettings->GetAssemblyName().IsEmpty()
+		&& !SpatialGDKSettings->GetSnapshotPath().IsEmpty()
+		&& !SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
