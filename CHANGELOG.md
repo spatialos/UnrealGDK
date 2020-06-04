@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed the names of the following toolbar buttons:
   - `Start` is now called `Start Deployment`
   - `Deploy` is now called `Configure`
+- Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
