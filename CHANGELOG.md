@@ -24,22 +24,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The GDK now uses SpatialOS 14.6.1.
 - Add ability to disable outgoing RPC queue timeouts by setting `QueuedOutgoingRPCWaitTime` to 0.0f.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
-- You can now edit the project name field in the `Cloud Deployment` window.
+- You can now edit the project name field in the `Cloud Deployment Configuration` window.
 - Worker types are now defined in the runtime settings.
 - Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
-- A launch configuration editor has been added under the Deploy toolbar button.
+- A launch configuration editor has been added under the `Configure` toolbar button.
 - The cloud deployment window can now generate a launch configuration from the current map or use the launch configuration editor.
 - Worker load can be specified by game logic via `SpatialMetrics::SetWorkerLoadDelegate`
-- You can now specify deployment tags in the `Cloud Deployment` window.
+- You can now specify deployment tags in the `Cloud Deployment Configuration` window.
 - RPCs declared in a UINTERFACE can now be executed. Previously, this would lead to a runtime assertion.
 - Full Schema generation now uses the CookAndGenerateSchema commandlet, which will result in faster and more stable schema generation for big projects.
-- Added `Open Deployment Page` button to the `Cloud Deployment` window.
-- The `Launch Deployment` button in the `Cloud Deployment` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before launching the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
-- When launching a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
+- Added `Open Deployment Page` button to the `Cloud Deployment Configuration` window.
+- The `Start Deployment` button in the `Cloud Deployment Configuration` dialog can now generate schema, generate a snapshot, build all selected workers, and upload the assembly before starting the deployment. There are checkboxes to toggle the generation of schema and snapshots as well as whether to build the client and simulated player workers.
+- When starting a cloud deployment via the Unreal Editor, it will now automatically add the `dev_login` tag to the deployment.
 - Renamed `enableProtocolLogging` command line parameter to `enableWorkerSDKProtocolLogging` and added `enableWorkerSDKOpLogging` parameter that allows to log user-level ops. Renamed `protocolLoggingPrefix` parameter to `workerSDKLogPrefix`. This prefix is used for both protocol and op logging. Added `workerSDKLogLevel` parameter that takes "debug", "info", "warning" or "error". Added `workerSDKLogFileSize` to control the maximum file size of the worker SDK log file.
-- Change the icon of the Connection toolbar button based on the selected connection flow.
+- Changed the icon of the `Start Deployment` toolbar button based on the selected connection flow.
 - Created a new dropdown in the Spatial toolbar. This dropdown menu allows you to configure how to connect your PIE client or your Launch on Device client:
-  - You can choose between `Connect to a local deployment` and `Connect to a cloud deployment` to specify the flow the client should automatically take upon clicking the Play or the Launch button.
+  - You can choose between `Connect to a local deployment` and `Connect to a cloud deployment` to specify the flow the client should automatically take upon clicking the `Play` or the `Launch` button.
   - Added the `Local Deployment IP` field to specify which local deployment you want to connect to. By default, this will be `127.0.0.1`.
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
@@ -47,7 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new icons for the toolbar.
 - The port is now respected when travelling via URL, translating to the receptionist port. The `-receptionistPort` command-line argument will still be used for the first connection.
 - Running BuildWorker.bat with <game-name>Client will build the Client target of your project.
-- When changing the project name via the `Cloud Deployment` dialog the development authentication token will automatically be regenerated.
+- When changing the project name via the `Cloud Deployment Configuration` window the development authentication token will automatically be regenerated.
+- Changed the names of the following toolbar buttons:
+  - `Start` is now called `Start Deployment`
+  - `Deploy` is now called `Configure`
+- Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
