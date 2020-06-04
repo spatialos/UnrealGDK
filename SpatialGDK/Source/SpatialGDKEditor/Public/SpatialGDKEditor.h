@@ -33,6 +33,8 @@ public:
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
 
+	void SetProjectName(const FString& InProjectName);
+
 	TSharedRef<FSpatialGDKDevAuthTokenGenerator> GetDevAuthTokenGeneratorRef();
 	TSharedRef<FSpatialGDKPackageAssembly> GetPackageAssemblyRef();
 

@@ -11,7 +11,9 @@
 #include "Widgets/Text/STextBlock.h"
 
 #include "SpatialCommandUtils.h"
+#include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCommandLineArgsManager.h"
+#include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKSettings.h"
@@ -170,5 +172,6 @@ void FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted(const FText& InText,
 	}
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
-	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
+	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
+	SpatialGDKEditorInstance->SetProjectName(NewProjectName);
 }
