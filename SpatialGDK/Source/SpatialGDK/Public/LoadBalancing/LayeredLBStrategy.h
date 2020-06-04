@@ -73,6 +73,10 @@ public:
 	// switch to Load Balancing. 
 	bool CouldHaveAuthority(TSubclassOf<AActor> Class) const;
 
+	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
+	// Currently, this is just the default strategy.
+	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
+
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
