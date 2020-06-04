@@ -11,7 +11,6 @@ release () {
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
-  local ENGINE_VERSIONS="${7:-}"
 
   echo "--- Releasing ${REPO_NAME}: Merging ${CANDIDATE_BRANCH} into ${RELEASE_BRANCH} :package:"
 
@@ -86,7 +85,7 @@ fi
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
-ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
+ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-source-branches)"
 
 setupReleaseTool
 
@@ -115,7 +114,7 @@ while IFS= read -r ENGINE_VERSION; do
     "${ENGINE_VERSIONS}"
 done <<< "${ENGINE_VERSIONS}"
 
-release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"  "${ENGINE_VERSIONS}"
+release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"
 release "UnrealGDKExampleProject" "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)" "spatialos"
 release "UnrealGDKTestGyms"       "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"       "spatialos"
 release "UnrealGDKEngineNetTest"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"  "improbable"
