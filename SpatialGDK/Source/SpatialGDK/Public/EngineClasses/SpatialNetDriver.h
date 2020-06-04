@@ -182,6 +182,10 @@ public:
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
+	// IsReady evaluates the GSM, Load Balancing system, and others to get a holistic
+	// view of whether the SpatialNetDriver is ready to assume normal operations.
+	bool IsReady();
+
 private:
 
 	TUniquePtr<SpatialDispatcher> Dispatcher;
