@@ -2204,7 +2204,7 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	if (InPayload.Index >= ClassInfo.RPCs.Num())
+	if (InPayload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
 	{
 		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
 		UE_LOG(LogSpatialReceiver, Error, TEXT("Invalid RPC index (%d) received on %s, dropping the RPC"), InPayload.Index, *TargetObject->GetName());
