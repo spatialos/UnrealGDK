@@ -239,6 +239,13 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
 }
 
+UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
+{
+	// The default strategy is guaranteed to exist as long as the strategy is ready.
+	check(IsReady());
+	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
+}
+
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const
 {
 	if (Class == nullptr)
