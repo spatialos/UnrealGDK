@@ -281,7 +281,6 @@ namespace ReleaseTool
 
                 Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
                 Logger.Info("Successfully created PR for merging the target-branch (default release) into the source-branch (default master).");
-                Logger.Info("Merge hash: {0}", pullRequest.MergeCommitSha);
             }
             catch (Exception e)
             {
