@@ -246,7 +246,6 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 
-
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const
 {
 	if (Class == nullptr)
