@@ -18,7 +18,7 @@ class FMenuBuilder;
 class FSpatialGDKEditor;
 class FToolBarBuilder;
 class FUICommandList;
-class SSpatialGDKSimulatedPlayerDeployment;
+class SSpatialGDKCloudDeploymentConfiguration;
 class SWindow;
 class USoundBase;
 
@@ -53,8 +53,8 @@ public:
 	void OnShowFailedNotification(const FString& NotificationText);
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
-	FReply OnLaunchCloudDeployment();
-	bool CanLaunchCloudDeployment() const;
+	FReply OnStartCloudDeployment();
+	bool CanStartCloudDeployment() const;
 
 	bool IsSimulatedPlayersEnabled() const;
 	/** Delegate called when the user either clicks the simulated players checkbox */
@@ -123,7 +123,7 @@ private:
 	void OpenLaunchConfigurationEditor();
 	void LaunchOrShowCloudDeployment();
 
-	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	/** Delegate to determine the 'Start Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
 	bool CanBuildAndUpload() const;
 
@@ -173,7 +173,7 @@ private:
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
 	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
-	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
+	TSharedPtr<SSpatialGDKCloudDeploymentConfiguration> CloudDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
 
