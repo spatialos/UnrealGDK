@@ -36,6 +36,7 @@
 #include "SpatialCommandUtils.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKDevAuthTokenGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKEditorPackageAssembly.h"
@@ -716,6 +717,11 @@ void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted(const FText& I
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
 	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
+	if (SpatialGDKEditorPtr.IsValid())
+	{
+		TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuthTokenGenerator = SpatialGDKEditorPtr.Pin()->GetDevAuthTokenGeneratorRef();
+		DevAuthTokenGenerator->AsyncGenerateDevAuthToken();
+	}
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)

@@ -28,7 +28,4 @@ struct FLayerInfo
 
 	UPROPERTY(EditAnywhere, Category = "Load Balancing")
 	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Category = "Load Balancing")
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 };
