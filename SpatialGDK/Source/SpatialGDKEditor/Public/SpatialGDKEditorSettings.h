@@ -169,12 +169,7 @@ struct FSpatialLaunchConfigDescription
 	FSpatialLaunchConfigDescription()
 		: Template(TEXT("w2_r0500_e5"))
 		, World()
-	{
-		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
-
-		ServerWorkerConfig = UnrealWorkerDefaultSetting;
-	}
+	{}
 
 	/** Deployment template. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
