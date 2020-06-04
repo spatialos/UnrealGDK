@@ -149,8 +149,8 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Use GDK Pinned Version"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to use the SpatialOS Runtime version associated to the current GDK version"))))
+									.Text(FText::FromString(FString(TEXT("Use GDK Pinned Version For Cloud"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to use the SpatialOS Runtime version associated to the current GDK version for cloud deployments"))))
 								]
 							+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -735,7 +735,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const
 void SSpatialGDKSimulatedPlayerDeployment::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersion(SpatialGDKSettings->RuntimeVariant, NewCheckedState == ECheckBoxState::Checked);
+	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersionForCloud(SpatialGDKSettings->RuntimeVariant, NewCheckedState == ECheckBoxState::Checked);
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType)
@@ -901,14 +901,14 @@ ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsUsingGDKPinnedRuntimeVers
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
-	return RuntimeVersion.GetUseGDKPinnedRuntimeVersion() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	return RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 bool SSpatialGDKSimulatedPlayerDeployment::IsUsingCustomRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
-	return !RuntimeVersion.GetUseGDKPinnedRuntimeVersion();
+	return !RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud();
 }
 
 FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText() const
@@ -916,7 +916,7 @@ FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText(
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
 	const FString& RuntimeVersionString =
-		RuntimeVersion.GetUseGDKPinnedRuntimeVersion() ? RuntimeVersion.GetPinnedVersion() : RuntimeVersion.GetVersionForCloud();
+		RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud() ? RuntimeVersion.GetPinnedVersion() : RuntimeVersion.GetVersionForCloud();
 	return FText::FromString(RuntimeVersionString);
 }
 

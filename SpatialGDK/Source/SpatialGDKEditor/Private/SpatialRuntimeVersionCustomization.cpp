@@ -27,31 +27,32 @@ void FSpatialRuntimeVersionCustomization::CustomizeHeader(TSharedRef<IPropertyHa
 
 void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle, IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
-	const FName& PinnedGDKPropertyName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, bUseGDKPinnedRuntimeVersion);
+	const FName& PinnedGDKRuntimeLocalPropertyName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, bUseGDKPinnedRuntimeVersionForLocal);
+	const FName& PinnedGDKRuntimeCloudPropertyName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, bUseGDKPinnedRuntimeVersionForCloud);
 	const FName& PinnedGDKPropertyVersionName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, PinnedVersion);
 
 	uint32 NumChildren;
 	StructPropertyHandle->GetNumChildren(NumChildren);
-
-	// Get the correct pinned version name.
-	FString PinnedVersionString;
-	TSharedPtr<IPropertyHandle> PinnedVersionProperty = StructPropertyHandle->GetChildHandle(PinnedGDKPropertyVersionName);
-	PinnedVersionProperty->GetValueAsFormattedString(PinnedVersionString);
 
 	for (uint32 ChildIdx = 0; ChildIdx < NumChildren; ++ChildIdx)
 	{
 		TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(ChildIdx);
 
 		// Layout other properties as usual.
-		if (ChildProperty->GetProperty()->GetFName() != PinnedGDKPropertyName)
+		if (ChildProperty->GetProperty()->GetFName() != PinnedGDKRuntimeLocalPropertyName || ChildProperty->GetProperty()->GetFName() != PinnedGDKRuntimeCloudPropertyName)
 		{
 			StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 			continue;
 		}
 
+		void* StructPtr;
+		check(StructPropertyHandle->GetValueData(StructPtr) == FPropertyAccess::Success);
+
+		const FRuntimeVariantVersion* VariantVersion = reinterpret_cast<const FRuntimeVariantVersion*>(StructPtr);
+
 		IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
-		FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *PinnedVersionString);
+		FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *VariantVersion->GetPinnedVersion());
 
 		CustomRow.CustomWidget()
 			.NameContent()

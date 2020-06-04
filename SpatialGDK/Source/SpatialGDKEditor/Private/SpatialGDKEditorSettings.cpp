@@ -21,7 +21,7 @@ DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 
 const FString& FRuntimeVariantVersion::GetVersionForLocal() const
 {
-	if (bUseGDKPinnedRuntimeVersion || LocalRuntimeVersion.IsEmpty())
+	if (bUseGDKPinnedRuntimeVersionForLocal || LocalRuntimeVersion.IsEmpty())
 	{
 		return PinnedVersion;
 	}
@@ -30,7 +30,7 @@ const FString& FRuntimeVariantVersion::GetVersionForLocal() const
 
 const FString& FRuntimeVariantVersion::GetVersionForCloud() const
 {
-	if (bUseGDKPinnedRuntimeVersion || CloudRuntimeVersion.IsEmpty())
+	if (bUseGDKPinnedRuntimeVersionForCloud || CloudRuntimeVersion.IsEmpty())
 	{
 		return PinnedVersion;
 	}
@@ -91,6 +91,15 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
+	}
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		// If the pinned template has been selected for use, update the template field with the correct name.
+		if (LaunchConfigDesc.bUsePinnedTemplateForRuntimeVariant)
+		{
+			LaunchConfigDesc.Template = LaunchConfigDesc.GetTemplate();
+		}
 	}
 }
 
@@ -235,16 +244,27 @@ void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, bool bUse)
+void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersionForLocal(ESpatialOSRuntimeVariant::Type Variant, bool bUse)
 {
-	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersion = bUse;
+	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersionForLocal = bUse;
 	SaveConfig();
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
+}
+
+void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersionForCloud(ESpatialOSRuntimeVariant::Type Variant, bool bUse)
+{
+	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersionForCloud = bUse;
+	SaveConfig();
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 }
 
 void USpatialGDKEditorSettings::SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version)
 {
 	GetRuntimeVariantVersion(Variant).CloudRuntimeVersion = Version;
 	SaveConfig();
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayerDeploymentName(const FString& Name)
@@ -424,4 +444,23 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 
 	// Return current Editor's Build variant as default.
 	return FPlatformProcess::GetBinariesSubdirectory();
+}
+
+FString FSpatialLaunchConfigDescription::GetTemplate() const
+{
+	if (bUsePinnedTemplateForRuntimeVariant)
+	{
+#if PLATFORM_MAC
+		return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+#endif
+		switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+		{
+		case ESpatialOSRuntimeVariant::CompatibilityMode:
+			return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+		default:
+			return SpatialConstants::PinnedStandardRuntimeTemplate;
+		}
+	}
+
+	return Template;
 }

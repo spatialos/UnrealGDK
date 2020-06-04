@@ -233,7 +233,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json
-			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
+			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.GetTemplate()); // Template section
 			Writer->WriteObjectStart(TEXT("world")); // World section begin
 				Writer->WriteObjectStart(TEXT("dimensions"));
 				Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);

@@ -244,7 +244,7 @@ const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
 const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
 const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
-const uint16 LOCATOR_PORT     = 443;
+const uint16  LOCATOR_PORT    = 443;
 
 const FString CONSOLE_HOST    = TEXT("console.improbable.io");
 const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
@@ -292,8 +292,11 @@ const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
-const FString InspectorURL = TEXT("http://localhost:31000/inspector");
+const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
 const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
+
+const FString PinnedStandardRuntimeTemplate          = TEXT("w2_r0500_e5");
+const FString PinnedCompatibilityModeRuntimeTemplate = TEXT("w2_r0500_e5");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
