@@ -45,7 +45,7 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
-#include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Utils/LaunchConfigEditor.h"
 
@@ -77,7 +77,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -110,6 +109,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -1057,7 +1057,7 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 	else
 	{
 		CloudDeploymentSettingsWindowPtr = SNew(SWindow)
-			.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
+			.Title(LOCTEXT("CloudDeploymentConfigurationTitle", "Cloud Deployment Configuration"))
 			.HasCloseButton(true)
 			.SupportsMaximize(false)
 			.SupportsMinimize(false)
@@ -1067,7 +1067,7 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 			SNew(SBox)
 			.WidthOverride(700.0f)
 			[
-				SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+				SAssignNew(CloudDeploymentConfigPtr, SSpatialGDKCloudDeploymentConfiguration)
 				.SpatialGDKEditor(SpatialGDKEditorInstance)
 				.ParentWindow(CloudDeploymentSettingsWindowPtr)
 			]
@@ -1087,9 +1087,9 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 
 void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()
 {
-	if (CanLaunchCloudDeployment())
+	if (CanStartCloudDeployment())
 	{
-		OnLaunchCloudDeployment();
+		OnStartCloudDeployment();
 	}
 	else
 	{
@@ -1204,7 +1204,7 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
-FReply FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment()
+FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -1246,14 +1246,14 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment()
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
-	auto LaunchCloudDeployment = [this]()
+	auto StartCloudDeployment = [this]()
 	{
-		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
-		SpatialGDKEditorInstance->LaunchCloudDeployment(
+		OnShowTaskStartNotification(FString::Printf(TEXT("Starting cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
+		SpatialGDKEditorInstance->StartCloudDeployment(
 			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				OnShowSuccessNotification("Successfully launched cloud deployment.");
+				OnShowSuccessNotification("Successfully started cloud deployment.");
 				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
 				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(DeploymentName);
@@ -1261,17 +1261,17 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+				OnShowFailedNotification("Failed to start cloud deployment. See output logs for details.");
 			})
 		);
 	};
 
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-		[this, LaunchCloudDeployment]()
+		[this, StartCloudDeployment]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
-			LaunchCloudDeployment();
+			StartCloudDeployment();
 		}
 		else
 		{
@@ -1291,7 +1291,7 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
 
-bool FSpatialGDKEditorToolbarModule::CanLaunchCloudDeployment() const
+bool FSpatialGDKEditorToolbarModule::CanStartCloudDeployment() const
 {
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }
