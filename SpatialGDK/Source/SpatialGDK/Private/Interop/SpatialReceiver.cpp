@@ -2203,7 +2203,20 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+
+	if (InPayload.Index >= ClassInfo.RPCs.Num())
+	{
+		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Invalid RPC index (%d) received on %s, dropping the RPC"), InPayload.Index, *TargetObject->GetName());
+		return;
+	}
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
+	if (Function == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Missing function info received on %s, dropping the RPC"), *TargetObject->GetName());
+		return;
+	}
+
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 
