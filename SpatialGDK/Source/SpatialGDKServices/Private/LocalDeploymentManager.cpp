@@ -429,7 +429,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to authenticate against SpatialOS while attempting to start a local deployment."));
 		}
 		bStartingDeployment = false;
 
@@ -714,7 +714,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
+				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to start deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 
 			ExposedRuntimeIP = TEXT("");
 			bSpatialServiceInProjectDirectory = false;

@@ -435,7 +435,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableMultiWorker is set, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
