@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to the SpatialOS Game Development Kit for Unreal will be documented in this file.
 
-The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format of this Changelog is based on [Guide: writing good release notes](/SpatialGDK/Extras/internal-documentation/how-to-write-good-release-notes.md),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **Note**: Since GDK for Unreal v0.8.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
