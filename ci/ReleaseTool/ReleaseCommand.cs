@@ -165,7 +165,7 @@ namespace ReleaseTool
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
 
                             var releaseHashes = options.EngineVersions
-                                .Select(version => $"dry-run/{version.Trim()}-release")
+                                .Select(version => $"{version.Trim()}-release")
                                 .Select(BuildkiteAgent.GetMetadata)
                                 .Select(hash => $"UnrealEngine-{hash}")
                                 .ToList();
@@ -305,8 +305,6 @@ namespace ReleaseTool
                     if (releaseIndex != -1)
                     {
                         changelog[releaseIndex] = releaseHeading;
-                        Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilePath);
-                        return;
                     }
                     else
                     {
@@ -329,7 +327,7 @@ namespace ReleaseTool
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
 
-            var engineVersion = $"dry-run/{options.SourceBranch.Trim()}-release";
+            var engineVersion = options.SourceBranch.Trim();
 
             string name;
             string releaseBody;
