@@ -66,6 +66,27 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
+	auto AddRequiredFieldAsterisk = [](TSharedRef<SWidget> TextBlock)
+	{
+		return SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.HAlign(HAlign_Left)
+			[
+				TextBlock
+			]
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.HAlign(HAlign_Left)
+			.Padding(2.0f, 0.0f)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(FString(TEXT("*"))))
+				.ToolTipText(FText::FromString(FString(TEXT("Required field"))))
+				.ColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f))
+			];
+	};
+
 	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 	AssemblyNameInputErrorReporting = SNew(SPopupErrorText);
@@ -103,9 +124,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Project Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+									AddRequiredFieldAsterisk(
+										SNew(STextBlock)
+										.Text(FText::FromString(FString(TEXT("Project Name"))))
+										.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+									)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -126,9 +149,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Assembly Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
+									AddRequiredFieldAsterisk(
+										SNew(STextBlock)
+										.Text(FText::FromString(FString(TEXT("Assembly Name"))))
+										.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
+									)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -192,9 +217,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Deployment Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
+									AddRequiredFieldAsterisk(
+										SNew(STextBlock)
+										.Text(FText::FromString(FString(TEXT("Deployment Name"))))
+										.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
+									)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -215,9 +242,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Snapshot File"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The relative path to the snapshot file."))))
+									AddRequiredFieldAsterisk(
+										SNew(STextBlock)
+										.Text(FText::FromString(FString(TEXT("Snapshot File"))))
+										.ToolTipText(FText::FromString(FString(TEXT("The relative path to the snapshot file."))))
+									)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -242,9 +271,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Launch Config File"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The relative path to the launch configuration file."))))
+									AddRequiredFieldAsterisk(
+										SNew(STextBlock)
+										.Text(FText::FromString(FString(TEXT("Launch Config File"))))
+										.ToolTipText(FText::FromString(FString(TEXT("The relative path to the launch configuration file."))))
+									)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
