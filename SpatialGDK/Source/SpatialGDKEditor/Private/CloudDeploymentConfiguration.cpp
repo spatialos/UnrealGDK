@@ -24,6 +24,7 @@ void FCloudDeploymentConfiguration::InitFromSettings()
 	SimulatedPlayerCluster = Settings->GetSimulatedPlayerCluster();
 	NumberOfSimulatedPlayers = Settings->GetNumberOfSimulatedPlayers();
 
+	bBuildAndUploadAssembly = Settings->ShouldBuildAndUploadAssembly();
 	bGenerateSchema = Settings->IsGenerateSchemaEnabled();
 	bGenerateSnapshot = Settings->IsGenerateSnapshotEnabled();
 	BuildConfiguration = Settings->GetAssemblyBuildConfiguration().ToString();

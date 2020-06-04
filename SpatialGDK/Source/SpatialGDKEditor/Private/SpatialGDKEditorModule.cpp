@@ -2,17 +2,18 @@
 
 #include "SpatialGDKEditorModule.h"
 
+#include "EditorExtension/GridLBStrategyEditorExtension.h"
 #include "GeneralProjectSettings.h"
-#include "ISettingsModule.h"
 #include "ISettingsContainer.h"
+#include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-
-#include "EditorExtension/GridLBStrategyEditorExtension.h"
+#include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCommandLineArgsManager.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorLayoutDetails.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
 #include "Utils/LaunchConfigEditor.h"
@@ -33,6 +34,7 @@ void FSpatialGDKEditorModule::StartupModule()
 	RegisterSettings();
 
 	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
+	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 	CommandLineArgsManager->Init();
 }
 
@@ -74,6 +76,11 @@ FString FSpatialGDKEditorModule::GetDevAuthToken() const
 FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 {
 	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+}
+
+bool FSpatialGDKEditorModule::CanExecuteLaunch() const
+{
+	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
