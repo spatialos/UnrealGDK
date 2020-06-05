@@ -11,6 +11,7 @@ release () {
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
+  local ENGINE_VERSIONS_LOCAL_VAR=$(echo ${ENGINE_VERSIONS[*]// })
 
   echo "--- Releasing ${REPO_NAME}: Merging ${CANDIDATE_BRANCH} into ${RELEASE_BRANCH} :package:"
 
@@ -27,7 +28,7 @@ release () {
         --github-key-file="/var/github/github_token" \
         --pull-request-url="${PR_URL}" \
         --github-organization="${GITHUB_ORG}" \
-        --engine-versions="${ENGINE_VERSIONS}"
+        --engine-versions="${ENGINE_VERSIONS_LOCAL_VAR}"
 }
 
 set -e -u -o pipefail
@@ -85,7 +86,7 @@ fi
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
-ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-source-branches)"
+ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
 
 setupReleaseTool
 
