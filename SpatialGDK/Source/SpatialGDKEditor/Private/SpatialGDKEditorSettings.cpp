@@ -94,13 +94,12 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->SaveConfig();
 	}
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
 	{
-		// If the pinned template has been selected for use, update the template field with the correct name.
-		if (LaunchConfigDesc.bUsePinnedTemplateForRuntimeVariant)
-		{
-			LaunchConfigDesc.Template = LaunchConfigDesc.GetTemplateToUse();
-		}
+		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
+
+		OnRuntimeVariantChangedDelegate.Broadcast();
 	}
 }
 
@@ -458,9 +457,9 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 	return FPlatformProcess::GetBinariesSubdirectory();
 }
 
-FString FSpatialLaunchConfigDescription::GetTemplateToUse() const
+FString FSpatialLaunchConfigDescription::GetTemplate(bool bUseDefault) const
 {
-	if (bUsePinnedTemplateForRuntimeVariant)
+	if (bUseDefault)
 	{
 #if PLATFORM_MAC
 		return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
@@ -476,18 +475,3 @@ FString FSpatialLaunchConfigDescription::GetTemplateToUse() const
 
 	return Template;
 }
-
-FString FSpatialLaunchConfigDescription::GetPinnedTemplate() const
-{
-#if PLATFORM_MAC
-	return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
-#endif
-	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
-	default:
-		return SpatialConstants::PinnedStandardRuntimeTemplate;
-	}
-}
-

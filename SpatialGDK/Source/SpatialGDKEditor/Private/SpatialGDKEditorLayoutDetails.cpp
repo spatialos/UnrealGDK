@@ -37,7 +37,11 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	CurrentLayout = &DetailBuilder;
-	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* GDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	GDKEditorSettings->OnRuntimeVariantChangedDelegate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
+
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
 
 	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
 	CloudConnectionCategory.AddCustomRow(FText::FromString("Project Name"))

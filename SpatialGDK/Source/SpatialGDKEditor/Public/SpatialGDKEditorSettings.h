@@ -15,6 +15,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
+DECLARE_MULTICAST_DELEGATE(FOnRuntimeVariantChanged)
+
 class FSpatialRuntimeVersionCustomization;
 class UAbstractRuntimeLoadBalancingStrategy;
 class USpatialGDKEditorSettings;
@@ -171,21 +173,19 @@ struct FSpatialLaunchConfigDescription
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: bUsePinnedTemplateForRuntimeVariant(true)
+		: bUseDefaultTemplateForRuntimeVariant(true)
 		, Template()
 		, World()
 	{}
 
-	FString GetTemplateToUse() const;
+	FString GetTemplate(bool bUseDefault) const;
 
-	FString GetPinnedTemplate() const;
-
-	/** Whether to use the GDK pinned template for deployments. */
+	/** Use default template for deployments. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
-	bool bUsePinnedTemplateForRuntimeVariant;
+	bool bUseDefaultTemplateForRuntimeVariant;
 
 	/** Deployment template. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bUsePinnedTemplateForRuntimeVariant"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bUseDefaultTemplateForRuntimeVariant"))
 	FString Template;
 
 	/** Configuration for the simulated world. */
@@ -271,11 +271,11 @@ protected:
 	bool bUseGDKPinnedRuntimeVersionForCloud = true;
 
 	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersionForLocal"))
 	FString LocalRuntimeVersion;
 
 	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersionForCloud"))
 	FString CloudRuntimeVersion;
 
 private:
@@ -324,6 +324,8 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
 	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
+
+	mutable FOnRuntimeVariantChanged OnRuntimeVariantChangedDelegate;
 
 private:
 

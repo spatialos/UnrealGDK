@@ -27,7 +27,7 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 	TArray<UObject*> EditedObject;
 	StructPropertyHandle->GetOuterObjects(EditedObject);
 
-	const FName& PinnedGDKRuntimeLocalPropertyName = GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, bUsePinnedTemplateForRuntimeVariant);
+	const FName& PinnedGDKRuntimeLocalPropertyName = GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, bUseDefaultTemplateForRuntimeVariant);
 
 	if (EditedObject.Num() == 0)
 	{
@@ -96,7 +96,7 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 
 			const FSpatialLaunchConfigDescription* LaunchConfigDesc = reinterpret_cast<const FSpatialLaunchConfigDescription*>(StructPtr);
 
-			FString PinnedTemplateDisplay = FString::Printf(TEXT("GDK Pinned Template: %s"), *LaunchConfigDesc->GetPinnedTemplate());
+			FString PinnedTemplateDisplay = FString::Printf(TEXT("Default: %s"), *LaunchConfigDesc->GetTemplate(/*bUseDefault*/ true));
 
 			IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
