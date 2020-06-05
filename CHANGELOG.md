@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 - The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
 - Settings for Offloading and Load Balancing have been combined and moved from the Editor and Runtime settings to instead be per map in the SpatialWorldSettings. For a detailed explanation please see the Load Balancing documentation.
+- Running with result types (previously default enabled) is now mandatory. The Runtime setting `bEnableResultTypes` has been removed to reflect this.
 
 ### Features:
 - The toolbar now defaults to [Inspector V2](http://localhost:31000/inspector-v2) instead of [Inspector V1](http://localhost:31000/inspector), which is now only available when using the compatiblity runtime. 
