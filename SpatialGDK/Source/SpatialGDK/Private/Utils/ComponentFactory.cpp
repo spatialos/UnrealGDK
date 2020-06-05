@@ -180,7 +180,7 @@ uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject
 
 void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)
 {
-	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	if (FStructProperty* StructProperty = Cast<FStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
 		FSpatialNetBitWriter ValueDataWriter(PackageMap);
@@ -212,51 +212,51 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 
 		AddBytesToSchema(Object, FieldId, ValueDataWriter);
 	}
-	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	else if (FBoolProperty* BoolProperty = Cast<FBoolProperty>(Property))
 	{
 		Schema_AddBool(Object, FieldId, (uint8)BoolProperty->GetPropertyValue(Data));
 	}
-	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	else if (FFloatProperty* FloatProperty = Cast<FFloatProperty>(Property))
 	{
 		Schema_AddFloat(Object, FieldId, FloatProperty->GetPropertyValue(Data));
 	}
-	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	else if (FDoubleProperty* DoubleProperty = Cast<FDoubleProperty>(Property))
 	{
 		Schema_AddDouble(Object, FieldId, DoubleProperty->GetPropertyValue(Data));
 	}
-	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	else if (FInt8Property* Int8Property = Cast<FInt8Property>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, (int32)Int8Property->GetPropertyValue(Data));
 	}
-	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	else if (FInt16Property* Int16Property = Cast<FInt16Property>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, (int32)Int16Property->GetPropertyValue(Data));
 	}
-	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	else if (FIntProperty* IntProperty = Cast<FIntProperty>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, IntProperty->GetPropertyValue(Data));
 	}
-	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	else if (FInt64Property* Int64Property = Cast<FInt64Property>(Property))
 	{
 		Schema_AddInt64(Object, FieldId, Int64Property->GetPropertyValue(Data));
 	}
-	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	else if (FByteProperty* ByteProperty = Cast<FByteProperty>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, (uint32)ByteProperty->GetPropertyValue(Data));
 	}
-	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	else if (FUInt16Property* UInt16Property = Cast<FUInt16Property>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, (uint32)UInt16Property->GetPropertyValue(Data));
 	}
-	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	else if (FUInt32Property* UInt32Property = Cast<FUInt32Property>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, UInt32Property->GetPropertyValue(Data));
 	}
-	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	else if (FUInt64Property* UInt64Property = Cast<FUInt64Property>(Property))
 	{
 		Schema_AddUint64(Object, FieldId, UInt64Property->GetPropertyValue(Data));
 	}
-	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	else if (FObjectPropertyBase* ObjectProperty = Cast<FObjectPropertyBase>(Property))
 	{
 		if (Cast<USoftObjectProperty>(Property))
 		{
@@ -275,19 +275,19 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
 		}
 	}
-	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	else if (FNameProperty* NameProperty = Cast<FNameProperty>(Property))
 	{
 		AddStringToSchema(Object, FieldId, NameProperty->GetPropertyValue(Data).ToString());
 	}
-	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	else if (FStrProperty* StrProperty = Cast<FStrProperty>(Property))
 	{
 		AddStringToSchema(Object, FieldId, StrProperty->GetPropertyValue(Data));
 	}
-	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	else if (FTextProperty* TextProperty = Cast<FTextProperty>(Property))
 	{
 		AddStringToSchema(Object, FieldId, TextProperty->GetPropertyValue(Data).ToString());
 	}
-	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
+	else if (FArrayProperty* ArrayProperty = Cast<FArrayProperty>(Property))
 	{
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
@@ -300,7 +300,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			ClearedIds->Add(FieldId);
 		}
 	}
-	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	else if (FEnumProperty* EnumProperty = Cast<FEnumProperty>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
@@ -311,15 +311,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, ClearedIds);
 		}
 	}
-	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>() || Property->IsA<UInterfaceProperty>())
+	else if (Property->IsA<FDelegateProperty>() || Property->IsA<FMulticastDelegateProperty>() || Property->IsA<FInterfaceProperty>())
 	{
 		// These properties can be set to replicate, but won't serialize across the network.
 	}
-	else if (Property->IsA<UMapProperty>())
+	else if (Property->IsA<FMapProperty>())
 	{
 		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
-	else if (Property->IsA<USetProperty>())
+	else if (Property->IsA<FSetProperty>())
 	{
 		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}

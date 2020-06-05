@@ -266,7 +266,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 
 		// Jump over invalid replicated property types
+#if ENGINE_MINOR_VERSION >= 25
+		if (Cmd.Property->IsA<FDelegateProperty>() || Cmd.Property->IsA<FMulticastDelegateProperty>() || Cmd.Property->IsA<FInterfaceProperty>())
+#else
 		if (Cmd.Property->IsA<UDelegateProperty>() || Cmd.Property->IsA<UMulticastDelegateProperty>() || Cmd.Property->IsA<UInterfaceProperty>())
+#endif
 		{
 			continue;
 		}
@@ -337,11 +341,28 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		RepDataNode->Condition = Parent.Condition;
 		RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
 		RepDataNode->ArrayIndex = PropertyNode->StaticArrayIndex;
+#if ENGINE_MINOR_VERSION >= 25
+		if (Class->IsChildOf(AActor::StaticClass()))
+		{
+			// Uses the same pattern as ComponentReader::ApplySchemaObject and ReceivePropertyHelper
+			if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
+			{
+				const int32 SwappedCmdIndex = RepLayout.Parents[(int32)AActor::ENetFields_Private::Role].CmdStart;
+				RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
+			}
+			else if (UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex))
+			{
+				const int32 SwappedCmdIndex = RepLayout.Parents[(int32)AActor::ENetFields_Private::RemoteRole].CmdStart;
+				RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
+			}
+		}
+#else
 		if (Parent.RoleSwapIndex != -1)
 		{
 			const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
 			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
 		}
+#endif
 		else
 		{
 			RepDataNode->RoleSwapHandle = -1;

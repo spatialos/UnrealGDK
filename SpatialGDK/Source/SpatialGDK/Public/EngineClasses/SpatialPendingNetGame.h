@@ -19,4 +19,7 @@ class USpatialPendingNetGame : public UPendingNetGame
 
 	virtual void SendJoin() override;
 
+	//Made virtual in PendingNetGame.h, make it do nothing, as it would usually send a packet
+	virtual void SendInitialJoin() override {}
+
 };
