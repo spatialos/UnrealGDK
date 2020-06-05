@@ -72,7 +72,7 @@ bool SpatialGDKCloudStop()
 	// get and provide deployment-id to stop the deployment as one of the LauncherStopArguments
 	const FString LauncherStopArguments = FString::Printf(
 		TEXT("stop %s"),
-		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
+		*SpatialGDKSettings->GetPrimaryRegionCodeText().ToString()
 		);
 
 	int32 OutCode = 0;

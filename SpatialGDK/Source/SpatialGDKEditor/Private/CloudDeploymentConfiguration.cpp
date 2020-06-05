@@ -13,7 +13,7 @@ void FCloudDeploymentConfiguration::InitFromSettings()
 	PrimaryDeploymentName = Settings->GetPrimaryDeploymentName();
 	PrimaryLaunchConfigPath = Settings->GetPrimaryLaunchConfigPath();
 	SnapshotPath = Settings->GetSnapshotPath();
-	PrimaryRegionCode = Settings->GetPrimaryRegionCode().ToString();
+	PrimaryRegionCode = Settings->GetPrimaryRegionCodeText().ToString();
 	MainDeploymentCluster = Settings->GetMainDeploymentCluster();
 	DeploymentTags = Settings->GetDeploymentTags();
 

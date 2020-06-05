@@ -101,6 +101,13 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 
 		OnRuntimeVariantChangedDelegate.Broadcast();
 	}
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
+	{
+
+		// TODO: Change this to OnDefaultTemplateNameRequireUpdate
+		OnRuntimeVariantChangedDelegate.Broadcast();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -462,14 +469,35 @@ FString FSpatialLaunchConfigDescription::GetTemplate(bool bUseDefault) const
 	if (bUseDefault)
 	{
 #if PLATFORM_MAC
-		return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+		{
+			return SpatialConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
+		}
+		else
+		{
+			return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+		}
 #endif
 		switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
 		{
 		case ESpatialOSRuntimeVariant::CompatibilityMode:
-			return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+			{
+				return SpatialConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
+			}
+			else
+			{
+				return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+			}
 		default:
-			return SpatialConstants::PinnedStandardRuntimeTemplate;
+			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+			{
+				return SpatialConstants::PinnedChinaStandardRuntimeTemplate;
+			}
+			else
+			{
+				return SpatialConstants::PinnedStandardRuntimeTemplate;
+			}
 		}
 	}
 

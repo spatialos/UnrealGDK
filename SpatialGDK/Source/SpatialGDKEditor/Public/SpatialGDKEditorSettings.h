@@ -581,7 +581,7 @@ public:
 	}
 
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);
-	FORCEINLINE FText GetPrimaryRegionCode() const
+	FORCEINLINE FText GetPrimaryRegionCodeText() const
 	{
 		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
@@ -591,6 +591,11 @@ public:
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	const ERegionCode::Type GetPrimaryRegionCode() const
+	{
+		return PrimaryDeploymentRegionCode;
 	}
 
 	void SetMainDeploymentCluster(const FString& NewCluster);
