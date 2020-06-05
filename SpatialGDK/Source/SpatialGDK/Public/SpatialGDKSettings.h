@@ -191,13 +191,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
-	/**
-	* Adds granular result types for queries.
-	* Granular here means specifically the required Unreal components for spawning other actors and all data type components.
-	*/
-	UPROPERTY(config)
-	bool bEnableResultTypes;
-
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
