@@ -27,11 +27,13 @@ public:
 
 	bool GenerateSchema(ESchemaGenerationMethod Method);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
-	void LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
+	void StartCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
+
+	void SetProjectName(const FString& InProjectName);
 
 	TSharedRef<FSpatialGDKDevAuthTokenGenerator> GetDevAuthTokenGeneratorRef();
 	TSharedRef<FSpatialGDKPackageAssembly> GetPackageAssemblyRef();
