@@ -108,6 +108,9 @@ private:
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
 
+	ECheckBoxState IsBuildAndUploadAssemblyEnabled() const;
+	void OnCheckedBuildAndUploadAssembly(ECheckBoxState NewCheckedState);
+
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);
 

@@ -28,6 +28,7 @@ struct SPATIALGDKEDITOR_API FCloudDeploymentConfiguration
 	FString SimulatedPlayerCluster;
 	uint32 NumberOfSimulatedPlayers = 0;
 
+	bool bBuildAndUploadAssembly = false;
 	bool bGenerateSchema = false;
 	bool bGenerateSnapshot = false;
 	FString BuildConfiguration;
