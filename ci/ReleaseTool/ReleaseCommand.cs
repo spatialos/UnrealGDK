@@ -62,7 +62,7 @@ namespace ReleaseTool
             public string GithubOrgName { get; set; }
 
             [Option("engine-versions", HelpText = "An array containing every engine version source branch.", Required = false)]
-            public IEnumerable<string> EngineVersions {get;set;}
+            public string EngineVersions {get;set;}
 
             public string GitHubTokenFile { get; set; }
 
@@ -164,7 +164,7 @@ namespace ReleaseTool
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
 
-                            var releaseHashes = options.EngineVersions
+                            var releaseHashes = options.EngineVersions.Split(" ")
                                 .Select(version => $"{version.Trim()}-release")
                                 .Select(BuildkiteAgent.GetMetadata)
                                 .Select(hash => $"UnrealEngine-{hash}")
