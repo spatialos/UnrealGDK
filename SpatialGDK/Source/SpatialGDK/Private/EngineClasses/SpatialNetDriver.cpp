@@ -42,7 +42,6 @@
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -136,8 +135,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	ActorGroupManager = GetGameInstance()->ActorGroupManager.Get();
-
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
 	// from OnConnectionToSpatialOSSucceeded callback which could be executed with the async
@@ -146,7 +143,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
+	if (!ClassInfoManager->TryInit(this))
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
@@ -385,7 +382,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		CreateAndInitializeLoadBalancingClasses();
 	}
@@ -452,14 +449,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
+		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableMultiWorker is set, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->DefaultLayerLockingPolicy);
 		}
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 	}
@@ -624,13 +621,22 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
 		USpatialStatics::IsActorGroupOwnerForActor(Actor))
 	{
-		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner.
+		// We only want to delete actors which are replicated and we somehow gain local authority over,
+		// when they should be in a different Layer.
 		return;
 	}
 
-	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
-		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
+	if (LoadBalanceStrategy != nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
+			LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
+			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
+	}
+
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();
 	Actor->SetLifeSpan(0.01f);
@@ -697,15 +703,14 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 
 	if (OwningWorld != World
 		|| !IsServer()
-		|| GlobalStateManager == nullptr
-		|| USpatialStatics::IsSpatialOffloadingEnabled())
+		|| GlobalStateManager == nullptr)
 	{
 		// If the world isn't our owning world, we are a client, or we loaded the levels
-		// before connecting to Spatial, or we are running with offloading, we return early.
+		// before connecting to Spatial, we return early.
 		return;
 	}
 
-	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
@@ -852,7 +857,6 @@ void USpatialNetDriver::BeginDestroy()
 	}
 #endif
 
-	ActorGroupManager = nullptr;
 	if (EventLogger.IsValid())
 	{
 		EventLogger->End();
@@ -2357,7 +2361,10 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
-			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+			// Process levels which were loaded before the connection to Spatial was ready.
+			GetGameInstance()->CleanupCachedLevelsAfterConnection();
+
+			if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 			{
 				// We know at this point that we have all the information to set the worker's interest query.
 				Sender->UpdateServerWorkerEntityInterestAndPosition();

@@ -79,12 +79,6 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 			{
 				TSharedPtr<IPropertyHandle> EntryFieldProp = EntryProp->GetChildHandle(EntryField);
 
-				// Skip the load balancing property in the Editor settings.
-				if (bIsInSettings && EntryFieldProp->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, WorkerLoadBalancing))
-				{
-					continue;
-				}
-
 				Entry.AddPropertyRow(EntryFieldProp.ToSharedRef()).CustomWidget(true).NameContent()
 				[
 					EntryFieldProp->CreatePropertyNameWidget()

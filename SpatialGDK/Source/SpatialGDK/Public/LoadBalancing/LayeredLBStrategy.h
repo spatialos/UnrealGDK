@@ -69,6 +69,14 @@ public:
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
 	/* End UAbstractLBStrategy Interface */
 
+	// This is provided to support the offloading interface in SpatialStatics. It should be removed once users
+	// switch to Load Balancing. 
+	bool CouldHaveAuthority(TSubclassOf<AActor> Class) const;
+
+	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
+	// Currently, this is just the default strategy.
+	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
+
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
@@ -85,10 +93,6 @@ private:
 	// Returns true if ActorA and ActorB are contained in Layers that are
 	// on the same Server worker type.
 	bool IsSameWorkerType(const AActor* ActorA, const AActor* ActorB) const;
-
-	// Returns true if the current Worker Type owns this Actor Group.
-	// Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
-	bool IsLayerOwner(const FName& Layer) const;
 
 	// Returns the name of the Layer this Actor belongs to.
 	FName GetLayerNameForActor(const AActor& Actor) const;

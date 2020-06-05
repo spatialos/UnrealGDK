@@ -10,13 +10,12 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(CreateSpatialGDKSchemaFull, "Schema (Full Scan)", "Creates SpatialOS Unreal GDK schema for all assets.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(DeleteSchemaDatabase, "Delete schema database", "Deletes the schema database file", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(CreateSpatialGDKSnapshot, "Snapshot", "Creates SpatialOS Unreal GDK snapshot.", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StartNative, "Native", "Use native Unreal networking", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StartNoAutomaticConnection, "None", "Doesn't automatically connect to SpatialOS", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StartLocalSpatialDeployment, "Local", "Start a local deployment", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StartCloudSpatialDeployment, "Cloud", "Start a cloud deployment (Windows-only)", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(StopSpatialDeployment, "Stop", "Stops SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StartNative, "Start Deployment", "Use native Unreal networking", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StartLocalSpatialDeployment, "Start Deployment", "Start a local deployment", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StartCloudSpatialDeployment, "Start Deployment", "Start a cloud deployment (Not available for macOS)", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(StopSpatialDeployment, "Stop Deployment", "Stops SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(LaunchInspectorWebPageAction, "Inspector", "Launches default web browser to SpatialOS Inspector.", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(OpenCloudDeploymentWindowAction, "Deploy", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(OpenCloudDeploymentWindowAction, "Configure", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(OpenLaunchConfigurationEditorAction, "Create Launch Configuration", "Opens an editor to create SpatialOS Launch configurations", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(EnableBuildClientWorker, "Build Client Worker", "If checked, an UnrealClient worker will be built and uploaded before launching the cloud deployment.", EUserInterfaceActionType::ToggleButton, FInputChord());
 	UI_COMMAND(EnableBuildSimulatedPlayer, "Build Simulated Player", "If checked, a SimulatedPlayer worker will be built and uploaded before launching the cloud deployment.", EUserInterfaceActionType::ToggleButton, FInputChord());

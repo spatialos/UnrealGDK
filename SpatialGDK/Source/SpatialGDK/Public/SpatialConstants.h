@@ -226,8 +226,6 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
-const FName DefaultActorGroup = FName(TEXT("Default"));
-
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
@@ -392,15 +390,6 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
-
-inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
-{
-	if (LoadBalancingWorkerType == "")
-	{
-		return { DefaultServerWorkerType.ToString() };
-	}
-	return { LoadBalancingWorkerType.ToString() };
 }
 
 } // ::SpatialConstants

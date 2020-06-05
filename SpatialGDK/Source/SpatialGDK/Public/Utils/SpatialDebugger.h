@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/WorkerRegion.h"
 #include "SpatialCommonTypes.h"
 

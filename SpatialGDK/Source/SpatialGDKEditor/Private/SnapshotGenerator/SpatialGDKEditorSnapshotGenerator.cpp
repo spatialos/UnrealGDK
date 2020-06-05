@@ -117,20 +117,6 @@ Worker_ComponentData CreateStartupActorManagerData()
 	return StartupActorManagerData;
 }
 
-WorkerRequirementSet CreateReadACLForAlwaysRelevantEntities()
-{
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	WorkerRequirementSet ReadACL;
-	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
-	{
-		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
-		ReadACL.Add(WorkerTypeAttributeSet);
-	}
-
-	return ReadACL;
-}
-
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
@@ -148,13 +134,15 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
+	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
+
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(GSM, Components);
@@ -186,11 +174,13 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
+	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
+
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
-	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(VirtualWorkerTranslator, Components);

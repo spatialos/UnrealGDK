@@ -10,7 +10,6 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/InterestFactory.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
@@ -28,7 +27,6 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
-class SpatialActorGroupManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -159,7 +157,6 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	SpatialActorGroupManager* ActorGroupManager;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
