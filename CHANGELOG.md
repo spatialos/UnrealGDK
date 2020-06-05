@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings for Offloading and Load Balancing have been combined and moved from the Editor and Runtime settings to instead be per map in the SpatialWorldSettings. For a detailed explanation please see the Load Balancing documentation.
 
 ### Features:
+- The toolbar now defaults to [Inspector V2](http://localhost:31000/inspector-v2) instead of [Inspector V1](http://localhost:31000/inspector), which remains available. 
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
