@@ -102,18 +102,19 @@ USER_ID=$(id -u)
 # 4. RELEASE_BRANCH
 # 5. PR_URL
 # 6. GITHUB_ORG
-# 7 onwards. ENGINE_VERSIONS
 
 # Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
-while IFS= read -r ENGINE_VERSION; do
-  release "UnrealEngine" \
+for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
+do
+   : 
+   # Once per ENGINE_VERSION do:
+   release "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-${ENGINE_VERSION}-pr-url)" \
-    "improbableio" \
-    "${ENGINE_VERSIONS}"
-done <<< "${ENGINE_VERSIONS}"
+    "improbableio"
+done
 
 release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"
 release "UnrealGDKExampleProject" "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)" "spatialos"
