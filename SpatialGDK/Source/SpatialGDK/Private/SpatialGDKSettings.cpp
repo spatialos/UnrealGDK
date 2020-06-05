@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
+
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
@@ -44,7 +45,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(true)
+	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedOutgoingRPCWaitTime(30.0f)
@@ -58,21 +59,17 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableResultTypes(true)
 	, ServicesRegion(EServicesRegion::Default)
-	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
-	, bEnableOffloading(false)
-	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bEnableUnrealLoadBalancer(false)
+	, bEnableMultiWorker(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
-	, UdpServerUpstreamUpdateIntervalMS(1)
 	, UdpServerDownstreamUpdateIntervalMS(1)
-	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
+	, bWorkerFlushAfterOutgoingNetworkOp(false)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
@@ -83,7 +80,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
-	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -94,9 +90,9 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableOffloading);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableMultiWorker);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableUnrealLoadBalancer);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableMultiWorker);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideResultTypes"), TEXT("Result types"), bEnableResultTypes);
@@ -104,19 +100,11 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
-
-	if (bEnableUnrealLoadBalancer)
-	{
-		if (bEnableHandover == false)
-		{
-			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
-		}
-	}
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->bEnableOffloading = bEnableOffloading;
-	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+	PlayInSettings->DefaultWorkerType = SpatialConstants::DefaultServerWorkerType;
 #endif
 }
 
@@ -128,15 +116,9 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	// Use MemberProperty here so we report the correct member name for nested changes
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableOffloading))
-	{
-		GetMutableDefault<ULevelEditorPlaySettings>()->bEnableOffloading = bEnableOffloading;
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultWorkerType))
-	{
-		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
+	// TODO(UNR-3569): Engine PR to remove bEnableOffloading from ULevelEditorPlaySettings.
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
@@ -155,7 +137,7 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUseRPCRingBuffers))
 	{
-		return !bEnableUnrealLoadBalancer;
+		return !bEnableMultiWorker;
 	}
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
@@ -184,7 +166,7 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
-	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+	return bUseRPCRingBuffers || bEnableMultiWorker;
 }
 
 float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const

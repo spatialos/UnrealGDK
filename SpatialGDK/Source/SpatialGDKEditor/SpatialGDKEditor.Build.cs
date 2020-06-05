@@ -24,12 +24,14 @@ public class SpatialGDKEditor : ModuleRules
 				"Engine",
  				"EngineSettings",
  				"IOSRuntimeSettings",
+ 				"LauncherServices",
  				"Json",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
 				"SpatialGDK",
 				"SpatialGDKServices",
+ 				"UATHelper",
 				"UnrealEd",
 				"DesktopPlatform"
 			});

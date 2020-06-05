@@ -88,9 +88,7 @@ const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
 
 const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
-const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 9996;
-const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 9995;
 const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
@@ -120,8 +118,6 @@ const Worker_ComponentId COMPONENT_PRESENCE_COMPONENT_ID				= 9972;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID			= 9971;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
-
-const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
@@ -156,7 +152,7 @@ const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
 const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
 const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
 const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
-const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
+const Schema_FieldId UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID		= 6;
 
 // UnrealRPCPayload Field IDs
 const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
@@ -230,11 +226,11 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
-const FName DefaultActorGroup = FName(TEXT("Default"));
-
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
+
+static const FName DefaultLayer = FName(TEXT("UnrealWorker"));
 
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
@@ -250,9 +246,16 @@ const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
 const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
 const uint16 LOCATOR_PORT     = 443;
 
+const FString CONSOLE_HOST    = TEXT("console.improbable.io");
+const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
+
 const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString AssemblyPatternHint = TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
 const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
+const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
+const FString Ipv4Pattern = TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {
@@ -280,11 +283,14 @@ const FString URL_TARGET_DEPLOYMENT_OPTION = TEXT("deployment=");
 const FString URL_PLAYER_ID_OPTION = TEXT("playerid=");
 const FString URL_DISPLAY_NAME_OPTION = TEXT("displayname=");
 const FString URL_METADATA_OPTION = TEXT("metadata=");
+const FString URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION = TEXT("useExternalIpForBridge");
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
 const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
+
+const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
@@ -301,7 +307,6 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
 	// Global state components
-	SINGLETON_MANAGER_COMPONENT_ID,
 	DEPLOYMENT_MAP_COMPONENT_ID,
 	STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 	GSM_SHUTDOWN_COMPONENT_ID,
@@ -335,7 +340,6 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
 	// Global state components
-	SINGLETON_MANAGER_COMPONENT_ID,
 	DEPLOYMENT_MAP_COMPONENT_ID,
 	STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 	GSM_SHUTDOWN_COMPONENT_ID,
@@ -386,15 +390,6 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
-
-inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
-{
-	if (LoadBalancingWorkerType == "")
-	{
-		return { DefaultServerWorkerType.ToString() };
-	}
-	return { LoadBalancingWorkerType.ToString() };
 }
 
 } // ::SpatialConstants

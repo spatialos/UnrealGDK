@@ -4,22 +4,21 @@
 
 #include "Async/Async.h"
 #include "DesktopPlatformModule.h"
+#include "Editor.h"
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "HAL/PlatformFilemanager.h"
+#include "InstalledPlatformInfo.h"
+#include "Internationalization/Regex.h"
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "SpatialCommandUtils.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorToolbar.h"
-#include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
+#include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
+#include "Utils/LaunchConfigEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SFilePathPicker.h"
@@ -31,20 +30,47 @@
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "Widgets/Notifications/SPopupErrorText.h"
 #include "Widgets/Text/STextBlock.h"
 
-#include "Internationalization/Regex.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialConstants.h"
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorToolbar.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
+
+namespace
+{
+	//Build Configurations
+	const FString DebugConfiguration(TEXT("Debug"));
+	const FString DebugGameConfiguration(TEXT("DebugGame"));
+	const FString DevelopmentConfiguration(TEXT("Development"));
+	const FString TestConfiguration(TEXT("Test"));
+	const FString ShippingConfiguration(TEXT("Shipping"));
+} // anonymous namespace
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
+	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+	AssemblyNameInputErrorReporting = SNew(SPopupErrorText);
+	AssemblyNameInputErrorReporting->SetError(TEXT(""));
+	DeploymentNameInputErrorReporting = SNew(SPopupErrorText);
+	DeploymentNameInputErrorReporting->SetError(TEXT(""));
 	ChildSlot
 		[
 			SNew(SBorder)
@@ -67,44 +93,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 						.Padding(1.0f)
 						[
 							SNew(SVerticalBox)
-							// Build explanation set
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SWrapBox)
-								.UseAllottedWidth(true)
-								+ SWrapBox::Slot()
-								.VAlign(VAlign_Bottom)
-								[
-									SNew(STextBlock)
-									.AutoWrapText(true)
-									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
-								]
-								+ SWrapBox::Slot()
-								.VAlign(VAlign_Bottom)
-								[
-									SNew(STextBlock)
-									.AutoWrapText(true)
-								.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
-								]
-								+ SWrapBox::Slot()
-								[
-									SNew(SHyperlink)
-									.Text(FText::FromString(FString(TEXT("here."))))
-									.OnNavigate(this, &SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked)
-								]
-							]
-							// Separator
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SSeparator)
-							]
-							// Project 
+							// Project
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -123,10 +112,11 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(ProjectName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-									.IsEnabled(false)
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted)
+									.ErrorReporting(ProjectNameInputErrorReporting)
 								]
 							]
-							// Assembly Name 
+							// Assembly Name
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -146,16 +136,16 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(SpatialGDKSettings->GetAssemblyName()))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited, ETextCommit::Default)
+									.ErrorReporting(AssemblyNameInputErrorReporting)
 								]
 							]
 							// RuntimeVersion
 							+ SVerticalBox::Slot()
-								.AutoHeight()
-								.Padding(2.0f)
-								[
-									SNew(SHorizontalBox)
-									+ SHorizontalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
@@ -169,13 +159,13 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsUsingGDKPinnedRuntimeVersion)
 									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedUsePinnedVersion)
 								]
-								]
+							]
 							+ SVerticalBox::Slot()
-								.AutoHeight()
-								.Padding(2.0f)
-								[
-									SNew(SHorizontalBox)
-									+ SHorizontalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
@@ -191,7 +181,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnRuntimeCustomVersionCommited, ETextCommit::Default)
 									.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::IsUsingCustomRuntimeVersion)
 								]
-								]
+							]
 							// Pirmary Deployment Name 
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -212,7 +202,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.Text(FText::FromString(SpatialGDKSettings->GetPrimaryDeploymentName()))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited, ETextCommit::Default)
+									.ErrorReporting(DeploymentNameInputErrorReporting)
 								]
 							]
 							// Snapshot File + File Picker
@@ -269,6 +259,46 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
 								]
 							]
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT(""))))
+								.ToolTipText(FText::FromString(FString(TEXT(""))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SButton)
+									.Text(FText::FromString(FString(TEXT("Generate from current map"))))
+									.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap)
+								]
+								]
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT(""))))
+								.ToolTipText(FText::FromString(FString(TEXT(""))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SButton)
+									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
+									.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnOpenLaunchConfigEditor)
+								]
+							]
 							// Primary Deployment Region Picker
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -295,6 +325,52 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Main Deployment Cluster
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetMainDeploymentCluster()))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited, ETextCommit::Default)
+								]
+							]
+							// Deployment Tags
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Deployment Tags"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetDeploymentTags()))
+									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommitted)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommitted, ETextCommit::Default)
+								]
+							]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -313,38 +389,24 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(STextBlock)
 								.Text(FText::FromString(FString(TEXT("Simulated Players"))))
 							]
-							// Toggle
+							// Toggle Simulated Players
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
-							.VAlign(VAlign_Center)
 							[
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(SVerticalBox)
-									+ SVerticalBox::Slot()
-									.AutoHeight()
-									.Padding(2.0f)
-									.VAlign(VAlign_Center)
-									[
-										SNew(SHorizontalBox)
-										+ SHorizontalBox::Slot()
-										.AutoWidth()
-										[
-											SNew(SCheckBox)
-											.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
-											.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
-										]
-										+ SHorizontalBox::Slot()
-										.AutoWidth()
-										.HAlign(HAlign_Center)
-										[
-											SNew(STextBlock)
-											.Text(FText::FromString(FString(TEXT("Add simulated players"))))
-										]
-									]
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Add simulated players"))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
 								]
 							]
 							// Simulated Players Deployment Name
@@ -371,7 +433,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
 								]
 							]
-							// Simulated Players Number 
+							// Simulated Players Number
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -391,7 +453,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.ToolTipText(FText::FromString(FString(TEXT("Number of Simulated Players."))))
 									.MinValue(1)
 									.MaxValue(8192)
-									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
+									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayers())
 									.OnValueChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
 								]
@@ -423,6 +485,166 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Simulated Player Cluster
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(FText::FromString(SpatialGDKSettings->GetSimulatedPlayerCluster()))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerClusterCommited)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerClusterCommited, ETextCommit::Default)
+									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
+								]
+							]
+							// Separator
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							.VAlign(VAlign_Center)
+							[
+								SNew(SSeparator)
+							]
+							// Explanation text
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							.VAlign(VAlign_Center)
+							.HAlign(HAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
+							]
+							// Generate Schema
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Generate Schema"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the schema automatically when building the assembly."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsGenerateSchemaEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSchema)
+								]
+							]
+							// Generate Snapshot
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Generate Snapshot"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the snapshot automatically when building the assembly."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsGenerateSnapshotEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot)
+								]
+							]
+							// Build Configuration
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Build Configuration"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The configuration to build."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SComboButton)
+									.OnGetMenuContent(this, &SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguration)
+									.ContentPadding(FMargin(2.0f, 2.0f))
+									.ButtonContent()
+									[
+										SNew(STextBlock)
+										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetAssemblyBuildConfiguration)
+									]
+								]
+							]
+							// Enable/Disable Build Client Worker
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Build Client Worker"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to build the client worker as part of the assembly."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsBuildClientWorkerEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedBuildClientWorker)
+								]
+							]
+							// Force Overwrite on Upload
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Force Overwrite on Upload"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to overwrite an existing assembly when uploading."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite)
+								]
+							]
+							// Separator
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							.VAlign(VAlign_Center)
+							[
+								SNew(SSeparator)
+							]
 							// Buttons
 							+ SVerticalBox::Slot()
 							.FillHeight(1.0f)
@@ -431,18 +653,34 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
-								.HAlign(HAlign_Right)
+								.HAlign(HAlign_Left)
 								[
-									// Launch Simulated Players Deployment Button
+									// Open Deployment Page
 									SNew(SUniformGridPanel)
 									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
 									+ SUniformGridPanel::Slot(0, 0)
 									[
 										SNew(SButton)
 										.HAlign(HAlign_Center)
+										.Text(FText::FromString(FString(TEXT("Open Deployment Page"))))
+										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked)
+										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage)
+									]
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								.HAlign(HAlign_Right)
+								[
+									// Launch Deployment Button
+									SNew(SUniformGridPanel)
+									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
+									+ SUniformGridPanel::Slot(1, 0)
+									[
+										SNew(SButton)
+										.HAlign(HAlign_Center)
 										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
-										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked)
-										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid)
+										.OnClicked_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment)
+										.IsEnabled_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::CanLaunchCloudDeployment)
 									]
 								]
 							]
@@ -455,14 +693,43 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 
 void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
+	const FString& InputAssemblyName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsAssemblyNameValid(InputAssemblyName))
+	{
+		AssemblyNameInputErrorReporting->SetError(SpatialConstants::AssemblyPatternHint);
+		return;
+	}
+	AssemblyNameInputErrorReporting->SetError(TEXT(""));
+
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetAssemblyName(InText.ToString());
+	SpatialGDKSettings->SetAssemblyName(InputAssemblyName);
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
+{
+	FString NewProjectName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsProjectNameValid(NewProjectName))
+	{
+		ProjectNameInputErrorReporting->SetError(SpatialConstants::ProjectPatternHint);
+		return;
+	}
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+
+	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
+	const FString& InputDeploymentName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsDeploymentNameValid(InputDeploymentName))
+	{
+		DeploymentNameInputErrorReporting->SetError(SpatialConstants::DeploymentPatternHint);
+		return;
+	}
+	DeploymentNameInputErrorReporting->SetError(TEXT(""));
+	
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetPrimaryDeploymentName(InText.ToString());
+	SpatialGDKSettings->SetPrimaryDeploymentName(InputDeploymentName);
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
@@ -489,6 +756,12 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const
 	SpatialGDKSettings->SetPrimaryLaunchConfigPath(PickedPath);
 }
 
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentTagsCommitted(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetDeploymentTags(InText.ToString());
+}
+
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeploymentRegionCode()
 {
 	FMenuBuilder MenuBuilder(true, NULL);
@@ -507,6 +780,12 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeployment
 	return MenuBuilder.MakeWidget();
 }
 
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetMainDeploymentCluster(InText.ToString());
+}
+
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDeploymentRegionCode()
 {
 	FMenuBuilder MenuBuilder(true, NULL);
@@ -521,8 +800,14 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDe
 			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
 		}
 	}
-	
+
 	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetSimulatedPlayerCluster(InText.ToString());
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue)
@@ -548,94 +833,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetNumberOfSimulatedPlayers(NewValue);
-}
-
-FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-
-	if (!SpatialGDKSettings->IsDeploymentConfigurationValid())
-	{
-		if (ToolbarPtr)
-		{
-			ToolbarPtr->OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
-		}
-
-		return FReply::Handled();
-	}
-
-	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
-	{
-		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
-		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
-		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
-
-		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
-		{
-			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded."), *BuiltSimPlayersName);
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(MissingSimPlayerBuildText));
-		}
-	}
-
-	if (ToolbarPtr)
-	{
-		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
-	}
-
-	auto LaunchCloudDeployment = [this, ToolbarPtr]()
-	{
-		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
-		{
-			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-				FSimpleDelegate::CreateLambda([]()
-				{
-					if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
-					{
-						ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
-					}
-				}),
-
-				FSimpleDelegate::CreateLambda([]()
-				{
-					if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
-					{
-						ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
-					}
-				})
-			);
-
-			return;
-		}
-
-		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-		Info.bUseSuccessFailIcons = true;
-		Info.ExpireDuration = 3.0f;
-
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-	};
-
-#if ENGINE_MINOR_VERSION <= 22
-	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#else
-	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#endif
-		[this, LaunchCloudDeployment, ToolbarPtr]()
-	{
-		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
-		{
-			LaunchCloudDeployment();
-		}
-		else
-		{
-			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
-		}
-	});
-
-	return FReply::Handled();
 }
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
@@ -700,11 +897,6 @@ ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled()
 	return SpatialGDKSettings->IsSimulatedPlayersEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
-bool SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid() const
-{
-	return true;
-}
-
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsUsingGDKPinnedRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -722,4 +914,150 @@ FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText(
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString& RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
 	return FText::FromString(RuntimeVersion);
+}
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnGenerateConfigFromCurrentMap()
+{
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
+	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
+
+	FillWorkerConfigurationFromCurrentMap(ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
+
+	OnPrimaryLaunchConfigPathPicked(LaunchConfig);
+
+	return FReply::Handled();
+}
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenLaunchConfigEditor()
+{
+	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor", ParentWindowPtr.Pin());
+
+	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
+	{
+		if (TSharedPtr<SWidget> This = WeakThis.Pin())
+		{
+			static_cast<SSpatialGDKSimulatedPlayerDeployment*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
+		}
+	}
+	);
+
+	return FReply::Handled();
+}
+
+TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguration()
+{
+	FMenuBuilder MenuBuilder(true, nullptr);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(DebugConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugConfiguration))
+	);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(DebugGameConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugGameConfiguration))
+	);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(DevelopmentConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DevelopmentConfiguration))
+	);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(TestConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, TestConfiguration))
+	);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(ShippingConfiguration), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, ShippingConfiguration))
+	);
+
+	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Configuration)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetAssemblyBuildConfiguration(Configuration);
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsForceAssemblyOverwriteEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetForceAssemblyOverwrite(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsBuildClientWorkerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsBuildClientWorkerEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedBuildClientWorker(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetBuildClientWorker(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsGenerateSchemaEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsGenerateSchemaEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSchema(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetGenerateSchema(NewCheckedState == ECheckBoxState::Checked);
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsGenerateSnapshotEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsGenerateSnapshotEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedGenerateSnapshot(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetGenerateSnapshot(NewCheckedState == ECheckBoxState::Checked);
+}
+
+FReply SSpatialGDKSimulatedPlayerDeployment::OnOpenCloudDeploymentPageClicked()
+{
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+	FString ConsoleHost = GetDefault<USpatialGDKSettings>()->IsRunningInChina() ? SpatialConstants::CONSOLE_HOST_CN : SpatialConstants::CONSOLE_HOST;
+	FString Url = FString::Printf(TEXT("https://%s/projects/%s"), *ConsoleHost, *ProjectName);
+
+	FString WebError;
+	FPlatformProcess::LaunchURL(*Url, TEXT(""), &WebError);
+	if (!WebError.IsEmpty())
+	{
+		FNotificationInfo Info(FText::FromString(WebError));
+		Info.ExpireDuration = 3.0f;
+		Info.bUseSuccessFailIcons = true;
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		NotificationItem->ExpireAndFadeout();
+		return FReply::Unhandled();
+	}
+
+	return FReply::Handled();
+}
+
+bool SSpatialGDKSimulatedPlayerDeployment::CanOpenCloudDeploymentPage() const
+{
+	return !FSpatialGDKServicesModule::GetProjectName().IsEmpty();
 }
