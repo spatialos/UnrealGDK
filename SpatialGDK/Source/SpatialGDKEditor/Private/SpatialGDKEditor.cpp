@@ -344,6 +344,12 @@ bool FSpatialGDKEditor::FullScanRequired()
 	return !Schema::GeneratedSchemaFolderExists() || !Schema::GeneratedSchemaDatabaseExists();
 }
 
+void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
+{
+	FSpatialGDKServicesModule::SetProjectName(InProjectName);
+	SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+}
+
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
 {
 	if (OnAssetLoadedHandle.IsValid())

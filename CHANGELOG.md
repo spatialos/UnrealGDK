@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Start` is now called `Start Deployment`
   - `Deploy` is now called `Configure`
 - Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
+- When changing the project name via the `Cloud Deployment` dialog the development authentication token will automatically be regenerated.
+- The SpatialOS project name can now be modified via the **SpatialOS Editor Settings**.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
