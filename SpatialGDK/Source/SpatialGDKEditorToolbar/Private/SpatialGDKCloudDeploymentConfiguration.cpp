@@ -773,11 +773,9 @@ void SSpatialGDKCloudDeploymentConfiguration::OnProjectNameCommitted(const FText
 	}
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
-	FSpatialGDKServicesModule::SetProjectName(NewProjectName);
 	if (SpatialGDKEditorPtr.IsValid())
 	{
-		TSharedRef<FSpatialGDKDevAuthTokenGenerator> DevAuthTokenGenerator = SpatialGDKEditorPtr.Pin()->GetDevAuthTokenGeneratorRef();
-		DevAuthTokenGenerator->AsyncGenerateDevAuthToken();
+		SpatialGDKEditorPtr.Pin()->SetProjectName(NewProjectName);
 	}
 }
 

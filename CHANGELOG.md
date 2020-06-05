@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings for Offloading and Load Balancing have been combined and moved from the Editor and Runtime settings to instead be per map in the SpatialWorldSettings. For a detailed explanation please see the Load Balancing documentation.
 
 ### Features:
+- The toolbar now defaults to [Inspector V2](http://localhost:31000/inspector-v2) instead of [Inspector V1](http://localhost:31000/inspector), which is now only available when using the compatiblity runtime. 
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
@@ -52,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Start` is now called `Start Deployment`
   - `Deploy` is now called `Configure`
 - Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
+- When changing the project name via the `Cloud Deployment` dialog the development authentication token will automatically be regenerated.
+- The SpatialOS project name can now be modified via the **SpatialOS Editor Settings**.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
