@@ -40,6 +40,7 @@ private:
 	virtual bool ShouldConnectToCloudDeployment() const override;
 	virtual FString GetDevAuthToken() const override;
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
+	virtual bool ShouldStartLocalServer() const override;
 
 	virtual bool CanExecuteLaunch() const override;
 	virtual bool CanStartPlaySession(FText& OutErrorMessage) const override;

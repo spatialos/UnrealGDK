@@ -80,6 +80,11 @@ FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 	return GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName();
 }
 
+bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->IsStartLocalServerWorkerEnabled();
+}
+
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 {
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
