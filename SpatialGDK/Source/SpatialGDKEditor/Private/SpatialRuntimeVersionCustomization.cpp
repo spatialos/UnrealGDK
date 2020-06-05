@@ -29,7 +29,6 @@ void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IProperty
 {
 	const FName& PinnedGDKRuntimeLocalPropertyName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, bUseGDKPinnedRuntimeVersionForLocal);
 	const FName& PinnedGDKRuntimeCloudPropertyName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, bUseGDKPinnedRuntimeVersionForCloud);
-	const FName& PinnedGDKPropertyVersionName = GET_MEMBER_NAME_CHECKED(FRuntimeVariantVersion, PinnedVersion);
 
 	uint32 NumChildren;
 	StructPropertyHandle->GetNumChildren(NumChildren);
@@ -39,7 +38,7 @@ void FSpatialRuntimeVersionCustomization::CustomizeChildren(TSharedRef<IProperty
 		TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(ChildIdx);
 
 		// Layout other properties as usual.
-		if (ChildProperty->GetProperty()->GetFName() != PinnedGDKRuntimeLocalPropertyName || ChildProperty->GetProperty()->GetFName() != PinnedGDKRuntimeCloudPropertyName)
+		if (ChildProperty->GetProperty()->GetFName() != PinnedGDKRuntimeLocalPropertyName && ChildProperty->GetProperty()->GetFName() != PinnedGDKRuntimeCloudPropertyName)
 		{
 			StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 			continue;

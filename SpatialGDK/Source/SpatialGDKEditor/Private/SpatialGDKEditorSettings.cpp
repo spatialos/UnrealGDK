@@ -99,7 +99,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		// If the pinned template has been selected for use, update the template field with the correct name.
 		if (LaunchConfigDesc.bUsePinnedTemplateForRuntimeVariant)
 		{
-			LaunchConfigDesc.Template = LaunchConfigDesc.GetTemplate();
+			LaunchConfigDesc.Template = LaunchConfigDesc.GetTemplateToUse();
 		}
 	}
 }
@@ -458,7 +458,7 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 	return FPlatformProcess::GetBinariesSubdirectory();
 }
 
-FString FSpatialLaunchConfigDescription::GetTemplate() const
+FString FSpatialLaunchConfigDescription::GetTemplateToUse() const
 {
 	if (bUsePinnedTemplateForRuntimeVariant)
 	{
@@ -476,3 +476,18 @@ FString FSpatialLaunchConfigDescription::GetTemplate() const
 
 	return Template;
 }
+
+FString FSpatialLaunchConfigDescription::GetPinnedTemplate() const
+{
+#if PLATFORM_MAC
+	return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+#endif
+	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+	{
+	case ESpatialOSRuntimeVariant::CompatibilityMode:
+		return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+	default:
+		return SpatialConstants::PinnedStandardRuntimeTemplate;
+	}
+}
+

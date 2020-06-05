@@ -171,11 +171,14 @@ struct FSpatialLaunchConfigDescription
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: Template()
+		: bUsePinnedTemplateForRuntimeVariant(true)
+		, Template()
 		, World()
 	{}
 
-	FString GetTemplate() const;
+	FString GetTemplateToUse() const;
+
+	FString GetPinnedTemplate() const;
 
 	/** Whether to use the GDK pinned template for deployments. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)

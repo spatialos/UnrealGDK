@@ -295,7 +295,7 @@ const FString DEV_LOGIN_TAG = TEXT("dev_login");
 const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
 const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
 
-const FString PinnedStandardRuntimeTemplate          = TEXT("w2_r0500_e5");
+const FString PinnedStandardRuntimeTemplate          = TEXT("n1standard4_std40_action1g1");
 const FString PinnedCompatibilityModeRuntimeTemplate = TEXT("w2_r0500_e5");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
