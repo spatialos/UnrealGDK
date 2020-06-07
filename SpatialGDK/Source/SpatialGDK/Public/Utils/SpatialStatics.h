@@ -34,7 +34,7 @@ public:
     * Returns true if SpatialOS Offloading is enabled.
     */
     UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
-    static bool IsSpatialOffloadingEnabled();
+    static bool IsSpatialOffloadingEnabled(const UWorld* World);
 
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.

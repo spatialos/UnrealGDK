@@ -286,7 +286,7 @@ void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLe
 			continue;
 		}
 
-		if (USpatialStatics::IsSpatialOffloadingEnabled())
+		if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()))
 		{
 			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
 			{
