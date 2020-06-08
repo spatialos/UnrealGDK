@@ -61,6 +61,7 @@ public:
 	bool IsSimulatedPlayersEnabled() const;
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers();
+
 	bool IsBuildClientWorkerEnabled() const;
 	void OnCheckedBuildClientWorker();
 
