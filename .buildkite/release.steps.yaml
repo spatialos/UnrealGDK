@@ -58,8 +58,6 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: "unrealgdk-release"
-    #TODO: Remove this skip when dry-run is complete.
-    skip: true
 
  # Stage 3: Run all tests against the release candidates.
  # Block steps require a human to click a button. This 
@@ -74,8 +72,6 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: "unrealgdk-release"
-    #TODO: Remove this skip when dry-run is complete.
-    skip: true
   
   - wait
 
