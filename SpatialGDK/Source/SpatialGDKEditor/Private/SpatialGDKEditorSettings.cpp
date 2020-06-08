@@ -58,6 +58,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, AssemblyBuildConfiguration(TEXT("Development"))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bPackageMobileCommandLineArgs(false)
+	, bStartLocalServerWorker(false)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {
