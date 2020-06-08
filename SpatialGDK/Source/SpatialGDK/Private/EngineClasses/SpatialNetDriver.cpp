@@ -603,11 +603,17 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		!IsReady() ||
-		USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		(IsReady() && USpatialStatics::IsActorGroupOwnerForActor(Actor)))
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over,
 		// when they should be in a different Layer.
+		return;
+	}
+
+	if (!IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Spawned replicated actor %s (owner: %s) before the NetDriver was ready. This is not supported. Actors should only be spawned after BeginPlay is called."),
+			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
 		return;
 	}
 
