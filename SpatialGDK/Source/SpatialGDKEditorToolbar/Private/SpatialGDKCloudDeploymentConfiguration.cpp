@@ -988,8 +988,7 @@ FText SSpatialGDKCloudDeploymentConfiguration::GetSpatialOSRuntimeVersionToUseTe
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
-	const FString& RuntimeVersionString =
-		RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud() ? RuntimeVersion.GetPinnedVersion() : RuntimeVersion.GetVersionForCloud();
+	const FString& RuntimeVersionString = RuntimeVersion.GetVersionForCloud();
 	return FText::FromString(RuntimeVersionString);
 }
 
