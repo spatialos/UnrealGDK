@@ -430,12 +430,13 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
 		{
-			if (WorldSettings->DefaultLayerLoadBalanceStrategy != nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If a Load balancing strategy is set, there must be a Locking Policy set. Using default policy."));
-			}
+			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
+		}
+		else if (WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
