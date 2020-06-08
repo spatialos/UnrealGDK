@@ -431,8 +431,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentDeploymentToConnect;
 
-	/** Whether to start Local Server Worker when connecting to cloud deployment*/
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Start Local Server Worker"))
+	/** Whether to start local server worker when connecting to cloud deployment*/
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bStartLocalServerWorker;
 
 private:

@@ -6,7 +6,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLocalReceptionistProxyServerManager, Log, All);
 
-
 class FLocalReceptionistProxyServerManager
 {
 public:

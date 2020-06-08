@@ -38,7 +38,6 @@ public:
 	static void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
 
 private:
-
 	FLocalDeploymentManager LocalDeploymentManager;
 	FLocalReceptionistProxyServerManager LocalReceptionistProxyServerManager;
 
