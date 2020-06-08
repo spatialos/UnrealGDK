@@ -315,4 +315,6 @@ public:
 	/** Experimental feature to use SpatialView layer when communicating with the Worker */
 	UPROPERTY(Config)
 	bool bUseSpatialView;
+
+	bool bOverrideLoadBalancing;
 };
