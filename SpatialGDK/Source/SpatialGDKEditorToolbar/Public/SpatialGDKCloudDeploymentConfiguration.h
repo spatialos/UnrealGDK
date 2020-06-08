@@ -13,17 +13,17 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SCompoundWidget.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKCloudDeploymentConfiguration, Log, All);
 
 class SWindow;
 
 enum class ECheckBoxState : uint8;
 
-class SSpatialGDKSimulatedPlayerDeployment : public SCompoundWidget
+class SSpatialGDKCloudDeploymentConfiguration : public SCompoundWidget
 {
 public:
 
-	SLATE_BEGIN_ARGS(SSpatialGDKSimulatedPlayerDeployment) {}
+	SLATE_BEGIN_ARGS(SSpatialGDKCloudDeploymentConfiguration) {}
 
 	/** A reference to the parent window */
 	SLATE_ARGUMENT(TSharedPtr<SWindow>, ParentWindow)
@@ -107,6 +107,9 @@ private:
 
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsBuildAndUploadAssemblyEnabled() const;
+	void OnCheckedBuildAndUploadAssembly(ECheckBoxState NewCheckedState);
 
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);
