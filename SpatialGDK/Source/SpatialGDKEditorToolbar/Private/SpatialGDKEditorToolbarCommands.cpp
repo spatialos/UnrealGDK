@@ -19,7 +19,6 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(OpenLaunchConfigurationEditorAction, "Create Launch Configuration", "Opens an editor to create SpatialOS Launch configurations", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(EnableBuildClientWorker, "Build Client Worker", "If checked, an UnrealClient worker will be built and uploaded before launching the cloud deployment.", EUserInterfaceActionType::ToggleButton, FInputChord());
 	UI_COMMAND(EnableBuildSimulatedPlayer, "Build Simulated Player", "If checked, a SimulatedPlayer worker will be built and uploaded before launching the cloud deployment.", EUserInterfaceActionType::ToggleButton, FInputChord());
-	UI_COMMAND(EnableStartLocalServerWorker, "Start Local Server Worker", "If checked, an UnrealWorker will start and automatically connect to a cloud deployment", EUserInterfaceActionType::ToggleButton, FInputChord());
 	UI_COMMAND(StartSpatialService, "Start Service", "Starts the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialService, "Stop Service", "Stops the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(EnableSpatialNetworking, "SpatialOS Networking", "If checked, the SpatialOS networking is used. Otherwise, native Unreal networking is used.", EUserInterfaceActionType::ToggleButton, FInputChord());
