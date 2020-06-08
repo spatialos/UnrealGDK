@@ -209,7 +209,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 		return true;
 	}
 
-	FString TagsCommand = FString::Printf(TEXT("project deployment tags list %s --json_output"),*DeploymentName);
+	FString TagsCommand = FString::Printf(TEXT("project deployment tags list %s --json_output"), *DeploymentName);
 	if (bIsRunningInChina)
 	{
 		TagsCommand += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
@@ -250,7 +250,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 
 
 	FString JsonMessage;
-	if (!(JsonRootObject)->TryGetStringField("msg", JsonMessage))
+	if (!JsonRootObject->TryGetStringField("msg", JsonMessage))
 	{
 		OutErrorMessage = FText::Format(LOCTEXT("DeploymentTagsMsgInvalid", "Unable to parse the msg field inside the received json data.\nResult: {0}"), FText::FromString(RetrieveTagsResult));
 		return false;
@@ -276,3 +276,5 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the dev_login tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName));
 	return false;
 }
+
+#undef LOCTEXT_NAMESPACE

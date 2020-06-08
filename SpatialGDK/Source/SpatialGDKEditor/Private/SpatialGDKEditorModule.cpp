@@ -91,7 +91,6 @@ bool FSpatialGDKEditorModule::CanStartSession() const
 	{
 		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar."));
 
-
 		return false;
 	}
 
