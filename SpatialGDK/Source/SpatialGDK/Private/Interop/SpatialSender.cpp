@@ -696,9 +696,14 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
 
-	return FRPCErrorInfo{ TargetObject, Function, Result, false };
-}
+	if (Channel->bCreatingNewEntity && Function->HasAnyFunctionFlags(FUNC_NetClient))
+	{
+		SendOnEntityCreationRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+	}
 
+	return SendLegacyRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
+}
 #if !UE_BUILD_SHIPPING
 void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
