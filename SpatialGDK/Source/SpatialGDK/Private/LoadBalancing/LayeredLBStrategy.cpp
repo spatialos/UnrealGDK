@@ -78,6 +78,14 @@ void ULayeredLBStrategy::Init()
 
 void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
+	if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error,
+			TEXT("The Local Virtual Worker Id cannot be set twice. Current value: %d Requested new value: %d"),
+			LocalVirtualWorkerId, InLocalVirtualWorkerId);
+		return;
+	}
+
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 	for (const auto& Elem : LayerNameToLBStrategy)
 	{
