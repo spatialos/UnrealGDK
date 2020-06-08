@@ -265,15 +265,12 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	TArray<FString> Tags;
 	test.ParseIntoArray(Tags, TEXT(","), true);
 
-	for (int i = 0; i < Tags.Num(); i++)
+	if (Tags.Contains(SpatialGDKServicesConstants::DevLoginDeploymentTag))
 	{
-		if (Tags[i] == SpatialGDKServicesConstants::DevLoginDeploymentTag)
-		{
-			return true;
-		}
+		return true;
 	}
 
-	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the dev_login tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName));
+	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the {1} tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName), FText::FromString(SpatialGDKServicesConstants::DevLoginDeploymentTag));
 	return false;
 }
 
