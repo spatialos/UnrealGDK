@@ -173,13 +173,21 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	bConnectAsClient = bInitAsClient;
 
 	const ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
-	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment() && bInitAsClient)
+	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment())
 	{
-		DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
-		DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		DevAuthConfig.UseExternalIp = true;
-		StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
-		return;
+		if (bInitAsClient)
+		{
+			DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
+			DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+			DevAuthConfig.UseExternalIp = true;
+			StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
+			return;
+		}
+
+		if(SpatialGDKEditorModule->ShouldStartLocalServer())
+		{
+			ReceptionistConfig.UseExternalIp = true;
+		}
 	}
 
 	switch (GetConnectionType())
