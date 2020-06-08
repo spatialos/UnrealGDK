@@ -205,6 +205,7 @@ namespace ReleaseTool
                         break;
                     }
 
+                    Logger.Info($"{options.PullRequestUrl} is not in a mergeable state, will query mergeability again in one minute.");
                     Thread.Sleep(TimeSpan.FromMinutes(1));
                 }
 
@@ -216,6 +217,8 @@ namespace ReleaseTool
                     throw new InvalidOperationException(
                         $"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                 }
+
+                Logger.Info($"{options.PullRequestUrl} had been merged.");
 
                 // This uploads the commit hashes of the merge into release.
                 // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
