@@ -184,7 +184,7 @@ public:
 
 	// IsReady evaluates the GSM, Load Balancing system, and others to get a holistic
 	// view of whether the SpatialNetDriver is ready to assume normal operations.
-	bool IsReady();
+	bool IsReady() const;
 
 private:
 

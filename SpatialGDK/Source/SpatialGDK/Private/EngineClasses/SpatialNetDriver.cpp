@@ -2568,11 +2568,10 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 }
 #endif
 
-bool USpatialNetDriver::IsReady()
+bool USpatialNetDriver::IsReady() const
 {
 	return bIsReadyToStart;
 }
-
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
