@@ -226,12 +226,6 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 	}
 }
 
-bool FSpatialGDKEditor::IsSnapshotGenerated()
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return FPaths::FileExists(SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath());
-}
-
 bool FSpatialGDKEditor::IsSchemaGenerated()
 {
 	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));

@@ -713,7 +713,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
-	if (!SpatialGDKEditorInstance->IsSnapshotGenerated())
+	if (!IsSnapshotGenerated())
 	{
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 		if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotToLoadPath()))
@@ -1132,6 +1132,12 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 			bSchemaBuildError = true;
 		}
 	}
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FPaths::FileExists(SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath());
 }
 
 FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const

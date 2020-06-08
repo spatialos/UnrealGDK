@@ -32,7 +32,6 @@ public:
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
-	bool IsSnapshotGenerated();
 	bool IsSchemaGenerated();
 
 	void SetProjectName(const FString& InProjectName);

@@ -89,11 +89,8 @@ bool FSpatialGDKEditorModule::CanStartSession() const
 {
 	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
 	{
-		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. Do you want to generate it?"));
-		if (Result == EAppReturnType::Yes)
-		{
-			// TODO generate schema
-		}
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar."));
+
 
 		return false;
 	}
@@ -106,13 +103,12 @@ bool FSpatialGDKEditorModule::CanStartSession() const
 			return false;
 		}
 
-		FString DeploymentCheckResult;
-		int32 ExitCode;
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-		if (!SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, SpatialGDKServicesConstants::SpatialOSDirectory, DeploymentCheckResult, ExitCode))
+		FText OutErrorMessage;
+		if (!SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, OutErrorMessage))
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("CloudDeploymentNotRunning", "The specified cloud deployment is not running."));
+			FMessageDialog::Open(EAppMsgType::Ok, OutErrorMessage);
 			return false;
 		}
 	}

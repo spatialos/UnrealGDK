@@ -8,6 +8,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
+#define LOCTEXT_NAMESPACE "SpatialCommandUtils"
+
 bool SpatialCommandUtils::SpatialVersion(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
 {
 	FString Command = TEXT("version");
@@ -199,7 +201,7 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 	return true;
 }
 
-bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
+bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIsRunningInChina, FText& OutErrorMessage)
 {
 	if (DeploymentName.IsEmpty())
 	{
@@ -207,40 +209,42 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 		return true;
 	}
 
-	FString TagsCommand = FString::Printf(TEXT("project deployment tags list %s --json_output"), *DeploymentName);
+	FString TagsCommand = FString::Printf(TEXT("project deployment tags list %s --json_output"),*DeploymentName);
 	if (bIsRunningInChina)
 	{
 		TagsCommand += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
 	}
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, TagsCommand, DirectoryToRun, OutResult, OutExitCode);
-	if (OutExitCode != 0)
+	FString DeploymentCheckResult;
+	int32 ExitCode;
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, TagsCommand, SpatialGDKServicesConstants::SpatialOSDirectory, DeploymentCheckResult, ExitCode);
+	if (ExitCode != 0)
 	{
-		FString ErrorMessage = OutResult;
-		TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(OutResult);
+		FString ErrorMessage = DeploymentCheckResult;
+		TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(DeploymentCheckResult);
 		TSharedPtr<FJsonObject> JsonRootObject;
 		if (FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid())
 		{
 			JsonRootObject->TryGetStringField("error", ErrorMessage);
 		}
-		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Unable to retrieve deployment tags. Is the deployment %s running? Result: %s"), *DeploymentName, *ErrorMessage);
+		OutErrorMessage = FText::Format(LOCTEXT("DeploymentTagsRetrievalFailed", "Unable to retrieve deployment tags. Is the deployment {0} running?\nResult: {1}"), FText::FromString(DeploymentName), FText::FromString(ErrorMessage));
 		return false;
 	};
 
 	FString AuthResult;
 	FString RetrieveTagsResult;
-	bool bFoundNewline = OutResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &RetrieveTagsResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	bool bFoundNewline = DeploymentCheckResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &RetrieveTagsResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 	if (!bFoundNewline || RetrieveTagsResult.IsEmpty())
 	{
 		// This is necessary because spatial might return multiple json structs depending on whether you are already authenticated against spatial and are on the latest version of it.
-		RetrieveTagsResult = OutResult;
+		RetrieveTagsResult = DeploymentCheckResult;
 	}
 
 	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(RetrieveTagsResult);
 	TSharedPtr<FJsonObject> JsonRootObject;
 	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
 	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Unable to parse the received tags. Result: %s"), *RetrieveTagsResult);
+		OutErrorMessage = FText::Format(LOCTEXT("DeploymentTagsJsonInvalid", "Unable to parse the received tags.\nResult: {0}"), FText::FromString(RetrieveTagsResult));
 		return false;
 	}
 
@@ -248,7 +252,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	FString JsonMessage;
 	if (!(JsonRootObject)->TryGetStringField("msg", JsonMessage))
 	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Unable to parse the msg field inside the received json data. Result: %s"), *RetrieveTagsResult);
+		OutErrorMessage = FText::Format(LOCTEXT("DeploymentTagsMsgInvalid", "Unable to parse the msg field inside the received json data.\nResult: {0}"), FText::FromString(RetrieveTagsResult));
 		return false;
 	}
 
@@ -269,6 +273,6 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 		}
 	}
 
-	UE_LOG(LogSpatialCommandUtils, Error, TEXT("The cloud deployment %s does not have the dev_login tag associated with it. The client won't be able to connect to the deployment"), *DeploymentName);
+	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the dev_login tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName));
 	return false;
 }

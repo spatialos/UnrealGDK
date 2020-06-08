@@ -149,7 +149,6 @@ private:
 	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;
-	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
 
