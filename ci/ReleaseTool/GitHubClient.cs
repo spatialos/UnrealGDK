@@ -105,12 +105,15 @@ namespace ReleaseTool
                 return MergeState.AlreadyMerged;
             }
 
-            if (pr.Mergeable.HasValue)
+            if (pr.Mergeable.Equals(true) && pr.MergeableState == MergeableState.Clean)
             {
-                return pr.Mergeable.Value ? MergeState.ReadyToMerge : MergeState.NotReadyToMerge;
+                return MergeState.ReadyToMerge;
             }
 
-            return MergeState.NotReadyToMerge;
+            else
+            {
+                return MergeState.NotReadyToMerge;
+            }
         }
 
         public PullRequestMerge MergePullRequest(Repository repository, int pullRequestId)
