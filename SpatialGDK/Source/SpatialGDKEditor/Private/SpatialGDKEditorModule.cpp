@@ -7,11 +7,14 @@
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
+#include "Misc/MessageDialog.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCommandLineArgsManager.h"
 #include "SpatialGDKEditorLayoutDetails.h"
 #include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
@@ -80,6 +83,67 @@ FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 {
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
+}
+
+bool FSpatialGDKEditorModule::CanStartSession() const
+{
+	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
+	{
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. Do you want to generate it?"));
+		if (Result == EAppReturnType::Yes)
+		{
+			// TODO generate schema
+		}
+
+		return false;
+	}
+
+	if (ShouldConnectToCloudDeployment())
+	{
+		if (GetDevAuthToken().IsEmpty())
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingDevelopmentAuthenticationToken", "You have to generate or provide a development authentication token in the SpatialOS GDK Editor Settings section to enable connecting to a cloud deployment."));
+			return false;
+		}
+
+		FString DeploymentCheckResult;
+		int32 ExitCode;
+		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+		if (!SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, SpatialGDKServicesConstants::SpatialOSDirectory, DeploymentCheckResult, ExitCode))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("CloudDeploymentNotRunning", "The specified cloud deployment is not running."));
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool FSpatialGDKEditorModule::CanStartPlaySession() const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	return CanStartSession();
+}
+
+bool FSpatialGDKEditorModule::CanStartLaunchSession() const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	if (ShouldConnectToLocalDeployment() && GetSpatialOSLocalDeploymentIP().IsEmpty())
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingLocalDeploymentIP", "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable connecting to a local deployment."));
+		return false;
+	}
+
+	return CanStartSession();
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
