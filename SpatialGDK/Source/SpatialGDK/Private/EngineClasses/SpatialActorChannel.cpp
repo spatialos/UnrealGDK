@@ -253,8 +253,6 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
 
-	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
-
 	if (bHasAuthority)
 	{
 		// Workaround to delay the delete entity request if tearing off.
