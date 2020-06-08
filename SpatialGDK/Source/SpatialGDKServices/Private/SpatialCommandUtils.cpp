@@ -198,3 +198,77 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 	OutTokenSecret = TokenSecret;
 	return true;
 }
+
+bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
+{
+	if (DeploymentName.IsEmpty())
+	{
+		// If we don't specify a deployment name, we will not check if any deployment is running.
+		return true;
+	}
+
+	FString TagsCommand = FString::Printf(TEXT("project deployment tags list %s --json_output"), *DeploymentName);
+	if (bIsRunningInChina)
+	{
+		TagsCommand += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
+	}
+
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, TagsCommand, DirectoryToRun, OutResult, OutExitCode);
+	if (OutExitCode != 0)
+	{
+		FString ErrorMessage = OutResult;
+		TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(OutResult);
+		TSharedPtr<FJsonObject> JsonRootObject;
+		if (FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid())
+		{
+			JsonRootObject->TryGetStringField("error", ErrorMessage);
+		}
+		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Unable to retrieve deployment tags. Is the deployment %s running? Result: %s"), *DeploymentName, *ErrorMessage);
+		return false;
+	};
+
+	FString AuthResult;
+	FString RetrieveTagsResult;
+	bool bFoundNewline = OutResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &RetrieveTagsResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	if (!bFoundNewline || RetrieveTagsResult.IsEmpty())
+	{
+		// This is necessary because spatial might return multiple json structs depending on whether you are already authenticated against spatial and are on the latest version of it.
+		RetrieveTagsResult = OutResult;
+	}
+
+	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(RetrieveTagsResult);
+	TSharedPtr<FJsonObject> JsonRootObject;
+	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
+	{
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Unable to parse the received tags. Result: %s"), *RetrieveTagsResult);
+		return false;
+	}
+
+
+	FString JsonMessage;
+	if (!(JsonRootObject)->TryGetStringField("msg", JsonMessage))
+	{
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Unable to parse the msg field inside the received json data. Result: %s"), *RetrieveTagsResult);
+		return false;
+	}
+
+	/*
+	Output looks like this:
+	Tags: [unreal_deployment_launcher,dev_login]
+	We need to parse it a bit to be able to iterate through the tags
+	*/
+	FString test = JsonMessage.Mid(7, JsonMessage.Len() - 8);
+	TArray<FString> Tags;
+	test.ParseIntoArray(Tags, TEXT(","), true);
+
+	for (int i = 0; i < Tags.Num(); i++)
+	{
+		if (Tags[i] == SpatialGDKServicesConstants::DevLoginDeploymentTag)
+		{
+			return true;
+		}
+	}
+
+	UE_LOG(LogSpatialCommandUtils, Error, TEXT("The cloud deployment %s does not have the dev_login tag associated with it. The client won't be able to connect to the deployment"), *DeploymentName);
+	return false;
+}
