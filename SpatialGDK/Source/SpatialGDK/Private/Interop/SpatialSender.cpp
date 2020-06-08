@@ -704,13 +704,6 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 	return SendLegacyRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
 }
-#if !UE_BUILD_SHIPPING
-void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
-{
-	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
-	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
-}
-#endif
 
 void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
@@ -850,7 +843,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 		}
 	}
 
-	return SendLegacyRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
+	return WillHaveAuthorityOverActor;
 }
 
 void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
