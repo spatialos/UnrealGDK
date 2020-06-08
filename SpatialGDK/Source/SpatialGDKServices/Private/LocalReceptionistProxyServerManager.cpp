@@ -31,7 +31,7 @@ bool FLocalReceptionistProxyServerManager::KillProcessBlockingPort()
 	if (ExitCode == ExitCodeSuccess && bSuccess)
 	{
 		// Get the line of the netstat output that contains the port we're looking for.
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), ReceptionistPort));
 		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
 		if (PidMatcher.FindNext())
 		{

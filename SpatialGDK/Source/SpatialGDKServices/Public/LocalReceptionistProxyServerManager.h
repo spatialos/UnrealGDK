@@ -21,7 +21,7 @@ private:
 	FString RunningCloudDeploymentName;
 
 	static const int32 ExitCodeSuccess = 0;
-	static const int32 RequiredRuntimePort = 7777;
+	static const int32 ReceptionistPort = 7777;
 
 	bool bProxyIsRunning = false;
 };
