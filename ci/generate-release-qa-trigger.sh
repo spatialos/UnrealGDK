@@ -72,9 +72,8 @@ FIRST_VERSION=$(echo "${ENGINE_VERSIONS}" | sed -n '1p')
                 "GDK_BRANCH: "${GDK_VERSION}-rc"" \
                 "ENGINE_VERSION: ""HEAD ${FIRST_VERSION}-${GDK_VERSION}-rc"""
 
-### Commented this out as to not run supefluous large builds during testing.
-### TODO: uncomment this
 ### unrealgdk-nfr
+### TODO: Uncomment the below when implementing GV-515
 ###while IFS= read -r ENGINE_VERSION; do
 ###    triggerTest "unrealgdk" \
 ###                "nfr" \
