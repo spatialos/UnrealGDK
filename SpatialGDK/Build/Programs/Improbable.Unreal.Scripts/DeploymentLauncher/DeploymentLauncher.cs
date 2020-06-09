@@ -514,10 +514,10 @@ namespace Improbable
 
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform), GetPlatformRefreshTokenCredential(useChinaPlatform));
 
-            if (args.Length == 4)
+            if (args.Length == 3)
             {
                 // Stop only the specified deployment.
-                var deploymentId = args[3];
+                var deploymentId = args[2];
                 StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
 
                 return 0;
