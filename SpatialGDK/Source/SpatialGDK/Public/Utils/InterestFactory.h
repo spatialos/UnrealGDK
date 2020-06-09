@@ -89,9 +89,6 @@ private:
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
-	// If the result types flag is flipped, set the specified result type.
-	void SetResultType(Query& OutQuery, const SchemaResultType& InResultType) const;
-
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 
