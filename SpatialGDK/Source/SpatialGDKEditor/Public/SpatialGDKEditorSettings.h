@@ -119,9 +119,6 @@ struct FWorkerTypeLaunchSection
 
 	FWorkerTypeLaunchSection()
 		: WorkerPermissions()
-		, MaxConnectionCapacityLimit(0)
-		, bLoginRateLimitEnabled(false)
-		, LoginRateLimit()
 		, bAutoNumEditorInstances(true)
 		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(false)

@@ -43,6 +43,9 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
 
+	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+
 	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
 	CloudConnectionCategory.AddCustomRow(FText::FromString("Project Name"))
 		.NameContent()

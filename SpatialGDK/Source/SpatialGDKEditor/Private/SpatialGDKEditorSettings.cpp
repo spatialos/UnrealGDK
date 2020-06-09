@@ -104,8 +104,6 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
-
-		// TODO: Change this to OnDefaultTemplateNameRequireUpdate
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
 }
