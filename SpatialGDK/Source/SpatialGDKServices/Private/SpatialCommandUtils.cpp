@@ -280,7 +280,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	return false;
 }
 
-FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, FString &OutResult, int32 &OutExitCode)
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, FString &OutResult, int32 &OutExitCode, bool &bProcessSucessed)
 {
 	FString Command = TEXT("cloud connect external ");
 
@@ -299,7 +299,7 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 
 	ProcHandle = FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, nullptr, 1 /*PriorityModifer*/, *SpatialGDKServicesConstants::SpatialOSDirectory, WritePipe);
 
-	bool bProcessSucessed = false;
+	bProcessSucessed = false;
 	bool bProcessFinished = false;
 	if (ProcHandle.IsValid())
 	{

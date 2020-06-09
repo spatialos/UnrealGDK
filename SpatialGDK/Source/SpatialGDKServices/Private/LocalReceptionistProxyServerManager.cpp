@@ -3,6 +3,8 @@
 #include "LocalReceptionistProxyServerManager.h"
 
 #include "Internationalization/Regex.h"
+#include "Sockets.h"
+#include "SocketSubsystem.h"
 #include "SpatialCommandUtils.h"
 #include "UObject/CoreNet.h"
 
@@ -63,6 +65,31 @@ bool FLocalReceptionistProxyServerManager::KillProcessBlockingPort()
 
 }
 
+bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks()
+{
+	//Check if any process is blocking the 7777 port
+	//if(CheckIfPortIsBound(ReceptionistPort))
+	//{
+		//Try killing the process that blocks the 7777 port 
+		bool bProcessKilled = KillProcessBlockingPort();
+		if (!bProcessKilled)
+		{
+			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process :"));
+			return false;
+		}
+	//}
+	return true;
+}
+
+void FLocalReceptionistProxyServerManager::Init()
+{
+	if (!IsRunningCommandlet())
+	{
+		LocalReceptionistProxyServerPreRunChecks();
+	}
+	return;
+}
+
 
 bool FLocalReceptionistProxyServerManager::TryStopReceptionistProxyServer()
 {
@@ -75,6 +102,8 @@ bool FLocalReceptionistProxyServerManager::TryStopReceptionistProxyServer()
 
 	return false;
 }
+
+
 
 bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName)
 {
@@ -97,32 +126,14 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	}
 
 	bool bProxyStartSuccess = false;
-	//Retry if the receptionist proxy server fails to start
-	while (!bProxyStartSuccess)
+	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, StartResult, ExitCode, bProxyStartSuccess);
+
+	//check if process run successfully
+	bSuccess = ProxyServerProcHandle.IsValid();
+	if (!bSuccess || !bProxyStartSuccess)
 	{
-		//Start the local receptionist proxy server
-		ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, StartResult, ExitCode);
-
-		//check if process run successfully
-		bSuccess = ProxyServerProcHandle.IsValid();
-		if (!bSuccess)
-		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
-			return false;
-		}
-
-		//check if Proxy started successfully
-		bProxyStartSuccess = StartResult.Contains("The receptionist proxy is available");
-		if(!bProxyStartSuccess)
-		{
-			//Try killing the process that blocks the 7777 port before retrying to start the receptionist proxy server
-			bool bProcessKilled = KillProcessBlockingPort();
-			if(!bProcessKilled)
-			{
-				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
-				return false;
-			}
-		}
+		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
+		return false;
 	}
 
 	RunningCloudDeploymentName = CloudDeploymentName;

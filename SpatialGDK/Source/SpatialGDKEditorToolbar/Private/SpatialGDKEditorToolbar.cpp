@@ -118,6 +118,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	LocalReceptionistProxyServerManager->Init();
+
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 }
 
