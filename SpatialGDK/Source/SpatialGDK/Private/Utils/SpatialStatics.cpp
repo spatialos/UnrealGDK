@@ -78,8 +78,9 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
+	// Offloading using the Unreal Load Balancing always load balances based on the owning actor.
 	const AActor* RootOwner = Actor;
-	while (RootOwner->bUseNetOwnerActorGroup && RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr)
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
