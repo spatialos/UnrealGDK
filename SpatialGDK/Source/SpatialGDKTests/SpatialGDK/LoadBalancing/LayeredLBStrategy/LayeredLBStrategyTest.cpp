@@ -228,12 +228,14 @@ bool FCheckShouldHaveAuthMatchesWhoShouldHaveAuth::Update()
 {
 	const auto Strat = TestData->Strat;
 	const auto& TestActors = TestData->TestActors;
+
 	const bool WeShouldHaveAuthority
 		= Strat->WhoShouldHaveAuthority(*TestActors[ActorName]) == Strat->GetLocalVirtualWorkerId();
+	const bool DoWeActuallyHaveAuthority = Strat->ShouldHaveAuthority(*TestActors[ActorName]);
 
 	Test->TestEqual(
-		FString::Printf(TEXT("Expected: %b Actual: %b"), WeShouldHaveAuthority, Strat->ShouldHaveAuthority(*TestActors[ActorName])),
-		WeShouldHaveAuthority, Strat->ShouldHaveAuthority(*TestActors[ActorName]));
+		FString::Printf(TEXT("Expected: %b Actual: %b"), WeShouldHaveAuthority, DoWeActuallyHaveAuthority),
+		WeShouldHaveAuthority, DoWeActuallyHaveAuthority);
 	return true;
 }
 
@@ -267,30 +269,6 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_layered_strat_of_two_by_four_grid_strat_singleton_s
 	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {} }));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckMinimumWorkers(Data, this, 10));
-
-	return true;
-}
-
-LAYEREDLBSTRATEGY_TEST(GIVEN_two_actors_of_different_types_and_same_positions_managed_by_different_layers_WHEN_who_has_auth_called_THEN_return_different_values)
-{
-	AutomationOpenMap("/Engine/Maps/Entry");
-
-	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
-
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
-
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} }));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} }));
-
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
-
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor"), FVector(0, 0, 0)));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor"), FVector(0, 0, 0)));
-
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor"), TEXT("Layer2Actor"), false));
 
 	return true;
 }
@@ -382,6 +360,25 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have
 	return true;
 }
 
+LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_THEN_an_error_is_logged)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 2));
+
+	this->AddExpectedError("The Local Virtual Worker Id cannot be set twice. Current value:",
+		EAutomationExpectedErrorFlags::MatchType::Contains, 1);
+
+	return true;
+}
+
 LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_should_have_auth_called_THEN_return_same_for_both)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
@@ -406,21 +403,26 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 	return true;
 }
 
-LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_THEN_an_error_is_logged)
+LAYEREDLBSTRATEGY_TEST(GIVEN_two_actors_of_different_types_and_same_positions_managed_by_different_layers_WHEN_who_has_auth_called_THEN_return_different_values)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} }));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} }));
+
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 2));
 
-	this->AddExpectedError("The Local Virtual Worker Id cannot be set twice. Current value:",
-		EAutomationExpectedErrorFlags::MatchType::Contains, 1);
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor"), FVector(0, 0, 0)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor"), FVector(0, 0, 0)));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor"), TEXT("Layer2Actor"), false));
 
 	return true;
 }
