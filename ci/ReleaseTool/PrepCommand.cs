@@ -64,6 +64,9 @@ namespace ReleaseTool
             [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
             public string GithubOrgName { get; set; }
 
+            [Option("engine-versions", HelpText = "An array containing every engine version source branch.", Required = false)]
+            public string EngineVersions {get;set;}
+
             #region IBuildkiteOptions implementation
 
             public string MetadataFilePath { get; set; }
@@ -116,6 +119,11 @@ namespace ReleaseTool
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
                             UpdatePluginFile(pluginFileName, gitClient);
+                            var engineCandidateBranches = options.EngineVersions.Split(" ")
+                                .Select(engineVersion => $"{engineVersion.Trim()}-{options.Version}-rc"
+                                .Select(engineCandidateBranch => $"HEAD {engineVersion}")
+                                .ToList();
+                            UpdateUnrealEngineVersionFile(engineCandidateBranches, gitClient);
                             break;
                         case "UnrealEngine":
                             UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
@@ -215,6 +223,17 @@ namespace ReleaseTool
                     File.WriteAllLines(ChangeLogFilePath, changelog);
                     gitClient.StageFile(ChangeLogFilePath);
                 }
+            }
+        }
+
+        private static void UpdateUnrealEngineVersionFile(List<string> versions, GitClient client)
+        {
+            const string unrealEngineVersionFile = "ci/unreal-engine.version";
+
+            using (new WorkingDirectoryScope(client.RepositoryPath))
+            {
+                File.WriteAllLines(unrealEngineVersionFile, versions);
+                client.StageFile(unrealEngineVersionFile);
             }
         }
 

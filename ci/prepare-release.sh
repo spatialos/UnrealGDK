@@ -10,6 +10,7 @@ prepareRelease () {
   local CANDIDATE_BRANCH="${3}"
   local RELEASE_BRANCH="${4}"
   local GITHUB_ORG="${5}"
+  local ENGINE_VERSIONS_LOCAL_VAR=$(echo ${ENGINE_VERSIONS[*]// })
   
   echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
 
@@ -26,6 +27,7 @@ prepareRelease () {
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
         --github-organization="${GITHUB_ORG}"
+        --engine-versions="${ENGINE_VERSIONS_LOCAL_VAR}"
 }
 
 set -e -u -o pipefail
@@ -88,7 +90,7 @@ USER_ID=$(id -u)
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
-ENGINE_VERSIONS="$(buildkite-agent meta-data get engine-source-branches)"
+ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
 prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
@@ -97,10 +99,13 @@ prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-s
 prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
 prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
 
-while IFS= read -r ENGINE_VERSION; do
-  prepareRelease "UnrealEngine" \
+for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
+do
+   : 
+   # Once per ENGINE_VERSION do:
+   prepareRelease "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "${ENGINE_VERSION}-release" \
     "improbableio"
-done <<< "${ENGINE_VERSIONS}"
+done
