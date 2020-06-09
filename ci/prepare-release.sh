@@ -26,7 +26,7 @@ prepareRelease () {
         --release-branch="${RELEASE_BRANCH}" \
         --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
-        --github-organization="${GITHUB_ORG}"
+        --github-organization="${GITHUB_ORG}" \
         --engine-versions="${ENGINE_VERSIONS_LOCAL_VAR}"
 }
 
