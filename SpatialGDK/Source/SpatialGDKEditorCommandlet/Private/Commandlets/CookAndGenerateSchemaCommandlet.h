@@ -37,4 +37,6 @@ class SPATIALGDKEDITORCOMMANDLET_API UCookAndGenerateSchemaCommandlet : public U
 
 public:
 	virtual int32 Main(const FString& CmdLineParams) override;
+
+	virtual int32 MainCook(const FString& CmdLineParams, FObjectListener& Listener);
 };
