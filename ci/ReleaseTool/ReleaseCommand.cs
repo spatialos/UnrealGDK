@@ -382,7 +382,7 @@ Happy developing,
 
 ## Release Notes
 
-* **Tech writer:** Your human labour is required to populate translate the above and include it here.
+* **Tech writer:** Your human labour is required to translate the above and include it here.
 
 ";
                     break;
