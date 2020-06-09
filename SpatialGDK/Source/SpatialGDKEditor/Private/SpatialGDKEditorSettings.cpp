@@ -267,15 +267,12 @@ void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersionForCloud(ESpatialOS
 {
 	GetRuntimeVariantVersion(Variant).bUseGDKPinnedRuntimeVersionForCloud = bUse;
 	SaveConfig();
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 }
 
 void USpatialGDKEditorSettings::SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version)
 {
 	GetRuntimeVariantVersion(Variant).CloudRuntimeVersion = Version;
 	SaveConfig();
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayerDeploymentName(const FString& Name)
@@ -467,16 +464,10 @@ FString FSpatialLaunchConfigDescription::GetTemplate(bool bUseDefault) const
 	if (bUseDefault)
 	{
 #if PLATFORM_MAC
-		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
-		{
-			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
-		}
-#endif
+		switch (ESpatialOSRuntimeVariant::CompatibilityMode)
+#else
 		switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+#endif
 		{
 		case ESpatialOSRuntimeVariant::CompatibilityMode:
 			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
