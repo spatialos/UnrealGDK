@@ -1219,6 +1219,10 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 	CloudDeploymentConfiguration.InitFromSettings();
 
+	const FString& DeploymentName = CloudDeploymentConfiguration.PrimaryDeploymentName;
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetDevelopmentDeploymentToConnect(DeploymentName);
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName);
+
 	if (CloudDeploymentConfiguration.bBuildAndUploadAssembly)
 	{
 		if (CloudDeploymentConfiguration.bGenerateSchema)
@@ -1262,10 +1266,6 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			FSimpleDelegate::CreateLambda([this]()
 			{
 				OnShowSuccessNotification("Successfully started cloud deployment.");
-				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
-				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(DeploymentName);
-				UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName)
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
