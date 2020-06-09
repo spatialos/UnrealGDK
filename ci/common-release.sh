@@ -29,17 +29,3 @@ function setupReleaseTool() {
         --file ./ci/docker/release-tool.Dockerfile \
         .
 }
-
-function writeBuildkiteMetadata() {
-    BK_METADATA_FILE="${1}"
-
-    # If we want to upload any metadata elements. Do so here.
-    if [[ -f "${BK_METADATA_FILE}" ]]; then
-        while IFS= read -r line
-        do
-            KEY=$(echo "${line}" | cut -d "," -f 1)
-            VALUE=$(echo "${line}" | cut -d "," -f 2-)
-            buildkite-agent meta-data set "${KEY}" "${VALUE}"
-        done < "${BK_METADATA_FILE}"
-    fi
-}
