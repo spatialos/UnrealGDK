@@ -467,56 +467,6 @@ void USpatialSender::FlushRPCService()
 	}
 }
 
-void FillComponentInterests(const FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
-{
-	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		Worker_InterestOverride SingleClientInterest = { Info.SchemaComponents[SCHEMA_OwnerOnly], bNetOwned };
-		ComponentInterest.Add(SingleClientInterest);
-	}
-
-	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		Worker_InterestOverride HandoverInterest = { Info.SchemaComponents[SCHEMA_Handover], false };
-		ComponentInterest.Add(HandoverInterest);
-	}
-}
-
-TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned)
-{
-	TArray<Worker_InterestOverride> ComponentInterest;
-
-	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
-
-	// Statically attached subobjects
-	for (auto& SubobjectInfoPair : ActorInfo.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
-	}
-
-	// Subobjects dynamically created through replication
-	for (const auto& Subobject : Channel->CreateSubObjects)
-	{
-		const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
-		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())
-	{
-		ComponentInterest.Add({ SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, bIsNetOwned });
-		ComponentInterest.Add({ SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, bIsNetOwned });
-	}
-	else
-	{
-		ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
-		ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
-	}
-
-	return ComponentInterest;
-}
-
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, void* Params)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
@@ -528,13 +478,6 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 #else
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 #endif
-}
-
-void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned)
-{
-	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
-
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterestForActor(Channel, bNetOwned));
 }
 
 void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent)
@@ -562,15 +505,6 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 
 		SendAddComponents(EntityId, { ComponentFactory::CreateEmptyComponentData(NewComponent) });
 	}
-}
-
-void USpatialSender::SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned)
-{
-	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
-
-	TArray<Worker_InterestOverride> ComponentInterest;
-	FillComponentInterests(Info, bNetOwned, ComponentInterest);
-	NetDriver->Connection->SendComponentInterest(EntityId, MoveTemp(ComponentInterest));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
