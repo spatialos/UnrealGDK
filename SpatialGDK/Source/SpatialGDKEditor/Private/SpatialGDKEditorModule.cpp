@@ -105,7 +105,6 @@ bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
 		if (!Settings->DevelopmentDeploymentToConnect.IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, OutErrorMessage))
 		{
-			OutErrorMessage = OutErrorMessage;
 			return false;
 		}
 	}
