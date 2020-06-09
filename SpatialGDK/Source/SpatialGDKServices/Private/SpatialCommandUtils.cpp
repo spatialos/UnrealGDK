@@ -275,7 +275,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	{
 		return true;
 	}
-	UE_LOG(LogSpatialCommandUtils, Verbose, TEXT("Tags: %s"), *TagsString);
+
 	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the {1} tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName), FText::FromString(SpatialGDKServicesConstants::DevLoginDeploymentTag));
 	return false;
 }
