@@ -38,4 +38,6 @@ struct SPATIALGDKEDITOR_API FCloudDeploymentConfiguration
 	FString BuildServerExtraArgs;
 	FString BuildClientExtraArgs;
 	FString BuildSimulatedPlayerExtraArgs;
+
+	bool bUseChinaPlatform = false;
 };
