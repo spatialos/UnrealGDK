@@ -133,18 +133,6 @@ struct FWorkerTypeLaunchSection
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorkerPermissionsSection WorkerPermissions;
 
-	/** Defines the maximum number of worker instances that can connect. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Max connection capacity limit (0 = unlimited capacity)", ClampMin = "0", UIMin = "0"))
-	int32 MaxConnectionCapacityLimit;
-
-	/** Enable connection rate limiting. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Login rate limit enabled"))
-	bool bLoginRateLimitEnabled;
-
-	/** Login rate limiting configuration. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled"))
-	FLoginRateLimitSection LoginRateLimit;
-
 	/** Automatically or manually specifies the number of worker instances to launch in editor. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Automatically compute number of instances to launch in Editor"))
 	bool bAutoNumEditorInstances;
