@@ -240,22 +240,22 @@ const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
+const FString SpatialSessionIdURLOption		= TEXT("spatialSessionId=");
 
 const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
 const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
-const uint16  LOCATOR_PORT    = 443;
+const uint16 LOCATOR_PORT     = 443;
 
 const FString CONSOLE_HOST    = TEXT("console.improbable.io");
 const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
 
-const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-const FString AssemblyPatternHint = TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
-const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
-const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
-const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+const FString AssemblyPattern		= TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString AssemblyPatternHint	= TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
+const FString ProjectPattern		= TEXT("^[a-z0-9_]{3,32}$");
+const FString ProjectPatternHint	= TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
+const FString DeploymentPattern		= TEXT("^[a-z0-9_]{2,32}$");
 const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
-const FString Ipv4Pattern = TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
+const FString Ipv4Pattern			= TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {

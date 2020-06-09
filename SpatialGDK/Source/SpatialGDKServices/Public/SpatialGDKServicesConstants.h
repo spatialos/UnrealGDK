@@ -33,7 +33,7 @@ namespace SpatialGDKServicesConstants
 	const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 
 	const FString SpatialOSRuntimePinnedStandardVersion         = TEXT("0.4.0-preview-5");
-	const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.1");
+	const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.3");
 
 	const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
 	const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");

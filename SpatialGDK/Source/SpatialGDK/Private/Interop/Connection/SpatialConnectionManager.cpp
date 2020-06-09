@@ -84,7 +84,7 @@ struct ConfigureConnection
 		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
-		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnectionInPackagedBuilds) || (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnectionInPackagedBuilds))
+		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection) || (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
 		{
 #if WITH_EDITOR
 			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));

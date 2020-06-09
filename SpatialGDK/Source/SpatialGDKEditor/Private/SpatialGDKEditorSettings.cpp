@@ -459,36 +459,41 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 	return FPlatformProcess::GetBinariesSubdirectory();
 }
 
-FString FSpatialLaunchConfigDescription::GetTemplate(bool bUseDefault) const
+const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 {
-	if (bUseDefault)
+	if (bUseDefaultTemplateForRuntimeVariant)
 	{
-#if PLATFORM_MAC
-		switch (ESpatialOSRuntimeVariant::CompatibilityMode)
-#else
-		switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-#endif
-		{
-		case ESpatialOSRuntimeVariant::CompatibilityMode:
-			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
-			{
-				return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
-			}
-			else
-			{
-				return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
-			}
-		default:
-			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
-			{
-				return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
-			}
-			else
-			{
-				return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
-			}
-		}
+		return GetDefaultTemplateForRuntimeVariant();
 	}
 
 	return Template;
+}
+
+const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
+{
+#if PLATFORM_MAC
+	switch (ESpatialOSRuntimeVariant::CompatibilityMode)
+#else
+	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+#endif
+	{
+	case ESpatialOSRuntimeVariant::CompatibilityMode:
+		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+		{
+			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
+		}
+		else
+		{
+			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
+		}
+	default:
+		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+		{
+			return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
+		}
+		else
+		{
+			return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
+		}
+	}
 }

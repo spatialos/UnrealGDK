@@ -175,7 +175,9 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{}
 
-	FString GetTemplate(bool bUseDefault) const;
+	const FString& GetTemplate() const;
+
+	const FString& GetDefaultTemplateForRuntimeVariant() const;
 
 	/** Use default template for deployments. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
@@ -240,7 +242,8 @@ struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
 
 	GENERATED_BODY()
 
-	FRuntimeVariantVersion() = default;
+	FRuntimeVariantVersion() : PinnedVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
+	{}
 
 	FRuntimeVariantVersion(const FString& InPinnedVersion) : PinnedVersion(InPinnedVersion)
 	{}

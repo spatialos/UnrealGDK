@@ -51,7 +51,7 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 
 			const FSpatialLaunchConfigDescription* LaunchConfigDesc = reinterpret_cast<const FSpatialLaunchConfigDescription*>(StructPtr);
 
-			FString PinnedTemplateDisplay = FString::Printf(TEXT("Default: %s"), *LaunchConfigDesc->GetTemplate(/*bUseDefault*/ true));
+			FString PinnedTemplateDisplay = FString::Printf(TEXT("Default: %s"), *LaunchConfigDesc->GetDefaultTemplateForRuntimeVariant());
 
 			IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 

@@ -74,8 +74,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableNetCullDistanceInterest(true)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
-	, bUseSecureClientConnectionInPackagedBuilds(false)
-	, bUseSecureServerConnectionInPackagedBuilds(false)
+	, bUseSecureClientConnection(false)
+	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
 {

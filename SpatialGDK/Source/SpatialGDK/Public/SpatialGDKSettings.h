@@ -290,12 +290,12 @@ public:
 	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
 
 	/** Use TLS encryption for UnrealClient workers connection. May impact performance. Only works in non-editor builds. */
-	UPROPERTY(EditAnywhere, Config, Category = "Connection")
-	bool bUseSecureClientConnectionInPackagedBuilds;
+	UPROPERTY(EditAnywhere, Config, Category = "Connection", meta = (DisplayName = "Use Secure Client Connection In Packaged Builds"))
+	bool bUseSecureClientConnection;
 
 	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. Only works in non-editor builds. */
-	UPROPERTY(EditAnywhere, Config, Category = "Connection")
-	bool bUseSecureServerConnectionInPackagedBuilds;
+	UPROPERTY(EditAnywhere, Config, Category = "Connection", meta = (DisplayName = "Use Secure Server Connection In Packaged Builds"))
+	bool bUseSecureServerConnection;
 
 	/**
 	 * Enable to ensure server workers always express interest such that any server is interested in a super set of
