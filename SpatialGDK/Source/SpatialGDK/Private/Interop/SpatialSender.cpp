@@ -1094,7 +1094,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
 			if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Adding tombstone to entity: %lld (actor: %s)"), EntityId, *Actor->GetPathName());
+				UE_LOG(LogSpatialSender, Log, TEXT("Adding tombstone to entity: %lld (actor: %s)"), EntityId, *Actor->GetPathName());
 				AddTombstoneToEntity(EntityId);
 			}
 			else
@@ -1104,7 +1104,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Log, TEXT("Sending retire entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetPathName(), EntityId, Actor->HasAuthority());
+			UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetPathName(), EntityId, Actor->HasAuthority());
 			Connection->SendDeleteEntityRequest(EntityId);
 		}
 	}
