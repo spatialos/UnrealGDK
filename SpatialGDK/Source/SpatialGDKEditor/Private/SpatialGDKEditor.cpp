@@ -10,12 +10,14 @@
 #include "GeneralProjectSettings.h"
 #include "Internationalization/Regex.h"
 #include "IUATHelperModule.h"
+#include "Misc/MessageDialog.h"
 #include "Misc/ScopedSlowTask.h"
 #include "PackageTools.h"
 #include "Settings/ProjectPackagingSettings.h"
 #include "UnrealEdMisc.h"
 #include "UObject/StrongObjectPtr.h"
 
+#include "SpatialGDKDevAuthTokenGenerator.h"
 #include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
@@ -29,8 +31,66 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
+namespace 
+{
+
+bool CheckAutomationToolsUpToDate()
+{
+#if PLATFORM_WINDOWS
+	FString RunUATScriptName = TEXT("RunUAT.bat");
+	FString CmdExe = TEXT("cmd.exe");
+#elif PLATFORM_LINUX
+	FString RunUATScriptName = TEXT("RunUAT.sh");
+	FString CmdExe = TEXT("/bin/bash");
+#else
+	FString RunUATScriptName = TEXT("RunUAT.command");
+	FString CmdExe = TEXT("/bin/sh");
+#endif
+
+	FString UatPath = FPaths::ConvertRelativePathToFull(FPaths::EngineDir() / TEXT("Build/BatchFiles") / RunUATScriptName);
+	
+	if (!FPaths::FileExists(UatPath))
+	{
+		FFormatNamedArguments Arguments;
+		Arguments.Add(TEXT("File"), FText::FromString(UatPath));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("RequiredFileNotFoundMessage", "A required file could not be found:\n{File}"), Arguments));
+
+		return false;
+	}
+
+#if PLATFORM_WINDOWS
+	FString FullCommandLine = FString::Printf(TEXT("/c \"\"%s\" -list\""), *UatPath);
+#else
+	FString FullCommandLine = FString::Printf(TEXT("\"%s\" -list"), *UatPath);
+#endif
+
+	FString ListCommandResult;
+	int32 ResultCode = -1;
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(CmdExe, FullCommandLine, FPaths::EngineDir(), ListCommandResult, ResultCode);
+
+	if (ResultCode != 0)
+	{
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Automation tool execution error : %i"), ResultCode);
+		return false;
+	}
+
+	if (ListCommandResult.Find(TEXT("CookAndGenerateSchema")) >= 0)
+	{
+		return true;
+	}
+
+	FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("GenerateSchemaUATOutOfDate",
+	"Could not generate Schema because the AutomationTool is out of date.\n"
+	"Please rebuild the AutomationTool project which can be found alongside the UE4 project files"));
+
+	return false;
+}
+
+}
+
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
+	, SpatialGDKDevAuthTokenGeneratorInstance(MakeShared<FSpatialGDKDevAuthTokenGenerator>())
 	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>())
 {
 }
@@ -72,6 +132,11 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 
 	if (Method == FullAssetScan)
 	{
+		if (!CheckAutomationToolsUpToDate())
+		{
+			return false;
+		}
+
 		// Make sure SchemaDatabase is not loaded.
 		if (UPackage* LoadedDatabase = FindPackage(nullptr, *FPaths::Combine(TEXT("/Game/"), *SpatialConstants::SCHEMA_DATABASE_FILE_PATH)))
 		{
@@ -242,7 +307,7 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-void FSpatialGDKEditor::LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+void FSpatialGDKEditor::StartCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
 	LaunchCloudResult = Async(EAsyncExecution::Thread, [&Configuration]() { return SpatialGDKCloudLaunch(Configuration); },
 		[this, SuccessCallback, FailureCallback]
@@ -277,6 +342,12 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 bool FSpatialGDKEditor::FullScanRequired()
 {
 	return !Schema::GeneratedSchemaFolderExists() || !Schema::GeneratedSchemaDatabaseExists();
+}
+
+void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
+{
+	FSpatialGDKServicesModule::SetProjectName(InProjectName);
+	SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
@@ -325,6 +396,11 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			World->UpdateWorldComponents(true, true);
 		}
 	}
+}
+
+TSharedRef<FSpatialGDKDevAuthTokenGenerator> FSpatialGDKEditor::GetDevAuthTokenGeneratorRef()
+{
+	return SpatialGDKDevAuthTokenGeneratorInstance;
 }
 
 TSharedRef<FSpatialGDKPackageAssembly> FSpatialGDKEditor::GetPackageAssemblyRef()

@@ -49,7 +49,7 @@ ActorLockToken UOwnershipLockingPolicy::AcquireLock(AActor* Actor, FString Debug
 		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, OwnershipHierarchyRoot });
 	}
 
-	UE_LOG(LogOwnershipLockingPolicy, Log, TEXT("Acquiring migration lock. "
+	UE_LOG(LogOwnershipLockingPolicy, Verbose, TEXT("Acquiring migration lock. "
 		"Actor: %s. Lock name: %s. Token %d: Locks held: %d."), *GetNameSafe(Actor), *DebugString, NextToken, ActorToLockingState.Find(Actor)->LockCount);
 	TokenToNameAndActor.Emplace(NextToken, LockNameAndActor{ MoveTemp(DebugString), Actor });
 	return NextToken++;
@@ -66,7 +66,7 @@ bool UOwnershipLockingPolicy::ReleaseLock(const ActorLockToken Token)
 
 	AActor* Actor = NameAndActor->Actor;
 	const FString& Name = NameAndActor->LockName;
-	UE_LOG(LogOwnershipLockingPolicy, Log, TEXT("Releasing Actor migration lock. Actor: %s. Token: %d. Lock name: %s"), *Actor->GetName(), Token, *Name);
+	UE_LOG(LogOwnershipLockingPolicy, Verbose, TEXT("Releasing Actor migration lock. Actor: %s. Token: %d. Lock name: %s"), *Actor->GetName(), Token, *Name);
 
 	check(ActorToLockingState.Contains(Actor));
 
@@ -76,7 +76,7 @@ bool UOwnershipLockingPolicy::ReleaseLock(const ActorLockToken Token)
 		MigrationLockElement& ActorLockingState = CountIt.Value();
 		if (ActorLockingState.LockCount == 1)
 		{
-			UE_LOG(LogOwnershipLockingPolicy, Log, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName());
+			UE_LOG(LogOwnershipLockingPolicy, Verbose, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName());
 			Actor->OnDestroyed.RemoveDynamic(this, &UOwnershipLockingPolicy::OnExplicitlyLockedActorDeleted);
 			RemoveOwnershipHierarchyRootInformation(ActorLockingState.HierarchyRoot, Actor);
 			CountIt.RemoveCurrent();

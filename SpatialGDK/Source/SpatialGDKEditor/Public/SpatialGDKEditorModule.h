@@ -6,6 +6,8 @@
 #include "Modules/ModuleManager.h"
 
 class FLBStrategyEditorExtensionManager;
+class FSpatialGDKEditor;
+class FSpatialGDKEditorCommandLineArgsManager;
 
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
@@ -23,6 +25,11 @@ public:
 		return true;
 	}
 
+	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const
+	{
+		return SpatialGDKEditorInstance;
+	}
+
 protected:
 	// Local deployment connection flow
 	virtual bool ShouldConnectToLocalDeployment() const override;
@@ -34,6 +41,8 @@ protected:
 	virtual FString GetDevAuthToken() const override;
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 
+	virtual bool CanExecuteLaunch() const override;
+
 private:
 	void RegisterSettings();
 	void UnregisterSettings();
@@ -41,5 +50,8 @@ private:
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();
 
+private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
+	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
+	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 };

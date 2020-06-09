@@ -55,7 +55,7 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS = 255; // This is set unreasonably large but is flushed at the rate of USpatialGDKSettings::OpsUpdateRate.
+		UdpUpstreamIntervalMS = 10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
@@ -220,7 +220,8 @@ public:
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		// Get command line options first since the URL handling will modify the CommandLine string
-		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+		uint16 Port;
+		bool bReceptionistPortParsed = FParse::Value(CommandLine, TEXT("receptionistPort"), Port);
 		FParse::Bool(CommandLine, *SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION, UseExternalIp);
 
 		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
@@ -241,6 +242,12 @@ public:
 		{
 			SetReceptionistHost(Host);
 		}
+		// If the ReceptionistPort was parsed in the command-line arguments, it would be overwritten by the URL setup above.
+		// So we restore/set it here.
+		if (bReceptionistPortParsed)
+		{
+			SetReceptionistPort(Port);
+		}
 
 		return true;
 	}
@@ -250,6 +257,7 @@ public:
 		if (!URL.Host.IsEmpty())
 		{
 			SetReceptionistHost(URL.Host);
+			SetReceptionistPort(URL.Port);
 		}
 		if (URL.HasOption(*SpatialConstants::URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION))
 		{
@@ -259,7 +267,7 @@ public:
 
 	FString GetReceptionistHost() const { return ReceptionistHost; }
 
-	uint16 ReceptionistPort;
+	uint16 GetReceptionistPort() const { return ReceptionistPort; }
 
 private:
 	void SetReceptionistHost(const FString& Host)
@@ -270,5 +278,9 @@ private:
 		}
 	}
 
+	void SetReceptionistPort(const uint16 Port) { ReceptionistPort = Port; }
+
 	FString ReceptionistHost;
+
+	uint16 ReceptionistPort;
 };

@@ -18,7 +18,7 @@ class FMenuBuilder;
 class FSpatialGDKEditor;
 class FToolBarBuilder;
 class FUICommandList;
-class SSpatialGDKSimulatedPlayerDeployment;
+class SSpatialGDKCloudDeploymentConfiguration;
 class SWindow;
 class USoundBase;
 
@@ -48,12 +48,20 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
+	void OnShowSingleFailureNotification(const FString& NotificationText);
 	void OnShowSuccessNotification(const FString& NotificationText);
 	void OnShowFailedNotification(const FString& NotificationText);
 	void OnShowTaskStartNotification(const FString& NotificationText);
 
-	FReply OnLaunchDeployment();
-	bool CanLaunchDeployment() const;
+	FReply OnStartCloudDeployment();
+	bool CanStartCloudDeployment() const;
+
+	bool IsSimulatedPlayersEnabled() const;
+	/** Delegate called when the user either clicks the simulated players checkbox */
+	void OnCheckedSimulatedPlayers();
+
+	bool IsBuildClientWorkerEnabled() const;
+	void OnCheckedBuildClientWorker();
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
@@ -63,14 +71,20 @@ private:
 
 	void VerifyAndStartDeployment();
 
-	void StartSpatialDeploymentButtonClicked();
+	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
-	bool StartSpatialDeploymentIsVisible() const;
-	bool StartSpatialDeploymentCanExecute() const;
+	bool StartNativeIsVisible() const;
+	bool StartNativeCanExecute() const;
+
+	bool StartLocalSpatialDeploymentIsVisible() const;
+	bool StartLocalSpatialDeploymentCanExecute() const;
+
+	bool StartCloudSpatialDeploymentIsVisible() const;
+	bool StartCloudSpatialDeploymentCanExecute() const;
 
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
@@ -81,6 +95,23 @@ private:
 	bool StopSpatialServiceIsVisible() const;
 	bool StopSpatialServiceCanExecute() const;
 
+	void OnToggleSpatialNetworking();
+	bool OnIsSpatialNetworkingEnabled() const;
+
+	void GDKEditorSettingsClicked() const;
+	void GDKRuntimeSettingsClicked() const;
+
+	bool IsLocalDeploymentSelected() const;
+	bool IsCloudDeploymentSelected() const;
+
+	bool IsSpatialOSNetFlowConfigurable() const;
+
+	void LocalDeploymentClicked();
+	void CloudDeploymentClicked();
+
+	bool IsLocalDeploymentIPEditable() const;
+	bool AreCloudDeploymentPropertiesEditable() const;
+
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -90,8 +121,9 @@ private:
 
 	void ShowCloudDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
+	void LaunchOrShowCloudDeployment();
 
-	/** Delegate to determine the 'Launch Deployment' button enabled state */
+	/** Delegate to determine the 'Start Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
 	bool CanBuildAndUpload() const;
 
@@ -105,7 +137,9 @@ private:
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
+	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
+	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
 
 	void ShowSuccessNotification(const FString& NotificationText);
@@ -118,6 +152,9 @@ private:
 	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
+
+	// This should be called whenever the settings determining whether a local deployment should be automatically started have changed.
+	void OnAutoStartLocalDeploymentChanged();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
@@ -136,7 +173,7 @@ private:
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
 	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
-	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
+	TSharedPtr<SSpatialGDKCloudDeploymentConfiguration> CloudDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
 

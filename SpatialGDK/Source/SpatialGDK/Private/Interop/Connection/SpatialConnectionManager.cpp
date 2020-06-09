@@ -7,7 +7,9 @@
 
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
@@ -171,13 +173,13 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 
 	bConnectAsClient = bInitAsClient;
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
+	const ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment() && bInitAsClient)
 	{
-		DevAuthConfig.Deployment = SpatialGDKSettings->DevelopmentDeploymentToConnect;
+		DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
 		DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		DevAuthConfig.UseExternalIp = true;
-		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
+		StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
 		return;
 	}
 
@@ -316,7 +318,7 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
 
 	FinishConnecting(ConnectionFuture);

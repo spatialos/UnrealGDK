@@ -418,6 +418,10 @@ USpatialActorChannel* USpatialReceiver::GetOrRecreateChannelForDomantActor(AActo
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
+	if (Channel == nullptr)
+	{
+		return nullptr;
+	}
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
@@ -588,7 +592,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
+
+	if (Channel != nullptr)
 	{
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
@@ -641,7 +647,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			{
 				const bool bDormantActor = (Actor->NetDormancy >= DORM_DormantAll);
 
-				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)) || bDormantActor)
+				if (IsValid(Channel) || bDormantActor)
 				{
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
@@ -689,9 +695,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			}
 			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 			{
-				if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+				if (Channel != nullptr)
 				{
-					ActorChannel->bCreatedEntity = false;
+					Channel->bCreatedEntity = false;
 				}
 
 				// With load-balancing enabled, we already set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
@@ -719,9 +725,12 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			{
 				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
 				{
-					// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
-					uint32 BytesWritten = 0;
-					Sender->SendAddComponentForSubobject(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
+					if (IsValid(Channel))
+					{
+						// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
+						uint32 BytesWritten = 0;
+						Sender->SendAddComponentForSubobject(Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
+					}
 				}
 			}
 
@@ -730,12 +739,12 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	}
 	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 	{
-		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		if (Channel != nullptr)
 		{
 			// Soft handover isn't supported currently.
 			if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
-				ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+				Channel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 			}
 		}
 
@@ -969,11 +978,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	if (!NetDriver->IsServer())
 	{
 		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-		// Don't send dynamic interest for this actor if it is otherwise handled by result types.
-		if (!SpatialGDKSettings->bEnableResultTypes)
-		{
-			Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
-		}
 
 		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 		// a player index. For now we don't support split screen, so the number is always 0.
@@ -1401,18 +1405,6 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	ResolvePendingOperations(Subobject, SubobjectRef);
-
-	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
-	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-	{
-		return;
-	}
-
-	// If on a client, we need to set up the proper component interest for the new subobject.
-	if (!NetDriver->IsServer())
-	{
-		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsAuthoritativeClient());
-	}
 }
 
 struct USpatialReceiver::RepStateUpdateHelper
@@ -2194,7 +2186,20 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+
+	if (InPayload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
+	{
+		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Invalid RPC index (%d) received on %s, dropping the RPC"), InPayload.Index, *TargetObject->GetPathName());
+		return;
+	}
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
+	if (Function == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Missing function info received on %s, dropping the RPC"), *TargetObject->GetPathName());
+		return;
+	}
+
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 
