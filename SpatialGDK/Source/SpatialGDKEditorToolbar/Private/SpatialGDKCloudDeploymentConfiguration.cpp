@@ -337,6 +337,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
+								.Visibility(this, &SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
@@ -350,6 +351,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SComboButton)
 									.OnGetMenuContent(this, &SSpatialGDKCloudDeploymentConfiguration::OnGetPrimaryDeploymentRegionCode)
 									.ContentPadding(FMargin(2.0f, 2.0f))
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsPrimaryRegionPickerEnabled)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
@@ -368,14 +370,14 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetMainDeploymentCluster()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited, ETextCommit::Default)
 								]
@@ -496,6 +498,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
+								.Visibility(this, &SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
@@ -509,7 +512,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SComboButton)
 									.OnGetMenuContent(this, &SSpatialGDKCloudDeploymentConfiguration::OnGetSimulatedPlayerDeploymentRegionCode)
 									.ContentPadding(FMargin(2.0f, 2.0f))
-									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayerRegionPickerEnabled)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
@@ -528,14 +531,14 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetSimulatedPlayerCluster()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerClusterCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerClusterCommited, ETextCommit::Default)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
@@ -839,6 +842,24 @@ TSharedRef<SWidget> SSpatialGDKCloudDeploymentConfiguration::OnGetPrimaryDeploym
 	}
 
 	return MenuBuilder.MakeWidget();
+}
+
+EVisibility SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility() const
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->IsRunningInChina() ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible;
+}
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsPrimaryRegionPickerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->GetMainDeploymentCluster().IsEmpty();
+}
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayerRegionPickerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->IsSimulatedPlayersEnabled() && SpatialGDKEditorSettings->GetSimulatedPlayerCluster().IsEmpty();
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
