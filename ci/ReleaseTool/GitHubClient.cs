@@ -64,13 +64,13 @@ namespace ReleaseTool
             return repositoryTask.Result;
         }
 
-        public bool TryGetPullRequest(Repository repository, string branchFrom, string branchTo, out PullRequest request)
+        public bool TryGetPullRequest(Repository repository, string githubOrg, string branchFrom, string branchTo, out PullRequest request)
         {
             var pullRequestRequest = new PullRequestRequest
             {
                 State = ItemStateFilter.Open,
                 Base = branchTo,
-                Head = branchFrom
+                Head = $"{githubOrg}:{branchFrom}"
             };
 
             var results = octoClient.PullRequest
