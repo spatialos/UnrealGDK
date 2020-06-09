@@ -50,6 +50,8 @@ UWorld* GetAnyGameWorld()
 	return World;
 }
 
+} // anonymous namespace
+
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForWorld, TSharedPtr<TestData>, TestData);
 bool FWaitForWorld::Update()
 {
@@ -68,11 +70,6 @@ bool FWaitForWorld::Update()
 	return false;
 }
 
-struct StrategyConfig {
-	TSubclassOf<UAbstractLBStrategy> StrategyClass;
-	TSet<TSoftClassPtr<AActor>> TargetActorTypes;
-};
-
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCreateStrategy, TSharedPtr<TestData>, TestData);
 bool FCreateStrategy::Update()
 {
@@ -89,15 +86,16 @@ bool FSetDefaultLayer::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FAddLayer, TSharedPtr<TestData>, TestData, StrategyConfig, Strategy);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FAddLayer, TSharedPtr<TestData>, TestData, TSubclassOf<UAbstractLBStrategy>, StrategyClass, TSet<TSoftClassPtr<AActor>>, TargetActorTypes);
 bool FAddLayer::Update()
 {
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestData->TestWorld->GetWorldSettings());
 	auto StratName = FName{ *FString::FromInt((WorldSettings->WorkerLayers.Num())) };
 	FLayerInfo LayerInfo;
 	LayerInfo.Name = StratName;
-	LayerInfo.LoadBalanceStrategy = Strategy.StrategyClass;
-	for (const auto& TargetActors : Strategy.TargetActorTypes) {
+	LayerInfo.LoadBalanceStrategy = StrategyClass;
+	for (const auto& TargetActors : TargetActorTypes)
+	{
 		LayerInfo.ActorClasses.Add(TargetActors);
 	}
 	WorldSettings->WorkerLayers.Add(StratName, LayerInfo);
@@ -115,7 +113,8 @@ bool FSetupStrategy::Update()
 	auto& Strat = TestData->Strat;
 	Strat->Init();
 
-	if (!NumVirtualWorkers.IsSet()) {
+	if (!NumVirtualWorkers.IsSet())
+	{
 		NumVirtualWorkers = Strat->GetMinimumRequiredWorkers();
 	}
 
@@ -124,10 +123,10 @@ bool FSetupStrategy::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupStrategyLocalWorker, TSharedPtr<TestData>, TestData, VirtualWorkerId, worker_id);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupStrategyLocalWorker, TSharedPtr<TestData>, TestData, VirtualWorkerId, WorkerId);
 bool FSetupStrategyLocalWorker::Update()
 {
-	TestData->Strat->SetLocalVirtualWorkerId(worker_id);
+	TestData->Strat->SetLocalVirtualWorkerId(WorkerId);
 	return true;
 }
 
@@ -154,7 +153,7 @@ bool FCheckMinimumWorkers::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckStratIsReady, TSharedPtr<TestData>, TestData, FAutomationTestBase*, Test, bool, Expected);
 bool FCheckStratIsReady::Update()
 {
-	const auto& Strat = TestData->Strat;
+	const UAbstractLBStrategy* Strat = TestData->Strat;
 	Test->TestEqual(
 		FString::Printf(TEXT("Strategy for minimum required workers. Actual: %d, Expected: %d"), Strat->IsReady(), Expected),
 		Strat->IsReady(), Expected);
@@ -218,7 +217,7 @@ bool FCheckRequiresHandover::Update()
 {
 	const bool Actual = TestData->Strat->RequiresHandoverData();
 	Test->TestEqual(
-		FString::Printf(TEXT("Strategy requires handover data Expected: %c Actual: %c"), Expected, Actual),
+		FString::Printf(TEXT("Strategy requires handover data. Expected: %c Actual: %c"), Expected, Actual),
 		Expected, Actual);
 	return true;
 }
@@ -234,7 +233,7 @@ bool FCheckShouldHaveAuthMatchesWhoShouldHaveAuth::Update()
 	const bool DoWeActuallyHaveAuthority = Strat->ShouldHaveAuthority(*TestActors[ActorName]);
 
 	Test->TestEqual(
-		FString::Printf(TEXT("Expected: %b Actual: %b"), WeShouldHaveAuthority, DoWeActuallyHaveAuthority),
+		FString::Printf(TEXT("WhoShouldHaveAuthority should match ShouldHaveAuthority. Expected: %b Actual: %b"), WeShouldHaveAuthority, DoWeActuallyHaveAuthority),
 		WeShouldHaveAuthority, DoWeActuallyHaveAuthority);
 	return true;
 }
@@ -265,8 +264,8 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_layered_strat_of_two_by_four_grid_strat_singleton_s
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {} }));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {} }));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UTwoByFourLBGridStrategy::StaticClass(), {} ));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UGridBasedLBStrategy::StaticClass(), {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckMinimumWorkers(Data, this, 10));
 
@@ -279,14 +278,14 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_2_single_cell_strats_and_default_s
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} }));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} }));
 	this->AddExpectedError("LayeredLBStrategy was not given enough VirtualWorkerIds to meet the demands of the layer strategies.",
 		EAutomationExpectedErrorFlags::MatchType::Contains, 1);
 
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UGridBasedLBStrategy::StaticClass(), {ALayer1Pawn::StaticClass()}));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UGridBasedLBStrategy::StaticClass(), {ALayer2Pawn::StaticClass()}));
 	// The two single strategies plus the default strat require 3 vitual workers, but we only have 2.
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, 2));
 
@@ -302,8 +301,8 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_2_single_cell_grid_strats_and_defa
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} }));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} }));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UGridBasedLBStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} ));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UGridBasedLBStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} ));
 
 	// The two single strategies plus the default strat require 3 vitual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, 3));
@@ -336,7 +335,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UGridBasedLBStrategy::StaticClass(), {ADefaultPawn::StaticClass()} }));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UGridBasedLBStrategy::StaticClass(), {ADefaultPawn::StaticClass()}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, true));
@@ -354,7 +353,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("DefaultLayerActor"), FVector(0, 0, 0)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("DefaultLayerActor"), FVector::ZeroVector));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckWhoShouldHaveAuthority(Data, this, "DefaultLayerActor", 1));
 
 	return true;
@@ -388,14 +387,14 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} }));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} }));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UTwoByFourLBGridStrategy::StaticClass(), {ALayer1Pawn::StaticClass()}));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UTwoByFourLBGridStrategy::StaticClass(), {ALayer2Pawn::StaticClass()}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor1"), FVector(0, 0, 0)));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor2"), FVector(0, 0, 0)));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor1"), FVector(0, 0, 0)));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Later2Actor2"), FVector(0, 0, 0)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor1"), FVector::ZeroVector));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor2"), FVector::ZeroVector));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor1"), FVector::ZeroVector));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Later2Actor2"), FVector::ZeroVector));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor1"), TEXT("Layer1Actor2"), true));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer2Actor1"), TEXT("Later2Actor2"), true));
@@ -413,18 +412,17 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_two_actors_of_different_types_and_same_positions_ma
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetDefaultLayer(Data, UGridBasedLBStrategy::StaticClass()));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer1Pawn::StaticClass()} }));
-	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, { UTwoByFourLBGridStrategy::StaticClass(), {ALayer2Pawn::StaticClass()} }));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UTwoByFourLBGridStrategy::StaticClass(), {ALayer1Pawn::StaticClass()}));
+	ADD_LATENT_AUTOMATION_COMMAND(FAddLayer(Data, UTwoByFourLBGridStrategy::StaticClass(), {ALayer2Pawn::StaticClass()}));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategy(Data, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupStrategyLocalWorker(Data, 1));
 
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor"), FVector(0, 0, 0)));
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor"), FVector(0, 0, 0)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("Layer1Actor"), FVector::ZeroVector));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor"), FVector::ZeroVector));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor"), TEXT("Layer2Actor"), false));
 
 	return true;
-}
 }
 

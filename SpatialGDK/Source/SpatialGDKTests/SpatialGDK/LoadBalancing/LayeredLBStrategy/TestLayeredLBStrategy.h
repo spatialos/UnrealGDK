@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "LoadBalancing/GridBasedLBStrategy.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/DefaultPawn.h"
-
-#include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "TestLayeredLBStrategy.generated.h"
 
@@ -26,7 +26,7 @@ public:
 /**
  * Same as a Default pawn but for testing
  */
-UCLASS(config = Game, Blueprintable, BlueprintType)
+UCLASS(NotPlaceable)
 class SPATIALGDKTESTS_API ALayer1Pawn : public ADefaultPawn
 {
 	GENERATED_BODY()
@@ -36,7 +36,7 @@ class SPATIALGDKTESTS_API ALayer1Pawn : public ADefaultPawn
 /**
  * Same as a Default pawn but for testing
  */
-UCLASS(config = Game, Blueprintable, BlueprintType)
+UCLASS(NotPlaceable)
 class SPATIALGDKTESTS_API ALayer2Pawn : public ADefaultPawn
 {
 	GENERATED_BODY()
