@@ -146,7 +146,7 @@ bool FCheckMinimumWorkers::Update()
 {
 	const uint32 Actual = TestData->Strat->GetMinimumRequiredWorkers();
 	Test->TestEqual(
-		FString::Printf(TEXT("Checking strategy for minimum required workers. Actual: %d, Expected: %d"), Actual, Expected),
+		FString::Printf(TEXT("Strategy for minimum required workers. Actual: %d, Expected: %d"), Actual, Expected),
 		Actual, Expected);
 	return true;
 }
@@ -156,7 +156,7 @@ bool FCheckStratIsReady::Update()
 {
 	const auto& Strat = TestData->Strat;
 	Test->TestEqual(
-		FString::Printf(TEXT("Checking strategy for minimum required workers. Actual: %d, Expected: %d"), Strat->IsReady(), Expected),
+		FString::Printf(TEXT("Strategy for minimum required workers. Actual: %d, Expected: %d"), Strat->IsReady(), Expected),
 		Strat->IsReady(), Expected);
 	return true;
 }
@@ -201,12 +201,12 @@ bool FCheckActorsAuth::Update()
 	if (ExpectEqual)
 	{
 		Test->TestEqual(
-			FString::Printf(TEXT("Checking actors have the same auth. Actor1: %d, Actor2: %d"), FirstActorAuth, SecondActorAuth),
+			FString::Printf(TEXT("Actors should have the same auth. Actor1: %d, Actor2: %d"), FirstActorAuth, SecondActorAuth),
 			FirstActorAuth, SecondActorAuth);
 	}
 	else {
 		Test->TestNotEqual(
-			FString::Printf(TEXT("Checking actors have different auth. Actor1: %d, Actor2: %d"), FirstActorAuth, SecondActorAuth),
+			FString::Printf(TEXT("Actors should have different auth. Actor1: %d, Actor2: %d"), FirstActorAuth, SecondActorAuth),
 			FirstActorAuth, SecondActorAuth);
 	}
 
@@ -218,7 +218,7 @@ bool FCheckRequiresHandover::Update()
 {
 	const bool Actual = TestData->Strat->RequiresHandoverData();
 	Test->TestEqual(
-		FString::Printf(TEXT("Checking strategy requires handover data Expected: %c Actual: %c"), Expected, Actual),
+		FString::Printf(TEXT("Strategy requires handover data Expected: %c Actual: %c"), Expected, Actual),
 		Expected, Actual);
 	return true;
 }
