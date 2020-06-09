@@ -7,13 +7,12 @@
 #include "IDesktopPlatform.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKDefaultLaunchConfigGenerator.h"
-#include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 
-TSharedPtr<ULaunchConfigurationEditor> ULaunchConfigurationEditor::_instance = nullptr;
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKSettings.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 void ULaunchConfigurationEditor::PostInitProperties()
 {

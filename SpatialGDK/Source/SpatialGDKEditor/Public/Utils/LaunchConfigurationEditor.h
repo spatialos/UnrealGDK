@@ -27,7 +27,4 @@ protected:
 
 	UFUNCTION(Exec)
 	void SaveConfiguration();
-
-private:
-	static TSharedPtr<ULaunchConfigurationEditor> _instance;
 };
