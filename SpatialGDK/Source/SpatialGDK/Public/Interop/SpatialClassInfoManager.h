@@ -150,5 +150,4 @@ private:
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
-	TMap<Worker_ComponentId, TArray<Schema_FieldId>> ComponentToFieldIdsMap;
 };
