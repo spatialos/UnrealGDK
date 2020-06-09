@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CommandLine;
@@ -119,9 +120,9 @@ namespace ReleaseTool
                         case "UnrealGDK":
                             UpdateChangeLog(ChangeLogFilename, options, gitClient);
                             UpdatePluginFile(pluginFileName, gitClient);
+
                             var engineCandidateBranches = options.EngineVersions.Split(" ")
-                                .Select(engineVersion => $"{engineVersion.Trim()}-{options.Version}-rc"
-                                .Select(engineCandidateBranch => $"HEAD {engineVersion}")
+                                .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{options.Version}-rc")
                                 .ToList();
                             UpdateUnrealEngineVersionFile(engineCandidateBranches, gitClient);
                             break;
