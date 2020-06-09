@@ -24,6 +24,8 @@ class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	USpatialGameInstance();
+
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
@@ -70,7 +72,7 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
-	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const;
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -101,4 +103,7 @@ private:
 
 	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
+
+	// Boolean for whether or not the Spatial connection is ready for normal operations.
+	bool bIsSpatialNetDriverReady;
 };

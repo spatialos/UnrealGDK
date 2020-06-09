@@ -25,6 +25,11 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
+USpatialGameInstance::USpatialGameInstance()
+	: Super()
+	, bIsSpatialNetDriverReady(false)
+{}
+
 bool USpatialGameInstance::HasSpatialNetDriver() const
 {
 	bool bHasSpatialNetDriver = false;
@@ -265,8 +270,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
-	check(SpatialConnectionManager != nullptr);
-	if (SpatialConnectionManager->IsConnected())
+	if (bIsSpatialNetDriverReady)
 	{
 		CleanupLevelInitializedNetworkActors(LoadedLevel);
 	}
@@ -276,8 +280,9 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 	}
 }
 
-void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const
+void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel)
 {
+	bIsSpatialNetDriverReady = true;
 	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
 	{
 		AActor* Actor = LoadedLevel->Actors[ActorIndex];
