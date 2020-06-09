@@ -128,6 +128,7 @@ private:
 	bool CanBuildAndUpload() const;
 
 	void OnBuildSuccess();
+	void OnStartCloudDeploymentFinished();
 
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
@@ -180,4 +181,6 @@ private:
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
+
+	bool bStartingCloudDeployment;
 };

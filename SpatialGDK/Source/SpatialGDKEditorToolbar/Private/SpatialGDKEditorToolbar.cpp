@@ -56,6 +56,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
 , bSchemaBuildError(false)
+, bStartingCloudDeployment(false)
 {
 }
 
@@ -913,7 +914,7 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() con
 	// TODO: UNR-3396 - allow launching cloud deployments from mac
 	return false;
 #else
-	return CanBuildAndUpload();
+	return CanBuildAndUpload() && !bStartingCloudDeployment;
 #endif
 }
 
@@ -1254,6 +1255,8 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
+	bStartingCloudDeployment = true;
+
 	auto StartCloudDeployment = [this]()
 	{
 		OnShowTaskStartNotification(FString::Printf(TEXT("Starting cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
@@ -1261,6 +1264,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
+				OnStartCloudDeploymentFinished();
 				OnShowSuccessNotification("Successfully started cloud deployment.");
 				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
@@ -1269,6 +1273,7 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
+				OnStartCloudDeploymentFinished();
 				OnShowFailedNotification("Failed to start cloud deployment. See output logs for details.");
 			})
 		);
@@ -1283,8 +1288,17 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		}
 		else
 		{
+			OnStartCloudDeploymentFinished();
 			OnShowFailedNotification(TEXT("Failed to launch cloud deployment. Unable to authenticate with SpatialOS."));
 		}
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::OnStartCloudDeploymentFinished()
+{
+	AsyncTask(ENamedThreads::GameThread, [this]
+	{
+		bStartingCloudDeployment = false;
 	});
 }
 
@@ -1305,7 +1319,7 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 
 bool FSpatialGDKEditorToolbarModule::CanStartCloudDeployment() const
 {
-	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
+	return IsDeploymentConfigurationValid() && CanBuildAndUpload() && !bStartingCloudDeployment;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const
