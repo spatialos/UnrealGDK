@@ -164,7 +164,7 @@ namespace ReleaseTool
                     var branchTo = options.ReleaseBranch;
 
                     // Only open a PR if one does not exist yet.
-                    if (!gitHubClient.TryGetPullRequest(gitHubRepo, GithubOrg, branchFrom, branchTo, out var pullRequest))
+                    if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
                     {
                         Logger.Info("No PR exists. Attempting to open a new PR");
                         pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,

@@ -102,10 +102,11 @@ namespace ReleaseTool
                 // Check if a PR has already been opened from release branch into source branch.
                 // If it has, log the PR URL and move on.
                 // This ensures the idempotence of the pipeline.
+                var githubOrg = options.GithubOrgName;
                 var branchFrom = options.ReleaseBranch;
                 var branchTo = options.SourceBranch;
 
-                if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
+                if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
                 {
                     try
                     {
@@ -246,10 +247,11 @@ namespace ReleaseTool
                 // Check if a PR has already been opened from release branch into source branch.
                 // If it has, log the PR URL and move on.
                 // This ensures the idempotence of the pipeline.
+                var githubOrg = options.GithubOrgName;
                 var branchFrom = options.ReleaseBranch;
                 var branchTo = options.SourceBranch;
 
-                if (!gitHubClient.TryGetPullRequest(gitHubRepo, branchFrom, branchTo, out var pullRequest))
+                if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
                 {
                     try
                     {
