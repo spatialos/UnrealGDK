@@ -205,8 +205,8 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 {
 	if (DeploymentName.IsEmpty())
 	{
-		// If we don't specify a deployment name, we will not check if any deployment is running.
-		return true;
+		OutErrorMessage = LOCTEXT("NoDeploymentName", "No deployment name has been specified.");
+		return false;
 	}
 
 	FString TagsCommand = FString::Printf(TEXT("project deployment tags list %s --json_output"), *DeploymentName);
@@ -261,15 +261,21 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	Tags: [unreal_deployment_launcher,dev_login]
 	We need to parse it a bit to be able to iterate through the tags
 	*/
-	FString test = JsonMessage.Mid(7, JsonMessage.Len() - 8);
+	if (JsonMessage[6] != '[' || JsonMessage[JsonMessage.Len() - 1] != ']')
+	{
+		OutErrorMessage = FText::Format(LOCTEXT("DeploymentTagsInvalid", "Could not parse the tags.\nMessage: {0}"), FText::FromString(JsonMessage));
+		return false;
+	}
+
+	FString TagsString = JsonMessage.Mid(7, JsonMessage.Len() - 8);
 	TArray<FString> Tags;
-	test.ParseIntoArray(Tags, TEXT(","), true);
+	TagsString.ParseIntoArray(Tags, TEXT(","), true);
 
 	if (Tags.Contains(SpatialGDKServicesConstants::DevLoginDeploymentTag))
 	{
 		return true;
 	}
-
+	UE_LOG(LogSpatialCommandUtils, Verbose, TEXT("Tags: %s"), *TagsString);
 	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the {1} tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName), FText::FromString(SpatialGDKServicesConstants::DevLoginDeploymentTag));
 	return false;
 }

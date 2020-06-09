@@ -85,12 +85,11 @@ bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
 
-bool FSpatialGDKEditorModule::CanStartSession() const
+bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 {
 	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
 	{
-		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar."));
-
+		OutErrorMessage = LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar.");
 		return false;
 	}
 
@@ -98,16 +97,15 @@ bool FSpatialGDKEditorModule::CanStartSession() const
 	{
 		if (GetDevAuthToken().IsEmpty())
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingDevelopmentAuthenticationToken", "You have to generate or provide a development authentication token in the SpatialOS GDK Editor Settings section to enable connecting to a cloud deployment."));
+			OutErrorMessage = LOCTEXT("MissingDevelopmentAuthenticationToken", "You have to generate or provide a development authentication token in the SpatialOS GDK Editor Settings section to enable connecting to a cloud deployment.");
 			return false;
 		}
 
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-		FText OutErrorMessage;
-		if (!SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, OutErrorMessage))
+		if (!Settings->DevelopmentDeploymentToConnect.IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, OutErrorMessage))
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, OutErrorMessage);
+			OutErrorMessage = OutErrorMessage;
 			return false;
 		}
 	}
@@ -115,17 +113,17 @@ bool FSpatialGDKEditorModule::CanStartSession() const
 	return true;
 }
 
-bool FSpatialGDKEditorModule::CanStartPlaySession() const
+bool FSpatialGDKEditorModule::CanStartPlaySession(FText& OutErrorMessage) const
 {
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		return true;
 	}
 
-	return CanStartSession();
+	return CanStartSession(OutErrorMessage);
 }
 
-bool FSpatialGDKEditorModule::CanStartLaunchSession() const
+bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) const
 {
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
@@ -134,11 +132,11 @@ bool FSpatialGDKEditorModule::CanStartLaunchSession() const
 
 	if (ShouldConnectToLocalDeployment() && GetSpatialOSLocalDeploymentIP().IsEmpty())
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("MissingLocalDeploymentIP", "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable connecting to a local deployment."));
+		OutErrorMessage = LOCTEXT("MissingLocalDeploymentIP", "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable connecting to a local deployment.");
 		return false;
 	}
 
-	return CanStartSession();
+	return CanStartSession(OutErrorMessage);
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()

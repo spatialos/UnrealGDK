@@ -42,8 +42,8 @@ private:
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 
 	virtual bool CanExecuteLaunch() const override;
-	virtual bool CanStartPlaySession() const override;
-	virtual bool CanStartLaunchSession() const override;
+	virtual bool CanStartPlaySession(FText& OutErrorMessage) const override;
+	virtual bool CanStartLaunchSession(FText& OutErrorMessage) const override;
 
 private:
 	void RegisterSettings();
@@ -51,7 +51,7 @@ private:
 	bool HandleEditorSettingsSaved();
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();
-	bool CanStartSession() const;
+	bool CanStartSession(FText& OutErrorMessage) const;
 
 private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
