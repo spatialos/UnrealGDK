@@ -15,7 +15,7 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
-#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/LaunchConfigEditorLayoutDetails.h"
 #include "WorkerTypeCustomization.h"
 

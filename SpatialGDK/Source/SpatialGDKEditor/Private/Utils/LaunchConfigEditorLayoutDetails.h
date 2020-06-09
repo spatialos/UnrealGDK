@@ -8,10 +8,7 @@
 class FLaunchConfigEditorLayoutDetails : public IDetailCustomization
 {
 private:
-	void ForceRefreshLayout();
-
 	IDetailLayoutBuilder* MyLayout = nullptr;
-
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;

@@ -47,7 +47,7 @@
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
-#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -1082,7 +1082,7 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 
 void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 {
-	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"), nullptr);
+	ULaunchConfigurationEditor::OpenModalWindow(nullptr);
 }
 
 void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()

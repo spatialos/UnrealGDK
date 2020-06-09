@@ -23,17 +23,6 @@ TSharedRef<IDetailCustomization> FSpatialGDKEditorLayoutDetails::MakeInstance()
 	return MakeShareable(new FSpatialGDKEditorLayoutDetails);
 }
 
-void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
-{
-	if (CurrentLayout != nullptr)
-	{
-		TArray<TWeakObjectPtr<UObject>> Objects;
-		CurrentLayout->GetObjectsBeingCustomized(Objects);
-		USpatialGDKEditorSettings* Settings = Objects.Num() > 0 ? Cast<USpatialGDKEditorSettings>(Objects[0].Get()) : nullptr;
-		CurrentLayout->ForceRefreshDetails();
-	}
-}
-
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	CurrentLayout = &DetailBuilder;

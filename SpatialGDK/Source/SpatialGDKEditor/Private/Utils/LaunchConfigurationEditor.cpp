@@ -1,23 +1,62 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Utils/TransientUObjectEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 
+#include "DesktopPlatformModule.h"
+#include "Framework/Application/SlateApplication.h"
+#include "IDesktopPlatform.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-
-#include "Framework/Application/SlateApplication.h"
+#include "SpatialGDKSettings.h"
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 
+TSharedPtr<ULaunchConfigurationEditor> ULaunchConfigurationEditor::_instance = nullptr;
+
+void ULaunchConfigurationEditor::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+}
+
+void ULaunchConfigurationEditor::SaveConfiguration()
+{
+	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+	{
+		return;
+	}
+
+	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+
+	FString DefaultOutPath = SpatialGDKServicesConstants::SpatialOSDirectory;
+	TArray<FString> Filenames;
+
+	bool bSaved = DesktopPlatform->SaveFileDialog(
+		FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr),
+		TEXT("Save launch configuration"),
+		DefaultOutPath,
+		TEXT(""),
+		TEXT("JSON Configuration|*.json"),
+		EFileDialogFlags::None,
+		Filenames);
+
+	if (bSaved && Filenames.Num() > 0)
+	{
+		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+		{
+			OnConfigurationSaved.ExecuteIfBound(this, Filenames[0]);
+		}
+	}
+}
 
 namespace
 {
-
-	void OnTransientUObjectEditorWindowClosed(const TSharedRef<SWindow>& Window, UTransientUObjectEditor* Instance)
-	{
-		Instance->RemoveFromRoot();
-	}
-
 	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 	{
@@ -38,7 +77,7 @@ namespace
 		return true;
 	}
 
-	FReply ExecuteEditorCommand(UTransientUObjectEditor* Instance, UFunction* MethodToExecute)
+	FReply ExecuteEditorCommand(ULaunchConfigurationEditor* Instance, UFunction* MethodToExecute)
 	{
 		Instance->CallFunctionByNameWithArguments(*MethodToExecute->GetName(), *GLog, nullptr, true);
 
@@ -46,20 +85,9 @@ namespace
 	}
 }
 
-// Rewrite of FPropertyEditorModule::CreateFloatingDetailsView to use the detail property view in a new window.
-UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow)
+ULaunchConfigurationEditor* ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWindow)
 {
-	if (!ObjectClass)
-	{
-		return nullptr;
-	}
-
-	if (!ObjectClass->IsChildOf<UTransientUObjectEditor>())
-	{
-		return nullptr;
-	}
-
-	UTransientUObjectEditor* ObjectInstance = NewObject<UTransientUObjectEditor>(GetTransientPackage(), ObjectClass);
+	ULaunchConfigurationEditor* ObjectInstance = NewObject<ULaunchConfigurationEditor>(GetTransientPackage(), ULaunchConfigurationEditor::StaticClass());
 	ObjectInstance->AddToRoot();
 
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
@@ -98,7 +126,7 @@ UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(c
 		];
 
 	// Add UFunction marked Exec as buttons in the editor's window
-	for (TFieldIterator<UFunction> FuncIt(ObjectClass); FuncIt; ++FuncIt)
+	for (TFieldIterator<UFunction> FuncIt(ULaunchConfigurationEditor::StaticClass()); FuncIt; ++FuncIt)
 	{
 		UFunction* Function = *FuncIt;
 		if (Function->HasAnyFunctionFlags(FUNC_Exec) && (Function->NumParms == 0))
@@ -113,19 +141,20 @@ UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(c
 				[
 					SNew(SHorizontalBox)
 					+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.Padding(2.0)
-				[
-					SNew(SButton)
-					.Text(ButtonCaption)
-				.OnClicked(FOnClicked::CreateStatic(&ExecuteEditorCommand, ObjectInstance, Function))
-				]
+					.AutoWidth()
+					.Padding(2.0)
+					[
+						SNew(SButton)
+						.Text(ButtonCaption)
+						.OnClicked(FOnClicked::CreateStatic(&ExecuteEditorCommand, ObjectInstance, Function))
+					]
 				];
 		}
 	}
 
 	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(FText::FromString(EditorName))
+		.Title(FText::FromString(TEXT("Launch Configuration Editor")))
+		.ClientSize(FVector2D(600, 400))
 		[
 			SNew(SBorder)
 			.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
@@ -133,28 +162,21 @@ UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(c
 				VBoxBuilder
 			]
 		];
-	
-	if (!ParentWindow.IsValid() && FModuleManager::Get().IsModuleLoaded("MainFrame"))
+
+	if (!InParentWindow.IsValid() && FModuleManager::Get().IsModuleLoaded("MainFrame"))
 	{
 		// If the main frame exists parent the window to it
 		IMainFrameModule& MainFrame = FModuleManager::GetModuleChecked<IMainFrameModule>("MainFrame");
-		ParentWindow = MainFrame.GetParentWindow();
+		InParentWindow = MainFrame.GetParentWindow();
 	}
 
-	if (ParentWindow.IsValid())
+	if (InParentWindow.IsValid())
 	{
-		FSlateApplication::Get().AddWindowAsNativeChild(NewSlateWindow, ParentWindow.ToSharedRef());
+		FSlateApplication::Get().AddModalWindow(NewSlateWindow, InParentWindow.ToSharedRef());
 	}
 	else
 	{
-		FSlateApplication::Get().AddWindow(NewSlateWindow);
+		FSlateApplication::Get().AddModalWindow(NewSlateWindow, nullptr);
 	}
-
-	NewSlateWindow->RegisterActiveTimer(0.5, FWidgetActiveTimerDelegate::CreateLambda([NewSlateWindow](double, float)
-	{
-		NewSlateWindow->Resize(NewSlateWindow->GetDesiredSize());
-		return EActiveTimerReturnType::Stop;
-	}));
-
 	return ObjectInstance;
 }

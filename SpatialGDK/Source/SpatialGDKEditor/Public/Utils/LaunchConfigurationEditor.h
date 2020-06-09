@@ -2,31 +2,32 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "SpatialGDKEditorSettings.h"
-#include "Utils/TransientUObjectEditor.h"
 
-#include "LaunchConfigEditor.generated.h"
+#include "LaunchConfigurationEditor.generated.h"
 
 class ULaunchConfigurationEditor;
 
 DECLARE_DELEGATE_TwoParams(FOnSpatialOSLaunchConfigurationSaved, ULaunchConfigurationEditor*, const FString&)
 
-class UAbstractRuntimeLoadBalancingStrategy;
-
 UCLASS(Transient, CollapseCategories)
-class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UTransientUObjectEditor
+class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UObject
 {
 	GENERATED_BODY()
-
 public:
 	FOnSpatialOSLaunchConfigurationSaved OnConfigurationSaved;
 
 	UPROPERTY(EditAnywhere, Category = "Launch Configuration")
 	FSpatialLaunchConfigDescription LaunchConfiguration;
 
+	static ULaunchConfigurationEditor* OpenModalWindow(TSharedPtr<SWindow> InParentWindow);
 protected:
 	void PostInitProperties() override;
 
 	UFUNCTION(Exec)
 	void SaveConfiguration();
+
+private:
+	static TSharedPtr<ULaunchConfigurationEditor> _instance;
 };
