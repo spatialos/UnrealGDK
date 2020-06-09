@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#pragma once
+
 #include "SpatialGDKEditorCommandletPrivate.h"
 
 #include "Modules/ModuleInterface.h"

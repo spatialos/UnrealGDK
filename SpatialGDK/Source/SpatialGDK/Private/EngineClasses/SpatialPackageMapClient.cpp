@@ -2,11 +2,6 @@
 
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-#include "EngineUtils.h"
-#include "Engine/Engine.h"
-#include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
-
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetBitReader.h"
@@ -15,8 +10,12 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityPool.h"
 #include "Utils/SchemaOption.h"
+
+#include "EngineUtils.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
@@ -42,7 +41,7 @@ void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 		{
 			// Walk up the outer chain and ensure that no object is PendingKill. This is required because although
 			// EInternalObjectFlags::PendingKill prevents objects that are PendingKill themselves from getting added
-			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within 
+			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within
 			// FNetGUIDCache::RegisterNetGUID_Server where it again iterates up the object's owner chain, assigning
 			// ids and ensuring that no object is set to PendingKill in the process.
 			UObject* Outer = Object->GetOuter();
@@ -75,7 +74,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
-	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
+	Worker_EntityId EntityId = AllocateEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
@@ -269,21 +268,7 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnreal
 {
 	if (UClass* UniqueObjectClass = Cast<UClass>(GetObjectFromUnrealObjectRef(UniqueObjectClassRef)))
 	{
-		TArray<AActor*> FoundActors;
-		// USpatialPackageMapClient is an inner object of UNetConnection,
-		// which in turn contains a NetDriver and gets the UWorld it references.
-		UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
-
-		// There should be only one Actor per class.
-		if (FoundActors.Num() == 1)
-		{
-			return FoundActors[0];
-		}
-
-		FString FullPath;
-		SpatialGDK::GetFullPathFromUnrealObjectReference(UniqueObjectClassRef, FullPath);
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Found %d Actors for class: %s. There should only be one."), FoundActors.Num(), *FullPath);
-		return nullptr;
+		return GetUniqueActorInstanceByClass(UniqueObjectClass);
 	}
 	else
 	{
@@ -294,9 +279,39 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnreal
 	}
 }
 
+AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClass(UClass* UniqueObjectClass) const
+{
+	check(UniqueObjectClass != nullptr);
+
+	TArray<AActor*> FoundActors;
+	// USpatialPackageMapClient is an inner object of UNetConnection,
+	// which in turn contains a NetDriver and gets the UWorld it references.
+	UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
+
+	// There should be only one Actor per class.
+	if (FoundActors.Num() == 1)
+	{
+		return FoundActors[0];
+	}
+
+	UE_LOG(LogSpatialPackageMap, Warning, TEXT("Found %d Actors for class: %s. There should only be one."), FoundActors.Num(), *UniqueObjectClass->GetName());
+	return nullptr;
+}
+
+Worker_EntityId USpatialPackageMapClient::AllocateEntityId()
+{
+	return EntityPool->GetNextEntityId();
+}
+
 bool USpatialPackageMapClient::IsEntityPoolReady() const
 {
 	return (EntityPool != nullptr) && (EntityPool->IsReady());
+}
+
+FEntityPoolReadyEvent& USpatialPackageMapClient::GetEntityPoolReadyDelegate()
+{
+	check(bIsServer);
+	return EntityPool->GetEntityPoolReadyDelegate();
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)

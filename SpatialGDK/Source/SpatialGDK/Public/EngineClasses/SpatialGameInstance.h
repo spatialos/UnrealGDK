@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
@@ -25,6 +24,8 @@ class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	USpatialGameInstance();
+
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
@@ -56,6 +57,8 @@ public:
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
+	void CleanupCachedLevelsAfterConnection();
+
 	// Invoked when this worker has successfully connected to SpatialOS
 	UPROPERTY(BlueprintAssignable)
 	FOnConnectedEvent OnSpatialConnected;
@@ -69,7 +72,7 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -94,6 +97,13 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	// A set of the levels which were loaded before the SpatialOS connection.
+	UPROPERTY()
+	TSet<ULevel*> CachedLevelsForNetworkIntialize;
+
 	UFUNCTION()
-	void OnLevelInitializedNetworkActors(ULevel* Level, UWorld* OwningWorld);
+	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
+
+	// Boolean for whether or not the Spatial connection is ready for normal operations.
+	bool bIsSpatialNetDriverReady;
 };

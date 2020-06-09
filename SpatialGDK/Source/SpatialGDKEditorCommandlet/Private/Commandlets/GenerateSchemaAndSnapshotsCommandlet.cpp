@@ -220,18 +220,9 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForMap(FSpatialGDKEd
 
 bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchema(FSpatialGDKEditor& InSpatialGDKEditor)
 {
-	bool bSchemaGenSuccess;
-	if (InSpatialGDKEditor.GenerateSchema(true))
-	{
-		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
-		bSchemaGenSuccess = true;
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed"));
-		bSchemaGenSuccess = false;
-	}
-	return bSchemaGenSuccess;
+	UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Commandlet GenerateSchemaAndSnapshots without -SkipSchema has been deprecated in favor of CookAndGenerateSchemaCommandlet."));
+
+	return false;
 }
 
 bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& MapName)

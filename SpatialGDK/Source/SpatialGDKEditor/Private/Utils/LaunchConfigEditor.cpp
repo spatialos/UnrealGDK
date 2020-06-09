@@ -18,25 +18,12 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkersMap, LaunchConfiguration.World.Dimensions);
-}
-
-void ULaunchConfigurationEditor::OnWorkerTypesChanged()
-{
-	LaunchConfiguration.OnWorkerTypesChanged();
-	for (TPair<FName, FWorkerTypeLaunchSection>& LaunchSection : LaunchConfiguration.ServerWorkersMap)
-	{
-		if (LaunchSection.Value.WorkerLoadBalancing == nullptr)
-		{
-			LaunchSection.Value.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<UAbstractRuntimeLoadBalancingStrategy>();
-		}
-	}
-	PostEditChange();
+	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
 }
 
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
-	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkersMap))
+	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
 	{
 		return;
 	}
@@ -57,7 +44,7 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkersMap))
+		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
 		{
 			OnConfigurationSaved.ExecuteIfBound(this, Filenames[0]);
 		}

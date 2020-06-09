@@ -4,6 +4,8 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 
 using namespace SpatialGDKEditor::Schema;
 
@@ -45,12 +47,10 @@ public:
 		}
 	}
 
-#if ENGINE_MINOR_VERSION >= 23
 	virtual void OnUObjectArrayShutdown() override
 	{
 		GUObjectArray.RemoveUObjectCreateListener(this);
 	}
-#endif
 
 private:
 	TSet<FSoftClassPath>* VisitedClasses;
@@ -71,21 +71,22 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	TGuardValue<bool> UnattendedScriptGuard(GIsRunningUnattendedScript, GIsRunningUnattendedScript || IsRunningCommandlet());
 
-#if ENGINE_MINOR_VERSION <= 22
-	// Force spatial networking
-	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(true);
-#endif
-
 	FObjectListener ObjectListener;
 	TSet<FSoftClassPath> ReferencedClasses;
 	ObjectListener.StartListening(&ReferencedClasses);
-	
+
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
 		return 0;
 	}
+
+	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
+	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 
 	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
@@ -112,11 +113,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B)
 	{
-#if ENGINE_MINOR_VERSION <= 22
-		return A.GetAssetPathName() < B.GetAssetPathName();
-#else
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
-#endif
 	});
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
@@ -154,7 +151,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
 		return 0;
-	} 
+	}
 
 	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{

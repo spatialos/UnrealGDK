@@ -6,6 +6,8 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/WorkerRegion.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/SpatialDebugging.h"
@@ -143,7 +145,14 @@ void ASpatialDebugger::OnAuthorityGained()
 {
 	if (NetDriver->LoadBalanceStrategy)
 	{
-		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
+		const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+		if (LayeredLBStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get LayeredLBStrategy."));
+			return;
+		}
+
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
 		{
 			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 			WorkerRegions.SetNum(LBStrategyRegions.Num());
@@ -229,7 +238,7 @@ void ASpatialDebugger::LoadIcons()
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	UTexture2D* DefaultTexture = DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
+	UTexture2D* DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
 
 	const float IconWidth = 16.0f;
 	const float IconHeight = 16.0f;
@@ -329,6 +338,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	const SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 
 	static const float BaseHorizontalOffset(16.0f);
+
+	if (!FApp::CanEverRender()) // DrawIcon can attempt to use the underlying texture resource even when using nullrhi
+	{
+		return;
+	}
 
 	if (bShowLock)
 	{
