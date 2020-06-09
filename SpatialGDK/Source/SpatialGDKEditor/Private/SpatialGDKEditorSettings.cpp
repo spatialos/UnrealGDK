@@ -99,14 +99,14 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
 
-		OnRuntimeVariantChangedDelegate.Broadcast();
+		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
 
 		// TODO: Change this to OnDefaultTemplateNameRequireUpdate
-		OnRuntimeVariantChangedDelegate.Broadcast();
+		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
 }
 
@@ -471,11 +471,11 @@ FString FSpatialLaunchConfigDescription::GetTemplate(bool bUseDefault) const
 #if PLATFORM_MAC
 		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
 		{
-			return SpatialConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
+			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
 		}
 		else
 		{
-			return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
 		}
 #endif
 		switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
@@ -483,20 +483,20 @@ FString FSpatialLaunchConfigDescription::GetTemplate(bool bUseDefault) const
 		case ESpatialOSRuntimeVariant::CompatibilityMode:
 			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
 			{
-				return SpatialConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
+				return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
 			}
 			else
 			{
-				return SpatialConstants::PinnedCompatibilityModeRuntimeTemplate;
+				return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
 			}
 		default:
 			if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
 			{
-				return SpatialConstants::PinnedChinaStandardRuntimeTemplate;
+				return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
 			}
 			else
 			{
-				return SpatialConstants::PinnedStandardRuntimeTemplate;
+				return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 			}
 		}
 	}

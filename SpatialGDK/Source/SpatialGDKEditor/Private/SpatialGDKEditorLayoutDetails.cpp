@@ -39,7 +39,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 	CurrentLayout = &DetailBuilder;
 	const USpatialGDKEditorSettings* GDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	GDKEditorSettings->OnRuntimeVariantChangedDelegate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
+	GDKEditorSettings->OnDefaultTemplateNameRequireUpdate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
 

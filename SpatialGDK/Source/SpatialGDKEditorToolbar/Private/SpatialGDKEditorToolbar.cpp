@@ -872,11 +872,11 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 	FString InspectorURL;
 	if (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Standard)
 	{
-		InspectorURL = SpatialConstants::InspectorURL;
+		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
 	}
 	else
 	{
-		InspectorURL = SpatialConstants::InspectorV2URL;
+		InspectorURL = SpatialGDKServicesConstants::InspectorV2URL;
 	}
 
 	FString WebError;

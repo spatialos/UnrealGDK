@@ -292,14 +292,6 @@ const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
-const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
-const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
-
-const FString PinnedStandardRuntimeTemplate               = TEXT("n1standard4_std40_action1g1");
-const FString PinnedCompatibilityModeRuntimeTemplate      = TEXT("w2_r0500_e5");
-const FString PinnedChinaStandardRuntimeTemplate          = TEXT("m5xlarge_ssd40_action1g1");
-const FString PinnedChinaCompatibilityModeRuntimeTemplate = TEXT("m5xlarge_ssd40_r0500");
-
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {

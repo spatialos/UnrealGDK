@@ -291,11 +291,11 @@ public:
 
 	/** Use TLS encryption for UnrealClient workers connection. May impact performance. Only works in non-editor builds. */
 	UPROPERTY(EditAnywhere, Config, Category = "Connection")
-	bool bUseSecureClientConnection;
+	bool bUseSecureClientConnectionInPackagedBuilds;
 
 	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. Only works in non-editor builds. */
 	UPROPERTY(EditAnywhere, Config, Category = "Connection")
-	bool bUseSecureServerConnection;
+	bool bUseSecureServerConnectionInPackagedBuilds;
 
 	/**
 	 * Enable to ensure server workers always express interest such that any server is interested in a super set of

@@ -15,7 +15,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
-DECLARE_MULTICAST_DELEGATE(FOnRuntimeVariantChanged)
+DECLARE_MULTICAST_DELEGATE(FOnDefaultTemplateNameRequireUpdate)
 
 class FSpatialRuntimeVersionCustomization;
 class UAbstractRuntimeLoadBalancingStrategy;
@@ -260,7 +260,7 @@ struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
 
 	const FString& GetPinnedVersion() const { return PinnedVersion; }
 
-protected:
+private:
 
 	/** Whether to use the GDK-associated SpatialOS runtime version for local deployments, or to use the one specified in the RuntimeVersion field. */
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version for local"))
@@ -325,7 +325,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
 	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
 
-	mutable FOnRuntimeVariantChanged OnRuntimeVariantChangedDelegate;
+	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
 
 private:
 
