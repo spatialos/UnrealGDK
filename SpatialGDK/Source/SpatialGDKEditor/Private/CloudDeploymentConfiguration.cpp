@@ -2,6 +2,7 @@
 
 #include "CloudDeploymentConfiguration.h"
 
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 
 void FCloudDeploymentConfiguration::InitFromSettings()
@@ -24,6 +25,7 @@ void FCloudDeploymentConfiguration::InitFromSettings()
 	SimulatedPlayerCluster = Settings->GetSimulatedPlayerCluster();
 	NumberOfSimulatedPlayers = Settings->GetNumberOfSimulatedPlayers();
 
+	bBuildAndUploadAssembly = Settings->ShouldBuildAndUploadAssembly();
 	bGenerateSchema = Settings->IsGenerateSchemaEnabled();
 	bGenerateSnapshot = Settings->IsGenerateSnapshotEnabled();
 	BuildConfiguration = Settings->GetAssemblyBuildConfiguration().ToString();
@@ -33,4 +35,11 @@ void FCloudDeploymentConfiguration::InitFromSettings()
 	BuildServerExtraArgs = Settings->BuildServerExtraArgs;
 	BuildClientExtraArgs = Settings->BuildClientExtraArgs;
 	BuildSimulatedPlayerExtraArgs = Settings->BuildSimulatedPlayerExtraArgs;
+
+	bUseChinaPlatform = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+	if (bUseChinaPlatform)
+	{
+		PrimaryRegionCode = TEXT("CN");
+		SimulatedPlayerRegionCode = TEXT("CN");
+	}
 }

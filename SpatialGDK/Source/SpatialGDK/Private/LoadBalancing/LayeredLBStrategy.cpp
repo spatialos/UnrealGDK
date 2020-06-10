@@ -38,7 +38,7 @@ void ULayeredLBStrategy::Init()
 
 	if (WorldSettings == nullptr)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
@@ -245,6 +245,13 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 {
 	check(IsReady());
 	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
+}
+
+UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
+{
+	// The default strategy is guaranteed to exist as long as the strategy is ready.
+	check(IsReady());
+	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const

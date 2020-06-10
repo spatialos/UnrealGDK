@@ -5,7 +5,7 @@
 #include "Containers/UnrealString.h"
 
 /**
- * This struct is used to save all the fields needed to build, upload, and launch a cloud deployment.
+ * This struct is used to save all the fields needed to build, upload, and start a cloud deployment.
  * This lets the user continue to modify the settings without affecting the deployment that is being prepared.
  */
 struct SPATIALGDKEDITOR_API FCloudDeploymentConfiguration
@@ -28,6 +28,7 @@ struct SPATIALGDKEDITOR_API FCloudDeploymentConfiguration
 	FString SimulatedPlayerCluster;
 	uint32 NumberOfSimulatedPlayers = 0;
 
+	bool bBuildAndUploadAssembly = false;
 	bool bGenerateSchema = false;
 	bool bGenerateSnapshot = false;
 	FString BuildConfiguration;
@@ -37,4 +38,6 @@ struct SPATIALGDKEDITOR_API FCloudDeploymentConfiguration
 	FString BuildServerExtraArgs;
 	FString BuildClientExtraArgs;
 	FString BuildSimulatedPlayerExtraArgs;
+
+	bool bUseChinaPlatform = false;
 };

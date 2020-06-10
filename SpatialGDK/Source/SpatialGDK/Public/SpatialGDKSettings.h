@@ -151,10 +151,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
-	/** Seconds to wait before dropping an outgoing RPC.*/
-	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Dropping Outgoing RPC"))
-	float QueuedOutgoingRPCWaitTime;
-
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
 	float PositionUpdateFrequency;
@@ -190,13 +186,6 @@ public:
 	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
-
-	/**
-	* Adds granular result types for queries.
-	* Granular here means specifically the required Unreal components for spawning other actors and all data type components.
-	*/
-	UPROPERTY(config)
-	bool bEnableResultTypes;
 
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")

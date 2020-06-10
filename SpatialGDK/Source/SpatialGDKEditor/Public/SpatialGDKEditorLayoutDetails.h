@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "IDetailCustomization.h"
 
+class IErrorReportingWidget;
+
 class FSpatialGDKEditorLayoutDetails : public IDetailCustomization
 {
 public:
@@ -16,4 +18,8 @@ private:
 
 private:
 	IDetailLayoutBuilder* CurrentLayout = nullptr;
+	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
+
+	/** Delegate to commit project name */
+	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
 };
