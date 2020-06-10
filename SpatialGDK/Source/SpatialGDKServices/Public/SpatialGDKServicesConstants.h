@@ -42,4 +42,6 @@ namespace SpatialGDKServicesConstants
 	const FString PinnedCompatibilityModeRuntimeTemplate      = TEXT("w2_r0500_e5");
 	const FString PinnedChinaStandardRuntimeTemplate          = TEXT("m5xlarge_ssd40_action1g1");
 	const FString PinnedChinaCompatibilityModeRuntimeTemplate = TEXT("m5xlarge_ssd40_r0500");
+	
+	const FString DevLoginDeploymentTag = TEXT("dev_login");
 }
