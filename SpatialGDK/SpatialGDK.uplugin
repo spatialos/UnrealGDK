@@ -72,6 +72,15 @@
       "WhitelistPlatforms": [
         "Win64"
       ]
+    },
+    {
+      "Name": "SpatialGDKFunctionalTests",
+      "Type": "Editor",
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [ 
+        "Win64",
+	"Mac"
+      ]
     }
   ],
   "Plugins": [
