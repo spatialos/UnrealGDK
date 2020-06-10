@@ -18,7 +18,8 @@ class SPATIALGDKTESTS_API UTwoByFourLBGridStrategy : public UGridBasedLBStrategy
 	GENERATED_BODY()
 
 public:
-	UTwoByFourLBGridStrategy(): Super() {
+	UTwoByFourLBGridStrategy(): Super()
+	{
 		Rows = 2;
 		Cols = 4;
 	}
