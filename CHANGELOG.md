@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`6.6.6`] - 2020-06-09
+## [`6.6.6`] - 2020-06-10
 - Removed `QueuedOutgoingRPCWaitTime`, all RPC failure cases are now correctly queued or dropped.
 
 ### New Known Issues:
