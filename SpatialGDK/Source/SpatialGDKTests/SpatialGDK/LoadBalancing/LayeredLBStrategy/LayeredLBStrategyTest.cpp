@@ -4,6 +4,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialGDKTests/SpatialGDK/LoadBalancing/GridBasedLBStrategy/TestGridBasedLBStrategy.h"
+#include "SpatialGDKSettings.h"
 #include "TestLayeredLBStrategy.h"
 
 #include "Engine/Engine.h"
@@ -25,10 +26,16 @@ struct TestData {
 	UWorld* TestWorld{ nullptr };
 	TMap<FName, AActor*> TestActors{};
 
+	TestData()
+	{
+		Cast<USpatialGDKSettings>(USpatialGDKSettings::StaticClass()->GetDefaultObject())->bEnableMultiWorker = true;
+	}
+
 	~TestData()
 	{
 		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestWorld->GetWorldSettings());
 		WorldSettings->WorkerLayers.Empty();
+		Cast<USpatialGDKSettings>(USpatialGDKSettings::StaticClass()->GetDefaultObject())->bEnableMultiWorker = false;
 	}
 };
 
