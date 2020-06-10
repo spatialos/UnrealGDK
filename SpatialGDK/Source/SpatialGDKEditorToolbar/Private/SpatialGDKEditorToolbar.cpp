@@ -793,7 +793,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
-	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSpatialOSRuntimeVersionForLocal();
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 	{
@@ -856,8 +856,19 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
+	// Get the runtime variant currently being used as this affects which Inspector to use.
+	FString InspectorURL;
+	if (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Standard)
+	{
+		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
+	}
+	else
+	{
+		InspectorURL = SpatialGDKServicesConstants::InspectorV2URL;
+	}
+
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("http://localhost:31000/inspector-v2"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));
