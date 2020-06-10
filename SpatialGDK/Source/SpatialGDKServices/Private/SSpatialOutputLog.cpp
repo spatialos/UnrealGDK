@@ -289,7 +289,7 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
 	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) loggerName=(.*\\.)?(.*)"));
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=\"(.*)\" loggerName=(.*\\.)?(.*)"));
 	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
 	if (!LogMatcher.FindNext())
@@ -305,7 +305,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
 	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
-	if (LogCategory == TEXT("WorkerLogMessageHandler"))
+	if (LogCategory == TEXT("WorkerLogMessageHandler") || LogCategory == TEXT("Runtime"))
 	{
 		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
 		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);

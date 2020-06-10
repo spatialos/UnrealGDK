@@ -10,11 +10,11 @@ void FCloudDeploymentConfiguration::InitFromSettings()
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
 	AssemblyName = Settings->GetAssemblyName();
-	RuntimeVersion = Settings->GetSpatialOSRuntimeVersionForCloud();
+	RuntimeVersion = Settings->GetSelectedRuntimeVariantVersion().GetVersionForCloud();
 	PrimaryDeploymentName = Settings->GetPrimaryDeploymentName();
 	PrimaryLaunchConfigPath = Settings->GetPrimaryLaunchConfigPath();
 	SnapshotPath = Settings->GetSnapshotPath();
-	PrimaryRegionCode = Settings->GetPrimaryRegionCode().ToString();
+	PrimaryRegionCode = Settings->GetPrimaryRegionCodeText().ToString();
 	MainDeploymentCluster = Settings->GetMainDeploymentCluster();
 	DeploymentTags = Settings->GetDeploymentTags();
 
