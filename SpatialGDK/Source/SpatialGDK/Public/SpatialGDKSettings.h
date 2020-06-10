@@ -289,12 +289,12 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
 	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
 
-	/** Use TLS encryption for UnrealClient workers connection. May impact performance. */
-	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	/** Use TLS encryption for UnrealClient workers connection. May impact performance. Only works in non-editor builds. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection", meta = (DisplayName = "Use Secure Client Connection In Packaged Builds"))
 	bool bUseSecureClientConnection;
 
-	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. */
-	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. Only works in non-editor builds. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection", meta = (DisplayName = "Use Secure Server Connection In Packaged Builds"))
 	bool bUseSecureServerConnection;
 
 	/**
