@@ -21,7 +21,8 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "SpatialGDK",
                 "Core",
                 "CoreUObject",
-                "Engine"
+                "Engine",
+                "FunctionalTesting"
             });
     }
 }
