@@ -17,9 +17,38 @@ FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 {
 }
 
-bool FLocalReceptionistProxyServerManager::KillProcessBlockingPort()
+bool FLocalReceptionistProxyServerManager::GetProcessName()
 {
-	bool bSuccess = true;
+	bool bSuccess = false;
+
+	const FString TaskListCmd = FString::Printf(TEXT("tasklist"));
+
+	//get the task list for 
+	const FString TaskListArgs = FString::Printf(TEXT(" /fi \"PID eq %s\" /nh /fo:csv"), *BlockingProcess.Pid);
+	FString TaskListResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*TaskListCmd, *TaskListArgs, &ExitCode, &TaskListResult, &StdErr);
+	if (ExitCode == ExitCodeSuccess && bSuccess)
+	{
+		FRegexPattern ProcessNamePattern(TEXT("\"(.+?)\""));
+		FRegexMatcher ProcessNameMatcher(ProcessNamePattern, TaskListResult);
+		if (ProcessNameMatcher.FindNext())
+		{
+			BlockingProcess.Name = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
+
+			return true;
+		}
+	}
+
+	UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to get the name of process that is blocking required port."));
+	
+	return false;
+}
+
+bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
+{
+	bool bSuccess = false;
 
 	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
 
@@ -37,47 +66,66 @@ bool FLocalReceptionistProxyServerManager::KillProcessBlockingPort()
 		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
 		if (PidMatcher.FindNext())
 		{
-			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
-
-			const FString TaskKillCmd = TEXT("taskkill");
-			const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
-			FString TaskKillResult;
-			bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
-			bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
-			if (!bSuccess)
+			const FString State = PidMatcher.GetCaptureGroup(2 /* Get the State of the process, which is the second group. */);
+			if (State.Contains("LISTENING"))
 			{
-				UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
+				
+				BlockingProcess.Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+				if (GetProcessName())
+				{
+					UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Process %s with PID:%s is blocking required port."), *BlockingProcess.Name, *BlockingProcess.Pid);
+				}
+				return true;
 			}
-		}
-		else
-		{
-			bSuccess = false;
-			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port."));
 		}
 	}
 	else
 	{
-		bSuccess = false;
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to check if any process is blocking required port. Error: %s"), *StdErr);
+	}
+
+	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("No Process is blocking the runtime port."));
+
+	return false;
+}
+
+
+bool FLocalReceptionistProxyServerManager::KillBlockingPortProcess()
+{
+	bool bSuccess = false;
+
+	int32 ExitCode;
+	FString StdErr;
+
+	const FString TaskKillCmd = TEXT("taskkill");
+	const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *BlockingProcess.Pid);
+	FString TaskKillResult;
+	bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+	bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
+	if (!bSuccess)
+	{
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
 	}
 
 	return bSuccess;
-
 }
 
 bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks()
 {
 	//Check if any process is blocking the 7777 port
-	//if(CheckIfPortIsBound(ReceptionistPort))
-	//{
+	if(CheckIfPortIsBound())
+	{
 		//Try killing the process that blocks the 7777 port 
-		bool bProcessKilled = KillProcessBlockingPort();
+		bool bProcessKilled = KillBlockingPortProcess();
 		if (!bProcessKilled)
 		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process :"));
+			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process %s that is blocking the port. "), *BlockingProcess.Name);
 			return false;
 		}
-	//}
+
+		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Succesfully killed %s process that was blocking 7777 port."), *BlockingProcess.Name);
+	}
+
 	return true;
 }
 

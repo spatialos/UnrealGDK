@@ -11,15 +11,26 @@ class FLocalReceptionistProxyServerManager
 public:
 	FLocalReceptionistProxyServerManager();
 
-	bool CheckIfPortIsBound(int32 Port);
-	bool KillProcessBlockingPort();
+	bool CheckIfPortIsBound();
+	bool KillBlockingPortProcess();
 	bool LocalReceptionistProxyServerPreRunChecks();
+
+	bool GetProcessName();
 
 	void SPATIALGDKSERVICES_API Init();
 	bool SPATIALGDKSERVICES_API TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName);
 	bool SPATIALGDKSERVICES_API TryStopReceptionistProxyServer();
 	
 private:
+
+	struct BlockingPortProcess
+	{
+		FString Pid = "";
+		FString Name = "";
+	};
+
+	BlockingPortProcess BlockingProcess;
+
 	FProcHandle ProxyServerProcHandle;
 	FString RunningCloudDeploymentName;
 
