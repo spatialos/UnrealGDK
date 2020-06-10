@@ -211,7 +211,6 @@ namespace ReleaseTool
                     Thread.Sleep(TimeSpan.FromMinutes(1));
                 }
 
-                mergeResult result = null;
                 while (true)
                 {
                     // Merge into release
