@@ -225,6 +225,7 @@ namespace ReleaseTool
                     {
                         Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                         Logger.Info($"{options.PullRequestUrl} is not in a mergeable state, will query mergeability again in one minute.");
+                        Thread.Sleep(TimeSpan.FromMinutes(1));
                     }
 
                     if (!mergeResult.Merged)
