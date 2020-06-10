@@ -67,8 +67,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 
-	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
-	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = true; };
+	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; };
 
 	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
@@ -82,7 +82,7 @@ private:
 	UPROPERTY()
 	USpatialConnectionManager* SpatialConnectionManager;
 
-	bool bFirstConnectionToSpatialOSAttempted = false;
+	bool bShouldConnectUsingCommandLineArgs = false;
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
@@ -101,7 +101,6 @@ private:
 
 	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
 	void TryCreateConnectionManager();
-	void TryAddLocatorCommandLineArg();
 
 	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);

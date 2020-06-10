@@ -80,6 +80,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingToSpawn(false)
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
+	, bFirstSpatialConnection(true)
 	, SessionId(0)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
@@ -241,10 +242,17 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
 
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
+	if (bFirstSpatialConnection)
 	{
-		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		// Otherwise, try using command line arguments to setup connection config.
+		bFirstSpatialConnection = false;
+		TryAddLocatorCommandLineArg();
+	}
+
+	if (!GameInstance->GetShouldConnectUsingCommandLineArgs())
+	{
+		GameInstance->DisableShouldConnectUsingCommandLineArgs();
+
+		// Try using command line arguments to setup connection config.
 		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
 			// If the command line arguments can not be used, use the input URL to setup connection config.
@@ -270,6 +278,25 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 #else
 	ConnectionManager->Connect(bConnectAsClient, 0);
 #endif
+}
+
+void USpatialNetDriver::TryAddLocatorCommandLineArg()
+{
+	// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
+	// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+
+	// Initialize a locator configuration which will parse command line arguments.
+	FLocatorConfig LocatorConfig;
+	if (LocatorConfig.TryLoadCommandLineArgs())
+	{
+		// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+		const TCHAR* CommandLineArgs = FCommandLine::Get();
+
+		FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+		NewCommandLineArgs.Append(FString(CommandLineArgs));
+
+		FCommandLine::Set(*NewCommandLineArgs);
+	}
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()

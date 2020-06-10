@@ -209,6 +209,7 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
+	bool bFirstSpatialConnection;
 
 	FString SnapshotToLoad;
 
@@ -219,6 +220,7 @@ private:
 	class USpatialGameInstance* GetGameInstance() const;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
+	void TryAddLocatorCommandLineArg();
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
