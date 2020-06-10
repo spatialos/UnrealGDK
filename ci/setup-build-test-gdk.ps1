@@ -60,7 +60,7 @@ if (Test-Path env:GDK_SETTINGS) {
 $tests = @()
 
 # TODO: UNR-3632 - Remove this when new runtime passes all network tests.
-$override_runtime_to_compatibility_mode = "-ini:SpatialGDKEditorSettings:[/Script/SpatialGDKEditor.SpatialGDKEditorSettings]:RuntimeVariant=Standard"
+$override_runtime_to_compatibility_mode = "-ini:SpatialGDKEditorSettings:[/Script/SpatialGDKEditor.SpatialGDKEditorSettings]:RuntimeVariant=CompatibilityMode"
 
 # If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
 # There are basically two situations here: either we are trying to run tests, in which case we use EngineNetTest
