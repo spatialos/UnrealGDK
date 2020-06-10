@@ -203,6 +203,7 @@ namespace ReleaseTool
 
                     if (gitHubClient.GetMergeState(gitHubRepo, pullRequestId) == GitHubClient.MergeState.ReadyToMerge)
                     {
+                        Logger.Info($"{options.PullRequestUrl} is mergeable. Attempting to merge.");
                         break;
                     }
 
@@ -210,13 +211,27 @@ namespace ReleaseTool
                     Thread.Sleep(TimeSpan.FromMinutes(1));
                 }
 
-                // Merge into release
-                var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
-
-                if (!mergeResult.Merged)
+                while (true)
                 {
-                    throw new InvalidOperationException(
-                        $"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
+                    // Merge into release
+                    var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
+
+                    if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
+                    {
+                        throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
+                    }
+
+                    if (!mergeResult.Merged)
+                    {
+                        Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
+                        Logger.Info($"{options.PullRequestUrl} is not in a mergeable state, will query mergeability again in one minute.");
+                    }
+
+                    if (!mergeResult.Merged)
+                    {
+                        break;
+                    }
+
                 }
 
                 Logger.Info($"{options.PullRequestUrl} had been merged.");
