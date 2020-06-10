@@ -978,11 +978,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	if (!NetDriver->IsServer())
 	{
 		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-		// Don't send dynamic interest for this actor if it is otherwise handled by result types.
-		if (!SpatialGDKSettings->bEnableResultTypes)
-		{
-			Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
-		}
 
 		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 		// a player index. For now we don't support split screen, so the number is always 0.
@@ -1410,18 +1405,6 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	ResolvePendingOperations(Subobject, SubobjectRef);
-
-	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
-	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-	{
-		return;
-	}
-
-	// If on a client, we need to set up the proper component interest for the new subobject.
-	if (!NetDriver->IsServer())
-	{
-		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsAuthoritativeClient());
-	}
 }
 
 struct USpatialReceiver::RepStateUpdateHelper
@@ -2203,7 +2186,20 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+
+	if (InPayload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
+	{
+		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Invalid RPC index (%d) received on %s, dropping the RPC"), InPayload.Index, *TargetObject->GetPathName());
+		return;
+	}
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
+	if (Function == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Missing function info received on %s, dropping the RPC"), *TargetObject->GetPathName());
+		return;
+	}
+
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 

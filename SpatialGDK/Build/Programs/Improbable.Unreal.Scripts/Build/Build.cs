@@ -178,31 +178,9 @@ exit /b !ERRORLEVEL!";
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
-                if (additionalUATArgs.Contains("-pak"))
-                {
-                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
-                }
-                else
-                {
-                    ForceSpatialNetworkingInConfig(windowsNoEditorPath, baseGameName);
-                }
+                ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsNoEditorPath, baseGameName);
 
-                // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
-                // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
-                var oldExe = Path.Combine(windowsNoEditorPath, $"{gameName}.exe");
-                var renamedExe = Path.Combine(windowsNoEditorPath, $"_{gameName}.exe");
-                if (File.Exists(renamedExe))
-                {
-                    File.Delete(renamedExe);
-                }
-                if (File.Exists(oldExe))
-                {
-                    File.Move(oldExe, renamedExe);
-                }
-                else
-                {
-                    Console.WriteLine("Could not find the executable to rename.");
-                }
+                RenameExeForLauncher(windowsNoEditorPath, baseGameName);
 
                 Common.RunRedirected(runUATBat, new[]
                 {
@@ -244,14 +222,7 @@ exit /b !ERRORLEVEL!";
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
 
-                if (additionalUATArgs.Contains("-pak"))
-                {
-                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
-                }
-                else
-                {
-                    ForceSpatialNetworkingInConfig(linuxSimulatedPlayerPath, baseGameName);
-                }
+                ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, linuxSimulatedPlayerPath, baseGameName);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
@@ -318,14 +289,7 @@ exit /b !ERRORLEVEL!";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
-                if (additionalUATArgs.Contains("-pak"))
-                {
-                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
-                }
-                else
-                {
-                    ForceSpatialNetworkingInConfig(serverPath, baseGameName);
-                }
+                ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, serverPath, baseGameName);
 
                 if (isLinux)
                 {
@@ -339,6 +303,51 @@ exit /b !ERRORLEVEL!";
                     "ZipUtils",
                     "-add=" + Quote(serverPath),
                     "-archive=" + Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip"))
+                });
+            }
+            else if (gameName == baseGameName + "Client")
+            {
+                Common.WriteHeading(" > Building client.");
+                Common.RunRedirected(runUATBat, new[]
+                {
+                    "BuildCookRun",
+                    noCompile ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
+                    "-project=" + Quote(projectFile),
+                    "-noP4",
+                    "-clientconfig=" + configuration,
+                    "-serverconfig=" + configuration,
+                    "-utf8output",
+                    "-cook",
+                    "-stage",
+                    "-package",
+                    "-unversioned",
+                    "-compressed",
+                    "-stagingdirectory=" + Quote(stagingDir),
+                    "-stdout",
+                    "-FORCELOGFLUSH",
+                    "-CrashForUAT",
+                    "-unattended",
+                    "-fileopenlog",
+                    "-SkipCookingEditorContent",
+                    "-client",
+                    "-noserver",
+                    "-platform=" + platform,
+                    "-targetplatform=" + platform,
+                    additionalUATArgs
+                });
+
+                var windowsClientPath = Path.Combine(stagingDir, "WindowsClient");
+
+                ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsClientPath, baseGameName);
+
+                RenameExeForLauncher(windowsClientPath, baseGameName);
+
+                Common.RunRedirected(runUATBat, new[]
+                {
+                    "ZipUtils",
+                    "-add=" + Quote(windowsClientPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
             else
@@ -358,6 +367,38 @@ exit /b !ERRORLEVEL!";
         private static string Quote(string toQuote)
         {
             return $"\"{toQuote}\"";
+        }
+
+        private static void RenameExeForLauncher(string workerPath, string gameName)
+        {
+            // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
+            // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
+            var oldExe = Path.Combine(workerPath, $"{gameName}.exe");
+            var renamedExe = Path.Combine(workerPath, $"_{gameName}.exe");
+            if (File.Exists(renamedExe))
+            {
+                File.Delete(renamedExe);
+            }
+            if (File.Exists(oldExe))
+            {
+                File.Move(oldExe, renamedExe);
+            }
+            else
+            {
+                Console.WriteLine("Could not find the executable to rename.");
+            }
+        }
+
+        private static void ForceSpatialNetworkingUnlessPakSpecified(string additionalUATArgs, string workerPath, string gameName)
+        {
+            if (additionalUATArgs.Contains("-pak"))
+            {
+                Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
+            }
+            else
+            {
+                ForceSpatialNetworkingInConfig(workerPath, gameName);
+            }
         }
 
         private static void ForceSpatialNetworkingInConfig(string workerPath, string gameName)

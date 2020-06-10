@@ -45,7 +45,7 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
-#include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Utils/LaunchConfigEditor.h"
 
@@ -77,7 +77,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -110,6 +109,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -196,13 +196,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNativeCanExecute),
 		FIsActionChecked(),
 		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNativeIsVisible));
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().StartNoAutomaticConnection,
-		FExecuteAction(),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionCanExecute),
-		FIsActionChecked(),
-		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionIsVisible));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartLocalSpatialDeployment,
@@ -321,10 +314,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 {
 	Builder.BeginSection("SpatialOS Unreal GDK", LOCTEXT("SpatialOS Unreal GDK", "SpatialOS Unreal GDK"));
 	{
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartNative);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartNoAutomaticConnection);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartLocalSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartCloudSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
@@ -332,6 +322,8 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 #if PLATFORM_WINDOWS
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenCloudDeploymentWindowAction);
 #endif
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 	}
@@ -341,18 +333,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builder)
 {
 	Builder.AddSeparator(NAME_None);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
-	Builder.AddComboButton(
-		FUIAction(),
-		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent),
-		LOCTEXT("GDKSchemaCombo_Label", "Schema Generation Options"),
-		TAttribute<FText>(),
-		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Schema"),
-		true
-	);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartNative);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartNoAutomaticConnection);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartLocalSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartCloudSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
@@ -376,6 +357,16 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 		true
 	);
 #endif
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
+	Builder.AddComboButton(
+		FUIAction(),
+		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent),
+		LOCTEXT("GDKSchemaCombo_Label", "Schema Generation Options"),
+		TAttribute<FText>(),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Schema"),
+		true
+	);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
@@ -878,7 +869,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("http://localhost:31000/inspector"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(TEXT("http://localhost:31000/inspector-v2"), TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));
@@ -896,16 +887,6 @@ bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNativeCanExecute() const
-{
-	return false;
-}
-
-bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionIsVisible() const
-{
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
-}
-
-bool FSpatialGDKEditorToolbarModule::StartNoAutomaticConnectionCanExecute() const
 {
 	return false;
 }
@@ -987,12 +968,6 @@ void FSpatialGDKEditorToolbarModule::GDKEditorSettingsClicked() const
 void FSpatialGDKEditorToolbarModule::GDKRuntimeSettingsClicked() const
 {
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-}
-
-bool FSpatialGDKEditorToolbarModule::IsNoAutomaticConnectionSelected() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::NoAutomaticConnection;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentSelected() const
@@ -1082,7 +1057,7 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 	else
 	{
 		CloudDeploymentSettingsWindowPtr = SNew(SWindow)
-			.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
+			.Title(LOCTEXT("CloudDeploymentConfigurationTitle", "Cloud Deployment Configuration"))
 			.HasCloseButton(true)
 			.SupportsMaximize(false)
 			.SupportsMinimize(false)
@@ -1092,7 +1067,7 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 			SNew(SBox)
 			.WidthOverride(700.0f)
 			[
-				SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+				SAssignNew(CloudDeploymentConfigPtr, SSpatialGDKCloudDeploymentConfiguration)
 				.SpatialGDKEditor(SpatialGDKEditorInstance)
 				.ParentWindow(CloudDeploymentSettingsWindowPtr)
 			]
@@ -1112,9 +1087,9 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 
 void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()
 {
-	if (CanLaunchCloudDeployment())
+	if (CanStartCloudDeployment())
 	{
-		OnLaunchCloudDeployment();
+		OnStartCloudDeployment();
 	}
 	else
 	{
@@ -1229,7 +1204,7 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
-FReply FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment()
+FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -1244,59 +1219,67 @@ FReply FSpatialGDKEditorToolbarModule::OnLaunchCloudDeployment()
 
 	CloudDeploymentConfiguration.InitFromSettings();
 
-	if (CloudDeploymentConfiguration.bGenerateSchema)
-	{
-		if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
-		{
-			OnShowSingleFailureNotification(TEXT("Generate schema failed."));
-			return FReply::Unhandled();
-		}
-	}
+	const FString& DeploymentName = CloudDeploymentConfiguration.PrimaryDeploymentName;
+	GetMutableDefault<USpatialGDKEditorSettings>()->SetDevelopmentDeploymentToConnect(DeploymentName);
+	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName);
 
-	if (CloudDeploymentConfiguration.bGenerateSnapshot)
+	if (CloudDeploymentConfiguration.bBuildAndUploadAssembly)
 	{
-		if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath))
+		if (CloudDeploymentConfiguration.bGenerateSchema)
 		{
-			OnShowSingleFailureNotification(TEXT("Generate snapshot failed."));
-			return FReply::Unhandled();
+			if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+			{
+				OnShowSingleFailureNotification(TEXT("Generate schema failed."));
+				return FReply::Unhandled();
+			}
 		}
-	}
 
-	TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
-	PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
-	PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
+		if (CloudDeploymentConfiguration.bGenerateSnapshot)
+		{
+			if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), CloudDeploymentConfiguration.SnapshotPath))
+			{
+				OnShowSingleFailureNotification(TEXT("Generate snapshot failed."));
+				return FReply::Unhandled();
+			}
+		}
+
+		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
+		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
+		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Skipping building and uploading assembly."));
+		OnBuildSuccess();
+	}
 
 	return FReply::Handled();
 }
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
-	auto LaunchCloudDeployment = [this]()
+	auto StartCloudDeployment = [this]()
 	{
-		OnShowTaskStartNotification(FString::Printf(TEXT("Launching cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
-		SpatialGDKEditorInstance->LaunchCloudDeployment(
+		OnShowTaskStartNotification(FString::Printf(TEXT("Starting cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
+		SpatialGDKEditorInstance->StartCloudDeployment(
 			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				OnShowSuccessNotification("Successfully launched cloud deployment.");
-				USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-				const FString& DeploymentName = SpatialGDKEditorSettings->GetPrimaryDeploymentName();
-				SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(DeploymentName);
-				UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName)
+				OnShowSuccessNotification("Successfully started cloud deployment.");
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
-				OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+				OnShowFailedNotification("Failed to start cloud deployment. See output logs for details.");
 			})
 		);
 	};
 
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-		[this, LaunchCloudDeployment]()
+		[this, StartCloudDeployment]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
-			LaunchCloudDeployment();
+			StartCloudDeployment();
 		}
 		else
 		{
@@ -1308,7 +1291,11 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty() || SpatialGDKSettings->GetAssemblyName().IsEmpty() ? false : true;
+	return !FSpatialGDKServicesModule::GetProjectName().IsEmpty()
+		&& !SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty()
+		&& !SpatialGDKSettings->GetAssemblyName().IsEmpty()
+		&& !SpatialGDKSettings->GetSnapshotPath().IsEmpty()
+		&& !SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
@@ -1316,7 +1303,7 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
 }
 
-bool FSpatialGDKEditorToolbarModule::CanLaunchCloudDeployment() const
+bool FSpatialGDKEditorToolbarModule::CanStartCloudDeployment() const
 {
 	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
 }

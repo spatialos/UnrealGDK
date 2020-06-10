@@ -13,17 +13,17 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SCompoundWidget.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKCloudDeploymentConfiguration, Log, All);
 
 class SWindow;
 
 enum class ECheckBoxState : uint8;
 
-class SSpatialGDKSimulatedPlayerDeployment : public SCompoundWidget
+class SSpatialGDKCloudDeploymentConfiguration : public SCompoundWidget
 {
 public:
 
-	SLATE_BEGIN_ARGS(SSpatialGDKSimulatedPlayerDeployment) {}
+	SLATE_BEGIN_ARGS(SSpatialGDKCloudDeploymentConfiguration) {}
 
 	/** A reference to the parent window */
 	SLATE_ARGUMENT(TSharedPtr<SWindow>, ParentWindow)
@@ -81,6 +81,15 @@ private:
 	/** Delegate called when the user selects a region code from the dropdown for the primary deployment */
 	void OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);
 
+	/** Delegate to determine whether the region picker is visible. */
+	EVisibility GetRegionPickerVisibility() const;
+
+	/** Delegate to determine whether the primary region picker is enabled. */
+	bool IsPrimaryRegionPickerEnabled() const;
+
+	/** Delegate to determine whether the simulated player region picker is enabled. */
+	bool IsSimulatedPlayerRegionPickerEnabled() const;
+
 	/** Delegate to commit main deployment cluster */
 	void OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType);
 
@@ -107,6 +116,9 @@ private:
 
 	/** Delegate called when the user either clicks the simulated players checkbox */
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
+
+	ECheckBoxState IsBuildAndUploadAssemblyEnabled() const;
+	void OnCheckedBuildAndUploadAssembly(ECheckBoxState NewCheckedState);
 
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);

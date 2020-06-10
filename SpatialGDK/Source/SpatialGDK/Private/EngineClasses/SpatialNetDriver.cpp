@@ -430,7 +430,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableMultiWorker is set, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
@@ -598,10 +598,17 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		(IsReady() && USpatialStatics::IsActorGroupOwnerForActor(Actor)))
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over,
 		// when they should be in a different Layer.
+		return;
+	}
+
+	if (!IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Spawned replicated actor %s (owner: %s) before the NetDriver was ready. This is not supported. Actors should only be spawned after BeginPlay is called."),
+			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
 		return;
 	}
 
@@ -1738,7 +1745,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	PollPendingLoads();
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -2488,17 +2495,23 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	SelectiveProcessOps(FoundOps);
 
-	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReady() &&
-		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
+	if (!PackageMap->IsEntityPoolReady())
 	{
-		// Return whether or not we are ready to start
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
-		return true;
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
+		return false;
 	}
-
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Not yet ready to begin processing, still processing startup ops."));
-	return false;
+	else if (!GlobalStateManager->IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
+		return false;
+	}
+	else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+		return false;
+	}
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
+	return true;
 }
 
 bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
@@ -2555,6 +2568,11 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 	TombstonedEntities.Add(EntityId);
 }
 #endif
+
+bool USpatialNetDriver::IsReady() const
+{
+	return bIsReadyToStart;
+}
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)

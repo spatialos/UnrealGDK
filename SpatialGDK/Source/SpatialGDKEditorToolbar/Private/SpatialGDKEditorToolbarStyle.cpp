@@ -67,12 +67,6 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.StartNative.Small",
 		new IMAGE_BRUSH(TEXT("None@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.StartNoAutomaticConnection",
-		new IMAGE_BRUSH(TEXT("None"), Icon40x40));
-
-	Style->Set("SpatialGDKEditorToolbar.StartNoAutomaticConnection.Small",
-		new IMAGE_BRUSH(TEXT("None@0.5x"), Icon20x20));
-
 	Style->Set("SpatialGDKEditorToolbar.StartLocalSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("StartLocal"), Icon40x40));
 
