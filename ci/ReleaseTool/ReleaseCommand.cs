@@ -228,7 +228,7 @@ namespace ReleaseTool
                         Thread.Sleep(TimeSpan.FromMinutes(1));
                     }
 
-                    if (!mergeResult.Merged)
+                    if (mergeResult.Merged)
                     {
                         break;
                     }
