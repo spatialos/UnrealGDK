@@ -2,11 +2,10 @@
 
 #include "SpatialGDKEditorCloudLauncher.h"
 
-#include "Interfaces/IPluginManager.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
 
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKServicesModule.h"
 #include "CloudDeploymentConfiguration.h"
+#include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCloudLauncher);
 
@@ -43,6 +42,11 @@ bool SpatialGDKCloudLaunch(const FCloudDeploymentConfiguration& Configuration)
 		);
 	}
 
+	if (Configuration.bUseChinaPlatform)
+	{
+		LauncherCreateArguments += TEXT(" --china");
+	}
+
 	int32 OutCode = 0;
 	FString OutString;
 	FString OutErr;
@@ -66,20 +70,13 @@ bool SpatialGDKCloudStop()
 	UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Function not available"));
 	return false;
 
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
 	// TODO: UNR-2435 - Add a Stop Deployment button and fix the code below:
 	// get and provide deployment-id to stop the deployment as one of the LauncherStopArguments
-	const FString LauncherStopArguments = FString::Printf(
-		TEXT("stop %s"),
-		*SpatialGDKSettings->GetPrimaryRegionCodeText().ToString()
-		);
-
 	int32 OutCode = 0;
 	FString OutString;
 	FString OutErr;
 
-	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherStopArguments, &OutCode, &OutString, &OutErr);
+	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, TEXT("stop"), &OutCode, &OutString, &OutErr);
 	if (OutCode != 0)
 	{
 		UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Cloud Launch failed with code %d: %s"), OutCode, *OutString);

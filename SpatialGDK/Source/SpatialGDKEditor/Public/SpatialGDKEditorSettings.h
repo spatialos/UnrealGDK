@@ -197,8 +197,7 @@ namespace ERegionCode
 	{
 		US = 1,
 		EU,
-		AP,
-		CN
+		AP
 	};
 }
 

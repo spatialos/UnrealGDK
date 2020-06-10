@@ -478,7 +478,7 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 #endif
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 		{
 			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
 		}
@@ -487,7 +487,7 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
 		}
 	default:
-		if (GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode() == ERegionCode::CN)
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 		{
 			return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
 		}
