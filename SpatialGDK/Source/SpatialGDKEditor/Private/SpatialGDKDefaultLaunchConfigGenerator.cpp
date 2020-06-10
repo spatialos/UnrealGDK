@@ -98,21 +98,22 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
-
 	if (WorldSettings == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing SpatialWorldSettings on map %s"), *World.GetMapName());
 		return 1;
 	}
 
-	if (WorldSettings->IsMultiWorkerEnabled() == false)
+	const FSpatialMultiWorkerSettings MultiWorkerSettings = WorldSettings->MultiWorkerSettings;
+
+	if (MultiWorkerSettings.bEnableMultiWorker == false)
 	{
 		return 1;
 	}
 
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
 	uint32 NumWorkers = 0;
-	if (WorldSettings->DefaultLayerLoadBalanceStrategy == nullptr)
+	if (MultiWorkerSettings.DefaultLayerLoadBalanceStrategy == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
 		return 1;
@@ -121,9 +122,9 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 	{
 		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = nullptr;
 		FIntPoint Dimension;
-		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->DefaultLayerLoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
+		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(MultiWorkerSettings.DefaultLayerLoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
 		{
-			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the default SpatialOS Load balancing strategy from %s"), *WorldSettings->DefaultLayerLoadBalanceStrategy->GetName());
+			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the default SpatialOS Load balancing strategy from %s"), *MultiWorkerSettings.DefaultLayerLoadBalanceStrategy->GetName());
 			NumWorkers += 1;
 		}
 		else
@@ -132,7 +133,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		}
 	}
 
-	for (const auto& Layer : WorldSettings->WorkerLayers)
+	for (const auto& Layer : MultiWorkerSettings.WorkerLayers)
 	{
 		const FName& LayerKey = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
@@ -161,14 +162,20 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstractRuntimeLoadBalancingStrategy*& OutStrategy, FIntPoint& OutWorldDimension)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
-
-	if (WorldSettings == nullptr || !WorldSettings->IsMultiWorkerEnabled())
+	if (WorldSettings == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No SpatialWorldSettings on map %s"), *World.GetMapName());
 		return false;
 	}
 
-	if (WorldSettings->DefaultLayerLoadBalanceStrategy == nullptr)
+	const FSpatialMultiWorkerSettings MultiWorkerSettings = WorldSettings->MultiWorkerSettings;
+	if (!MultiWorkerSettings.bEnableMultiWorker)
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("Trying to get load balancing strategy when multi-worker is disabled. Map: %s"), *World.GetMapName());
+		return false;
+	}
+
+	if (MultiWorkerSettings.DefaultLayerLoadBalanceStrategy == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
 		return false;
@@ -176,9 +183,9 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
 
-	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->DefaultLayerLoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutStrategy, OutWorldDimension))
+	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(MultiWorkerSettings.DefaultLayerLoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutStrategy, OutWorldDimension))
 	{
-		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy from %s"), *WorldSettings->DefaultLayerLoadBalanceStrategy->GetName());
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy from %s"), *MultiWorkerSettings.DefaultLayerLoadBalanceStrategy->GetName());
 		return false;
 	}
 

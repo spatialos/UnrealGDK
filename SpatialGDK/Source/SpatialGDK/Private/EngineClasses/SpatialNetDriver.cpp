@@ -424,7 +424,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
+	// Check for CLI overriden multiworker settings
+
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+	const FSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings != nullptr ? &WorldSettings->MultiWorkerSettings : nullptr;
+
 	if (IsServer())
 	{
 		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
@@ -443,14 +447,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
-		else if (WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		else if (MultiWorkerSettings->DefaultLayerLockingPolicy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->DefaultLayerLockingPolicy);
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, MultiWorkerSettings->DefaultLayerLockingPolicy);
 		}
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 	}
