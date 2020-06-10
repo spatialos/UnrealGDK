@@ -51,15 +51,12 @@ private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
 
-	// Build the checkout radius constraints for client workers
-	FrequencyConstraints CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
-	
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
-	ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	ResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	ResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	ResultType CreateServerAuthInterestResultType();
+	SchemaResultType CreateClientNonAuthInterestResultType();
+	SchemaResultType CreateClientAuthInterestResultType();
+	SchemaResultType CreateServerNonAuthInterestResultType();
+	SchemaResultType CreateServerAuthInterestResultType();
 
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
@@ -92,9 +89,6 @@ private:
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
-	// If the result types flag is flipped, set the specified result type.
-	void SetResultType(Query& OutQuery, const ResultType& InResultType) const;
-
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 
@@ -103,10 +97,10 @@ private:
 	FrequencyConstraints ClientCheckoutRadiusConstraint;
 
 	// Cache the result types of queries.
-	ResultType ClientNonAuthInterestResultType;
-	ResultType ClientAuthInterestResultType;
-	ResultType ServerNonAuthInterestResultType;
-	ResultType ServerAuthInterestResultType;
+	SchemaResultType ClientNonAuthInterestResultType;
+	SchemaResultType ClientAuthInterestResultType;
+	SchemaResultType ServerNonAuthInterestResultType;
+	SchemaResultType ServerAuthInterestResultType;
 };
 
 } // namespace SpatialGDK

@@ -76,7 +76,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
 			// Start spatial service in the current project if spatial networking is enabled
-			
+
 			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 			{
 				TryStartSpatialService(RuntimeIPToExpose);
@@ -175,7 +175,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	TSharedRef<FInternetAddr> BroadcastAddr = SocketSubsystem->CreateInternetAddr();
 	BroadcastAddr->SetBroadcastAddress();
 	BroadcastAddr->SetPort(Port);
-	
+
 	// Now the listen address.
 	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
 	ListenAddr->SetPort(Port);
@@ -188,7 +188,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 		ListenSocket->SetReuseAddr();
 		ListenSocket->SetNonBlocking();
 		ListenSocket->SetRecvErr();
-	
+
 		// Bind to our listen port.
 		if (ListenSocket->Bind(*ListenAddr))
 		{
@@ -419,11 +419,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
 
 
-#if ENGINE_MINOR_VERSION <= 22
-	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
-#else
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
-#endif
 		[this, LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack]()
 	{
 		bool bSuccess = AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true;
@@ -433,7 +429,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to authenticate against SpatialOS while attempting to start a local deployment."));
 		}
 		bStartingDeployment = false;
 
@@ -718,7 +714,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
+				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to start deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 
 			ExposedRuntimeIP = TEXT("");
 			bSpatialServiceInProjectDirectory = false;

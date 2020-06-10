@@ -7,7 +7,8 @@ param(
     [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
     [string] $additional_gdk_options = "",
-    [bool]   $run_with_spatial = $False
+    [bool]   $run_with_spatial = $False,
+    [string] $additional_cmd_line_args = ""
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
@@ -19,9 +20,34 @@ function Force-ResolvePath {
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
 }
 
+function Parse-UnrealOptions {
+    param (
+        [string] $raw_options,
+        [string] $category
+    )
+    $options_arr = $raw_options.Split(";", [System.StringSplitOptions]::RemoveEmptyEntries)
+    $options_arr = $options_arr | ForEach-Object { "${category}:$_" }
+    $options_result = $options_arr -Join ","
+    return $options_result
+}
+
+. "$PSScriptRoot\common.ps1"
+
 if ($run_with_spatial) {
     # Generate schema and snapshots
     Write-Output "Generating snapshot and schema for testing project"
+    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+        "$uproject_path", `
+        "-SkipShaderCompile", # Skip shader compilation
+        "-nopause", # Close the unreal log window automatically on exit
+        "-nosplash", # No splash screen
+        "-unattended", # Disable anything requiring user feedback
+        "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+        "-run=CookAndGenerateSchema", # Run the commandlet
+        "-cookall", # Make sure it runs for all maps (and other things)
+        "-targetplatform=LinuxServer"
+    )
+    
     Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-NoShaderCompile", # Prevent shader compilation
@@ -29,7 +55,7 @@ if ($run_with_spatial) {
         "-nosplash", # No splash screen
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-        "-run=GenerateSchemaAndSnapshots", # Run the commandlet
+        "-run=GenerateSnapshot", # Run the commandlet
         "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
 
@@ -49,14 +75,7 @@ $ue_path_absolute = Force-ResolvePath $unreal_editor_path
 $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 
-$additional_gdk_options_arr = $additional_gdk_options.Split(";")
-$additional_gdk_options = ""
-Foreach ($additional_gdk_option in $additional_gdk_options_arr) {
-    if ($additional_gdk_options -ne "") {
-        $additional_gdk_options += ","
-    }
-    $additional_gdk_options += "[/Script/SpatialGDK.SpatialGDKSettings]:$additional_gdk_option"
-}
+$additional_gdk_options = Parse-UnrealOptions "$additional_gdk_options" "[/Script/SpatialGDK.SpatialGDKSettings]"
 
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", # We need some project to run tests in, but for unit tests the exact project shouldn't matter
@@ -74,6 +93,10 @@ $cmd_args_list = @( `
     "-OverrideSpatialNetworking=$run_with_spatial" # A parameter to switch beetween different networking implementations
 )
 
+if($additional_cmd_line_args -ne "") {
+    $cmd_args_list += "$additional_cmd_line_args" # Any additional command line arguments the user wants to pass in
+}
+
 Write-Output "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
@@ -81,9 +104,13 @@ try {
     # Give the Unreal Editor 30 minutes to run the tests, otherwise kill it
     # This is so we can get some logs out of it, before we are cancelled by buildkite
     Wait-Process -Timeout 1800 -InputObject $run_tests_proc
+    # If the Editor crashes, these processes can stay lingering and prevent the job from ever timing out
+    Stop-Runtime
 }
 catch {
     Stop-Process -Force -InputObject $run_tests_proc # kill the dangling process
     buildkite-agent artifact upload "$log_file_path" # If the tests timed out, upload the log and throw an error
+    # Looks like BuildKite doesn't like this failure and a dangling runtime will prevent the job from ever timing out
+    Stop-Runtime
     throw $_
 }

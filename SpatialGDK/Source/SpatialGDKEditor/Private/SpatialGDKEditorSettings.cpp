@@ -2,32 +2,22 @@
 
 #include "SpatialGDKEditorSettings.h"
 
+#include "Interfaces/ITargetPlatformManagerModule.h"
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
+
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
-
-void FSpatialLaunchConfigDescription::SetLevelEditorPlaySettingsWorkerTypes()
-{
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-
-	PlayInSettings->WorkerTypesToLaunch.Empty(ServerWorkers.Num());
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : ServerWorkers)
-	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
-	}
-}
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -35,14 +25,18 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bUseGDKPinnedRuntimeVersion(true)
-	, bExposeRuntimeIP(false)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
+	, CookAndGeneratePlatform("")
+	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
-	, bUseDevelopmentAuthenticationFlow(false)
+	, bBuildAndUploadAssembly(true)
+	, AssemblyBuildConfiguration(TEXT("Development"))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
+	, bStartPIEClientsWithLocalLaunchOnDevice(false)
+	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
@@ -82,22 +76,6 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
-	{
-		SetRuntimeWorkerTypes();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
-	{
-		SetRuntimeUseDevelopmentAuthenticationFlow();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentAuthenticationToken))
-	{
-		SetRuntimeDevelopmentAuthenticationToken();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentDeploymentToConnect))
-	{
-		SetRuntimeDevelopmentDeploymentToConnect();
-	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -109,50 +87,7 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 
-	SetRuntimeWorkerTypes();
-	SetRuntimeUseDevelopmentAuthenticationFlow();
-	SetRuntimeDevelopmentAuthenticationToken();
-	SetRuntimeDevelopmentDeploymentToConnect();
-}
-
-void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
-{
-	TSet<FName> WorkerTypes;
-	
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
-	{
-		if (WorkerLaunch.WorkerTypeName != NAME_None)
-		{
-			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
-		}
-	}
-
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	if (RuntimeSettings != nullptr)
-	{
-		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
-		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
-		RuntimeSettings->PostEditChange();
-		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
-	}
-}
-
-void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->bUseDevelopmentAuthenticationFlow = bUseDevelopmentAuthenticationFlow;
-}
-
-void USpatialGDKEditorSettings::SetRuntimeDevelopmentAuthenticationToken()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->DevelopmentAuthenticationToken = DevelopmentAuthenticationToken;
-}
-
-void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
-{
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
+	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
 }
 
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
@@ -221,16 +156,72 @@ void USpatialGDKEditorSettings::SetSnapshotPath(const FString& Path)
 void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type RegionCode)
 {
 	PrimaryDeploymentRegionCode = RegionCode;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetMainDeploymentCluster(const FString& NewCluster)
+{
+	MainDeploymentCluster = NewCluster;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetDeploymentTags(const FString& Tags)
+{
+	DeploymentTags = Tags;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
+{
+	AssemblyBuildConfiguration = Configuration;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewCluster)
+{
+	SimulatedPlayerCluster = NewCluster;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetBuildAndUploadAssembly(bool bBuildAndUpload)
+{
+	bBuildAndUploadAssembly = bBuildAndUpload;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetForceAssemblyOverwrite(bool bForce)
+{
+	bForceAssemblyOverwrite = bForce;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
+{
+	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
+{
+	bGenerateSchema = bGenerate;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetGenerateSnapshot(bool bGenerate)
+{
+	bGenerateSnapshot = bGenerate;
 	SaveConfig();
 }
 
@@ -326,14 +317,19 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
 	bool bValid = true;
+	if (!IsProjectNameValid(FSpatialGDKServicesModule::GetProjectName()))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint);
+		bValid = false;
+	}
 	if (!IsAssemblyNameValid(AssemblyName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::AssemblyPattern);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint);
 		bValid = false;
 	}
 	if (!IsDeploymentNameValid(PrimaryDeploymentName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
 		bValid = false;
 	}
 	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
@@ -356,7 +352,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	{
 		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
 			bValid = false;
 		}
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
@@ -388,4 +384,39 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	}
 
 	return bValid;
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString& Token)
+{
+	DevelopmentAuthenticationToken = Token;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+{
+	DevelopmentDeploymentToConnect = Deployment;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
+{
+	ExposedRuntimeIP = RuntimeIP;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType)
+{
+	SpatialOSNetFlowType = NetFlowType;
+	SaveConfig();
+}
+
+FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() const
+{
+	if (!CookAndGeneratePlatform.IsEmpty())
+	{
+		return CookAndGeneratePlatform;
+	}
+
+	// Return current Editor's Build variant as default.
+	return FPlatformProcess::GetBinariesSubdirectory();
 }

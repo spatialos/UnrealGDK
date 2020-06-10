@@ -7,6 +7,7 @@
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 #include "CoreMinimal.h"
 
@@ -74,13 +75,15 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
-			LaunchConfigDescription.SetLevelEditorPlaySettingsWorkerTypes();
+			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
+			FWorkerTypeLaunchSection Conf;
+
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
 			{
 				return;
 			}
+			SetLevelEditorPlaySettingsWorkerType(Conf);
 
 			if (LocalDeploymentManager->IsLocalDeploymentRunning())
 			{
