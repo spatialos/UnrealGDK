@@ -155,7 +155,7 @@ bool FCheckStratIsReady::Update()
 {
 	const UAbstractLBStrategy* Strat = TestData->Strat;
 	Test->TestEqual(
-		FString::Printf(TEXT("Strategy for minimum required workers. Actual: %d, Expected: %d"), Strat->IsReady(), Expected),
+		FString::Printf(TEXT("Strategy is ready. Actual: %d, Expected: %d"), Strat->IsReady(), Expected),
 		Strat->IsReady(), Expected);
 	return true;
 }
