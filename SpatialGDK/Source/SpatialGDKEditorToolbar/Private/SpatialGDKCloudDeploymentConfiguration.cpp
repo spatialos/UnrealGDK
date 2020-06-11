@@ -1013,15 +1013,10 @@ FReply SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap()
 
 FReply SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor()
 {
-	ULaunchConfigurationEditor* Editor = ULaunchConfigurationEditor::OpenModalWindow(ParentWindowPtr.Pin());
-	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
-	{
-		if (TSharedPtr<SWidget> This = WeakThis.Pin())
-		{
-			static_cast<SSpatialGDKCloudDeploymentConfiguration*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
-		}
-	}
-	);
+	ULaunchConfigurationEditor::OpenModalWindow(ParentWindowPtr.Pin(), [](const FString& FilePath) {
+		USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		SpatialGDKSettings->SetPrimaryLaunchConfigPath(FilePath);
+	});
 
 	return FReply::Handled();
 }

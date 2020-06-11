@@ -49,7 +49,7 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 	{
 		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
 		{
-			OnConfigurationSaved.ExecuteIfBound(this, Filenames[0]);
+			OnConfigurationSaved.ExecuteIfBound(Filenames[0]);
 		}
 	}
 }
@@ -84,7 +84,7 @@ namespace
 	}
 }
 
-ULaunchConfigurationEditor* ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWindow)
+void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWindow, OnLaunchConfigurationSaved InSaved)
 {
 	ULaunchConfigurationEditor* ObjectInstance = NewObject<ULaunchConfigurationEditor>(GetTransientPackage(), ULaunchConfigurationEditor::StaticClass());
 	ObjectInstance->AddToRoot();
@@ -168,6 +168,10 @@ ULaunchConfigurationEditor* ULaunchConfigurationEditor::OpenModalWindow(TSharedP
 		IMainFrameModule& MainFrame = FModuleManager::GetModuleChecked<IMainFrameModule>("MainFrame");
 		InParentWindow = MainFrame.GetParentWindow();
 	}
+	if (InSaved != nullptr)
+	{
+		ObjectInstance->OnConfigurationSaved.BindLambda(InSaved);
+	}
 
 	if (InParentWindow.IsValid())
 	{
@@ -177,5 +181,4 @@ ULaunchConfigurationEditor* ULaunchConfigurationEditor::OpenModalWindow(TSharedP
 	{
 		FSlateApplication::Get().AddModalWindow(NewSlateWindow, nullptr);
 	}
-	return ObjectInstance;
 }

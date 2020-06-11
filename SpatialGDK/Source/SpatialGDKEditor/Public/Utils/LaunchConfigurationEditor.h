@@ -9,7 +9,7 @@
 
 class ULaunchConfigurationEditor;
 
-DECLARE_DELEGATE_TwoParams(FOnSpatialOSLaunchConfigurationSaved, ULaunchConfigurationEditor*, const FString&)
+DECLARE_DELEGATE_OneParam(FOnSpatialOSLaunchConfigurationSaved, const FString&)
 
 UCLASS(Transient, CollapseCategories)
 class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UObject
@@ -21,7 +21,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Launch Configuration")
 	FSpatialLaunchConfigDescription LaunchConfiguration;
 
-	static ULaunchConfigurationEditor* OpenModalWindow(TSharedPtr<SWindow> InParentWindow);
+	typedef void(*OnLaunchConfigurationSaved)(const FString&);
+
+	static void OpenModalWindow(TSharedPtr<SWindow> InParentWindow, OnLaunchConfigurationSaved InSaved = nullptr);
 protected:
 	void PostInitProperties() override;
 
