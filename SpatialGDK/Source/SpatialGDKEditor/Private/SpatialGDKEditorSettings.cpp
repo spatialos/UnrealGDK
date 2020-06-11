@@ -65,10 +65,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-#if PLATFORM_MAC
-	return CompatibilityModeRuntimeVersion;
-#endif
-
 	switch (Variant)
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
@@ -478,11 +474,7 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-#if PLATFORM_MAC
-	switch (ESpatialOSRuntimeVariant::CompatibilityMode)
-#else
 	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-#endif
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
 		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
