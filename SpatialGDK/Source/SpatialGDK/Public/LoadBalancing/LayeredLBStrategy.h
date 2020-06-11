@@ -47,7 +47,6 @@ class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 
 public:
 	ULayeredLBStrategy();
-	~ULayeredLBStrategy();
 
 	/* UAbstractLBStrategy Interface */
 	virtual void Init() override;
@@ -84,6 +83,7 @@ private:
 
 	TMap<VirtualWorkerId, FName> VirtualWorkerIdToLayerName;
 
+	UPROPERTY()
 	TMap<FName, UAbstractLBStrategy* > LayerNameToLBStrategy;
 
 	// Returns the name of the first Layer that contains this, or a parent of this class,
