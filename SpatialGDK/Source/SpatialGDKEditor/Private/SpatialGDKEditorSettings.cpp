@@ -146,6 +146,13 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
 {
+	// Selecting CN region code in the Cloud Deployment Configuration window has been deprecated.
+	// It will now be automatically determined based on the services region.
+	if (RegionCode == ERegionCode::CN)
+	{
+		return false;
+	}
+
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 	return pEnum != nullptr && pEnum->IsValidEnumValue(RegionCode);
