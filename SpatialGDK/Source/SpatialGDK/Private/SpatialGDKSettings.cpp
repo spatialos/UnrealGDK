@@ -58,7 +58,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bEnableMultiWorker(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -78,6 +77,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
+	, bOverrideLoadBalancing(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -88,9 +88,8 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableMultiWorker);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableMultiWorker);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancing"), TEXT("Load balancing"), bOverrideLoadBalancing);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
@@ -132,11 +131,6 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 
 	const FName Name = InProperty->GetFName();
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUseRPCRingBuffers))
-	{
-		return !bEnableMultiWorker;
-	}
-
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
 	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, RPCRingBufferSizeMap)
 	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxRPCRingBufferSize))
@@ -163,7 +157,7 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
-	return bUseRPCRingBuffers || bEnableMultiWorker;
+	return bUseRPCRingBuffers;
 }
 
 float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const

@@ -382,10 +382,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (SpatialSettings->bEnableMultiWorker)
-	{
-		CreateAndInitializeLoadBalancingClasses();
-	}
+	CreateAndInitializeLoadBalancingClasses();
 
 	if (SpatialSettings->UseRPCRingBuffer())
 	{
@@ -433,9 +430,13 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableMultiWorker is set, there must be a Locking Policy set. Using default policy."));
+			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
+		}
+		else if (WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
@@ -701,16 +702,9 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
-	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
-	{
-		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
-		return;
-	}
-
-	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
+	if (!LoadBalanceStrategy->IsReady())
 	{
 		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial.
 		return;
@@ -722,7 +716,7 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		// otherwise, load balancing is enabled, so check the lb strategy.
 		if (Actor->GetIsReplicated())
 		{
-			const bool bRoleAuthoritative = !bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+			const bool bRoleAuthoritative = LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 			Actor->Role = bRoleAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 			Actor->RemoteRole = bRoleAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 		}
@@ -2345,11 +2339,8 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 			// Process levels which were loaded before the connection to Spatial was ready.
 			GetGameInstance()->CleanupCachedLevelsAfterConnection();
 
-			if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
-			{
-				// We know at this point that we have all the information to set the worker's interest query.
-				Sender->UpdateServerWorkerEntityInterestAndPosition();
-			}
+			// We know at this point that we have all the information to set the worker's interest query.
+			Sender->UpdateServerWorkerEntityInterestAndPosition();
 
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.
