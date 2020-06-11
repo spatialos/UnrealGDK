@@ -81,6 +81,15 @@ private:
 	/** Delegate called when the user selects a region code from the dropdown for the primary deployment */
 	void OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);
 
+	/** Delegate to determine whether the region picker is visible. */
+	EVisibility GetRegionPickerVisibility() const;
+
+	/** Delegate to determine whether the primary region picker is enabled. */
+	bool IsPrimaryRegionPickerEnabled() const;
+
+	/** Delegate to determine whether the simulated player region picker is enabled. */
+	bool IsSimulatedPlayerRegionPickerEnabled() const;
+
 	/** Delegate to commit main deployment cluster */
 	void OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType);
 
