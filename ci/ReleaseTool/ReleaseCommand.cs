@@ -220,7 +220,7 @@ namespace ReleaseTool
                 while (true)
                 {
                     // Merge into release
-                    mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
+                    mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge);
                     if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
                     {
                         throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");

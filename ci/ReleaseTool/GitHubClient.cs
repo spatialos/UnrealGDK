@@ -116,11 +116,11 @@ namespace ReleaseTool
             }
         }
 
-        public PullRequestMerge MergePullRequest(Repository repository, int pullRequestId)
+        public PullRequestMerge MergePullRequest(Repository repository, int pullRequestId, PullRequestMergeMethod mergeMethod)
         {
             var mergePullRequest = new MergePullRequest
             {
-                MergeMethod = PullRequestMergeMethod.Squash
+                MergeMethod = mergeMethod
             };
 
             var mergePullRequestTask = octoClient.PullRequest.Merge(repository.Id, pullRequestId, mergePullRequest);
