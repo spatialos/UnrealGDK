@@ -27,15 +27,12 @@ struct TestData {
 	TMap<FName, AActor*> TestActors{};
 
 	TestData()
-	{
-		Cast<USpatialGDKSettings>(USpatialGDKSettings::StaticClass()->GetDefaultObject())->bEnableMultiWorker = true;
-	}
+	{}
 
 	~TestData()
 	{
 		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestWorld->GetWorldSettings());
 		WorldSettings->WorkerLayers.Empty();
-		Cast<USpatialGDKSettings>(USpatialGDKSettings::StaticClass()->GetDefaultObject())->bEnableMultiWorker = false;
 	}
 };
 

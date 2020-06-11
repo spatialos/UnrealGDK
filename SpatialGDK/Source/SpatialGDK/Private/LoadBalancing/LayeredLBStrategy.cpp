@@ -23,14 +23,11 @@ void ULayeredLBStrategy::Init()
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	check(Settings->bEnableMultiWorker);
-
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
-	if (WorldSettings == nullptr)
+	if (SpatialGDKSettings->bOverrideLoadBalancing || WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;

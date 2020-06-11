@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 - The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
 - Settings for Offloading and Load Balancing have been combined and moved from the Editor and Runtime settings to instead be per map in the SpatialWorldSettings. For a detailed explanation please see the Load Balancing documentation.
+- Command line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer` have been removed and UnrealGDK Load balancing is always enabled. To override a map's load balancing config and run single worker, use the command line flag `OverrideLoadBalancing`
 - Running with result types (previously default enabled) is now mandatory. The Runtime setting `bEnableResultTypes` has been removed to reflect this.
 - Offloading lookup by Actor returns based on the root owner of the Actor.
 - Removed `QueuedOutgoingRPCWaitTime`, all RPC failure cases are now correctly queued or dropped.

@@ -118,8 +118,8 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	Constraint = AlwaysRelevantConstraint;
 
-	// If we are using the unreal load balancer, we also add the server worker interest defined by the load balancing strategy.
-	if (SpatialGDKSettings->bEnableMultiWorker)
+	// Also add the server worker interest defined by the load balancing strategy if there is more than one worker.
+	if (LBStrategy->GetMinimumRequiredWorkers() > 1)
 	{
 		check(LBStrategy != nullptr);
 
