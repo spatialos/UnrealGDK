@@ -96,7 +96,7 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -126,7 +126,7 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
