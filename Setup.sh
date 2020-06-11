@@ -55,9 +55,7 @@ fi
 if [[ -n "${USE_CHINA_SERVICES_REGION}" ]]; then
     touch UseChinaServicesRegion
 else
-    if [[ -e UseChinaServicesRegion ]]; then
-        rm -f UseChinaServicesRegion
-    fi
+    rm -f UseChinaServicesRegion
 fi
 
 echo "Clean folders"
