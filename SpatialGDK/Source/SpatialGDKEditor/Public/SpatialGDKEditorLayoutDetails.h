@@ -14,6 +14,9 @@ public:
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
 
 private:
+	void ForceRefreshLayout();
+
+private:
 	IDetailLayoutBuilder* CurrentLayout = nullptr;
 	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
 
