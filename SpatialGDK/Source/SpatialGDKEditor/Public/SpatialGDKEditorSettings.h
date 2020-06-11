@@ -463,6 +463,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
 	FString MobileExtraCommandLineArgs;
 
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Include Command Line Arguments when Packaging"))
+	bool bPackageCommandLineArgs;
+
 	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
 	bool bStartPIEClientsWithLocalLaunchOnDevice;

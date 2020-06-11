@@ -139,6 +139,34 @@ bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) cons
 	return CanStartSession(OutErrorMessage);
 }
 
+FString FSpatialGDKEditorModule::GetClientCommandLineArgs() const
+{
+	FString CommandLine;
+	if (ShouldConnectToLocalDeployment())
+	{
+		CommandLine = FString::Printf(TEXT("%s -useExternalIpForBridge true"), *GetSpatialOSLocalDeploymentIP());
+	}
+	else if (ShouldConnectToCloudDeployment())
+	{
+		CommandLine = TEXT("connect.to.spatialos -devAuthToken ") + GetDevAuthToken();
+		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
+		if (!CloudDeploymentName.IsEmpty())
+		{
+			CommandLine += TEXT(" -deployment ") + CloudDeploymentName;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Display, TEXT("Cloud deployment name is empty. If there are multiple running deployments with 'dev_login' tag, the game will choose one randomly."));
+		}
+	}
+	return CommandLine;
+}
+
+bool FSpatialGDKEditorModule::PackageCommandLineArgs() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->bPackageCommandLineArgs;
+}
+
 void FSpatialGDKEditorModule::RegisterSettings()
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
