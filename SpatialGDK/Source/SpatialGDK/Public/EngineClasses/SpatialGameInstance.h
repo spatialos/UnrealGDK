@@ -67,7 +67,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 
-	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = true; }
+	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
 	void SetHasPreviouslyConnectedToSpatial() { bHasPreviouslyConnectedToSpatial = true; }
@@ -85,7 +85,7 @@ private:
 	UPROPERTY()
 	USpatialConnectionManager* SpatialConnectionManager;
 
-	bool bShouldConnectUsingCommandLineArgs = false;
+	bool bShouldConnectUsingCommandLineArgs = true;
 	bool bHasPreviouslyConnectedToSpatial = false;
 
 	UPROPERTY()
