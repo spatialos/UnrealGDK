@@ -8,7 +8,12 @@
 #include "SpatialConstants.h"
 
 #if WITH_EDITOR
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/FileHelper.h"
 #include "Settings/LevelEditorPlaySettings.h"
+
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
@@ -121,6 +126,10 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
 				"Failing to do will result in unintended behavior or crashes!"))));
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServicesRegion))
+	{
+		UpdateServicesRegionFile();
+	}
 }
 
 bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
@@ -147,7 +156,27 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 	return true;
 }
 
-#endif
+void USpatialGDKSettings::UpdateServicesRegionFile()
+{
+	// Create or remove an empty file in the plugin directory indicating whether to use China services region.
+	const FString UseChinaServicesRegionFilepath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename);
+	if (IsRunningInChina())
+	{
+		if (!FPaths::FileExists(UseChinaServicesRegionFilepath))
+		{
+			FFileHelper::SaveStringToFile(TEXT(""), *UseChinaServicesRegionFilepath);
+		}
+	}
+	else
+	{
+		if (FPaths::FileExists(UseChinaServicesRegionFilepath))
+		{
+			FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*UseChinaServicesRegionFilepath);
+		}
+	}
+}
+
+#endif // WITH_EDITOR
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
@@ -174,6 +203,12 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 	}
 
 	return RPCQueueWarningDefaultTimeout;
+}
+
+void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
+{
+	ServicesRegion = NewRegion;
+	SaveConfig();
 }
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const

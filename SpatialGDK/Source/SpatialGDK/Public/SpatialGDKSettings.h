@@ -224,6 +224,8 @@ public:
 private:
 #if WITH_EDITOR
 	bool CanEditChange(const UProperty* InProperty) const override;
+
+	void UpdateServicesRegionFile();
 #endif
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
@@ -272,6 +274,8 @@ public:
 	float RPCQueueWarningDefaultTimeout;
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
+
+	void SetServicesRegion(EServicesRegion::Type NewRegion);
 
 	/** Enable to use the new net cull distance component tagging form of interest */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
