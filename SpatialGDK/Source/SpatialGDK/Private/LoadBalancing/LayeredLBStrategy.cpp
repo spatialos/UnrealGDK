@@ -65,7 +65,6 @@ void ULayeredLBStrategy::Init()
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
-		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Added LBStrategy %lld for the Default Layer."), DefaultLBStrategy);
 	}
 }
 
