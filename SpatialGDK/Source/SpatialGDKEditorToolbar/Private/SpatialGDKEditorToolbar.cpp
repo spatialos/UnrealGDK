@@ -56,6 +56,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
 , bSchemaBuildError(false)
+, bStartingCloudDeployment(false)
 {
 }
 
@@ -715,23 +716,10 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	if (!IsSnapshotGenerated())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but snapshot is not generated."));
-		return;
-	}
-
-	if (!IsSchemaGenerated())
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but schema is not generated."));
-		return;
-	}
-
-	if (bSchemaBuildError)
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Schema did not previously compile correctly, you may be running a stale build."));
-
-		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema compiler. Schema will most likely be out of date, which may lead to undefined behavior. Are you sure you want to continue?"));
-		if (Result == EAppReturnType::No)
+		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+		if (!SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotToLoadPath()))
 		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but failed to generate a snapshot."));
 			return;
 		}
 	}
@@ -805,7 +793,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
-	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSpatialOSRuntimeVersionForLocal();
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 	{
@@ -868,8 +856,19 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
+	// Get the runtime variant currently being used as this affects which Inspector to use.
+	FString InspectorURL;
+	if (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Standard)
+	{
+		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
+	}
+	else
+	{
+		InspectorURL = SpatialGDKServicesConstants::InspectorV2URL;
+	}
+
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("http://localhost:31000/inspector-v2"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));
@@ -913,7 +912,7 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() con
 	// TODO: UNR-3396 - allow launching cloud deployments from mac
 	return false;
 #else
-	return CanBuildAndUpload();
+	return CanBuildAndUpload() && !bStartingCloudDeployment;
 #endif
 }
 
@@ -1153,13 +1152,6 @@ bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 	return FPaths::FileExists(SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath());
 }
 
-bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
-{
-	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
-	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
-}
-
 FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -1258,6 +1250,8 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 {
+	bStartingCloudDeployment = true;
+
 	auto StartCloudDeployment = [this]()
 	{
 		OnShowTaskStartNotification(FString::Printf(TEXT("Starting cloud deployment: %s"), *CloudDeploymentConfiguration.PrimaryDeploymentName));
@@ -1265,10 +1259,12 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 			CloudDeploymentConfiguration,
 			FSimpleDelegate::CreateLambda([this]()
 			{
+				OnStartCloudDeploymentFinished();
 				OnShowSuccessNotification("Successfully started cloud deployment.");
 			}),
 			FSimpleDelegate::CreateLambda([this]()
 			{
+				OnStartCloudDeploymentFinished();
 				OnShowFailedNotification("Failed to start cloud deployment. See output logs for details.");
 			})
 		);
@@ -1283,8 +1279,17 @@ void FSpatialGDKEditorToolbarModule::OnBuildSuccess()
 		}
 		else
 		{
+			OnStartCloudDeploymentFinished();
 			OnShowFailedNotification(TEXT("Failed to launch cloud deployment. Unable to authenticate with SpatialOS."));
 		}
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::OnStartCloudDeploymentFinished()
+{
+	AsyncTask(ENamedThreads::GameThread, [this]
+	{
+		bStartingCloudDeployment = false;
 	});
 }
 
@@ -1305,7 +1310,7 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
 
 bool FSpatialGDKEditorToolbarModule::CanStartCloudDeployment() const
 {
-	return IsDeploymentConfigurationValid() && CanBuildAndUpload();
+	return IsDeploymentConfigurationValid() && CanBuildAndUpload() && !bStartingCloudDeployment;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSimulatedPlayersEnabled() const

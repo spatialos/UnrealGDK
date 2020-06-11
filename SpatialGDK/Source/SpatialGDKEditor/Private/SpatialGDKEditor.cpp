@@ -226,6 +226,13 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 	}
 }
 
+bool FSpatialGDKEditor::IsSchemaGenerated()
+{
+	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
+}
+
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -346,8 +353,11 @@ bool FSpatialGDKEditor::FullScanRequired()
 
 void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
 {
-	FSpatialGDKServicesModule::SetProjectName(InProjectName);
-	SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	if (!FSpatialGDKServicesModule::GetProjectName().Equals(InProjectName))
+	{
+		FSpatialGDKServicesModule::SetProjectName(InProjectName);
+		SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	}
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

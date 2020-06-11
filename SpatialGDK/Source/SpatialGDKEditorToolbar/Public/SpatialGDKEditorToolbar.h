@@ -128,6 +128,7 @@ private:
 	bool CanBuildAndUpload() const;
 
 	void OnBuildSuccess();
+	void OnStartCloudDeploymentFinished();
 
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
@@ -149,7 +150,6 @@ private:
 	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;
-	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
 
@@ -180,4 +180,6 @@ private:
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
+
+	bool bStartingCloudDeployment;
 };
