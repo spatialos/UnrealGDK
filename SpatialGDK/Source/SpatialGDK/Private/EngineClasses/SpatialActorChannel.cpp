@@ -257,11 +257,12 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	if (bHasAuthority)
 	{
+		check(Actor != nullptr);
 		// Workaround to delay the delete entity request if tearing off.
 		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
-		if (Actor != nullptr && Actor->GetTearOff())
+		if (Actor->GetTearOff())
 		{
-			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f, Actor->IsNetStartupActor());
 			// Since the entity deletion is delayed, this creates a situation,
 			// when the Actor is torn off, but still replicates.
 			// Disabling replication makes RPC calls impossible for this Actor.
@@ -269,7 +270,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		}
 		else
 		{
-			Sender->RetireEntity(EntityId);
+			Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
 		}
 	}
 }

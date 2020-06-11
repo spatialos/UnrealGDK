@@ -1018,31 +1018,20 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
+void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor)
 {
-	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	if (bIsNetStartupActor)
 	{
-		if (Actor->IsNetStartupActor())
+		Receiver->RemoveActor(EntityId);
+		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+		if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
-			Receiver->RemoveActor(EntityId);
-			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-			if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
-			{
-				AddTombstoneToEntity(EntityId);
-			}
-			else
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld (actor: %s)"), EntityId, *Actor->GetName());
-			}
-		}
-		else
-		{
-			Connection->SendDeleteEntityRequest(EntityId);
+			AddTombstoneToEntity(EntityId);
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't get Actor from PackageMap for EntityId: %lld"), EntityId);
+		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }
 
