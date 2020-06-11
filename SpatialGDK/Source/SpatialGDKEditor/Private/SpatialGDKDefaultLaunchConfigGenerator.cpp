@@ -72,19 +72,6 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerTyp
 				}
 			Writer->WriteObjectEnd();
 		Writer->WriteArrayEnd();
-		if (WorkerConfig.MaxConnectionCapacityLimit > 0)
-		{
-			Writer->WriteObjectStart(TEXT("connection_capacity_limit"));
-				Writer->WriteValue(TEXT("max_capacity"), WorkerConfig.MaxConnectionCapacityLimit);
-			Writer->WriteObjectEnd();
-		}
-		if (WorkerConfig.bLoginRateLimitEnabled)
-		{
-			Writer->WriteObjectStart(TEXT("login_rate_limit"));
-				Writer->WriteValue(TEXT("duration"), WorkerConfig.LoginRateLimit.Duration);
-				Writer->WriteValue(TEXT("requests_per_duration"), WorkerConfig.LoginRateLimit.RequestsPerDuration);
-			Writer->WriteObjectEnd();
-		}
 	Writer->WriteObjectEnd();
 
 	return true;
@@ -233,7 +220,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json
-			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
+			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.GetTemplate()); // Template section
 			Writer->WriteObjectStart(TEXT("world")); // World section begin
 				Writer->WriteObjectStart(TEXT("dimensions"));
 				Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
@@ -272,7 +259,6 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 				// Write the client worker section
 				FWorkerTypeLaunchSection ClientWorker;
 				ClientWorker.WorkerPermissions.bAllPermissions = true;
-				ClientWorker.bLoginRateLimitEnabled = false;
 				WriteWorkerSection(Writer, SpatialConstants::DefaultClientWorkerType, ClientWorker);
 			Writer->WriteArrayEnd(); // Worker section end
 		Writer->WriteObjectEnd(); // End of json
