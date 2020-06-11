@@ -341,7 +341,7 @@ exit /b !ERRORLEVEL!";
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsClientPath, baseGameName);
 
-                RenameExeForLauncher(windowsClientPath, baseGameName);
+                RenameExeForLauncher(windowsClientPath, baseGameName + "Client");
 
                 Common.RunRedirected(runUATBat, new[]
                 {
