@@ -211,28 +211,25 @@ namespace ReleaseTool
                     Thread.Sleep(TimeSpan.FromMinutes(1));
                 }
 
+                PullRequestMerge mergeResult = null;
                 while (true)
                 {
                     // Merge into release
-                    var mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
-
+                    mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId);
                     if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
                     {
                         throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
                     }
-
                     if (!mergeResult.Merged)
                     {
                         Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                         Logger.Info($"{options.PullRequestUrl} is not in a mergeable state, will query mergeability again in one minute.");
                         Thread.Sleep(TimeSpan.FromMinutes(1));
                     }
-
-                    if (mergeResult.Merged)
+                    else
                     {
                         break;
                     }
-
                 }
 
                 Logger.Info($"{options.PullRequestUrl} had been merged.");
