@@ -37,38 +37,11 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	CurrentLayout = &DetailBuilder;
-	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* GDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	TSharedPtr<IPropertyHandle> UsePinnedVersionProperty = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseGDKPinnedRuntimeVersion));
+	GDKEditorSettings->OnDefaultTemplateNameRequireUpdate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 
-	IDetailPropertyRow* CustomRow = DetailBuilder.EditDefaultProperty(UsePinnedVersionProperty);
-
-	FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
-
-	CustomRow->CustomWidget()
-		.NameContent()
-		[
-			UsePinnedVersionProperty->CreatePropertyNameWidget()
-		]
-		.ValueContent()
-		[
-			SNew(SHorizontalBox)
-			+SHorizontalBox::Slot()
-			.HAlign(HAlign_Left)
-			.AutoWidth()
-			[
-				UsePinnedVersionProperty->CreatePropertyValueWidget()
-			]
-			+SHorizontalBox::Slot()
-			.Padding(5)
-			.HAlign(HAlign_Center)
-			.AutoWidth()
-			[
-				SNew(STextBlock)
-				.Text(FText::FromString(PinnedVersionDisplay))
-			]
-		];
 
 	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
