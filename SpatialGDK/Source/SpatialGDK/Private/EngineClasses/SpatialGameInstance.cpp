@@ -135,13 +135,13 @@ void USpatialGameInstance::TryCreateConnectionManager()
 
 void USpatialGameInstance::StartGameInstance()
 {
-	if (!GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
+	if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
 	{
-		TryCreateConnectionManager();
+		DisableShouldConnectUsingCommandLineArgs();
 	}
 	else
 	{
-		DisableShouldConnectUsingCommandLineArgs();
+		TryCreateConnectionManager();
 	}
 
 	Super::StartGameInstance();
