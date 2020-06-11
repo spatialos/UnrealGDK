@@ -240,11 +240,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
-	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-	if (bFirstSpatialConnection)
+	if (!GameInstance->HasConnectedToSpatial())
 	{
-		bFirstSpatialConnection = false;
+		GameInstance->SetHasConnectedToSpatial();
 		TryAddLocatorCommandLineArg();
 	}
 

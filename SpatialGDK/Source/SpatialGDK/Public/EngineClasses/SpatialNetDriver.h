@@ -209,7 +209,6 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-	bool bFirstSpatialConnection;
 
 	FString SnapshotToLoad;
 
