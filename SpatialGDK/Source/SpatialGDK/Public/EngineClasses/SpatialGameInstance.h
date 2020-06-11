@@ -70,8 +70,8 @@ public:
 	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = true; }
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
-	void SetHasConnectedToSpatial() { bHasConnectedToSpatial = true; }
-	bool HasConnectedToSpatial() const { return bHasConnectedToSpatial; }
+	void SetHasPreviouslyConnectedToSpatial() { bHasPreviouslyConnectedToSpatial = true; }
+	bool HasPreviouslyConnectedToSpatial() const { return bHasPreviouslyConnectedToSpatial; }
 
 	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
@@ -86,7 +86,7 @@ private:
 	USpatialConnectionManager* SpatialConnectionManager;
 
 	bool bShouldConnectUsingCommandLineArgs = false;
-	bool bHasConnectedToSpatial = false;
+	bool bHasPreviouslyConnectedToSpatial = false;
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;

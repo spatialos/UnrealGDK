@@ -80,7 +80,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingToSpawn(false)
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
-	, bFirstSpatialConnection(true)
 	, SessionId(0)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
@@ -242,20 +241,21 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-	if (!GameInstance->HasConnectedToSpatial())
+	// This ensures that any connections attempting to using command line arguments have a valid locater host in the command line.
+	if (!GameInstance->HasPreviouslyConnectedToSpatial())
 	{
-		GameInstance->SetHasConnectedToSpatial();
+		GameInstance->SetHasPreviouslyConnectedToSpatial();
 		TryAddLocatorCommandLineArg();
 	}
 
-	if (!GameInstance->GetShouldConnectUsingCommandLineArgs())
+	if (GameInstance->GetShouldConnectUsingCommandLineArgs())
 	{
 		GameInstance->DisableShouldConnectUsingCommandLineArgs();
 
 		// Try using command line arguments to setup connection config.
 		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			// If the command line arguments can not be used, use the input URL to setup connection config.
+			// If the command line arguments can not be used, use the input URL to setup connection config instead.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
