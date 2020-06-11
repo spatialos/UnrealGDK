@@ -353,8 +353,11 @@ bool FSpatialGDKEditor::FullScanRequired()
 
 void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
 {
-	FSpatialGDKServicesModule::SetProjectName(InProjectName);
-	SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	if (!FSpatialGDKServicesModule::GetProjectName().Equals(InProjectName))
+	{
+		FSpatialGDKServicesModule::SetProjectName(InProjectName);
+		SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	}
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
