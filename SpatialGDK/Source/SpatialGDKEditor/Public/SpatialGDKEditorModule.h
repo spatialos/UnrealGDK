@@ -45,8 +45,8 @@ private:
 	virtual bool CanStartPlaySession(FText& OutErrorMessage) const override;
 	virtual bool CanStartLaunchSession(FText& OutErrorMessage) const override;
 
-	virtual FString GetClientCommandLineArgs() const override;
-	virtual bool PackageCommandLineArgs() const override;
+	virtual FString GetMobileClientCommandLineArgs() const override;
+	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
 private:
 	void RegisterSettings();

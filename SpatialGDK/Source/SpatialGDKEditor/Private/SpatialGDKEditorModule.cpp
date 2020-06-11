@@ -139,7 +139,7 @@ bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) cons
 	return CanStartSession(OutErrorMessage);
 }
 
-FString FSpatialGDKEditorModule::GetClientCommandLineArgs() const
+FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 {
 	FString CommandLine;
 	if (ShouldConnectToLocalDeployment())
@@ -162,9 +162,9 @@ FString FSpatialGDKEditorModule::GetClientCommandLineArgs() const
 	return CommandLine;
 }
 
-bool FSpatialGDKEditorModule::PackageCommandLineArgs() const
+bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 {
-	return GetDefault<USpatialGDKEditorSettings>()->bPackageCommandLineArgs;
+	return GetDefault<USpatialGDKEditorSettings>()->bPackageMobileCommandLineArgs;
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
