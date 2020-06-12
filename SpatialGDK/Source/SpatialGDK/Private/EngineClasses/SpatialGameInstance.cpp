@@ -111,18 +111,19 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
-	TryCreateConnectionManager();
+	StartSpatialConnection();
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
 #endif
 
-void USpatialGameInstance::TryCreateConnectionManager()
+void USpatialGameInstance::StartSpatialConnection()
 {
 	if (HasSpatialNetDriver())
 	{
 		UE_LOG(LogSpatialGameInstance, Log, TEXT("Attempting to create Spatial connnection manager"));
 
 		// If we are using spatial networking then prepare a spatial connection.
+		TryInjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
 	}
 #if TRACE_LIB_ACTIVE
@@ -135,6 +136,29 @@ void USpatialGameInstance::TryCreateConnectionManager()
 #endif
 }
 
+void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
+{
+	if (!HasPreviouslyConnectedToSpatial())
+	{
+		SetHasPreviouslyConnectedToSpatial();
+		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
+		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+
+		// Initialize a locator configuration which will parse command line arguments.
+		FLocatorConfig LocatorConfig;
+		if (LocatorConfig.TryLoadCommandLineArgs())
+		{
+			// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+			const TCHAR* CommandLineArgs = FCommandLine::Get();
+
+			FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+			NewCommandLineArgs.Append(FString(CommandLineArgs));
+
+			FCommandLine::Set(*NewCommandLineArgs);
+		}
+	}
+}
+
 void USpatialGameInstance::StartGameInstance()
 {
 	if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
@@ -144,7 +168,7 @@ void USpatialGameInstance::StartGameInstance()
 	}
 	else
 	{
-		TryCreateConnectionManager();
+		StartSpatialConnection();
 	}
 
 	Super::StartGameInstance();

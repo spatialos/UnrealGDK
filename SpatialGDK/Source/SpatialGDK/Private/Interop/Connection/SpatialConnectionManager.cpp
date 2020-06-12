@@ -410,6 +410,7 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 	bool bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
 	if (bSuccessfullyLoaded)
 	{
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up locator config from command line arguments"));
 		SetConnectionType(ESpatialConnectionType::Locator);
 		LocatorConfig.WorkerType = SpatialWorkerType;
 	}
@@ -418,25 +419,25 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 		bSuccessfullyLoaded = DevAuthConfig.TryLoadCommandLineArgs();
 		if (bSuccessfullyLoaded)
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up dev auth config from command line arguments"));
 			SetConnectionType(ESpatialConnectionType::DevAuthFlow);
 			DevAuthConfig.WorkerType = SpatialWorkerType;
 		}
 		else
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up receptionist config from command line arguments"));
 			bSuccessfullyLoaded = ReceptionistConfig.TryLoadCommandLineArgs();
 			SetConnectionType(ESpatialConnectionType::Receptionist);
 			ReceptionistConfig.WorkerType = SpatialWorkerType;
 		}
 	}
 
-	UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Attempt to set up connection config from command line arguments was %s"), bSuccessfullyLoaded ? TEXT("successful") : TEXT("unsuccessful"));
-
 	return bSuccessfullyLoaded;
 }
 
 void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
 {
-	UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Setting up connection config from URL"));
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up connection config from URL"));
 
 	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
