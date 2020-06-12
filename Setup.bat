@@ -67,6 +67,20 @@ call :MarkStartOfBlock "Setup variables"
     )
 call :MarkEndOfBlock "Setup variables"
 
+call :MarkStartOfBlock "Setup services region"
+    set USE_CHINA_SERVICES_REGION=
+    for %%A in (%*) do (
+        if "%%A"=="--china" set USE_CHINA_SERVICES_REGION=True
+    )
+
+    rem Create or remove an empty file in the plugin directory indicating whether to use China services region.
+    if defined USE_CHINA_SERVICES_REGION (
+        echo. 2> UseChinaServicesRegion
+    ) else (
+        if exist UseChinaServicesRegion del UseChinaServicesRegion
+    )
+call :MarkEndOfBlock "Setup services region"
+
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
