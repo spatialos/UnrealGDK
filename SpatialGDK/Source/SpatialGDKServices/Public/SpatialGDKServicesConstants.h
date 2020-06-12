@@ -10,14 +10,12 @@ namespace SpatialGDKServicesConstants
 	// Assumes that spatial is installed and in the PATH
 	const FString SpatialPath = TEXT("");
 	const FString Extension = TEXT("exe");
-	const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.4.0-preview-5");
 #elif PLATFORM_MAC
 	// UNR-2518: This is currently hardcoded and we expect users to have spatial either installed or symlinked to this path.
 	// If they haven't, it is necessary to symlink it to /usr/local/bin. At some point we should expose this via
 	// the Unreal UI, however right now the SpatialGDKServices module is unable to see these.
 	const FString SpatialPath = TEXT("/usr/local/bin");
 	const FString Extension = TEXT("");
-	const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.4.0-preview-6");
 #endif
 
 	static inline const FString CreateExePath(FString Path, FString ExecutableName)
@@ -34,6 +32,7 @@ namespace SpatialGDKServicesConstants
 	const FString SpatialOSConfigFileName = TEXT("spatialos.json");
 	const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 
+	const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.4.0-preview-6");
 	const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 
 	const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
