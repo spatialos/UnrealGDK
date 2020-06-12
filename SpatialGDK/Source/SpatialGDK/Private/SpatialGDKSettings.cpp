@@ -51,7 +51,7 @@ namespace
 				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
 			}
 		}
-		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue.IsSet() ? bOutValue.GetValue() ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
+		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
 	}
 }
 
