@@ -174,8 +174,8 @@ namespace Improbable
 
                 if (launchSimPlayerDeployment)
                 {
-                    // we are using the main deployment snapshot also for the sim player deployment, because we only need to specify a deployment
-                    // to be able to start the deployment. The simplayers don't care about the actual snapshot.
+                    // we are using the main deployment snapshot also for the sim player deployment, because we only need to specify a snapshot
+                    // to be able to start the deployment. The sim players don't care about the actual snapshot.
                     var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
                         projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
                         simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
@@ -229,7 +229,7 @@ namespace Improbable
             var simDeploymentSnapshotPath = args[9];
 
             var simNumPlayers = 0;
-            if (!Int32.TryParse(args[9], out simNumPlayers))
+            if (!Int32.TryParse(args[10], out simNumPlayers))
             {
                 Console.WriteLine("Cannot parse the number of simulated players to connect.");
                 return 1;
@@ -633,7 +633,7 @@ namespace Improbable
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <num-sim-players>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <num-sim-players>");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <num-sim-players>");
             Console.WriteLine($"  Starts a simulated player deployment. Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
@@ -655,7 +655,7 @@ namespace Improbable
 
             if (args.Length == 0 ||
                 (args[0] == "create" && (args.Length != 15 && args.Length != 10)) ||
-                (args[0] == "createsim" && args.Length != 10) ||
+                (args[0] == "createsim" && args.Length != 11) ||
                 (args[0] == "stop" && (args.Length != 2 && args.Length != 3)) ||
                 (args[0] == "list" && args.Length != 2))
             {
