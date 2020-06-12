@@ -173,7 +173,7 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor);
+	void DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor);
 
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.

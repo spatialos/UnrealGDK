@@ -1388,7 +1388,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 
 			// If the actor has been torn off, close the channel
 			// Native also checks here for !bIsRecentlyRelevant and if so closes due to relevancy, we're not doing because it's less likely
-			// in a SpatialOS game. Might be worth an investigation in future as a performance win.
+			// in a SpatialOS game. Might be worth an investigation in future as a performance win - UNR-3063
 			if (Actor->GetTearOff() && Channel != NULL)
 			{
 				UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
@@ -2313,7 +2313,7 @@ void USpatialNetDriver::WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfter
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
-void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor)
+void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor)
 {
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(RetryTimer, [this, EntityId, bIsNetStartupActor]()
