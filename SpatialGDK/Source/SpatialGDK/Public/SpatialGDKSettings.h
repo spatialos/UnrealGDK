@@ -313,5 +313,5 @@ public:
 	  * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	  * the map's config with a 1x1 grid.
 	  */
-	bool bOverrideMultiWorker;
+	TOptional<bool> bOverrideMultiWorker;
 };
