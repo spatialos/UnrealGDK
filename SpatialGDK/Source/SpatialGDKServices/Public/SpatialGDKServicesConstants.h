@@ -32,16 +32,18 @@ namespace SpatialGDKServicesConstants
 	const FString SpatialOSConfigFileName = TEXT("spatialos.json");
 	const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 
-	const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.4.0-preview-6");
+	const FString SpatialOSRuntimePinnedStandardVersion         = TEXT("0.4.0");
 	const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 
 	const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
 	const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
 
 	const FString PinnedStandardRuntimeTemplate               = TEXT("n1standard4_std40_action1g1");
-	const FString PinnedCompatibilityModeRuntimeTemplate      = TEXT("w2_r0500_e5");
-	const FString PinnedChinaStandardRuntimeTemplate          = TEXT("m5xlarge_ssd40_action1g1");
-	const FString PinnedChinaCompatibilityModeRuntimeTemplate = TEXT("m5xlarge_ssd40_r0500");
+	const FString PinnedCompatibilityModeRuntimeTemplate      = TEXT("n1standard4_std40_r0500");
+	const FString PinnedChinaStandardRuntimeTemplate          = TEXT("s5large16_std50_action1g1");
+	const FString PinnedChinaCompatibilityModeRuntimeTemplate = TEXT("s5large16_std50_r0500");
 	
 	const FString DevLoginDeploymentTag = TEXT("dev_login");
+
+	const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
 }
