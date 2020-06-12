@@ -167,11 +167,8 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 		AddPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
-	if (InActor->GetNetConnection() != nullptr)
-	{
-		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest, InEntityId);
-	}
+	// Clients need to see owner only and server RPC components on entities they have authority over
+	AddClientSelfInterest(ResultInterest, InEntityId);
 
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest, InEntityId);
