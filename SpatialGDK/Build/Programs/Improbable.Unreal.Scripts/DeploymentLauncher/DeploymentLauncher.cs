@@ -174,9 +174,12 @@ namespace Improbable
 
                 if (launchSimPlayerDeployment)
                 {
+                    // we are using the main deployment snapshot also for the sim player deployment, because we only need to specify a deployment
+                    // to be able to start the deployment. The simplayers don't care about the actual snapshot.
                     var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
                         projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
-                        simDeploymentJson, simDeploymentRegion, simDeploymentCluster, simNumPlayers, useChinaPlatform);
+                        simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
+                        simNumPlayers, useChinaPlatform);
 
                     // Wait for both deployments to be created.
                     Console.WriteLine("Waiting for simulated player deployment to be ready...");
@@ -223,6 +226,7 @@ namespace Improbable
             var simDeploymentJson = args[6];
             var simDeploymentRegion = args[7];
             var simDeploymentCluster = args[8];
+            var simDeploymentSnapshotPath = args[9];
 
             var simNumPlayers = 0;
             if (!Int32.TryParse(args[9], out simNumPlayers))
@@ -242,7 +246,7 @@ namespace Improbable
 
                 var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
                     projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentName,
-                    simDeploymentJson, simDeploymentRegion, simDeploymentCluster, simNumPlayers, useChinaPlatform);
+                    simDeploymentJson, simDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster, simNumPlayers, useChinaPlatform);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for the simulated player deployment to be ready...");
@@ -370,8 +374,19 @@ namespace Improbable
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentName,
-            string simDeploymentJsonPath, string regionCode, string clusterCode, int simNumPlayers, bool useChinaPlatform)
+            string simDeploymentJsonPath, string simDeploymentSnapshotPath, string regionCode, string clusterCode, int simNumPlayers, bool useChinaPlatform)
         {
+            var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(useChinaPlatform), GetPlatformRefreshTokenCredential(useChinaPlatform));
+
+            // Upload snapshots.
+            var simDeploymentSnapshotId = UploadSnapshot(snapshotServiceClient, simDeploymentSnapshotPath, projectName,
+                simDeploymentName, useChinaPlatform);
+
+            if (simDeploymentSnapshotId.Length == 0)
+            {
+                throw new Exception("Error while uploading sim player snapshot.");
+            }
+
             var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(useChinaPlatform), GetPlatformRefreshTokenCredential(useChinaPlatform));
 
             // Create development authentication token used by the simulated players.
@@ -480,8 +495,8 @@ namespace Improbable
                 },
                 Name = simDeploymentName,
                 ProjectName = projectName,
-                RuntimeVersion = runtimeVersion
-                // No snapshot included for the simulated player deployment
+                RuntimeVersion = runtimeVersion,
+                StartingSnapshotId = simDeploymentSnapshotId,
             };
 
             if (!String.IsNullOrEmpty(clusterCode))
