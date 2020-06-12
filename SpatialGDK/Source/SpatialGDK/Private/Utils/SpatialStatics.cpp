@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -65,10 +66,15 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
-bool USpatialStatics::IsSpatialOffloadingEnabled()
+bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
-	return IsSpatialNetworkingEnabled()
-		&& GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
+	if (World != nullptr)
+	{
+		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+		return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0;
+	}
+
+	return false;
 }
 
 bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
