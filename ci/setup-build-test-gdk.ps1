@@ -38,7 +38,7 @@ class TestSuite {
 [string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
-[string] $user_gdk_settings = ""
+[string] $user_gdk_settings = "$env:GDK_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
@@ -53,14 +53,7 @@ if (Test-Path env:TEST_REPO_BRANCH) {
     $test_repo_branch = $env:TEST_REPO_BRANCH
 }
 
-if (Test-Path env:GDK_SETTINGS) {
-    $user_gdk_settings = ";" + $env:GDK_SETTINGS
-}
-
 $tests = @()
-
-# TODO: UNR-3632 - Remove this when new runtime passes all network tests.
-$override_runtime_to_compatibility_mode = "-ini:SpatialGDKEditorSettings:[/Script/SpatialGDKEditor.SpatialGDKEditorSettings]:RuntimeVariant=CompatibilityMode"
 
 # If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
 # There are basically two situations here: either we are trying to run tests, in which case we use EngineNetTest
@@ -70,16 +63,16 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$user_cmd_line_args")
 }
 else {
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
     }
     else {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
-            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
+            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
