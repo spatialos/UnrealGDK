@@ -111,6 +111,9 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
+	SpatialWorkerType = Params.SpatialWorkerType;
+	bIsSimulatedPlayer = Params.bIsSimulatedPlayer;
+
 	StartSpatialConnection();
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
@@ -128,7 +131,7 @@ void USpatialGameInstance::StartSpatialConnection()
 	else
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
