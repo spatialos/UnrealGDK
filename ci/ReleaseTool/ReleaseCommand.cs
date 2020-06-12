@@ -220,7 +220,11 @@ namespace ReleaseTool
                 while (true)
                 {
                     // Merge into release
-                    mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge);
+                    try
+                    {
+                        mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge);
+                    }
+                    catch (Octokit.PullRequestNotMergeableException e) {} // Will be covered by log below
                     if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
                     {
                         throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
