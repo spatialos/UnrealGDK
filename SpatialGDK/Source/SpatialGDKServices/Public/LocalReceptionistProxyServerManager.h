@@ -15,7 +15,7 @@ public:
 	bool KillBlockingPortProcess();
 	bool LocalReceptionistProxyServerPreRunChecks();
 
-	bool GetProcessName();
+	FString GetProcessName();
 
 	void SPATIALGDKSERVICES_API Init();
 	bool SPATIALGDKSERVICES_API TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName);

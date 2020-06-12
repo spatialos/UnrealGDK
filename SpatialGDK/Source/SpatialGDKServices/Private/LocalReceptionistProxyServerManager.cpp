@@ -17,10 +17,10 @@ FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 {
 }
 
-bool FLocalReceptionistProxyServerManager::GetProcessName()
+FString FLocalReceptionistProxyServerManager::GetProcessName()
 {
 	bool bSuccess = false;
-
+	FString ProcessName = "";
 	const FString TaskListCmd = FString::Printf(TEXT("tasklist"));
 
 	//get the task list for 
@@ -35,15 +35,15 @@ bool FLocalReceptionistProxyServerManager::GetProcessName()
 		FRegexMatcher ProcessNameMatcher(ProcessNamePattern, TaskListResult);
 		if (ProcessNameMatcher.FindNext())
 		{
-			BlockingProcess.Name = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
+			ProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
 
-			return true;
+			return ProcessName;
 		}
 	}
 
 	UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to get the name of process that is blocking required port."));
 	
-	return false;
+	return ProcessName;
 }
 
 bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
@@ -71,10 +71,10 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
 			{
 				
 				BlockingProcess.Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
-				if (GetProcessName())
-				{
-					UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Process %s with PID:%s is blocking required port."), *BlockingProcess.Name, *BlockingProcess.Pid);
-				}
+				BlockingProcess.Name = GetProcessName();
+				
+				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Process %s with PID:%s is blocking required port."), *BlockingProcess.Name, *BlockingProcess.Pid);
+				
 				return true;
 			}
 		}
