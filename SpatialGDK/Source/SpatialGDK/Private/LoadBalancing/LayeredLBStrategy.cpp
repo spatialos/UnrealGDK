@@ -26,7 +26,7 @@ void ULayeredLBStrategy::Init()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
-	if (SpatialGDKSettings->bOverrideLoadBalancing || WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (!SpatialGDKSettings->bOverrideMultiWorker && (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker))
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
