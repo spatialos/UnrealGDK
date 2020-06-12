@@ -18,7 +18,7 @@
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
-#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SFilePathPicker.h"
@@ -1040,16 +1040,10 @@ FReply SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap()
 
 FReply SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor()
 {
-	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor", ParentWindowPtr.Pin());
-
-	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
-	{
-		if (TSharedPtr<SWidget> This = WeakThis.Pin())
-		{
-			static_cast<SSpatialGDKCloudDeploymentConfiguration*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
-		}
-	}
-	);
+	ULaunchConfigurationEditor::OpenModalWindow(ParentWindowPtr.Pin(), [](const FString& FilePath) {
+		USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		SpatialGDKSettings->SetPrimaryLaunchConfigPath(FilePath);
+	});
 
 	return FReply::Handled();
 }
