@@ -102,7 +102,7 @@ private:
 	UPROPERTY()
 	TSet<ULevel*> CachedLevelsForNetworkIntialize;
 
-	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
+	// Initializes the Spatial connection manager if Spatial networking is enabled, otherwise does nothing.
 	void StartSpatialConnection();
 
 	void SetHasPreviouslyConnectedToSpatial() { bHasPreviouslyConnectedToSpatial = true; }

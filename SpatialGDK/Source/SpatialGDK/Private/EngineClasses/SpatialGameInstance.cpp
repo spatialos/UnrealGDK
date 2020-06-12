@@ -120,8 +120,6 @@ void USpatialGameInstance::StartSpatialConnection()
 {
 	if (HasSpatialNetDriver())
 	{
-		UE_LOG(LogSpatialGameInstance, Log, TEXT("Attempting to create Spatial connnection manager"));
-
 		// If we are using spatial networking then prepare a spatial connection.
 		TryInjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
@@ -130,7 +128,7 @@ void USpatialGameInstance::StartSpatialConnection()
 	else
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
@@ -163,7 +161,6 @@ void USpatialGameInstance::StartGameInstance()
 {
 	if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
 	{
-		UE_LOG(LogSpatialGameInstance, Log, TEXT("PreventClientCloudDeploymentAutoConnect is enabled. Command line args will be ignored when connection to SpatialOS"));
 		DisableShouldConnectUsingCommandLineArgs();
 	}
 	else
