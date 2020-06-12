@@ -26,10 +26,10 @@ void ULayeredLBStrategy::Init()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
-	bool bIsMultiWorkerDisabled = (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && !SpatialGDKSettings->bOverrideMultiWorker)
-		|| (!SpatialGDKSettings->bOverrideMultiWorker.IsSet() && (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker));
+	bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->bEnableMultiWorker;
+	bIsMultiWorkerEnabled &= !SpatialGDKSettings->bOverrideMultiWorker.IsSet() || SpatialGDKSettings->bOverrideMultiWorker;
 
-	if (bIsMultiWorkerDisabled)
+	if (!bIsMultiWorkerEnabled)
 	{
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Multi-Worker has been disabled. Creating LBStrategy for the Default Layer"));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
