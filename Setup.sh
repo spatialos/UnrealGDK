@@ -20,11 +20,14 @@ SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
 DOWNLOAD_MOBILE=
+USE_CHINA_SERVICES_REGION=
 
 while test $# -gt 0
 do
     case "$1" in
-        --china) DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
+        --china)
+            DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
+            USE_CHINA_SERVICES_REGION=true
             ;;
         --mobile) DOWNLOAD_MOBILE=true
             ;;
@@ -46,6 +49,13 @@ if [[ -e .git/hooks ]]; then
 
     # Add git hook to run Setup.sh when RequireSetup file has been updated.
     cp "$(pwd)/SpatialGDK/Extras/git/post-merge" "$(pwd)/.git/hooks"
+fi
+
+# Create or remove an empty file in the plugin directory indicating whether to use China services region.
+if [[ -n "${USE_CHINA_SERVICES_REGION}" ]]; then
+    touch UseChinaServicesRegion
+else
+    rm -f UseChinaServicesRegion
 fi
 
 echo "Clean folders"

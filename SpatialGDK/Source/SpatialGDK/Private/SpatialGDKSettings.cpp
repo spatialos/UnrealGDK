@@ -8,7 +8,12 @@
 #include "SpatialConstants.h"
 
 #if WITH_EDITOR
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/FileHelper.h"
 #include "Settings/LevelEditorPlaySettings.h"
+
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
@@ -58,7 +63,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bEnableMultiWorker(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -78,6 +82,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
+	, bOverrideLoadBalancing(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -88,9 +93,8 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableMultiWorker);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableMultiWorker);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancing"), TEXT("Load balancing"), bOverrideLoadBalancing);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
@@ -121,6 +125,10 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
 				"Failing to do will result in unintended behavior or crashes!"))));
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServicesRegion))
+	{
+		UpdateServicesRegionFile();
+	}
 }
 
 bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
@@ -132,11 +140,6 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 
 	const FName Name = InProperty->GetFName();
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUseRPCRingBuffers))
-	{
-		return !bEnableMultiWorker;
-	}
-
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
 	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, RPCRingBufferSizeMap)
 	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxRPCRingBufferSize))
@@ -147,7 +150,27 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 	return true;
 }
 
-#endif
+void USpatialGDKSettings::UpdateServicesRegionFile()
+{
+	// Create or remove an empty file in the plugin directory indicating whether to use China services region.
+	const FString UseChinaServicesRegionFilepath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename);
+	if (IsRunningInChina())
+	{
+		if (!FPaths::FileExists(UseChinaServicesRegionFilepath))
+		{
+			FFileHelper::SaveStringToFile(TEXT(""), *UseChinaServicesRegionFilepath);
+		}
+	}
+	else
+	{
+		if (FPaths::FileExists(UseChinaServicesRegionFilepath))
+		{
+			FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*UseChinaServicesRegionFilepath);
+		}
+	}
+}
+
+#endif // WITH_EDITOR
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
@@ -163,7 +186,7 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
-	return bUseRPCRingBuffers || bEnableMultiWorker;
+	return bUseRPCRingBuffers;
 }
 
 float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
@@ -174,6 +197,12 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 	}
 
 	return RPCQueueWarningDefaultTimeout;
+}
+
+void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
+{
+	ServicesRegion = NewRegion;
+	SaveConfig();
 }
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
