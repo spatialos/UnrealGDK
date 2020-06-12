@@ -117,6 +117,7 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"), TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 
 #if WITH_EDITOR
@@ -221,11 +222,14 @@ void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 	SaveConfig();
 }
 
-bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const
+bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
-#if WITH_EDITOR
+#if UE_EDITOR || UE_SERVER
 	return false;
 #else
-	return bIsClient && bPreventClientCloudDeploymentAutoConnect;
+	bool bIsServer = false;
+	const TCHAR* CommandLine = FCommandLine::Get();
+	FParse::Bool(CommandLine, TEXT("-server"), bIsServer);
+	return !bIsServer && bPreventClientCloudDeploymentAutoConnect;
 #endif
 };
