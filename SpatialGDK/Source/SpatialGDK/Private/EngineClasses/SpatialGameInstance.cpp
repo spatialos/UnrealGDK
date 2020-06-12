@@ -120,6 +120,8 @@ void USpatialGameInstance::TryCreateConnectionManager()
 {
 	if (HasSpatialNetDriver())
 	{
+		UE_LOG(LogSpatialGameInstance, Log, TEXT("Attempting to create Spatial connnection manager"));
+
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialConnectionManager();
 	}
@@ -137,6 +139,7 @@ void USpatialGameInstance::StartGameInstance()
 {
 	if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
 	{
+		UE_LOG(LogSpatialGameInstance, Log, TEXT("PreventClientCloudDeploymentAutoConnect is enabled. Command line args will be ignored when connection to SpatialOS"));
 		DisableShouldConnectUsingCommandLineArgs();
 	}
 	else

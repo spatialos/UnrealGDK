@@ -248,6 +248,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		TryAddLocatorCommandLineArg();
 	}
 
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempting connection to SpatialOS"));
+
 	if (GameInstance->GetShouldConnectUsingCommandLineArgs())
 	{
 		GameInstance->DisableShouldConnectUsingCommandLineArgs();
