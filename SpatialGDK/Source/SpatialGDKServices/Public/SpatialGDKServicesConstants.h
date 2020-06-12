@@ -44,4 +44,6 @@ namespace SpatialGDKServicesConstants
 	const FString PinnedChinaCompatibilityModeRuntimeTemplate = TEXT("m5xlarge_ssd40_r0500");
 	
 	const FString DevLoginDeploymentTag = TEXT("dev_login");
+
+	const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
 }

@@ -210,10 +210,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
-
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
@@ -224,6 +220,8 @@ public:
 private:
 #if WITH_EDITOR
 	bool CanEditChange(const UProperty* InProperty) const override;
+
+	void UpdateServicesRegionFile();
 #endif
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
@@ -273,6 +271,8 @@ public:
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 
+	void SetServicesRegion(EServicesRegion::Type NewRegion);
+
 	/** Enable to use the new net cull distance component tagging form of interest */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableNetCullDistanceInterest;
@@ -308,4 +308,10 @@ public:
 	/** Experimental feature to use SpatialView layer when communicating with the Worker */
 	UPROPERTY(Config)
 	bool bUseSpatialView;
+
+	/**
+	  * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
+	  * the map's config with a 1x1 grid.
+	  */
+	bool bOverrideLoadBalancing;
 };
