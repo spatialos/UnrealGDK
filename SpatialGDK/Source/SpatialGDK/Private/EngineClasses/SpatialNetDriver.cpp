@@ -239,20 +239,21 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
-	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
+	// Ensures that any connections attempting to using command line arguments have a valid locater host in the command line.
+	GameInstance->TryInjectSpatialLocatorIntoCommandLine();
+
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Attempting connection to SpatialOS"));
+
+	if (GameInstance->GetShouldConnectUsingCommandLineArgs())
 	{
-		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect(bConnectAsClient))
+		GameInstance->DisableShouldConnectUsingCommandLineArgs();
+
+		// Try using command line arguments to setup connection config.
+		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			// If first time connecting but the bGetPreventClientCloudDeploymentAutoConnect flag is set then use input URL to setup connection config.
-			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
-		}
-		// Otherwise, try using command line arguments to setup connection config.
-		else if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
-		{
-			// If the command line arguments can not be used, use the input URL to setup connection config.
+			// If the command line arguments can not be used, use the input URL to setup connection config instead.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}

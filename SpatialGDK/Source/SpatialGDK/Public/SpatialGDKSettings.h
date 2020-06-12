@@ -198,7 +198,7 @@ private:
 
 public:
 
-	bool GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const;
+	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
@@ -313,5 +313,5 @@ public:
 	  * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	  * the map's config with a 1x1 grid.
 	  */
-	bool bOverrideLoadBalancing;
+	TOptional<bool> bOverrideMultiWorker;
 };
