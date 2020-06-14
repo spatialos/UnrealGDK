@@ -93,11 +93,11 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
-prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
-prepareRelease "UnrealGDKExampleProject"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
-prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "spatialos"
-prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
-prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "dry-run/release" "improbable"
+prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "spatialos"
+prepareRelease "UnrealGDKExampleProject"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "spatialos"
+prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "spatialos"
+prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "improbable"
+prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "improbable"
 
 for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
 do

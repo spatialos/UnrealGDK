@@ -29,13 +29,13 @@ steps:
         key: "gdk-source-branch"
         required: true
         hint: "The branch you want to create UnrealGDK, UnrealGDKExampleProject, UnrealGDKTestGyms, TestGymBuildKite & UnrealGDKEngineNetTest, release candidates from."
-        default: "dry-run/master"
+        default: "master"
 
       - text: "UnrealEngine source branches"
         key: "engine-source-branches"
         required: true
         hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line with the primary Engine version at the top."
-        default: "dry-run/4.24-SpatialOSUnrealGDK\ndry-run/4.23-SpatialOSUnrealGDK"
+        default: "4.24-SpatialOSUnrealGDK\n4.23-SpatialOSUnrealGDK"
 
   # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
   - label: "Prepare the release"
@@ -58,7 +58,7 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: "unrealgdk-release"
-    #TODO: Remove this skip when dry-run is complete.
+    #TODO: This step is actually not strictly neccessary, will be a slightly larger rewrite to get rid of it.
     skip: true
 
  # Stage 3: Run all tests against the release candidates.
@@ -74,8 +74,6 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: "unrealgdk-release"
-    #TODO: Remove this skip when dry-run is complete.
-    skip: true
   
   - wait
 
