@@ -30,7 +30,7 @@ public:
 		return SpatialGDKEditorInstance;
 	}
 
-protected:
+private:
 	// Local deployment connection flow
 	virtual bool ShouldConnectToLocalDeployment() const override;
 	virtual FString GetSpatialOSLocalDeploymentIP() const override;
@@ -42,6 +42,11 @@ protected:
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 
 	virtual bool CanExecuteLaunch() const override;
+	virtual bool CanStartPlaySession(FText& OutErrorMessage) const override;
+	virtual bool CanStartLaunchSession(FText& OutErrorMessage) const override;
+
+	virtual FString GetMobileClientCommandLineArgs() const override;
+	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
 private:
 	void RegisterSettings();
@@ -49,6 +54,7 @@ private:
 	bool HandleEditorSettingsSaved();
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();
+	bool CanStartSession(FText& OutErrorMessage) const;
 
 private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;

@@ -15,7 +15,11 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
+DECLARE_MULTICAST_DELEGATE(FOnDefaultTemplateNameRequireUpdate)
+
+class FSpatialRuntimeVersionCustomization;
 class UAbstractRuntimeLoadBalancingStrategy;
+class USpatialGDKEditorSettings;
 
 USTRUCT()
 struct FWorldLaunchSection
@@ -115,9 +119,6 @@ struct FWorkerTypeLaunchSection
 
 	FWorkerTypeLaunchSection()
 		: WorkerPermissions()
-		, MaxConnectionCapacityLimit(0)
-		, bLoginRateLimitEnabled(false)
-		, LoginRateLimit()
 		, bAutoNumEditorInstances(true)
 		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(false)
@@ -131,18 +132,6 @@ struct FWorkerTypeLaunchSection
 	/** Defines the worker instance's permissions. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorkerPermissionsSection WorkerPermissions;
-
-	/** Defines the maximum number of worker instances that can connect. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Max connection capacity limit (0 = unlimited capacity)", ClampMin = "0", UIMin = "0"))
-	int32 MaxConnectionCapacityLimit;
-
-	/** Enable connection rate limiting. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Login rate limit enabled"))
-	bool bLoginRateLimitEnabled;
-
-	/** Login rate limiting configuration. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled"))
-	FLoginRateLimitSection LoginRateLimit;
 
 	/** Automatically or manually specifies the number of worker instances to launch in editor. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Automatically compute number of instances to launch in Editor"))
@@ -164,15 +153,26 @@ struct FWorkerTypeLaunchSection
 USTRUCT()
 struct FSpatialLaunchConfigDescription
 {
+	friend class USpatialGDKEditorSettings;
+
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: Template(TEXT("w2_r0500_e5"))
+		: bUseDefaultTemplateForRuntimeVariant(true)
+		, Template()
 		, World()
 	{}
 
-	/** Deployment template. */
+	const FString& GetTemplate() const;
+
+	const FString& GetDefaultTemplateForRuntimeVariant() const;
+
+	/** Use default template for deployments. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	bool bUseDefaultTemplateForRuntimeVariant;
+
+	/** Deployment template. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bUseDefaultTemplateForRuntimeVariant"))
 	FString Template;
 
 	/** Configuration for the simulated world. */
@@ -198,7 +198,7 @@ namespace ERegionCode
 		US = 1,
 		EU,
 		AP,
-		CN
+		CN UMETA(Hidden)
 	};
 }
 
@@ -211,6 +211,65 @@ namespace ESpatialOSNetFlow
 		CloudDeployment
 	};
 }
+
+UENUM()
+namespace ESpatialOSRuntimeVariant
+{
+	enum Type
+	{
+		Standard,
+		CompatibilityMode
+	};
+}
+
+USTRUCT()
+struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
+{
+	friend class USpatialGDKEditorSettings;
+	friend class FSpatialRuntimeVersionCustomization;
+
+	GENERATED_BODY()
+
+	FRuntimeVariantVersion() : PinnedVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
+	{}
+
+	FRuntimeVariantVersion(const FString& InPinnedVersion) : PinnedVersion(InPinnedVersion)
+	{}
+
+	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending on the settings. */
+	const FString& GetVersionForCloud() const;
+
+	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending on the settings. */
+	const FString& GetVersionForLocal() const;
+
+	bool GetUseGDKPinnedRuntimeVersionForLocal() const { return bUseGDKPinnedRuntimeVersionForLocal; }
+
+	bool GetUseGDKPinnedRuntimeVersionForCloud() const { return bUseGDKPinnedRuntimeVersionForCloud; }
+
+	const FString& GetPinnedVersion() const { return PinnedVersion; }
+
+private:
+
+	/** Whether to use the GDK-associated SpatialOS runtime version for local deployments, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version for local"))
+	bool bUseGDKPinnedRuntimeVersionForLocal = true;
+
+	/** Whether to use the GDK-associated SpatialOS runtime version for cloud deployments, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version for cloud"))
+	bool bUseGDKPinnedRuntimeVersionForCloud = true;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersionForLocal"))
+	FString LocalRuntimeVersion;
+
+	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersionForCloud"))
+	FString CloudRuntimeVersion;
+
+private:
+	/** Pinned version for this variant. */
+	FString PinnedVersion;
+};
 
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
@@ -236,25 +295,29 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
 	bool bGenerateDefaultLaunchConfig;
 
-	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
-	const FString& GetSpatialOSRuntimeVersionForCloud() const;
+	/** Returns which runtime variant we should use. */
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
 
-	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
-	const FString& GetSpatialOSRuntimeVersionForLocal() const;
+	/** Returns the version information for the currently set variant*/
+	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
+	{
+		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
+	}
 
-	/** Whether to use the GDK-associated SpatialOS runtime version, or to use the one specified in the RuntimeVersion field. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version"))
-	bool bUseGDKPinnedRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime")
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
 
-	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
-	FString LocalRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	FRuntimeVariantVersion StandardRuntimeVersion;
 
-	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
-	FString CloudRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
+
+	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
 
 private:
+
+	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
 
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
@@ -400,6 +463,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
 	FString MobileExtraCommandLineArgs;
 
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Include Command Line Arguments when Packaging"))
+	bool bPackageMobileCommandLineArgs;
+
 	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
 	bool bStartPIEClientsWithLocalLaunchOnDevice;
@@ -506,7 +572,7 @@ public:
 	}
 
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);
-	FORCEINLINE FText GetPrimaryRegionCode() const
+	FORCEINLINE FText GetPrimaryRegionCodeText() const
 	{
 		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
@@ -516,6 +582,11 @@ public:
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	const ERegionCode::Type GetPrimaryRegionCode() const
+	{
+		return PrimaryDeploymentRegionCode;
 	}
 
 	void SetMainDeploymentCluster(const FString& NewCluster);
@@ -585,17 +656,9 @@ public:
 		return bGenerateSnapshot;
 	}
 
-	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);
-	FORCEINLINE bool GetUseGDKPinnedRuntimeVersion() const
-	{
-		return bUseGDKPinnedRuntimeVersion;
-	}
-
-	void SetCustomCloudSpatialOSRuntimeVersion(const FString& Version);
-	FORCEINLINE const FString& GetCustomCloudSpatialOSRuntimeVersion() const
-	{
-		return CloudRuntimeVersion;
-	}
+	void SetUseGDKPinnedRuntimeVersionForLocal(ESpatialOSRuntimeVariant::Type Variant, bool IsEnabled);
+	void SetUseGDKPinnedRuntimeVersionForCloud(ESpatialOSRuntimeVariant::Type Variant, bool IsEnabled);
+	void SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version);
 
 	void SetSimulatedPlayerDeploymentName(const FString& Name);
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const

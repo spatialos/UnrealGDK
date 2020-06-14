@@ -686,7 +686,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
-					Sender->RetireEntity(Op.entity_id);
+					Sender->RetireEntity(Op.entity_id, Actor->IsNetStartupActor());
 				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)

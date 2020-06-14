@@ -18,7 +18,7 @@
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
-#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SFilePathPicker.h"
@@ -175,8 +175,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Use GDK Pinned Version"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to use the SpatialOS Runtime version associated to the current GDK version"))))
+									.Text(FText::FromString(FString(TEXT("Use GDK Pinned Version For Cloud"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to use the SpatialOS Runtime version associated to the current GDK version for cloud deployments"))))
 								]
 							+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -337,6 +337,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
+								.Visibility(this, &SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
@@ -350,10 +351,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SComboButton)
 									.OnGetMenuContent(this, &SSpatialGDKCloudDeploymentConfiguration::OnGetPrimaryDeploymentRegionCode)
 									.ContentPadding(FMargin(2.0f, 2.0f))
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsPrimaryRegionPickerEnabled)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
-										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryRegionCode)
+										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryRegionCodeText)
 									]
 								]
 							]
@@ -368,14 +370,14 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetMainDeploymentCluster()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited, ETextCommit::Default)
 								]
@@ -496,6 +498,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
+								.Visibility(this, &SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
@@ -509,7 +512,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SComboButton)
 									.OnGetMenuContent(this, &SSpatialGDKCloudDeploymentConfiguration::OnGetSimulatedPlayerDeploymentRegionCode)
 									.ContentPadding(FMargin(2.0f, 2.0f))
-									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayerRegionPickerEnabled)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
@@ -528,14 +531,14 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetSimulatedPlayerCluster()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to. Region code will be ignored if this is specified."))))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerClusterCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerClusterCommited, ETextCommit::Default)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
@@ -796,13 +799,13 @@ void SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentNameCommited(co
 void SSpatialGDKCloudDeploymentConfiguration::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersion(NewCheckedState == ECheckBoxState::Checked);
+	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersionForCloud(SpatialGDKSettings->RuntimeVariant, NewCheckedState == ECheckBoxState::Checked);
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(InText.ToString());
+	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(SpatialGDKSettings->RuntimeVariant, InText.ToString());
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnSnapshotPathPicked(const FString& PickedPath)
@@ -830,15 +833,36 @@ TSharedRef<SWidget> SSpatialGDKCloudDeploymentConfiguration::OnGetPrimaryDeploym
 
 	if (pEnum != nullptr)
 	{
-		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		for (int32 EnumIdx = 0; EnumIdx < pEnum->NumEnums() - 1; EnumIdx++)
 		{
-			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			if (!pEnum->HasMetaData(TEXT("Hidden"), EnumIdx))
+			{
+				int64 CurrentEnumValue = pEnum->GetValueByIndex(EnumIdx);
+				FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
+				MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			}
 		}
 	}
 
 	return MenuBuilder.MakeWidget();
+}
+
+EVisibility SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility() const
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->IsRunningInChina() ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible;
+}
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsPrimaryRegionPickerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->GetMainDeploymentCluster().IsEmpty();
+}
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayerRegionPickerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->IsSimulatedPlayersEnabled() && SpatialGDKEditorSettings->GetSimulatedPlayerCluster().IsEmpty();
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
@@ -973,20 +997,23 @@ ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayersEnable
 ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsUsingGDKPinnedRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->GetUseGDKPinnedRuntimeVersion() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
+	return RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 bool SSpatialGDKCloudDeploymentConfiguration::IsUsingCustomRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return !SpatialGDKSettings->GetUseGDKPinnedRuntimeVersion();
+	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
+	return !RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud();
 }
 
 FText SSpatialGDKCloudDeploymentConfiguration::GetSpatialOSRuntimeVersionToUseText() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString& RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
-	return FText::FromString(RuntimeVersion);
+	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
+	const FString& RuntimeVersionString = RuntimeVersion.GetVersionForCloud();
+	return FText::FromString(RuntimeVersionString);
 }
 
 FReply SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap()
@@ -1013,16 +1040,10 @@ FReply SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap()
 
 FReply SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor()
 {
-	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor", ParentWindowPtr.Pin());
-
-	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
-	{
-		if (TSharedPtr<SWidget> This = WeakThis.Pin())
-		{
-			static_cast<SSpatialGDKCloudDeploymentConfiguration*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
-		}
-	}
-	);
+	ULaunchConfigurationEditor::OpenModalWindow(ParentWindowPtr.Pin(), [](const FString& FilePath) {
+		USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		SpatialGDKSettings->SetPrimaryLaunchConfigPath(FilePath);
+	});
 
 	return FReply::Handled();
 }
