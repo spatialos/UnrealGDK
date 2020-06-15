@@ -46,8 +46,15 @@ void ULayeredLBStrategy::Init()
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
-			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
-			ClassPathToLayer.Add(ClassPtr, LayerName);
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, LayerName);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
+			}
 		}
 	}
 
