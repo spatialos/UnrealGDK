@@ -131,7 +131,7 @@ public:
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
-	void WriteAndEndTraceIfRemote(const TraceKey Key, const FString& TraceDesc);
+	void WriteAndEndTrace(const TraceKey Key, const FString& TraceDesc, bool bOnlyEndIfTraceRootIsRemote);
 
 	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);

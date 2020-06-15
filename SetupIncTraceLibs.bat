@@ -22,6 +22,9 @@ call :MarkStartOfBlock "Retrieve dependencies"
 	spatial package retrieve internal        trace-dynamic-x86_64-gcc510-linux          14.3.0-b2647-85717ee-WORKER-SNAPSHOT "%CORE_SDK_DIR%\trace_lib\trace-linux.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
+REM There is a race condition between retrieve and unzip, add version call to stall briefly
+call spatial version 
+
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\trace_lib\trace-win32.zip\"	-DestinationPath \"%BINARIES_DIR%\Win64\" -Force;"^
 						"Expand-Archive -Path \"%CORE_SDK_DIR%\trace_lib\trace-linux.zip\"	-DestinationPath \"%BINARIES_DIR%\Linux\" -Force;"

@@ -5,14 +5,21 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "SpatialConstants.h"
 #include "UObject/Package.h"
+
+#include "SpatialConstants.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
+
+DECLARE_MULTICAST_DELEGATE(FOnDefaultTemplateNameRequireUpdate)
+
+class FSpatialRuntimeVersionCustomization;
+class UAbstractRuntimeLoadBalancingStrategy;
+class USpatialGDKEditorSettings;
 
 USTRUCT()
 struct FWorldLaunchSection
@@ -111,48 +118,27 @@ struct FWorkerTypeLaunchSection
 	GENERATED_BODY()
 
 	FWorkerTypeLaunchSection()
-		: WorkerTypeName()
-		, WorkerPermissions()
-		, MaxConnectionCapacityLimit(0)
-		, bLoginRateLimitEnabled(false)
-		, LoginRateLimit()
-		, Columns(1)
-		, Rows(1)
+		: WorkerPermissions()
+		, bAutoNumEditorInstances(true)
 		, NumEditorInstances(1)
-		, bManualWorkerConnectionOnly(true)
+		, bManualWorkerConnectionOnly(false)
 	{
 	}
 
-	/** The name of the worker type, defined in the filename of its spatialos.<worker_type>.worker.json file. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
-	FName WorkerTypeName;
+	/** Worker type name, deprecated in favor of defining them in the runtime settings.*/
+	UPROPERTY(config)
+	FName WorkerTypeName_DEPRECATED;
 
 	/** Defines the worker instance's permissions. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorkerPermissionsSection WorkerPermissions;
 
-	/** Defines the maximum number of worker instances that can connect. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Max connection capacity limit (0 = unlimited capacity)", ClampMin = "0", UIMin = "0"))
-	int32 MaxConnectionCapacityLimit;
-
-	/** Enable connection rate limiting. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Login rate limit enabled"))
-	bool bLoginRateLimitEnabled;
-
-	/** Login rate limiting configuration. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled"))
-	FLoginRateLimitSection LoginRateLimit;
-
-	/** Number of columns in the rectangle grid load balancing config. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid column count", ClampMin = "1", UIMin = "1"))
-	int32 Columns;
-
-	/** Number of rows in the rectangle grid load balancing config. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
-	int32 Rows;
+	/** Automatically or manually specifies the number of worker instances to launch in editor. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Automatically compute number of instances to launch in Editor"))
+	bool bAutoNumEditorInstances;
 
 	/** Number of instances to launch when playing in editor. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0", EditCondition = "!bAutoNumEditorInstances"))
 	int32 NumEditorInstances;
 
 	/** Flags defined for a worker instance. */
@@ -167,40 +153,26 @@ struct FWorkerTypeLaunchSection
 USTRUCT()
 struct FSpatialLaunchConfigDescription
 {
+	friend class USpatialGDKEditorSettings;
+
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: Template(TEXT("w2_r0500_e5"))
+		: bUseDefaultTemplateForRuntimeVariant(true)
+		, Template()
 		, World()
-	{
-		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
-		UnrealWorkerDefaultSetting.Rows = 1;
-		UnrealWorkerDefaultSetting.Columns = 1;
-		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
+	{}
 
-		ServerWorkers.Add(UnrealWorkerDefaultSetting);
-	}
+	const FString& GetTemplate() const;
 
-	FSpatialLaunchConfigDescription(const FName& WorkerTypeName)
-		: Template(TEXT("w2_r0500_e5"))
-		, World()
-	{
-		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = WorkerTypeName;
-		UnrealWorkerDefaultSetting.Rows = 1;
-		UnrealWorkerDefaultSetting.Columns = 1;
-		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
+	const FString& GetDefaultTemplateForRuntimeVariant() const;
 
-		ServerWorkers.Add(UnrealWorkerDefaultSetting);
-	}
-
-
-	/** Set WorkerTypesToLaunch in level editor play settings. */
-	SPATIALGDKEDITOR_API void SetLevelEditorPlaySettingsWorkerTypes();
+	/** Use default template for deployments. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	bool bUseDefaultTemplateForRuntimeVariant;
 
 	/** Deployment template. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bUseDefaultTemplateForRuntimeVariant"))
 	FString Template;
 
 	/** Configuration for the simulated world. */
@@ -208,8 +180,11 @@ struct FSpatialLaunchConfigDescription
 	FWorldLaunchSection World;
 
 	/** Worker-specific configuration parameters. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (TitleProperty = "WorkerTypeName"))
-	TArray<FWorkerTypeLaunchSection> ServerWorkers;
+	UPROPERTY(config)
+	TArray<FWorkerTypeLaunchSection> ServerWorkers_DEPRECATED;
+
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
+	FWorkerTypeLaunchSection ServerWorkerConfig;
 };
 
 /**
@@ -223,11 +198,80 @@ namespace ERegionCode
 		US = 1,
 		EU,
 		AP,
-		CN
+		CN UMETA(Hidden)
 	};
 }
 
-UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
+UENUM()
+namespace ESpatialOSNetFlow
+{
+	enum Type
+	{
+		LocalDeployment,
+		CloudDeployment
+	};
+}
+
+UENUM()
+namespace ESpatialOSRuntimeVariant
+{
+	enum Type
+	{
+		Standard,
+		CompatibilityMode
+	};
+}
+
+USTRUCT()
+struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
+{
+	friend class USpatialGDKEditorSettings;
+	friend class FSpatialRuntimeVersionCustomization;
+
+	GENERATED_BODY()
+
+	FRuntimeVariantVersion() : PinnedVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
+	{}
+
+	FRuntimeVariantVersion(const FString& InPinnedVersion) : PinnedVersion(InPinnedVersion)
+	{}
+
+	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending on the settings. */
+	const FString& GetVersionForCloud() const;
+
+	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending on the settings. */
+	const FString& GetVersionForLocal() const;
+
+	bool GetUseGDKPinnedRuntimeVersionForLocal() const { return bUseGDKPinnedRuntimeVersionForLocal; }
+
+	bool GetUseGDKPinnedRuntimeVersionForCloud() const { return bUseGDKPinnedRuntimeVersionForCloud; }
+
+	const FString& GetPinnedVersion() const { return PinnedVersion; }
+
+private:
+
+	/** Whether to use the GDK-associated SpatialOS runtime version for local deployments, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version for local"))
+	bool bUseGDKPinnedRuntimeVersionForLocal = true;
+
+	/** Whether to use the GDK-associated SpatialOS runtime version for cloud deployments, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version for cloud"))
+	bool bUseGDKPinnedRuntimeVersionForCloud = true;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersionForLocal"))
+	FString LocalRuntimeVersion;
+
+	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersionForCloud"))
+	FString CloudRuntimeVersion;
+
+private:
+	/** Pinned version for this variant. */
+	FString PinnedVersion;
+};
+
+UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
 	GENERATED_BODY()
@@ -238,17 +282,7 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
 
-private:
-
-	/** Set WorkerTypes in runtime settings. */
-	void SetRuntimeWorkerTypes();
-
-	/** Set DAT in runtime settings. */
-	void SetRuntimeUseDevelopmentAuthenticationFlow();
-	void SetRuntimeDevelopmentDeploymentToConnect();
-
 public:
-
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
 	bool bShowSpatialServiceButton;
@@ -261,37 +295,37 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
 	bool bGenerateDefaultLaunchConfig;
 
-	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
-	const FString& GetSpatialOSRuntimeVersionForCloud() const;
+	/** Returns which runtime variant we should use. */
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
 
-	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
-	const FString& GetSpatialOSRuntimeVersionForLocal() const;
+	/** Returns the version information for the currently set variant*/
+	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
+	{
+		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
+	}
 
-	/** Whether to use the GDK-associated SpatialOS runtime version, or to use the one specified in the RuntimeVersion field. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version"))
-	bool bUseGDKPinnedRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime")
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
 
-	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
-	FString LocalRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	FRuntimeVariantVersion StandardRuntimeVersion;
 
-	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
-	FString CloudRuntimeVersion;
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
+
+	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
 
 private:
+
+	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
 
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
 	FFilePath SpatialOSLaunchConfig;
 
 public:
-	/** Expose the runtime on a particular IP address when it is running on this machine. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Expose local runtime"))
-	bool bExposeRuntimeIP;
-
-	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", DisplayName = "Exposed local runtime IP address"))
+	/** Specify on which IP address the local runtime should be reachable. If empty, the local runtime will not be exposed. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
@@ -311,66 +345,117 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Platform to target when using Cook And Generate Schema (if empty, defaults to Editor's platform)"))
+	FString CookAndGeneratePlatform;
+
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
+	FString CookAndGenerateAdditionalArguments;
+
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local launch"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Assembly name"))
-		FString AssemblyName;
+	FString AssemblyName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment name"))
-		FString PrimaryDeploymentName;
+	FString PrimaryDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cloud launch configuration path"))
-		FFilePath PrimaryLaunchConfigPath;
+	FFilePath PrimaryLaunchConfigPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Snapshot path"))
-		FFilePath SnapshotPath;
+	FFilePath SnapshotPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
-		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
+	TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
+
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
+	FString MainDeploymentCluster;
+
+	/** Tags used when launching a deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+	FString DeploymentTags;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-		bool bUseDevelopmentAuthenticationFlow;
+	/** Whether to build and upload the assembly when starting the cloud deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build and Upload Assembly"))
+	bool bBuildAndUploadAssembly;
+
+	/** The build configuration to use when creating workers for the assembly, e.g. Development */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
+	FString AssemblyBuildConfiguration;
+
+	/** Allow overwriting an assembly of the same name */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Force Assembly Overwrite"))
+	bool bForceAssemblyOverwrite;
+
+	/** Whether to build client worker as part of the assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Client Worker"))
+	bool bBuildClientWorker;
+
+	/** Whether to generate schema automatically before building an assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Schema"))
+	bool bGenerateSchema;
+
+	/** Whether to generate a snapshot automatically before building an assembly */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Generate Snapshot"))
+	bool bGenerateSnapshot;
+
+	/** Extra arguments to pass when building the server worker. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly")
+	FString BuildServerExtraArgs;
+
+	/** Extra arguments to pass when building the client worker. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly")
+	FString BuildClientExtraArgs;
+
+	/** Extra arguments to pass when building the simulated player worker. */
+	UPROPERTY(EditAnywhere, config, Category = "Assembly")
+	FString BuildSimulatedPlayerExtraArgs;
 
 	/** The token created using 'spatial project auth dev-auth-token' */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-		FString DevelopmentAuthenticationToken;
+	FString DevelopmentAuthenticationToken;
 
 	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-		FString DevelopmentDeploymentToConnect;
+	FString DevelopmentDeploymentToConnect;
 
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
-		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
+	FString SimulatedPlayerCluster;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
-		bool bSimulatedPlayersIsEnabled;
+	bool bSimulatedPlayersIsEnabled;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Deployment name"))
-		FString SimulatedPlayerDeploymentName;
+	FString SimulatedPlayerDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
-		uint32 NumberOfSimulatedPlayers;
+	uint32 NumberOfSimulatedPlayers;
 
-	static bool IsAssemblyNameValid(const FString& Name);
-	static bool IsProjectNameValid(const FString& Name);
-	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
 public:
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
-	bool bMobileConnectToLocalDeployment;
+	/** If checked, use the connection flow override below instead of the one selected in the editor when building the command line for mobile. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Override Mobile Connection Flow (only for Push settings to device)"))
+	bool bMobileOverrideConnectionFlow;
 
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
-	FString MobileRuntimeIP;
+	/** The connection flow that should be used when pushing command line to the mobile device. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileOverrideConnectionFlow", DisplayName = "Mobile Connection Flow"))
+	TEnumAsByte<ESpatialOSNetFlow::Type> MobileConnectionFlow;
+
+	/** If specified, use this IP instead of 'Exposed local runtime IP address' when building the command line to push to the mobile device. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Local Runtime IP Override"))
+	FString MobileRuntimeIPOverride;
 
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
 	FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
@@ -378,16 +463,22 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
 	FString MobileExtraCommandLineArgs;
 
+	/** If checked, PIE clients will be automatically started when launching on a device and connecting to local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
+	bool bStartPIEClientsWithLocalLaunchOnDevice;
+
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
+	/** Select the connection flow that should be used when starting the game with Spatial networking enabled. */
+	UPROPERTY(EditAnywhere, config, Category = "Connection Flow", meta = (DisplayName = "SpatialOS Connection Flow Type"))
+	TEnumAsByte<ESpatialOSNetFlow::Type> SpatialOSNetFlowType;
+
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
-		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("default_launch.json"))
-			: SpatialOSLaunchConfig.FilePath;
+		return SpatialOSLaunchConfig.FilePath;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToSave() const
@@ -407,6 +498,13 @@ public:
 		return SpatialOSSnapshotToLoad.IsEmpty()
 			? FString(TEXT("default.snapshot"))
 			: SpatialOSSnapshotToLoad;
+	}
+
+	FString GetCookAndGenerateSchemaTargetPlatform() const;
+
+	FORCEINLINE FString GetCookAndGenerateSchemaAdditionalArgs() const
+	{
+		return CookAndGenerateAdditionalArguments;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
@@ -471,7 +569,7 @@ public:
 	}
 
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);
-	FORCEINLINE FText GetPrimaryRegionCode() const
+	FORCEINLINE FText GetPrimaryRegionCodeText() const
 	{
 		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
@@ -481,6 +579,29 @@ public:
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	const ERegionCode::Type GetPrimaryRegionCode() const
+	{
+		return PrimaryDeploymentRegionCode;
+	}
+
+	void SetMainDeploymentCluster(const FString& NewCluster);
+	FORCEINLINE FString GetMainDeploymentCluster() const
+	{
+		return MainDeploymentCluster;
+	}
+
+	void SetDeploymentTags(const FString& Tags);
+	FORCEINLINE FString GetDeploymentTags() const
+	{
+		return DeploymentTags;
+	}
+
+	void SetAssemblyBuildConfiguration(const FString& Configuration);
+	FORCEINLINE FText GetAssemblyBuildConfiguration() const
+	{
+		return FText::FromString(AssemblyBuildConfiguration);
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
@@ -502,22 +623,50 @@ public:
 		return bSimulatedPlayersIsEnabled;
 	}
 
-	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);
-	FORCEINLINE bool GetUseGDKPinnedRuntimeVersion() const
+	void SetBuildAndUploadAssembly(bool bBuildAndUpload);
+	FORCEINLINE bool ShouldBuildAndUploadAssembly() const
 	{
-		return bUseGDKPinnedRuntimeVersion;
+		return bBuildAndUploadAssembly;
 	}
 
-	void SetCustomCloudSpatialOSRuntimeVersion(const FString& Version);
-	FORCEINLINE const FString& GetCustomCloudSpatialOSRuntimeVersion() const
+	void SetForceAssemblyOverwrite(bool bForce);
+	FORCEINLINE bool IsForceAssemblyOverwriteEnabled() const
 	{
-		return CloudRuntimeVersion;
+		return bForceAssemblyOverwrite;
 	}
+
+	void SetBuildClientWorker(bool bBuild);
+	FORCEINLINE bool IsBuildClientWorkerEnabled() const
+	{
+		return bBuildClientWorker;
+	}
+
+	void SetGenerateSchema(bool bGenerate);
+	FORCEINLINE bool IsGenerateSchemaEnabled() const
+	{
+		return bGenerateSchema;
+	}
+
+	void SetGenerateSnapshot(bool bGenerate);
+	FORCEINLINE bool IsGenerateSnapshotEnabled() const
+	{
+		return bGenerateSnapshot;
+	}
+
+	void SetUseGDKPinnedRuntimeVersionForLocal(ESpatialOSRuntimeVariant::Type Variant, bool IsEnabled);
+	void SetUseGDKPinnedRuntimeVersionForCloud(ESpatialOSRuntimeVariant::Type Variant, bool IsEnabled);
+	void SetCustomCloudSpatialOSRuntimeVersion(ESpatialOSRuntimeVariant::Type Variant, const FString& Version);
 
 	void SetSimulatedPlayerDeploymentName(const FString& Name);
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
 		return SimulatedPlayerDeploymentName;
+	}
+
+	void SetSimulatedPlayerCluster(const FString& NewCluster);
+	FORCEINLINE FString GetSimulatedPlayerCluster() const
+	{
+		return SimulatedPlayerCluster;
 	}
 
 	FORCEINLINE FString GetSimulatedPlayerLaunchConfigPath() const
@@ -526,7 +675,7 @@ public:
 	}
 
 	void SetNumberOfSimulatedPlayers(uint32 Number);
-	FORCEINLINE uint32 GetNumberOfSimulatedPlayer() const
+	FORCEINLINE uint32 GetNumberOfSimulatedPlayers() const
 	{
 		return NumberOfSimulatedPlayers;
 	}
@@ -538,5 +687,14 @@ public:
 
 	bool IsDeploymentConfigurationValid() const;
 
-	void SetRuntimeDevelopmentAuthenticationToken();
+	void SetDevelopmentAuthenticationToken(const FString& Token);
+	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
+
+	void SetExposedRuntimeIP(const FString& RuntimeIP);
+
+	void SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType);
+
+	static bool IsProjectNameValid(const FString& Name);
+	static bool IsAssemblyNameValid(const FString& Name);
+	static bool IsDeploymentNameValid(const FString& Name);
 };

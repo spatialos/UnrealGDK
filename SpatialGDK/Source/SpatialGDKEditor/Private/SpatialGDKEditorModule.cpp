@@ -2,22 +2,32 @@
 
 #include "SpatialGDKEditorModule.h"
 
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorLayoutDetails.h"
-
-#include "ISettingsModule.h"
-#include "ISettingsContainer.h"
-#include "ISettingsSection.h"
-#include "PropertyEditor/Public/PropertyEditorModule.h"
-#include "WorkerTypeCustomization.h"
-
 #include "EditorExtension/GridLBStrategyEditorExtension.h"
+#include "GeneralProjectSettings.h"
+#include "ISettingsContainer.h"
+#include "ISettingsModule.h"
+#include "ISettingsSection.h"
+#include "Misc/MessageDialog.h"
+#include "PropertyEditor/Public/PropertyEditorModule.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandLineArgsManager.h"
+#include "SpatialGDKEditorLayoutDetails.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
+#include "SpatialLaunchConfigCustomization.h"
+#include "SpatialRuntimeVersionCustomization.h"
+#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigEditorLayoutDetails.h"
+#include "WorkerTypeCustomization.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
+	, CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
 {
 
 }
@@ -27,6 +37,8 @@ void FSpatialGDKEditorModule::StartupModule()
 	RegisterSettings();
 
 	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
+	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
+	CommandLineArgsManager->Init();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
@@ -37,6 +49,94 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	{
 		UnregisterSettings();
 	}
+}
+
+bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
+{
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
+}
+
+FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->ExposedRuntimeIP;
+}
+
+bool FSpatialGDKEditorModule::ShouldStartPIEClientsWithLocalLaunchOnDevice() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->bStartPIEClientsWithLocalLaunchOnDevice;
+}
+
+bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
+{
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
+}
+
+FString FSpatialGDKEditorModule::GetDevAuthToken() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentAuthenticationToken;
+}
+
+FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+}
+
+bool FSpatialGDKEditorModule::CanExecuteLaunch() const
+{
+	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
+}
+
+bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
+{
+	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
+	{
+		OutErrorMessage = LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar.");
+		return false;
+	}
+
+	if (ShouldConnectToCloudDeployment())
+	{
+		if (GetDevAuthToken().IsEmpty())
+		{
+			OutErrorMessage = LOCTEXT("MissingDevelopmentAuthenticationToken", "You have to generate or provide a development authentication token in the SpatialOS GDK Editor Settings section to enable connecting to a cloud deployment.");
+			return false;
+		}
+
+		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+		if (!Settings->DevelopmentDeploymentToConnect.IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, OutErrorMessage))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool FSpatialGDKEditorModule::CanStartPlaySession(FText& OutErrorMessage) const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	return CanStartSession(OutErrorMessage);
+}
+
+bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	if (ShouldConnectToLocalDeployment() && GetSpatialOSLocalDeploymentIP().IsEmpty())
+	{
+		OutErrorMessage = LOCTEXT("MissingLocalDeploymentIP", "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable connecting to a local deployment.");
+		return false;
+	}
+
+	return CanStartSession(OutErrorMessage);
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
@@ -71,7 +171,10 @@ void FSpatialGDKEditorModule::RegisterSettings()
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout("SpatialLaunchConfigDescription", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialLaunchConfigCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout("RuntimeVariantVersion", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialRuntimeVersionCustomization::MakeInstance));
 	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(ULaunchConfigurationEditor::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FLaunchConfigEditorLayoutDetails::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()

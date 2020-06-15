@@ -37,7 +37,7 @@ void StartSetupConnectionConfigFromURL(USpatialConnectionManager* ConnectionMana
 	bOutUseReceptionist = (URL.Host != SpatialConstants::LOCATOR_HOST) && !URL.HasOption(TEXT("locator"));
 	if (bOutUseReceptionist)
 	{
-		ConnectionManager->ReceptionistConfig.SetReceptionistHost(URL.Host);
+		ConnectionManager->ReceptionistConfig.SetupFromURL(URL);
 	}
 	else
 	{
@@ -57,13 +57,6 @@ void FinishSetupConnectionConfig(USpatialConnectionManager* ConnectionManager, c
 
 		FReceptionistConfig& ReceptionistConfig = ConnectionManager->ReceptionistConfig;
 		ReceptionistConfig.WorkerType = WorkerType;
-
-		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
-		if (URL.HasOption(UseExternalIpForBridge))
-		{
-			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
-			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
-		}
 	}
 	else
 	{
@@ -75,7 +68,7 @@ void FinishSetupConnectionConfig(USpatialConnectionManager* ConnectionManager, c
 	}
 }
 } // anonymous namespace
- 
+
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForSeconds, double, Seconds);
 bool FWaitForSeconds::Update()
 {

@@ -75,7 +75,6 @@ struct FObjectReferences
 
 struct FPendingSubobjectAttachment
 {
-	USpatialActorChannel* Channel;
 	const FClassInfo* Info;
 	TWeakObjectPtr<UObject> Subobject;
 
@@ -171,32 +170,7 @@ public:
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	inline bool IsAuthoritativeClient() const
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-		{
-			return bIsAuthClient;
-		}
-
-		// If we aren't using result types, we have to actually look at the ACL to see if we should be authoritative or not to guess if we are going to receive authority
-		// in order to send dynamic interest overrides correctly for this client. If we don't do this there's a good chance we will see that there is no server RPC endpoint
-		// on this entity when we try to send any RPCs immediately after checking out the entity, which can lead to inconsistent state.
-		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
-		{
-			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))) {
-				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
-				{
-					for (const FString& Attribute : AttributeSet)
-					{
-						if (WorkerAttributes.Contains(Attribute))
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
-	
-		return false;
+		return bIsAuthClient;
 	}
 
 	// Sets the server and client authorities for this SpatialActorChannel based on the StaticComponentView
@@ -212,8 +186,12 @@ public:
 		}
 	}
 
-	inline void SetServerAuthority(const bool IsAuth)
+	void SetServerAuthority(const bool IsAuth)
 	{
+		if (IsAuth && !bIsAuthServer)
+		{
+			AuthorityReceivedTimestamp = FPlatformTime::Cycles64();
+		}
 		bIsAuthServer = IsAuth;
 	}
 
@@ -231,11 +209,7 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
-#if ENGINE_MINOR_VERSION <= 22
-		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
-#else
 		return FindOrCreateReplicator(Object)->RepState->GetReceivingRepState()->StaticBuffer;
-#endif
 	}
 
 	// Begin UChannel interface
@@ -245,11 +219,7 @@ public:
 
 	// Begin UActorChannel interface
 	virtual int64 ReplicateActor() override;
-#if ENGINE_MINOR_VERSION <= 22
-	virtual void SetChannelActor(AActor* InActor) override;
-#else
 	virtual void SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags) override;
-#endif
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
 	// End UActorChannel interface
@@ -272,7 +242,7 @@ public:
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
-	
+
 	void UpdateShadowData();
 	void UpdateSpatialPositionWithFrequencyCheck();
 	void UpdateSpatialPosition();
@@ -304,7 +274,9 @@ private:
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
-	
+
+	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
+
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
@@ -359,4 +331,15 @@ private:
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
+
+	// Band-aid until we get Actor Sets.
+	// Used on server-side workers only.
+	// Record when this worker receives SpatialOS Position component authority over the Actor.
+	// Tracking this helps prevent authority thrashing which can happen due a replication race
+	// between hierarchy Actors. This happens because hierarchy Actor migration using the
+	// default load-balancing strategy depends on the position of the hierarchy root Actor,
+	// or its controlled pawn. If the hierarchy Actor data is replicated to the new worker
+	// before the actor holding the position for all the hierarchy, it can immediately attempt to migrate back.
+	// Using this timestamp, we can back off attempting migrations for a while.
+	uint64 AuthorityReceivedTimestamp;
 };

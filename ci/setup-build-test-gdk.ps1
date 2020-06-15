@@ -16,8 +16,11 @@ class TestSuite {
     [ValidateNotNullOrEmpty()][string]$tests_path
     [ValidateNotNull()]       [string]$additional_gdk_options
     [bool]                            $run_with_spatial
+    [ValidateNotNull()]       [string]$additional_cmd_line_args
 
-    TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options, [bool] $run_with_spatial) {
+    TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map,
+              [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
+              [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_branch = $test_repo_branch
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
@@ -27,15 +30,23 @@ class TestSuite {
         $this.tests_path = $tests_path
         $this.additional_gdk_options = $additional_gdk_options
         $this.run_with_spatial = $run_with_spatial
+        $this.additional_cmd_line_args = $additional_cmd_line_args
     }
 }
 
 [string] $test_repo_url = "git@github.com:improbable/UnrealGDKEngineNetTest.git"
 [string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
-[string] $test_repo_map = "NetworkingMap"
 [string] $test_project_name = "NetworkTestProject"
-[string] $test_repo_branch = "0.9.0"
+[string] $test_repo_branch = "master"
 [string] $user_gdk_settings = ""
+[string] $user_cmd_line_args = "$env:TEST_ARGS"
+[string] $gdk_branch = "$env:BUILDKITE_BRANCH"
+
+# If the testing repo has a branch with the same name as the current branch, use that
+$testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
+if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+    $test_repo_branch = $gdk_branch
+}
 
 # Allow overriding testing branch via environment variable
 if (Test-Path env:TEST_REPO_BRANCH) {
@@ -48,29 +59,34 @@ if (Test-Path env:GDK_SETTINGS) {
 
 $tests = @()
 
+# TODO: UNR-3632 - Remove this when new runtime passes all network tests.
+$override_runtime_to_compatibility_mode = "-ini:SpatialGDKEditorSettings:[/Script/SpatialGDKEditor.SpatialGDKEditorSettings]:RuntimeVariant=CompatibilityMode"
+
 # If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
 # There are basically two situations here: either we are trying to run tests, in which case we use EngineNetTest
 # Or, we try different build targets, in which case we use UnrealGDKTestGyms
 if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
-    $test_repo_map = "EmptyGym"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK", "bEnableUnrealLoadBalancer=false$user_gdk_settings", $True)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
 }
-else{
+else {
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False)
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
     }
     else {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True)
-        # enable load-balancing once the tests pass reliably and the testing repo is updated
-        # $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")$user_gdk_settings", $True)
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
+            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$override_runtime_to_compatibility_mode $user_cmd_line_args")
     }
 
-    if ($env:SLOW_NETWORKING_TESTS) {
+    if ($env:SLOW_NETWORKING_TESTS -like "true") {
         $tests[0].tests_path += "+/Game/NetworkingMap"
+        if($env:TEST_CONFIG -ne "Native") {
+            $tests[0].tests_path += "+SpatialGDKSlow."
+        }
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
     }
 }
@@ -116,6 +132,7 @@ Foreach ($test in $tests) {
     $tests_path = $test.tests_path
     $additional_gdk_options = $test.additional_gdk_options
     $run_with_spatial = $test.run_with_spatial
+    $additional_cmd_line_args = $test.additional_cmd_line_args
 
     $project_is_cached = $False
     Foreach ($cached_project in $projects_cached) {
@@ -155,7 +172,8 @@ Foreach ($test in $tests) {
             -test_repo_map "$test_repo_map" `
             -tests_path "$tests_path" `
             -additional_gdk_options "$additional_gdk_options" `
-            -run_with_spatial $run_with_spatial
+            -run_with_spatial $run_with_spatial `
+            -additional_cmd_line_args "$additional_cmd_line_args"
         Finish-Event "test-gdk" "command"
 
         Start-Event "report-tests" "command"
