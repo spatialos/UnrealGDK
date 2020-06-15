@@ -198,7 +198,7 @@ private:
 
 public:
 
-	bool GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const;
+	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
@@ -220,6 +220,8 @@ public:
 private:
 #if WITH_EDITOR
 	bool CanEditChange(const UProperty* InProperty) const override;
+
+	void UpdateServicesRegionFile();
 #endif
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
@@ -269,6 +271,8 @@ public:
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 
+	void SetServicesRegion(EServicesRegion::Type NewRegion);
+
 	/** Enable to use the new net cull distance component tagging form of interest */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableNetCullDistanceInterest;
@@ -309,5 +313,5 @@ public:
 	  * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	  * the map's config with a 1x1 grid.
 	  */
-	bool bOverrideLoadBalancing;
+	TOptional<bool> bOverrideMultiWorker;
 };

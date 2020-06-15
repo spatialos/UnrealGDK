@@ -239,20 +239,21 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
-	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
+	// Ensures that any connections attempting to using command line arguments have a valid locater host in the command line.
+	GameInstance->TryInjectSpatialLocatorIntoCommandLine();
+
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Attempting connection to SpatialOS"));
+
+	if (GameInstance->GetShouldConnectUsingCommandLineArgs())
 	{
-		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect(bConnectAsClient))
+		GameInstance->DisableShouldConnectUsingCommandLineArgs();
+
+		// Try using command line arguments to setup connection config.
+		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			// If first time connecting but the bGetPreventClientCloudDeploymentAutoConnect flag is set then use input URL to setup connection config.
-			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
-		}
-		// Otherwise, try using command line arguments to setup connection config.
-		else if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
-		{
-			// If the command line arguments can not be used, use the input URL to setup connection config.
+			// If the command line arguments can not be used, use the input URL to setup connection config instead.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
@@ -895,7 +896,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				{
 					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
 				}
-				Sender->RetireEntity(EntityId);
+				Sender->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
 			}
 		}
 
@@ -1386,18 +1387,13 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				}
 			}
 
-			// UNR-865 - Handle closing actor channels for non-relevant actors without deleting the entity.
-			// If the actor wasn't recently relevant, or if it was torn off, close the actor channel if it exists for this connection
+			// If the actor has been torn off, close the channel
+			// Native also checks here for !bIsRecentlyRelevant and if so closes due to relevancy, we're not doing because it's less likely
+			// in a SpatialOS game. Might be worth an investigation in future as a performance win - UNR-3063
 			if (Actor->GetTearOff() && Channel != NULL)
 			{
-				// Non startup (map) actors have their channels closed immediately, which destroys them.
-				// Startup actors get to keep their channels open.
-				if (!Actor->IsNetStartupActor())
-				{
-					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
-					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-					Channel->Close(Actor->GetTearOff() ? EChannelCloseReason::TearOff : EChannelCloseReason::Relevancy);
-				}
+				UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
+				Channel->Close(Actor->GetTearOff() ? EChannelCloseReason::TearOff : EChannelCloseReason::Relevancy);
 			}
 		}
 	}
@@ -2318,12 +2314,12 @@ void USpatialNetDriver::WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfter
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
-void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
+void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor)
 {
 	FTimerHandle RetryTimer;
-	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId, bIsNetStartupActor]()
 	{
-		Sender->RetireEntity(EntityId);
+		Sender->RetireEntity(EntityId, bIsNetStartupActor);
 	}, Delay, false);
 }
 

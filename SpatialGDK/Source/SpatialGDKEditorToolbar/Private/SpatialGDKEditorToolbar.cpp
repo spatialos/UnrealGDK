@@ -47,7 +47,7 @@
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
-#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -83,6 +83,10 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
+
+	// Check for UseChinaServicesRegion file in the plugin directory to determine the services region.
+	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
+	GetMutableDefault<USpatialGDKSettings>()->SetServicesRegion(bUseChinaServicesRegion ? EServicesRegion::CN : EServicesRegion::Default);
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
@@ -1081,7 +1085,7 @@ void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
 
 void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 {
-	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"), nullptr);
+	ULaunchConfigurationEditor::OpenModalWindow(nullptr);
 }
 
 void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()
