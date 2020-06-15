@@ -23,11 +23,8 @@ void ULayeredLBStrategy::Init()
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
-
-	bool bIsMultiWorkerEnabled = SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker;
-	bIsMultiWorkerEnabled = bIsMultiWorkerEnabled || (!SpatialGDKSettings->bOverrideMultiWorker.IsSet() && (WorldSettings != nullptr && WorldSettings->bEnableMultiWorker));
+	bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 
 	if (!bIsMultiWorkerEnabled)
 	{
