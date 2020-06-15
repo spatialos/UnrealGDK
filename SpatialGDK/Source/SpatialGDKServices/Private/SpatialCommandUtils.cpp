@@ -280,9 +280,9 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	return false;
 }
 
-FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, FString &OutResult, int32 &OutExitCode, bool &bProcessSucceeded)
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32& Port , FString &OutResult, int32 &OutExitCode, bool &bProcessSucceeded)
 {
-	FString Command = FString::Printf(TEXT("cloud connect external %s"), *CloudDeploymentName);
+	FString Command = FString::Printf(TEXT("cloud connect external %s --listening_address %s --local_receptionist_port %i"), *CloudDeploymentName, *ListeningAddress, Port);
 
 	if (bIsRunningInChina)
 	{

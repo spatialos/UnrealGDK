@@ -46,7 +46,7 @@ FString FLocalReceptionistProxyServerManager::GetProcessName()
 	return ProcessName;
 }
 
-bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
+bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port)
 {
 	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
 
@@ -60,7 +60,7 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
 	if (ExitCode == ExitCodeSuccess && bSuccess)
 	{
 		// Get the line of the netstat output that contains the port we're looking for.
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), ReceptionistPort));
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
 		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
 		if (PidMatcher.FindNext())
 		{
@@ -110,10 +110,10 @@ bool FLocalReceptionistProxyServerManager::TryKillBlockingPortProcess()
 
 bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks()
 {
-	//Check if any process is blocking the 7777 port
-	if(CheckIfPortIsBound())
+	//Check if any process is blocking the receptionist port
+	if(CheckIfPortIsBound(ReceptionistPort))
 	{
-		//Try killing the process that blocks the 7777 port 
+		//Try killing the process that blocks the receptionist port 
 		bool bProcessKilled = TryKillBlockingPortProcess();
 		if (!bProcessKilled)
 		{
@@ -177,7 +177,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	}
 
 	bool bProxyStartSuccess = false;
-	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, StartResult, ExitCode, bProxyStartSuccess);
+	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode, bProxyStartSuccess);
 
 	//check if process run successfully
 	bSuccess = ProxyServerProcHandle.IsValid();

@@ -11,7 +11,7 @@ class FLocalReceptionistProxyServerManager
 public:
 	FLocalReceptionistProxyServerManager();
 
-	bool CheckIfPortIsBound();
+	bool CheckIfPortIsBound(int32 Port);
 	bool TryKillBlockingPortProcess();
 	bool LocalReceptionistProxyServerPreRunChecks();
 
@@ -36,6 +36,7 @@ private:
 
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ReceptionistPort = 7777;
+	const FString ListeningAddress = TEXT("127.0.0.1");
 
 	bool bProxyIsRunning = false;
 };
