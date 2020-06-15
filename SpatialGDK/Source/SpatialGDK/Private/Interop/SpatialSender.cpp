@@ -1015,31 +1015,29 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
+void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor)
 {
-	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	if (bIsNetStartupActor)
 	{
-		if (Actor->IsNetStartupActor())
+		Receiver->RemoveActor(EntityId);
+		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+		if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
-			Receiver->RemoveActor(EntityId);
-			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-			if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
-			{
-				AddTombstoneToEntity(EntityId);
-			}
-			else
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld (actor: %s)"), EntityId, *Actor->GetName());
-			}
+			UE_LOG(LogSpatialSender, Log, TEXT("Adding tombstone to entity: %lld"), EntityId);
+			AddTombstoneToEntity(EntityId);
 		}
 		else
 		{
-			Connection->SendDeleteEntityRequest(EntityId);
+			UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld"), EntityId);
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't get Actor from PackageMap for EntityId: %lld"), EntityId);
+		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
+		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+
+		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
+		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }
 
