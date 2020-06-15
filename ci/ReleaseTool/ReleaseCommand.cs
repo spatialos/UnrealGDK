@@ -21,8 +21,8 @@ namespace ReleaseTool
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private const string PullRequestNameTemplate = $"Release {0} - Merge {options.ReleaseBranch} into {options.SourceBranch}";
-        private const string pullRequestBody = $"Merging the {options.ReleaseBranch} into {options.SourceBranch}";
+        private const string PullRequestNameTemplate = "Release {0} - Merge {1} into {2}";
+        private const string pullRequestBody = "Merging {0} back into {1}. Please manually resolve merge conflicts.";
 
         private const string releaseAnnotationTemplate = "* Successfully created a [draft release]({0}) " +
            "in the repo `{1}`. Your human labour is now required to publish it.\n";
@@ -118,8 +118,8 @@ namespace ReleaseTool
                         pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
                         branchFrom,
                         branchTo,
-                        string.Format(PullRequestNameTemplate, options.Version),
-                        pullRequestBody);
+                        string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
+                        string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
                     }
                     catch (Octokit.ApiValidationException e)
                     {
@@ -285,8 +285,8 @@ namespace ReleaseTool
                         pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
                         branchFrom,
                         branchTo,
-                        string.Format(PullRequestNameTemplate, options.Version),
-                        pullRequestBody);
+                        string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
+                        string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
                     }
                     catch (Octokit.ApiValidationException e)
                     {
