@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.10.0`] - 2020-06-15
+
 ### New Known Issues:
 
 ### Breaking Changes:
