@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings for Offloading and Load Balancing have been combined and moved from the Editor and Runtime settings to instead be per map in the SpatialWorldSettings. For a detailed explanation please see the Load Balancing documentation.
 - Command line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer` have been removed and UnrealGDK Load balancing is always enabled. To override a map's load balancing config "EnableMultiWorker" setting, use the command line flag `OverrideMultiWorker`.
 - Running with result types (previously default enabled) is now mandatory. The Runtime setting `bEnableResultTypes` has been removed to reflect this.
+- Offloading lookup by Actor returns based on the root owner of the Actor.
 - Removed `QueuedOutgoingRPCWaitTime`, all RPC failure cases are now correctly queued or dropped.
 - Removed `Max connection capacity limit` and `Login rate limit` from generated worker configurations as no longer supported.
 - Secure worker connections are no longer supported for Editor builds. They are still supported for packaged builds.
