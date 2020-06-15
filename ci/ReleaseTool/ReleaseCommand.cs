@@ -15,14 +15,14 @@ namespace ReleaseTool
     ///     * Merges the candidate branch into the release branch.
     ///     * Pushes the release branch.
     ///     * Creates a GitHub release draft.
-    ///     * Creates a PR from the target-branch (defaults to release) branch into the source-branch (defaults to master).
+    ///     * Creates a PR from the release-branch (defaults to release) branch into the source-branch (defaults to master).
     /// </summary>
     internal class ReleaseCommand
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private const string PullRequestNameTemplate = "Release {0} - Merge target-branch into source-branch";
-        private const string pullRequestBody = "Merging the target-branch into source-branch.";
+        private const string PullRequestNameTemplate = $"Release {0} - Merge {options.ReleaseBranch} into {options.SourceBranch}";
+        private const string pullRequestBody = $"Merging the {options.ReleaseBranch} into {options.SourceBranch}";
 
         private const string releaseAnnotationTemplate = "* Successfully created a [draft release]({0}) " +
            "in the repo `{1}`. Your human labour is now required to publish it.\n";
@@ -82,7 +82,7 @@ namespace ReleaseTool
          *     This tool is designed to execute most of the git operations required when releasing:
          *         1. Merge the RC PR into the release branch.
          *         2. Draft a GitHub release using the changelog notes.
-         *         3. Open a PR from the target-branch into source-branch.
+         *         3. Open a PR from the release-branch into source-branch.
          */
         public int Run()
         {
@@ -123,7 +123,7 @@ namespace ReleaseTool
                     }
                     catch (Octokit.ApiValidationException e)
                     {
-                            // Handles the case where source-branch (default master) and target-branch (default release) are identical, so there is no need to merge source-branch back into target-branch.
+                            // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
                             if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
                             {
                                 Logger.Info(e.ApiError.Errors[0].Message);
@@ -290,7 +290,7 @@ namespace ReleaseTool
                     }
                     catch (Octokit.ApiValidationException e)
                     {
-                        // Handles the case where source-branch (default master) and target-branch (default release) are identical, so there is no need to merge source-branch back into target-branch.
+                        // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
                         if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
                         {
                             Logger.Info(e.ApiError.Errors[0].Message);
@@ -312,11 +312,11 @@ namespace ReleaseTool
                 BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
 
                 Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                Logger.Info("Successfully created PR for merging the target-branch (default release) into the source-branch (default master).");
+                Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
             }
             catch (Exception e)
             {
-                Logger.Error(e, "ERROR: Unable to release candidate branch and/or merge the target-branch (default release) back into the source-branch (default master). Error: {0}", e);
+                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e);
                 return 1;
             }
 
