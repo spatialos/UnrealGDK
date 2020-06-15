@@ -7,6 +7,7 @@ param(
     [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
     [string] $additional_gdk_options = "",
+    [string] $additional_gdk_editor_options = "",
     [bool]   $run_with_spatial = $False,
     [string] $additional_cmd_line_args = ""
 )
@@ -76,6 +77,7 @@ $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 
 $additional_gdk_options = Parse-UnrealOptions "$additional_gdk_options" "[/Script/SpatialGDK.SpatialGDKSettings]"
+$additional_gdk_editor_options = Parse-UnrealOptions "$additional_gdk_editor_options" "[/Script/SpatialGDKEditor.SpatialGDKEditorSettings]"
 
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", # We need some project to run tests in, but for unit tests the exact project shouldn't matter
@@ -89,7 +91,8 @@ $cmd_args_list = @( `
     "-unattended", # Disable anything requiring user feedback
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-stdout", # Print to output
-    "-ini:SpatialGDKSettings:$additional_gdk_options" # Pass changes to configuration files from above
+    "-ini:SpatialGDKSettings:$additional_gdk_options" # Pass changes to SpatialGDK configuration files from above
+    "-ini:SpatialGDKEditorSettings:$additional_gdk_editor_options" # Pass changes to SpatialGDKEditor configuration files from above
     "-OverrideSpatialNetworking=$run_with_spatial" # A parameter to switch beetween different networking implementations
 )
 

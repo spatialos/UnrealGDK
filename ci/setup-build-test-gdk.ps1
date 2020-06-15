@@ -15,12 +15,13 @@ class TestSuite {
     [ValidateNotNullOrEmpty()][string]$test_results_dir
     [ValidateNotNullOrEmpty()][string]$tests_path
     [ValidateNotNull()]       [string]$additional_gdk_options
+    [ValidateNotNull()]       [string]$additional_gdk_editor_options
     [bool]                            $run_with_spatial
     [ValidateNotNull()]       [string]$additional_cmd_line_args
 
     TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map,
               [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
-              [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
+              [string] $additional_gdk_editor_options, [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_branch = $test_repo_branch
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
@@ -29,6 +30,7 @@ class TestSuite {
         $this.test_results_dir = $test_results_dir
         $this.tests_path = $tests_path
         $this.additional_gdk_options = $additional_gdk_options
+        $this.additional_gdk_editor_options = $additional_gdk_editor_options
         $this.run_with_spatial = $run_with_spatial
         $this.additional_cmd_line_args = $additional_cmd_line_args
     }
@@ -39,6 +41,7 @@ class TestSuite {
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
 [string] $user_gdk_settings = "$env:GDK_SETTINGS"
+[string] $user_gdk_editor_settings = "$env:GDK_EDITOR_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
@@ -63,16 +66,63 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new(
+        "$test_repo_url",
+        "$test_repo_branch",
+        "$test_repo_relative_uproject_path",
+        "EmptyGym",
+        "$test_project_name",
+        "TestResults",
+        "SpatialGDK.",
+        "$user_gdk_settings",
+        "$user_gdk_editor_settings",
+        $True,
+        "$user_cmd_line_args"
+    )
 }
 else {
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+        $tests += [TestSuite]::new(
+            "$test_repo_url",
+            "$test_repo_branch",
+            "$test_repo_relative_uproject_path",
+            "NetworkingMap",
+            "$test_project_name",
+            "VanillaTestResults",
+            "/Game/SpatialNetworkingMap",
+            "$user_gdk_settings",
+            "$user_gdk_editor_settings",
+            $False,
+            "$user_cmd_line_args"
+        )
     }
     else {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
-            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
+        $tests += [TestSuite]::new(
+            "$test_repo_url",
+            "$test_repo_branch",
+            "$test_repo_relative_uproject_path",
+            "SpatialNetworkingMap",
+            "$test_project_name",
+            "TestResults",
+            "SpatialGDK.+/Game/SpatialNetworkingMap",
+            "$user_gdk_settings",
+            "RuntimeVariant=CompatibilityMode;$user_gdk_editor_settings",
+            $True,
+            "$user_cmd_line_args"
+        )
+        $tests += [TestSuite]::new(
+            "$test_repo_url",
+            "$test_repo_branch",
+            "$test_repo_relative_uproject_path",
+            "SpatialZoningMap",
+            "$test_project_name",
+            "LoadbalancerTestResults",
+            "/Game/SpatialZoningMap",
+            "bEnableMultiWorker=True;$user_gdk_settings",
+            "RuntimeVariant=CompatibilityMode;$user_gdk_editor_settings",
+            $True,
+            "$user_cmd_line_args"
+        )
     }
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
@@ -124,6 +174,7 @@ Foreach ($test in $tests) {
     $test_results_dir = $test.test_results_dir
     $tests_path = $test.tests_path
     $additional_gdk_options = $test.additional_gdk_options
+    $additional_gdk_editor_options = $test.additional_gdk_editor_options
     $run_with_spatial = $test.run_with_spatial
     $additional_cmd_line_args = $test.additional_cmd_line_args
 
@@ -165,6 +216,7 @@ Foreach ($test in $tests) {
             -test_repo_map "$test_repo_map" `
             -tests_path "$tests_path" `
             -additional_gdk_options "$additional_gdk_options" `
+            -additional_gdk_editor_options "$additional_gdk_editor_options" `
             -run_with_spatial $run_with_spatial `
             -additional_cmd_line_args "$additional_cmd_line_args"
         Finish-Event "test-gdk" "command"
