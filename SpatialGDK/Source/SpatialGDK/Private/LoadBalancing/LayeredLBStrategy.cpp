@@ -27,7 +27,7 @@ void ULayeredLBStrategy::Init()
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
 	bool bIsMultiWorkerEnabled = SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker;
-	bIsMultiWorkerEnabled |= !SpatialGDKSettings->bOverrideMultiWorker.IsSet() && (WorldSettings != nullptr && WorldSettings->bEnableMultiWorker);
+	bIsMultiWorkerEnabled = bIsMultiWorkerEnabled || (!SpatialGDKSettings->bOverrideMultiWorker.IsSet() && (WorldSettings != nullptr && WorldSettings->bEnableMultiWorker));
 
 	if (!bIsMultiWorkerEnabled)
 	{
