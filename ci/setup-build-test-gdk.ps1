@@ -65,12 +65,12 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
 }
 else {
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/Maps/FunctionalTests/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
     }
     else {
         # TODO: do I need to update map paths below??
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/Maps/FunctionalTests/SpatialZoningMap",
             "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 
