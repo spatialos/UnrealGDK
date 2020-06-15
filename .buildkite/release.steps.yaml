@@ -58,7 +58,7 @@ steps:
         permit_on_passed: true
     concurrency: 1
     concurrency_group: "unrealgdk-release"
-    #TODO: This step is actually not strictly neccessary, will be a slightly larger rewrite to get rid of it.
+    #TODO: This step is actually not strictly necessary. It will be removed as part of: UNR-3662
     skip: true
 
  # Stage 3: Run all tests against the release candidates.
