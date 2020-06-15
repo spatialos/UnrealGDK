@@ -20,7 +20,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Select "Continue" and move onto the next step.
 1. Wait for the "Prepare the release" step to run, it takes about 20 minutes, maybe grab a coffee?
 1. Once the "Prepare the release" step has passed the "Build & upload all UnrealEngine release candidates" step will commence.<br> While those builds run, take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate): "your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline to resume the release."<br>Click through to the PRs using the links in the annotations and follow the steps. Come back when you're done.
-1. As soon as the "Build & upload all UnrealEngine release candidates" step has passes, select "Run all tests".
+1. As soon as the "Build & upload all UnrealEngine release candidates" step has passed, select "Run all tests".
 1. Once all test have passed, all PRs are approved and all tasks listed in the PR descriptions are complete, select "Unblock the release". This will trigger "Release `ci/release.sh`".
 1. When "Release `ci/release.sh`" is complete, the unrealgdk-release pipeline will pass.<br>
 Take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate):<br>
