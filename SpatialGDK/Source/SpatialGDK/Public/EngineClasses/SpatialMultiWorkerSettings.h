@@ -12,8 +12,8 @@
 class UAbstractLBStrategy;
 class UAbstractLockingPolicy;
 
-USTRUCT()
-struct SPATIALGDK_API FSpatialMultiWorkerSettings
+UCLASS(Blueprintable)
+class SPATIALGDK_API USpatialMultiWorkerSettings : public UObject
 {
 	GENERATED_BODY()
 

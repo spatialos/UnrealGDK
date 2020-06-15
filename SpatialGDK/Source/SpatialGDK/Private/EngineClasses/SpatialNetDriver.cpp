@@ -427,7 +427,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	// Check for CLI overriden multiworker settings
 
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
-	const FSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings != nullptr ? &WorldSettings->MultiWorkerSettings : nullptr;
+	const USpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings != nullptr ? WorldSettings->MultiWorkerSettings->GetDefaultObject<USpatialMultiWorkerSettings>() : nullptr;
 
 	if (IsServer())
 	{
@@ -623,7 +623,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		(IsReady() && USpatialStatics::IsActorGroupOwnerForActor(Actor)))
+		IsReady())
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over,
 		// when they should be in a different Layer.
@@ -637,16 +637,16 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		return;
 	}
 
-	if (LoadBalanceStrategy != nullptr)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
-			LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-	}
-	else
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
-			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
-	}
+	//if (LoadBalanceStrategy != nullptr)
+	//{
+	//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
+	//		LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+	//}
+	//else
+	//{
+	//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
+	//		*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
+	//}
 
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();

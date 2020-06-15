@@ -20,5 +20,6 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_BODY()
 
 public:
-	FSpatialMultiWorkerSettings MultiWorkerSettings;
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettings;
 };
