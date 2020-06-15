@@ -118,8 +118,8 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	Constraint = AlwaysRelevantConstraint;
 
-	// If we are using the unreal load balancer, we also add the server worker interest defined by the load balancing strategy.
-	if (SpatialGDKSettings->bEnableMultiWorker)
+	// Also add the server worker interest defined by the load balancing strategy if there is more than one worker.
+	if (LBStrategy->GetMinimumRequiredWorkers() > 1)
 	{
 		check(LBStrategy != nullptr);
 
@@ -167,11 +167,8 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 		AddPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
-	if (InActor->GetNetConnection() != nullptr)
-	{
-		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest, InEntityId);
-	}
+	// Clients need to see owner only and server RPC components on entities they have authority over
+	AddClientSelfInterest(ResultInterest, InEntityId);
 
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest, InEntityId);

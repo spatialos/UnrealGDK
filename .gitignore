@@ -99,3 +99,6 @@ SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/Build.csproj.user
 _ReSharper.caches
 
 **/.DS_Store
+
+# File to indicate services region, created by Setup script
+UseChinaServicesRegion

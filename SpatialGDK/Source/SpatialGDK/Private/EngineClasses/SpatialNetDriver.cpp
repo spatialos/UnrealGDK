@@ -239,20 +239,21 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
-	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
+	// Ensures that any connections attempting to using command line arguments have a valid locater host in the command line.
+	GameInstance->TryInjectSpatialLocatorIntoCommandLine();
+
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Attempting connection to SpatialOS"));
+
+	if (GameInstance->GetShouldConnectUsingCommandLineArgs())
 	{
-		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect(bConnectAsClient))
+		GameInstance->DisableShouldConnectUsingCommandLineArgs();
+
+		// Try using command line arguments to setup connection config.
+		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			// If first time connecting but the bGetPreventClientCloudDeploymentAutoConnect flag is set then use input URL to setup connection config.
-			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
-		}
-		// Otherwise, try using command line arguments to setup connection config.
-		else if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
-		{
-			// If the command line arguments can not be used, use the input URL to setup connection config.
+			// If the command line arguments can not be used, use the input URL to setup connection config instead.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
@@ -382,10 +383,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (SpatialSettings->bEnableMultiWorker)
-	{
-		CreateAndInitializeLoadBalancingClasses();
-	}
+	CreateAndInitializeLoadBalancingClasses();
 
 	if (SpatialSettings->UseRPCRingBuffer())
 	{
@@ -433,9 +431,13 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableMultiWorker is set, there must be a Locking Policy set. Using default policy."));
+			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
+		}
+		else if (WorldSettings->DefaultLayerLockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
@@ -603,10 +605,17 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		(IsReady() && USpatialStatics::IsActorGroupOwnerForActor(Actor)))
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over,
 		// when they should be in a different Layer.
+		return;
+	}
+
+	if (!IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Spawned replicated actor %s (owner: %s) before the NetDriver was ready. This is not supported. Actors should only be spawned after BeginPlay is called."),
+			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
 		return;
 	}
 
@@ -694,16 +703,9 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
-	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
-	{
-		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
-		return;
-	}
-
-	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
+	if (!LoadBalanceStrategy->IsReady())
 	{
 		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial.
 		return;
@@ -715,7 +717,7 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		// otherwise, load balancing is enabled, so check the lb strategy.
 		if (Actor->GetIsReplicated())
 		{
-			const bool bRoleAuthoritative = !bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+			const bool bRoleAuthoritative = LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 			Actor->Role = bRoleAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 			Actor->RemoteRole = bRoleAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 		}
@@ -894,7 +896,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				{
 					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
 				}
-				Sender->RetireEntity(EntityId);
+				Sender->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
 			}
 		}
 
@@ -1385,18 +1387,13 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				}
 			}
 
-			// UNR-865 - Handle closing actor channels for non-relevant actors without deleting the entity.
-			// If the actor wasn't recently relevant, or if it was torn off, close the actor channel if it exists for this connection
+			// If the actor has been torn off, close the channel
+			// Native also checks here for !bIsRecentlyRelevant and if so closes due to relevancy, we're not doing because it's less likely
+			// in a SpatialOS game. Might be worth an investigation in future as a performance win - UNR-3063
 			if (Actor->GetTearOff() && Channel != NULL)
 			{
-				// Non startup (map) actors have their channels closed immediately, which destroys them.
-				// Startup actors get to keep their channels open.
-				if (!Actor->IsNetStartupActor())
-				{
-					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
-					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-					Channel->Close(Actor->GetTearOff() ? EChannelCloseReason::TearOff : EChannelCloseReason::Relevancy);
-				}
+				UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
+				Channel->Close(Actor->GetTearOff() ? EChannelCloseReason::TearOff : EChannelCloseReason::Relevancy);
 			}
 		}
 	}
@@ -1743,7 +1740,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	PollPendingLoads();
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -2317,12 +2314,12 @@ void USpatialNetDriver::WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfter
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
-void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
+void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor)
 {
 	FTimerHandle RetryTimer;
-	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId, bIsNetStartupActor]()
 	{
-		Sender->RetireEntity(EntityId);
+		Sender->RetireEntity(EntityId, bIsNetStartupActor);
 	}, Delay, false);
 }
 
@@ -2343,11 +2340,8 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 			// Process levels which were loaded before the connection to Spatial was ready.
 			GetGameInstance()->CleanupCachedLevelsAfterConnection();
 
-			if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
-			{
-				// We know at this point that we have all the information to set the worker's interest query.
-				Sender->UpdateServerWorkerEntityInterestAndPosition();
-			}
+			// We know at this point that we have all the information to set the worker's interest query.
+			Sender->UpdateServerWorkerEntityInterestAndPosition();
 
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.
@@ -2493,17 +2487,23 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	SelectiveProcessOps(FoundOps);
 
-	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReady() &&
-		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
+	if (!PackageMap->IsEntityPoolReady())
 	{
-		// Return whether or not we are ready to start
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
-		return true;
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
+		return false;
 	}
-
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Not yet ready to begin processing, still processing startup ops."));
-	return false;
+	else if (!GlobalStateManager->IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
+		return false;
+	}
+	else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+		return false;
+	}
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
+	return true;
 }
 
 bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
@@ -2560,6 +2560,11 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 	TombstonedEntities.Add(EntityId);
 }
 #endif
+
+bool USpatialNetDriver::IsReady() const
+{
+	return bIsReadyToStart;
+}
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)

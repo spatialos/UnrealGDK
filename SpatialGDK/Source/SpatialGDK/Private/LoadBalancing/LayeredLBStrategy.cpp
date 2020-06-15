@@ -17,28 +17,21 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
-ULayeredLBStrategy::~ULayeredLBStrategy()
-{
-	for (const auto& Elem : LayerNameToLBStrategy)
-	{
-		Elem.Value->RemoveFromRoot();
-	}
-}
-
 void ULayeredLBStrategy::Init()
 {
 	Super::Init();
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	check(Settings->bEnableMultiWorker);
-
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 
-	if (WorldSettings == nullptr)
+	bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->bEnableMultiWorker;
+	bIsMultiWorkerEnabled &= !SpatialGDKSettings->bOverrideMultiWorker.IsSet() || SpatialGDKSettings->bOverrideMultiWorker;
+
+	if (!bIsMultiWorkerEnabled)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Multi-Worker has been disabled. Creating LBStrategy for the Default Layer"));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
@@ -78,6 +71,14 @@ void ULayeredLBStrategy::Init()
 
 void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
+	if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error,
+			TEXT("The Local Virtual Worker Id cannot be set twice. Current value: %d Requested new value: %d"),
+			LocalVirtualWorkerId, InLocalVirtualWorkerId);
+		return;
+	}
+
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 	for (const auto& Elem : LayerNameToLBStrategy)
 	{
@@ -293,7 +294,6 @@ FName ULayeredLBStrategy::GetLayerNameForActor(const AActor& Actor) const
 
 void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLBStrategy* LBStrategy)
 {
-	LBStrategy->AddToRoot();
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
 	LayerNameToLBStrategy[LayerName]->Init();
 }

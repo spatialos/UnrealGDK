@@ -276,15 +276,9 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	if (Settings->bEnableMultiWorker)
-	{
-		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
-		if (ensure(Strategy != nullptr))
-		{
-			return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
-		}
-	}
-	return Settings->bEnableHandover;
+	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
+	check(Strategy != nullptr);
+	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
