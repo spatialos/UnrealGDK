@@ -277,6 +277,8 @@ private:
 
 	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
 
+	static void MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor);
+
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
@@ -342,4 +344,11 @@ private:
 	// before the actor holding the position for all the hierarchy, it can immediately attempt to migrate back.
 	// Using this timestamp, we can back off attempting migrations for a while.
 	uint64 AuthorityReceivedTimestamp;
+
+	// Contains the frame at which the actor (or its owner) was seen outside its worker's authoritative region.
+	// Used to delay migration by one frame, to allow Pre-Replication events to take place in the regular replication loop.
+	uint32 MigrationFrame;
+
+	// WorkerId to migrate to.
+	VirtualWorkerId MigrationVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 };

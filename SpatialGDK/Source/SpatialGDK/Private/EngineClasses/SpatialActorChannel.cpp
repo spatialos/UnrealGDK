@@ -81,22 +81,6 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
 }
 
-void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, const AActor* HierarchyActor, const AActor* OriginalActorBeingReplicated)
-{
-	if (HierarchyActor->GetIsReplicated() && HierarchyActor != OriginalActorBeingReplicated)
-	{
-		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
-		{
-			Channel->ReplicateActor();
-		}
-	}
-
-	for (const AActor* Child : HierarchyActor->Children)
-	{
-		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActorBeingReplicated);
-	}
-}
-
 } // end anonymous namespace
 
 bool FSpatialObjectRepState::MoveMappedObjectToUnmapped_r(const FUnrealObjectRef& ObjRef, FObjectReferencesMap& ObjectReferencesMap)
@@ -228,6 +212,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0f;
 	AuthorityReceivedTimestamp = 0;
+	MigrationFrame = 0;
+	MigrationVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	PendingDynamicSubobjects.Empty();
 	SavedConnectionOwningWorkerId.Empty();
@@ -453,6 +439,24 @@ void USpatialActorChannel::GetLatestAuthorityChangeFromHierarchy(const AActor* H
 	for (const AActor* Child : HierarchyActor->Children)
 	{
 		GetLatestAuthorityChangeFromHierarchy(Child, OutTimestamp);
+	}
+}
+
+void USpatialActorChannel::MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor)
+{
+	if (HierarchyActor->GetIsReplicated())
+	{
+		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(HierarchyActor))
+		{
+			HierarchyActor->ForceNetUpdate();
+			Channel->MigrationVirtualWorkerId = NewAuthVirtualWorkerId;
+			Channel->MigrationFrame = NetDriver->ReplicationFrame;
+		}
+	}
+
+	for (AActor* Child : HierarchyActor->Children)
+	{
+		MarkActorHierarchyForMigration(NetDriver, NewAuthVirtualWorkerId, Child);
 	}
 }
 
@@ -739,9 +743,32 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (NetDriver->LoadBalanceStrategy != nullptr &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
+		if (MigrationVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			const AActor* NetOwner = Actor->GetNetOwner();
+			if(MigrationFrame != NetDriver->ReplicationFrame)
+			{
+				Sender->SendAuthorityIntentUpdate(*Actor, MigrationVirtualWorkerId);
+
+				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+
+				Actor->OnAuthorityLost();
+				MigrationVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+			}
+		}
+		else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
+		{
+			AActor* NetOwner = [this]
+			{
+				AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
+				if(HierarchyRoot)
+				{
+					return HierarchyRoot;
+				}
+				return Actor;
+			}();
+			
 
 			uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
 			if (NetOwner != nullptr)
@@ -765,18 +792,7 @@ int64 USpatialActorChannel::ReplicateActor()
 				}
 				else
 				{
-					Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
-
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
-
-					if (NetOwner != nullptr)
-					{
-						ForceReplicateOnActorHierarchy(NetDriver, NetOwner, Actor);
-					}
+					MarkActorHierarchyForMigration(NetDriver, NewAuthVirtualWorkerId, NetOwner);
 				}
 			}
 		}
