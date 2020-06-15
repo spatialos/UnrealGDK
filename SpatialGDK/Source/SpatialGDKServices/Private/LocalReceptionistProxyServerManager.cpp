@@ -23,7 +23,7 @@ FString FLocalReceptionistProxyServerManager::GetProcessName()
 	FString ProcessName = "";
 	const FString TaskListCmd = FString::Printf(TEXT("tasklist"));
 
-	//get the task list for 
+	// get the task list line for the process with Pid 
 	const FString TaskListArgs = FString::Printf(TEXT(" /fi \"PID eq %s\" /nh /fo:csv"), *BlockingProcess.Pid);
 	FString TaskListResult;
 	int32 ExitCode;
@@ -41,15 +41,13 @@ FString FLocalReceptionistProxyServerManager::GetProcessName()
 		}
 	}
 
-	UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to get the name of process that is blocking required port."));
+	UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to get the name of the process that is blocking the required port."));
 	
 	return ProcessName;
 }
 
 bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
 {
-	bool bSuccess = false;
-
 	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
 
 	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
@@ -57,7 +55,7 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
 	FString NetStatResult;
 	int32 ExitCode;
 	FString StdErr;
-	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
+	bool bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
 
 	if (ExitCode == ExitCodeSuccess && bSuccess)
 	{
@@ -90,7 +88,7 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound()
 }
 
 
-bool FLocalReceptionistProxyServerManager::KillBlockingPortProcess()
+bool FLocalReceptionistProxyServerManager::TryKillBlockingPortProcess()
 {
 	bool bSuccess = false;
 
@@ -116,14 +114,14 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	if(CheckIfPortIsBound())
 	{
 		//Try killing the process that blocks the 7777 port 
-		bool bProcessKilled = KillBlockingPortProcess();
+		bool bProcessKilled = TryKillBlockingPortProcess();
 		if (!bProcessKilled)
 		{
 			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process %s that is blocking the port. "), *BlockingProcess.Name);
 			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Succesfully killed %s process that was blocking 7777 port."), *BlockingProcess.Name);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Succesfully killed %s process that was blocking %d port."), *BlockingProcess.Name, ReceptionistPort);
 	}
 
 	return true;
@@ -169,8 +167,13 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	//Stop receptionist proxy server if it is for a different cloud deployment
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid())
 	{
-		TryStopReceptionistProxyServer();
-		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Stop Previous proxy server!"));
+		if(!TryStopReceptionistProxyServer())
+		{
+			UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Failed to stop previous proxy server!"))
+			return false;
+		}
+
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Stopped previous proxy server!"));
 	}
 
 	bool bProxyStartSuccess = false;
@@ -191,5 +194,3 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 
 	return true;
 }
-
-

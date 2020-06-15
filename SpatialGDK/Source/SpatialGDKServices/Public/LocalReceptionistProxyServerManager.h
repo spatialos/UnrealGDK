@@ -12,7 +12,7 @@ public:
 	FLocalReceptionistProxyServerManager();
 
 	bool CheckIfPortIsBound();
-	bool KillBlockingPortProcess();
+	bool TryKillBlockingPortProcess();
 	bool LocalReceptionistProxyServerPreRunChecks();
 
 	FString GetProcessName();
@@ -25,8 +25,8 @@ private:
 
 	struct BlockingPortProcess
 	{
-		FString Pid = "";
-		FString Name = "";
+		FString Pid = TEXT("");
+		FString Name = TEXT("");
 	};
 
 	BlockingPortProcess BlockingProcess;

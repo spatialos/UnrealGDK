@@ -280,11 +280,9 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	return false;
 }
 
-FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, FString &OutResult, int32 &OutExitCode, bool &bProcessSucessed)
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, FString &OutResult, int32 &OutExitCode, bool &bProcessSucceeded)
 {
-	FString Command = TEXT("cloud connect external ");
-
-	Command += CloudDeploymentName;
+	FString Command = FString::Printf(TEXT("cloud connect external %s"), *CloudDeploymentName);
 
 	if (bIsRunningInChina)
 	{
@@ -299,16 +297,16 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 
 	ProcHandle = FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, nullptr, 1 /*PriorityModifer*/, *SpatialGDKServicesConstants::SpatialOSDirectory, WritePipe);
 
-	bProcessSucessed = false;
+	bProcessSucceeded = false;
 	bool bProcessFinished = false;
 	if (ProcHandle.IsValid())
 	{
-		while(!bProcessFinished && !bProcessSucessed)
+		while(!bProcessFinished && !bProcessSucceeded)
 		{
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
 
 			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
-			bProcessSucessed = OutResult.Contains("The receptionist proxy is available");
+			bProcessSucceeded = OutResult.Contains("The receptionist proxy is available");
 
 			FPlatformProcess::Sleep(0.01f);
 		}

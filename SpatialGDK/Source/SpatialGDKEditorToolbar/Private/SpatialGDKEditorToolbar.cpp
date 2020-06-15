@@ -868,17 +868,17 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 void FSpatialGDKEditorToolbarModule::StartLocalReceptionistProxyServer()
 {
-	OnShowTaskStartNotification(TEXT("StartLocalReceptionistProxyServer"));
+	OnShowTaskStartNotification(TEXT("Start local receptionist proxy server"));
 
 	bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName());
 
 	if (bSuccess)
 	{
-		OnShowSuccessNotification(TEXT("Successfully Started Local Receptionist Proxy Server"));
+		OnShowSuccessNotification(TEXT("Successfully started local receptionist proxy server"));
 	}
 	else
 	{
-		OnShowFailedNotification(TEXT("Failed to Start Local Receptionist Proxy Server!"));
+		OnShowFailedNotification(TEXT("Failed to start local receptionist proxy server"));
 	}
 }
 
