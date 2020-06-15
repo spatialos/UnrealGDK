@@ -34,8 +34,8 @@ class TestSuite {
     }
 }
 
-[string] $test_repo_url = "git@github.com:improbable/UnrealGDKEngineNetTest.git"
-[string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
+[string] $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git" #"git@github.com:improbable/UnrealGDKEngineNetTest.git"
+[string] $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject" #"Game\EngineNetTest.uproject"
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
 [string] $user_gdk_settings = "$env:GDK_SETTINGS"
@@ -59,8 +59,6 @@ $tests = @()
 # There are basically two situations here: either we are trying to run tests, in which case we use EngineNetTest
 # Or, we try different build targets, in which case we use UnrealGDKTestGyms
 if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
-    $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
-    $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
     $test_project_name = "GDKTestGyms"
 
     $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$user_cmd_line_args")
@@ -70,13 +68,21 @@ else {
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
     }
     else {
+        # TODO: do I need to update map paths below??
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
             "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
-        $tests[0].tests_path += "+/Game/NetworkingMap"
+        $native_test_repo_heads = git ls-remote --heads "git@github.com:improbable/UnrealGDKEngineNetTest.git" $gdk_branch
+        $native_test_repo_branch = "master"
+        #TODO: extract and clean
+        if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+            $native_test_repo_branch = $gdk_branch
+        }
+        $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$native_test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NativeNetworkTestProject", "NativeTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+
         if($env:TEST_CONFIG -ne "Native") {
             $tests[0].tests_path += "+SpatialGDKSlow."
         }
