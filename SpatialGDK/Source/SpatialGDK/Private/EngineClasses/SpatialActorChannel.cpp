@@ -444,7 +444,7 @@ void USpatialActorChannel::GetLatestAuthorityChangeFromHierarchy(const AActor* H
 
 void USpatialActorChannel::MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor)
 {
-	if (HierarchyActor->GetIsReplicated())
+	if (HierarchyActor->GetIsReplicated() && HierarchyActor->HasAuthority())
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(HierarchyActor))
 		{
