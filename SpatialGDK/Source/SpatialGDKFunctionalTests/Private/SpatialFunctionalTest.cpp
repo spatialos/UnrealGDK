@@ -457,7 +457,12 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == -1)
 	{
-		GetLocalFlowController()->OnTestFinished();
+		//test finished
+		if(StartTime > 0)
+		{
+			//if we ever started in first place
+			GetLocalFlowController()->OnTestFinished();
+		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest
 		{
 			NotifyTestFinishedObserver();
