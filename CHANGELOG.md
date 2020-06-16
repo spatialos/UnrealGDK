@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.10.0`] - 2020-06-15
+
 ### New Known Issues:
 
 ### Breaking Changes:
@@ -16,8 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 - The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
 - Settings for Offloading and Load Balancing have been combined and moved from the Editor and Runtime settings to instead be per map in the SpatialWorldSettings. For a detailed explanation please see the Load Balancing documentation.
-- Command line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer` have been removed and UnrealGDK Load balancing is always enabled. To override a map's load balancing config and run single worker, use the command line flag `OverrideLoadBalancing`
+- Command line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer` have been removed and UnrealGDK Load balancing is always enabled. To override a map's load balancing config "EnableMultiWorker" setting, use the command line flag `OverrideMultiWorker`.
 - Running with result types (previously default enabled) is now mandatory. The Runtime setting `bEnableResultTypes` has been removed to reflect this.
+- Offloading lookup by Actor returns based on the root owner of the Actor.
 - Removed `QueuedOutgoingRPCWaitTime`, all RPC failure cases are now correctly queued or dropped.
 - Removed `Max connection capacity limit` and `Login rate limit` from generated worker configurations as no longer supported.
 - Secure worker connections are no longer supported for Editor builds. They are still supported for packaged builds.
@@ -73,6 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
 - OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 - Fixed a rare server crash that could occur when closing an actor channel right after attaching a dynamic subobject to that actor.
+
+### Internal:
+Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
+
+- The SpatialOS GDK for Unreal is now released automatically using Buildkite CI. This should result in more frequent releases.
 
 ## [`0.9.0`] - 2020-05-05
 

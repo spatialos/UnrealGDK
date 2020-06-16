@@ -89,7 +89,7 @@ public:
 	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	void RetireEntity(const Worker_EntityId EntityId);
+	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);
 
 	// Creates an entity containing just a tombstone component and the minimal data to resolve an actor.
 	void CreateTombstoneEntity(AActor* Actor);

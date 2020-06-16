@@ -23,11 +23,12 @@ void ULayeredLBStrategy::Init()
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 
-	if (SpatialGDKSettings->bOverrideLoadBalancing || WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (!bIsMultiWorkerEnabled)
 	{
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Multi-Worker has been disabled. Creating LBStrategy for the Default Layer"));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
@@ -45,8 +46,15 @@ void ULayeredLBStrategy::Init()
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
-			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
-			ClassPathToLayer.Add(ClassPtr, LayerName);
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, LayerName);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
+			}
 		}
 	}
 
@@ -96,7 +104,7 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -126,7 +134,7 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
