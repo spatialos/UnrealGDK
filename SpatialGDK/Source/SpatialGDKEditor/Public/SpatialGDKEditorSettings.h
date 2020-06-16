@@ -431,7 +431,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentDeploymentToConnect;
 
-	/** Whether to start local server worker when connecting to cloud deployment*/
+	/** Whether to start local server worker when connecting to cloud deployment. If selected, make sure that the cloud deployment you want to connect to is not automatically launching Server-workers. (That your workers are "manual_connection_only" type)*/
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bStartLocalServerWorker;
 
