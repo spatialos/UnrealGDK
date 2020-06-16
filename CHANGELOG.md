@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.10.0`] - 2020-06-15
+
 ### New Known Issues:
 
 ### Breaking Changes:
@@ -74,6 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
 - OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 - Fixed a rare server crash that could occur when closing an actor channel right after attaching a dynamic subobject to that actor.
+
+### Internal:
+Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
+
+- The SpatialOS GDK for Unreal is now released automatically using Buildkite CI. This should result in more frequent releases.
 
 ## [`0.9.0`] - 2020-05-05
 

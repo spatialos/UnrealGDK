@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
-  "Version": 6,
-  "VersionName": "0.9.0",
+  "Version": 7,
+  "VersionName": "0.10.0",
   "FriendlyName": "SpatialOS GDK for Unreal",
   "Description": "The SpatialOS Game Development Kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
   "Category": "SpatialOS",
@@ -19,37 +19,59 @@
       "Name": "SpatialGDK",
       "Type": "Runtime",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win64", "Linux", "Mac", "XboxOne", "PS4", "IOS", "Android" ]
+      "WhitelistPlatforms": [
+        "Win64",
+        "Linux",
+        "Mac",
+        "XboxOne",
+        "PS4",
+        "IOS",
+        "Android"
+      ]
     },
     {
       "Name": "SpatialGDKEditor",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64", "Mac" ]
+      "WhitelistPlatforms": [
+        "Win64",
+        "Mac"
+      ]
     },
     {
       "Name": "SpatialGDKEditorToolbar",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64", "Mac" ]
+      "WhitelistPlatforms": [
+        "Win64",
+        "Mac"
+      ]
     },
     {
       "Name": "SpatialGDKEditorCommandlet",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64", "Mac" ]
+      "WhitelistPlatforms": [
+        "Win64",
+        "Mac"
+      ]
     },
     {
       "Name": "SpatialGDKServices",
       "Type": "Editor",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win64", "Mac" ]
+      "WhitelistPlatforms": [
+        "Win64",
+        "Mac"
+      ]
     },
     {
       "Name": "SpatialGDKTests",
       "Type": "Editor",
       "LoadingPhase": "PreLoadingScreen",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [
+        "Win64"
+      ]
     }
   ],
   "Plugins": [
