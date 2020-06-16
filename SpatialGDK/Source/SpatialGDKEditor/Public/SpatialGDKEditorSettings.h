@@ -435,6 +435,13 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bStartLocalServerWorker;
 
+	/** Port on which the receptionist proxy will be available.*/
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Local Receptionist Port"))
+	int32 LocalReceptionistPort = 7777;
+
+	/**Network interface to bind the receptionist proxy to.*/
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Listening Address"))
+	FString ListeningAddress = "127.0.0.1";
 private:
 	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;

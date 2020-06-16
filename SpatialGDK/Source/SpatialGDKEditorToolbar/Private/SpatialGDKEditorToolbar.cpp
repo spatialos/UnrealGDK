@@ -118,7 +118,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
-	LocalReceptionistProxyServerManager->Init();
+	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 }
@@ -870,7 +870,7 @@ void FSpatialGDKEditorToolbarModule::StartLocalReceptionistProxyServer()
 {
 	OnShowTaskStartNotification(TEXT("Start local receptionist proxy server"));
 
-	bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName());
+	bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName(), GetDefault<USpatialGDKEditorSettings>()->ListeningAddress, GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
 	if (bSuccess)
 	{
