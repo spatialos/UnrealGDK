@@ -25,7 +25,6 @@ namespace ReleaseTool
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
-        private const string ReleaseBranchCreationCommitMessageTemplate = "Created a release branch based on {0} release candidate.";
         private const string PullRequestTemplate = "Release {0}";
         private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
             "in the repo `{1}` from `{2}` into `{3}`. " +
@@ -152,8 +151,7 @@ namespace ReleaseTool
                     if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
                         gitClient.Fetch();
-                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
-                        gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
+                        gitClient.CheckoutRemoteBranch(options.SourceBranch);
                         gitClient.ForcePush(options.ReleaseBranch);
                     }
 

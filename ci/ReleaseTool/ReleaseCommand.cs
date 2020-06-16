@@ -316,7 +316,7 @@ namespace ReleaseTool
             }
             catch (Exception e)
             {
-                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e);
+                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e.Message);
                 return 1;
             }
 
