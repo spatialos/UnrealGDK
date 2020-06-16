@@ -108,7 +108,7 @@ bool FLocalReceptionistProxyServerManager::TryKillBlockingPortProcess()
 	return bSuccess;
 }
 
-bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks(const int32& ReceptionistPort)
+bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort)
 {
 	//Check if any process is blocking the receptionist port
 	if(CheckIfPortIsBound(ReceptionistPort))
@@ -127,7 +127,7 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	return true;
 }
 
-void FLocalReceptionistProxyServerManager::Init(const int32& Port)
+void FLocalReceptionistProxyServerManager::Init(int32 Port)
 {
 	if (!IsRunningCommandlet())
 	{
@@ -151,7 +151,7 @@ bool FLocalReceptionistProxyServerManager::TryStopReceptionistProxyServer()
 
 
 
-bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32& ReceptionistPort)
+bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 ReceptionistPort)
 {
 	FString StartResult;
 	int32 ExitCode;

@@ -18,7 +18,7 @@ public:
 	SPATIALGDKSERVICES_API static FProcHandle LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker, const FString& NewWorker, bool bIsRunningInChina, uint32* OutProcessID);
 	SPATIALGDKSERVICES_API static bool GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FString& OutErrorMessage);
 	SPATIALGDKSERVICES_API static bool HasDevLoginTag(const FString& DeploymentName, bool bIsRunningInChina, FText& OutErrorMessage);
-	SPATIALGDKSERVICES_API static FProcHandle StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32& ReceptionistPort, FString &OutResult, int32 &OutExitCode, bool &bProcessSucceeded);
+	SPATIALGDKSERVICES_API static FProcHandle StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 ReceptionistPort, FString &OutResult, int32 &OutExitCode, bool &bProcessSucceeded);
 	SPATIALGDKSERVICES_API static void StopLocalReceptionistProxyServer(FProcHandle& ProcessHandle);
 
 };

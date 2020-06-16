@@ -13,12 +13,12 @@ public:
 
 	bool CheckIfPortIsBound(int32 Port);
 	bool TryKillBlockingPortProcess();
-	bool LocalReceptionistProxyServerPreRunChecks(const int32& ReceptionistPort);
+	bool LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort);
 
 	FString GetProcessName();
 
-	void SPATIALGDKSERVICES_API Init(const int32& ReceptionistPort);
-	bool SPATIALGDKSERVICES_API TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32& ReceptionistPort);
+	void SPATIALGDKSERVICES_API Init(int32 ReceptionistPort);
+	bool SPATIALGDKSERVICES_API TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, int32 ReceptionistPort);
 	bool SPATIALGDKSERVICES_API TryStopReceptionistProxyServer();
 	
 private:
