@@ -94,10 +94,12 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 {
 	if (HasAuthority())
 	{
+		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("AutoDestroy [Local]: actor %s ; authority = %d"), *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
 		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
 	}
 	else if(LocalFlowController != nullptr)
 	{
+		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("AutoDestroy [Remote]: actor %s ; authority = %d"), *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
 		if(LocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
 		{
 			CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
