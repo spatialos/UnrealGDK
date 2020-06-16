@@ -314,4 +314,9 @@ public:
 	  * the map's config with a 1x1 grid.
 	  */
 	TOptional<bool> bOverrideMultiWorker;
+
+	/**
+	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
+	  */
+	bool bEnableMultiWorkerDebuggingWarnings;
 };
