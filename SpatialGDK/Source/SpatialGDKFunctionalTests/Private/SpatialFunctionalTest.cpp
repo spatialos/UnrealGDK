@@ -92,14 +92,15 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
+	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
 	if (HasAuthority())
 	{
-		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("AutoDestroy [Local]: actor %s ; authority = %d"), *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
+		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s AutoDestroy [Local]: actor %s ; authority = %d"), *DisplayName, *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
 		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
 	}
 	else if(LocalFlowController != nullptr)
 	{
-		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("AutoDestroy [Remote]: actor %s ; authority = %d"), *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
+		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s AutoDestroy [Remote]: actor %s ; authority = %d"), *DisplayName, *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
 		if(LocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
 		{
 			CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
@@ -512,16 +513,26 @@ void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActo
 
 void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TArray<AActor*>& ActorsToDestroy)
 {
+	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
+	UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s running MulticastAutoDestroyActors_Implementation"), *DisplayName);
 	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
 	{
 		for (AActor* Actor : ActorsToDestroy)
 		{
 			if (IsValid(Actor))
-			{
-				FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
-				
+			{				
 				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 				Actor->SetLifeSpan(0.01f);
+			}
+		}
+	}
+	else
+	{
+		for (AActor* Actor : ActorsToDestroy)
+		{
+			if (IsValid(Actor))
+			{
+				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - should have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 			}
 		}
 	}
