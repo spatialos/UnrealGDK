@@ -844,7 +844,7 @@ void USpatialSender::ProcessPositionUpdates()
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
 
 	Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
 
@@ -1036,7 +1036,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
 		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
+		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }
