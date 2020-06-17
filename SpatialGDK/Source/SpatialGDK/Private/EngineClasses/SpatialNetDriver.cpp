@@ -603,6 +603,12 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 
 void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bEnableMultiWorkerDebuggingWarnings)
+	{
+		return;
+	}
+
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
