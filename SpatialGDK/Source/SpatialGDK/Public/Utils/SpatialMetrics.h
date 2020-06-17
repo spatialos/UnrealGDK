@@ -62,7 +62,7 @@ public:
 
 	void IncPerfMetric(FName Metric, float Amount)
 	{
-		PerformanceCounters[Metric] += Amount;
+		PerformanceCounters.FindOrAdd(Metric) += Amount;
 	}
 	
 	void SetWorkerLoadDelegate(const UserSuppliedMetric& Delegate) { WorkerLoadDelegate = Delegate; }
