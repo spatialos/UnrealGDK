@@ -29,7 +29,6 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
 
-	PerformanceCounters.SetNum((int32)GDKMetric::Count);
 	ResetPerfMetrics();
 	
 	UserSuppliedMetric Delegate;
@@ -87,14 +86,17 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	// GDK metrics. Merge into UserMetrics
-	if (bIsServer)
+	// GDK performance metrics
+	if (bIsServer) // Enabled for server only for now
 	{
-		for (int i = 0; i < (size_t)GDKMetric::Count; i++)
+		for (auto It = PerformanceCounters.CreateIterator(); It; ++It)
 		{
+			const FString Prefix = "UnrealGDK_";
+			const FName& Name = It.Key();
+
 			SpatialGDK::GaugeMetric Guage;
-			Guage.Key = GetMetricName(GDKMetric(i));
-			Guage.Value = PerformanceCounters[i];
+			Guage.Key = TCHAR_TO_UTF8(*(Prefix + Name.ToString()));
+			Guage.Value = It.Value();
 			Metrics.GaugeMetrics.Add(Guage);
 		}
 	}
@@ -386,8 +388,5 @@ void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
 
 void USpatialMetrics::ResetPerfMetrics()
 {
-	for (int i = 0; i < (int)GDKMetric::Count; i++)
-	{
-		PerformanceCounters[i] = 0.0f;
-	}
+	PerformanceCounters.Reset();
 }

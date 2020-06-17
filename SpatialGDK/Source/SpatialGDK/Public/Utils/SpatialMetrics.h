@@ -17,12 +17,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 DECLARE_DELEGATE_RetVal(double, UserSuppliedMetric);
 
+#define GDK_PERF_METRICS_ENABLED !UE_BUILD_SHIPPING
+
 UCLASS()
 class SPATIALGDK_API USpatialMetrics : public UObject
 {
 	GENERATED_BODY()
 
-	TArray<float> PerformanceCounters;
+	TMap<FName, float> PerformanceCounters;
 public:
 	void Init(USpatialWorkerConnection* Connection, float MaxServerTickRate, bool bIsServer);
 
@@ -58,19 +60,16 @@ public:
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
 	FControllerRefProviderDelegate ControllerRefProvider;
 
-	void IncPerfMetric(int MetricType, float Amount)
+	void IncPerfMetric(FName Metric, float Amount)
 	{
-		if ((uint32)MetricType < (uint32)PerformanceCounters.Num())
-		{
-			PerformanceCounters[MetricType] += Amount;
-		}
+		PerformanceCounters[Metric] += Amount;
 	}
-	void ResetPerfMetrics();
 	
 	void SetWorkerLoadDelegate(const UserSuppliedMetric& Delegate) { WorkerLoadDelegate = Delegate; }
 	void SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate);
 	void RemoveCustomMetric(const FString& Metric);
 private:
+	void ResetPerfMetrics();
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

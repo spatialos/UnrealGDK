@@ -71,6 +71,12 @@ DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
 
+namespace
+{
+	FName NumActorsReplicated = TEXT("NumActorsReplicated");
+	FName ActorReplicationMs = TEXT("ActorReplicationMs");
+}
+
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, LoadBalanceStrategy(nullptr)
@@ -388,7 +394,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (SpatialSettings->UseRPCRingBuffer())
 	{
-		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()));
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()), SpatialMetrics);
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
@@ -1363,8 +1369,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 							LastRelevantActors.Add(Actor);
 						}
 
-						GDK_PERF_FRAME_COUNTER(SpatialMetrics, GDKMetric::NumActorsReplicated);
-						GDK_PERF_FRAME_SCOPED_TIME(SpatialMetrics, GDKMetric::ActorReplicationTime);
+						GDK_PERF_FRAME_COUNTER(SpatialMetrics, NumActorsReplicated);
+						GDK_PERF_FRAME_SCOPED_TIME(SpatialMetrics, ActorReplicationMs);
 
 						if (Channel->ReplicateActor())
 						{

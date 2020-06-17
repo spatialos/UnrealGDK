@@ -7,16 +7,23 @@
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
 #include "Utils/SpatialLatencyTracer.h"
+#include "Utils/PerfMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
+namespace
+{
+	static FName NumRPCs = TEXT("NumRPCs");
+	static FName NumRPCsOverflowed = TEXT("NumRPCsOverflowed");
+}
 namespace SpatialGDK
 {
 
-SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer)
+SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer, USpatialMetrics* SpatialMetrics)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
+	, SpatialMetrics(SpatialMetrics)
 {
 }
 
@@ -25,9 +32,10 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	EPushRPCResult Result = EPushRPCResult::Success;
-
+	GDK_PERF_FRAME_COUNTER(SpatialMetrics, NumRPCs);
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
+		GDK_PERF_FRAME_COUNTER(SpatialMetrics, NumRPCsOverflowed);
 		// Already has queued RPCs of this type, queue until those are pushed.
 		AddOverflowedRPC(EntityType, MoveTemp(Payload));
 		Result = EPushRPCResult::QueueOverflowed;
