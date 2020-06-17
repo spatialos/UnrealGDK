@@ -518,6 +518,9 @@ void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TAr
 		{
 			if (IsValid(Actor))
 			{
+				FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
+				
+				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 				Actor->SetLifeSpan(0.01f);
 			}
 		}
