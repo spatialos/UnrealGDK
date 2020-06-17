@@ -91,7 +91,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	{
 		for (auto It = PerformanceCounters.CreateIterator(); It; ++It)
 		{
-			const FString Prefix = "UnrealGDK_";
+			const FString Prefix = "Unreal";
 			const FName& Name = It.Key();
 
 			SpatialGDK::GaugeMetric Guage;
