@@ -7,7 +7,9 @@
 
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
@@ -23,14 +25,33 @@ struct ConfigureConnection
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
-		, ProtocolLogPrefix(*FormatProtocolPrefix())
+		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
 		Params.worker_type = WorkerType.Get();
 
-		Params.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
-		Params.protocol_logging.log_prefix = ProtocolLogPrefix.Get();
+		Logsink.logsink_type = WORKER_LOGSINK_TYPE_ROTATING_FILE;
+		Logsink.rotating_logfile_parameters.log_prefix = WorkerSDKLogFilePrefix.Get();
+		Logsink.rotating_logfile_parameters.max_log_files = 1;
+		// TODO: When upgrading to Worker SDK 14.6.2, remove the WorkerSDKLogFileSize parameter and set this to 0 for infinite file size
+		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = Config.WorkerSDKLogFileSize;
+
+		uint32_t Categories = 0;
+		if (Config.EnableWorkerSDKOpLogging)
+		{
+			Categories |= WORKER_LOG_CATEGORY_API;
+		}
+		if (Config.EnableWorkerSDKProtocolLogging)
+		{
+			Categories |= WORKER_LOG_CATEGORY_NETWORK_STATUS | WORKER_LOG_CATEGORY_NETWORK_TRAFFIC;
+		}
+		Logsink.filter_parameters.categories = Categories;
+		Logsink.filter_parameters.level = Config.WorkerSDKLogLevel;
+
+		Params.logsinks = &Logsink;
+		Params.logsink_count = 1;
+		Params.enable_logging_at_startup = Categories != 0;
 
 		Params.component_vtable_count = 0;
 		Params.default_component_vtable = &DefaultVtable;
@@ -58,45 +79,42 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
-		if (!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
+		// Use insecure connections default.
+		Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+
+		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
+		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection) || (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
 		{
+#if WITH_EDITOR
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));
+#else
 			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-		}
-		else if (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection)
-		{
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-		}
-		else
-		{
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+#endif
 		}
 
 		Params.enable_dynamic_components = true;
 	}
 
-	FString FormatProtocolPrefix() const
+	FString FormatWorkerSDKLogFilePrefix() const
 	{
-		FString FinalProtocolLoggingPrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
-		if (!Config.ProtocolLoggingPrefix.IsEmpty())
+		FString FinalLogFilePrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
+		if (!Config.WorkerSDKLogPrefix.IsEmpty())
 		{
-			FinalProtocolLoggingPrefix += Config.ProtocolLoggingPrefix;
+			FinalLogFilePrefix += Config.WorkerSDKLogPrefix;
 		}
-		else
-		{
-			FinalProtocolLoggingPrefix += Config.WorkerId;
-		}
-		return FinalProtocolLoggingPrefix;
+		FinalLogFilePrefix += Config.WorkerId + TEXT("-");
+		return FinalLogFilePrefix;
 	}
 
 	const FConnectionConfig& Config;
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
-	FTCHARToUTF8 ProtocolLogPrefix;
+	FTCHARToUTF8 WorkerSDKLogFilePrefix;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
+	Worker_LogsinkParameters Logsink{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
@@ -154,13 +172,13 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 
 	bConnectAsClient = bInitAsClient;
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
+	const ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment() && bInitAsClient)
 	{
-		DevAuthConfig.Deployment = SpatialGDKSettings->DevelopmentDeploymentToConnect;
+		DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
 		DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		DevAuthConfig.UseExternalIp = true;
-		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
+		StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
 		return;
 	}
 
@@ -299,7 +317,7 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
 
 	FinishConnecting(ConnectionFuture);
@@ -392,6 +410,7 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 	bool bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
 	if (bSuccessfullyLoaded)
 	{
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up locator config from command line arguments"));
 		SetConnectionType(ESpatialConnectionType::Locator);
 		LocatorConfig.WorkerType = SpatialWorkerType;
 	}
@@ -400,11 +419,13 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 		bSuccessfullyLoaded = DevAuthConfig.TryLoadCommandLineArgs();
 		if (bSuccessfullyLoaded)
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up dev auth config from command line arguments"));
 			SetConnectionType(ESpatialConnectionType::DevAuthFlow);
 			DevAuthConfig.WorkerType = SpatialWorkerType;
 		}
 		else
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up receptionist config from command line arguments"));
 			bSuccessfullyLoaded = ReceptionistConfig.TryLoadCommandLineArgs();
 			SetConnectionType(ESpatialConnectionType::Receptionist);
 			ReceptionistConfig.WorkerType = SpatialWorkerType;
@@ -416,6 +437,8 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 
 void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
 {
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up connection config from URL"));
+
 	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
 		FString LocatorHostOverride;

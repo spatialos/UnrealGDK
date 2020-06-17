@@ -51,14 +51,11 @@ private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
 
-	// Build the checkout radius constraints for client workers
-	FrequencyConstraints CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
-	
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
-	SchemaResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	SchemaResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	SchemaResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	SchemaResultType CreateClientNonAuthInterestResultType();
+	SchemaResultType CreateClientAuthInterestResultType();
+	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
 
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
@@ -91,9 +88,6 @@ private:
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
-
-	// If the result types flag is flipped, set the specified result type.
-	void SetResultType(Query& OutQuery, const SchemaResultType& InResultType) const;
 
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;

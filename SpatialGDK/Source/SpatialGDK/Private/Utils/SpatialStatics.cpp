@@ -5,33 +5,21 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "EngineClasses/SpatialGameInstance.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
     return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-}
-
-SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
-{
-	if (const UWorld* World = WorldContext->GetWorld())
-	{
-		if (const USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
-		{
-			check(SpatialGameInstance->ActorGroupManager.IsValid());
-			return SpatialGameInstance->ActorGroupManager.Get();
-		}
-	}
-	return nullptr;
 }
 
 FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
@@ -78,9 +66,15 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
-bool USpatialStatics::IsSpatialOffloadingEnabled()
+bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
-    return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
+	if (World != nullptr)
+	{
+		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+		return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0;
+	}
+
+	return false;
 }
 
 bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
@@ -90,73 +84,32 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
-	const AActor* EffectiveActor = Actor;
-	while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+	// Offloading using the Unreal Load Balancing always load balances based on the owning actor.
+	const AActor* RootOwner = Actor;
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
-		EffectiveActor = EffectiveActor->GetOwner();
+		RootOwner = RootOwner->GetOwner();
 	}
 
-	return IsActorGroupOwnerForClass(EffectiveActor, EffectiveActor->GetClass());
+	return IsActorGroupOwnerForClass(RootOwner, RootOwner->GetClass());
 }
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
 	{
-		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
-		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ClassWorkerType == CurrentWorkerType;
+		return false;
 	}
 
-	if (const UWorld* World = WorldContextObject->GetWorld())
+	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		return World->GetNetMode() != NM_Client;
-	}
-
-	return false;
-}
-
-bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
-		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ActorGroupWorkerType == CurrentWorkerType;
-	}
-
-	if (const UWorld* World = WorldContextObject->GetWorld())
-	{
-		return World->GetNetMode() != NM_Client;
-	}
-
-	return false;
-}
-
-FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
-	{
-		const AActor* EffectiveActor = Actor;
-		while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
 		{
-			EffectiveActor = EffectiveActor->GetOwner();
+			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
-
-		return ActorGroupManager->GetActorGroupForClass(EffectiveActor->GetClass());
 	}
-
-	return SpatialConstants::DefaultActorGroup;
-}
-
-FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
-	}
-
-	return SpatialConstants::DefaultActorGroup;
+	return true;
 }
 
 void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FString& InString /*= FString(TEXT("Hello"))*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)

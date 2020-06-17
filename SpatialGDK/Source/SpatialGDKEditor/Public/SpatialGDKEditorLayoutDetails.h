@@ -4,25 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "IDetailCustomization.h"
-#include "Input/Reply.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorLayoutDetails, Log, All);
+class IErrorReportingWidget;
 
 class FSpatialGDKEditorLayoutDetails : public IDetailCustomization
 {
-private:
-	bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
-	bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
-
-	FReply GenerateDevAuthToken();
-	FReply PushCommandLineArgsToIOSDevice();
-	FReply PushCommandLineArgsToAndroidDevice();
-
-	void ForceRefreshLayout();
-
-	IDetailLayoutBuilder* CurrentLayout = nullptr;
-
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
+
+private:
+	void ForceRefreshLayout();
+
+private:
+	IDetailLayoutBuilder* CurrentLayout = nullptr;
+	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
+
+	/** Delegate to commit project name */
+	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);
 };

@@ -253,23 +253,29 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
 
-	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
-
 	if (bHasAuthority)
 	{
-		// Workaround to delay the delete entity request if tearing off.
-		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
-		if (Actor != nullptr && Actor->GetTearOff())
+		if (Actor != nullptr)
 		{
-			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
-			// Since the entity deletion is delayed, this creates a situation,
-			// when the Actor is torn off, but still replicates.
-			// Disabling replication makes RPC calls impossible for this Actor.
-			Actor->SetReplicates(false);
+			// Workaround to delay the delete entity request if tearing off.
+			// Task to improve this: UNR-841
+			if (Actor->GetTearOff())
+			{
+				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
+				// Since the entity deletion is delayed, this creates a situation,
+				// when the Actor is torn off, but still replicates.
+				// Disabling replication makes RPC calls impossible for this Actor.
+				Actor->SetReplicates(false);
+			}
+			else
+			{
+				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+			}
 		}
 		else
 		{
-			Sender->RetireEntity(EntityId);
+			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 		}
 	}
 }
@@ -631,21 +637,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			bCreatedEntity = true;
 
-			// We preemptively set the Actor role to SimulatedProxy if:
-			//  - offloading is disabled (with offloading we never give up authority since we're always spawning authoritatively),
-			//  - load balancing is disabled (since the legacy behaviour is to wait until Spatial tells us we have authority) OR
-			//  - load balancing is enabled AND our lb strategy says this worker shouldn't have authority AND the Actor isn't locked.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() &&
-				(!SpatialGDKSettings->bEnableUnrealLoadBalancer
-					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))))
+			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
+			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
+			if (NetDriver->LoadBalanceStrategy == nullptr)
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
-
-				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
-				{
-					UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-				}
 			}
 		}
 		else
@@ -739,7 +736,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
+	if (NetDriver->LoadBalanceStrategy != nullptr &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
@@ -1391,11 +1388,6 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
-		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
-		if (!GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-		{
-			Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
-		}
 
 		Actor->SetIsOwnedByClient(bNetOwned);
 

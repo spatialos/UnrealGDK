@@ -38,16 +38,19 @@ class TestSuite {
 [string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
-[string] $user_gdk_settings = ""
+[string] $user_gdk_settings = "$env:GDK_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
+[string] $gdk_branch = "$env:BUILDKITE_BRANCH"
+
+# If the testing repo has a branch with the same name as the current branch, use that
+$testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
+if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+    $test_repo_branch = $gdk_branch
+}
 
 # Allow overriding testing branch via environment variable
 if (Test-Path env:TEST_REPO_BRANCH) {
     $test_repo_branch = $env:TEST_REPO_BRANCH
-}
-
-if (Test-Path env:GDK_SETTINGS) {
-    $user_gdk_settings = ";" + $env:GDK_SETTINGS
 }
 
 $tests = @()
@@ -60,7 +63,7 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "bEnableUnrealLoadBalancer=false;$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$user_cmd_line_args")
 }
 else {
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
@@ -69,7 +72,7 @@ else {
     else {
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
         $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
-            "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`");$user_gdk_settings", $True, "$user_cmd_line_args")
+            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {

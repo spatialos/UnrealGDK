@@ -226,11 +226,11 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
-const FName DefaultActorGroup = FName(TEXT("Default"));
-
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
+
+static const FName DefaultLayer = FName(TEXT("UnrealWorker"));
 
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
@@ -240,7 +240,7 @@ const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
+const FString SpatialSessionIdURLOption		= TEXT("spatialSessionId=");
 
 const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
 const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
@@ -249,12 +249,13 @@ const uint16 LOCATOR_PORT     = 443;
 const FString CONSOLE_HOST    = TEXT("console.improbable.io");
 const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
 
-const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-const FString AssemblyPatternHint = TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
-const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
-const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
-const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+const FString AssemblyPattern		= TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString AssemblyPatternHint	= TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
+const FString ProjectPattern		= TEXT("^[a-z0-9_]{3,32}$");
+const FString ProjectPatternHint	= TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
+const FString DeploymentPattern		= TEXT("^[a-z0-9_]{2,32}$");
 const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
+const FString Ipv4Pattern			= TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {
@@ -288,6 +289,8 @@ const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
 const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
+
+const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
@@ -387,15 +390,6 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
-
-inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
-{
-	if (LoadBalancingWorkerType == "")
-	{
-		return { DefaultServerWorkerType.ToString() };
-	}
-	return { LoadBalancingWorkerType.ToString() };
 }
 
 } // ::SpatialConstants

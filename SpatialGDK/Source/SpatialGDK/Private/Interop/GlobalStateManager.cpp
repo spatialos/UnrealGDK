@@ -359,28 +359,6 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
-{
-	// This logic is not used in offloading.
-	if (USpatialStatics::IsSpatialOffloadingEnabled())
-	{
-		return;
-	}
-
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated())
-			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
-			}
-		}
-	}
-}
-
 void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
 {
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
@@ -412,14 +390,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-		{
-			SetAllActorRolesBasedOnLBStrategy();
-		}
-		else
-		{
-			BecomeAuthoritativeOverAllActors();
-		}
+		SetAllActorRolesBasedOnLBStrategy();
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();

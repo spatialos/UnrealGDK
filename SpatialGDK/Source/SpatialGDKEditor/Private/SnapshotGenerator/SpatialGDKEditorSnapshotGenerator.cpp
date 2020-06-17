@@ -10,7 +10,6 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/ComponentFactory.h"
@@ -118,20 +117,6 @@ Worker_ComponentData CreateStartupActorManagerData()
 	return StartupActorManagerData;
 }
 
-WorkerRequirementSet CreateReadACLForAlwaysRelevantEntities()
-{
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	WorkerRequirementSet ReadACL;
-	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
-	{
-		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
-		ReadACL.Add(WorkerTypeAttributeSet);
-	}
-
-	return ReadACL;
-}
-
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
@@ -149,13 +134,15 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
+	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
+
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(GSM, Components);
@@ -187,11 +174,13 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
+	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
+
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
-	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(VirtualWorkerTranslator, Components);
@@ -269,23 +258,21 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	return true;
 }
 
-bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
+bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotPath)
 {
-	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
-	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
+	if (!ValidateAndCreateSnapshotGenerationPath(SnapshotPath))
 	{
 		return false;
 	}
 
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SnapshotPath);
 
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
 	Parameters.default_component_vtable = &DefaultVtable;
 
 	bool bSuccess = true;
-	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SavePath), &Parameters);
+	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SnapshotPath), &Parameters);
 	if (const char* SchemaError = Worker_SnapshotOutputStream_GetState(OutputStream).error_message)
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error creating SnapshotOutputStream: %s"), UTF8_TO_TCHAR(SchemaError));
