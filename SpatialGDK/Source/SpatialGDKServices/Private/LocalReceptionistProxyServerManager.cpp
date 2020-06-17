@@ -70,8 +70,9 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port)
 				
 				BlockingProcess.Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
 				BlockingProcess.Name = GetProcessName();
-				const FString WarningMsg = LOCTEXT("FailedToGetBlockingProcessName", "Failed to get the name of the process that is blocking the required port.").ToString();
-				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Process %s with PID:%s is blocking required port."), *BlockingProcess.Name, *BlockingProcess.Pid);
+
+				const FText WarningMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Process {0} with PID : {1} is blocking required port."), FText::FromString(BlockingProcess.Name), FText::FromString(BlockingProcess.Pid));
+				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s"), *WarningMsg.ToString());
 				
 				return true;
 			}
@@ -79,7 +80,9 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port)
 	}
 	else
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to check if any process is blocking required port. Error: %s"), *StdErr);
+		const FText ErrorMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Failed to check if any process is blocking required port. Error: {0}"), FText::FromString(StdErr));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("%s"), *ErrorMsg.ToString());
+	
 	}
 
 	
@@ -112,6 +115,7 @@ bool FLocalReceptionistProxyServerManager::TryKillBlockingPortProcess()
 
 bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort)
 {
+	FText LogMessage;
 	//Check if any process is blocking the receptionist port
 	if(CheckIfPortIsBound(ReceptionistPort))
 	{
@@ -119,11 +123,13 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 		bool bProcessKilled = TryKillBlockingPortProcess();
 		if (!bProcessKilled)
 		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process %s that is blocking the port. "), *BlockingProcess.Name);
+			LogMessage = FText::Format(LOCTEXT("FailedToKillBlockingPortProcess", "Failed to kill the process '{0}' that is blocking the port."), FText::FromString(BlockingProcess.Name));
+			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s"), *LogMessage.ToString());
 			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Succesfully killed %s process that was blocking %d port."), *BlockingProcess.Name, ReceptionistPort);
+		LogMessage = FText::Format(LOCTEXT("SucceededToKillBlockingPortProcess", "Succesfully killed {0} process that was blocking {1} port."), FText::FromString(BlockingProcess.Name), ReceptionistPort);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"), *LogMessage.ToString());
 	}
 
 	return true;
@@ -187,7 +193,8 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	bSuccess = ProxyServerProcHandle.IsValid();
 	if (!bSuccess || !bProxyStartSuccess)
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
+		const FText WarningMessage = FText::Format(LOCTEXT("FailedToStartProxyServer", "Starting the local receptionist proxy server failed. Error Code: {0}, Error Message: {1}"), ExitCode, FText::FromString(StartResult));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s"), *WarningMessage.ToString());
 		return false;
 	}
 

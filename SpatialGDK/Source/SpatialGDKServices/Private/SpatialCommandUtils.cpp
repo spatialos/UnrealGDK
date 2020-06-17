@@ -313,7 +313,7 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 	}
 	else
 	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *SpatialGDKServicesConstants::SpatialExe, *Command, *SpatialGDKServicesConstants::SpatialOSDirectory);
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("%s"), *FText::Format(LOCTEXT( "CloudConnectExternalExecutionFailed","Execution failed. '{0}' with arguments '{1}' in directory '{2}' "), FText::FromString(SpatialGDKServicesConstants::SpatialExe), FText::FromString(Command), FText::FromString(SpatialGDKServicesConstants::SpatialOSDirectory)).ToString());
 	}
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);
