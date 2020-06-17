@@ -388,5 +388,8 @@ void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
 
 void USpatialMetrics::ResetPerfMetrics()
 {
-	PerformanceCounters.Reset();
+	for (auto It = PerformanceCounters.CreateIterator(); It; ++It)
+	{
+		It.Value() = 0.0f;
+	}
 }
