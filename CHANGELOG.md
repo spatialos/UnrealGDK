@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secure worker connections are no longer supported for Editor builds. They are still supported for packaged builds.
 
 ### Features:
-- New default Control GameMode in the Example Project. Two Teams compete to control points on the map, with help from NPCs guards.
+- New default Control GameMode in the Example Project. Two Teams compete to control points on the map, with help from NPC guards.
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
