@@ -15,13 +15,18 @@ namespace
 	typedef TFunction<bool(ASpatialFunctionalTest* NetTest)> FIsReadyEventFunc;
 	typedef TFunction<void(ASpatialFunctionalTest* NetTest)> FStartEventFunc;
 	typedef TFunction<void(ASpatialFunctionalTest* NetTest, float DeltaTime)> FTickEventFunc;
+
+	// we need 2 values since the way we clean up tests is based on replication of variables,
+	// so if the test fails to start, the cleanup process would never be triggered
+	constexpr int SPATIAL_FUNCTIONAL_TEST_NOT_STARTED = -1; // represents test waiting to run
+	constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// represents test already ran
 }
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
  */
-UCLASS(Blueprintable, hidecategories = (Input, Movement, Collision, Rendering, Replication, Tick, LOD, "Utilities|Transformation"))
+UCLASS(Blueprintable, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest
 {
 	GENERATED_BODY()
@@ -123,8 +128,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfClientWorkers();
 
+protected:
+	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
+
 private:
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "2"), Category = "Spatial Functional Test") // @TODO currently cannot run tests with less than 2 clients
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
 	int NumRequiredClients = 2;
 
 	// number of servers that should be running in the world
@@ -140,9 +148,9 @@ private:
 	// Time current step has been running for, used if Step Definition has TimeLimit >= 0
 	float TimeRunningStep = 0.0f;
 
-	// Current Step Index, -1 if not executing any
+	// Current Step Index, < 0 if not executing any, check consts at the top
 	UPROPERTY(ReplicatedUsing=OnReplicated_CurrentStepIndex, Transient)
-	int CurrentStepIndex = -1;
+	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
