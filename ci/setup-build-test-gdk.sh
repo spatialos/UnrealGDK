@@ -13,10 +13,10 @@ pushd "$(dirname "$0")"
     BUILD_HOME="${3:-"$(pwd)/../.."}"
 
     UNREAL_PATH="${BUILD_HOME}/UnrealEngine"
-    TEST_UPROJECT_NAME="EngineNetTest"
-    TEST_REPO_URL="git@github.com:improbable/UnrealGDKEngineNetTest.git"
-    TEST_REPO_MAP="NetworkingMap"
-    TEST_PROJECT_NAME="NetworkTestProject"
+    TEST_UPROJECT_NAME="UnrealGDKTestGyms"
+    TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
+    TEST_REPO_MAP="SpatialNetworkingMap"
+    TEST_PROJECT_NAME="GDKTestGyms"
     CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}" 
     SLOW_NETWORKING_TESTS=false
 
@@ -45,7 +45,7 @@ pushd "$(dirname "$0")"
         "${BUILD_STATE}" \
         "${TEST_UPROJECT_NAME}${BUILD_TARGET}"
 
-    # TODO UNR-3164 - re-enable tests after we made sure they work for Mac
+    # TODO UNR-3164 - re-enable tests after we made sure they work for Mac; note: test execution changed, see .ps script
     # echo "--- run-fast-tests"
     # "${GDK_HOME}/ci/run-tests.sh" \
     #     "${UNREAL_PATH}" \
