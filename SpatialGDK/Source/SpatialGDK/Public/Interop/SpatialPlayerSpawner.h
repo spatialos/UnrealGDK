@@ -61,7 +61,7 @@ private:
 
 	// Authoritative server worker
 	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const PhysicalWorkerName& ClientWorkerId);
-	void ForwardSpawnRequestToOtherServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
+	void ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
 	void RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId, const bool bShouldTryDifferentPlayerStart = false);
 
 	// Any server

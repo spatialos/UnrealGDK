@@ -224,8 +224,10 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 
 	VirtualWorkerId VirtualWorkerToForwardTo = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
-	// If we can't find a PlayerStart Actor, the PlayerSpawner authoritative worker may be a worker type which has all PlayerStart Actors
-	// and/or shouldn't be processing player spawning anyway.
+	// If we can't find a PlayerStart Actor, the PlayerSpawner authoritative worker may be part of a layer
+	// which has deleted all PlayerStart Actors and/or shouldn't be processing player spawning. In this case,
+	// we attempt to forward to the worker authoritative over the PlayerStart CDO, was pass a null object ref
+	// so that the forwarded worker knows to search for a PlayerStart.
 	if (PlayerStartActor == nullptr)
 	{
 		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Cast<AActor>(APlayerStart::StaticClass()->GetDefaultObject()));
@@ -244,7 +246,7 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 		return;
 	}
 
-	ForwardSpawnRequestToOtherServer(SpawnPlayerRequest, PlayerStartActor, ClientWorkerId, VirtualWorkerToForwardTo);
+	ForwardSpawnRequestToStrategizedServer(SpawnPlayerRequest, PlayerStartActor, ClientWorkerId, VirtualWorkerToForwardTo);
 }
 
 void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(const Schema_Object* PlayerSpawnData, AActor* PlayerStart)
@@ -259,7 +261,7 @@ void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(const Schema_Object* Pla
 	GameMode->SetPrioritizedPlayerStart(nullptr);
 }
 
-void USpatialPlayerSpawner::ForwardSpawnRequestToOtherServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker)
+void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker)
 {
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Forwarding player spawn request to strategized worker. Client ID: %s. PlayerStart: %s. Strategeized virtual worker %d"),
 		*ClientWorkerId, *GetNameSafe(PlayerStart), SpawningVirtualWorker);
