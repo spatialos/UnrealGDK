@@ -278,6 +278,7 @@ private:
 	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
 
 	static void MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor);
+	static void DropActorHierarchyMigration(USpatialNetDriver* NetDriver, AActor* HierarchyActor);
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
@@ -345,8 +346,9 @@ private:
 	// Using this timestamp, we can back off attempting migrations for a while.
 	uint64 AuthorityReceivedTimestamp;
 
-	// Contains the frame at which the actor (or its owner) was seen outside its worker's authoritative region.
-	// Used to delay migration by one frame, to allow Pre-Replication events to take place in the regular replication loop.
+	// Contains the frame at which the actor hierarchy was marked to be migrated to another worker.
+	// Used to delay the hierarchy's migration by one frame, to allow all actors in the hierarchy to go through
+	// the regular replication loop (to run Pre-Replication events for instance) before being migrated together.
 	uint32 MigrationFrame;
 
 	// WorkerId to migrate to.

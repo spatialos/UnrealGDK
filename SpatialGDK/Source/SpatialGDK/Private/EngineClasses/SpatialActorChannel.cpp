@@ -460,6 +460,22 @@ void USpatialActorChannel::MarkActorHierarchyForMigration(USpatialNetDriver* Net
 	}
 }
 
+void USpatialActorChannel::DropActorHierarchyMigration(USpatialNetDriver* NetDriver, AActor* HierarchyActor)
+{
+	if (HierarchyActor->GetIsReplicated() && HierarchyActor->HasAuthority())
+	{
+		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(HierarchyActor))
+		{
+			Channel->MigrationVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+		}
+	}
+
+	for (AActor* Child : HierarchyActor->Children)
+	{
+		DropActorHierarchyMigration(Child);
+	}
+}
+
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
@@ -745,7 +761,12 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		if (MigrationVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			if(MigrationFrame != NetDriver->ReplicationFrame)
+			if (NetDriver->LockingPolicy->IsLocked(Actor))
+			{
+				AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
+				DropActorHierarchyMigration(NetDriver, HierarchyRoot);
+			}
+			else if (MigrationFrame != NetDriver->ReplicationFrame)
 			{
 				Sender->SendAuthorityIntentUpdate(*Actor, MigrationVirtualWorkerId);
 
@@ -759,21 +780,13 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
 		{
-			AActor* NetOwner = [this]
-			{
-				AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
-				if(HierarchyRoot)
-				{
-					return HierarchyRoot;
-				}
-				return Actor;
-			}();
-			
+			AActor* TopmostOwner = SpatialGDK::GetTopmostOwner(Actor);
+			AActor* HierarchyRoot = TopmostOwner ? TopmostOwner : Actor;
 
 			uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
-			if (NetOwner != nullptr)
+			if (TopmostOwner != nullptr)
 			{
-				GetLatestAuthorityChangeFromHierarchy(NetOwner, HierarchyAuthorityReceivedTimestamp);
+				GetLatestAuthorityChangeFromHierarchy(HierarchyRoot, HierarchyAuthorityReceivedTimestamp);
 			}
 
 			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
@@ -792,7 +805,7 @@ int64 USpatialActorChannel::ReplicateActor()
 				}
 				else
 				{
-					MarkActorHierarchyForMigration(NetDriver, NewAuthVirtualWorkerId, NetOwner);
+					MarkActorHierarchyForMigration(NetDriver, NewAuthVirtualWorkerId, HierarchyRoot);
 				}
 			}
 		}
