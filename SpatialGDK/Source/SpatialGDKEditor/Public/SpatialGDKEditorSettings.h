@@ -356,26 +356,26 @@ private:
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Assembly name"))
+	UPROPERTY(config)
 	FString AssemblyName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment name"))
+	UPROPERTY(config)
 	FString PrimaryDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cloud launch configuration path"))
+	UPROPERTY(config)
 	FFilePath PrimaryLaunchConfigPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Snapshot path"))
+	UPROPERTY(config)
 	FFilePath SnapshotPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
+	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
+	UPROPERTY(config)
 	FString MainDeploymentCluster;
 
 	/** Tags used when launching a deployment */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+	UPROPERTY(config)
 	FString DeploymentTags;
 
 	const FString SimulatedPlayerLaunchConfigPath;
@@ -426,19 +426,19 @@ public:
 	FString DevelopmentDeploymentToConnect;
 
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
+	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
+	UPROPERTY(config)
 	FString SimulatedPlayerCluster;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
+	UPROPERTY(config)
 	bool bSimulatedPlayersIsEnabled;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Deployment name"))
+	UPROPERTY(config)
 	FString SimulatedPlayerDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
+	UPROPERTY(config)
 	uint32 NumberOfSimulatedPlayers;
 
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
