@@ -130,7 +130,7 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"), *OutLogMessage.ToString());
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s :'%s'"), *LOCTEXT("KilledBlockingPortProcess", "Succesfully killed").ToString(), *OutLogMessage.ToString());
 		return true;
 	}
 
