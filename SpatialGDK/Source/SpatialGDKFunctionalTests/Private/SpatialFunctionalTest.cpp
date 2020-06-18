@@ -92,7 +92,6 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
-	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
 	if (HasAuthority())
 	{
 		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
