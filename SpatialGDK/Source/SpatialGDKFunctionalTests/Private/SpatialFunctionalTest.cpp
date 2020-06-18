@@ -95,12 +95,10 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
 	if (HasAuthority())
 	{
-		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s AutoDestroy [Local]: actor %s ; authority = %d"), *DisplayName, *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
 		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
 	}
 	else if(LocalFlowController != nullptr)
 	{
-		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s AutoDestroy [Remote]: actor %s ; authority = %d"), *DisplayName, *(ActorToAutoDestroy->GetName()), ActorToAutoDestroy->HasAuthority());
 		if(LocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
 		{
 			CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
@@ -525,7 +523,6 @@ void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActo
 void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TArray<AActor*>& ActorsToDestroy)
 {
 	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
-	UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s running MulticastAutoDestroyActors_Implementation"), *DisplayName);
 	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
 	{
 		for (AActor* Actor : ActorsToDestroy)
@@ -543,7 +540,7 @@ void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TAr
 		{
 			if (IsValid(Actor))
 			{
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - should have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 			}
 		}
 	}
