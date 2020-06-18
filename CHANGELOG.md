@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+- Replaced the "Generate From Current Map" button  from the "Cloud Deployment Configuration" window by "Automatically Generate Configuration" checkbox that if ticked, generates an up to date configuration from the current map every time a cloud deployment is started.
+
 
 ### New Known Issues:
 
