@@ -198,13 +198,12 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 
 void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* SpawnPlayerRequest, const PhysicalWorkerName& ClientWorkerId)
 {
-	// If the load balancing strategy dictates that this another worker should have authority the chosen PlayerStart THEN the spawn is handled locally,
-	// Else if the the PlayerStart is handled by another worker THEN forwarded the request to that worker to prevent an initial player migration
-	// Else if a PlayerStart can't be found, we could be on the wrong worker type, so forward to the server authoritative over the PlayerStart CDO.
+	// If the load balancing strategy dictates that this worker should have authority over the chosen PlayerStart THEN the spawn is handled locally,
+	// Else if the the PlayerStart is handled by another worker THEN forward the request to that worker to prevent an initial player migration,
+	// Else if a PlayerStart can't be found THEN we could be on the wrong worker type, so forward to the GameMode authoritative server.
 	// 
 	// This implementation depends on:
-	// 1) the load-balancing strategy having the same rules for PlayerStart Actors and Characters / Controllers /
-	// Player States or,
+	// 1) the load-balancing strategy having the same rules for PlayerStart Actors and Characters / Controllers / Player States or,
 	// 2) the authoritative virtual worker ID for a PlayerStart Actor not changing during the lifetime of a deployment.
 	check (NetDriver->LoadBalanceStrategy != nullptr)
 
@@ -225,12 +224,13 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	VirtualWorkerId VirtualWorkerToForwardTo = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// If we can't find a PlayerStart Actor, the PlayerSpawner authoritative worker may be part of a layer
-	// which has deleted all PlayerStart Actors and/or shouldn't be processing player spawning. In this case,
-	// we attempt to forward to the worker authoritative over the PlayerStart CDO, was pass a null object ref
-	// so that the forwarded worker knows to search for a PlayerStart.
+	// which has a limited view of the world and/or shouldn't be processing player spawning. In this case,
+	// we attempt to forward to the worker authoritative over the GameMode, as we assume the FindPlayerStart
+	// implementation may depend on authoritative game mode logic. We pass a null object ref so that the
+	// forwarded worker knows to search for a PlayerStart.
 	if (PlayerStartActor == nullptr)
 	{
-		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Cast<AActor>(APlayerStart::StaticClass()->GetDefaultObject()));
+		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*UGameplayStatics::GetGameMode(GetWorld()));
 	}
 	else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
 	{
