@@ -72,11 +72,11 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 				PID = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
 				if (GetProcessName(PID, ProcessName))
 				{
-					LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Process {0} with PID : {1} is blocking required port."), FText::FromString(ProcessName), FText::FromString(PID));
+					LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "{0} process with PID:{1}."), FText::FromString(ProcessName), FText::FromString(PID));
 					return true;
 				}
 
-				LogMsg= FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown Process with PID : {1} is blocking required port."), FText::FromString(PID));
+				LogMsg= FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(PID));
 			
 				return true;
 			}
@@ -84,7 +84,7 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 	}
 	else
 	{
-		LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Failed to check if any process is blocking required port. Error: {0}"), FText::FromString(StdErr));
+		LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Failed to check if any process is blocking required port. Error:{0}"), FText::FromString(StdErr));
 	}
 
 	LogMsg = LOCTEXT("NoProcessBlockingProxyPort", "No Process is blocking the required port.");
@@ -126,15 +126,15 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 		bool bProcessKilled = TryKillBlockingPortProcess(PID);
 		if (!bProcessKilled)
 		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s : '%s'"), *LOCTEXT("FailedToKillBlockingPortProcess", "Failed to kill the process that is blocking the port.").ToString(),*OutLogMessage.ToString());
+			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s %s!"), *LOCTEXT("FailedToKillBlockingPortProcess", "Failed to kill the process that is blocking the port.").ToString(),*OutLogMessage.ToString());
 			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s :'%s'"), *LOCTEXT("KilledBlockingPortProcess", "Succesfully killed").ToString(), *OutLogMessage.ToString());
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s %s."), *LOCTEXT("KilledBlockingPortProcess", "Succesfully killed").ToString(), *OutLogMessage.ToString());
 		return true;
 	}
 
-	OutLogMessage = LOCTEXT("NoProcessBlockingPort", "The required Port is not blocked!");
+	OutLogMessage = LOCTEXT("NoProcessBlockingPort", "The required port is not blocked!");
 	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"), *OutLogMessage.ToString());
 	return true;
 }
