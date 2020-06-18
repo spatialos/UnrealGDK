@@ -25,6 +25,8 @@ private:
 
 	FProcHandle ProxyServerProcHandle;
 	FString RunningCloudDeploymentName;
+	int32 RunningProxyReceptionistPort;
+	FString RunningProxyListeningAddress;
 
 	static const int32 ExitCodeSuccess = 0;
 

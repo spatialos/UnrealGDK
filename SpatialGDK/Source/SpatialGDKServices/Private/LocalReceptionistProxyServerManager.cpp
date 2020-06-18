@@ -170,14 +170,14 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	bool bSuccess = false;
 
 	//Do not restart the same proxy if you have already a proxy running for the same cloud deployment
-	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName)
+	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress ==ListeningAddress && RunningProxyReceptionistPort==ReceptionistPort)
 	{
 		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"), *LOCTEXT("ServerProxyAlreadyRunning", "The local receptionist proxy server is already running!").ToString());
 
 		return true;
 	}
 
-	//Stop receptionist proxy server if it is for a different cloud deployment
+	//Stop receptionist proxy server if it is for a different cloud deployment, port or listening address
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid())
 	{
 		if(!TryStopReceptionistProxyServer())
@@ -193,7 +193,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	bool bProxyStartSuccess = false;
 	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode, bProxyStartSuccess);
 
-	//check if process run successfully
+	//Check if process run successfully
 	bSuccess = ProxyServerProcHandle.IsValid();
 	if (!bSuccess || !bProxyStartSuccess)
 	{
@@ -203,6 +203,8 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	}
 
 	RunningCloudDeploymentName = CloudDeploymentName;
+	RunningProxyListeningAddress = ListeningAddress;
+	RunningProxyReceptionistPort = ReceptionistPort;
 	bProxyIsRunning = true;
 
 	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"),*LOCTEXT("SuccesfullyStartedServerProxy", "Local receptionist proxy server started sucessfully!").ToString());
