@@ -131,7 +131,9 @@ private:
 	bool IsUsingCustomRuntimeVersion() const;
 	FText GetSpatialOSRuntimeVersionToUseText() const;
 
-	FReply OnGenerateConfigFromCurrentMap();
+	ECheckBoxState IsAutoGenerateConfigEnabled() const;
+	bool IsUsingAutoGenerateConfig() const;
+	void OnCheckedAutoGenerateConfig(ECheckBoxState NewCheckedState);
 
 	FReply OnOpenLaunchConfigEditor();
 

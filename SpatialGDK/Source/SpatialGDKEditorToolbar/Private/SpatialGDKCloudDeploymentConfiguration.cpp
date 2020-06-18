@@ -289,6 +289,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLaunchConfigPath)
 									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryLaunchConfigPathPicked)
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsUsingAutoGenerateConfig)
 								]
 							]
 							+ SVerticalBox::Slot()
@@ -307,8 +308,9 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(SButton)
-									.Text(FText::FromString(FString(TEXT("Generate from current map"))))
-									.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap)
+									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
+								.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor)
+								.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsUsingAutoGenerateConfig)
 								]
 								]
 							+ SVerticalBox::Slot()
@@ -320,15 +322,16 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT(""))))
-								.ToolTipText(FText::FromString(FString(TEXT(""))))
+									.Text(FText::FromString(FString(TEXT("Automatically Generate Configuration"))))
+								.ToolTipText(FText::FromString(FString(TEXT("Whether to automatically generate the configuration from the current map every time a cloud deployment is started."))))
 								]
-							+ SHorizontalBox::Slot()
+
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
-									SNew(SButton)
-									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
-									.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor)
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateConfigEnabled)
+								.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateConfig)
 								]
 							]
 							// Primary Deployment Region Picker
@@ -1016,26 +1019,23 @@ FText SSpatialGDKCloudDeploymentConfiguration::GetSpatialOSRuntimeVersionToUseTe
 	return FText::FromString(RuntimeVersionString);
 }
 
-FReply SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap()
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsUsingAutoGenerateConfig() const
 {
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-	check(EditorWorld != nullptr);
+	const USpatialGDKEditorSettings* SpatialGKDSettings = GetDefault<USpatialGDKEditorSettings>();
+	return !SpatialGKDSettings->IsAutoGenerateConfigEnabled();
+}
 
-	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateConfigEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGKDSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGKDSettings->IsAutoGenerateConfigEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-
-	FillWorkerConfigurationFromCurrentMap(ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
-
-	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
-
-	OnPrimaryLaunchConfigPathPicked(LaunchConfig);
-
-	return FReply::Handled();
+void SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateConfig(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetAutoGenerateConfigEnabledState(NewCheckedState == ECheckBoxState::Checked);
 }
 
 FReply SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor()
