@@ -148,7 +148,10 @@ void ASpatialFunctionalTest::FinishStep()
 {
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	checkf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
-	AuxLocalFlowController->NotifyStepFinished();
+	if(AuxLocalFlowController != nullptr)
+	{
+		AuxLocalFlowController->NotifyStepFinished();
+	}
 }
 
 const FSpatialFunctionalTestStepDefinition ASpatialFunctionalTest::GetStepDefinition(int StepIndex) const
@@ -195,7 +198,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	{
 		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(), *UEnum::GetValueAsString(TestResult), *Message);
 
-		CurrentStepIndex = -1;
+		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
 		MulticastAutoDestroyActors(AutoDestroyActors);
 
@@ -203,7 +206,11 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	}
 	else
 	{
-		GetLocalFlowController()->NotifyFinishTest(TestResult, Message);
+		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
+		if (AuxLocalFlowController != nullptr)
+		{
+			AuxLocalFlowController->NotifyFinishTest(TestResult, Message);
+		}
 	}
 }
 
@@ -458,13 +465,17 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 
 void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
-	if (CurrentStepIndex == -1)
+	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
 		//test finished
 		if(StartTime > 0)
 		{
 			//if we ever started in first place
-			GetLocalFlowController()->OnTestFinished();
+			ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
+			if (AuxLocalFlowController != nullptr)
+			{
+				AuxLocalFlowController->OnTestFinished();
+			}
 		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest
 		{
