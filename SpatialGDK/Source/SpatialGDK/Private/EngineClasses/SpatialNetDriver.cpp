@@ -831,7 +831,7 @@ void USpatialNetDriver::BeginDestroy()
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
 		// Flush the connection and wait a moment to allow the message to propagate.
-		// This is a workaround and needs to be handled more smoothly : UNR-3694
+		// TODO: UNR-3697 - This needs to be handled more correctly
 		Connection->Flush();
 		FPlatformProcess::Sleep(0.1f);
 
