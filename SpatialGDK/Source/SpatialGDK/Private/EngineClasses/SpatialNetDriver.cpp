@@ -830,6 +830,10 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
+		// Flush the connection and wait a moment to allow the message to propagate.
+		// This is a workaround and needs to be handled more smoothly : UNR-3694
+		Connection->Flush();
+		FPlatformProcess::Sleep(0.1f);
 
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
