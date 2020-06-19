@@ -246,7 +246,7 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 				{
 					bFoundConflictingId = true;
 					DesiredClientId += 1; // there's a collision, let's try the next one
-					check(DesiredClientId != 0, TEXT("This situation should only happen if you have more than 255 players, so you'll probably already be in trouble given that we don't support that"));
+					checkf(DesiredClientId != 0, TEXT("This situation should only happen if you have more than 255 players, so you'll probably already be in trouble given that we don't support that"));
 					break;
 
 				}
