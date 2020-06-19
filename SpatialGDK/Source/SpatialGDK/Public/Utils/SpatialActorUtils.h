@@ -37,7 +37,7 @@ inline AActor* GetTopmostOwner(const AActor* Actor)
 inline AActor* GetHierarchyRoot(const AActor* Actor)
 {
 	AActor* TopmostOwner = GetTopmostOwner(Actor);
-	return TopmostOwner ? TopmostOwner : Actor;
+	return TopmostOwner ? TopmostOwner : const_cast<AActor*>(Actor);
 }
 
 inline FString GetConnectionOwningWorkerId(const AActor* Actor)

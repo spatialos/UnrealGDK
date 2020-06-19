@@ -472,7 +472,7 @@ void USpatialActorChannel::DropActorHierarchyMigration(USpatialNetDriver* NetDri
 
 	for (AActor* Child : HierarchyActor->Children)
 	{
-		DropActorHierarchyMigration(Child);
+		DropActorHierarchyMigration(NetDriver, Child);
 	}
 }
 
