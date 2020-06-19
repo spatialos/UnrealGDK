@@ -124,11 +124,14 @@ bool USpatialGameInstance::TryStartSpatialConnection()
 	if (!bHasPreviouslyConnectedToSpatial &&
 		HasSpatialNetDriver())
 	{
-		// If we are using spatial networking then prepare a spatial connection.
 		// Ensure that any connections attempting to using command line arguments have a valid locater host in the command line.
 		InjectSpatialLocatorIntoCommandLine();
+
+		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialConnectionManager();
+
 		bHasPreviouslyConnectedToSpatial = true;
+
 		return true;
 	}
 #if TRACE_LIB_ACTIVE
