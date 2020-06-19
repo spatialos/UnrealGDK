@@ -1217,7 +1217,6 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 
 	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
-
 }
 
 FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
@@ -1231,9 +1230,9 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 		return FReply::Unhandled();
 	}
 
-	if (SpatialGDKSettings->IsAutoGenerateConfigEnabled())
+	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
 	{
-		this->GenerateConfigFromCurrentMap();
+		GenerateConfigFromCurrentMap();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
@@ -1329,7 +1328,7 @@ bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 		&& !SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty()
 		&& !SpatialGDKSettings->GetAssemblyName().IsEmpty()
 		&& !SpatialGDKSettings->GetSnapshotPath().IsEmpty()
-		&& (!SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty() || SpatialGDKSettings->IsAutoGenerateConfigEnabled());
+		&& (!SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty() || SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig());
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const

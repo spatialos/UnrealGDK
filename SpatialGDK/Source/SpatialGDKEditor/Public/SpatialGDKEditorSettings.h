@@ -378,8 +378,8 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
 	FString DeploymentTags;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Auto generate configuration from current map"))
-	bool bIsAutoGenerateConfigEnabled;
+	UPROPERTY(config)
+	bool bIsAutoGenerateCloudConfigEnabled;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
@@ -629,10 +629,10 @@ public:
 		return bSimulatedPlayersIsEnabled;
 	}
 
-	void SetAutoGenerateConfigEnabledState(bool IsEnabled);
-	FORCEINLINE bool IsAutoGenerateConfigEnabled() const
+	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);
+	FORCEINLINE bool ShouldAutoGenerateCloudLaunchConfig() const
 	{
-		return bIsAutoGenerateConfigEnabled;
+		return bIsAutoGenerateCloudConfigEnabled;
 	}
 
 	void SetBuildAndUploadAssembly(bool bBuildAndUpload);

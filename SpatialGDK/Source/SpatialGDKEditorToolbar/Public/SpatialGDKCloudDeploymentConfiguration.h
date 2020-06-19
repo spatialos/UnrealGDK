@@ -131,9 +131,9 @@ private:
 	bool IsUsingCustomRuntimeVersion() const;
 	FText GetSpatialOSRuntimeVersionToUseText() const;
 
-	ECheckBoxState IsAutoGenerateConfigEnabled() const;
-	bool IsUsingAutoGenerateConfig() const;
-	void OnCheckedAutoGenerateConfig(ECheckBoxState NewCheckedState);
+	ECheckBoxState IsAutoGenerateCloudLaunchConfigEnabled() const;
+	bool CanPickOrEditCloudLaunchConfig() const;
+	void OnCheckedAutoGenerateCloudLaunchConfig(ECheckBoxState NewCheckedState);
 
 	FReply OnOpenLaunchConfigEditor();
 
