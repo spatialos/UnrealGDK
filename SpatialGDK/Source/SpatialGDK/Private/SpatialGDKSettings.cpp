@@ -221,7 +221,10 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 {
 	ServicesRegion = NewRegion;
-	SaveConfig();
+
+	// Save in default config so this applies for other platforms e.g. Linux, Android.
+	UProperty* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
 }
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
