@@ -71,7 +71,7 @@ public:
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
 	// Initializes the Spatial connection manager if Spatial networking is enabled, otherwise does nothing.
-	void TryStartSpatialConnection();
+	bool TryStartSpatialConnection();
 
 	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 

@@ -119,7 +119,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 }
 #endif
 
-void USpatialGameInstance::TryStartSpatialConnection()
+bool USpatialGameInstance::TryStartSpatialConnection()
 {
 	if (!bHasPreviouslyConnectedToSpatial &&
 		HasSpatialNetDriver())
@@ -129,6 +129,7 @@ void USpatialGameInstance::TryStartSpatialConnection()
 		InjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
 		bHasPreviouslyConnectedToSpatial = true;
+		return true;
 	}
 #if TRACE_LIB_ACTIVE
 	else
@@ -138,6 +139,7 @@ void USpatialGameInstance::TryStartSpatialConnection()
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
+	return false;
 }
 
 void USpatialGameInstance::InjectSpatialLocatorIntoCommandLine()
