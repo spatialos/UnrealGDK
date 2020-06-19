@@ -45,7 +45,7 @@ void ASpatialFunctionalTest::BeginPlay()
 		NumExpectedServers = LBStrategy != nullptr ? LBStrategy->GetMinimumRequiredWorkers() : 1;
 	}
 
-	if (HasAuthority())
+	if (GetWorld()->IsServer())
 	{
 		SetupClientPlayerRegistrationFlow();
 	}
@@ -228,6 +228,39 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 	{
 		//FlowControllers invoke this on each worker's local context when checkout and ready, we only want to act in the authority
 		return;
+	}
+
+	if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client)
+	{
+		// Because of the way interest borders between server workers are setup, you can have clients being spawned outside the Test's
+		// server worker, which means that it will have an id given locally by the server worker where the client spawned. So when registering,
+		// the Test server worker will ensure that the clients all have unique ids. Note that server workers don't have this issue
+		// because their ids are tied to their virtual worker id, hence guaranteed to be unique.
+		uint8 DesiredClientId = FlowController->ControllerInstanceId;
+		while (true)
+		{
+			bool bFoundConflictingId = false;
+			for (auto* AuxController : FlowControllers)
+			{
+				if (AuxController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client && AuxController->ControllerInstanceId == DesiredClientId)
+				{
+					bFoundConflictingId = true;
+					DesiredClientId += 1; // there's a collision, let's try the next one
+					check(DesiredClientId != 0, TEXT("This situation should only happen if you have more than 255 players, so you'll probably already be in trouble given that we don't support that"));
+					break;
+
+				}
+			}
+			if (!bFoundConflictingId)
+			{
+				if (FlowController->ControllerInstanceId != DesiredClientId)
+				{
+					FlowController->ControllerInstanceId = DesiredClientId;
+					FlowController->CrossServerSetControllerInstanceId(DesiredClientId);
+				}
+				break;
+			}
+		}
 	}
 	
 	FlowControllers.Add(FlowController);
@@ -503,7 +536,10 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 		{
 			if (APlayerController* PlayerController = Cast<APlayerController>(Spawned))
 			{
-				this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
+				if(PlayerController->HasAuthority())
+				{
+					this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
+				}
 			}
 		}
 	));
