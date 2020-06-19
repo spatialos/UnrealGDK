@@ -231,17 +231,25 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	if (PlayerStartActor == nullptr)
 	{
 		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*UGameplayStatics::GetGameMode(GetWorld()));
+		if (VirtualWorkerToForwardTo == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("The server authoritative over the GameMode could not locate any PlayerStart, this is unsupported."));
+		} 
 	}
 	else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
 	{
 		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*PlayerStartActor);
+		if (VirtualWorkerToForwardTo == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Load-balance strategy returned invalid virtual worker ID for selected PlayerStart Actor: %s"),
+				*GetNameSafe(PlayerStartActor));
+		}
 	}
 
 	// If the load balancing strategy returns invalid virtual worker IDs for the PlayerStart, we should error.
 	if (VirtualWorkerToForwardTo == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Load-balance strategy returned invalid virtual worker ID for selected PlayerStart Actor: %s. Defaulting to normal player spawning flow."),
-			*GetNameSafe(PlayerStartActor));
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Defaulting to normal player spawning flow."));
 		PassSpawnRequestToNetDriver(SpawnPlayerRequest, nullptr);
 		return;
 	}
