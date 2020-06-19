@@ -275,9 +275,9 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
-	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
-
-	static void MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor);
+	static void GetLatestAuthorityChangeFromHierarchy(USpatialNetDriver* NetDriver, const AActor* HierarchyActor, uint64& OutTimestamp);
+	static void MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, AActor* HierarchyActor);
+	static void SetActorHierarchyMigrationDestination(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor);
 	static void DropActorHierarchyMigration(USpatialNetDriver* NetDriver, AActor* HierarchyActor);
 
 public:
@@ -352,5 +352,7 @@ private:
 	uint32 MigrationFrame;
 
 	// WorkerId to migrate to.
-	VirtualWorkerId MigrationVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	// Optional is valid if a migration was deemed necessary (LoadBalancingStrategy->ShouldHaveAuthority == false)
+	// but will contain an invalid ID until the frame where migration will happen and WhoShouldHaveAuthority will be evaluated for the entire hierarchy.
+	TOptional<VirtualWorkerId> MigrationVirtualWorkerId;
 };
