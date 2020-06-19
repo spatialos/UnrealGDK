@@ -222,6 +222,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		bPersistSpatialConnection = URL.HasOption(*SpatialConstants::ClientsStayConnectedURLOption);
 	}
 
+	// This will create a Spatial Connection Manager if it is our first time connection.
+	// It will also inject a command line locater.
+	GameInstance->TryStartSpatialConnection();
+
 	if (!bPersistSpatialConnection)
 	{
 		GameInstance->DestroySpatialConnectionManager();
@@ -240,9 +244,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
 	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
-
-	// Ensures that any connections attempting to using command line arguments have a valid locater host in the command line.
-	GameInstance->TryInjectSpatialLocatorIntoCommandLine();
 
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Attempting connection to SpatialOS"));
 

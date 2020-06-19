@@ -114,18 +114,21 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	SpatialWorkerType = Params.SpatialWorkerType;
 	bIsSimulatedPlayer = Params.bIsSimulatedPlayer;
 
-	StartSpatialConnection();
+	TryStartSpatialConnection();
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
 #endif
 
-void USpatialGameInstance::StartSpatialConnection()
+void USpatialGameInstance::TryStartSpatialConnection()
 {
-	if (HasSpatialNetDriver())
+	if (!bHasPreviouslyConnectedToSpatial &&
+		HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
-		TryInjectSpatialLocatorIntoCommandLine();
+		// Ensure that any connections attempting to using command line arguments have a valid locater host in the command line.
+		InjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
+		bHasPreviouslyConnectedToSpatial = true;
 	}
 #if TRACE_LIB_ACTIVE
 	else
@@ -137,26 +140,22 @@ void USpatialGameInstance::StartSpatialConnection()
 #endif
 }
 
-void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
+void USpatialGameInstance::InjectSpatialLocatorIntoCommandLine()
 {
-	if (!HasPreviouslyConnectedToSpatial())
+	// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
+	// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+
+	// Initialize a locator configuration which will parse command line arguments.
+	FLocatorConfig LocatorConfig;
+	if (LocatorConfig.TryLoadCommandLineArgs())
 	{
-		SetHasPreviouslyConnectedToSpatial();
-		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
-		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+		// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+		const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-		// Initialize a locator configuration which will parse command line arguments.
-		FLocatorConfig LocatorConfig;
-		if (LocatorConfig.TryLoadCommandLineArgs())
-		{
-			// Modify the commandline args to have a Host IP to force a NetDriver to be used.
-			const TCHAR* CommandLineArgs = FCommandLine::Get();
+		FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+		NewCommandLineArgs.Append(FString(CommandLineArgs));
 
-			FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
-			NewCommandLineArgs.Append(FString(CommandLineArgs));
-
-			FCommandLine::Set(*NewCommandLineArgs);
-		}
+		FCommandLine::Set(*NewCommandLineArgs);
 	}
 }
 
@@ -168,7 +167,7 @@ void USpatialGameInstance::StartGameInstance()
 	}
 	else
 	{
-		StartSpatialConnection();
+		TryStartSpatialConnection();
 	}
 
 	Super::StartGameInstance();

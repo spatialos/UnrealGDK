@@ -70,7 +70,8 @@ public:
 	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
-	void TryInjectSpatialLocatorIntoCommandLine();
+	// Initializes the Spatial connection manager if Spatial networking is enabled, otherwise does nothing.
+	void TryStartSpatialConnection();
 
 	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
@@ -102,11 +103,7 @@ private:
 	UPROPERTY()
 	TSet<ULevel*> CachedLevelsForNetworkIntialize;
 
-	// Initializes the Spatial connection manager if Spatial networking is enabled, otherwise does nothing.
-	void StartSpatialConnection();
-
-	void SetHasPreviouslyConnectedToSpatial() { bHasPreviouslyConnectedToSpatial = true; }
-	bool HasPreviouslyConnectedToSpatial() const { return bHasPreviouslyConnectedToSpatial; }
+	void InjectSpatialLocatorIntoCommandLine();
 
 	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
