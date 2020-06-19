@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+- You can how change the GDK Editor Setting "Stop local deployment on stop play in editor" in order to automatically stop deployment when you stop playing in editor.
+
 ## [`0.10.0`] - 2020-06-15
 
 ### New Known Issues:
