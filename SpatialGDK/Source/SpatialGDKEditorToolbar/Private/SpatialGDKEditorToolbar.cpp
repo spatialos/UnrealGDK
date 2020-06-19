@@ -83,6 +83,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
+	bStopSpatialOnEndPIE = SpatialGDKEditorSettings->bStopSpatialOnEndPIE;
 
 	// Check for UseChinaServicesRegion file in the plugin directory to determine the services region.
 	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
@@ -107,7 +108,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if ((GIsAutomationTesting || bStopSpatialOnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -1033,7 +1034,8 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		FName PropertyName = PropertyChangedEvent.Property != nullptr
 				? PropertyChangedEvent.Property->GetFName()
 				: NAME_None;
-		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
+		FString PropertyNameStr = PropertyName.ToString();
+		if (PropertyNameStr == TEXT("bStopSpatialOnExit"))
 		{
 			/*
 			* This updates our own local copy of bStopSpatialOnExit as Settings change.
@@ -1043,7 +1045,11 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			*/
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
-		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
+		else if (PropertyNameStr == TEXT("bStopSpatialOnEndPIE"))
+		{
+			bStopSpatialOnEndPIE = Settings->bStopSpatialOnEndPIE;
+		}
+		else if (PropertyNameStr == TEXT("bAutoStartLocalDeployment"))
 		{
 			OnAutoStartLocalDeploymentChanged();
 		}
