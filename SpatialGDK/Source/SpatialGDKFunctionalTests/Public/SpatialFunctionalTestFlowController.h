@@ -57,6 +57,11 @@ public:
 	// Returns if the data regarding the FlowControllers has been replicated to their owners
 	bool IsReadyToRunTest() { return bIsReadyToRunTest; }
 
+	// Each server worker will assign local client ids, this function will be used by
+	// the Test owner server worker to guarantee they are all unique
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerSetControllerInstanceId(uint8 NewControllerInstanceId);
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;

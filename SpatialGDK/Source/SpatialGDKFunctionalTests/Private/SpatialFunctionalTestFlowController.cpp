@@ -48,6 +48,11 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	}
 }
 
+void ASpatialFunctionalTestFlowController::CrossServerSetControllerInstanceId_Implementation(uint8 NewControllerInstanceId)
+{
+	ControllerInstanceId = NewControllerInstanceId;
+}
+
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 {
 	if(!bReadyToRegisterWithTest || OwningTest == nullptr)
