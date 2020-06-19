@@ -71,7 +71,10 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 	if (World != nullptr)
 	{
 		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-		return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0;
+		if (WorldSettings != nullptr)
+		{
+			return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0;
+		}
 	}
 
 	return false;
