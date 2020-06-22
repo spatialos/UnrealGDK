@@ -22,3 +22,43 @@ type UnrealObjectRef {
     // their package map.
     option<bool> use_class_path_to_load_object = 6;
 }
+
+type BytesList {
+    list<bytes> list = 1;
+}
+
+type BoolList {
+    list<bool> list = 1;
+}
+
+type FloatList {
+    list<float> list = 1;
+}
+
+type DoubleList {
+    list<double> list = 1;
+}
+
+type Int32List {
+    list<int32> list = 1;
+}
+
+type Int64List {
+    list<int64> list = 1;
+}
+
+type Uint32List {
+    list<uint32> list = 1;
+}
+
+type Uint64List {
+    list<uint64> list = 1;
+}
+
+type StringList {
+    list<string> list = 1;
+}
+
+type UnrealObjectRefList {
+    list<UnrealObjectRef> list = 1;
+}

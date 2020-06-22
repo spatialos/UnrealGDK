@@ -121,8 +121,43 @@ FString PropertyToSchemaType(UProperty* Property)
 
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const int FieldCounter)
 {
+	// YOLO
+	bool bIsClearable = RepProp->Property->IsA(UArrayProperty::StaticClass());
+	FString TypeName = PropertyToSchemaType(RepProp->Property);
+	if (bIsClearable)
+	{
+		UArrayProperty* ArrayProp = (UArrayProperty*)RepProp->Property;
+		if (!ArrayProp->Inner->IsA(UArrayProperty::StaticClass()))
+		{
+			TypeName = PropertyToSchemaType(ArrayProp->Inner) + TEXT("List");
+			if (!TypeName.IsEmpty())
+			{
+				TypeName[0] = FChar::ToUpper(TypeName[0]);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Really bad list of lists, pls refactor."));
+		}
+		
+		/*
+		TypeName = SchemaFieldName(RepProp);
+		
+		TypeName += TEXT("Type");
+		TypeName = TypeName.Replace(TEXT("_"), TEXT(""));
+
+		Writer.Printf("type {0} {", *TypeName).Indent();
+		Writer.Printf("{0} {1} = {2};",
+			*PropertyToSchemaType(RepProp->Property),
+			*SchemaFieldName(RepProp),
+			1
+		);
+		Writer.Outdent().Printf("}");
+		*/
+	}
+
 	Writer.Printf("{0} {1} = {2};",
-		*PropertyToSchemaType(RepProp->Property),
+		*TypeName,
 		*SchemaFieldName(RepProp),
 		FieldCounter
 	);
@@ -360,11 +395,11 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		// Note that this file has been generated automatically
 		package unreal.generated;)""");
 
-	bool bShouldIncludeCoreTypes = false;
+	bool bShouldIncludeCoreTypes = true;
 
 	// Only include core types if the subobject has replicated references to other UObjects
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-	for (auto& PropertyGroup : RepData)
+	/*for (auto& PropertyGroup : RepData)
 	{
 		for (auto& PropertyPair : PropertyGroup.Value)
 		{
@@ -382,7 +417,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 				}
 			}
 		}
-	}
+	}*/
 
 	if (bShouldIncludeCoreTypes)
 	{
