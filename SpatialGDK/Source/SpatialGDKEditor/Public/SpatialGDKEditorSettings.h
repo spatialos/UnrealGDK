@@ -381,6 +381,9 @@ private:
 	UPROPERTY(config)
 	FString DeploymentTags;
 
+	UPROPERTY(config)
+	bool bIsAutoGenerateCloudConfigEnabled;
+
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
@@ -627,6 +630,12 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);
+	FORCEINLINE bool ShouldAutoGenerateCloudLaunchConfig() const
+	{
+		return bIsAutoGenerateCloudConfigEnabled;
 	}
 
 	void SetBuildAndUploadAssembly(bool bBuildAndUpload);
