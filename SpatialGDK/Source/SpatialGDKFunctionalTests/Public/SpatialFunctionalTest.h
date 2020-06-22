@@ -91,23 +91,23 @@ public:
 	// Add Steps for Blueprints
 	
 	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
-	void AddUniversalStep(FString StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	void AddUniversalStep(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
-	void AddClientStep(FString StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	void AddClientStep(const FString& StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
-	void AddServerStep(FString StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	void AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	void AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition);
 
 	// Add Steps for C++
-	FSpatialFunctionalTestStepDefinition& AddUniversalStep(FString StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
-	FSpatialFunctionalTestStepDefinition& AddClientStep(FString StepName, int ClientId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddClientStep(const FString& StepName, int ClientId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
-	FSpatialFunctionalTestStepDefinition& AddServerStep(FString StepName, int ServerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddServerStep(const FString& StepName, int ServerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
 	// Start Running a Step
 	void StartStep(const int StepIndex);

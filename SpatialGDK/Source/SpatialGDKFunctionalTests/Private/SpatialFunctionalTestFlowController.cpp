@@ -94,7 +94,7 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 
 void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 {
-	checkf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or it's logic is calling FinishStep multiple times"));
+	ensureMsgf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or it's logic is calling FinishStep multiple times"));
 	if (CurrentStep.bIsRunning)
 	{
 		if (ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
