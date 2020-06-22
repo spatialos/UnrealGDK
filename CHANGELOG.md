@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced the **Generate From Current Map** button  from the **Cloud Deployment Configuration** window by **Automatically Generate Launch Configuration** checkbox. If ticked, it generates an up to date configuration from the current map when selecting the **Start Deployment** button.
 
 
+### Features:
+- You can how change the GDK Editor Setting "Stop local deployment on stop play in editor" in order to automatically stop deployment when you stop playing in editor.
+
 ## [`0.10.0`] - 2020-06-15
 
 ### New Known Issues:
