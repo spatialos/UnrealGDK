@@ -34,7 +34,7 @@ public:
 			RepFlags.bRepPhysics);
 #endif
 
-		// Build a ConditionMap. This code is taken directly from FRepLayout::RebuildConditionalProperties
+		// Build a ConditionMap. This code is taken directly from FRepLayout::BuildConditionMapFromRepFlags
 		static_assert(COND_Max == 16, "We are expecting 16 rep conditions"); // Guard in case more are added.
 		const bool bIsInitial = RepFlags.bNetInitial ? true : false;
 		const bool bIsOwner = RepFlags.bNetOwner ? true : false;
@@ -44,19 +44,24 @@ public:
 
 		ConditionMap[COND_None] = true;
 		ConditionMap[COND_InitialOnly] = bIsInitial;
+
 		ConditionMap[COND_OwnerOnly] = bIsOwner;
-		ConditionMap[COND_SkipOwner] = !bIsOwner;
+		ConditionMap[COND_SkipOwner] = !ActorChannel->IsAuthoritativeClient(); // TODO: UNR-????
+
 		ConditionMap[COND_SimulatedOnly] = bIsSimulated;
 		ConditionMap[COND_SimulatedOnlyNoReplay] = bIsSimulated && !bIsReplay;
 		ConditionMap[COND_AutonomousOnly] = !bIsSimulated;
+
 		ConditionMap[COND_SimulatedOrPhysics] = bIsSimulated || bIsPhysics;
 		ConditionMap[COND_SimulatedOrPhysicsNoReplay] = (bIsSimulated || bIsPhysics) && !bIsReplay;
+
 		ConditionMap[COND_InitialOrOwner] = bIsInitial || bIsOwner;
 		ConditionMap[COND_ReplayOrOwner] = bIsReplay || bIsOwner;
 		ConditionMap[COND_ReplayOnly] = bIsReplay;
 		ConditionMap[COND_SkipReplay] = !bIsReplay;
-		ConditionMap[COND_Never] = false;
+
 		ConditionMap[COND_Custom] = true;
+		ConditionMap[COND_Never] = false;
 	}
 
 	bool IsRelevant(ELifetimeCondition Condition) const
