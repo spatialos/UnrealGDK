@@ -224,9 +224,9 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	// This will create a Spatial Connection Manager if it is our first time connection.
 	// It will also inject a command line locater.
-	bool bCreatedNewNetDriver = GameInstance->TryStartSpatialConnection();
+	bool bCreatedNewConnectionManager = GameInstance->TryStartSpatialConnection();
 
-	if (!bCreatedNewNetDriver &&
+	if (!bCreatedNewConnectionManager &&
 		!bPersistSpatialConnection)
 	{
 		GameInstance->DestroySpatialConnectionManager();
