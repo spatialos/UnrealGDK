@@ -45,7 +45,7 @@ void ASpatialFunctionalTest::BeginPlay()
 		NumExpectedServers = LBStrategy != nullptr ? LBStrategy->GetMinimumRequiredWorkers() : 1;
 	}
 
-	if (HasAuthority())
+	if (GetWorld()->IsServer())
 	{
 		SetupClientPlayerRegistrationFlow();
 	}
@@ -228,6 +228,12 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 	{
 		//FlowControllers invoke this on each worker's local context when checkout and ready, we only want to act in the authority
 		return;
+	}
+
+	if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client)
+	{
+		// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
+		FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
 	}
 	
 	FlowControllers.Add(FlowController);
@@ -503,7 +509,10 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 		{
 			if (APlayerController* PlayerController = Cast<APlayerController>(Spawned))
 			{
-				this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
+				if(PlayerController->HasAuthority())
+				{
+					this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
+				}
 			}
 		}
 	));
