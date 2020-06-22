@@ -1206,6 +1206,25 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
+
+void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
+{
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
+	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+
+	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
+
+	FillWorkerConfigurationFromCurrentMap(ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
+
+	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
+}
+
 FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -1215,6 +1234,11 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 		OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
 
 		return FReply::Unhandled();
+	}
+
+	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
+	{
+		GenerateConfigFromCurrentMap();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
@@ -1310,7 +1334,7 @@ bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 		&& !SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty()
 		&& !SpatialGDKSettings->GetAssemblyName().IsEmpty()
 		&& !SpatialGDKSettings->GetSnapshotPath().IsEmpty()
-		&& !SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty();
+		&& (!SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty() || SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig());
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
