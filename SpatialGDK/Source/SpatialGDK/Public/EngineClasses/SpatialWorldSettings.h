@@ -22,4 +22,14 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettings;
+
+	bool IsMultiWorkerEnabled() const
+	{
+		return *MultiWorkerSettings != nullptr && MultiWorkerSettings.GetDefaultObject()->bEnableMultiWorker;
+	}
+
+	const TMap<FName, FLayerInfo>* GetWorkerLayers() const
+	{
+		return &MultiWorkerSettings.GetDefaultObject()->WorkerLayers;
+	}
 };

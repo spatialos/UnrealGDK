@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialMultiWorkerSettings.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
@@ -41,7 +42,7 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 	{
 		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
+			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags)
 			{
 				return SpatialWorkerFlags->GetWorkerFlag(InFlagName, OutFlagValue);
 			}
