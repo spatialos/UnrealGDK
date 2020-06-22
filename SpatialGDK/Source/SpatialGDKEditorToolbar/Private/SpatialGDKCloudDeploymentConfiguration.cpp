@@ -878,11 +878,14 @@ TSharedRef<SWidget> SSpatialGDKCloudDeploymentConfiguration::OnGetSimulatedPlaye
 
 	if (pEnum != nullptr)
 	{
-		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		for (int32 EnumIdx = 0; EnumIdx < pEnum->NumEnums() - 1; EnumIdx++)
 		{
-			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			if (!pEnum->HasMetaData(TEXT("Hidden"), EnumIdx))
+			{
+				int64 CurrentEnumValue = pEnum->GetValueByIndex(EnumIdx);
+				FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
+				MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			}
 		}
 	}
 
