@@ -7,6 +7,11 @@
 #include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTestFlowController.generated.h"
 
+namespace
+{
+	constexpr uint8 INVALID_FLOW_CONTROLLER_ID = 0;
+}
+
 class ASpatialFunctionalTest;
 
 UCLASS()
@@ -55,7 +60,7 @@ public:
 	void OnTestFinished();
 
 	// Returns if the data regarding the FlowControllers has been replicated to their owners
-	bool IsReadyToRunTest() { return bIsReadyToRunTest; }
+	bool IsReadyToRunTest() { return ControllerInstanceId != INVALID_FLOW_CONTROLLER_ID && bIsReadyToRunTest; }
 
 	// Each server worker will assign local client ids, this function will be used by
 	// the Test owner server worker to guarantee they are all unique
