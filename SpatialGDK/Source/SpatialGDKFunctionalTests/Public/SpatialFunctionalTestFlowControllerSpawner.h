@@ -19,6 +19,8 @@ public:
 	ASpatialFunctionalTestFlowController* SpawnServerFlowController();
 	ASpatialFunctionalTestFlowController* SpawnClientFlowController(APlayerController* OwningClient);
 
+	void AssignClientFlowControllerId(ASpatialFunctionalTestFlowController* ClientFlowController);
+
 private:
 	ASpatialFunctionalTest* OwningTest;
 	TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerClass;

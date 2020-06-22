@@ -55,13 +55,20 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 	ASpatialFunctionalTestFlowController* FlowController = World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, OwningTest->GetActorTransform(), OwningClient);
 	FlowController->OwningTest = OwningTest;
 	FlowController->ControllerType = ESpatialFunctionalTestFlowControllerType::Client;
-	FlowController->ControllerInstanceId = NextClientControllerId++;
+	FlowController->ControllerInstanceId = INVALID_FLOW_CONTROLLER_ID; // by default have invalid id, Test Authority will set it to ensure uniqueness
 	
 	FlowController->FinishSpawning(OwningTest->GetActorTransform(), true);
 	// TODO: Replace locking with custom LB strategy - UNR-3393
 	LockFlowControllerDelegations(FlowController);
 
 	return FlowController;
+}
+
+void SpatialFunctionalTestFlowControllerSpawner::AssignClientFlowControllerId(ASpatialFunctionalTestFlowController* ClientFlowController)
+{
+	check(OwningTest->HasAuthority() && ClientFlowController != nullptr && ClientFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client && ClientFlowController->ControllerInstanceId == INVALID_FLOW_CONTROLLER_ID);
+
+	ClientFlowController->CrossServerSetControllerInstanceId(NextClientControllerId++);
 }
 
 uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* World) const
