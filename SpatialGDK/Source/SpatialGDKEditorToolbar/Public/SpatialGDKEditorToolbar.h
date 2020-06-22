@@ -159,7 +159,7 @@ private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
-	bool bStopSpatialOnEndPIE;
+	bool bStopLocalDeploymentOnEndPIE;
 
 	bool bSchemaBuildError;
 

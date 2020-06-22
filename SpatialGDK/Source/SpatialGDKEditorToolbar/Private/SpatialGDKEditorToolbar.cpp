@@ -83,7 +83,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
-	bStopSpatialOnEndPIE = SpatialGDKEditorSettings->bStopSpatialOnEndPIE;
+	bStopLocalDeploymentOnEndPIE = SpatialGDKEditorSettings->bStopLocalDeploymentOnEndPIE;
 
 	// Check for UseChinaServicesRegion file in the plugin directory to determine the services region.
 	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
@@ -108,7 +108,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if ((GIsAutomationTesting || bStopSpatialOnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if ((GIsAutomationTesting || bStopLocalDeploymentOnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -1045,9 +1045,9 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			*/
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
-		else if (PropertyNameStr == TEXT("bStopSpatialOnEndPIE"))
+		else if (PropertyNameStr == TEXT("bStopLocalDeploymentOnEndPIE"))
 		{
-			bStopSpatialOnEndPIE = Settings->bStopSpatialOnEndPIE;
+			bStopLocalDeploymentOnEndPIE = Settings->bStopLocalDeploymentOnEndPIE;
 		}
 		else if (PropertyNameStr == TEXT("bAutoStartLocalDeployment"))
 		{

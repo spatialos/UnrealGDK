@@ -329,7 +329,7 @@ public:
 	FString ExposedRuntimeIP;
 
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on stop play in editor"))
-	bool bStopSpatialOnEndPIE;
+	bool bStopLocalDeploymentOnEndPIE;
 
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on exit"))
