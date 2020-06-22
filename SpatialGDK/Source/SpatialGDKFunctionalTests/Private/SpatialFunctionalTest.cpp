@@ -144,7 +144,7 @@ void ASpatialFunctionalTest::StartTest()
 void ASpatialFunctionalTest::FinishStep()
 {
 	auto* AuxLocalFlowController = GetLocalFlowController();
-	checkf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
+	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if(AuxLocalFlowController != nullptr)
 	{
 		AuxLocalFlowController->NotifyStepFinished();
@@ -241,13 +241,13 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 
 ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowController()
 {
-	checkf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen, but falling back to finding it in World"));
+	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
 	return LocalFlowController;
 }
 
 // Add Steps for Blueprints
 
-void ASpatialFunctionalTest::AddUniversalStep(FString StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddUniversalStep(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -263,7 +263,7 @@ void ASpatialFunctionalTest::AddUniversalStep(FString StepName, const FStepIsRea
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddClientStep(FString StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddClientStep(const FString& StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -278,7 +278,7 @@ void ASpatialFunctionalTest::AddClientStep(FString StepName, int ClientId, const
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddServerStep(FString StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -355,7 +355,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 
 // Add Steps for C++
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddUniversalStep(FString StepName, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -382,7 +382,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddUniversalStep(F
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddClientStep(FString StepName, int ClientId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddClientStep(const FString& StepName, int ClientId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -408,7 +408,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddClientStep(FStr
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddServerStep(FString StepName, int ServerId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddServerStep(const FString& StepName, int ServerId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -461,7 +461,7 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
 		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FLowControllerDisplayName);
-		checkf(false, TEXT("%s"), *ErrorMsg);
+		ensureMsgf(false, TEXT("%s"), *ErrorMsg);
 		FinishTest(EFunctionalTestResult::Error, ErrorMsg);
 	}
 }
