@@ -182,4 +182,6 @@ private:
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	bool bStartingCloudDeployment;
+
+	void GenerateConfigFromCurrentMap();
 };
