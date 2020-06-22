@@ -431,7 +431,8 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+		const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
+		if (!bIsMultiWorkerEnabled)
 		{
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
@@ -602,6 +603,12 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 
 void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bEnableMultiWorkerDebuggingWarnings)
+	{
+		return;
+	}
+
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
