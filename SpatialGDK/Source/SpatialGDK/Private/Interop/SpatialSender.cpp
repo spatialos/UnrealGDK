@@ -507,6 +507,31 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 	}
 }
 
+void USpatialSender::SendTearOffUpdate(AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
+
+	FWorkerComponentUpdate ComponentUpdate = {};
+
+	Worker_ComponentId ComponentId = ClassInfoManager->GetComponentIdForClass(*Actor->GetClass());
+
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	Schema_AddBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID, Actor->GetTearOff() ? 1 : 0); // uint8_t
+
+	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+}
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 #if !UE_BUILD_SHIPPING

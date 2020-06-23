@@ -182,11 +182,6 @@ void USpatialReceiver::LeaveCriticalSection()
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
-	if (DelayedRetireCallback* FunctionCall = EntitiesQueuedForRetire.Find(Op.entity_id))
-	{
-		(*FunctionCall)(NetDriver, Sender, Op.entity_id);
-		EntitiesQueuedForRetire.Remove(Op.entity_id);
-	}
 }
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
@@ -2631,11 +2626,6 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 			}
 		}
 	}
-}
-
-void USpatialReceiver::QueueRetireEntity(Worker_EntityId EntityId, const DelayedRetireCallback& Callback)
-{
-	EntitiesQueuedForRetire.Add(EntityId, Callback);
 }
 
 bool USpatialReceiver::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
