@@ -70,6 +70,18 @@ void ULayeredLBStrategy::Init()
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+		for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->DefaultActorClasses)
+		{
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
+			}
+		}
 	}
 }
 

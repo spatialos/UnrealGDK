@@ -747,6 +747,12 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		return;
 	}
 
+	if (NetDriver->LoadBalanceStrategy->GetMinimumRequiredWorkers() > 1)
+	{
+		UE_LOG(LogGameMode, Warning, TEXT("Server travel is not supported on a deployment with multiple workers."));
+		return;
+	}
+
 	NetDriver->GlobalStateManager->ResetGSM();
 
 	GameMode->StartToLeaveMap();

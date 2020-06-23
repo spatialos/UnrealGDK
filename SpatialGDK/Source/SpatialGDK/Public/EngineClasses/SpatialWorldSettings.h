@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<UAbstractLockingPolicy> DefaultLayerLockingPolicy;
 
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSet<TSoftClassPtr<AActor>> DefaultActorClasses;
+
 	/** Layer configuration. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TMap<FName, FLayerInfo> WorkerLayers;
