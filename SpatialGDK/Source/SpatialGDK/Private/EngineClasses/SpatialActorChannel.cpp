@@ -220,6 +220,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	// Actor Channels are pooled, so we must initialize internal state here.
 	bCreatedEntity = false;
 	bCreatingNewEntity = false;
+	bRuntimeAcknowledgedEntity = false;
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
 	bNetOwned = false;
@@ -252,31 +253,49 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	}
 
 	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
-
-	if (bHasAuthority)
+	if (Actor != nullptr)
 	{
-		if (Actor != nullptr)
+		bool bIsTearOff = Actor->GetTearOff();
+		bool bIsNetStartup = Actor->IsNetStartupActor();
+		DelayedRetireCallback FuncRetireActor = [bIsTearOff, bIsNetStartup](USpatialNetDriver* NetDriver, USpatialSender* Sender, Worker_EntityId EntityId)
 		{
 			// Workaround to delay the delete entity request if tearing off.
 			// Task to improve this: UNR-841
+			if (bIsTearOff)
+			{
+				// To ensure that the actor has time to stops replicating to the runtime.
+				NetDriver->DelayedRetireEntity(EntityId, 1.0f, bIsNetStartup);
+			}
+			else
+			{
+				Sender->RetireEntity(EntityId, bIsNetStartup);
+			}
+		};
+		if (bHasAuthority)
+		{
 			if (Actor->GetTearOff())
 			{
-				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
 				// Since the entity deletion is delayed, this creates a situation,
 				// when the Actor is torn off, but still replicates.
 				// Disabling replication makes RPC calls impossible for this Actor.
 				Actor->SetReplicates(false);
 			}
-			else
+			FuncRetireActor(NetDriver, Sender, EntityId);
+		}
+		else 
+		{
+			if (bCreatedEntity && !bRuntimeAcknowledgedEntity)
 			{
-				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+				// Wait until entity has been ackknowledged by the runtime
+				Receiver->QueueRetireEntity(EntityId, FuncRetireActor);
 			}
 		}
-		else
-		{
-			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
-		}
+	}
+	else
+	{
+		// TODO
+		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 	}
 }
 

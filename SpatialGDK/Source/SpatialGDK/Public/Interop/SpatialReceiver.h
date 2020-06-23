@@ -49,6 +49,8 @@ struct PendingAddComponentWrapper
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
 };
 
+using DelayedRetireCallback = TFunction<void(USpatialNetDriver*, USpatialSender*, Worker_EntityId)>;
+
 UCLASS()
 class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 {
@@ -100,6 +102,7 @@ public:
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
+	void QueueRetireEntity(Worker_EntityId EntityId, const DelayedRetireCallback& Callback);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -262,4 +265,6 @@ private:
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 	// END TODO
+
+	TMap<Worker_EntityId_Key, DelayedRetireCallback> EntitiesQueuedForRetire;
 };

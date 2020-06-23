@@ -260,6 +260,7 @@ public:
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
+	void OnRuntimeAcknowledgeEntityId() { bRuntimeAcknowledgedEntity = true; }
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -278,6 +279,9 @@ private:
 	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
 
 public:
+	// If the runtime has sent any ops which reference our new entity, such as an add entity op.
+	bool bRuntimeAcknowledgedEntity;
+
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
 
