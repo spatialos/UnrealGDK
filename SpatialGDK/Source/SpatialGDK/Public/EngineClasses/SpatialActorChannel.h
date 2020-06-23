@@ -259,6 +259,7 @@ public:
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
