@@ -291,7 +291,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 			}
 			else if(!bCreatedEntity)
 			{
-				UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel without authority - entity id (%lld)"), EntityId);
+				UE_LOG(LogSpatialActorChannel, Warning, TEXT("DeleteEntityIfAuthoritative called on actor channel without authority - entity id (%lld)"), EntityId);
 			}
 		}
 	}
