@@ -1239,8 +1239,6 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
-<<<<<<< HEAD
-
 void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
@@ -1258,36 +1256,6 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 
 	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
 }
-
-void FSpatialGDKEditorToolbarModule::OnAutoStartLocalReceptionistProxyServer()
-{
-	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	bool bShouldAutoStartLocalReceptionistProxyServer = (Settings->bStartLocalServerWorker && Settings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment);
-
-	if (bShouldAutoStartLocalReceptionistProxyServer)
-	{
-		if (!UEditorEngine::TryStartLocalReceptionistProxyServer.IsBound())
-		{
-			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-			UEditorEngine::TryStartLocalReceptionistProxyServer.BindLambda([this]
-			{
-				StartLocalReceptionistProxyServer();
-			});
-		}
-	}
-	else
-	{
-		if (UEditorEngine::TryStartLocalReceptionistProxyServer.IsBound())
-		{
-			// Unbind the TryStartLocalReceptionistProxyServer if autostart is disabled.
-			UEditorEngine::TryStartLocalReceptionistProxyServer.Unbind();
-
-			LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
-		}
-	}
-}
-=======
->>>>>>> Move StartLocalReceptionist logic to the editor module
 
 FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 {
