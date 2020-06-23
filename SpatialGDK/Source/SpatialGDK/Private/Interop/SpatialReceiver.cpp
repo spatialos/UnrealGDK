@@ -182,10 +182,6 @@ void USpatialReceiver::LeaveCriticalSection()
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
-	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
-	{
-		Channel->OnRuntimeAcknowledgeEntityId();
-	}
 	if (DelayedRetireCallback* FunctionCall = EntitiesQueuedForRetire.Find(Op.entity_id))
 	{
 		(*FunctionCall)(NetDriver, Sender, Op.entity_id);

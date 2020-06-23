@@ -220,7 +220,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	// Actor Channels are pooled, so we must initialize internal state here.
 	bCreatedEntity = false;
 	bCreatingNewEntity = false;
-	bRuntimeAcknowledgedEntity = false;
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
 	bNetOwned = false;
@@ -245,14 +244,19 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	Receiver = NetDriver->Receiver;
 }
 
-void USpatialActorChannel::DeleteEntityIfAuthoritative()
+void USpatialActorChannel::RetireEntityIfAuthoritative()
 {
 	if (NetDriver->Connection == nullptr)
 	{
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
+	if (!NetDriver->IsAuthoritativeDestructionAllowed())
+	{
+		return;
+	}
+
+	bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
 	if (Actor != nullptr)
 	{
 		bool bIsTearOff = Actor->GetTearOff();
@@ -271,7 +275,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 				Sender->RetireEntity(EntityId, bIsNetStartup);
 			}
 		};
-		if (bHasAuthority)
+		if (bHasAuthority && bCreatedEntity)
 		{
 			if (Actor->GetTearOff())
 			{
@@ -284,14 +288,9 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		}
 		else
 		{
-			if (bCreatedEntity && !bRuntimeAcknowledgedEntity)
+			if (bCreatedEntity) // Wait until we have authority
 			{
-				// Wait until entity has been ackknowledged by the runtime
 				Receiver->QueueRetireEntity(EntityId, FuncRetireActor);
-			}
-			else if(!bCreatedEntity)
-			{
-				UE_LOG(LogSpatialActorChannel, Warning, TEXT("DeleteEntityIfAuthoritative called on actor channel without authority - entity id (%lld)"), EntityId);
 			}
 		}
 	}
@@ -301,11 +300,6 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		{
 			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
-		}
-		else
-		{
-			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor and no authority - entity id (%lld)"), EntityId);
 		}
 	}
 }
@@ -323,7 +317,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			CloseReason != EChannelCloseReason::Dormancy)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			DeleteEntityIfAuthoritative();
+			RetireEntityIfAuthoritative();
 		}
 #endif // WITH_EDITOR
 
@@ -365,7 +359,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else
 	{
-		DeleteEntityIfAuthoritative();
+		RetireEntityIfAuthoritative();
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
