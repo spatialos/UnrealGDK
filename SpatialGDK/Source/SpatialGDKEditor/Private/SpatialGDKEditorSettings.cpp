@@ -59,6 +59,8 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bPackageMobileCommandLineArgs(false)
 	, bStartLocalServerWorker(false)
+	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
+	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {

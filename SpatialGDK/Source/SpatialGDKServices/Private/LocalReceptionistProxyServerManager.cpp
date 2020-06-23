@@ -80,7 +80,7 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 					return true;
 				}
 
-				LogMsg= FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(PID));
+				LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(PID));
 			
 				return true;
 			}
