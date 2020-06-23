@@ -61,11 +61,11 @@ private:
 
 	// Authoritative server worker
 	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const PhysicalWorkerName& ClientWorkerId);
-	bool ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId);
+	void ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
 	void RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId, const bool bShouldTryDifferentPlayerStart = false);
 
 	// Any server
-	void PassSpawnRequestToNetDriver(Schema_Object* PlayerSpawnData, AActor* PlayerStart);
+	void PassSpawnRequestToNetDriver(const Schema_Object* PlayerSpawnData, AActor* PlayerStart);
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
