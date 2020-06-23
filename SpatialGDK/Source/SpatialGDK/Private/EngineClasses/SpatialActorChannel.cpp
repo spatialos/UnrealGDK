@@ -96,6 +96,7 @@ void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, const AActor* 
 		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActorBeingReplicated);
 	}
 }
+
 } // end anonymous namespace
 
 bool FSpatialObjectRepState::MoveMappedObjectToUnmapped_r(const FUnrealObjectRef& ObjRef, FObjectReferencesMap& ObjectReferencesMap)
@@ -260,15 +261,15 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	{
 		if (Actor != nullptr)
 		{
-			// Workaround to delay the delete entity request if tearing off.	
+			// Workaround to delay the delete entity request if tearing off.
 			// Task to improve this: UNR-841
 			if (Actor->GetTearOff())
 			{
+				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
 				// Since the entity deletion is delayed, this creates a situation,
 				// when the Actor is torn off, but still replicates.
 				// Disabling replication makes RPC calls impossible for this Actor.
 				Actor->SetReplicates(false);
-				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
 			}
 			else
 			{
