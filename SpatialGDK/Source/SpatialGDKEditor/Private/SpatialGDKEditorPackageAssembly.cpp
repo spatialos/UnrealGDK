@@ -39,7 +39,7 @@ void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const
 {
 	FString WorkingDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	FString Project = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
-	FString Args = FString::Printf(TEXT("%s %s %s %s %s"), *ProjectName, *Platform, *Configuration, *Project, *AdditionalArgs);
+	FString Args = FString::Printf(TEXT("%s %s %s \"%s\" %s"), *ProjectName, *Platform, *Configuration, *Project, *AdditionalArgs);
 	LaunchTask(SpatialBuildExe, Args, WorkingDir);
 }
 
