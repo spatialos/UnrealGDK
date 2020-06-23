@@ -100,6 +100,7 @@ public:
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
+	void RetireWhenAuthoritive(Worker_EntityId EntityId);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -262,4 +263,7 @@ private:
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 	// END TODO
+
+	TSet<Worker_EntityId> IncomingEntitiesToIgnore;
+	TSet<Worker_EntityId> PendingDeleteWhenAuthoritive;
 };

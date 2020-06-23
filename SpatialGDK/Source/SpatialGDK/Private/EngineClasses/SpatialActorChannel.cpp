@@ -289,7 +289,11 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			// Send tear off update now
 			Sender->SendTearOffUpdate(Actor);
 		}
-		NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
+		Receiver->RetireWhenAuthoritive(EntityId); // Ensure we don't recreate the actor
+	}
+	else
+	{
+		bool umWerid = false;
 	}
 }
 

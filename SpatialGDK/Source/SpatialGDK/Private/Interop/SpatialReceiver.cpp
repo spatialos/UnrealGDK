@@ -100,6 +100,13 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
+		if (IncomingEntitiesToIgnore.Contains(PendingAddEntity)) // Prevent ReceiveActor for these
+		{
+			PendingDeleteWhenAuthoritive.Add(PendingAddEntity);
+			IncomingEntitiesToIgnore.Remove(PendingAddEntity);
+			continue;
+		}
+
 		ReceiveActor(PendingAddEntity);
 		if (!IsEntityWaitingForAsyncLoad(PendingAddEntity))
 		{
@@ -115,6 +122,12 @@ void USpatialReceiver::LeaveCriticalSection()
 	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
+		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE && PendingDeleteWhenAuthoritive.Contains(PendingAuthorityChange.entity_id))
+		{
+			Sender->RetireEntity(PendingAuthorityChange.entity_id, false);
+			PendingDeleteWhenAuthoritive.Remove(PendingAuthorityChange.entity_id);
+			continue;
+		}
 		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			HandleActorAuthority(PendingAuthorityChange);
@@ -2626,6 +2639,11 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 			}
 		}
 	}
+}
+
+void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId)
+{
+	IncomingEntitiesToIgnore.Add(EntityId);
 }
 
 bool USpatialReceiver::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
