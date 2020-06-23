@@ -760,7 +760,7 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 	case EPushRPCResult::NoEntityInStaticComponentView:
 		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPC: RPC was called before CreateEntityRequest, so it will queued. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return false;
-	case default:
+	default:
 		return true;
 	}
 }
