@@ -282,7 +282,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 			}
 			FuncRetireActor(NetDriver, Sender, EntityId);
 		}
-		else 
+		else
 		{
 			if (bCreatedEntity && !bRuntimeAcknowledgedEntity)
 			{
