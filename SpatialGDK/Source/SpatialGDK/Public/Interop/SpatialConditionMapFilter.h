@@ -46,7 +46,7 @@ public:
 		ConditionMap[COND_InitialOnly] = bIsInitial;
 
 		ConditionMap[COND_OwnerOnly] = bIsOwner;
-		ConditionMap[COND_SkipOwner] = !ActorChannel->IsAuthoritativeClient(); // TODO: UNR-????
+		ConditionMap[COND_SkipOwner] = !ActorChannel->IsAuthoritativeClient(); // TODO: UNR-3714, this is a best-effort measure, but SkipOwner is currently quite broken
 
 		ConditionMap[COND_SimulatedOnly] = bIsSimulated;
 		ConditionMap[COND_SimulatedOnlyNoReplay] = bIsSimulated && !bIsReplay;
