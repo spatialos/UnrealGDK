@@ -289,13 +289,24 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 				// Wait until entity has been ackknowledged by the runtime
 				Receiver->QueueRetireEntity(EntityId, FuncRetireActor);
 			}
+			else if(!bCreatedEntity)
+			{
+				UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel without authority - entity id (%lld)"), EntityId);
+			}
 		}
 	}
-	else
+	else 
 	{
-		// TODO
-		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
+		if (bHasAuthority)
+		{
+			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
+		}
+		else
+		{
+			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor and no authority - entity id (%lld)"), EntityId);
+		}
 	}
 }
 
