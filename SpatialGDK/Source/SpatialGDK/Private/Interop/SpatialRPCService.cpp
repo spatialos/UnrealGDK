@@ -85,11 +85,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	}
 	else
 	{
-		// If the entity isn't in the view, we assume this RPC was called before
-		// CreateEntityRequest, so we put it into a component data object.
-		EndpointObject = Schema_GetComponentDataFields(GetOrCreateComponentData(EntityComponent));
-
-		LastAckedRPCId = 0;
+		// If the entity isn't in the view, we assume this RPC was called before CreateEntityRequest
+		return EPushRPCResult::NoEntityInStaticComponentView;
 	}
 
 	uint64 NewRPCId = LastSentRPCIds.FindRef(EntityType) + 1;
