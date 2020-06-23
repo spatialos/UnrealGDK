@@ -11,6 +11,10 @@
 DEFINE_LOG_CATEGORY(LogLocalReceptionistProxyServerManager);
 
 #define LOCTEXT_NAMESPACE "FLocalReceptionistProxyServerManager"
+namespace
+{
+	static const int32 ExitCodeSuccess = 0;
+}
 
 FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 : RunningCloudDeploymentName("")
@@ -20,7 +24,7 @@ FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FString& ProcessName)
 {
 	bool bSuccess = false;
-	ProcessName = "";
+	ProcessName = TEXT("");
 	const FString TaskListCmd = TEXT("tasklist");
 
 	// get the task list line for the process with Pid 
@@ -170,7 +174,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	bool bSuccess = false;
 
 	//Do not restart the same proxy if you have already a proxy running for the same cloud deployment
-	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress ==ListeningAddress && RunningProxyReceptionistPort==ReceptionistPort)
+	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress == ListeningAddress && RunningProxyReceptionistPort == ReceptionistPort)
 	{
 		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"), *LOCTEXT("ServerProxyAlreadyRunning", "The local receptionist proxy server is already running!").ToString());
 
