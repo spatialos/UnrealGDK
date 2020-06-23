@@ -532,6 +532,7 @@ void USpatialSender::SendTearOffUpdate(AActor* Actor)
 
 	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 }
+
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 #if !UE_BUILD_SHIPPING
