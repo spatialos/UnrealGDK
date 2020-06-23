@@ -53,6 +53,8 @@ public:
 
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
+	virtual void GatherRelevantActors(TArray<AActor*>& OutActors) const override;
+
 	// # Test APIs
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
@@ -163,12 +165,12 @@ private:
 
 	void SetupClientPlayerRegistrationFlow();
 
-	UFUNCTION(CrossServer, Reliable)
-	void CrossServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
+	//UFUNCTION(CrossServer, Reliable)
+	//void CrossServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
 
-	UFUNCTION(Server, Reliable)
-	void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
+	//UFUNCTION(Server, Reliable)
+	//void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastAutoDestroyActors(const TArray<AActor*>& ActorsToDestroy);
+	//UFUNCTION(NetMulticast, Reliable)
+	//void MulticastAutoDestroyActors(const TArray<AActor*>& ActorsToDestroy);
 };

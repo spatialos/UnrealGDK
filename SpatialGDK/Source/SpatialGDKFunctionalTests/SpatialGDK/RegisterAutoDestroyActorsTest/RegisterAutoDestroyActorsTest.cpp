@@ -32,11 +32,25 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 				NetTest->AssertTrue(IsValid(Character), FString::Printf(TEXT("Spawned ACharacter in worker %s"), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i+1)->GetDisplayName()));
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
+
 			NetTest->FinishStep();
 		});
 	}
 
-	{ // Step 2 - Check If Clients have it
+	//{ // Step 2 - Wait 5 seconds allow characters to transition to new workers
+	//	AddServerStep(TEXT("SERVER_1_Wait_5_Seconds"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+	//		double startTime = FPlatformTime::Seconds();
+	//		double endTime = startTime + 5;
+	//		while (startTime < endTime)
+	//		{
+	//			startTime = FPlatformTime::Seconds();
+	//		}
+
+	//		NetTest->FinishStep();
+	//		});
+	//}
+
+	{ // Step 3 - Check If Clients have it
 		AddClientStep(TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::ALL_WORKERS_ID, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime){
 				int NumCharactersFound = 0;
 				int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
@@ -53,14 +67,18 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 		}, 5.0f);
 	}
 
-	{ // Step 3 - Destroy by second server that doesn't have authority
-		AddServerStep(TEXT("SERVER_2_RegisterAutoDestroyActors"), 2, [](ASpatialFunctionalTest* NetTest) -> bool {
+	{ // Step 4 - Destroy by all servers that have authority
+		AddServerStep(TEXT("SERVER_ALL_RegisterAutoDestroyActors"), 0, [](ASpatialFunctionalTest* NetTest) -> bool {
 			int NumCharactersFound = 0;
-			int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
+			//int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
+			int NumCharactersExpected = 1;
 			UWorld* World = NetTest->GetWorld();
 			for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
 			{
-				++NumCharactersFound;
+				if ((*It)->HasAuthority())
+				{
+					++NumCharactersFound;
+				}
 			}
 
 			return NumCharactersFound == NumCharactersExpected;
@@ -69,8 +87,11 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			UWorld* World = NetTest->GetWorld();
 			for (TActorIterator<ACharacter> It(World); It; ++It)
 			{
-				NetTest->AssertTrue(IsValid(*It), TEXT("Registering ACharacter for destruction"));
-				NetTest->RegisterAutoDestroyActor(*It);
+				if ((*It)->HasAuthority())
+				{
+					NetTest->AssertTrue(IsValid(*It), TEXT("Registering ACharacter for destruction"));
+					NetTest->RegisterAutoDestroyActor(*It);
+				}
 			}
 			NetTest->FinishStep();
 		}, nullptr, 5.0f);

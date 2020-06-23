@@ -9,6 +9,8 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "AutoDestroyComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialFunctionalTest, Log, All);
 
@@ -94,9 +96,15 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 {
 	if (HasAuthority())
 	{
-		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
+		//Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
+
+		//UAutoDestroyComponent* AutoDestroyComponent = NewObject<UAutoDestroyComponent>(UAutoDestroyComponent::StaticClass());
+		UAutoDestroyComponent* AutoDestroyComponent = NewObject<UAutoDestroyComponent>(ActorToAutoDestroy);
+		AutoDestroyComponent->AttachToComponent(ActorToAutoDestroy->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		AutoDestroyComponent->RegisterComponent();
+
 	}
-	else if(LocalFlowController != nullptr)
+	/*else if(LocalFlowController != nullptr)
 	{
 		if(LocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
 		{
@@ -106,7 +114,7 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 		{
 			ServerRegisterAutoDestroyActor(ActorToAutoDestroy);
 		}
-	}
+	}*/
 }
 
 bool ASpatialFunctionalTest::IsReady_Implementation()
@@ -197,7 +205,26 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 
 		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
-		MulticastAutoDestroyActors(AutoDestroyActors);
+		//MulticastAutoDestroyActors(AutoDestroyActors);
+
+		// Delete actors registered for auto destroy
+		
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
+
+		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Delete actors registered for auto destroy: found %d actors "), FoundActors.Num());
+
+		for (int32 ActorIndex = 0; ActorIndex < FoundActors.Num(); ++ActorIndex)
+		{
+			AActor* FoundActor = FoundActors[ActorIndex];
+			UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<UAutoDestroyComponent>();
+			if (AutoDestroyComponent != NULL)
+			{
+				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Delete actor %s "), *(FoundActor->GetName()));
+				// will be removed next frame
+				FoundActor->SetLifeSpan(0.01f);
+			}
+		}
 
 		Super::FinishTest(TestResult, Message);
 	}
@@ -518,38 +545,72 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 	));
 }
 
-void ASpatialFunctionalTest::CrossServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
+//void ASpatialFunctionalTest::CrossServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
+//{
+//	RegisterAutoDestroyActor(ActorToAutoDestroy);
+//}
+//
+//void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
+//{
+//	CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
+//}
+
+void ASpatialFunctionalTest::GatherRelevantActors(TArray<AActor*>& OutActors) const
 {
-	RegisterAutoDestroyActor(ActorToAutoDestroy);
+	if (ObservationPoint)
+	{
+		OutActors.AddUnique(ObservationPoint);
+	}
+
+	/*for (auto Actor : AutoDestroyActors)
+	{
+		if (Actor)
+		{
+			OutActors.AddUnique(Actor);
+		}
+	}*/
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
+
+	for (int32 ActorIndex = 0; ActorIndex < FoundActors.Num(); ++ActorIndex)
+	{
+		AActor* FoundActor = FoundActors[ActorIndex];
+
+		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<UAutoDestroyComponent>();
+		if (AutoDestroyComponent != NULL)
+		{
+			OutActors.AddUnique(FoundActor);
+		}
+
+	}
+
+
+	OutActors.Append(DebugGatherRelevantActors());
 }
 
-void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
-{
-	CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
-}
-
-void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TArray<AActor*>& ActorsToDestroy)
-{
-	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
-	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
-	{
-		for (AActor* Actor : ActorsToDestroy)
-		{
-			if (IsValid(Actor))
-			{				
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
-				Actor->SetLifeSpan(0.01f);
-			}
-		}
-	}
-	else
-	{
-		for (AActor* Actor : ActorsToDestroy)
-		{
-			if (IsValid(Actor))
-			{
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
-			}
-		}
-	}
-}
+//void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TArray<AActor*>& ActorsToDestroy)
+//{
+//	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
+//	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
+//	{
+//		for (AActor* Actor : ActorsToDestroy)
+//		{
+//			if (IsValid(Actor))
+//			{				
+//				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+//				Actor->SetLifeSpan(0.01f);
+//			}
+//		}
+//	}
+//	else
+//	{
+//		for (AActor* Actor : ActorsToDestroy)
+//		{
+//			if (IsValid(Actor))
+//			{
+//				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+//			}
+//		}
+//	}
+//}
