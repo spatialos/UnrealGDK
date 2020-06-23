@@ -7,6 +7,7 @@
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
+#include "LocalReceptionistProxyServerManager.h"
 #include "Misc/MessageDialog.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "SpatialCommandUtils.h"
@@ -38,6 +39,9 @@ void FSpatialGDKEditorModule::StartupModule()
 	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 	CommandLineArgsManager->Init();
+
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
@@ -83,6 +87,27 @@ FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
 {
 	return GetDefault<USpatialGDKEditorSettings>()->IsStartLocalServerWorkerEnabled();
+}
+
+bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
+{
+	if(ShouldConnectToCloudDeployment() && ShouldStartLocalServer())
+	{
+			bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect, GetDefault<USpatialGDKEditorSettings>()->ListeningAddress, GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
+
+			if (bSuccess)
+			{
+				UE_LOG(LogTemp, Log, TEXT("%s"), *LOCTEXT("ProxyStartedSuccessfully", "Successfully started local receptionist proxy server!").ToString());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s"), *LOCTEXT("FailedToStartProxy", "Failed to start local receptionist proxy server").ToString());
+			}
+
+			return bSuccess;
+	}
+
+	return true;
 }
 
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const

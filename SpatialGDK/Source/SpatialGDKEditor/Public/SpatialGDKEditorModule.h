@@ -8,6 +8,7 @@
 class FLBStrategyEditorExtensionManager;
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
+class  FLocalReceptionistProxyServerManager;
 
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
@@ -41,6 +42,7 @@ private:
 	virtual FString GetDevAuthToken() const override;
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 	virtual bool ShouldStartLocalServer() const override;
+	virtual bool TryStartLocalReceptionistProxyServer() const override;
 
 	virtual bool CanExecuteLaunch() const override;
 	virtual bool CanStartPlaySession(FText& OutErrorMessage) const override;
@@ -61,4 +63,6 @@ private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
+
+	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 };
