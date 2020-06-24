@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "LoadBalancing/LayeredLBStrategy.h"
-
-#include "CoreMinimal.h"
 #include "Utils/LayerInfo.h"
+
+#include "Templates/SubclassOf.h"
+#include "UObject/NameTypes.h"
+#include "UObject/Object.h"
 
 #include "SpatialMultiWorkerSettings.generated.h"
 

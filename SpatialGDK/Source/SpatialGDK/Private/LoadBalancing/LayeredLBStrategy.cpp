@@ -35,7 +35,7 @@ void ULayeredLBStrategy::Init()
 	}
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const TPair<FName, FLayerInfo>& Layer : *WorldSettings->GetWorkerLayers())
+	for (const TPair<FName, FLayerInfo>& Layer : WorldSettings->GetWorkerLayers())
 	{
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
@@ -63,8 +63,8 @@ void ULayeredLBStrategy::Init()
 
 	// Finally, add the default layer.
 	UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
-	USpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettings.GetDefaultObject();
-	if (*MultiWorkerSettings->DefaultLayerLoadBalanceStrategy == nullptr)
+	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy = WorldSettings->GetDefaultLoadBalancingStrategyClass();
+	if (*DefaultLayerLoadBalanceStrategy == nullptr)
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
@@ -72,7 +72,7 @@ void ULayeredLBStrategy::Init()
 	}
 	else
 	{
-		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, MultiWorkerSettings->DefaultLayerLoadBalanceStrategy);
+		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 
 		// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with

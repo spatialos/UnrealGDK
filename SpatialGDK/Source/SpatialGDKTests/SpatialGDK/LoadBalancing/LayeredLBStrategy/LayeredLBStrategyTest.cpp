@@ -21,19 +21,6 @@
 namespace
 {
 
-UCLASS()
-class UTestMultiWorkerSettings : public USpatialMultiWorkerSettings
-{
-	GENERATED_BODY()
-
-public:
-	UTestMultiWorkerSettings()
-	{
-		bEnableMultiWorker = true;
-		DefaultLayerLoadBalanceStrategy = UGridBasedLBStrategy::StaticClass();
-	}
-};
-
 struct TestData
 {
 	ULayeredLBStrategy* Strat{ nullptr };
@@ -90,7 +77,7 @@ DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetDefaultLayer, TSharedPtr<Test
 bool FSetDefaultLayer::Update()
 {
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestData->TestWorld->GetWorldSettings());
-	WorldSettings->MultiWorkerSettings->DefaultLayerLoadBalanceStrategy = DefaultLayer;
+	WorldSettings->SetLoadBalancingStrategyClass(DefaultLayer);
 
 	return true;
 }
@@ -99,7 +86,7 @@ DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FAddLayer, TSharedPtr<TestData>
 bool FAddLayer::Update()
 {
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestData->TestWorld->GetWorldSettings());
-	auto StratName = FName{ *FString::FromInt((WorldSettings->WorkerLayers.Num())) };
+	auto StratName = FName{ *FString::FromInt((WorldSettings->GetWorkerLayers().Num())) };
 	FLayerInfo LayerInfo;
 	LayerInfo.Name = StratName;
 	LayerInfo.LoadBalanceStrategy = StrategyClass;
@@ -107,7 +94,7 @@ bool FAddLayer::Update()
 	{
 		LayerInfo.ActorClasses.Add(TargetActors);
 	}
-	WorldSettings->WorkerLayers.Add(StratName, LayerInfo);
+	WorldSettings->GetWorkerLayers().Add(StratName, LayerInfo);
 
 	return true;
 }
@@ -116,10 +103,8 @@ DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupStrategy, TSharedPtr<TestDa
 bool FSetupStrategy::Update()
 {
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestData->TestWorld->GetWorldSettings());
-
-	USpatialMultiWorkerSettings MultiWorkerSettings = NewObject<USpatialMultiWorkerSettings>();
-	WorldSettings->DefaultLayerLoadBalanceStrategy = UGridBasedLBStrategy::StaticClass();
-	WorldSettings->bEnableMultiWorker = true;
+	WorldSettings->SetLoadBalancingStrategyClass(UGridBasedLBStrategy::StaticClass());
+	WorldSettings->SetEnableMultiWorker(true);
 
 	auto& Strat = TestData->Strat;
 	Strat->Init();
