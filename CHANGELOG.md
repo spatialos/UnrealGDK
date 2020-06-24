@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.10.0`] - 2020-06-15
 
 ### New Known Issues:
+- Replicated properties using the `COND_SkipOwner` replication condition could still replicate in the first few frames of an actor becoming owned (for example by possessing a pawn, or setting the `Owner` field on an actor, so that it is ultimately owned by a `PlayerController`).
 
 ### Breaking Changes:
 - Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
