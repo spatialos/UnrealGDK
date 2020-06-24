@@ -20,7 +20,7 @@ SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, cons
 {
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload)
+EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity)
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
@@ -34,7 +34,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	}
 	else
 	{
-		Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+		Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), bCreatedEntity);
 
 		if (Result == EPushRPCResult::QueueOverflowed)
 		{
@@ -49,7 +49,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	return Result;
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload)
+EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
@@ -82,6 +82,11 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 
 			LastAckedRPCId = GetAckFromView(EntityId, Type);
 		}
+	}
+	else if (bCreatedEntity)
+	{
+		// An entity has been created, but not yet added to the StaticComponentView
+		return EPushRPCResult::NoEntityInStaticComponentView;
 	}
 	else
 	{
@@ -143,7 +148,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (RPCPayload& Payload : OverflowedRPCArray)
 		{
-			EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+			EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
 
 			switch (Result)
 			{
