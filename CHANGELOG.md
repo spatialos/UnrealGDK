@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
-- You can now edit the project name field in the `Cloud Deployment Configuration` window.
+- You can now edit the project name field in the `Cloud Deployment Configuration` window. Changes made here are reflected in your project's `spatialos.json` file.
 - Worker types are now defined in the runtime settings.
 - Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
 - A launch configuration editor has been added under the `Configure` toolbar button.
