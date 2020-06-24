@@ -34,7 +34,7 @@ public:
 	  * Any classes not specified on another layer will be handled by the default layer, but this also gives a way
 	  * to force classes to be on the default layer.
 	  */
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSet<TSoftClassPtr<AActor>> ExplicitDefaultActorClasses;
 
 	/** Layer configuration. */
