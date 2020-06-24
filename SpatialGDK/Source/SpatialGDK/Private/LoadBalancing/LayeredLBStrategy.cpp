@@ -82,7 +82,7 @@ void ULayeredLBStrategy::Init()
 			}
 			else
 			{
-				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added to default layer %s"), *ClassPtr.GetAssetName());
 			}
 		}
 	}
