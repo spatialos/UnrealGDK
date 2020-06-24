@@ -758,7 +758,7 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::NoEntityInStaticComponentView:
-		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPC: RPC was called before CreateEntityRequest, so it will be queued. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and checkout, so it will be queued. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return false;
 	default:
 		return true;
