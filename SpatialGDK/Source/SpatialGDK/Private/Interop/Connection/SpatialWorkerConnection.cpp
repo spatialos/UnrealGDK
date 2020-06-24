@@ -5,6 +5,8 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
+#include <chrono>
+
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
@@ -182,16 +184,73 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
+constexpr int32 MaxMeasurements = 1000;
+constexpr float OutputFrequency = 3.f;
+template<class T>
+float CalculateAverage(const T Array[MaxMeasurements])
+{
+	auto Avg = 0.0f;
+	for (int i = 0; i < MaxMeasurements; i++)
+	{
+		Avg += Array[i];
+	}
+	Avg /= static_cast<float>(MaxMeasurements);
+	return Avg;
+}
+
 uint32 USpatialWorkerConnection::Run()
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
 
+	double IncomingTimes[MaxMeasurements]{};
+	double OutgoingTimes[MaxMeasurements]{};
+	int32 MessagesProcessed[MaxMeasurements]{};
+	int32 CurrIncomingTime = 0;
+	int32 CurrOutgoingTime = 0;
+	int32 CurrMessage = 0;
+	float OutputTimer = OutputFrequency;
+	auto CurrTime = std::chrono::steady_clock::now();
+
+	bool bMessagesRemaining = false;
+	int32 NumMessagesProcessed = 0;
+	bool bOpsQueued = false;
 	while (KeepRunning)
 	{
-		ThreadWaitCondition->Wait();
-		QueueLatestOpList();
-		ProcessOutgoingMessages();
+		if (!bMessagesRemaining)
+		{
+			ThreadWaitCondition->Wait();
+		}
+
+		std::chrono::steady_clock::time_point IncomingStart = std::chrono::steady_clock::now();
+		bOpsQueued = QueueLatestOpList();
+		std::chrono::steady_clock::time_point IncomingEnd = std::chrono::steady_clock::now();
+		ProcessOutgoingMessages(NumMessagesProcessed, bMessagesRemaining);
+		std::chrono::steady_clock::time_point OutgoingEnd = std::chrono::steady_clock::now();
+
+		if (bOpsQueued)
+		{
+			IncomingTimes[CurrIncomingTime++] = std::chrono::duration_cast<std::chrono::microseconds>(IncomingEnd - IncomingStart).count() * 0.001;
+			CurrIncomingTime %= MaxMeasurements;
+		}
+		if (NumMessagesProcessed > 0)
+		{
+			OutgoingTimes[CurrOutgoingTime++] = std::chrono::duration_cast<std::chrono::microseconds>(OutgoingEnd - IncomingEnd).count() * 0.001;
+			MessagesProcessed[CurrMessage++] = NumMessagesProcessed;
+			CurrOutgoingTime %= MaxMeasurements;
+			CurrMessage %= MaxMeasurements;
+		}
+
+		auto NewTicks = std::chrono::steady_clock::now();
+		OutputTimer -= std::chrono::duration_cast<std::chrono::microseconds>(NewTicks - CurrTime).count() * 0.001 * 0.001;
+		CurrTime = NewTicks;
+
+		if (OutputTimer < 0.f)
+		{
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Op times: Incoming: %f ms, Outgoing: %f ms, Avg Messages Sent: %f"),
+				CalculateAverage(IncomingTimes), CalculateAverage(OutgoingTimes), CalculateAverage(MessagesProcessed));
+			OutputTimer += OutputFrequency;
+		}
 	}
 
 	return 0;
@@ -210,20 +269,22 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 	check(OpsProcessingThread);
 }
 
-void USpatialWorkerConnection::QueueLatestOpList()
+bool USpatialWorkerConnection::QueueLatestOpList()
 {
 	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
 	if (OpList->op_count > 0)
 	{
 		OpListQueue.Enqueue(OpList);
+		return true;
 	}
 	else
 	{
 		Worker_OpList_Destroy(OpList);
+		return false;
 	}
 }
 
-void USpatialWorkerConnection::ProcessOutgoingMessages()
+void USpatialWorkerConnection::ProcessOutgoingMessages(int32& OutOpsProcessed, bool& bOutOpsRemaining)
 {
 	bool bSentData = false;
 	int RemainingOutgoingMessagesToProcess = OutgoingOpsToProcessPerTick;
@@ -437,6 +498,9 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 	{
 		Worker_Connection_Alpha_Flush(WorkerConnection);
 	}
+
+	OutOpsProcessed = OutgoingOpsToProcessPerTick - RemainingOutgoingMessagesToProcess;
+	bOutOpsRemaining = OutgoingMessagesQueue.IsEmpty();
 }
 
 void USpatialWorkerConnection::MaybeFlush()
@@ -453,7 +517,9 @@ void USpatialWorkerConnection::Flush()
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->bRunSpatialWorkerConnectionOnGameThread)
 	{
-		ProcessOutgoingMessages();
+		bool bMoreOpsToProgess;
+		int NumMessagesProcessed;
+		ProcessOutgoingMessages(NumMessagesProcessed, bMoreOpsToProgess);
 	}
 	else
 	{

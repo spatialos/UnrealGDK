@@ -1800,7 +1800,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	{
 		if (Connection != nullptr)
 		{
-			Connection->ProcessOutgoingMessages();
+			bool bMoreOpsToProgess;
+			int NumMessagesProcessed;
+			Connection->ProcessOutgoingMessages(NumMessagesProcessed, bMoreOpsToProgess);
 		}
 	}
 
