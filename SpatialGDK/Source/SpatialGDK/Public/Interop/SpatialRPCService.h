@@ -59,7 +59,7 @@ class SPATIALGDK_API SpatialRPCService
 public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatingNewEntity = false);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity = false);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -86,7 +86,7 @@ private:
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatingNewEntity = false);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity = false);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 
