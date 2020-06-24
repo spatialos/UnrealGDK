@@ -40,6 +40,8 @@ enum class ERPCResult : uint8
 	NoControllerChannel,
 	ControllerChannelNotListening,
 
+	RPCServiceFailure,
+
 	Unknown
 };
 
