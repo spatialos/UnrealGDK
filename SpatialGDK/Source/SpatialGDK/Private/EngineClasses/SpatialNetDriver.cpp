@@ -222,7 +222,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		bPersistSpatialConnection = URL.HasOption(*SpatialConstants::ClientsStayConnectedURLOption);
 	}
 
-	if (!bPersistSpatialConnection)
+	if (GameInstance->GetSpatialConnectionManager() == nullptr)
+	{
+		GameInstance->CreateNewSpatialConnectionManager();
+	}
+	else if (!bPersistSpatialConnection)
 	{
 		GameInstance->DestroySpatialConnectionManager();
 		GameInstance->CreateNewSpatialConnectionManager();
