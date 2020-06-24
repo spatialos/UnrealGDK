@@ -77,7 +77,7 @@ void ULayeredLBStrategy::Init()
 		{
 			if (ClassPtr.IsValid())
 			{
-				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr->GetName());
 				ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
 			}
 			else
