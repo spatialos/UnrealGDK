@@ -99,19 +99,27 @@ void USpatialReceiver::LeaveCriticalSection()
 	check(bInCriticalSection);
 
 	// Remove any actors which need to be deleted but authority has not been gained yet
-	for (DeferredRetire& DeferredObject : EntitiesToRetireOnAuthorityGain)
+	for (DeferredRetire& Retire : EntitiesToRetireOnAuthorityGain)
 	{
-		PendingAddActors.RemoveAll([EntityIdToRemove = DeferredObject.EntityId](const Worker_EntityId& EntityId) { return EntityId == EntityIdToRemove; });
-		PendingAddComponents.RemoveAll([EntityIdToRemove = DeferredObject.EntityId](const PendingAddComponentWrapper& Component) {return Component.EntityId == EntityIdToRemove; });
+		PendingAddActors.RemoveAll([EntityIdToRemove = Retire.EntityId](const Worker_EntityId& EntityId) { return EntityId == EntityIdToRemove; });
+		PendingAddComponents.RemoveAll([EntityIdToRemove = Retire.EntityId](const PendingAddComponentWrapper& Component) {return Component.EntityId == EntityIdToRemove; });
 
 		for (int32 Itr = PendingAuthorityChanges.Num() - 1; Itr >= 0; --Itr)
 		{
 			const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[Itr];
-			if (AuthorityChange.entity_id == DeferredObject.EntityId)
+			if (AuthorityChange.entity_id == Retire.EntityId)
 			{
 				if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 				{
-					Sender->RetireEntity(DeferredObject.EntityId, DeferredObject.bIsNetStartupActor);
+					if (Retire.bNeedsTearOff)
+					{
+						Sender->SendTearOffUpdate(Retire.EntityId, Retire.ActorClassId, Retire.bNeedsTearOff);
+						NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
+					}
+					else
+					{
+						Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
+					}
 				} 
 				PendingAuthorityChanges.RemoveAt(Itr); // If this turns out to be non-authoritative we should just remove here 
 			}
@@ -2648,9 +2656,9 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 	}
 }
 
-void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId, bool bIsNetStartup)
+void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
 {
-	DeferredRetire DeferredObj = { EntityId, bIsNetStartup };
+	DeferredRetire DeferredObj = { EntityId, /*ActorClassId*/ ActorClassId, /*bIsNetStartupActor*/ bIsNetStartup, /*bNeedsTearOff*/bNeedsTearOff };
 	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);
 }
 

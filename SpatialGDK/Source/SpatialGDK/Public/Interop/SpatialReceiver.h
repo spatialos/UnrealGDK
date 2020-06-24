@@ -100,7 +100,7 @@ public:
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
-	void RetireWhenAuthoritive(Worker_EntityId EntityId, bool bIsNetStartup);
+	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -267,7 +267,9 @@ private:
 	struct DeferredRetire
 	{
 		Worker_EntityId EntityId;
+		Worker_ComponentId ActorClassId;
 		bool			bIsNetStartupActor;
+		bool			bNeedsTearOff;
 	};
 	TArray<DeferredRetire> EntitiesToRetireOnAuthorityGain;
 };
