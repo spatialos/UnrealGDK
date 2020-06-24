@@ -17,7 +17,7 @@ class USpatialLatencyTracer;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
-DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, ERPCType, const SpatialGDK::RPCPayload&);
+DECLARE_DELEGATE_RetVal_FourParams(bool, ExtractRPCDelegate, Worker_EntityId, ERPCType, const SpatialGDK::RPCPayload&, uint64);
 
 namespace SpatialGDK
 {
@@ -69,10 +69,13 @@ public:
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
-	// Will also store acked IDs locally.
+
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+
+	// Will also store acked IDs locally.
+	void AcknowledgeLastProcessedRPCId(Worker_EntityId EntityId, ERPCType Type, uint64 LastProcessedRPCId);
 
 	void OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId);
 	void OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId);

@@ -70,7 +70,8 @@ public:
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling SpatialRPCService::ExtractRPCsForEntity.
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
+	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId) override;
+	virtual void OnRPCQueueProcessingUpdate(const FPendingRPCParams& LastProcessedRPCParams) override;
 
 	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
 	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
@@ -131,13 +132,13 @@ private:
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
-	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
+	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
-	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload);
+	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload, uint64 RPCId = SpatialConstants::INVALID_RPC_ID);
 
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 

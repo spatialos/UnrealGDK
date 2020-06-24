@@ -36,10 +36,13 @@ void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_ComponentUpdateOp& O
 {}
 
 // This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling SpatialRPCService::ExtractRPCsForEntity.
-bool SpatialOSDispatcherSpy::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)
+bool SpatialOSDispatcherSpy::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId)
 {
 	return false;
 }
+
+void SpatialOSDispatcherSpy::OnRPCQueueProcessingUpdate(const FPendingRPCParams& LastProcessedRPCParams)
+{}
 
 void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {}

@@ -84,22 +84,24 @@ namespace
 	}
 }
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload, uint64 InRPCId)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
+	, RPCId(InRPCId)
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload, uint64 RPCId)
 {
-	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload)};
+	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload), RPCId};
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
 		if (ApplyFunction(Params))
 		{
+			ExecuteRPCQueueProcessingUpdateFunction(Params);
 			return;
 		}
 	}
@@ -123,7 +125,12 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 			break;
 		}
 	}
-	RPCList.RemoveAt(0, NumProcessedParams);
+
+	if (NumProcessedParams != 0)
+	{
+		ExecuteRPCQueueProcessingUpdateFunction(RPCList[NumProcessedParams - 1]);
+		RPCList.RemoveAt(0, NumProcessedParams);
+	}
 }
 
 void FRPCContainer::ProcessRPCs()
@@ -184,6 +191,11 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 	ProcessingFunction = Function;
 }
 
+void FRPCContainer::BindRPCQueueProcessingUpdateFunction(const FRPCQueueProcessingUpdateDelegate& Function)
+{
+	RPCQueueProcessingUpdateDelegate = Function;
+}
+
 bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	ensure(ProcessingFunction.IsBound());
@@ -193,11 +205,17 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	{
 		return true;
 	}
-	else
-	{
+
 #if !UE_BUILD_SHIPPING
-		LogRPCError(ErrorInfo, QueueType, Params);
+	LogRPCError(ErrorInfo, QueueType, Params);
 #endif
-		return ErrorInfo.bShouldDrop;
+	return ErrorInfo.bShouldDrop;
+}
+
+void FRPCContainer::ExecuteRPCQueueProcessingUpdateFunction(const FPendingRPCParams& Params)
+{
+	if (RPCQueueProcessingUpdateDelegate.IsBound())
+	{
+		RPCQueueProcessingUpdateDelegate.Execute(Params);
 	}
 }

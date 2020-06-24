@@ -17,6 +17,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
 struct FPendingRPCParams;
 struct FRPCErrorInfo;
 DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
+DECLARE_DELEGATE_OneParam(FRPCQueueProcessingUpdateDelegate, const FPendingRPCParams&)
 
 UENUM()
 enum class ERPCResult : uint8
@@ -27,12 +28,12 @@ enum class ERPCResult : uint8
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,
+	NoAuthority,
 
 	// Sender specific
 	NoActorChannel,
 	SpatialActorChannelNotListening,
 	NoNetConnection,
-	NoAuthority,
 	InvalidRPCType,
 
 	// Specific to packing
@@ -65,7 +66,7 @@ struct FRPCErrorInfo
 
 struct SPATIALGDK_API FPendingRPCParams
 { 
-	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload);
+	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload, uint64 InRPCId);
 
 	// Moveable, not copyable.
 	FPendingRPCParams() = delete;
@@ -80,6 +81,7 @@ struct SPATIALGDK_API FPendingRPCParams
 
 	FDateTime Timestamp;
 	ERPCType Type;
+	uint64 RPCId;
 };
 
 class SPATIALGDK_API FRPCContainer
@@ -95,7 +97,8 @@ public:
 	~FRPCContainer() = default;
 
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
-	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload);
+	void BindRPCQueueProcessingUpdateFunction(const FRPCQueueProcessingUpdateDelegate& Function);
+	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload, uint64 RPCId = SpatialConstants::INVALID_RPC_ID);
 	void ProcessRPCs();
 	void DropForEntity(const Worker_EntityId& EntityId);
 
@@ -110,6 +113,10 @@ private:
 	bool ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
+	FRPCQueueProcessingUpdateDelegate RPCQueueProcessingUpdateDelegate;
+
+	void ExecuteRPCQueueProcessingUpdateFunction(const FPendingRPCParams& Params);
+
 	bool bAlreadyProcessingRPCs = false;
 
 	ERPCQueueType QueueType = ERPCQueueType::Unknown;

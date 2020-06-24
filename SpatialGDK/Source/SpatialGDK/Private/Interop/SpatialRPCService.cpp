@@ -427,7 +427,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue());
+				bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue(), RPCId);
 				if (!bKeepExtracting)
 				{
 					break;
@@ -444,6 +444,21 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	{
 		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, last sent ID: %d, last seen ID: %d"),
 			EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
+	}
+}
+
+void SpatialRPCService::AcknowledgeLastProcessedRPCId(Worker_EntityId EntityId, ERPCType Type, uint64 LastProcessedRPCId)
+{
+	uint64 LastSeenRPCId;
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+
+	if (Type == ERPCType::NetMulticast)
+	{
+		LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
+	}
+	else
+	{
+		LastSeenRPCId = LastAckedRPCIds[EntityTypePair];
 	}
 
 	if (LastProcessedRPCId > LastSeenRPCId)
