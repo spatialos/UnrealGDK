@@ -626,8 +626,14 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 	if (bUseRPCRingBuffer && RPCService != nullptr)
 	{
-		SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		}
+		else
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+		}
 	}
 
 	if (Channel->bCreatingNewEntity && Function->HasAnyFunctionFlags(FUNC_NetClient))
@@ -719,10 +725,10 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 }
 
-void USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
+	EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
 	if (Result == EPushRPCResult::Success)
 	{
@@ -740,17 +746,22 @@ void USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 	{
 	case EPushRPCResult::QueueOverflowed:
 		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		return true;
 	case EPushRPCResult::DropOverflowed:
 		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		return true;
 	case EPushRPCResult::HasAckAuthority:
 		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		return true;
 	case EPushRPCResult::NoRingBufferAuthority:
 		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
 		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		return true;
+	case EPushRPCResult::NoEntityInStaticComponentView:
+		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and checkout, so it will be queued. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return false;
+	default:
+		return true;
 	}
 }
 
