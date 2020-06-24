@@ -285,7 +285,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	else
 	{
 		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("RetireEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 	}
 }
 
