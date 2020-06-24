@@ -127,7 +127,7 @@ void USpatialReceiver::LeaveCriticalSection()
 					EntitiesToRetireOnAuthorityGain.RemoveAt(RetireItr);
 					break;
 				} 
-				PendingAuthorityChanges.RemoveAt(AuthorityItr); // If this turns out to be non-authoritative we should just remove here 
+				PendingAuthorityChanges.RemoveAt(AuthorityItr); // Ignore authority change otherwise
 			}
 		}
 	}
