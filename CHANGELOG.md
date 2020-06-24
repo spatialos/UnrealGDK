@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicated properties using the `COND_SkipOwner` replication condition could still replicate in the first few frames of an actor becoming owned (for example by possessing a pawn, or setting the `Owner` field on an actor, so that it is ultimately owned by a `PlayerController`).
 
 ### Breaking Changes:
+- The new SpatialOS Runtime required the latest spatial CLI version. Run 'spatial update' to get the latest version.
+- Inspector V1 is incompatible with the new SpatialOS Runtime. Inspector V2 is used by default instead.
 - Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 - The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
@@ -27,11 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secure worker connections are no longer supported for Editor builds. They are still supported for packaged builds.
 
 ### Features:
-- New default Control GameMode in the Example Project. Two Teams compete to control points on the map, with help from NPC guards.
+- Added support for the new standard SpatialOS Runtime, version `0.4.1`.
+- Added support for the new compatibility mode SpatialOS Runtime, version `14.5.4`.
+- The GDK now uses SpatialOS SDK version [14.6.1](https://documentation.improbable.io/sdks-and-data/docs/release-notes#section-14-6-1).
+- Added a new dropdown setting in SpatialGDK Editor Settings that you can use to choose Runtime variant. There is currently Standard and Compatibility Mode. Standard is default, Compatibility Mode can be used if any networking issues arise when updating to the latest GDK version.
+- Added new default deployment templates. The default template changes based on which Runtime variant you have selected and your current primary deployment region is.
+- Inspector V2 is now supported. Inspector V2 is used by default for the Standard Runtime variant. Inspector V1 remains the default for the Compatibility Mode Runtime variant.
+- The Example Project has a new default game mode: Control. In Control two teams compete to control points on the map. Control points are guarded by NPCs who will join your team if you capture their point.
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
-- The GDK now uses SpatialOS 14.6.1.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
 - You can now edit the project name field in the `Cloud Deployment Configuration` window.
 - Worker types are now defined in the runtime settings.
@@ -63,10 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
 - When changing the project name via the `Cloud Deployment` dialog the development authentication token will automatically be regenerated.
 - The SpatialOS project name can now be modified via the **SpatialOS Editor Settings**.
-- Added support for the new SpatialOS Runtime. 
-- Added a new dropdown setting in SpatialGDK Editor Settings to choose Runtime variant. There is currently Standard and Compatibility Mode. Standard is default, Compatibility Mode can be used if any networking issues arise when updating to the latest GDK version.
-- Added new default deployment templates. The default template changes based on which Runtime variant you have selected and your current primary deployment region is.
-- Inspector V2 is now supported. Inspector V2 is used by default for the Standard Runtime variant. Inspector V1 remains the default for the Compatibility Mode Runtime variant.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
