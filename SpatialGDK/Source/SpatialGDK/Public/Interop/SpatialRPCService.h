@@ -59,7 +59,7 @@ class SPATIALGDK_API SpatialRPCService
 public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity = false);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend

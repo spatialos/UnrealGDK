@@ -20,7 +20,7 @@ SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, cons
 {
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity /* = false */)
+EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity)
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
@@ -85,6 +85,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	}
 	else if (bCreatedEntity)
 	{
+		// An entity has been created, but not yet added to the StaticComponentView
 		return EPushRPCResult::NoEntityInStaticComponentView;
 	}
 	else
