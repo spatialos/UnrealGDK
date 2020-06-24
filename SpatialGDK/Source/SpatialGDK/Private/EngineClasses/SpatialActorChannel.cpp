@@ -282,14 +282,10 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 		}
 	}
-	else if (bCreatedEntity) // We will gain authority soon
+	else if (bCreatedEntity) // We have not gained authority yet
 	{
-		if (Actor->GetTearOff())
-		{
-			// Send tear off update now
-			Sender->SendTearOffUpdate(Actor);
-		}
-		Receiver->RetireWhenAuthoritive(EntityId, Actor->IsNetStartupActor()); // Ensure we don't recreate the actor
+		Actor->SetReplicates(false);
+		Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
 	}
 }
 
