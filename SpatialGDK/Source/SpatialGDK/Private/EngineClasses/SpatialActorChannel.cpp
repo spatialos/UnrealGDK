@@ -261,24 +261,20 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	{
 		if (bHasAuthority)
 		{
-			if (Actor != nullptr)
+			// Workaround to delay the delete entity request if tearing off.
+			// Task to improve this: UNR-841
+			if (Actor->GetTearOff())
 			{
-				// Workaround to delay the delete entity request if tearing off.
-				// Task to improve this: UNR-841
-				if (Actor->GetTearOff())
-				{
-					NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
-					// Since the entity deletion is delayed, this creates a situation,
-					// when the Actor is torn off, but still replicates.
-					// Disabling replication makes RPC calls impossible for this Actor.
-					Actor->SetReplicates(false);
-				}
-				else
-				{
-					Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
-				}
+				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
+				// Since the entity deletion is delayed, this creates a situation,
+				// when the Actor is torn off, but still replicates.
+				// Disabling replication makes RPC calls impossible for this Actor.
+				Actor->SetReplicates(false);
 			}
-
+			else
+			{
+				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+			}
 		}
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
