@@ -105,7 +105,7 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 		}
-		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) { return Component.EntityId == PendingAddEntity;});
+		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {return Component.EntityId == PendingAddEntity;});
 	}
 
 	// The reason the AuthorityChange processing is split according to authority is to avoid cases
@@ -2854,7 +2854,7 @@ void USpatialReceiver::HandleDeferredEntityDeletion(const DeferredRetire& Retire
 void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
 {
 	int32 Index = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([EntityId](const DeferredRetire& Retire) { return Retire.EntityId == EntityId; });
-	if (Index != -1)
+	if (Index != INDEX_NONE)
 	{
 		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
 		EntitiesToRetireOnAuthorityGain.RemoveAt(Index);

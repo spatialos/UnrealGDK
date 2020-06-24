@@ -268,8 +268,8 @@ private:
 	{
 		Worker_EntityId EntityId;
 		Worker_ComponentId ActorClassId;
-		bool			bIsNetStartupActor;
-		bool			bNeedsTearOff;
+		bool bIsNetStartupActor;
+		bool bNeedsTearOff;
 	};
 	TArray<DeferredRetire> EntitiesToRetireOnAuthorityGain;
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
