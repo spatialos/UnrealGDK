@@ -98,23 +98,6 @@ void USpatialReceiver::LeaveCriticalSection()
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
-	// Remove any actors which need to be deleted but authority has not been gained yet
-	PendingAddActors.RemoveAll([this](const Worker_EntityId& EntityId) { return HasEntityBeenRequestedForDelete(EntityId); });
-	PendingAddComponents.RemoveAll([this](const PendingAddComponentWrapper& Component) {return HasEntityBeenRequestedForDelete(Component.EntityId); });
-	for (int32 AuthorityItr = PendingAuthorityChanges.Num() - 1; AuthorityItr >= 0; --AuthorityItr)
-	{
-		const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[AuthorityItr];
-		if (HasEntityBeenRequestedForDelete(AuthorityChange.entity_id))
-		{
-			if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthorityChange.component_id == SpatialConstants::POSITION_COMPONENT_ID)
-			{
-				HandleEntityDeletedAuthority(AuthorityChange.entity_id);
-			}
-			PendingAuthorityChanges.RemoveAt(AuthorityItr); // Ignore any other authority change otherwise
-		}
-	}
-
-
 	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
 		ReceiveActor(PendingAddEntity);
