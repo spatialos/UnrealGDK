@@ -291,10 +291,6 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		}
 		Receiver->RetireWhenAuthoritive(EntityId); // Ensure we don't recreate the actor
 	}
-	else
-	{
-		bool umWerid = false;
-	}
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
