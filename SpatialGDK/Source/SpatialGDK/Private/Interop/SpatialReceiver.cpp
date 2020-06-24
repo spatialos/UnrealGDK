@@ -234,12 +234,11 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
 		// This means we need to be inside a critical section, otherwise we may not have all the requisite
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
-		PendingAddActors.Add(Op.entity_id);
+		PendingAddActors.AddUnique(Op.entity_id);
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
