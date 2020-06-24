@@ -565,10 +565,7 @@ public:
 	void SetSnapshotPath(const FString& Path);
 	FORCEINLINE FString GetSnapshotPath() const
 	{
-		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		return SnapshotPath.FilePath.IsEmpty()
-			? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
-			: SnapshotPath.FilePath;
+		return SnapshotPath.FilePath;
 	}
 
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);

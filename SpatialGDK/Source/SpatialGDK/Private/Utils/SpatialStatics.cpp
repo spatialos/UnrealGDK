@@ -104,6 +104,11 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 		return false;
 	}
 
+	if (World->IsNetMode(NM_Client))
+	{
+		return false;
+	}
+
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
 		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))

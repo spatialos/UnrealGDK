@@ -140,11 +140,6 @@ void USpatialReceiver::LeaveCriticalSection()
 			// TODO: UNR-3457 to remove this workaround.
 			continue;
 		}
-		if (ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) == SCHEMA_OwnerOnly)
-		{
-			// Skip owner only components here, as they will be handled after gaining authority
-			continue;
-		}
 
 		UE_LOG(LogSpatialReceiver, Verbose,
 			TEXT("Add component inside of a critical section, outside of an add entity, being handled: entity id %lld, component id %d."),
@@ -157,18 +152,6 @@ void USpatialReceiver::LeaveCriticalSection()
 		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			HandleActorAuthority(PendingAuthorityChange);
-		}
-	}
-
-	// Note that this logic should probably later on be done by the SpatialView, where we can reorder these ops in
-	// a more structured manner.
-	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-	{
-		// Owner only components have to be applied after gaining authority, as it is possible (and indeed extremely likely),
-		// that the authority over the ClientRPCEndpoint comes in the same critical section, and we need it for applying the data
-		if (ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) == SCHEMA_OwnerOnly)
-		{
-			HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 		}
 	}
 
