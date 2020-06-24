@@ -98,21 +98,34 @@ void USpatialReceiver::LeaveCriticalSection()
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
+	// Remove any actors which need to be deleted but authority has not been gained yet
+	for (DeferredRetire& DeferredObject : EntitiesToRetireOnAuthorityGain)
+	{
+		PendingAddActors.RemoveAll([EntityIdToRemove = DeferredObject.EntityId](const Worker_EntityId& EntityId) { return EntityId == EntityIdToRemove; });
+		PendingAddComponents.RemoveAll([EntityIdToRemove = DeferredObject.EntityId](const PendingAddComponentWrapper& Component) {return Component.EntityId == EntityIdToRemove; });
+
+		for (int32 Itr = PendingAuthorityChanges.Num() - 1; Itr >= 0; --Itr)
+		{
+			const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[Itr];
+			if (AuthorityChange.entity_id == DeferredObject.EntityId)
+			{
+				if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+				{
+					Sender->RetireEntity(DeferredObject.EntityId, DeferredObject.bIsNetStartupActor);
+				} 
+				PendingAuthorityChanges.RemoveAt(Itr); // If this turns out to be non-authoritative we should just remove here 
+			}
+		}
+	}
+
 	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
-		if (IncomingEntitiesToIgnore.Contains(PendingAddEntity)) // Prevent ReceiveActor for these
-		{
-			PendingDeleteWhenAuthoritive.Add(PendingAddEntity);
-			IncomingEntitiesToIgnore.Remove(PendingAddEntity);
-			continue;
-		}
-
 		ReceiveActor(PendingAddEntity);
 		if (!IsEntityWaitingForAsyncLoad(PendingAddEntity))
 		{
 			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 		}
-		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {return Component.EntityId == PendingAddEntity;});
+		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) { return Component.EntityId == PendingAddEntity;});
 	}
 
 	// The reason the AuthorityChange processing is split according to authority is to avoid cases
@@ -122,12 +135,6 @@ void USpatialReceiver::LeaveCriticalSection()
 	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE && PendingDeleteWhenAuthoritive.Contains(PendingAuthorityChange.entity_id))
-		{
-			Sender->RetireEntity(PendingAuthorityChange.entity_id, false);
-			PendingDeleteWhenAuthoritive.Remove(PendingAuthorityChange.entity_id);
-			continue;
-		}
 		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			HandleActorAuthority(PendingAuthorityChange);
@@ -2641,9 +2648,10 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 	}
 }
 
-void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId)
+void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId, bool bIsNetStartup)
 {
-	IncomingEntitiesToIgnore.Add(EntityId);
+	DeferredRetire DeferredObj = { EntityId, bIsNetStartup };
+	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);
 }
 
 bool USpatialReceiver::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)

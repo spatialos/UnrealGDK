@@ -100,7 +100,7 @@ public:
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
-	void RetireWhenAuthoritive(Worker_EntityId EntityId);
+	void RetireWhenAuthoritive(Worker_EntityId EntityId, bool bIsNetStartup);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -264,6 +264,10 @@ private:
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 	// END TODO
 
-	TSet<Worker_EntityId> IncomingEntitiesToIgnore;
-	TSet<Worker_EntityId> PendingDeleteWhenAuthoritive;
+	struct DeferredRetire
+	{
+		Worker_EntityId EntityId;
+		bool			bIsNetStartupActor;
+	};
+	TArray<DeferredRetire> EntitiesToRetireOnAuthorityGain;
 };

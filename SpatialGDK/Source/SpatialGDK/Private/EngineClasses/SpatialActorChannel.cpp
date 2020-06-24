@@ -289,7 +289,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			// Send tear off update now
 			Sender->SendTearOffUpdate(Actor);
 		}
-		Receiver->RetireWhenAuthoritive(EntityId); // Ensure we don't recreate the actor
+		Receiver->RetireWhenAuthoritive(EntityId, Actor->IsNetStartupActor()); // Ensure we don't recreate the actor
 	}
 }
 
