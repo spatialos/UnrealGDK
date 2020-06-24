@@ -68,6 +68,8 @@ public:
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
 
+	void DeleteActorsRegisteredForAutoDestroy();
+
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 	
@@ -171,6 +173,6 @@ private:
 	//UFUNCTION(Server, Reliable)
 	//void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
 
-	//UFUNCTION(NetMulticast, Reliable)
-	//void MulticastAutoDestroyActors(const TArray<AActor*>& ActorsToDestroy);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastAutoDestroyActors();
 };
