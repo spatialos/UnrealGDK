@@ -86,7 +86,7 @@ private:
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity = false);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 

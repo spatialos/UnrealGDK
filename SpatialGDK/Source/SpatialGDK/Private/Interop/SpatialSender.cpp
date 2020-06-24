@@ -632,7 +632,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		}
 		else
 		{
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Unknown };
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
 		}
 	}
 

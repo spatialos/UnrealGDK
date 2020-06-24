@@ -49,7 +49,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	return Result;
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity /* = false */)
+EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
@@ -148,7 +148,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (RPCPayload& Payload : OverflowedRPCArray)
 		{
-			EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+			EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
 
 			switch (Result)
 			{
