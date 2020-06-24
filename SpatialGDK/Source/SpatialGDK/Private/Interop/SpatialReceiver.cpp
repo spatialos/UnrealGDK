@@ -99,14 +99,16 @@ void USpatialReceiver::LeaveCriticalSection()
 	check(bInCriticalSection);
 
 	// Remove any actors which need to be deleted but authority has not been gained yet
-	for (DeferredRetire& Retire : EntitiesToRetireOnAuthorityGain)
+	for(int32 RetireItr = EntitiesToRetireOnAuthorityGain.Num()-1; RetireItr >= 0; RetireItr--)
 	{
+		const DeferredRetire& Retire = EntitiesToRetireOnAuthorityGain[RetireItr];
+
 		PendingAddActors.RemoveAll([EntityIdToRemove = Retire.EntityId](const Worker_EntityId& EntityId) { return EntityId == EntityIdToRemove; });
 		PendingAddComponents.RemoveAll([EntityIdToRemove = Retire.EntityId](const PendingAddComponentWrapper& Component) {return Component.EntityId == EntityIdToRemove; });
 
-		for (int32 Itr = PendingAuthorityChanges.Num() - 1; Itr >= 0; --Itr)
+		for (int32 AuthorityItr = PendingAuthorityChanges.Num() - 1; AuthorityItr >= 0; --AuthorityItr)
 		{
-			const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[Itr];
+			const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[AuthorityItr];
 			if (AuthorityChange.entity_id == Retire.EntityId)
 			{
 				if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -120,8 +122,12 @@ void USpatialReceiver::LeaveCriticalSection()
 					{
 						Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 					}
+
+					// Once handled, break into outer loop
+					EntitiesToRetireOnAuthorityGain.RemoveAt(RetireItr);
+					break;
 				} 
-				PendingAuthorityChanges.RemoveAt(Itr); // If this turns out to be non-authoritative we should just remove here 
+				PendingAuthorityChanges.RemoveAt(AuthorityItr); // If this turns out to be non-authoritative we should just remove here 
 			}
 		}
 	}
