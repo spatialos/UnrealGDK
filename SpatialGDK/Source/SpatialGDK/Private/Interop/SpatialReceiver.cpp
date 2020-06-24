@@ -598,6 +598,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	const bool bActorHadAuthority = Actor->HasAuthority();
+
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 
 	if (Channel != nullptr)
@@ -687,17 +689,20 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						UpdateShadowData(Op.entity_id);
 					}
 
-					Actor->OnAuthorityGained();
+					if (bActorHadAuthority) // This is Actor's spawning worker.
+					{
+						Actor->OnActorReady();
+					}
+					else // This Actor migrated to this worker or was loaded from a snapshot.
+					{
+						Actor->OnAuthorityGained();
+					}
 				}
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
 					Sender->RetireEntity(Op.entity_id, Actor->IsNetStartupActor());
 				}
-			}
-			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-			{
-				Actor->OnAuthorityLossImminent();
 			}
 			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 			{
@@ -1241,6 +1246,9 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	// Don't have authority over Actor until SpatialOS delegates authority
 	NewActor->Role = ROLE_SimulatedProxy;
 	NewActor->RemoteRole = ROLE_Authority;
+
+	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
+	NewActor->SetActorReady(true);
 
 	return NewActor;
 }
