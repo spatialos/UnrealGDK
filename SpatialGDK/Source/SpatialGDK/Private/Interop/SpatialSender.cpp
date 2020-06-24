@@ -507,7 +507,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 	}
 }
 
-void USpatialSender::SendTearOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, bool bTornOff)
+void USpatialSender::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -515,7 +515,7 @@ void USpatialSender::SendTearOffUpdate(Worker_EntityId EntityId, Worker_Componen
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	Schema_AddBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID, bTornOff ? 1 : 0); // uint8_t
+	Schema_AddBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID, 1);
 
 	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 }

@@ -257,35 +257,39 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	}
 
 	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
-	if (bHasAuthority)
+	if (Actor != nullptr)
 	{
-		if (Actor != nullptr)
+		if (bHasAuthority)
 		{
-			// Workaround to delay the delete entity request if tearing off.
-			// Task to improve this: UNR-841
-			if (Actor->GetTearOff())
+			if (Actor != nullptr)
 			{
-				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
-				// Since the entity deletion is delayed, this creates a situation,
-				// when the Actor is torn off, but still replicates.
-				// Disabling replication makes RPC calls impossible for this Actor.
-				Actor->SetReplicates(false);
+				// Workaround to delay the delete entity request if tearing off.
+				// Task to improve this: UNR-841
+				if (Actor->GetTearOff())
+				{
+					NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
+					// Since the entity deletion is delayed, this creates a situation,
+					// when the Actor is torn off, but still replicates.
+					// Disabling replication makes RPC calls impossible for this Actor.
+					Actor->SetReplicates(false);
+				}
+				else
+				{
+					Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+				}
 			}
-			else
-			{
-				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
-			}
+
 		}
-		else
+		else if (bCreatedEntity) // We have not gained authority yet
 		{
-			// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
+			Actor->SetReplicates(false);
+			Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
 	}
-	else if (bCreatedEntity) // We have not gained authority yet
+	else
 	{
-		Actor->SetReplicates(false);
-		Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
+		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 	}
 }
 

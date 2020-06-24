@@ -99,38 +99,21 @@ void USpatialReceiver::LeaveCriticalSection()
 	check(bInCriticalSection);
 
 	// Remove any actors which need to be deleted but authority has not been gained yet
-	for(int32 RetireItr = EntitiesToRetireOnAuthorityGain.Num()-1; RetireItr >= 0; --RetireItr)
+	PendingAddActors.RemoveAll([this](const Worker_EntityId& EntityId) { return !HasEntityBeenRequestedForDelete(EntityId); });
+	PendingAddComponents.RemoveAll([this](const PendingAddComponentWrapper& Component) {return !HasEntityBeenRequestedForDelete(Component.EntityId); });
+	for (int32 AuthorityItr = PendingAuthorityChanges.Num() - 1; AuthorityItr >= 0; --AuthorityItr)
 	{
-		const DeferredRetire& Retire = EntitiesToRetireOnAuthorityGain[RetireItr];
-
-		PendingAddActors.RemoveAll([EntityIdToRemove = Retire.EntityId](const Worker_EntityId& EntityId) { return EntityId == EntityIdToRemove; });
-		PendingAddComponents.RemoveAll([EntityIdToRemove = Retire.EntityId](const PendingAddComponentWrapper& Component) {return Component.EntityId == EntityIdToRemove; });
-
-		for (int32 AuthorityItr = PendingAuthorityChanges.Num() - 1; AuthorityItr >= 0; --AuthorityItr)
+		const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[AuthorityItr];
+		if (HasEntityBeenRequestedForDelete(AuthorityChange.entity_id))
 		{
-			const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[AuthorityItr];
-			if (AuthorityChange.entity_id == Retire.EntityId)
+			if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthorityChange.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 			{
-				if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthorityChange.component_id == SpatialConstants::POSITION_COMPONENT_ID)
-				{
-					if (Retire.bNeedsTearOff)
-					{
-						Sender->SendTearOffUpdate(Retire.EntityId, Retire.ActorClassId, Retire.bNeedsTearOff);
-						NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
-					}
-					else
-					{
-						Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
-					}
-
-					// Once handled, break into outer loop
-					EntitiesToRetireOnAuthorityGain.RemoveAt(RetireItr);
-					break;
-				} 
-				PendingAuthorityChanges.RemoveAt(AuthorityItr); // Ignore authority change otherwise
+				HandleEntityDeletedAuthority(AuthorityChange.entity_id);
 			}
+			PendingAuthorityChanges.RemoveAt(AuthorityItr); // Ignore any other authority change otherwise
 		}
 	}
+
 
 	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
@@ -230,6 +213,11 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
+	if (!HasEntityBeenRequestedForDelete(Op.entity_id))
+	{
+		return;
+	}
+
 	// Remove all RemoveComponentOps that have already been received and have the same entityId and componentId as the AddComponentOp.
 	// TODO: This can probably be removed when spatial view is added.
 	QueuedRemoveComponentOps.RemoveAll([&Op](const Worker_RemoveComponentOp& RemoveComponentOp) {
@@ -263,11 +251,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+		
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
 		// This means we need to be inside a critical section, otherwise we may not have all the requisite
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
-		PendingAddActors.AddUnique(Op.entity_id);
+		PendingAddActors.Add(Op.entity_id);
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
@@ -518,6 +507,15 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
+	if (!HasEntityBeenRequestedForDelete(Op.entity_id))
+	{
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		{
+			HandleEntityDeletedAuthority(Op.entity_id);
+		}
+		return;
+	}
+
 	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 	// This way systems that depend on having non-stale state can function correctly.
 	StaticComponentView->OnAuthorityChange(Op);
@@ -2633,8 +2631,11 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 			CriticalSectionSaveState CriticalSectionState(*this);
 
 			EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
-			PendingAddActors.Add(Entity);
-			PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
+			if (HasEntityBeenRequestedForDelete(Entity))
+			{
+				PendingAddActors.Add(Entity);
+				PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
+			}
 			LeaveCriticalSection();
 
 			for (QueuedOpForAsyncLoad& Op : AsyncLoadEntity.PendingOps)
@@ -2664,7 +2665,7 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 
 void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
 {
-	DeferredRetire DeferredObj = { EntityId, /*ActorClassId*/ ActorClassId, /*bIsNetStartupActor*/ bIsNetStartup, /*bNeedsTearOff*/bNeedsTearOff };
+	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
 	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);
 }
 
@@ -2847,5 +2848,33 @@ void USpatialReceiver::CleanupRepStateMap(FSpatialObjectRepState& RepState)
 				ObjectRefToRepStateMap.Remove(Ref);
 			}
 		}
+	}
+}
+
+bool USpatialReceiver::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId)
+{
+	return !EntitiesToRetireOnAuthorityGain.ContainsByPredicate([EntityId](const DeferredRetire& Retire) { return EntityId == Retire.EntityId; });
+}
+
+void USpatialReceiver::HandleDeferredEntityDeletion(const DeferredRetire& Retire)
+{
+	if (Retire.bNeedsTearOff)
+	{
+		Sender->SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
+		NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
+	}
+	else
+	{
+		Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
+	}
+}
+
+void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
+{
+	int32 Index = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([EntityId](const DeferredRetire& Retire) { return Retire.EntityId == EntityId; });
+	if (Index != -1)
+	{
+		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
+		EntitiesToRetireOnAuthorityGain.RemoveAt(Index);
 	}
 }
