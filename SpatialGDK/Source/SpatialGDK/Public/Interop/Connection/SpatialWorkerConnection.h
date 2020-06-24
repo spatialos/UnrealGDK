@@ -87,4 +87,6 @@ private:
 
 	// Coordinates the async worker ops thread.
 	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
+
+	int32 OutgoingOpsToProcessPerTick = 0;
 };

@@ -320,4 +320,7 @@ public:
 	  */
 	UPROPERTY()
 	bool bEnableMultiWorkerDebuggingWarnings;
+
+	UPROPERTY(Config)
+	int32 NumOutgoingOpsToProcessPerTick;
 };

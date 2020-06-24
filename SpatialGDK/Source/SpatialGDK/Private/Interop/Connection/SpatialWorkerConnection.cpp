@@ -15,7 +15,10 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 
 	CacheWorkerAttributes();
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();    
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	OutgoingOpsToProcessPerTick = SpatialGDKSettings->NumOutgoingOpsToProcessPerTick;
+
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
@@ -223,8 +226,10 @@ void USpatialWorkerConnection::QueueLatestOpList()
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
 	bool bSentData = false;
-	while (!OutgoingMessagesQueue.IsEmpty())
+	int RemainingOutgoingMessagesToProcess = OutgoingOpsToProcessPerTick;
+	while (!OutgoingMessagesQueue.IsEmpty() && RemainingOutgoingMessagesToProcess > 0)
 	{
+		RemainingOutgoingMessagesToProcess--;
 		bSentData = true;
 
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
