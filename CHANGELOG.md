@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the new standard SpatialOS Runtime, version `0.4.1`.
 - Added support for the new compatibility mode SpatialOS Runtime, version [`14.5.4`](https://forums.improbable.io/t/spatialos-13-runtime-release-notes-14-5-4/7333).
 - Added a new dropdown setting in SpatialGDK Editor Settings that you can use to choose Runtime variant. There is currently Standard and Compatibility Mode. Standard is default, Compatibility Mode can be used if any networking issues arise when updating to the latest GDK version.
-- Added new default deployment templates. The default template changes based on which Runtime variant you have selected and your current primary deployment region is.
+- Added new default deployment templates. The default template changes based on which Runtime variant you have selected and what your current primary deployment region is.
 - Inspector V2 is now supported. Inspector V2 is used by default for the Standard Runtime variant. Inspector V1 remains the default for the Compatibility Mode Runtime variant.
 - The Example Project has a new default game mode: Control. In Control two teams compete to control points on the map. Control points are guarded by NPCs who will join your team if you capture their point.
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
