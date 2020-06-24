@@ -99,7 +99,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	check(bInCriticalSection);
 
 	// Remove any actors which need to be deleted but authority has not been gained yet
-	for(int32 RetireItr = EntitiesToRetireOnAuthorityGain.Num()-1; RetireItr >= 0; RetireItr--)
+	for(int32 RetireItr = EntitiesToRetireOnAuthorityGain.Num()-1; RetireItr >= 0; --RetireItr)
 	{
 		const DeferredRetire& Retire = EntitiesToRetireOnAuthorityGain[RetireItr];
 
