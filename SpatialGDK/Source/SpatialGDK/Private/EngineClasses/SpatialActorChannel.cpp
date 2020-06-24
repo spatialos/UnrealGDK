@@ -282,7 +282,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("DeleteEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 		}
 	}
-	else if(bCreatedEntity) // We will gain authority soon
+	else if (bCreatedEntity) // We will gain authority soon
 	{
 		if (Actor->GetTearOff())
 		{
