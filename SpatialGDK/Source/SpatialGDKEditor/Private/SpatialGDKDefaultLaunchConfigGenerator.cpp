@@ -104,12 +104,13 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	const USpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettings->GetDefaultObject<USpatialMultiWorkerSettings>();
-	if (MultiWorkerSettings == nullptr)
+	if (*WorldSettings->MultiWorkerSettings == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("MultiWorkerSettings was empty on world settings. Map %s"), *World.GetMapName());
 		return 1;
 	}
+
+	const USpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettings->GetDefaultObject<USpatialMultiWorkerSettings>();
 
 	if (MultiWorkerSettings->bEnableMultiWorker == false)
 	{
@@ -173,14 +174,14 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 		return false;
 	}
 
-	TSubclassOf<USpatialMultiWorkerSettings> SettingsClass = WorldSettings->MultiWorkerSettings;
-	if (SettingsClass == nullptr)
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->MultiWorkerSettings;
+	if (MultiWorkerSettingsClass == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No MultiWorkerSettings specified on SpatialWorldSettings for map %s"), *World.GetMapName());
 		return false;
 	}
 
-	const USpatialMultiWorkerSettings* MultiWorkerSettings = SettingsClass->GetDefaultObject<USpatialMultiWorkerSettings>();
+	const USpatialMultiWorkerSettings* MultiWorkerSettings = MultiWorkerSettingsClass->GetDefaultObject<USpatialMultiWorkerSettings>();
 	if (!MultiWorkerSettings->bEnableMultiWorker)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("Trying to get load balancing strategy when multi-worker is disabled. Map: %s"), *World.GetMapName());

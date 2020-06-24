@@ -58,7 +58,6 @@ void ULayeredLBStrategy::Init()
 		{
 			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
 			ClassPathToLayer.Add(ClassPtr, LayerName);
-
 		}
 	}
 

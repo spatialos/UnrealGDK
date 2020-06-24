@@ -20,16 +20,28 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_BODY()
 
 public:
+	ASpatialWorldSettings()
+	{
+		if (*MultiWorkerSettingsClass != nullptr)
+		{
+			MultiWorkerSettings = NewObject<USpatialMultiWorkerSettings>(this, MultiWorkerSettingsClass);
+		}
+	};
+
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
-	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettings;
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
 	bool IsMultiWorkerEnabled() const
 	{
-		return *MultiWorkerSettings != nullptr && MultiWorkerSettings.GetDefaultObject()->bEnableMultiWorker;
+		return MultiWorkerSettings != nullptr && MultiWorkerSettings->bEnableMultiWorker;
 	}
 
-	const TMap<FName, FLayerInfo>* GetWorkerLayers() const
+	const TMap<FName, FLayerInfo>& GetWorkerLayers() const
 	{
-		return &MultiWorkerSettings.GetDefaultObject()->WorkerLayers;
+		return MultiWorkerSettings->WorkerLayers;
 	}
+
+private:
+	UPROPERTY()
+	USpatialMultiWorkerSettings* MultiWorkerSettings;
 };
