@@ -111,7 +111,7 @@ void USpatialReceiver::LeaveCriticalSection()
 			const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[AuthorityItr];
 			if (AuthorityChange.entity_id == Retire.EntityId)
 			{
-				if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+				if (AuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthorityChange.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 				{
 					if (Retire.bNeedsTearOff)
 					{
