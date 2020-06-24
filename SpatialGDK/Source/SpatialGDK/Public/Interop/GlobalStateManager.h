@@ -40,6 +40,8 @@ public:
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
+	void QueryTranslation();
+
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void IncrementSessionID();

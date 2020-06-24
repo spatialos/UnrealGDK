@@ -747,6 +747,12 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		return;
 	}
 
+	if (NetDriver->LoadBalanceStrategy->GetMinimumRequiredWorkers() > 1)
+	{
+		UE_LOG(LogGameMode, Warning, TEXT("Server travel is not supported on a deployment with multiple workers."));
+		return;
+	}
+
 	NetDriver->GlobalStateManager->ResetGSM();
 
 	GameMode->StartToLeaveMap();
@@ -2510,6 +2516,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 	else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 	{
+		GlobalStateManager->QueryTranslation();
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
 		return false;
 	}

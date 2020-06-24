@@ -428,6 +428,7 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 // This is so clients know when to connect to the deployment.
 void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 {
+	// Build a constraint for the GSM.
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 
@@ -455,16 +456,43 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			if (NetDriver->VirtualWorkerTranslator.IsValid())
-			{
-				ApplyVirtualWorkerMappingFromQueryResponse(Op);
-			}
 			ApplyDeploymentMapDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+}
+
+void UGlobalStateManager::QueryTranslation()
+{
+	// Build a constraint for the Virtual Worker Translation.
+	Worker_ComponentConstraint TranslationComponentConstraint{};
+	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+
+	Worker_Constraint TranslationConstraint{};
+	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
+
+	Worker_EntityQuery TranslationQuery{};
+	TranslationQuery.constraint = TranslationConstraint;
+	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+
+	EntityQueryDelegate TranslationQueryDelegate;
+	TranslationQueryDelegate.BindLambda([this](const Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+		{
+			if (NetDriver->VirtualWorkerTranslator.IsValid())
+			{
+				ApplyVirtualWorkerMappingFromQueryResponse(Op);
+			}
+		}
+	});
+	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
 }
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
