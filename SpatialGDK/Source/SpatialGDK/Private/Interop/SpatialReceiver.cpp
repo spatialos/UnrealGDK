@@ -99,8 +99,8 @@ void USpatialReceiver::LeaveCriticalSection()
 	check(bInCriticalSection);
 
 	// Remove any actors which need to be deleted but authority has not been gained yet
-	PendingAddActors.RemoveAll([this](const Worker_EntityId& EntityId) { return !HasEntityBeenRequestedForDelete(EntityId); });
-	PendingAddComponents.RemoveAll([this](const PendingAddComponentWrapper& Component) {return !HasEntityBeenRequestedForDelete(Component.EntityId); });
+	PendingAddActors.RemoveAll([this](const Worker_EntityId& EntityId) { return HasEntityBeenRequestedForDelete(EntityId); });
+	PendingAddComponents.RemoveAll([this](const PendingAddComponentWrapper& Component) {return HasEntityBeenRequestedForDelete(Component.EntityId); });
 	for (int32 AuthorityItr = PendingAuthorityChanges.Num() - 1; AuthorityItr >= 0; --AuthorityItr)
 	{
 		const Worker_AuthorityChangeOp& AuthorityChange = PendingAuthorityChanges[AuthorityItr];
@@ -213,7 +213,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
-	if (!HasEntityBeenRequestedForDelete(Op.entity_id))
+	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
 		return;
 	}
@@ -507,7 +507,7 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
-	if (!HasEntityBeenRequestedForDelete(Op.entity_id))
+	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
@@ -2853,7 +2853,7 @@ void USpatialReceiver::CleanupRepStateMap(FSpatialObjectRepState& RepState)
 
 bool USpatialReceiver::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId)
 {
-	return !EntitiesToRetireOnAuthorityGain.ContainsByPredicate([EntityId](const DeferredRetire& Retire) { return EntityId == Retire.EntityId; });
+	return EntitiesToRetireOnAuthorityGain.ContainsByPredicate([EntityId](const DeferredRetire& Retire) { return EntityId == Retire.EntityId; });
 }
 
 void USpatialReceiver::HandleDeferredEntityDeletion(const DeferredRetire& Retire)
