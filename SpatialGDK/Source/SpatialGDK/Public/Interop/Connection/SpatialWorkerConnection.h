@@ -89,4 +89,5 @@ private:
 	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
 
 	int32 OutgoingOpsToProcessPerTick = 0;
+	float OpsReportDelta = 1.f;
 };

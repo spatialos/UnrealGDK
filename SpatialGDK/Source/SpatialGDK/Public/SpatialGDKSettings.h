@@ -323,4 +323,7 @@ public:
 
 	UPROPERTY(Config)
 	int32 NumOutgoingOpsToProcessPerTick;
+
+	UPROPERTY(Config)
+	float OpsReportDelta;
 };

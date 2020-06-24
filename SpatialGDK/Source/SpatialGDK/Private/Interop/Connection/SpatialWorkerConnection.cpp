@@ -20,6 +20,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	OutgoingOpsToProcessPerTick = SpatialGDKSettings->NumOutgoingOpsToProcessPerTick;
+	OpsReportDelta = SpatialGDKSettings->OpsReportDelta;
 
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
@@ -185,7 +186,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 }
 
 constexpr int32 MaxMeasurements = 1000;
-constexpr float OutputFrequency = 3.f;
 template<class T>
 float CalculateAverage(const T Array[MaxMeasurements])
 {
@@ -209,7 +209,7 @@ uint32 USpatialWorkerConnection::Run()
 	int32 CurrIncomingTime = 0;
 	int32 CurrOutgoingTime = 0;
 	int32 CurrMessage = 0;
-	float OutputTimer = OutputFrequency;
+	float OutputTimer = OpsReportDelta;
 	auto CurrTime = std::chrono::steady_clock::now();
 
 	bool bMessagesRemaining = false;
@@ -247,9 +247,9 @@ uint32 USpatialWorkerConnection::Run()
 
 		if (OutputTimer < 0.f)
 		{
-			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Op times: Incoming: %f ms, Outgoing: %f ms, Avg Messages Sent: %f"),
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Op times: Incoming: %f ms, Outgoing: %f ms, Avg Messages Sent: %f"),
 				CalculateAverage(IncomingTimes), CalculateAverage(OutgoingTimes), CalculateAverage(MessagesProcessed));
-			OutputTimer += OutputFrequency;
+			OutputTimer += OpsReportDelta;
 		}
 	}
 
