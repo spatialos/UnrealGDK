@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicated properties using the `COND_SkipOwner` replication condition could still replicate in the first few frames of an actor becoming owned (for example by possessing a pawn, or setting the `Owner` field on an actor, so that it is ultimately owned by a `PlayerController`).
 
 ### Breaking Changes:
-- The new SpatialOS Runtime required the latest spatial CLI version. Run 'spatial update' to get the latest version.
+- The new SpatialOS Runtime requires the latest spatial CLI version. Run 'spatial update' to get the latest version.
 - Inspector V1 is incompatible with the new SpatialOS Runtime. Inspector V2 is used by default instead.
 - Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
