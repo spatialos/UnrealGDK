@@ -51,7 +51,7 @@ enum class EPushRPCResult : uint8
 	DropOverflowed,
 	HasAckAuthority,
 	NoRingBufferAuthority,
-	NoEntityInStaticComponentView
+	EntityBeingCreated
 };
 
 class SPATIALGDK_API SpatialRPCService
@@ -59,7 +59,7 @@ class SPATIALGDK_API SpatialRPCService
 public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -86,7 +86,7 @@ private:
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 
