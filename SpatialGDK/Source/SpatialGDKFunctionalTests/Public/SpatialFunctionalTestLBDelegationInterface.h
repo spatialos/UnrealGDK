@@ -18,8 +18,9 @@ class USpatialFunctionalTestLBDelegationInterface : public UInterface
 
 struct FSpatialFunctionalTestActorDelegation
 {
-	uint32 Id = 0;
+	int64 EntityId = 0;
 	TWeakObjectPtr<AActor> ActorPtr = nullptr;
+	VirtualWorkerId WorkerId = 0;
 	bool bPersistOnTestFinished = false;
 };
 
@@ -37,5 +38,5 @@ public:
 	void RemoveAllActorDelegations(bool bRemovePersistent = false);
 
 protected:
-	TMap<uint32, FSpatialFunctionalTestActorDelegation> Delegations;
+	TMap<int64, FSpatialFunctionalTestActorDelegation> Delegations;
 };

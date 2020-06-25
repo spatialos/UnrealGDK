@@ -9,6 +9,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialFunctionalTest, Log, All);
 
@@ -187,6 +188,41 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 		}
 	}
 	return Counter;
+}
+
+bool ASpatialFunctionalTest::AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
+{
+	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+	return DelegationInterface != nullptr ? DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished) : false;
+}
+
+bool ASpatialFunctionalTest::RemoveActorDelegation(AActor* Actor)
+{
+	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+	return DelegationInterface != nullptr ? DelegationInterface->RemoveActorDelegation(Actor) : false;
+}
+
+bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor)
+{
+	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+	return DelegationInterface != nullptr ? DelegationInterface->HasActorDelegation(Actor) : false;
+}
+
+ISpatialFunctionalTestLBDelegationInterface* ASpatialFunctionalTest::GetDelegationInterface() const
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (SpatialNetDriver)
+	{
+		ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+		if(LayeredLBStrategy != nullptr)
+		{
+			return Cast<ISpatialFunctionalTestLBDelegationInterface>(LayeredLBStrategy->GetLBStrategyForVisualRendering());
+		}
+	}
+	return nullptr;
 }
 
 void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const FString& Message)

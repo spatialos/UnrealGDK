@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "SpatialFunctionalTestLBDelegationInterface.h"
 #include "SpatialFunctionalTestGridLBStrategy.generated.h"
 
 /**
@@ -11,12 +12,13 @@
  * Has a 500 unit interest border, so the shared interest between workers should be small.
  */
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy
+class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy, public ISpatialFunctionalTestLBDelegationInterface
 {
 	GENERATED_BODY()
 
 public:
 	USpatialFunctionalTestGridLBStrategy();
 
-	//void DelegateActorToWorker(AActor* Actor, VirtualWorkerId WorkerId);
+	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
+	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 };

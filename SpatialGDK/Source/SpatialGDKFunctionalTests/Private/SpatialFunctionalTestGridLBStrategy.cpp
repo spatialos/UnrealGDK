@@ -2,6 +2,7 @@
 
 
 #include "SpatialFunctionalTestGridLBStrategy.h"
+#include "GameFramework/Actor.h"
 
 USpatialFunctionalTestGridLBStrategy::USpatialFunctionalTestGridLBStrategy()
 {
@@ -10,7 +11,22 @@ USpatialFunctionalTestGridLBStrategy::USpatialFunctionalTestGridLBStrategy()
 	InterestBorder = 500.0f;
 }
 
-//void USpatialFunctionalTestGridLBStrategy::DelegateActorToWorker(AActor* Actor, VirtualWorkerId WorkerId)
-//{
-//	
-//}
+bool USpatialFunctionalTestGridLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
+{
+	auto* Delegation = Delegations.Find(Actor.GetUniqueID());
+	if (Delegation != nullptr)
+	{
+		return GetLocalVirtualWorkerId() == Delegation->WorkerId;
+	}
+	return Super::ShouldHaveAuthority(Actor);
+}
+
+VirtualWorkerId USpatialFunctionalTestGridLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
+{
+	auto* Delegation = Delegations.Find(Actor.GetUniqueID());
+	if (Delegation != nullptr)
+	{
+		return Delegation->WorkerId;
+	}
+	return Super::WhoShouldHaveAuthority(Actor);
+}

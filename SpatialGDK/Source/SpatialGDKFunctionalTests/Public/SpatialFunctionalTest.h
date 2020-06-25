@@ -8,6 +8,7 @@
 #include "EngineUtils.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestStep.h"
+#include "SpatialFunctionalTestLBDelegationInterface.h"
 #include "SpatialFunctionalTest.generated.h"
 
 namespace 
@@ -128,8 +129,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfClientWorkers();
 
+	// # Actor Delegation APIs
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished = false);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool RemoveActorDelegation(AActor* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool HasActorDelegation(AActor* Actor);
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
+
+	ISpatialFunctionalTestLBDelegationInterface* GetDelegationInterface() const;
 
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
