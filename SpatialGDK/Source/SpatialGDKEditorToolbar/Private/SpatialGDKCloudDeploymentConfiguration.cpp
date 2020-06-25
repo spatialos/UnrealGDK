@@ -262,6 +262,27 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									.OnPathPicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnSnapshotPathPicked)
 								]
 							]
+							// Automatically Generate Launch Configuration
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Automatically Generate Launch Configuration"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to automatically generate the launch configuration from the current map when a cloud deployment is started."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateCloudLaunchConfigEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateCloudLaunchConfig)
+								]
+							]
 							// Primary Launch Config + File Picker
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -311,26 +332,6 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
 									.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor)
 									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::CanPickOrEditCloudLaunchConfig)
-								]
-							]
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Automatically Generate Launch Configuration"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to automatically generate the launch configuration from the current map when a cloud deployment is started."))))
-								]
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(SCheckBox)
-									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateCloudLaunchConfigEnabled)
-									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateCloudLaunchConfig)
 								]
 							]
 							// Primary Deployment Region Picker
