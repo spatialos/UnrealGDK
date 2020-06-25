@@ -753,7 +753,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	if (NetDriver->LoadBalanceStrategy->GetMinimumRequiredWorkers() > 1)
 	{
-		UE_LOG(LogGameMode, Warning, TEXT("Server travel is not supported on a deployment with multiple workers."));
+		UE_LOG(LogGameMode, Error, TEXT("Server travel is not supported on a deployment with multiple workers."));
 		return;
 	}
 

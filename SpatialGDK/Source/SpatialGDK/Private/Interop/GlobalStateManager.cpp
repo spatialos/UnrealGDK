@@ -59,6 +59,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
+	bTranslationQueryInFlight = false;
 }
 
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
@@ -466,6 +467,12 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 
 void UGlobalStateManager::QueryTranslation()
 {
+	if (bTranslationQueryInFlight)
+	{
+		// Only allow one in flight query. Retries will be handled by the SpatialNetDriver.
+		return;
+	}
+
 	// Build a constraint for the Virtual Worker Translation.
 	Worker_ComponentConstraint TranslationComponentConstraint{};
 	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
@@ -478,8 +485,7 @@ void UGlobalStateManager::QueryTranslation()
 	TranslationQuery.constraint = TranslationConstraint;
 	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
 
 	EntityQueryDelegate TranslationQueryDelegate;
 	TranslationQueryDelegate.BindLambda([this](const Worker_EntityQueryResponseOp& Op)
@@ -491,11 +497,12 @@ void UGlobalStateManager::QueryTranslation()
 				ApplyVirtualWorkerMappingFromQueryResponse(Op);
 			}
 		}
+		bTranslationQueryInFlight = false;
 	});
 	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
 }
 
-void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
 {
 	check(NetDriver->VirtualWorkerTranslator.IsValid());
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
