@@ -2475,6 +2475,7 @@ void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
 	{
 		if (USpatialReceiver* SpatialReceiver = WeakThis.Get())
 		{
+			SpatialReceiver->Sender->ProcessOutgoingRPCs();
 			SpatialReceiver->IncomingRPCs.ProcessRPCs();
 		}
 	}, GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime, true);

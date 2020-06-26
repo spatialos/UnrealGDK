@@ -728,9 +728,7 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	const EPushRPCResult Result = Channel->bCreatedEntity
-		                              ? EPushRPCResult::EntityBeingCreated
-		                              : RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
+	const EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
 	if (Result == EPushRPCResult::Success)
 	{
@@ -918,6 +916,11 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
 
 	// Try to send all pending RPCs unconditionally
+	ProcessOutgoingRPCs();
+}
+
+void USpatialSender::ProcessOutgoingRPCs()
+{
 	OutgoingRPCs.ProcessRPCs();
 }
 
