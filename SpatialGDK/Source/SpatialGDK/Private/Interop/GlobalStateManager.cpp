@@ -487,17 +487,25 @@ void UGlobalStateManager::QueryTranslation()
 
 	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
 
+	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
 	EntityQueryDelegate TranslationQueryDelegate;
-	TranslationQueryDelegate.BindLambda([this](const Worker_EntityQueryResponseOp& Op)
+	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op)
 	{
+		if (!WeakGlobalStateManager.IsValid())
+		{
+			// The GSM was destroyed before receiving the response.
+			return;
+		}
+
+		UGlobalStateManager* GlobalStateManager = WeakGlobalStateManager.Get();
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
-			if (NetDriver->VirtualWorkerTranslator.IsValid())
+			if (GlobalStateManager->NetDriver->VirtualWorkerTranslator.IsValid())
 			{
-				ApplyVirtualWorkerMappingFromQueryResponse(Op);
+				GlobalStateManager->ApplyVirtualWorkerMappingFromQueryResponse(Op);
 			}
 		}
-		bTranslationQueryInFlight = false;
+		GlobalStateManager->bTranslationQueryInFlight = false;
 	});
 	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
 }
