@@ -70,6 +70,12 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	RPCService = InRPCService;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
+
+	// Attempt to send RPCs that might have been queued while waiting for authority over entities this worker created.
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime > 0.0f)
+	{
+		PeriodicallyProcessOutgoingRPCs();
+	}
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
@@ -106,6 +112,18 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	}
 
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
+void USpatialSender::PeriodicallyProcessOutgoingRPCs()
+{
+	FTimerHandle Timer;
+	TimerManager->SetTimer(Timer, [WeakThis = TWeakObjectPtr<USpatialSender>(this)]()
+	{
+		if (USpatialSender* SpatialSender = WeakThis.Get())
+		{
+			SpatialSender->ProcessOutgoingRPCs();
+		}
+	}, GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
 }
 
 void USpatialSender::SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)

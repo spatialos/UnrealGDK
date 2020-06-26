@@ -1821,8 +1821,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 
 void USpatialReceiver::FlushRetryRPCs()
 {
-	// Attempt to send RPCs that might have been queued while waiting for authority over entities this worker created.
-	Sender->ProcessOutgoingRPCs();
 	Sender->FlushRetryRPCs();
 }
 
