@@ -839,11 +839,12 @@ void USpatialNetDriver::BeginDestroy()
 		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
+
+			// Flush the connection and wait a moment to allow the message to propagate.
+			// TODO: UNR-3697 - This needs to be handled more correctly
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
 		}
-		// Flush the connection and wait a moment to allow the message to propagate.
-		// TODO: UNR-3697 - This needs to be handled more correctly
-		Connection->Flush();
-		FPlatformProcess::Sleep(0.1f);
 
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
