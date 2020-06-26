@@ -833,19 +833,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
 			*NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
-
-		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = StaticComponentView->HasAuthority(EntityId, Position::ComponentId);
-		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
-		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
-		if (bAuthority)
-		{
-			if (EntityActor->GetNetConnection() != nullptr || EntityActor->IsA<APawn>())
-			{
-				EntityActor->RemoteRole = ROLE_AutonomousProxy;
-			}
-		}
-
 		return;
 	}
 

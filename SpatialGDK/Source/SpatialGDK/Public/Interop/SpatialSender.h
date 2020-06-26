@@ -143,6 +143,8 @@ private:
 
 	void AddTombstoneToEntity(const Worker_EntityId EntityId);
 
+	void PeriodicallyProcessOutgoingRPCs();
+
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
 
