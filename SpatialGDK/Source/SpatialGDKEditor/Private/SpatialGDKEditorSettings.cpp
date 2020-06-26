@@ -447,12 +447,6 @@ void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString&
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
-{
-	DevelopmentDeploymentToConnect = Deployment;
-	SaveConfig();
-}
-
 void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
 {
 	ExposedRuntimeIP = RuntimeIP;

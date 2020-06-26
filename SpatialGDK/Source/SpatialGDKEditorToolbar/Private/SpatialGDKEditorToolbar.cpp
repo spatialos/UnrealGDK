@@ -441,7 +441,7 @@ void OnCloudDeploymentNameChanged(const FText& InText, ETextCommit::Type InCommi
 	}
 
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SetDevelopmentDeploymentToConnect(InputDeploymentName);
+	SpatialGDKEditorSettings->SetPrimaryDeploymentName(InputDeploymentName);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting cloud deployment name to %s"), *InputDeploymentName);
 }
@@ -478,7 +478,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 
 		MenuBuilder.AddWidget(SNew(SEditableText)
 			.OnTextCommitted_Static(OnCloudDeploymentNameChanged)
-			.Text(FText::FromString(SpatialGDKEditorSettings->DevelopmentDeploymentToConnect))
+			.Text(FText::FromString(SpatialGDKEditorSettings->GetPrimaryDeploymentName()))
 			.SelectAllTextWhenFocused(true)
 			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Raw(this, &FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable)
@@ -1240,7 +1240,6 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 	CloudDeploymentConfiguration.InitFromSettings();
 
 	const FString& DeploymentName = CloudDeploymentConfiguration.PrimaryDeploymentName;
-	GetMutableDefault<USpatialGDKEditorSettings>()->SetDevelopmentDeploymentToConnect(DeploymentName);
 	UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Setting deployment to connect to %s"), *DeploymentName);
 
 	if (CloudDeploymentConfiguration.bBuildAndUploadAssembly)
