@@ -525,6 +525,19 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 	}
 }
 
+void USpatialSender::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	FWorkerComponentUpdate ComponentUpdate = {};
+
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	Schema_AddBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID, 1);
+
+	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+}
+
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 #if !UE_BUILD_SHIPPING

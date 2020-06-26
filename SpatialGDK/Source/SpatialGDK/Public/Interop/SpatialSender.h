@@ -87,6 +87,7 @@ public:
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
 	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
+	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);

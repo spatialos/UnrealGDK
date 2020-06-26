@@ -268,7 +268,7 @@ protected:
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
 
-	void DeleteEntityIfAuthoritative();
+	void RetireEntityIfAuthoritative();
 
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
