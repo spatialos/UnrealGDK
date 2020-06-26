@@ -23,6 +23,8 @@
 #include "SpatialRuntimeVersionCustomization.h"
 #include "WorkerTypeCustomization.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
+
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
@@ -40,6 +42,7 @@ void FSpatialGDKEditorModule::StartupModule()
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 	CommandLineArgsManager->Init();
 
+	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 }
@@ -93,15 +96,16 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 {
 	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
 	{
-		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect, GetDefault<USpatialGDKEditorSettings>()->ListeningAddress, GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
-
+		const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
+		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->DevelopmentDeploymentToConnect, EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
+		
 		if (bSuccess)
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s"), *LOCTEXT("ProxyStartedSuccessfully", "Successfully started local receptionist proxy server!").ToString());
+			UE_LOG(LogSpatialGDKEditorModule, Log, TEXT("%s"), *LOCTEXT("ProxyStartedSuccessfully", "Successfully started local receptionist proxy server!").ToString());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s"), *LOCTEXT("FailedToStartProxy", "Failed to start local receptionist proxy server").ToString());
+			UE_LOG(LogSpatialGDKEditorModule, Error, TEXT("%s"), *LOCTEXT("FailedToStartProxy", "Failed to start local receptionist proxy server").ToString());
 		}
 
 		return bSuccess;
@@ -185,7 +189,7 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 		}
 		else
 		{
-			UE_LOG(LogTemp, Display, TEXT("Cloud deployment name is empty. If there are multiple running deployments with 'dev_login' tag, the game will choose one randomly."));
+			UE_LOG(LogSpatialGDKEditorModule, Display, TEXT("Cloud deployment name is empty. If there are multiple running deployments with 'dev_login' tag, the game will choose one randomly."));
 		}
 	}
 	return CommandLine;
@@ -200,6 +204,7 @@ bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
 {
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
+		// Always start the PIE server(s) if Spatial networking is disabled.
 		return true;
 	}
 

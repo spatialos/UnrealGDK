@@ -10,6 +10,8 @@ class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
 class FLocalReceptionistProxyServerManager;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorModule, Log, All);
+
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
 public:
