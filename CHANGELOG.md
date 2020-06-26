@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
 - When changing the project name via the `Cloud Deployment` dialog the development authentication token will automatically be regenerated.
 - The SpatialOS project name can now be modified via the **SpatialOS Editor Settings**.
+- Replaced the `Generate From Current Map` button from the `Cloud Deployment Configuration` window by `Automatically Generate Launch Configuration` checkbox. If ticked, it generates an up to date configuration from the current map when selecting the `Start Deployment` button.
 
 ## Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
