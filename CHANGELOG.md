@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - The GDK now uses SpatialOS SDK version [`14.6.1`](https://documentation.improbable.io/sdks-and-data/docs/release-notes#section-14-6-1).
-- Added support for the new standard SpatialOS Runtime, version `0.4.1`.
+- Added support for the new standard SpatialOS Runtime, version `0.4.3`.
 - Added support for the new compatibility mode SpatialOS Runtime, version [`14.5.4`](https://forums.improbable.io/t/spatialos-13-runtime-release-notes-14-5-4/7333).
 - Added a new dropdown setting in SpatialGDK Editor Settings that you can use to choose Runtime variant. There is currently Standard and Compatibility Mode. Standard is default, Compatibility Mode can be used if any networking issues arise when updating to the latest GDK version.
 - Added new default deployment templates. The default template changes based on which Runtime variant you have selected and what your current primary deployment region is.
