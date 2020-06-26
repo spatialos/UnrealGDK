@@ -62,6 +62,10 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	{
 		if (!View->HasAuthority(EntityId, RingBufferComponentId))
 		{
+			if (bCreatedEntity)
+			{
+				return EPushRPCResult::EntityBeingCreated;
+			}
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
@@ -83,13 +87,12 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			LastAckedRPCId = GetAckFromView(EntityId, Type);
 		}
 	}
-	else if (bCreatedEntity)
-	{
-		// An entity has been created, but not yet added to the StaticComponentView
-		return EPushRPCResult::NoEntityInStaticComponentView;
-	}
 	else
 	{
+		if (bCreatedEntity)
+		{
+			return EPushRPCResult::EntityBeingCreated;
+		}
 		// If the entity isn't in the view, we assume this RPC was called before
 		// CreateEntityRequest, so we put it into a component data object.
 		EndpointObject = Schema_GetComponentDataFields(GetOrCreateComponentData(EntityComponent));
@@ -148,7 +151,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (RPCPayload& Payload : OverflowedRPCArray)
 		{
-			EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
+			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
 
 			switch (Result)
 			{
@@ -166,6 +169,8 @@ void SpatialRPCService::PushOverflowedRPCs()
 				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
+			default:
+				checkNoEntry();
 			}
 
 #if TRACE_LIB_ACTIVE
