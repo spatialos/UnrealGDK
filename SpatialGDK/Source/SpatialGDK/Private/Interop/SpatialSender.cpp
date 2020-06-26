@@ -121,7 +121,7 @@ void USpatialSender::PeriodicallyProcessOutgoingRPCs()
 	{
 		if (USpatialSender* SpatialSender = WeakThis.Get())
 		{
-			SpatialSender->ProcessOutgoingRPCs();
+			SpatialSender->OutgoingRPCs.ProcessRPCs();
 		}
 	}, GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
 }
@@ -934,11 +934,6 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
 
 	// Try to send all pending RPCs unconditionally
-	ProcessOutgoingRPCs();
-}
-
-void USpatialSender::ProcessOutgoingRPCs()
-{
 	OutgoingRPCs.ProcessRPCs();
 }
 
