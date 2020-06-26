@@ -301,6 +301,14 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
 
+	// Stop tracking if the entity was deleted as a result of deleting the actor during creation.
+	// This assumes that authority will be gained before interest is gained and lost.
+	const int32 RetiredActorIndex = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([Op](const DeferredRetire& Retire) { return Op.entity_id == Retire.EntityId; });
+	if (RetiredActorIndex != INDEX_NONE)
+	{
+		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
+	}
+
 	if (LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->OnEntityRemoved(Op);
@@ -2840,6 +2848,5 @@ void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
 	if (Index != INDEX_NONE)
 	{
 		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
-		EntitiesToRetireOnAuthorityGain.RemoveAt(Index);
 	}
 }
