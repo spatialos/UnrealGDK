@@ -23,13 +23,13 @@ FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 {
 }
 
-bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FString& ProcessName)
+bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FString& OutProcessName)
 {
 	bool bSuccess = false;
-	ProcessName = TEXT("");
+	OutProcessName = TEXT("");
 	const FString TaskListCmd = TEXT("tasklist");
 
-	// get the task list line for the process with Pid 
+	// Get the task list line for the process with Pid 
 	const FString TaskListArgs = FString::Printf(TEXT(" /fi \"PID eq %s\" /nh /fo:csv"), *PID);
 	FString TaskListResult;
 	int32 ExitCode;
@@ -41,7 +41,7 @@ bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FS
 		FRegexMatcher ProcessNameMatcher(ProcessNamePattern, TaskListResult);
 		if (ProcessNameMatcher.FindNext())
 		{
-			ProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
+			OutProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
 
 			return true;
 		}
@@ -52,7 +52,7 @@ bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FS
 	return false;
 }
 
-bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FString& PID, FText& LogMsg)
+bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FString& OutPID, FText& OutLogMsg)
 {
 	const FString NetStatCmd = TEXT("netstat");
 
@@ -75,14 +75,14 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 			if (State.Contains("LISTENING"))
 			{
 				
-				PID = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
-				if (GetProcessName(PID, ProcessName))
+				OutPID = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+				if (GetProcessName(OutPID, ProcessName))
 				{
-					LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "{0} process with PID:{1}."), FText::FromString(ProcessName), FText::FromString(PID));
+					OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "{0} process with PID:{1}."), FText::FromString(ProcessName), FText::FromString(OutPID));
 					return true;
 				}
 
-				LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(PID));
+				OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(OutPID));
 			
 				return true;
 			}
@@ -90,10 +90,10 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 	}
 	else
 	{
-		LogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Failed to check if any process is blocking required port. Error:{0}"), FText::FromString(StdErr));
+		OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Failed to check if any process is blocking required port. Error:{0}"), FText::FromString(StdErr));
 	}
 
-	LogMsg = LOCTEXT("NoProcessBlockingProxyPort", "No Process is blocking the required port.");
+	OutLogMsg = LOCTEXT("NoProcessBlockingProxyPort", "No Process is blocking the required port.");
 
 	return false;
 }
@@ -125,10 +125,10 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	FText OutLogMessage;
 	FString PID;
 
-	//Check if any process is blocking the receptionist port
+	// Check if any process is blocking the receptionist port
 	if (CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
-		//Try killing the process that blocks the receptionist port 
+		// Try killing the process that blocks the receptionist port 
 		bool bProcessKilled = TryKillBlockingPortProcess(PID);
 		if (!bProcessKilled)
 		{
@@ -174,7 +174,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	int32 ExitCode;
 	bool bSuccess = false;
 
-	//Do not restart the same proxy if you have already a proxy running for the same cloud deployment
+	// Do not restart the same proxy if you have already a proxy running for the same cloud deployment
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress == ListeningAddress && RunningProxyReceptionistPort == ReceptionistPort)
 	{
 		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"), *LOCTEXT("ServerProxyAlreadyRunning", "The local receptionist proxy server is already running!").ToString());
@@ -182,7 +182,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 		return true;
 	}
 
-	//Stop receptionist proxy server if it is for a different cloud deployment, port or listening address
+	// Stop receptionist proxy server if it is for a different cloud deployment, port or listening address
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid())
 	{
 		if (!TryStopReceptionistProxyServer())
@@ -198,7 +198,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	bool bProxyStartSuccess = false;
 	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode, bProxyStartSuccess);
 
-	//Check if process run successfully
+	// Check if process run successfully
 	bSuccess = ProxyServerProcHandle.IsValid();
 	if (!bSuccess || !bProxyStartSuccess)
 	{
