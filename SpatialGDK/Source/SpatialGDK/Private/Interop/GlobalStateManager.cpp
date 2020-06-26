@@ -486,6 +486,7 @@ void UGlobalStateManager::QueryTranslation()
 	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+	bTranslationQueryInFlight = true;
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
 	EntityQueryDelegate TranslationQueryDelegate;
