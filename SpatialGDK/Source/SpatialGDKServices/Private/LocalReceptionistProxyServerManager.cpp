@@ -5,19 +5,21 @@
 #include "Internationalization/Regex.h"
 #include "Sockets.h"
 #include "SocketSubsystem.h"
-#include "SpatialCommandUtils.h"
 #include "UObject/CoreNet.h"
+
+#include "SpatialCommandUtils.h"
 
 DEFINE_LOG_CATEGORY(LogLocalReceptionistProxyServerManager);
 
 #define LOCTEXT_NAMESPACE "FLocalReceptionistProxyServerManager"
+
 namespace
 {
 	static const int32 ExitCodeSuccess = 0;
 }
 
 FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
-: RunningCloudDeploymentName("")
+: RunningCloudDeploymentName(TEXT(""))
 {
 }
 
@@ -149,7 +151,6 @@ void FLocalReceptionistProxyServerManager::Init(int32 Port)
 	{
 		LocalReceptionistProxyServerPreRunChecks(Port);
 	}
-	return;
 }
 
 

@@ -437,11 +437,11 @@ public:
 
 	/** Port on which the receptionist proxy will be available.*/
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Local Receptionist Port"))
-	int32 LocalReceptionistPort = SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT;
+		int32 LocalReceptionistPort;
 
-	/**Network address to bind the receptionist proxy to.*/
+	/** Network address to bind the receptionist proxy to. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Listening Address"))
-	FString ListeningAddress = SpatialConstants::LOCAL_HOST;
+		FString ListeningAddress;
 private:
 	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;

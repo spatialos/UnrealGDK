@@ -8,7 +8,7 @@
 class FLBStrategyEditorExtensionManager;
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
-class  FLocalReceptionistProxyServerManager;
+class FLocalReceptionistProxyServerManager;
 
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
