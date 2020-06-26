@@ -322,6 +322,6 @@ public:
 	/**
 	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
 	  */
-	UPROPERTY()
+	UPROPERTY(Config)
 	bool bEnableMultiWorkerDebuggingWarnings;
 };
