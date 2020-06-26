@@ -126,7 +126,7 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	FString PID;
 
 	//Check if any process is blocking the receptionist port
-	if(CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
+	if (CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
 		//Try killing the process that blocks the receptionist port 
 		bool bProcessKilled = TryKillBlockingPortProcess(PID);
@@ -185,7 +185,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	//Stop receptionist proxy server if it is for a different cloud deployment, port or listening address
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid())
 	{
-		if(!TryStopReceptionistProxyServer())
+		if (!TryStopReceptionistProxyServer())
 		{
 			UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"),*LOCTEXT("FailedToStopPreviousServerProxy", "Failed to stop previous proxy server!").ToString());
 		
