@@ -51,7 +51,7 @@ enum class EPushRPCResult : uint8
 	DropOverflowed,
 	HasAckAuthority,
 	NoRingBufferAuthority,
-	NoEntityInStaticComponentView
+	EntityBeingCreated
 };
 
 class SPATIALGDK_API SpatialRPCService
