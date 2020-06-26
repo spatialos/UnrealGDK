@@ -51,6 +51,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
+	, bIsAutoGenerateCloudConfigEnabled(true)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
@@ -235,6 +236,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
+{
+	bIsAutoGenerateCloudConfigEnabled = IsEnabled;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetBuildAndUploadAssembly(bool bBuildAndUpload)
 {
 	bBuildAndUploadAssembly = bBuildAndUpload;
@@ -390,7 +397,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
 		bValid = false;
 	}
-	if (GetPrimaryLaunchConfigPath().IsEmpty())
+	if (GetPrimaryLaunchConfigPath().IsEmpty() && !bIsAutoGenerateCloudConfigEnabled)
 	{
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
 		bValid = false;
