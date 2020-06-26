@@ -183,7 +183,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 			StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
 			return;
 		}
-		else if(SpatialGDKEditorModule->ShouldStartLocalServer())
+		else if (SpatialGDKEditorModule->ShouldConnectServerToCloud())
 		{
 			ReceptionistConfig.UseExternalIp = true;
 		}

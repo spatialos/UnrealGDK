@@ -1082,7 +1082,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		{
 			OnAutoStartLocalDeploymentChanged();
 		}
-		else if(PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStartLocalServerWorker))
+		else if(PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bConnectServerToCloud))
 		{
 			LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 		}

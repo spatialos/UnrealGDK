@@ -433,7 +433,7 @@ public:
 
 	/** Whether to start local server worker when connecting to cloud deployment. If selected, make sure that the cloud deployment you want to connect to is not automatically launching Server-workers. (That your workers are "manual_connection_only" type)*/
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
-	bool bStartLocalServerWorker;
+	bool bConnectServerToCloud;
 
 	/** Port on which the receptionist proxy will be available.*/
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Local Receptionist Port"))
@@ -686,10 +686,10 @@ public:
 		return SimulatedPlayerDeploymentName;
 	}
 
-	void SetStartLocalServerWorker(bool bIsEnabled);
-	FORCEINLINE bool IsStartLocalServerWorkerEnabled() const
+	void SetConnectServerToCloud(bool bIsEnabled);
+	FORCEINLINE bool IsConnectServerToCloudEnabled() const
 	{
-		return bStartLocalServerWorker;
+		return bConnectServerToCloud;
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);

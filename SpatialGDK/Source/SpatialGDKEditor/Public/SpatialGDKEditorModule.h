@@ -41,7 +41,7 @@ private:
 	virtual bool ShouldConnectToCloudDeployment() const override;
 	virtual FString GetDevAuthToken() const override;
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
-	virtual bool ShouldStartLocalServer() const override;
+	virtual bool ShouldConnectServerToCloud() const override;
 	virtual bool TryStartLocalReceptionistProxyServer() const override;
 
 	virtual bool CanExecuteLaunch() const override;
@@ -51,6 +51,7 @@ private:
 	virtual FString GetMobileClientCommandLineArgs() const override;
 	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
+	virtual bool ShouldStartLocalServer() const override;
 private:
 	void RegisterSettings();
 	void UnregisterSettings();

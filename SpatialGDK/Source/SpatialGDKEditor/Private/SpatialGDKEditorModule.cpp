@@ -84,27 +84,27 @@ FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 	return GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName();
 }
 
-bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
+bool FSpatialGDKEditorModule::ShouldConnectServerToCloud() const
 {
-	return GetDefault<USpatialGDKEditorSettings>()->IsStartLocalServerWorkerEnabled();
+	return GetDefault<USpatialGDKEditorSettings>()->IsConnectServerToCloudEnabled();
 }
 
 bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 {
-	if(ShouldConnectToCloudDeployment() && ShouldStartLocalServer())
+	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
 	{
-			bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect, GetDefault<USpatialGDKEditorSettings>()->ListeningAddress, GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
+		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect, GetDefault<USpatialGDKEditorSettings>()->ListeningAddress, GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
-			if (bSuccess)
-			{
-				UE_LOG(LogTemp, Log, TEXT("%s"), *LOCTEXT("ProxyStartedSuccessfully", "Successfully started local receptionist proxy server!").ToString());
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s"), *LOCTEXT("FailedToStartProxy", "Failed to start local receptionist proxy server").ToString());
-			}
+		if (bSuccess)
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s"), *LOCTEXT("ProxyStartedSuccessfully", "Successfully started local receptionist proxy server!").ToString());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s"), *LOCTEXT("FailedToStartProxy", "Failed to start local receptionist proxy server").ToString());
+		}
 
-			return bSuccess;
+		return bSuccess;
 	}
 
 	return true;
@@ -194,6 +194,16 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 {
 	return GetDefault<USpatialGDKEditorSettings>()->bPackageMobileCommandLineArgs;
+}
+
+bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	return ShouldConnectToLocalDeployment() || (ShouldConnectToLocalDeployment() && ShouldConnectServerToCloud());
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
