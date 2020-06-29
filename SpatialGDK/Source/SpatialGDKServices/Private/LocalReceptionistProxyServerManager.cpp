@@ -54,70 +54,27 @@ bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FS
 
 bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FString& OutPID, FText& OutLogMsg)
 {
-	const FString NetStatCmd = TEXT("netstat");
-
-	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
-	const FString NetStatArgs = TEXT("-n -o -a");
-	FString NetStatResult;
-	int32 ExitCode;
-	FString StdErr;
+	FString State;
 	FString ProcessName;
-	bool bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
-
-	if (ExitCode == ExitCodeSuccess && bSuccess)
+	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, OutPID, State);
+	if (bSuccess)
 	{
-		// Get the line of the netstat output that contains the port we're looking for.
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
-		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
-		if (PidMatcher.FindNext())
+		if (State.Contains("LISTENING"))
 		{
-			const FString State = PidMatcher.GetCaptureGroup(2 /* Get the State of the process, which is the second group. */);
-			if (State.Contains("LISTENING"))
+			if (GetProcessName(OutPID, ProcessName))
 			{
-				
-				OutPID = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
-				if (GetProcessName(OutPID, ProcessName))
-				{
-					OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "{0} process with PID:{1}."), FText::FromString(ProcessName), FText::FromString(OutPID));
-					return true;
-				}
-
-				OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(OutPID));
-			
+				OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "{0} process with PID:{1}."), FText::FromString(ProcessName), FText::FromString(OutPID));
 				return true;
 			}
+
+			OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Unknown process with PID:{1}."), FText::FromString(OutPID));
+
+			return true;
 		}
 	}
-	else
-	{
-		OutLogMsg = FText::Format(LOCTEXT("ProcessBlockingPort", "Failed to check if any process is blocking required port. Error:{0}"), FText::FromString(StdErr));
-	}
-
 	OutLogMsg = LOCTEXT("NoProcessBlockingProxyPort", "No Process is blocking the required port.");
 
 	return false;
-}
-
-
-bool FLocalReceptionistProxyServerManager::TryKillBlockingPortProcess(const FString& PID)
-{
-	bool bSuccess = false;
-
-	int32 ExitCode;
-	FString StdErr;
-
-	const FString TaskKillCmd = TEXT("taskkill");
-	const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
-	FString TaskKillResult;
-	bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
-	bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
-	if (!bSuccess)
-	{
-		const FText ErrorMessage = FText::Format(LOCTEXT("FailedToKillBlockingProcess", "Failed to kill process blocking required port. Error: '{0}'"), FText::FromString(StdErr));
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("%s"),*ErrorMessage.ToString());
-	}
-
-	return bSuccess;
 }
 
 bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort)
@@ -129,7 +86,7 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	if (CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
 		// Try killing the process that blocks the receptionist port 
-		bool bProcessKilled = TryKillBlockingPortProcess(PID);
+		bool bProcessKilled = SpatialCommandUtils::TryKillProcessWithPID(PID);
 		if (!bProcessKilled)
 		{
 			UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s %s!"), *LOCTEXT("FailedToKillBlockingPortProcess", "Failed to kill the process that is blocking the port.").ToString(),*OutLogMessage.ToString());

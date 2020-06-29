@@ -2,6 +2,7 @@
 
 #include "SpatialCommandUtils.h"
 
+#include "Internationalization/Regex.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -334,5 +335,62 @@ void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHand
 		FPlatformProcess::TerminateProc(ProcHandle, true);
 	}
 }
+
+bool SpatialCommandUtils::TryKillProcessWithPID(const FString & PID)
+{
+	int32 ExitCode;
+	FString StdErr;
+
+	const FString TaskKillCmd = TEXT("taskkill");
+	const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
+	FString TaskKillResult;
+	bool bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+	bSuccess = bSuccess && ExitCode == 0;
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
+	}
+
+	return bSuccess;
+}
+
+bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState)
+{
+	bool bSuccess = false;
+
+	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
+
+	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
+	const FString NetStatArgs = TEXT("-n -o -a");
+	FString NetStatResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
+
+	if (ExitCode == 0 && bSuccess)
+	{
+		// Get the line of the netstat output that contains the port we're looking for.
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
+		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
+		if (PidMatcher.FindNext())
+		{
+			OutState = PidMatcher.GetCaptureGroup(2 /* Get the State of the process, which is the second group. */);
+			OutPid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find PID of the process that is blocking %i port."), Port);
+		}
+	}
+	else
+	{
+		bSuccess = false;
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	}
+
+	return bSuccess;
+}
+
 
 #undef LOCTEXT_NAMESPACE
