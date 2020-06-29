@@ -17,28 +17,18 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
-ULayeredLBStrategy::~ULayeredLBStrategy()
-{
-	for (const auto& Elem : LayerNameToLBStrategy)
-	{
-		Elem.Value->RemoveFromRoot();
-	}
-}
-
 void ULayeredLBStrategy::Init()
 {
 	Super::Init();
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	check(Settings->bEnableMultiWorker);
-
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 
-	if (WorldSettings == nullptr)
+	if (!bIsMultiWorkerEnabled)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Multi-Worker has been disabled. Creating LBStrategy for the Default Layer"));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
@@ -56,8 +46,15 @@ void ULayeredLBStrategy::Init()
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
-			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
-			ClassPathToLayer.Add(ClassPtr, LayerName);
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, LayerName);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
+			}
 		}
 	}
 
@@ -73,11 +70,34 @@ void ULayeredLBStrategy::Init()
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+
+		// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with
+		// some parts of the hierarchy on different layers. This provides a way to specify that.
+		for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->ExplicitDefaultActorClasses)
+		{
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added to default layer %s"), *ClassPtr.GetAssetName());
+			}
+		}
 	}
 }
 
 void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
+	if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error,
+			TEXT("The Local Virtual Worker Id cannot be set twice. Current value: %d Requested new value: %d"),
+			LocalVirtualWorkerId, InLocalVirtualWorkerId);
+		return;
+	}
+
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 	for (const auto& Elem : LayerNameToLBStrategy)
 	{
@@ -99,7 +119,7 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -129,7 +149,7 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -239,6 +259,13 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
 }
 
+UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
+{
+	// The default strategy is guaranteed to exist as long as the strategy is ready.
+	check(IsReady());
+	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
+}
+
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const
 {
 	if (Class == nullptr)
@@ -286,7 +313,6 @@ FName ULayeredLBStrategy::GetLayerNameForActor(const AActor& Actor) const
 
 void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLBStrategy* LBStrategy)
 {
-	LBStrategy->AddToRoot();
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
 	LayerNameToLBStrategy[LayerName]->Init();
 }

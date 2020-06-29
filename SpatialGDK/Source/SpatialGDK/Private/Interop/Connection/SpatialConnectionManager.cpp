@@ -79,20 +79,19 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
-		if (!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
+		// Use insecure connections default.
+		Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+
+		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
+		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection) || (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
 		{
+#if WITH_EDITOR
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));
+#else
 			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-		}
-		else if (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection)
-		{
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-		}
-		else
-		{
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+#endif
 		}
 
 		Params.enable_dynamic_components = true;
@@ -411,6 +410,7 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 	bool bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
 	if (bSuccessfullyLoaded)
 	{
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up locator config from command line arguments"));
 		SetConnectionType(ESpatialConnectionType::Locator);
 		LocatorConfig.WorkerType = SpatialWorkerType;
 	}
@@ -419,11 +419,13 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 		bSuccessfullyLoaded = DevAuthConfig.TryLoadCommandLineArgs();
 		if (bSuccessfullyLoaded)
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up dev auth config from command line arguments"));
 			SetConnectionType(ESpatialConnectionType::DevAuthFlow);
 			DevAuthConfig.WorkerType = SpatialWorkerType;
 		}
 		else
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up receptionist config from command line arguments"));
 			bSuccessfullyLoaded = ReceptionistConfig.TryLoadCommandLineArgs();
 			SetConnectionType(ESpatialConnectionType::Receptionist);
 			ReceptionistConfig.WorkerType = SpatialWorkerType;
@@ -435,6 +437,8 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 
 void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
 {
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up connection config from URL"));
+
 	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
 		FString LocatorHostOverride;

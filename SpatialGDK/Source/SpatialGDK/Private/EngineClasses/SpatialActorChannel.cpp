@@ -244,33 +244,48 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	Receiver = NetDriver->Receiver;
 }
 
-void USpatialActorChannel::DeleteEntityIfAuthoritative()
+void USpatialActorChannel::RetireEntityIfAuthoritative()
 {
 	if (NetDriver->Connection == nullptr)
 	{
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
-
-	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
-
-	if (bHasAuthority)
+	if (!NetDriver->IsAuthoritativeDestructionAllowed())
 	{
-		// Workaround to delay the delete entity request if tearing off.
-		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
-		if (Actor != nullptr && Actor->GetTearOff())
+		return;
+	}
+
+	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
+	if (Actor != nullptr)
+	{
+		if (bHasAuthority)
 		{
-			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
-			// Since the entity deletion is delayed, this creates a situation,
-			// when the Actor is torn off, but still replicates.
-			// Disabling replication makes RPC calls impossible for this Actor.
+			// Workaround to delay the delete entity request if tearing off.
+			// Task to improve this: UNR-841
+			if (Actor->GetTearOff())
+			{
+				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
+				// Since the entity deletion is delayed, this creates a situation,
+				// when the Actor is torn off, but still replicates.
+				// Disabling replication makes RPC calls impossible for this Actor.
+				Actor->SetReplicates(false);
+			}
+			else
+			{
+				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+			}
+		}
+		else if (bCreatedEntity) // We have not gained authority yet
+		{
 			Actor->SetReplicates(false);
+			Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
-		else
-		{
-			Sender->RetireEntity(EntityId);
-		}
+	}
+	else
+	{
+		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("RetireEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 	}
 }
 
@@ -287,7 +302,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			CloseReason != EChannelCloseReason::Dormancy)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			DeleteEntityIfAuthoritative();
+			RetireEntityIfAuthoritative();
 		}
 #endif // WITH_EDITOR
 
@@ -329,7 +344,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else
 	{
-		DeleteEntityIfAuthoritative();
+		RetireEntityIfAuthoritative();
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
@@ -1166,7 +1181,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
+		UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor is invalid after trying to create entity"));
 		return;
 	}
 
@@ -1382,11 +1397,6 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
-		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
-		if (!GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-		{
-			Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
-		}
 
 		Actor->SetIsOwnedByClient(bNetOwned);
 

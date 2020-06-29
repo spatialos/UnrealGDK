@@ -173,7 +173,7 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+	void DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor);
 
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
@@ -181,6 +181,10 @@ public:
 
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
+
+	// IsReady evaluates the GSM, Load Balancing system, and others to get a holistic
+	// view of whether the SpatialNetDriver is ready to assume normal operations.
+	bool IsReady() const;
 
 private:
 

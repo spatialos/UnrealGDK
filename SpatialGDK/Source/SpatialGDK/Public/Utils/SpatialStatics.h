@@ -31,10 +31,10 @@ public:
 	static bool IsSpatialNetworkingEnabled();
 
     /**
-    * Returns true if SpatialOS Offloading is enabled.
+    * Returns true if there is more than one worker layer in the SpatialWorldSettings and IsMultiWorkerEnabled.
     */
     UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
-    static bool IsSpatialOffloadingEnabled();
+    static bool IsSpatialOffloadingEnabled(const UWorld* World);
 
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.

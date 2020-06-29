@@ -6,10 +6,14 @@
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Notifications/SPopupErrorText.h"
 #include "Widgets/Text/STextBlock.h"
 
 #include "SpatialCommandUtils.h"
+#include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCommandLineArgsManager.h"
+#include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKSettings.h"
@@ -33,39 +37,44 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	CurrentLayout = &DetailBuilder;
-	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* GDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	TSharedPtr<IPropertyHandle> UsePinnedVersionProperty = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseGDKPinnedRuntimeVersion));
+	GDKEditorSettings->OnDefaultTemplateNameRequireUpdate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 
-	IDetailPropertyRow* CustomRow = DetailBuilder.EditDefaultProperty(UsePinnedVersionProperty);
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
 
-	FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
+	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
-	CustomRow->CustomWidget()
+	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
+	CloudConnectionCategory.AddCustomRow(FText::FromString("Project Name"))
 		.NameContent()
 		[
-			UsePinnedVersionProperty->CreatePropertyNameWidget()
-		]
-		.ValueContent()
-		[
 			SNew(SHorizontalBox)
-			+SHorizontalBox::Slot()
-			.HAlign(HAlign_Left)
-			.AutoWidth()
-			[
-				UsePinnedVersionProperty->CreatePropertyValueWidget()
-			]
-			+SHorizontalBox::Slot()
-			.Padding(5)
-			.HAlign(HAlign_Center)
-			.AutoWidth()
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(FText::FromString(PinnedVersionDisplay))
+				.Text(FText::FromString(FString(TEXT("Project Name"))))
+				.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+			]
+		]
+		.ValueContent()
+		.VAlign(VAlign_Center)
+		.MinDesiredWidth(250)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				SNew(SEditableTextBox)
+				.Text(FText::FromString(ProjectName))
+				.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+				.OnTextCommitted(this, &FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted)
+				.ErrorReporting(ProjectNameInputErrorReporting)
 			]
 		];
 
-	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
 	CloudConnectionCategory.AddCustomRow(FText::FromString("Generate Development Authentication Token"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
@@ -124,4 +133,18 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
 			]
 		];
+}
+
+void FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
+{
+	FString NewProjectName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsProjectNameValid(NewProjectName))
+	{
+		ProjectNameInputErrorReporting->SetError(SpatialConstants::ProjectPatternHint);
+		return;
+	}
+	ProjectNameInputErrorReporting->SetError(TEXT(""));
+
+	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
+	SpatialGDKEditorInstance->SetProjectName(NewProjectName);
 }

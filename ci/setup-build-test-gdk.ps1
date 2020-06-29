@@ -38,7 +38,7 @@ class TestSuite {
 [string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
-[string] $user_gdk_settings = ""
+[string] $user_gdk_settings = "$env:GDK_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
@@ -53,10 +53,6 @@ if (Test-Path env:TEST_REPO_BRANCH) {
     $test_repo_branch = $env:TEST_REPO_BRANCH
 }
 
-if (Test-Path env:GDK_SETTINGS) {
-    $user_gdk_settings = ";" + $env:GDK_SETTINGS
-}
-
 $tests = @()
 
 # If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
@@ -67,7 +63,7 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "bEnableUnrealLoadBalancer=false;$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$user_cmd_line_args")
 }
 else {
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {

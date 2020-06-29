@@ -140,11 +140,6 @@ void USpatialReceiver::LeaveCriticalSection()
 			// TODO: UNR-3457 to remove this workaround.
 			continue;
 		}
-		if (ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) == SCHEMA_OwnerOnly)
-		{
-			// Skip owner only components here, as they will be handled after gaining authority
-			continue;
-		}
 
 		UE_LOG(LogSpatialReceiver, Verbose,
 			TEXT("Add component inside of a critical section, outside of an add entity, being handled: entity id %lld, component id %d."),
@@ -157,18 +152,6 @@ void USpatialReceiver::LeaveCriticalSection()
 		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			HandleActorAuthority(PendingAuthorityChange);
-		}
-	}
-
-	// Note that this logic should probably later on be done by the SpatialView, where we can reorder these ops in
-	// a more structured manner.
-	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-	{
-		// Owner only components have to be applied after gaining authority, as it is possible (and indeed extremely likely),
-		// that the authority over the ClientRPCEndpoint comes in the same critical section, and we need it for applying the data
-		if (ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) == SCHEMA_OwnerOnly)
-		{
-			HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 		}
 	}
 
@@ -193,6 +176,11 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
 		QueueAddComponentOpForAsyncLoad(Op);
+		return;
+	}
+
+	if (HasEntityBeenRequestedForDelete(Op.entity_id))
+	{
 		return;
 	}
 
@@ -312,6 +300,14 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
+
+	// Stop tracking if the entity was deleted as a result of deleting the actor during creation.
+	// This assumes that authority will be gained before interest is gained and lost.
+	const int32 RetiredActorIndex = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([Op](const DeferredRetire& Retire) { return Op.entity_id == Retire.EntityId; });
+	if (RetiredActorIndex != INDEX_NONE)
+	{
+		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
+	}
 
 	if (LoadBalanceEnforcer != nullptr)
 	{
@@ -484,6 +480,15 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
+	if (HasEntityBeenRequestedForDelete(Op.entity_id))
+	{
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		{
+			HandleEntityDeletedAuthority(Op.entity_id);
+		}
+		return;
+	}
+
 	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 	// This way systems that depend on having non-stale state can function correctly.
 	StaticComponentView->OnAuthorityChange(Op);
@@ -686,7 +691,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
-					Sender->RetireEntity(Op.entity_id);
+					Sender->RetireEntity(Op.entity_id, Actor->IsNetStartupActor());
 				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
@@ -850,19 +855,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
 			*NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
-
-		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = StaticComponentView->HasAuthority(EntityId, Position::ComponentId);
-		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
-		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
-		if (bAuthority)
-		{
-			if (EntityActor->GetNetConnection() != nullptr || EntityActor->IsA<APawn>())
-			{
-				EntityActor->RemoteRole = ROLE_AutonomousProxy;
-			}
-		}
-
 		return;
 	}
 
@@ -978,11 +970,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	if (!NetDriver->IsServer())
 	{
 		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-		// Don't send dynamic interest for this actor if it is otherwise handled by result types.
-		if (!SpatialGDKSettings->bEnableResultTypes)
-		{
-			Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
-		}
 
 		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 		// a player index. For now we don't support split screen, so the number is always 0.
@@ -1410,18 +1397,6 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	ResolvePendingOperations(Subobject, SubobjectRef);
-
-	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
-	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-	{
-		return;
-	}
-
-	// If on a client, we need to set up the proper component interest for the new subobject.
-	if (!NetDriver->IsServer())
-	{
-		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsAuthoritativeClient());
-	}
 }
 
 struct USpatialReceiver::RepStateUpdateHelper
@@ -2203,7 +2178,20 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+
+	if (InPayload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
+	{
+		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Invalid RPC index (%d) received on %s, dropping the RPC"), InPayload.Index, *TargetObject->GetPathName());
+		return;
+	}
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
+	if (Function == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Missing function info received on %s, dropping the RPC"), *TargetObject->GetPathName());
+		return;
+	}
+
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 
@@ -2632,6 +2620,12 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 	}
 }
 
+void USpatialReceiver::RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
+{
+	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
+	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);
+}
+
 bool USpatialReceiver::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
 {
 	return EntitiesWaitingForAsyncLoad.Contains(Entity);
@@ -2811,5 +2805,32 @@ void USpatialReceiver::CleanupRepStateMap(FSpatialObjectRepState& RepState)
 				ObjectRefToRepStateMap.Remove(Ref);
 			}
 		}
+	}
+}
+
+bool USpatialReceiver::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId)
+{
+	return EntitiesToRetireOnAuthorityGain.ContainsByPredicate([EntityId](const DeferredRetire& Retire) { return EntityId == Retire.EntityId; });
+}
+
+void USpatialReceiver::HandleDeferredEntityDeletion(const DeferredRetire& Retire)
+{
+	if (Retire.bNeedsTearOff)
+	{
+		Sender->SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
+		NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
+	}
+	else
+	{
+		Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
+	}
+}
+
+void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
+{
+	int32 Index = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([EntityId](const DeferredRetire& Retire) { return Retire.EntityId == EntityId; });
+	if (Index != INDEX_NONE)
+	{
+		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
 	}
 }

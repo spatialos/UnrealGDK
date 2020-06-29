@@ -226,6 +226,13 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 	}
 }
 
+bool FSpatialGDKEditor::IsSchemaGenerated()
+{
+	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
+}
+
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -307,7 +314,7 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-void FSpatialGDKEditor::LaunchCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+void FSpatialGDKEditor::StartCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
 	LaunchCloudResult = Async(EAsyncExecution::Thread, [&Configuration]() { return SpatialGDKCloudLaunch(Configuration); },
 		[this, SuccessCallback, FailureCallback]
@@ -342,6 +349,15 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 bool FSpatialGDKEditor::FullScanRequired()
 {
 	return !Schema::GeneratedSchemaFolderExists() || !Schema::GeneratedSchemaDatabaseExists();
+}
+
+void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
+{
+	if (!FSpatialGDKServicesModule::GetProjectName().Equals(InProjectName))
+	{
+		FSpatialGDKServicesModule::SetProjectName(InProjectName);
+		SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	}
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

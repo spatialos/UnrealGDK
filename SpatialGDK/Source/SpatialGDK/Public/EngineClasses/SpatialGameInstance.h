@@ -24,11 +24,11 @@ class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	USpatialGameInstance();
+
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
-	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
-	void TryConnectToSpatial();
 
 	virtual void StartGameInstance() override;
 
@@ -67,10 +67,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 
-	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
-	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
+	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
-	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel) const;
+	void TryInjectSpatialLocatorIntoCommandLine();
+
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -82,7 +84,8 @@ private:
 	UPROPERTY()
 	USpatialConnectionManager* SpatialConnectionManager;
 
-	bool bFirstConnectionToSpatialOSAttempted = false;
+	bool bShouldConnectUsingCommandLineArgs = true;
+	bool bHasPreviouslyConnectedToSpatial = false;
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
@@ -99,6 +102,15 @@ private:
 	UPROPERTY()
 	TSet<ULevel*> CachedLevelsForNetworkIntialize;
 
+	// Initializes the Spatial connection manager if Spatial networking is enabled, otherwise does nothing.
+	void StartSpatialConnection();
+
+	void SetHasPreviouslyConnectedToSpatial() { bHasPreviouslyConnectedToSpatial = true; }
+	bool HasPreviouslyConnectedToSpatial() const { return bHasPreviouslyConnectedToSpatial; }
+
 	UFUNCTION()
 	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
+
+	// Boolean for whether or not the Spatial connection is ready for normal operations.
+	bool bIsSpatialNetDriverReady;
 };
