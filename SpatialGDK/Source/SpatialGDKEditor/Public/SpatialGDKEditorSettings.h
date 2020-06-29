@@ -436,11 +436,11 @@ public:
 	bool bConnectServerToCloud;
 
 	/** Port on which the receptionist proxy will be available.*/
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Local Receptionist Port"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
 		int32 LocalReceptionistPort;
 
 	/** Network address to bind the receptionist proxy to. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bStartLocalServerWorker", DisplayName = "Listening Address"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Listening Address"))
 		FString ListeningAddress;
 private:
 	UPROPERTY(config)
