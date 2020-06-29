@@ -159,6 +159,7 @@ private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
+	bool bStopLocalDeploymentOnEndPIE;
 
 	bool bSchemaBuildError;
 
@@ -182,4 +183,6 @@ private:
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	bool bStartingCloudDeployment;
+
+	void GenerateConfigFromCurrentMap();
 };

@@ -83,6 +83,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
+	bStopLocalDeploymentOnEndPIE = SpatialGDKEditorSettings->bStopLocalDeploymentOnEndPIE;
 
 	// Check for UseChinaServicesRegion file in the plugin directory to determine the services region.
 	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
@@ -107,7 +108,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if ((GIsAutomationTesting || bStopLocalDeploymentOnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -1033,7 +1034,8 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		FName PropertyName = PropertyChangedEvent.Property != nullptr
 				? PropertyChangedEvent.Property->GetFName()
 				: NAME_None;
-		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
+		FString PropertyNameStr = PropertyName.ToString();
+		if (PropertyNameStr == TEXT("bStopSpatialOnExit"))
 		{
 			/*
 			* This updates our own local copy of bStopSpatialOnExit as Settings change.
@@ -1043,7 +1045,11 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			*/
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
-		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
+		else if (PropertyNameStr == TEXT("bStopLocalDeploymentOnEndPIE"))
+		{
+			bStopLocalDeploymentOnEndPIE = Settings->bStopLocalDeploymentOnEndPIE;
+		}
+		else if (PropertyNameStr == TEXT("bAutoStartLocalDeployment"))
 		{
 			OnAutoStartLocalDeploymentChanged();
 		}
@@ -1200,6 +1206,25 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
+
+void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
+{
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
+	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+
+	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
+
+	FillWorkerConfigurationFromCurrentMap(ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
+
+	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
+}
+
 FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -1209,6 +1234,11 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 		OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
 
 		return FReply::Unhandled();
+	}
+
+	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
+	{
+		GenerateConfigFromCurrentMap();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
@@ -1304,7 +1334,7 @@ bool FSpatialGDKEditorToolbarModule::IsDeploymentConfigurationValid() const
 		&& !SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty()
 		&& !SpatialGDKSettings->GetAssemblyName().IsEmpty()
 		&& !SpatialGDKSettings->GetSnapshotPath().IsEmpty()
-		&& !SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty();
+		&& (!SpatialGDKSettings->GetPrimaryLaunchConfigPath().IsEmpty() || SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig());
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAndUpload() const
