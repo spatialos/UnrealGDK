@@ -280,7 +280,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	return false;
 }
 
-FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 Port , FString &OutResult, int32 &OutExitCode, bool &bProcessSucceeded)
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 Port , FString &OutResult, int32 &OutExitCode)
 {
 	FString Command = FString::Printf(TEXT("cloud connect external %s --listening_address %s --local_receptionist_port %i"), *CloudDeploymentName, *ListeningAddress, Port);
 
@@ -297,7 +297,7 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 
 	ProcHandle = FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, nullptr, 1 /*PriorityModifer*/, *SpatialGDKServicesConstants::SpatialOSDirectory, WritePipe);
 
-	bProcessSucceeded = false;
+	bool bProcessSucceeded = false;
 	bool bProcessFinished = false;
 	if (ProcHandle.IsValid())
 	{
@@ -314,6 +314,11 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 	else
 	{
 		UE_LOG(LogSpatialCommandUtils, Error, TEXT("%s"), *FText::Format(LOCTEXT( "CloudConnectExternalExecutionFailed","Execution failed. '{0}' with arguments '{1}' in directory '{2}' "), FText::FromString(SpatialGDKServicesConstants::SpatialExe), FText::FromString(Command), FText::FromString(SpatialGDKServicesConstants::SpatialOSDirectory)).ToString());
+	}
+
+	if(!bProcessSucceeded)
+	{
+		FPlatformProcess::TerminateProc(ProcHandle, true);
 	}
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);

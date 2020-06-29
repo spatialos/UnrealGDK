@@ -172,7 +172,6 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 {
 	FString StartResult;
 	int32 ExitCode;
-	bool bSuccess = false;
 
 	// Do not restart the same proxy if you have already a proxy running for the same cloud deployment
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress == ListeningAddress && RunningProxyReceptionistPort == ReceptionistPort)
@@ -195,12 +194,10 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("%s"),*LOCTEXT("SucceededToStopPreviousServerProxy", "Stopped previous proxy server!").ToString());
 	}
 
-	bool bProxyStartSuccess = false;
-	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode, bProxyStartSuccess);
+	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode);
 
 	// Check if process run successfully
-	bSuccess = ProxyServerProcHandle.IsValid();
-	if (!bSuccess || !bProxyStartSuccess)
+	if (!ProxyServerProcHandle.IsValid())
 	{
 		const FText WarningMessage = FText::Format(LOCTEXT("FailedToStartProxyServer", "Starting the local receptionist proxy server failed. Error Code: {0}, Error Message: {1}"), ExitCode, FText::FromString(StartResult));
 		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("%s"), *WarningMessage.ToString());
