@@ -279,6 +279,7 @@ private:
 	static void MarkActorHierarchyForMigration(USpatialNetDriver* NetDriver, AActor* HierarchyActor);
 	static void SetActorHierarchyMigrationDestination(USpatialNetDriver* NetDriver, VirtualWorkerId NewAuthVirtualWorkerId, AActor* HierarchyActor);
 	static void DropActorHierarchyMigration(USpatialNetDriver* NetDriver, AActor* HierarchyActor);
+	void HandleActorLoadBalancing();
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
@@ -349,7 +350,7 @@ private:
 	// Contains the frame at which the actor hierarchy was marked to be migrated to another worker.
 	// Used to delay the hierarchy's migration by one frame, to allow all actors in the hierarchy to go through
 	// the regular replication loop (to run Pre-Replication events for instance) before being migrated together.
-	uint32 MigrationFrame;
+	uint32 MigrationInitiatedFrame;
 
 	// WorkerId to migrate to.
 	// Optional is valid if a migration was deemed necessary (LoadBalancingStrategy->ShouldHaveAuthority == false)

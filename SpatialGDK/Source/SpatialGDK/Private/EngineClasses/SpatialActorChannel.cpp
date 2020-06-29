@@ -212,7 +212,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0f;
 	AuthorityReceivedTimestamp = 0;
-	MigrationFrame = 0;
+	MigrationInitiatedFrame = 0;
 	MigrationVirtualWorkerId.Reset();
 
 	PendingDynamicSubobjects.Empty();
@@ -454,7 +454,7 @@ void USpatialActorChannel::MarkActorHierarchyForMigration(USpatialNetDriver* Net
 		{
 			ChildActor->ForceNetUpdate();
 			Channel->MigrationVirtualWorkerId.Emplace(SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
-			Channel->MigrationFrame = NetDriver->ReplicationFrame;
+			Channel->MigrationInitiatedFrame = NetDriver->ReplicationFrame;
 		}
 	}));
 }
@@ -479,6 +479,93 @@ void USpatialActorChannel::DropActorHierarchyMigration(USpatialNetDriver* NetDri
 			Channel->MigrationVirtualWorkerId.Reset();
 		}
 	}));
+}
+
+void USpatialActorChannel::HandleActorLoadBalancing()
+{
+	// if the field is set it means we should try to migrate authority to another worker
+	if (MigrationVirtualWorkerId.IsSet())
+	{
+		AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
+
+		// If we were locked in between replication frames, drop migration attempt.
+		if (NetDriver->LockingPolicy->IsLocked(Actor))
+		{
+			DropActorHierarchyMigration(NetDriver, HierarchyRoot);
+		}
+		// Are we in a different frame from the one we determined we should try to migrate ?
+		else if (MigrationInitiatedFrame != NetDriver->ReplicationFrame)
+		{
+			// An invalid worker id means we encounter the first actor in the hierarchy, which will determine where all the other actors will migrate.
+			if (MigrationVirtualWorkerId.GetValue() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+			{
+				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*HierarchyRoot);
+				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+				{
+					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+					DropActorHierarchyMigration(NetDriver, HierarchyRoot);
+				}
+				else if (NewAuthVirtualWorkerId == NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId())
+				{
+					DropActorHierarchyMigration(NetDriver, HierarchyRoot);
+				}
+				else
+				{
+					SetActorHierarchyMigrationDestination(NetDriver, NewAuthVirtualWorkerId, HierarchyRoot);
+				}
+			}
+
+			if (const VirtualWorkerId NewAuthVirtualWorkerId = MigrationVirtualWorkerId.GetValue())
+			{
+				Sender->SendAuthorityIntentUpdate(*Actor, MigrationVirtualWorkerId.GetValue());
+
+				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+
+				Actor->OnAuthorityLost();
+				MigrationVirtualWorkerId.Reset();
+			}
+		}
+	}
+	// Checking if we should retain authority.
+	else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
+	{
+		AActor* TopmostOwner = SpatialGDK::GetTopmostOwner(Actor);
+		AActor* HierarchyRoot = TopmostOwner ? TopmostOwner : Actor;
+
+		uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
+		if (TopmostOwner != nullptr)
+		{
+			GetLatestAuthorityChangeFromHierarchy(NetDriver, HierarchyRoot, HierarchyAuthorityReceivedTimestamp);
+		}
+
+		const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
+		const float MigrationBackoffTimeInSeconds = 1.0f;
+
+		if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
+		}
+		else
+		{
+			// Mark all the hierarchy actors as needing to migrate, as well as forcing a net update for all of them
+			// so the actual migration will be attempted on the next frame.
+			MarkActorHierarchyForMigration(NetDriver, HierarchyRoot);
+		}
+	}
+
+	// Update debugging info.
+	if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
+	{
+		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+		if (DebuggingInfo->IsLocked != bIsLocked)
+		{
+			DebuggingInfo->IsLocked = bIsLocked;
+			FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+			NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+		}
+	}
 }
 
 int64 USpatialActorChannel::ReplicateActor()
@@ -764,81 +851,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (NetDriver->LoadBalanceStrategy != nullptr &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		if (MigrationVirtualWorkerId.IsSet())
-		{
-			AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
-
-			if (NetDriver->LockingPolicy->IsLocked(Actor))
-			{
-				DropActorHierarchyMigration(NetDriver, HierarchyRoot);
-			}
-			else if (MigrationFrame != NetDriver->ReplicationFrame)
-			{
-				if (MigrationVirtualWorkerId.GetValue() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-				{
-					const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*HierarchyRoot);
-					if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-					{
-						UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
-						DropActorHierarchyMigration(NetDriver, HierarchyRoot);
-					}
-					else if (NewAuthVirtualWorkerId == NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId())
-					{
-						DropActorHierarchyMigration(NetDriver, HierarchyRoot);
-					}
-					else
-					{
-						SetActorHierarchyMigrationDestination(NetDriver, NewAuthVirtualWorkerId, HierarchyRoot);
-					}
-				}
-				if(const VirtualWorkerId NewAuthVirtualWorkerId = MigrationVirtualWorkerId.GetValue())
-				{
-					Sender->SendAuthorityIntentUpdate(*Actor, MigrationVirtualWorkerId.GetValue());
-
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
-					MigrationVirtualWorkerId.Reset();
-				}
-			}
-		}
-		else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
-		{
-			AActor* TopmostOwner = SpatialGDK::GetTopmostOwner(Actor);
-			AActor* HierarchyRoot = TopmostOwner ? TopmostOwner : Actor;
-
-			uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
-			if (TopmostOwner != nullptr)
-			{
-				GetLatestAuthorityChangeFromHierarchy(NetDriver, HierarchyRoot, HierarchyAuthorityReceivedTimestamp);
-			}
-
-			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
-			const float MigrationBackoffTimeInSeconds = 1.0f;
-
-			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
-			{
-				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
-			}
-			else
-			{
-				MarkActorHierarchyForMigration(NetDriver, HierarchyRoot);
-			}
-		}
-
-		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
-		{
-			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-			if (DebuggingInfo->IsLocked != bIsLocked)
-			{
-				DebuggingInfo->IsLocked = bIsLocked;
-				FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-				NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-			}
-		}
+		HandleActorLoadBalancing();
 	}
+
 #if USE_NETWORK_PROFILER
 	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
 #endif
