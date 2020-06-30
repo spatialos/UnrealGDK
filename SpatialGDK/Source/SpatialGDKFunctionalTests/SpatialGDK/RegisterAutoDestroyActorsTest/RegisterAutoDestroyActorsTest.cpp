@@ -33,23 +33,30 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 				//UE_LOG(LogTemp, Warning, TEXT("Spawned ACharacter %s in worker %s"), *(Character->GetName()), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i + 1)->GetDisplayName());
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
+			
 
 			NetTest->FinishStep();
 		});
+
+		
 	}
 
-	//{ // Step 2 - Wait 5 seconds allow characters to transition to new workers
-	//	AddServerStep(TEXT("SERVER_1_Wait_5_Seconds"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
-	//		double startTime = FPlatformTime::Seconds();
-	//		double endTime = startTime + 5;
-	//		while (startTime < endTime)
-	//		{
-	//			startTime = FPlatformTime::Seconds();
-	//		}
+	{  // Step 2 - Wait 5 seconds allow characters to transition to new workers
 
-	//		NetTest->FinishStep();
-	//		});
-	//}
+		// Setup timer for next step
+		double endTime = FPlatformTime::Seconds() + 5;
+
+	   AddServerStep(TEXT("SERVER__1_Wait_5_Seconds"), 1, [endTime](ASpatialFunctionalTest* NetTest) -> bool {
+		    double currentTime = FPlatformTime::Seconds();
+			
+			return (currentTime > endTime);
+			},
+
+			[](ASpatialFunctionalTest* NetTest) {
+				NetTest->FinishStep();
+			}, nullptr, 6.0f);
+	}
+
 
 	{ // Step 3 - Check If Clients have it
 		AddClientStep(TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::ALL_WORKERS_ID, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime){
