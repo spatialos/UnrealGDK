@@ -11,7 +11,7 @@ class FLocalReceptionistProxyServerManager
 public:
 	FLocalReceptionistProxyServerManager();
 
-	bool CheckIfPortIsBound(int32 Port, FString& OutPID, FText& OutLogMessages);
+	bool CheckIfPortIsBound(int32 Port, FString& OutPID, FString& OutLogMessages);
 	bool LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort);
 
 	bool GetProcessName(const FString& PID, FString& OutProcessName);
