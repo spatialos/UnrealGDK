@@ -222,6 +222,21 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 
+FName ULayeredLBStrategy::GetLocalLayerName() const
+{
+	// A worker won't have its layer assigned until the strategy is ready.
+	check(IsReady());
+
+	const FName* LocalLayerName = VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId);
+	if (LocalLayerName == nullptr)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("Load balancing strategy didn't contain mapping between virtual worker ID to layer name. Virtual worker: %d"), LocalVirtualWorkerId);
+		return NAME_None;
+	}
+
+	return *LocalLayerName;
+}
+
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const
 {
 	if (Class == nullptr)

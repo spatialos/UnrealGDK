@@ -262,3 +262,34 @@ void USpatialStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 	UE_LOG(LogSpatial, Verbose, TEXT("LockingComponent called ReleaseLock. Actor: %s. Token: %lld. Resulting lock count: %d"),
         *Actor->GetName(), LockToken.Token, LockingPolicy->GetActorLockCount(Actor));
 }
+
+FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("World was nullptr when calling GetLayerName"));
+		return NAME_None;
+	}
+
+	if (World->IsNetMode(NM_Client))
+	{
+		return SpatialConstants::DefaultClientWorkerType;
+	}
+
+	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (SpatialNetDriver == nullptr)
+	{
+		return SpatialConstants::DefaultLayer;
+	}
+
+	if (!SpatialNetDriver->IsReady())
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Called GetLayerName before NotifyBeginPlay has been called is invalid. Worker doesn't know its layer yet"));
+		return NAME_None;
+	}
+
+	const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+	check(LBStrategy != nullptr);
+	return LBStrategy->GetLocalLayerName();
+}
