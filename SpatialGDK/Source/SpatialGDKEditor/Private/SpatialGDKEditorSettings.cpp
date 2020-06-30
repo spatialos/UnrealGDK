@@ -93,18 +93,27 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
 	{
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
 
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, ExposedRuntimeIP))
+	{
+		if (!USpatialGDKEditorSettings::IsValidIP(ExposedRuntimeIP))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Please input a valid IP address.")));
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid IP address: %s"), *ExposedRuntimeIP);
+			// Reset IP to empty instead of keeping the invalid value.
+			SetExposedRuntimeIP(TEXT(""));
+			return;
+		}
 	}
 }
 
@@ -444,10 +453,11 @@ void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString&
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+bool USpatialGDKEditorSettings::IsValidIP(const FString& IP)
 {
-	DevelopmentDeploymentToConnect = Deployment;
-	SaveConfig();
+	const FRegexPattern IpV4PatternRegex(SpatialConstants::Ipv4Pattern);
+	FRegexMatcher IpV4RegexMatcher(IpV4PatternRegex, IP);
+	return IP.IsEmpty() || IpV4RegexMatcher.FindNext();
 }
 
 void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)

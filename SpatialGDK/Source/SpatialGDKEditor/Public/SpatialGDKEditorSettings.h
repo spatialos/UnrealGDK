@@ -427,10 +427,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
 
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
-
 private:
 	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
@@ -700,8 +696,8 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 
 	void SetDevelopmentAuthenticationToken(const FString& Token);
-	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
 
+	static bool IsValidIP(const FString& IP);
 	void SetExposedRuntimeIP(const FString& RuntimeIP);
 
 	void SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType);
