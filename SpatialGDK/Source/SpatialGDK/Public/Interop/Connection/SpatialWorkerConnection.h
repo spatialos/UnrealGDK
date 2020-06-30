@@ -15,6 +15,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include <chrono>
+
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
@@ -23,7 +25,10 @@ UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
-
+	TArray<double> wakeTimes;
+	std::chrono::steady_clock::time_point begin;
+	bool started{ false };
+	float printTimer{ 10.0f };
 public:
 	void SetConnection(Worker_Connection* WorkerConnectionIn);
 	virtual void FinishDestroy() override;

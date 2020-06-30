@@ -5,6 +5,8 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
+#include <chrono>
+
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
@@ -187,6 +189,40 @@ uint32 USpatialWorkerConnection::Run()
 	while (KeepRunning)
 	{
 		ThreadWaitCondition->Wait();
+
+		if (!started)
+		{
+			started = true;
+			begin = std::chrono::steady_clock::now();
+		}
+		else
+		{
+			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+			double milliseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() * 0.001;
+			begin = std::chrono::steady_clock::now();
+			wakeTimes.Push(milliseconds);
+			if (wakeTimes.Num() > 100)
+			{
+				wakeTimes.RemoveAt(0);
+			}
+			printTimer -= milliseconds;
+			if (printTimer < 0.0f)
+			{
+				double avg = 0.0;
+				for (auto& x : wakeTimes)
+				{
+					avg += x;
+				}
+				avg /= float(wakeTimes.Num());
+				printTimer = 10.0f*1000.0f;
+				TArray<double> s = wakeTimes;
+				s.Sort();
+				float mid = s[s.Num()*0.5f];
+				float nin = s[s.Num()*0.9f];
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("ProcessOutGoingMessages: avg %.8f med %.8f 90th %.8f"), avg, mid, nin);
+			}
+		}
+
 		QueueLatestOpList();
 		ProcessOutgoingMessages();
 	}
