@@ -213,7 +213,7 @@ bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
 		// Start the PIE server(s) if we're connecting to a local deployment.
 		return true;
 	}
-	if (ShouldConnectToLocalDeployment() && ShouldConnectServerToCloud())
+	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
 	{
 		// Start the PIE server(s) if we're connecting to a cloud deployment and using receptionist proxy for the server(s).
 		return true;
