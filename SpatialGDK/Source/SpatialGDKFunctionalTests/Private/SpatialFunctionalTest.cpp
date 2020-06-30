@@ -104,7 +104,7 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 		AutoDestroyComponent->AttachToComponent(ActorToAutoDestroy->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 		AutoDestroyComponent->RegisterComponent();
 
-		UE_LOG(LogTemp, Warning, TEXT("Registered ACharacter %s for destruction"), *(ActorToAutoDestroy->GetName()));
+		//UE_LOG(LogTemp, Warning, TEXT("Registered ACharacter %s for destruction"), *(ActorToAutoDestroy->GetName()));
 
 	}
 	/*else if(LocalFlowController != nullptr)
@@ -240,7 +240,7 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 		if (AutoDestroyComponent != NULL)
 		{
 			UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Delete actor %s "), *(FoundActor->GetName()));
-			UE_LOG(LogTemp, Warning, TEXT("Delete ACharacter %s"), *(FoundActor->GetName()));
+			//UE_LOG(LogTemp, Warning, TEXT("Delete ACharacter %s"), *(FoundActor->GetName()));
 			// will be removed next frame
 			FoundActor->SetLifeSpan(0.01f);
 		}
@@ -603,7 +603,7 @@ void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation()
 	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
 	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s MulticastAutoDestroyActors_Implementation No Authority"), *DisplayName);
+		//UE_LOG(LogTemp, Warning, TEXT("%s MulticastAutoDestroyActors_Implementation No Authority"), *DisplayName);
 
 
 		DeleteActorsRegisteredForAutoDestroy();
@@ -618,7 +618,7 @@ void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("% MulticastAutoDestroyActors_Implementation Authority"), *DisplayName);
+		//UE_LOG(LogTemp, Warning, TEXT("% MulticastAutoDestroyActors_Implementation Authority"), *DisplayName);
 
 
 		/*for (AActor* Actor : ActorsToDestroy)

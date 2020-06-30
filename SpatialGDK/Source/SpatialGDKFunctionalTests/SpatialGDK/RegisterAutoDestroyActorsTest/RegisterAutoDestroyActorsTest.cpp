@@ -30,7 +30,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			{
 				ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
 				NetTest->AssertTrue(IsValid(Character), FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *(Character->GetName()), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i + 1)->GetDisplayName()));
-				UE_LOG(LogTemp, Warning, TEXT("Spawned ACharacter %s in worker %s"), *(Character->GetName()), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i + 1)->GetDisplayName());
+				//UE_LOG(LogTemp, Warning, TEXT("Spawned ACharacter %s in worker %s"), *(Character->GetName()), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i + 1)->GetDisplayName());
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
 
@@ -91,7 +91,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 				if ((*It)->HasAuthority())
 				{
 					NetTest->AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *((*It)->GetName())));
-					UE_LOG(LogTemp, Warning, TEXT("Register ACharacter %s for destruction"), *((*It)->GetName()));
+					//UE_LOG(LogTemp, Warning, TEXT("Register ACharacter %s for destruction"), *((*It)->GetName()));
 					NetTest->RegisterAutoDestroyActor(*It);
 				}
 			}
