@@ -70,6 +70,21 @@ void ULayeredLBStrategy::Init()
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+
+		// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with
+		// some parts of the hierarchy on different layers. This provides a way to specify that.
+		for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->ExplicitDefaultActorClasses)
+		{
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added to default layer %s"), *ClassPtr.GetAssetName());
+			}
+		}
 	}
 }
 

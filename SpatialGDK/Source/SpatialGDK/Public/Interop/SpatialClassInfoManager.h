@@ -22,6 +22,7 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
+	case COND_ReplayOrOwner:
 	case COND_OwnerOnly:
 		return SCHEMA_OwnerOnly;
 	default:

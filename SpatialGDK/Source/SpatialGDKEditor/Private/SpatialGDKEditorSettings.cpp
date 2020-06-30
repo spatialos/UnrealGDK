@@ -52,6 +52,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
+	, bIsAutoGenerateCloudConfigEnabled(true)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
@@ -63,6 +64,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
+	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
@@ -184,7 +186,8 @@ void USpatialGDKEditorSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 
 void USpatialGDKEditorSettings::SetSnapshotPath(const FString& Path)
 {
-	SnapshotPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	// If a non-empty path is specified, convert it to full, otherwise just empty the field.
+	SnapshotPath.FilePath = Path.IsEmpty() ? TEXT("") : FPaths::ConvertRelativePathToFull(Path);
 	SaveConfig();
 }
 

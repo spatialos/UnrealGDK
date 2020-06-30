@@ -1253,6 +1253,13 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 	{
 		if (CloudDeploymentConfiguration.bGenerateSchema)
 		{
+			if (SpatialGDKEditorInstance->FullScanRequired())
+			{
+				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("A full schema generation is required at least once before you can start a cloud deployment. Press the Schema button before starting a cloud deployment.")));
+				OnShowSingleFailureNotification(TEXT("Generate schema failed."));
+				return FReply::Unhandled();
+			}
+
 			if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
 			{
 				OnShowSingleFailureNotification(TEXT("Generate schema failed."));
