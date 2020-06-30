@@ -46,4 +46,7 @@ namespace SpatialGDKServicesConstants
 	const FString DevLoginDeploymentTag = TEXT("dev_login");
 
 	const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
+
+	const FString ProxyFileDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../Game/Intermediate/")));
+	const FString ProxyInfoFilename = TEXT("ServerReceptionistProxyInfo.json");
 }
