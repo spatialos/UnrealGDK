@@ -328,6 +328,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on stop play in editor"))
+	bool bStopLocalDeploymentOnEndPIE;
+
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on exit"))
 	bool bStopSpatialOnExit;
@@ -377,6 +380,9 @@ private:
 	/** Tags used when launching a deployment */
 	UPROPERTY(config)
 	FString DeploymentTags;
+
+	UPROPERTY(config)
+	bool bIsAutoGenerateCloudConfigEnabled;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
@@ -621,6 +627,12 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);
+	FORCEINLINE bool ShouldAutoGenerateCloudLaunchConfig() const
+	{
+		return bIsAutoGenerateCloudConfigEnabled;
 	}
 
 	void SetBuildAndUploadAssembly(bool bBuildAndUpload);

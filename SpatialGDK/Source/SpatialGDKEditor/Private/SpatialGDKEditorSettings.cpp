@@ -46,6 +46,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
+	, bStopLocalDeploymentOnEndPIE(false)
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, CookAndGeneratePlatform("")
@@ -67,10 +68,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-#if PLATFORM_MAC
-	return CompatibilityModeRuntimeVersion;
-#endif
-
 	switch (Variant)
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
@@ -235,6 +232,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
+{
+	bIsAutoGenerateCloudConfigEnabled = IsEnabled;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetBuildAndUploadAssembly(bool bBuildAndUpload)
 {
 	bBuildAndUploadAssembly = bBuildAndUpload;
@@ -390,7 +393,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
 		bValid = false;
 	}
-	if (GetPrimaryLaunchConfigPath().IsEmpty())
+	if (GetPrimaryLaunchConfigPath().IsEmpty() && !bIsAutoGenerateCloudConfigEnabled)
 	{
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
 		bValid = false;
@@ -481,11 +484,7 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-#if PLATFORM_MAC
-	switch (ESpatialOSRuntimeVariant::CompatibilityMode)
-#else
 	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-#endif
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
 		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
