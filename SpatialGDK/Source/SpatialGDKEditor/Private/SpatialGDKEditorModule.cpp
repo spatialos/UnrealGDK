@@ -101,11 +101,11 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 		
 		if (bSuccess)
 		{
-			UE_LOG(LogSpatialGDKEditorModule, Log, TEXT("%s"), *LOCTEXT("ProxyStartedSuccessfully", "Successfully started local receptionist proxy server!").ToString());
+			UE_LOG(LogSpatialGDKEditorModule, Log, TEXT("Successfully started local receptionist proxy server!"));
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditorModule, Error, TEXT("%s"), *LOCTEXT("FailedToStartProxy", "Failed to start local receptionist proxy server").ToString());
+			UE_LOG(LogSpatialGDKEditorModule, Error, TEXT("Failed to start local receptionist proxy server"));
 		}
 
 		return bSuccess;

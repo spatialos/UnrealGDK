@@ -241,7 +241,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	// Check if process run successfully
 	if (!ProxyServerProcHandle.IsValid())
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %s, Error Message: %s"), ExitCode, StartResult);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %s, Error Message: %s"), ExitCode, *StartResult);
 		return false;
 	}
 
