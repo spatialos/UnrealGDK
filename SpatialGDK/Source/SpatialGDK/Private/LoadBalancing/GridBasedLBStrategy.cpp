@@ -68,7 +68,7 @@ TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
 }
 
-bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
+bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor)
 {
 	if (!IsReady())
 	{

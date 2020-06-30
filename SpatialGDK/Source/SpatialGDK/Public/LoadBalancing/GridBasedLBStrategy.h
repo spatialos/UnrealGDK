@@ -40,7 +40,7 @@ public:
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
+	virtual bool ShouldHaveAuthority(const AActor& Actor) override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
@@ -66,11 +66,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"), Category = "Grid Based Load Balancing")
 	float InterestBorder;
 
-private:
-
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
 
 	static bool IsInside(const FBox2D& Box, const FVector2D& Location);
+
+private:
+
 };

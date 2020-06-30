@@ -40,7 +40,7 @@ public:
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
+	virtual bool ShouldHaveAuthority(const AActor& Actor) { return false; }
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
 
 	/**
