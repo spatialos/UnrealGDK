@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 
+### Bug fixes:
+- `Cloud Deployment Name` field in the dropdown now refers to the same property as `Deployment Name` in the Cloud Deployment Configuration window, so the `Start Deployment` toolbar button will now use the name specified in the dropdown when quickly starting the new deployment without going through the Cloud Deployment Configuration window.
+- `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
+- Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
+
 ## [`0.10.0`] - 2020-06-15
 
 ### New Known Issues:
@@ -75,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The SpatialOS project name can now be modified via the **SpatialOS Editor Settings**.
 - Replaced the `Generate From Current Map` button from the `Cloud Deployment Configuration` window by `Automatically Generate Launch Configuration` checkbox. If ticked, it generates an up to date configuration from the current map when selecting the `Start Deployment` button.
 
-## Bug fixes:
+### Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
@@ -151,7 +156,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
 - Automatically remove UE4CommandLine.txt after finishing a Launch on device session on an Android device (only UnrealEngine 4.24 or above). This is done to prevent the launch session command line from overriding the one built into the APK.
 
-## Bug fixes:
+### Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
 - We now take the `OverrideSpatialNetworking` command line argument into account as early as possible (previously, `LocalDeploymentManager` queried `bSpatialNetworking` before the command line was parsed).
 - Servers now maintain interest in `AlwaysRelevant` Actors.
