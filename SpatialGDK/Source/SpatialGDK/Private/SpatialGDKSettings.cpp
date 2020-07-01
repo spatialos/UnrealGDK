@@ -70,6 +70,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
+	, QueuedOutgoingRPCRetryTime(1.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -221,17 +222,13 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 {
 	ServicesRegion = NewRegion;
-	SaveConfig();
+
+	// Save in default config so this applies for other platforms e.g. Linux, Android.
+	UProperty* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
 }
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
-#if UE_EDITOR || UE_SERVER
-	return false;
-#else
-	bool bIsServer = false;
-	const TCHAR* CommandLine = FCommandLine::Get();
-	FParse::Bool(CommandLine, TEXT("-server"), bIsServer);
-	return !bIsServer && bPreventClientCloudDeploymentAutoConnect;
-#endif
+	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };

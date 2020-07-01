@@ -70,8 +70,10 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
 	if (World != nullptr)
 	{
-		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-		return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0;
+		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+		{
+			return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0 && WorldSettings->IsMultiWorkerEnabled();
+		}
 	}
 
 	return false;
@@ -102,8 +104,20 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 		return false;
 	}
 
+	if (World->IsNetMode(NM_Client))
+	{
+		return false;
+	}
+
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
+		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
+		if (!SpatialNetDriver->IsReady())
+		{
+			UE_LOG(LogSpatial, Error, TEXT("Called IsActorGroupOwnerForClass before NotifyBeginPlay has been called is invalid. Actor class: %s"), *GetNameSafe(ActorClass));
+			return true;
+		}
+
 		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
 		{
 			return LBStrategy->CouldHaveAuthority(ActorClass);

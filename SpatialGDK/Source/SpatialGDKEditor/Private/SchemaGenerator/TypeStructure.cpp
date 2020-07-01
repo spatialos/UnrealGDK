@@ -394,6 +394,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 			switch (PropertyInfo->ReplicationData->Condition)
 			{
 			case COND_AutonomousOnly:
+			case COND_ReplayOrOwner:
 			case COND_OwnerOnly:
 				Group = REP_SingleClient;
 				break;
