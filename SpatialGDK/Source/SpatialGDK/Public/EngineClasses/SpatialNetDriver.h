@@ -259,7 +259,7 @@ private:
 	void ServerReplicateActors_HandleLoadBalancing(TArray<FNetworkObjectInfo*>& ConsiderList, TArray<FMigrationInfo>& OutMigrationInfo);
 	void ServerReplicateActors_ProcessMigration(const TArray<FMigrationInfo>& MigrationInfo);
 	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
-	void CollectActorsToMigrate(AActor* HierarchyActor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination, TArray<FMigrationInfo>& OutMigrationInfo, TSet<FNetworkObjectInfo*> OutAdditionalConsider);
+	void CollectActorsToMigrate(AActor* HierarchyActor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination, TArray<FMigrationInfo>& OutMigrationInfo, TSet<FNetworkObjectInfo*>& OutAdditionalConsider);
 
 #endif
 

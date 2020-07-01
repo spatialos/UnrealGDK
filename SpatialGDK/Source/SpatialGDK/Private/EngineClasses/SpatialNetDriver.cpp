@@ -1484,7 +1484,7 @@ void USpatialNetDriver::GetLatestAuthorityChangeFromHierarchy(const AActor* Hier
 	}
 }
 
-void USpatialNetDriver::CollectActorsToMigrate(AActor* HierarchyActor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination, TArray<FMigrationInfo>& OutMigrationInfo, TSet<FNetworkObjectInfo*> OutAdditionalConsider)
+void USpatialNetDriver::CollectActorsToMigrate(AActor* HierarchyActor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination, TArray<FMigrationInfo>& OutMigrationInfo, TSet<FNetworkObjectInfo*>& OutAdditionalConsider)
 {
 	if (HierarchyActor->GetIsReplicated()
 	&& HierarchyActor != OriginalActorBeingConsidered
