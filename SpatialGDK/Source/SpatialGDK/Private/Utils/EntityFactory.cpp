@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
@@ -367,21 +368,24 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 	}
 
-	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
-
-	// Create AuthorityDelegation from EntityACL component IDs.
-	AuthorityDelegationMap DelegationMap;
-	const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningEntityId(Actor);
-	const Worker_EntityId AuthoritativeServerPartitionId = SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID;
-
-	for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 	{
-		const Worker_ComponentId ComponentId = ComponentIdIt.Key();
-		const Worker_PartitionId PartitionId = IsClientAuthoritativeComponent(ComponentId) ? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
-		DelegationMap.Add(ComponentId, PartitionId);
+		// Create AuthorityDelegation from EntityACL component IDs.
+		AuthorityDelegationMap DelegationMap;
+		const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningEntityId(Actor);
+		const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
+
+		for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
+		{
+			const Worker_ComponentId ComponentId = ComponentIdIt.Key();
+			const Worker_PartitionId PartitionId = IsClientAuthoritativeComponent(ComponentId) ? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
+			DelegationMap.Add(ComponentId, PartitionId);
+		}
+		DelegationMap.Add(AuthorityDelegation::ComponentId, AuthoritativeServerPartitionId);
+		ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	}
-	DelegationMap.Add(AuthorityDelegation::ComponentId, AuthoritativeServerPartitionId);
-	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+
+	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
 	return ComponentDatas;
 }
@@ -457,6 +461,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 	const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker)
 {
+	check(GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing);
+
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);

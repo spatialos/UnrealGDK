@@ -1285,6 +1285,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
 		}
 
+		// ALLY SHOULD THIS BE THE LOCAL WORKER ID???????????????????????????????
 		Sender->SendAuthorityDelegationUpdate(EntityId, NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 
 		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;

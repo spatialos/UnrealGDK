@@ -57,7 +57,7 @@ inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const AActor* Act
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->ConnectingClientSystemEntityId;
+		return NetConnection->ConnectionClientWorkerSystemEntityId;
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;

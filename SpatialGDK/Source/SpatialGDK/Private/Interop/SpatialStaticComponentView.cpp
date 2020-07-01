@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialStaticComponentView.h"
 
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
@@ -93,6 +94,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 		Data = MakeUnique<SpatialGDK::ServerRPCEndpointLegacy>(Op.data);
 		break;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::AuthorityIntent>(Op.data);
+		break;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ClientEndpoint>(Op.data);
 		break;
@@ -152,6 +156,9 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 		Component = GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(Op.entity_id);
+		break;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
 		break;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::ClientEndpoint>(Op.entity_id);

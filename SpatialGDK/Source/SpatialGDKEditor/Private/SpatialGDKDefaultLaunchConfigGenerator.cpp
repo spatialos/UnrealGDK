@@ -198,7 +198,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 	return false;
 }
 
-bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
+bool ValidateGeneratedLaunchConfig(FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
 {
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
 
@@ -216,6 +216,18 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 			return false;
 		}
 	}
+
+	if (SpatialGDKRuntimeSettings->bEnableUserSpaceLoadBalancing)
+	{
+		// does this work lol
+		const FString EnableUSLBFlag = TEXT("enable_user_space_authority_assigner");
+		const FString* USLBSetting = LaunchConfigDesc.World.LegacyFlags.Find(EnableUSLBFlag);
+		if (USLBSetting == nullptr || !USLBSetting->Equals(TEXT("true")))
+		{
+			LaunchConfigDesc.World.LegacyFlags.Add(EnableUSLBFlag, TEXT("true"));
+		}
+	}
+
 	return true;
 }
 

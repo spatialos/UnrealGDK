@@ -103,9 +103,16 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest()
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// In USLB, we put the load balancing strategy interest query on the partition entity.
+	// Without USLB, we need to keep the query on the server worker entity.
+	if (!SpatialGDKSettings->bEnableUserSpaceLoadBalancing)
+	{
+		return CreatePartitionInterest(LBStrategy, VirtualWorker);
+	}
 
 	// Build the Interest component as we go by updating the component-> query list mappings.
 	Interest ServerInterest;
@@ -113,18 +120,12 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	Query ServerQuery;
 	QueryConstraint Constraint;
 
-	// Set the result type of the query
+	// Ensure server worker receives always relevant entities.
 	ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-
-	// Ensure server worker receives always relevant entities
 	ServerQuery.Constraint = CreateAlwaysRelevantConstraint();
-	
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
-	// Add another query to get the worker system entities.
-	// It allows us to know when a client has disconnected.
-	// TODO UNR-3042 : Migrate the VirtualWorkerTranslationManager to use the checked-out worker components instead of making a query.
-
+	// Workers have interest in all system worker entities, probably for a good reason?
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
@@ -137,15 +138,8 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 {
 	Interest PartitionInterest;
 
-	Query PartitionQuery;
-	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-	{
-		PartitionQuery.ResultComponentIds = InterestFactory::ServerNonAuthInterestResultType;
-	}
-	else
-	{
-		PartitionQuery.FullSnapshotResult = true;
-	}
+	Query PartitionQuery{};
+	PartitionQuery.ResultComponentIds = InterestFactory::ServerNonAuthInterestResultType;
 
 	QueryConstraint NewConstraint;
 	// Make sure we have the large constraint at the front. This is more likely to be efficient.
@@ -155,7 +149,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::POSITION_COMPONENT_ID, PartitionQuery);
 
 	Query SystemWorkerEntityQuery;
-	SetResultType(SystemWorkerEntityQuery, SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID });
+	SystemWorkerEntityQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	SystemWorkerEntityQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::POSITION_COMPONENT_ID, SystemWorkerEntityQuery);
 

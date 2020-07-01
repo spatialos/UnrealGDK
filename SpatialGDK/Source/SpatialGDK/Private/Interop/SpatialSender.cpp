@@ -258,25 +258,30 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
 
-	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::INTEREST_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
-
 	TArray<FWorkerComponentData> Components;
+
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerEntityId()).CreateServerWorkerData());
 	check(NetDriver != nullptr);
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest().CreateInterestData());
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		AuthorityDelegationMap DelegationMap;
+		DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::INTEREST_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, EntityId);
+		Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	}
+
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
@@ -290,7 +295,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 		}
 		USpatialSender* Sender = WeakSender.Get();
 
-		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+		if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing && Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			// SUPER MEGA DEATH HACK
@@ -368,7 +373,8 @@ void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntit
 	UE_LOG(LogSpatialSender, Log, TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId. %lld. "
 		"PartitionId: %lld"), *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
+	// Need to handle response?
+	Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
 }
 
 void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents)
@@ -611,26 +617,31 @@ void USpatialSender::SendAuthorityDelegationUpdate(Worker_EntityId EntityId, Vir
 
 	const Worker_ComponentId ClientRpcAuthComponent = SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer());
 
+	// Remove logic for the below, I don't really understand it.
+
 	// There's a case where this function is called after a Tombstone component is added to the entity (when a startup Actor is deleted).
-	// In this case, we won't be able to access the Actor* via the package map since it's been deleted. Currently we use the Actor* to grab the
+	// In this case, we won't be able to access the Actor* via the package map (since the Actor was removed when the Tombstone was added).
+	// Currently, we use the Actor* to grab the
 	// client worker partition ID that should be authoritative over the Heartbeat and client RPC endpoint components (if the entity has them).
 	// As a workaround, since the delegation of deleted Actors should be relevant, we'll just leave the partition ID as invalid if the Actor*
 	// cannot be retrieved.
 	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-	const Worker_PartitionId ClientWorkerPartitionId = Actor != nullptr ?
-		GetConnectionOwningEntityId(Actor) :
-		SpatialConstants::INVALID_ENTITY_ID;
+	const Worker_PartitionId ClientWorkerPartitionId =
+		//Actor != nullptr ?
+		GetConnectionOwningEntityId(Actor)
+		//: SpatialConstants::INVALID_ENTITY_ID
+	;
 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
             || ComponentId == ClientRpcAuthComponent)
 		{
-			if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
-			{
-				UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegaiton update"
-					" for entity %lld. This should happen only when startup Actors are deleted"), *NetDriver->Connection->GetWorkerId(), EntityId);
-			}
+			// if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
+			// {
+			// 	UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegaiton update"
+			// 		" for entity %lld. This should happen only when startup Actors are deleted"), *NetDriver->Connection->GetWorkerId(), EntityId);
+			// }
 			AuthorityDelegationComponent->Delegations.FindOrAdd(ComponentId, ClientWorkerPartitionId);
 			continue;
 		}

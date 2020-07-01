@@ -219,6 +219,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
+	/** If USLB will be enabled. */
+	UPROPERTY(EditAnywhere, config, Category = "Load Balancing")
+	bool bEnableUserSpaceLoadBalancing;
+
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
