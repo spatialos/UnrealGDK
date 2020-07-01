@@ -16,7 +16,7 @@
 namespace SpatialGDK
 {
 
-inline AActor* GetHierarchyRoot(const AActor* Actor)
+inline AActor* GetTopmostOwner(const AActor* Actor)
 {
 	check(Actor != nullptr);
 
@@ -34,6 +34,12 @@ inline AActor* GetHierarchyRoot(const AActor* Actor)
 	return Owner;
 }
 
+inline AActor* GetHierarchyRoot(const AActor* Actor)
+{
+	AActor* TopmostOwner = GetTopmostOwner(Actor);
+	return TopmostOwner != nullptr ? TopmostOwner : const_cast<AActor*>(Actor);
+}
+
 inline FString GetConnectionOwningWorkerId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
@@ -42,6 +48,23 @@ inline FString GetConnectionOwningWorkerId(const AActor* Actor)
 	}
 
 	return FString();
+}
+
+template <typename Functor>
+void ForeachReplicatedActorInHierarchy(AActor* HierarchyActor, Functor&& InFunctor)
+{
+	if (HierarchyActor)
+	{
+		if (HierarchyActor->GetIsReplicated())
+		{
+			InFunctor(HierarchyActor);
+		}
+
+		for (AActor* Child : HierarchyActor->Children)
+		{
+			ForeachReplicatedActorInHierarchy(Child, InFunctor);
+		}
+	}
 }
 
 inline FVector GetActorSpatialPosition(const AActor* InActor)

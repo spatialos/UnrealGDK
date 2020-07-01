@@ -24,7 +24,6 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -79,22 +78,6 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 
 	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxSendingChangeHistory;
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
-}
-
-void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, const AActor* HierarchyActor, const AActor* OriginalActorBeingReplicated)
-{
-	if (HierarchyActor->GetIsReplicated() && HierarchyActor != OriginalActorBeingReplicated)
-	{
-		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
-		{
-			Channel->ReplicateActor();
-		}
-	}
-
-	for (const AActor* Child : HierarchyActor->Children)
-	{
-		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActorBeingReplicated);
-	}
 }
 
 } // end anonymous namespace
@@ -446,25 +429,6 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	return HandoverChanged;
 }
 
-void USpatialActorChannel::GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp)
-{
-	if (HierarchyActor->GetIsReplicated())
-	{
-		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
-		{
-			if (Channel->AuthorityReceivedTimestamp > OutTimestamp)
-			{
-				OutTimestamp = Channel->AuthorityReceivedTimestamp;
-			}
-		}
-	}
-
-	for (const AActor* Child : HierarchyActor->Children)
-	{
-		GetLatestAuthorityChangeFromHierarchy(Child, OutTimestamp);
-	}
-}
-
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
@@ -504,6 +468,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FString Error(FString::Printf(TEXT("ReplicateActor called while already replicating! %s"), *Describe()));
 		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
+		ensureMsgf(false, TEXT("%s"), *Error);
 		ensureMsgf(false, TEXT("%s"), *Error);
 		return 0;
 	}
@@ -743,64 +708,6 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
-	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-	if (NetDriver->LoadBalanceStrategy != nullptr &&
-		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
-	{
-		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
-		{
-			const AActor* NetOwner = Actor->GetNetOwner();
-
-			uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
-			if (NetOwner != nullptr)
-			{
-				GetLatestAuthorityChangeFromHierarchy(NetOwner, HierarchyAuthorityReceivedTimestamp);
-			}
-
-			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
-			const float MigrationBackoffTimeInSeconds = 1.0f;
-
-			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
-			{
-				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
-			}
-			else
-			{
-				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
-				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-				{
-					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
-				}
-				else
-				{
-					Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
-
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
-
-					if (NetOwner != nullptr)
-					{
-						ForceReplicateOnActorHierarchy(NetDriver, NetOwner, Actor);
-					}
-				}
-			}
-		}
-
-		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
-		{
-			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-			if (DebuggingInfo->IsLocked != bIsLocked)
-			{
-				DebuggingInfo->IsLocked = bIsLocked;
-				FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-				NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-			}
-		}
-	}
 #if USE_NETWORK_PROFILER
 	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
 #endif

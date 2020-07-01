@@ -250,6 +250,17 @@ private:
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);
 	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
+
+	struct FMigrationInfo
+	{
+		AActor* ActorToMigrate;
+		VirtualWorkerId Destination;
+	};
+	void ServerReplicateActors_HandleLoadBalancing(TArray<FNetworkObjectInfo*>& ConsiderList, TArray<FMigrationInfo>& OutMigrationInfo);
+	void ServerReplicateActors_ProcessMigration(const TArray<FMigrationInfo>& MigrationInfo);
+	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
+	void CollectActorsToMigrate(AActor* HierarchyActor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination, TArray<FMigrationInfo>& OutMigrationInfo, TSet<FNetworkObjectInfo*> OutAdditionalConsider);
+
 #endif
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
