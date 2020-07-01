@@ -229,7 +229,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		bPersistSpatialConnection = URL.HasOption(*SpatialConstants::ClientsStayConnectedURLOption);
 	}
 
-	if (!bPersistSpatialConnection)
+	if (GameInstance->GetSpatialConnectionManager() == nullptr)
+	{
+		GameInstance->CreateNewSpatialConnectionManager();
+	}
+	else if (!bPersistSpatialConnection)
 	{
 		GameInstance->DestroySpatialConnectionManager();
 		GameInstance->CreateNewSpatialConnectionManager();
@@ -610,6 +614,12 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 
 void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bEnableMultiWorkerDebuggingWarnings)
+	{
+		return;
+	}
+
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
@@ -748,6 +758,12 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		return;
 	}
 
+	if (NetDriver->LoadBalanceStrategy->GetMinimumRequiredWorkers() > 1)
+	{
+		UE_LOG(LogGameMode, Error, TEXT("Server travel is not supported on a deployment with multiple workers."));
+		return;
+	}
+
 	NetDriver->GlobalStateManager->ResetGSM();
 
 	GameMode->StartToLeaveMap();
@@ -830,6 +846,11 @@ void USpatialNetDriver::BeginDestroy()
 		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
+
+			// Flush the connection and wait a moment to allow the message to propagate.
+			// TODO: UNR-3697 - This needs to be handled more correctly
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
 		}
 
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
@@ -2510,6 +2531,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 	else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 	{
+		GlobalStateManager->QueryTranslation();
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
 		return false;
 	}

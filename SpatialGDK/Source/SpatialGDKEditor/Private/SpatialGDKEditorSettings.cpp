@@ -46,11 +46,13 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
+	, bStopLocalDeploymentOnEndPIE(false)
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
+	, bIsAutoGenerateCloudConfigEnabled(true)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
@@ -62,14 +64,11 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
+	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-#if PLATFORM_MAC
-	return CompatibilityModeRuntimeVersion;
-#endif
-
 	switch (Variant)
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
@@ -187,7 +186,8 @@ void USpatialGDKEditorSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 
 void USpatialGDKEditorSettings::SetSnapshotPath(const FString& Path)
 {
-	SnapshotPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	// If a non-empty path is specified, convert it to full, otherwise just empty the field.
+	SnapshotPath.FilePath = Path.IsEmpty() ? TEXT("") : FPaths::ConvertRelativePathToFull(Path);
 	SaveConfig();
 }
 
@@ -230,6 +230,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayerCluster(const FString& NewClus
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
+{
+	bIsAutoGenerateCloudConfigEnabled = IsEnabled;
 	SaveConfig();
 }
 
@@ -388,7 +394,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
 		bValid = false;
 	}
-	if (GetPrimaryLaunchConfigPath().IsEmpty())
+	if (GetPrimaryLaunchConfigPath().IsEmpty() && !bIsAutoGenerateCloudConfigEnabled)
 	{
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
 		bValid = false;
@@ -479,11 +485,7 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-#if PLATFORM_MAC
-	switch (ESpatialOSRuntimeVariant::CompatibilityMode)
-#else
 	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-#endif
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
 		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
