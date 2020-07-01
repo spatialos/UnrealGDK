@@ -24,7 +24,7 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
-	InternalAck = 1;
+	SetInternalAck(true);
 }
 
 void USpatialNetConnection::BeginDestroy()
