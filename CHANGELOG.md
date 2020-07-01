@@ -90,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
 
 - The SpatialOS GDK for Unreal is now released automatically using Buildkite CI. This should result in more frequent releases.
+- Improbable now measure the non-functional characteristics of the GDK in Buildkite CI. This enables us to reason about and improve these characteristics. We track them as non-functional requirements (NFRs).
+- The NFR pipeline now runs with a density of 8, up from 3. This a more representative, game-like scenario.
 
 ## [`0.9.0`] - 2020-05-05
 
