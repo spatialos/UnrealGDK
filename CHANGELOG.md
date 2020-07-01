@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicated properties using the `COND_SkipOwner` replication condition could still replicate in the first few frames of an actor becoming owned (for example by possessing a pawn, or setting the `Owner` field on an actor, so that it is ultimately owned by a `PlayerController`).
 
 ### Breaking Changes:
-- The new SpatialOS Runtime requires the latest spatial CLI version. Run 'spatial update' to get the latest version.
+- The new SpatialOS Runtime requires the latest spatial CLI version. Run `spatial update` to get the latest version.
+- Old snapshots are not compatible with this UnrealGDK version, you must generate new snapshots after upgrading to this version.
 - Inspector V1 is incompatible with the new SpatialOS Runtime. Inspector V2 is used by default instead.
 - Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
@@ -83,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 - Fixed a rare server crash that could occur when closing an actor channel right after attaching a dynamic subobject to that actor.
 - Fixed a defect in `InstallGDK.bat` which sometimes caused it to incorrectly report `Error: Could not clone...` when repositories had been cloned correctly.
+- Actors from the same ownership hierarchy are now handled together when they are load-balanced.
 
 ### Internal:
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
