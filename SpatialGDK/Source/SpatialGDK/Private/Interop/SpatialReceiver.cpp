@@ -1956,7 +1956,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 	}
 	else
 	{
-		// Get the supposedly net owned actor
+		// Get the RPC target Actor.
 		AActor* Actor = Cast<AActor>(TargetObject);
 		if (Actor == nullptr)
 		{

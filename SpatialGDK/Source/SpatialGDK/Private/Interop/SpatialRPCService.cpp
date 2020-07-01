@@ -427,7 +427,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue(), RPCId);
+				const bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue(), RPCId);
 				if (!bKeepExtracting)
 				{
 					break;
