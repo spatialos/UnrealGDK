@@ -1486,7 +1486,9 @@ void USpatialNetDriver::GetLatestAuthorityChangeFromHierarchy(const AActor* Hier
 
 void USpatialNetDriver::CollectActorsToMigrate(AActor* HierarchyActor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination, TArray<FMigrationInfo>& OutMigrationInfo, TSet<FNetworkObjectInfo*> OutAdditionalConsider)
 {
-	if (HierarchyActor->GetIsReplicated() && HierarchyActor != OriginalActorBeingConsidered)
+	if (HierarchyActor->GetIsReplicated()
+	&& HierarchyActor != OriginalActorBeingConsidered
+	&& HierarchyActor->HasAuthority())
 	{
 		if(FNetworkObjectInfo* Info = FindNetworkObjectInfo(HierarchyActor))
 		{
@@ -1512,6 +1514,11 @@ void USpatialNetDriver::ServerReplicateActors_HandleLoadBalancing(TArray<FNetwor
 
 		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			continue;
+		}
+
+		if (!Actor->HasAuthority())
 		{
 			continue;
 		}
@@ -1581,18 +1588,6 @@ void USpatialNetDriver::ServerReplicateActors_HandleLoadBalancing(TArray<FNetwor
 		AActor* Actor = ActorInfo->Actor;
 
 		if (Actor->IsPendingKillPending())
-		{
-			continue;
-		}
-
-		if (Actor->GetRemoteRole() != ROLE_Authority)
-		{
-			continue;
-		}
-
-		// This actor may belong to a different net driver, make sure this is the correct one
-		// (this can happen when using beacon net drivers for example)
-		if (Actor->GetNetDriverName() != NetDriverName)
 		{
 			continue;
 		}
