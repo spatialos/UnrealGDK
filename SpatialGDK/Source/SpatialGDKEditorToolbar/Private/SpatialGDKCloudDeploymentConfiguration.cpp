@@ -227,7 +227,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetPrimaryDeploymentName()))
+									.Text(this, &SSpatialGDKCloudDeploymentConfiguration::GetPrimaryDeploymentNameText)
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentNameCommited)
 									.ErrorReporting(DeploymentNameInputErrorReporting)
@@ -767,6 +767,12 @@ void SSpatialGDKCloudDeploymentConfiguration::OnDeploymentAssemblyCommited(const
 
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetAssemblyName(InputAssemblyName);
+}
+
+FText SSpatialGDKCloudDeploymentConfiguration::GetPrimaryDeploymentNameText() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FText::FromString(SpatialGDKEditorSettings->GetPrimaryDeploymentName());
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
