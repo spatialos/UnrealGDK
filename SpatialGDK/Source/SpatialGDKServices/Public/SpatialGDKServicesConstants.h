@@ -48,5 +48,5 @@ namespace SpatialGDKServicesConstants
 	const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
 
 	const FString ProxyFileDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable")));
-	const FString ProxyInfoFilename = TEXT("ServerReceptionistProxyInfo.json");
+	const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("ServerReceptionistProxyInfo.json"));
 }

@@ -2,6 +2,7 @@
 
 #include "LocalReceptionistProxyServerManager.h"
 
+#include "HAL/PlatformFilemanager.h"
 #include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonReader.h"
@@ -17,11 +18,6 @@
 DEFINE_LOG_CATEGORY(LogLocalReceptionistProxyServerManager);
 
 #define LOCTEXT_NAMESPACE "FLocalReceptionistProxyServerManager"
-
-namespace
-{
-	static const FString ProxyInfoFilePath = FPaths::Combine(SpatialGDKServicesConstants::ProxyFileDirectory, SpatialGDKServicesConstants::ProxyInfoFilename);
-}
 
 FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 	: RunningCloudDeploymentName(TEXT(""))
@@ -128,6 +124,7 @@ bool FLocalReceptionistProxyServerManager::TryStopReceptionistProxyServer()
 		SpatialCommandUtils::StopLocalReceptionistProxyServer(ProxyServerProcHandle);
 		ProxyServerProcHandle.Reset();
 		bProxyIsRunning = false;
+		DeletePIDFile();
 		return true;
 	}
 
@@ -140,7 +137,7 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 	FString ProxyInfoFileResult;
 	TSharedPtr<FJsonObject> JsonParsedProxyInfoFile;
 
-	if (FFileHelper::LoadFileToString(ProxyInfoFileResult, *ProxyInfoFilePath))
+	if (FFileHelper::LoadFileToString(ProxyInfoFileResult, *SpatialGDKServicesConstants::ProxyInfoFilePath))
 	{
 		if (FSpatialGDKServicesModule::ParseJson(ProxyInfoFileResult, JsonParsedProxyInfoFile))
 		{
@@ -148,12 +145,12 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 		}
 		else
 		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."), *ProxyInfoFilePath);
+			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
 		}
 	}
 	else
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Loading %s failed. Can't get proxy's PID."), *ProxyInfoFilePath);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Loading %s failed. Can't get proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
 	}
 
 	return nullptr;
@@ -162,20 +159,7 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 void FLocalReceptionistProxyServerManager::SetPIDInJson(const FString& PID)
 {
 	FString ProxyInfoFileResult;
-
-	// If file does not exist create an empty json file 
-	if (!FPaths::FileExists(ProxyInfoFilePath))
-	{
-		FFileHelper::SaveStringToFile(TEXT("{ }"), *ProxyInfoFilePath);
-	}
-
-	TSharedPtr<FJsonObject> JsonParsedProxyInfoFile = ParsePIDFile();
-	if (!JsonParsedProxyInfoFile.IsValid())
-	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to update PID(%s). Please ensure that the following file exists: %s"), *PID, *SpatialGDKServicesConstants::ProxyInfoFilename);
-		return;
-	}
-
+	TSharedPtr<FJsonObject> JsonParsedProxyInfoFile = MakeShareable(new FJsonObject());
 	JsonParsedProxyInfoFile->SetStringField("pid", PID);
 
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&ProxyInfoFileResult);
@@ -184,9 +168,9 @@ void FLocalReceptionistProxyServerManager::SetPIDInJson(const FString& PID)
 		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write PID to parsed proxy info file. Unable to serialize content to json file."));
 		return;
 	}
-	if (!FFileHelper::SaveStringToFile(ProxyInfoFileResult, *ProxyInfoFilePath))
+	if (!FFileHelper::SaveStringToFile(ProxyInfoFileResult, *SpatialGDKServicesConstants::ProxyInfoFilePath))
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::ProxyInfoFilename);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::ProxyInfoFilePath);
 	}
 }
 
@@ -201,11 +185,19 @@ FString FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID()
 			return PID;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("'pid' does not exist in %s. Can't read proxy's PID."), *ProxyInfoFilePath);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("'pid' does not exist in %s. Can't read proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
 	}
 
 	PID.Empty();
 	return PID;
+}
+
+void FLocalReceptionistProxyServerManager::DeletePIDFile()
+{
+	if (FPaths::FileExists(SpatialGDKServicesConstants::ProxyInfoFilePath))
+	{
+		FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SpatialGDKServicesConstants::ProxyInfoFilePath);
+	}
 }
 
 bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 ReceptionistPort)
@@ -227,11 +219,10 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 		if (!TryStopReceptionistProxyServer())
 		{
 			UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Failed to stop previous proxy server!"));
-		
 			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Stopped previous proxy server sucessfully!"));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Stopped previous proxy server successfully!"));
 	}
 
 	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode);
@@ -258,7 +249,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	RunningProxyReceptionistPort = ReceptionistPort;
 	bProxyIsRunning = true;
 
-	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local receptionist proxy server started sucessfully!"));
+	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local receptionist proxy server started successfully!"));
 
 	return true;
 }
