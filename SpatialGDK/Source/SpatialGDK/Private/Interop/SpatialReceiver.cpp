@@ -1934,7 +1934,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	}
 }
 
-FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
+FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& Params, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
 {
 	FRPCErrorInfo ErrorInfo = { TargetObject, Function };
 
@@ -1943,7 +1943,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	TSet<FUnrealObjectRef> MappedRefs;
-	RPCPayload PayloadCopy = Payload;
+	RPCPayload PayloadCopy = Params.Payload;
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs, UnresolvedRefs);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
@@ -1962,14 +1962,18 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			Actor = Cast<UActorComponent>(TargetObject)->GetOwner();
 		}
 
-		if (Actor->Role == ROLE_SimulatedProxy)
+		const bool bHasServerEndpointAuthority = StaticComponentView->HasAuthority(Params.ObjectRef.Entity, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
+		if (bHasServerEndpointAuthority &&
+			Actor->Role == ROLE_SimulatedProxy &&
+			Params.Type != ERPCType::NetMulticast)
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
-			ErrorInfo.bShouldDrop = true;
+			ErrorInfo.QueueCommand = ERPCQueueCommand::DropEntireQueue;
 		}
 		else
 		{
 			TargetObject->ProcessEvent(Function, Parms);
+			RPCService->IncrementAckedRPCID(Params.ObjectRef.Entity, Params.Type);
 			ErrorInfo.ErrorCode = ERPCResult::Success;
 		}
 	}
@@ -2013,13 +2017,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		bApplyWithUnresolvedRefs = true;
 	}
 
-	FRPCErrorInfo RPCErrorInfo = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
-	if (RPCErrorInfo.ErrorCode == ERPCResult::Success)
-	{
-		RPCService->IncrementAckedRPCID(Params.ObjectRef.Entity, Params.Type);
-	}
-
-	return RPCErrorInfo;
+	return ApplyRPCInternal(TargetObject, Function, Params, FString{}, bApplyWithUnresolvedRefs);
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)

@@ -131,7 +131,7 @@ private:
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
-	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
+	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& Params, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 

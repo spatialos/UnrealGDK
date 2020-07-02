@@ -66,7 +66,7 @@ namespace
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
 			QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			ErrorInfo.bShouldDrop ? TEXT("dropped") : TEXT("queued"),
+			ErrorInfo.QueueCommand == ERPCQueueCommand::ContinueProcessing ? TEXT("queued") : TEXT("dropped"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
@@ -98,8 +98,11 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, E
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
-		if (ApplyFunction(Params))
+		ERPCQueueCommand QueueCommand = ApplyFunction(Params);
+		switch (QueueCommand)
 		{
+		case ERPCQueueCommand::ContinueProcessing:
+		case ERPCQueueCommand::DropEntireQueue:
 			return;
 		}
 	}
@@ -114,12 +117,15 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		if (ApplyFunction(Params))
+		ERPCQueueCommand QueueCommand = ApplyFunction(Params);
+		switch (QueueCommand)
 		{
+		case ERPCQueueCommand::ContinueProcessing:
 			NumProcessedParams++;
-		}
-		else
-		{
+		case ERPCQueueCommand::DropEntireQueue:
+			RPCList.Empty();
+			return;
+		case ERPCQueueCommand::DropRPC:
 			break;
 		}
 	}
@@ -188,18 +194,21 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 	ProcessingFunction = Function;
 }
 
-bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
+ERPCQueueCommand FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	ensure(ProcessingFunction.IsBound());
 	FRPCErrorInfo ErrorInfo = ProcessingFunction.Execute(Params);
 
+	return ErrorInfo.QueueCommand;
+
 	if (ErrorInfo.Success())
 	{
-		return true;
+		return ERPCQueueCommand::ContinueProcessing;
 	}
 
 #if !UE_BUILD_SHIPPING
 	LogRPCError(ErrorInfo, QueueType, Params);
 #endif
-	return ErrorInfo.bShouldDrop;
+
+	return ErrorInfo.QueueCommand;
 }

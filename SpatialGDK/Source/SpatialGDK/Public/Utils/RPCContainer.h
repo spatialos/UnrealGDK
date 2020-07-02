@@ -43,6 +43,13 @@ enum class ERPCResult : uint8
 	Unknown
 };
 
+enum class ERPCQueueCommand : uint8_t
+{
+	ContinueProcessing,
+	DropRPC,
+	DropEntireQueue
+};
+
 enum class ERPCQueueType : uint8_t
 {
 	Send,
@@ -60,7 +67,7 @@ struct FRPCErrorInfo
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
-	bool bShouldDrop = false;
+	ERPCQueueCommand QueueCommand = ERPCQueueCommand::ContinueProcessing;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
@@ -107,7 +114,7 @@ private:
 	using RPCContainerType = TMap<ERPCType, FRPCMap>;
 
 	void ProcessRPCs(FArrayOfParams& RPCList);
-	bool ApplyFunction(FPendingRPCParams& Params);
+	ERPCQueueCommand ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
 
