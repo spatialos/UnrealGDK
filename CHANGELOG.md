@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We’ve combined the settings for offloading and load balancing and moved them from the Editor and Runtime Settings to be per map in the World Settings. For more information, see the [offloading tutorial](https://documentation.improbable.io/gdk-for-unreal/docs/multiserver-offloading-1-set-up).
 - We’ve removed the command-line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer`, and GDK load balancing is always enabled. To override a map's `Enable Multi Worker` setting, use the command-line flag `OverrideMultiWorker`.
 - It is now mandatory to run a deployment with result types (previously result types were enabled by default). We’ve removed the Runtime setting `bEnableResultTypes` to reflect this.
-- Whether an Actor is offloaded depends on whether the root owner of that Actor is offloaded. This might affect you if you're using functions such as `IsActorGroupOwnedForActor`.
+- Whether an Actor is offloaded depends on whether the root owner of that Actor is offloaded. This might affect you if you're using functions such as `IsActorGroupOwnerForActor`.
 - We’ve removed `QueuedOutgoingRPCWaitTime`. All RPC failure cases are now correctly queued or dropped.
 - We’ve removed `Max connection capacity limit` and `Login rate limit` from the generated worker configuration file, because we no longer support them.
 - We no longer support secure worker connections when you run your game within the Unreal Editor. We still support secure worker connections for packaged builds.
