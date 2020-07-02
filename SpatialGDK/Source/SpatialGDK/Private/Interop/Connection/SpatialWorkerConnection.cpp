@@ -209,9 +209,69 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 
 void USpatialWorkerConnection::QueueLatestOpList()
 {
+	if (Tracer == nullptr)
+	{
+		Tracer = USpatialLatencyTracer::GetTracer(this);
+
+	}
+
 	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
 	if (OpList->op_count > 0)
 	{
+#if TRACE_LIB_ACTIVE
+		if (Tracer)
+		{
+			for (uint32 i = 0; i < OpList->op_count; i++)
+			{
+				if (OpList->ops[i].op_type == WORKER_OP_TYPE_COMPONENT_UPDATE &&
+					(OpList->ops[i].op.component_update.update.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+						|| OpList->ops[i].op.component_update.update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+						|| OpList->ops[i].op.component_update.update.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID))
+				{
+					Schema_Object* SOW = Schema_GetComponentUpdateFields(OpList->ops[i].op.component_update.update.schema_type);
+					for (int32 j = 0; j < 128; j++)
+					{
+						if (Schema_GetObjectCount(SOW, j) > 0)
+						{
+							Schema_Object* SO = Schema_GetObject(SOW, j);
+							//Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(OpList->ops[i].op.component_update.update.schema_type);
+							TraceKey K = Tracer->ReadTraceFromSchemaObject(SO, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+						}
+					}
+				}
+				if (OpList->ops[i].op_type == WORKER_OP_TYPE_COMPONENT_UPDATE && OpList->ops[i].op.component_update.update.component_id == 11599)
+				{
+					Schema_Object* SOW = Schema_GetComponentUpdateFields(OpList->ops[i].op.component_update.update.schema_type);
+					//if (Schema_GetBytesLength(SOW, 46) == sizeof(improbable::trace::TraceId) && Schema_GetBytesLength(SOW, 47) == sizeof(improbable::trace::SpanId))
+					int l0 = Schema_GetUint32Count(SOW, 46);
+					int l1 = Schema_GetUint32Count(SOW, 47);
+					if (l0 == sizeof(improbable::trace::TraceId) && l1 == sizeof(improbable::trace::SpanId))
+					{
+						TArray<uint8> TraceId;
+						for (int i = 0; i < sizeof(improbable::trace::TraceId); i++)
+						{
+							TraceId.Push((uint8)Schema_IndexUint32(SOW, 46, i));
+						}
+						TArray<uint8> SpanId;
+						for (int i = 0; i < sizeof(improbable::trace::SpanId); i++)
+						{
+							SpanId.Push((uint8)Schema_IndexUint32(SOW, 47, i));
+						}
+
+						TraceKey K = Tracer->ReadTraceFromSchemaObject(&TraceId[0], &SpanId[0]);
+					}
+#if 0
+					USpatialNetDriver* nd = NULL;
+					if (Schema_GetObjectCount(SOW, 46) > 0 && Schema_GetObjectCount(SOW, 47) > 0)
+					{
+						Schema_Object* Trc = Schema_GetObject(SOW, 46);
+						Schema_Object* Span = Schema_GetObject(SOW, 47);
+					}
+#endif
+				}
+			}
+		}
+#endif
 		OpListQueue.Enqueue(OpList);
 	}
 	else

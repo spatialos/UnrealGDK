@@ -67,6 +67,8 @@ private:
 	virtual void Stop() override;
 	// End FRunnable Interface
 
+	USpatialLatencyTracer* Tracer{ nullptr };
+
 	void InitializeOpsProcessingThread();
 
 	template <typename T, typename... ArgsType>

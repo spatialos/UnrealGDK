@@ -253,6 +253,44 @@ void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey Key, Schema_
 	}
 }
 
+TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(const uint8_t* TraceBytes, const uint8_t* SpanBytes)
+{
+	FScopeLock Lock(&Mutex);
+
+	improbable::trace::SpanContext DestContext = ReadSpanContext(TraceBytes, SpanBytes);
+
+	TraceKey Key = InvalidTraceKey;
+
+	for (const auto& TracePair : TraceMap)
+	{
+		const TraceKey& _Key = TracePair.Key;
+		const TraceSpan& Span = TracePair.Value;
+
+		if (Span.context().trace_id() == DestContext.trace_id())
+		{
+			Key = _Key;
+			break;
+		}
+	}
+
+	if (Key != InvalidTraceKey)
+	{
+		TraceSpan* Span = TraceMap.Find(Key);
+
+		WriteKeyFrameToTrace(Span, TEXT("Local Trace - Schema Obj Read"));
+	}
+	else
+	{
+		FString SpanMsg = FormatMessage(TEXT("Remote Parent Trace - Schema Obj Read"));
+		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
+
+		Key = GenerateNewTraceKey();
+		TraceMap.Add(Key, MoveTemp(RetrieveTrace));
+	}
+
+	return Key;
+}
+
 TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId)
 {
 	FScopeLock Lock(&Mutex);
