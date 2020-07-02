@@ -472,8 +472,8 @@ void USpatialSender::FlushRPCService()
 	{
 		RPCService->PushOverflowedRPCs();
 
-		const TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
-		for (const SpatialRPCService::UpdateToSend& Update : RPCs)
+		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+		for (SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 		}
