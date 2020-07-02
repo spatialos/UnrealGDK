@@ -191,7 +191,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 	Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
 	FindPlayerStartAndProcessPlayerSpawn(RequestPayload, ClientWorkerId);
 
-	const Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
+	Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
 	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
 }
 
