@@ -148,10 +148,6 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
 		}
 	}
-	else
-	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Loading %s failed. Can't get proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
-	}
 
 	return nullptr;
 }
