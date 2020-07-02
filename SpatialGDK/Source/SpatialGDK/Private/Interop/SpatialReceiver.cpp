@@ -817,8 +817,8 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 			continue;
 		}
 
-		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
+		const Worker_ComponentData ComponentData = PendingAddComponent.Data->Data.GetWorkerComponentData();
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 		return GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
 	}
 
@@ -957,7 +957,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (PendingAddComponent.EntityId == EntityId)
 		{
-			ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
+			ApplyComponentDataOnActorCreation(EntityId, PendingAddComponent.Data->Data.GetWorkerComponentData(), *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
 		}
 	}
 
@@ -1313,7 +1313,7 @@ void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Wo
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-			ApplyComponentData(*Channel, *Object, *Data->ComponentData);
+			ApplyComponentData(*Channel, *Object, Data->Data.GetWorkerComponentData());
 		}
 		return;
 	}
@@ -1391,7 +1391,7 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair = MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId);
 
 		PendingAddComponentWrapper& AddComponent = PendingDynamicSubobjectComponents[EntityComponentPair];
-		ApplyComponentData(*Channel, *Subobject, *AddComponent.Data->ComponentData);
+		ApplyComponentData(*Channel, *Subobject, AddComponent.Data->Data.GetWorkerComponentData());
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
 
@@ -2595,9 +2595,10 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 			PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
 			LeaveCriticalSection();
 
-			for (QueuedOpForAsyncLoad& Op : AsyncLoadEntity.PendingOps)
+			OpList Ops = MoveTemp(AsyncLoadEntity.PendingOps).CreateOpList();
+			for (uint32 i = 0; i < Ops.Count; ++i)
 			{
-				HandleQueuedOpForAsyncLoad(Op);
+				HandleQueuedOpForAsyncLoad(Ops.Ops[i]);
 			}
 		}
 	}
@@ -2635,55 +2636,28 @@ void USpatialReceiver::QueueAddComponentOpForAsyncLoad(const Worker_AddComponent
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	// Skip queuing a duplicate AddComponent op.
-	if (AsyncLoadEntity.PendingOps.ContainsByPredicate([&Op](const QueuedOpForAsyncLoad& QueuedOp)
-	{
-		return QueuedOp.Op.op_type == WORKER_OP_TYPE_ADD_COMPONENT
-			&& QueuedOp.Op.op.add_component.entity_id == Op.entity_id
-			&& QueuedOp.Op.op.add_component.data.component_id && Op.data.component_id;
-	}))
-	{
-		return;
-	}
-
-	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.AcquiredData = Worker_AcquireComponentData(&Op.data);
-	NewOp.Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
-	NewOp.Op.op.add_component.entity_id = Op.entity_id;
-	NewOp.Op.op.add_component.data = *NewOp.AcquiredData;
-	AsyncLoadEntity.PendingOps.Add(NewOp);
+	AsyncLoadEntity.PendingOps.AddComponent(Op.entity_id, ComponentData::CreateCopy(Op.data.schema_type, Op.data.component_id));
 }
 
 void USpatialReceiver::QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op)
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
-	NewOp.Op.op.remove_component = Op;
-	AsyncLoadEntity.PendingOps.Add(NewOp);
+	AsyncLoadEntity.PendingOps.RemoveComponent(Op.entity_id, Op.component_id);
 }
 
 void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op)
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-	NewOp.Op.op.authority_change = Op;
-	AsyncLoadEntity.PendingOps.Add(NewOp);
+	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_id, static_cast<Worker_Authority>(Op.authority));
 }
 
 void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op)
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.AcquiredUpdate = Worker_AcquireComponentUpdate(&Op.update);
-	NewOp.Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
-	NewOp.Op.op.component_update.entity_id = Op.entity_id;
-	NewOp.Op.op.component_update.update = *NewOp.AcquiredUpdate;
-	AsyncLoadEntity.PendingOps.Add(NewOp);
+	AsyncLoadEntity.PendingOps.UpdateComponent(Op.entity_id, ComponentUpdate::CreateCopy(Op.update.schema_type, Op.update.component_id));
 }
 
 TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker_EntityId Entity)
@@ -2706,19 +2680,16 @@ TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker
 	return ExtractedAddComponents;
 }
 
-TArray<USpatialReceiver::QueuedOpForAsyncLoad> USpatialReceiver::ExtractAuthorityOps(Worker_EntityId Entity)
+EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_EntityId Entity)
 {
-	TArray<QueuedOpForAsyncLoad> ExtractedOps;
+	EntityComponentOpListBuilder ExtractedOps;
 	TArray<Worker_AuthorityChangeOp> RemainingOps;
 
 	for (const Worker_AuthorityChangeOp& Op : PendingAuthorityChanges)
 	{
 		if (Op.entity_id == Entity)
 		{
-			QueuedOpForAsyncLoad NewOp = {};
-			NewOp.Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-			NewOp.Op.op.authority_change = Op;
-			ExtractedOps.Add(NewOp);
+			ExtractedOps.SetAuthority(Entity, Op.component_id, static_cast<Worker_Authority>(Op.authority));
 		}
 		else
 		{
@@ -2729,23 +2700,21 @@ TArray<USpatialReceiver::QueuedOpForAsyncLoad> USpatialReceiver::ExtractAuthorit
 	return ExtractedOps;
 }
 
-void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
+void USpatialReceiver::HandleQueuedOpForAsyncLoad(const Worker_Op& Op)
 {
-	switch (Op.Op.op_type)
+	switch (Op.op_type)
 	{
 	case WORKER_OP_TYPE_ADD_COMPONENT:
-		OnAddComponent(Op.Op.op.add_component);
-		Worker_ReleaseComponentData(Op.AcquiredData);
+		OnAddComponent(Op.op.add_component);
 		break;
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		ProcessRemoveComponent(Op.Op.op.remove_component);
+		ProcessRemoveComponent(Op.op.remove_component);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		HandleActorAuthority(Op.Op.op.authority_change);
+		HandleActorAuthority(Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		OnComponentUpdate(Op.Op.op.component_update);
-		Worker_ReleaseComponentUpdate(Op.AcquiredUpdate);
+		OnComponentUpdate(Op.op.component_update);
 		break;
 	default:
 		checkNoEntry();
