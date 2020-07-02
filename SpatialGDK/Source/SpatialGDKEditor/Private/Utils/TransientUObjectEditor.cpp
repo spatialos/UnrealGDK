@@ -19,13 +19,21 @@ namespace
 	}
 
 	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
-	static bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
+	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 	{
+#if ENGINE_MINOR_VERSION <= 24
+		const UProperty& Property = PropertyAndParent.Property;
+#else
 		const FProperty& Property = PropertyAndParent.Property;
+#endif
 
 		if (bHaveTemplate)
 		{
+#if ENGINE_MINOR_VERSION <= 24
+			const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
+#else
 			const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
+#endif
 			const bool bDisableEditOnTemplate = PropertyOwnerClass
 				&& PropertyOwnerClass->IsNative()
 				&& Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);

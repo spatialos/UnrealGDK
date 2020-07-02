@@ -1122,9 +1122,6 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 			bFoundReadyConnection = true;
 
-			// ULTRA HACK
-			SpatialConnection->LastReceiveTime = SpatialConnection->Driver->Time;
-
 			// the view target is what the player controller is looking at OR the owning actor itself when using beacons
 			SpatialConnection->ViewTarget = SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
 		}

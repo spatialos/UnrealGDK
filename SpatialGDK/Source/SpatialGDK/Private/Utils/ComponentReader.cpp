@@ -194,7 +194,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			{
 
 				// This is mostly copied from ReceivePropertyHelper in RepLayout.cpp
-				auto GetSwappedCmd = [&Cmd, &Cmds, &Parents, bIsAuthServer, Replicator, &Channel]() -> const FRepLayoutCmd&
+				auto GetSwappedCmd = [&Cmd, &Cmds, &Parents, bIsAuthServer, &Replicator, &Channel, &Parent]() -> const FRepLayoutCmd&
 				{
 #if ENGINE_MINOR_VERSION >= 25
 					// Only swap Role/RemoteRole for actors

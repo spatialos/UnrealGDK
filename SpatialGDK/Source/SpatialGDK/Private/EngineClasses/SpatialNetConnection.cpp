@@ -24,7 +24,11 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
+#if ENGINE_MINOR_VERSION <= 24
+	InternalAck = 1;
+#else
 	SetInternalAck(true);
+#endif
 }
 
 void USpatialNetConnection::BeginDestroy()
