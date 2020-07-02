@@ -32,7 +32,9 @@ pushd "$(dirname "$0")"
                 -unattended \
                 -nullRHI \
                 -run=CookAndGenerateSchema \
-                -cookall
+                -map="${TEST_REPO_MAP}" \
+                -targetplatform=MacNoEditor \
+                -cooksinglepackage
                 
             "${UNREAL_EDITOR_PATH}" \
                 "${UPROJECT_PATH}" \

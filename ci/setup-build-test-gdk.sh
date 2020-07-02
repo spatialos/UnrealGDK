@@ -13,12 +13,20 @@ pushd "$(dirname "$0")"
     BUILD_HOME="${3:-"$(pwd)/../.."}"
 
     UNREAL_PATH="${BUILD_HOME}/UnrealEngine"
+<<<<<<< HEAD
     TEST_UPROJECT_NAME="UnrealGDKTestGyms"
     TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
     TEST_REPO_MAP="SpatialNetworkingMap"
     TEST_PROJECT_NAME="GDKTestGyms"
     CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}" 
     SLOW_NETWORKING_TESTS=false
+=======
+    TEST_UPROJECT_NAME="GDKTestGyms"
+    TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
+    TEST_REPO_MAP="EmptyGym"
+    TEST_PROJECT_NAME="GDKTestGyms"
+    CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}"
+>>>>>>> update ci scripts to run tests and use test gyms
 
     # Download Unreal Engine
     echo "--- get-unreal-engine"
@@ -45,26 +53,25 @@ pushd "$(dirname "$0")"
         "${BUILD_STATE}" \
         "${TEST_UPROJECT_NAME}${BUILD_TARGET}"
 
-    # TODO UNR-3164 - re-enable tests after we made sure they work for Mac; note: test execution changed, see .ps script
-    # echo "--- run-fast-tests"
-    # "${GDK_HOME}/ci/run-tests.sh" \
-    #     "${UNREAL_PATH}" \
-    #     "${TEST_PROJECT_NAME}" \
-    #     "${UPROJECT_PATH}" \
-    #     "FastTestResults" \
-    #     "NetworkingMap" \
-    #     "SpatialGDK+/Game/SpatialNetworkingMap" \
-    #     "True"
+    echo "--- run-fast-tests"
+    "${GDK_HOME}/ci/run-tests.sh" \
+        "${UNREAL_PATH}" \
+        "${TEST_PROJECT_NAME}" \
+        "${UPROJECT_PATH}" \
+        "TestResults" \
+        "${TEST_REPO_MAP}" \
+        ".SpatialGDK" \
+        "True"
 
-    # if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
-    #     echo "--- run-slow-networking-tests"
-    #     "${GDK_HOME}/ci/run-tests.sh" \
-    #         "${UNREAL_PATH}" \
-    #         "${TEST_PROJECT_NAME}" \
-    #         "${UPROJECT_PATH}" \
-    #         "VanillaTestResults" \
-    #         "NetworkingMap" \
-    #         "+/Game/NetworkingMap" \
-    #         ""
-    # fi
+    if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
+        echo "--- run-slow-networking-tests"
+        "${GDK_HOME}/ci/run-tests.sh" \
+            "${UNREAL_PATH}" \
+            "${TEST_PROJECT_NAME}" \
+            "${UPROJECT_PATH}" \
+            "SlowTestResults" \
+            "${TEST_REPO_MAP}" \
+            "+SpatialGDKSlow." \
+            "True"
+    fi
 popd
