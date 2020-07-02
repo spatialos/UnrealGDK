@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 If you are using the Standard Runtime variant, note the following compatibility issues:
 - The [old Inspector](https://documentation.improbable.io/spatialos-tools/docs/the-inspector) won’t work. You must use the [new Inspector](https://documentation.improbable.io/spatialos-tools/docs/the-new-inspector) instead.
 - In the [Platform SDK in C#](https://documentation.improbable.io/sdks-and-data/docs/platform-csharp-introduction), you can’t set [capacity limits](https://documentation.improbable.io/sdks-and-data/docs/platform-csharp-capacity-limiting) or use the [remote interaction service](https://documentation.improbable.io/sdks-and-data/docs/platform-csharp-remote-interactions). You also can’t use the Platform SDK to take snapshots of cloud deployments, but we’ll fix this snapshot issue in a future release.
-- You can't generate a snapshot of a cloud deployment. 
+- You can't generate a snapshot of a cloud deployment. We'll fix this in a future release.
 - In the [CLI](https://documentation.improbable.io/spatialos-tools/docs/cli-introduction), the following commands don’t work:
   - `spatial local worker replace`
   - `spatial project deployment worker replace`
