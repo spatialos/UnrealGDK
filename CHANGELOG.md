@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### New Known Issues:
 - Replicated properties that use the `COND_SkipOwner` replication condition can still replicate in the first few frames of an Actor becoming owned.
+- Microsoft have fixed a defect in MSVC that previously caused errors when building Unreal Engine. We documented a workaround for this issue in GDK version [`0.7.0-preview`](#070-preview---2019-10-11). If you set up the GDK on your computer between the release of `0.7.0` and `0.10.0`, you have performed this workaround, which is no longer necessary. To undo this workaround, follow these steps:
+1. Open Visual Studio Installer.
+1. Select **Modify** on your Visual Studio 2019 installation.
+1. In the **Installation details** section, clear all the checkboxes for workloads and components except **Visual Studio Code editor**.
+1. In the **Workloads** tab, select the following items:
+ - **Universal Windows Platform development**
+ - **.NET desktop development**
+  - You must also select the **.NET Framework 4.6.2 development tools**.
+ - **Desktop development with C++**
+5. Select **Modify** to confirm your changes.
 
 ### Breaking Changes:
 - The SpatialOS Runtime Standard variant requires the latest version of the SpatialOS CLI. Run `spatial update` to get the latest version.
@@ -109,6 +119,7 @@ If you need any of the functionality mentioned above, [change your Runtime varia
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
 
 - The SpatialOS GDK for Unreal is now released automatically using Buildkite CI. This should result in more frequent releases.
+- Improbable now measures the non-functional characteristics of the GDK in Buildkite CI. This enables us to reason about and improve these characteristics. We track them as non-functional requirements (NFRs).
 
 ## [`0.9.0`] - 2020-05-05
 
