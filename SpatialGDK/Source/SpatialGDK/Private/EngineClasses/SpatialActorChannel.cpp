@@ -1285,8 +1285,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
 		}
 
-		// ALLY SHOULD THIS BE THE LOCAL WORKER ID???????????????????????????????
-		Sender->SendAuthorityDelegationUpdate(EntityId, NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
+		NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 
 		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
 
@@ -1298,7 +1297,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
-	Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	const Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	if (SavedInterestBucketComponentID != NewInterestBucketComponentId)
 	{
 		Sender->SendInterestBucketComponentChange(EntityId, SavedInterestBucketComponentID, NewInterestBucketComponentId);

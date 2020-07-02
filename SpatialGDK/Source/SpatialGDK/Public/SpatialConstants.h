@@ -193,9 +193,7 @@ const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID					= 2;
 // SpatialDebugger Field IDs.
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID   = 1;
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR               = 2;
-const Schema_FieldId SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID          = 3;
-const Schema_FieldId SPATIAL_DEBUGGING_INTENT_COLOR                      = 4;
-const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 5;
+const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 3;
 
 // ServerWorker Field IDs.
 const Schema_FieldId SERVER_WORKER_NAME_ID								 = 1;

@@ -47,7 +47,7 @@ public:
 	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
-	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker);
+	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
 	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker) const;
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.

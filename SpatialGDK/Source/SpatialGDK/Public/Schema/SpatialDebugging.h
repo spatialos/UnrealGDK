@@ -20,17 +20,13 @@ struct SpatialDebugging : Component
 	SpatialDebugging()
 		: AuthoritativeVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		, AuthoritativeColor()
-		, IntentVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		, IntentColor()
 		, IsLocked(false)
 	{}
 
-	SpatialDebugging(const VirtualWorkerId AuthoritativeVirtualWorkerIdIn, const FColor& AuthoritativeColorIn, const VirtualWorkerId IntentVirtualWorkerIdIn, const FColor& IntentColorIn, bool IsLockedIn)
+	SpatialDebugging(const VirtualWorkerId AuthoritativeVirtualWorkerIdIn, const FColor& AuthoritativeColorIn, bool IsLockedIn)
 	{
 		AuthoritativeVirtualWorkerId = AuthoritativeVirtualWorkerIdIn;
 		AuthoritativeColor = AuthoritativeColorIn;
-		IntentVirtualWorkerId = IntentVirtualWorkerIdIn;
-		IntentColor = IntentColorIn;
 		IsLocked = IsLockedIn;
 	}
 
@@ -40,8 +36,6 @@ struct SpatialDebugging : Component
 
 		AuthoritativeVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID);
 		AuthoritativeColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR));
-		IntentVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID);
-		IntentColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR));
 		IsLocked = Schema_GetBool(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_IS_LOCKED) != 0;
 	}
 
@@ -54,8 +48,6 @@ struct SpatialDebugging : Component
 
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID, AuthoritativeVirtualWorkerId);
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR, AuthoritativeColor.DWColor());
-		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID, IntentVirtualWorkerId);
-		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR, IntentColor.DWColor());
 		Schema_AddBool(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_IS_LOCKED, IsLocked);
 
 		return Data;
@@ -70,8 +62,6 @@ struct SpatialDebugging : Component
 
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID, AuthoritativeVirtualWorkerId);
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR, AuthoritativeColor.DWColor());
-		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID, IntentVirtualWorkerId);
-		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR, IntentColor.DWColor());
 		Schema_AddBool(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_IS_LOCKED, IsLocked);
 
 		return Update;
@@ -83,8 +73,6 @@ struct SpatialDebugging : Component
 
 		AuthoritativeVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID);
 		AuthoritativeColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR));
-		IntentVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID);
-		IntentColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR));
 		IsLocked = Schema_GetBool(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_IS_LOCKED) != 0;
 	}
 
@@ -94,13 +82,6 @@ struct SpatialDebugging : Component
 
 	// The color for the authoritative virtual worker.
 	FColor AuthoritativeColor;
-
-	// Id of the Unreal server worker which should be authoritative for the entity.
-	// 0 is reserved as an invalid/unset value.
-	VirtualWorkerId IntentVirtualWorkerId;
-
-	// The color for the intended virtual worker.
-	FColor IntentColor;
 
 	// Whether or not the entity is locked.
 	bool IsLocked;

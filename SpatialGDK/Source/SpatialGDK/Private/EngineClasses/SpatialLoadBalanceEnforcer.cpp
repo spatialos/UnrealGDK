@@ -128,109 +128,104 @@ bool SpatialLoadBalanceEnforcer::AclAssignmentRequestIsQueued(const Worker_Entit
 	return AclWriteAuthAssignmentRequests.Contains(EntityId);
 }
 
-TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+bool SpatialLoadBalanceEnforcer::GetAuthorityChangeState(Worker_EntityId EntityId, SpatialLoadBalanceEnforcer::AuthorityStateChange& OutAuthorityStateChange) const
 {
-	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> PendingRequests;
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		const AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityDelegation>(EntityId);
+		if (AuthorityDelegationComponent == nullptr)
+		{
+			// This happens if the AuthorityDelegation component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthorityDelegation component has been removed since the request was queued. EntityId: %lld"), EntityId);
+			return false;
+		}
+	}
+
+	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+	if (AuthorityIntentComponent == nullptr)
+	{
+		// This happens if the AuthorityIntent component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthorityIntent component has been removed since the request was queued. EntityId: %lld"), EntityId);
+		return false;
+	}
+
+	if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld. This should not happen - investigate if you see this warning."), EntityId);
+		return false;
+	}
+
+	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+	if (NetOwningClientWorkerComponent == nullptr)
+	{
+		// This happens if the NetOwningClientWorker component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as NetOwningClientWorker component has been removed since the request was queued. EntityId: %lld"), EntityId);
+		return false;
+	}
+
+	const ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	if (ComponentPresenceComponent == nullptr)
+	{
+		// This happens if the ComponentPresence component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as ComponentPresence component has been removed since the request was queued. EntityId: %lld"), EntityId);
+		return false;
+	}
+
+	if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to process ACL assignment; this worker lost authority over the EntityACL since the request was queued."
+            " Source worker ID: %s. Entity ID %lld."), *WorkerId, EntityId);
+		return false;
+	}
+
+	TArray<Worker_ComponentId> ComponentIds;
+
+	const EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+
+	// With USLB enabled, we grab our current component authorities from the AuthorityDelegation component.
+	// With USLB disabled, it's EntityACL.
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		AuthorityDelegation* AuthDelegation = StaticComponentView->GetComponentData<AuthorityDelegation>(EntityId);
+		AuthDelegation->Delegations.GetKeys(ComponentIds);
+	}
+	else
+	{
+		Acl->ComponentWriteAcl.GetKeys(ComponentIds);
+	}
+
+	// Ensure that every component ID in ComponentPresence will be assigned authority.
+	for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
+	{
+		ComponentIds.AddUnique(RequiredComponentId);
+	}
+
+	OutAuthorityStateChange = AuthorityStateChange{
+		EntityId,
+        Acl->ReadAcl,
+        ComponentIds,
+        AuthorityIntentComponent->VirtualWorkerId
+    };
+
+	return true;
+}
+
+TArray<SpatialLoadBalanceEnforcer::AuthorityStateChange> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+{
+	TArray<AuthorityStateChange> PendingRequests;
 
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
 
 	for (Worker_EntityId EntityId : AclWriteAuthAssignmentRequests)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+		AuthorityStateChange AuthorityChangeData{};
+		const bool bAuthorityChangeDataSuccess = GetAuthorityChangeState(EntityId, AuthorityChangeData);
+
+		if (bAuthorityChangeDataSuccess)
 		{
-			const SpatialGDK::AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityDelegation>(EntityId);
-			if (AuthorityDelegationComponent == nullptr)
-			{
-				// This happens if the AuthorityDelegation component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-				UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthorityDelegation component has been removed since the request was queued. EntityId: %lld"), EntityId);
-				CompletedRequests.Add(EntityId);
-				continue;
-			}
+			PendingRequests.Push(AuthorityChangeData);
 		}
-		else // USLB disabled
-		{
-			const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-			if (AuthorityIntentComponent == nullptr)
-			{
-				// This happens if the AuthorityIntent component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-				UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthorityIntent component has been removed since the request was queued. EntityId: %lld"), EntityId);
-				CompletedRequests.Add(EntityId);
-				continue;
-			}
-			else if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-			{
-				UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld. This should not happen - investigate if you see this warning."), EntityId);
-				CompletedRequests.Add(EntityId);
-				continue;
-			}
-
-			if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-			{
-				UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to update the EntityACL to match the authority intent; this worker lost authority over the EntityACL since the request was queued."
-					" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."), *WorkerId, EntityId, **DestinationWorkerId);
-				CompletedRequests.Add(EntityId);
-				continue;
-			}
-		}
-
-		const SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-		if (NetOwningClientWorkerComponent == nullptr)
-		{
-			// This happens if the NetOwningClientWorker component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as NetOwningClientWorker component has been removed since the request was queued. EntityId: %lld"), EntityId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		const SpatialGDK::ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
-		if (ComponentPresenceComponent == nullptr)
-		{
-			// This happens if the ComponentPresence component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as ComponentPresence component has been removed since the request was queued. EntityId: %lld"), EntityId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		check(VirtualWorkerTranslator != nullptr);
-		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (DestinationWorkerId == nullptr)
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("This worker is not assigned a virtual worker. This shouldn't happen! Worker: %s"), *WorkerId);
-			continue;
-		}
-
-		TArray<Worker_ComponentId> ComponentIds;
-
-		if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-		{
-
-		}
-		else
-		{
-			EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-			Acl->ComponentWriteAcl.GetKeys(ComponentIds);
-		}
-
-		// Ensure that every component ID in ComponentPresence is set in the write ACL.
-		for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
-		{
-			ComponentIds.AddUnique(RequiredComponentId);
-		}
-
-		// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
-		PhysicalWorkerName PossessingClientId = NetOwningClientWorkerComponent->WorkerId.IsSet() ?
-			NetOwningClientWorkerComponent->WorkerId.GetValue() :
-			FString();
-
-		PendingRequests.Push(
-			AclWriteAuthorityRequest{
-				EntityId,
-				*DestinationWorkerId,
-				Acl->ReadAcl,
-				{ { PossessingClientId } },
-				ComponentIds
-			});
 
 		CompletedRequests.Add(EntityId);
 	}
@@ -248,6 +243,15 @@ void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId
 
 bool SpatialLoadBalanceEnforcer::CanEnforce(Worker_EntityId EntityId) const
 {
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		return StaticComponentView->HasComponent(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+            && StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+            && StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID)
+            && StaticComponentView->HasComponent(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID)
+            && StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+	}
+
 	// We need to be able to see the ACL component
 	return StaticComponentView->HasComponent(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		// and the authority intent component

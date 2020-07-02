@@ -79,9 +79,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
 	bool bShowAuth = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show authority intent for every entity in range"))
-	bool bShowAuthIntent = false;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
 	bool bShowLock = false;
 
@@ -99,9 +96,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
 	UTexture2D *AuthTexture;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Intent Icon"))
-	UTexture2D *AuthIntentTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Unlocked Icon"))
 	UTexture2D *UnlockedTexture;
@@ -128,7 +122,6 @@ public:
 	virtual void OnRep_SetWorkerRegions();
 
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
-	void AuthoritativeVirtualWorkerChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 private:
 	void LoadIcons();
@@ -155,7 +148,6 @@ private:
 	enum EIcon
 	{
 		ICON_AUTH,
-		ICON_AUTH_INTENT,
 		ICON_UNLOCKED,
 		ICON_LOCKED,
 		ICON_BOX,

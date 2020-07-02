@@ -103,15 +103,17 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker)
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// In USLB, we put the load balancing strategy interest query on the partition entity.
-	// Without USLB, we need to keep the query on the server worker entity.
-	if (!SpatialGDKSettings->bEnableUserSpaceLoadBalancing)
+	// Without USLB, we need to put the query on the server worker entity. However, we can
+	// only do this once a worker knows its virtual worker ID, this is true if the load
+	// balancing strategy is ready.
+	if (!SpatialGDKSettings->bEnableUserSpaceLoadBalancing && LBStrategy->IsReady())
 	{
-		return CreatePartitionInterest(LBStrategy, VirtualWorker);
+		return CreatePartitionInterest(LBStrategy, LBStrategy->GetLocalVirtualWorkerId());
 	}
 
 	// Build the Interest component as we go by updating the component-> query list mappings.

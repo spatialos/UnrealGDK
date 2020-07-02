@@ -1716,7 +1716,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
 			for (const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
-				Sender->SetAclWriteAuthority(AclAssignmentRequest);
+				Sender->EnforceAuthority(AclAssignmentRequest);
 			}
 		}
 	}
@@ -2439,8 +2439,14 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 			// Process levels which were loaded before the connection to Spatial was ready.
 			GetGameInstance()->CleanupCachedLevelsAfterConnection();
 
-			// We know at this point that we have all the information to set the worker's interest query.
-			Sender->UpdateServerWorkerEntityInterestAndPosition();
+			if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+			{
+				// If USLB is disabled, the partition interest query is placed on the server worker entity.
+				// We cannot set this correctly when spawning the server worker entity because at that point
+				// the worker doesn't know its virtual worker ID. At this point, we're guaranteed to know it
+				// because the translator mapping is complete, so we send another interest update.
+				Sender->UpdateServerWorkerEntityInterestAndPosition();
+			}
 
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.

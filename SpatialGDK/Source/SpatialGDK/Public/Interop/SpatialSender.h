@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
-#include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RPCContainer.h"
+
+#include "CoreMinimal.h"
+#include "TimerManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -71,7 +72,6 @@ public:
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void SendAuthorityDelegationUpdate(Worker_EntityId EntityId, VirtualWorkerId VirtualWorker) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
@@ -86,6 +86,11 @@ public:
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
 	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+
+	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
+	void EnforceAuthority(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const;
+	void SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const;
+	void SendEntityACLUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const;
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);

@@ -16,13 +16,12 @@ class SpatialVirtualWorkerTranslator;
 class SPATIALGDK_API SpatialLoadBalanceEnforcer
 {
 public:
-	struct AclWriteAuthorityRequest
+	struct AuthorityStateChange
 	{
 		Worker_EntityId EntityId = 0;
-		PhysicalWorkerName OwningWorkerId;
 		WorkerRequirementSet ReadAcl;
-		WorkerRequirementSet ClientRequirementSet;
 		TArray<Worker_ComponentId> ComponentIds;
+		VirtualWorkerId TargetVirtualWorker;
 	};
 
 	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
@@ -38,8 +37,9 @@ public:
 	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
 	// Visible for testing
 	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
+	bool GetAuthorityChangeState(Worker_EntityId EntityId, AuthorityStateChange& OutAuthorityStateChange) const;
 
-	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
+	TArray<AuthorityStateChange> ProcessQueuedAclAssignmentRequests();
 
 private:
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);

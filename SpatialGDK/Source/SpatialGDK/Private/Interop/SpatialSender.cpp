@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialSender.h"
 
+
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 
@@ -15,6 +16,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Net/NetworkProfiler.h"
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/Interest.h"
@@ -152,7 +154,8 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-	SendAuthorityDelegationUpdate(EntityId, NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
+
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
 	{
@@ -248,28 +251,28 @@ void USpatialSender::CreateServerWorkerEntity()
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
-	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
-
-	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
+	check(NetDriver != nullptr);
 
 	TArray<FWorkerComponentData> Components;
-
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
-	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerEntityId()).CreateServerWorkerData());
-	check(NetDriver != nullptr);
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest().CreateInterestData());
+	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	WriteAclMap ComponentWriteAcl{};
+	if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
+		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
+	}
+	else
 	{
 		AuthorityDelegationMap DelegationMap;
 		DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
@@ -282,6 +285,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 		Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	}
 
+	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
@@ -439,21 +443,15 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);
-	if (NetDriver->WorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		// No worker entity to update.
-		return;
-	}
+	check(NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady());
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
-	FWorkerComponentUpdate InterestUpdate = NetDriver->InterestFactory->CreateServerWorkerInterest().CreateInterestUpdate();
+	FWorkerComponentUpdate InterestUpdate = NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
-	if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady())
-	{
-		// Also update the position of the worker entity to the centre of the load balancing region.
-		SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
-	}
+	// Also update the position of the worker entity to the centre of the load balancing region.
+	SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten)
@@ -594,27 +592,54 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendAuthorityDelegationUpdate(Worker_EntityId EntityId, VirtualWorkerId VirtualWorker) const
+void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
 {
-	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(VirtualWorker);
-
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID));
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
 
-	TArray<Worker_ComponentId> ComponentIds;
+	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	check(AuthorityIntentComponent != nullptr);
 
-	AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<AuthorityDelegation>(EntityId);
-	check(AuthorityDelegationComponent != nullptr);
-	AuthorityDelegationComponent->Delegations.GetKeys(ComponentIds);
-
-	// Ensure that every component ID in ComponentPresence is set in the AuthorityDelegation.
-	const SpatialGDK::ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
-	check(ComponentPresenceComponent != nullptr);
-	for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
+	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
 	{
-		ComponentIds.AddUnique(RequiredComponentId);
+		// There may be multiple intent updates triggered by a server worker before the Runtime
+		// notifies this worker that the authority has changed. Ignore the extra calls here.
+		UE_LOG(LogSpatialSender, Log, TEXT("Attempted to update AuthorityIntent twice to the same value. This shouldn't happen. "
+			"Entity ID: %lld. Virtual worker: '%d'"), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+		return;
 	}
 
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority intent update for entity id %lld. Virtual worker '%d' should become authoritative over %s"),
+        *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+
+	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
+}
+
+void USpatialSender::EnforceAuthority(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const
+{
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		SendAuthorityDelegationUpdate(Request);
+	}
+	else
+	{
+		SendEntityACLUpdate(Request);
+	}
+}
+
+void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const
+{
+	check(Request.EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID));
+
+	const Worker_PartitionId AuthoritativeServerPartition = NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(Request.TargetVirtualWorker);
+	
 	const Worker_ComponentId ClientRpcAuthComponent = SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer());
 
 	// Remove logic for the below, I don't really understand it.
@@ -625,41 +650,84 @@ void USpatialSender::SendAuthorityDelegationUpdate(Worker_EntityId EntityId, Vir
 	// client worker partition ID that should be authoritative over the Heartbeat and client RPC endpoint components (if the entity has them).
 	// As a workaround, since the delegation of deleted Actors should be relevant, we'll just leave the partition ID as invalid if the Actor*
 	// cannot be retrieved.
-	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Request.EntityId));
 	const Worker_PartitionId ClientWorkerPartitionId =
 		//Actor != nullptr ?
 		GetConnectionOwningEntityId(Actor)
 		//: SpatialConstants::INVALID_ENTITY_ID
 	;
 
-	for (const Worker_ComponentId& ComponentId : ComponentIds)
+	AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<AuthorityDelegation>(Request.EntityId);
+	check(AuthorityDelegationComponent != nullptr);
+	
+	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
             || ComponentId == ClientRpcAuthComponent)
 		{
 			// if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
 			// {
-			// 	UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegaiton update"
+			// 	UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegation update"
 			// 		" for entity %lld. This should happen only when startup Actors are deleted"), *NetDriver->Connection->GetWorkerId(), EntityId);
 			// }
 			AuthorityDelegationComponent->Delegations.FindOrAdd(ComponentId, ClientWorkerPartitionId);
 			continue;
 		}
 
-		AuthorityDelegationComponent->Delegations.Add(ComponentId, AuthoritativeServerPartitionId);
+		AuthorityDelegationComponent->Delegations.Add(ComponentId, AuthoritativeServerPartition);
 	}
 
-	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending AuthorityDelegation update. Entity: %lld. Actor %s. Server partition: %lld. Virtual worker: %d."),
-		*NetDriver->Connection->GetWorkerId(), EntityId, *GetNameSafe(Actor), AuthoritativeServerPartitionId, VirtualWorker);
-
-	// If the SpatialDebugger is enabled, also update the authority intent virtual worker ID and color.
-	if (NetDriver->SpatialDebugger != nullptr)
-	{
-		NetDriver->SpatialDebugger->AuthoritativeVirtualWorkerChanged(EntityId, VirtualWorker);
-	}
+	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending AuthorityDelegation update. Entity: %lld. Actor %s. Server partition: %lld."),
+		*NetDriver->Connection->GetWorkerId(), Request.EntityId, *GetNameSafe(Actor), AuthoritativeServerPartition);
 
 	FWorkerComponentUpdate Update = AuthorityDelegationComponent->CreateAuthorityDelegationUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
+	Connection->SendComponentUpdate(Request.EntityId, &Update);
+}
+
+void USpatialSender::SendEntityACLUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const
+{
+	check(NetDriver);
+	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
+
+	// Map the authoritative virtual worker to a physical worker name
+	check(NetDriver->VirtualWorkerTranslator != nullptr);
+	const PhysicalWorkerName* DestinationWorkerId = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(Request.TargetVirtualWorker);
+	check(DestinationWorkerId != nullptr)
+	const FString& AuthoritativePhysicalWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
+	const WorkerAttributeSet OwningServerWorkerAttributeSet = { AuthoritativePhysicalWorkerId };
+
+	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
+	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(Request.EntityId);
+	check(NetOwningClientWorkerComponent != nullptr);
+	const PhysicalWorkerName PossessingClientId = NetOwningClientWorkerComponent->WorkerId.IsSet() ?
+        NetOwningClientWorkerComponent->WorkerId.GetValue() :
+        FString();
+	
+	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
+	NewAcl->ReadAcl = Request.ReadAcl;
+
+	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
+	{
+		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
+            || ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		{
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
+			continue;
+		}
+
+		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+		{
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet } );
+			continue;
+		}
+
+		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+	}
+
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"), *NetDriver->Connection->GetWorkerId(), Request.EntityId, **DestinationWorkerId);
+
+	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
+	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
