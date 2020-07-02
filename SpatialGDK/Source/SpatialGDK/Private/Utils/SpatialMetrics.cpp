@@ -46,6 +46,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
+
 	if (WorkerLoadDelegate.IsBound())
 	{
 		WorkerLoad = WorkerLoadDelegate.Execute();
@@ -82,6 +83,29 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
+
+	for (const TPair<FString, double>& Metric : WorkerGuageMetricsToForward)
+	{
+		SpatialGDK::GaugeMetric SpatialMetric;
+		SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
+		SpatialMetric.Value = Metric.Value;
+		Metrics.GaugeMetrics.Add(SpatialMetric);
+	}
+	for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
+	{
+
+		SpatialGDK::HistogramMetric SpatialMetric;
+		SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
+		SpatialMetric.Buckets.Reserve(Metric.Value.Buckets.Num());
+		SpatialMetric.Sum = Metric.Value.Sum;
+		for (const TPair<double, uint32>& Bucket : Metric.Value.Buckets)
+		{
+			SpatialGDK::HistogramMetricBucket SpatialBucket;
+			SpatialBucket.UpperBound = Bucket.Key;
+			SpatialBucket.Samples = Bucket.Value;
+			SpatialMetric.Buckets.Push(SpatialBucket);
+		}
+	}
 
 	Connection->SendMetrics(Metrics);
 }
@@ -326,23 +350,39 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int Pa
 
 void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 {
-	if (WorkerMetricsRecieved.IsBound())
+	int32 NumGuageMetrics = Op->op.metrics.metrics.gauge_metric_count;
+	int32 NumHistogramMetrics = Op->op.metrics.metrics.histogram_metric_count;
+	if (NumGuageMetrics > 0 || NumHistogramMetrics > 0)
 	{
-		int32 NumMetrics = Op->op.metrics.metrics.gauge_metric_count;
+		// Construct a map to store all the metrics and pass it to the users delegate
+		WorkerGuageMetric GuageMetrics;
+		WorkerHistogramMetrics HistogramMetrics;
 
-		if (NumMetrics > 0)
+		GuageMetrics.Reserve(NumGuageMetrics);
+		for (int32 i = 0; i < NumGuageMetrics; i++)
 		{
-			// Construct a map to store all the metrics and pass it to the users delegate
-			TMap<FString, double> WorkerMetrics;
-			WorkerMetrics.Reserve(NumMetrics);
-
-			for (int32 i = 0; i < NumMetrics; i++)
-			{
-				WorkerMetrics.Add(Op->op.metrics.metrics.gauge_metrics[i].key, Op->op.metrics.metrics.gauge_metrics[i].value);
-			}
-
-			WorkerMetricsRecieved.Broadcast(WorkerMetrics);
+			GuageMetrics.Add(Op->op.metrics.metrics.gauge_metrics[i].key, Op->op.metrics.metrics.gauge_metrics[i].value);
 		}
+
+		HistogramMetrics.Reserve(NumHistogramMetrics);
+		for (int32 i = 0; i < NumHistogramMetrics; i++)
+		{
+			WorkerHistogramValues Histogram;
+			int32 NumBuckets = Op->op.metrics.metrics.histogram_metrics[i].bucket_count;
+			Histogram.Buckets.Reserve(NumBuckets);
+			Histogram.Sum = Op->op.metrics.metrics.histogram_metrics[i].sum;
+			for (int32 j = 0; j < NumBuckets; j++)
+			{
+				Histogram.Buckets.Push(TTuple<double, uint32>{ Op->op.metrics.metrics.histogram_metrics[i].buckets[j].upper_bound, Op->op.metrics.metrics.histogram_metrics[i].buckets[j].samples });
+			}
+			HistogramMetrics.Add(Op->op.metrics.metrics.histogram_metrics[i].key, Histogram);
+		}
+
+		WorkerMetricsRecieved.Broadcast(GuageMetrics, HistogramMetrics);
+
+		// Also forward these to metrics reporting
+		WorkerGuageMetricsToForward = MoveTemp(GuageMetrics);
+		WorkerHistogramMetricsToForward = MoveTemp(HistogramMetrics);
 	}
 }
 
