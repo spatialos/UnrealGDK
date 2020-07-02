@@ -148,12 +148,12 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 		}
 		else
 		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of proxyInfo.json failed. Can't get proxy's PID."));
+			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."), *ProxyInfoFilePath);
 		}
 	}
 	else
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Loading proxyInfo.json failed. Can't get proxy's PID."));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Loading %s failed. Can't get proxy's PID."), *ProxyInfoFilePath);
 	}
 
 	return nullptr;
@@ -176,7 +176,7 @@ void FLocalReceptionistProxyServerManager::SetPIDInJson(const FString& PID)
 		return;
 	}
 
-	JsonParsedProxyInfoFile->SetStringField("PID", PID);
+	JsonParsedProxyInfoFile->SetStringField("pid", PID);
 
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&ProxyInfoFileResult);
 	if (!FJsonSerializer::Serialize(JsonParsedProxyInfoFile.ToSharedRef(), JsonWriter))
@@ -184,7 +184,7 @@ void FLocalReceptionistProxyServerManager::SetPIDInJson(const FString& PID)
 		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write PID to parsed proxy info file. Unable to serialize content to json file."));
 		return;
 	}
-	if (!FFileHelper::SaveStringToFile(ProxyInfoFileResult, *FPaths::Combine(SpatialGDKServicesConstants::ProxyFileDirectory, SpatialGDKServicesConstants::ProxyInfoFilename)))
+	if (!FFileHelper::SaveStringToFile(ProxyInfoFileResult, *ProxyInfoFilePath))
 	{
 		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::ProxyInfoFilename);
 	}
@@ -200,10 +200,8 @@ FString FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID()
 		{
 			return PID;
 		}
-		else
-		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("'pid' does not exist in proxyInfo.json. Can't read proxy's PID."));
-		}
+
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("'pid' does not exist in %s. Can't read proxy's PID."), *ProxyInfoFilePath);
 	}
 
 	PID.Empty();
@@ -242,6 +240,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	if (!ProxyServerProcHandle.IsValid())
 	{
 		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %s, Error Message: %s"), ExitCode, *StartResult);
+		ProxyServerProcHandle.Reset();
 		return false;
 	}
 
