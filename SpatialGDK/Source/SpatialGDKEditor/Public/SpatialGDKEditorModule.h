@@ -54,6 +54,7 @@ private:
 	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
 	virtual bool ShouldStartLocalServer() const override;
+
 private:
 	void RegisterSettings();
 	void UnregisterSettings();

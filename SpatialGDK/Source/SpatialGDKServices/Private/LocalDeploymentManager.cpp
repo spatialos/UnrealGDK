@@ -211,13 +211,13 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 
 bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 {
-	FString Pid;
+	FString PID;
 	FString State;
 
-	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, Pid, State);
+	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, PID, State);
 	if (bSuccess)
 	{
-		bSuccess = SpatialCommandUtils::TryKillProcessWithPID(Pid);
+		bSuccess = SpatialCommandUtils::TryKillProcessWithPID(PID);
 	}
 
 	return bSuccess;

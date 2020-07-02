@@ -21,9 +21,9 @@ public:
 	bool SPATIALGDKSERVICES_API TryStopReceptionistProxyServer();
 	
 private:
-	static TSharedPtr<FJsonObject> ParsePidFile();
-	static void SetPidInJson(const FString & Pid);
-	static FString ParsePid();
+	static TSharedPtr<FJsonObject> ParsePIDFile();
+	static void SetPIDInJson(const FString& PID);
+	static FString GetPreviousReceptionistProxyPID();
 
 	FProcHandle ProxyServerProcHandle;
 	FString RunningCloudDeploymentName;

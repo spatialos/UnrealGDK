@@ -302,7 +302,7 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 	bool bProcessFinished = false;
 	if (ProcHandle.IsValid())
 	{
-		while(!bProcessFinished && !bProcessSucceeded)
+		while (!bProcessFinished && !bProcessSucceeded)
 		{
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
 
@@ -314,10 +314,10 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 	}
 	else
 	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *SpatialGDKServicesConstants::SpatialExe, *Command, *SpatialGDKServicesConstants::SpatialOSDirectory);
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s'"), *SpatialGDKServicesConstants::SpatialExe, *Command, *SpatialGDKServicesConstants::SpatialOSDirectory);
 	}
 
-	if(!bProcessSucceeded)
+	if (!bProcessSucceeded)
 	{
 		FPlatformProcess::TerminateProc(ProcHandle, true);
 	}
@@ -336,7 +336,7 @@ void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHand
 	}
 }
 
-bool SpatialCommandUtils::TryKillProcessWithPID(const FString & PID)
+bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 {
 	int32 ExitCode;
 	FString StdErr;
@@ -348,7 +348,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString & PID)
 	bSuccess = bSuccess && ExitCode == 0;
 	if (!bSuccess)
 	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to kill process with PID %s. Error: %s"), *PID, *StdErr);
 	}
 
 	return bSuccess;
@@ -391,6 +391,5 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 
 	return bSuccess;
 }
-
 
 #undef LOCTEXT_NAMESPACE
