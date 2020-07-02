@@ -54,13 +54,13 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
-		FRegexPattern IdPattern = TEXT("(\tid = )([0-9]+)(;)");
+		FRegexPattern IdPattern(TEXT("(\tid = )([0-9]+)(;)"));
 		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
 
-		FRegexPattern NamePattern = TEXT("(^component )(.+)( \\{)");
+		FRegexPattern NamePattern(TEXT("(^component )(.+)( \\{)"));
 		FRegexMatcher NameRegMatcher(NamePattern, SchemaLine);
 
-		FRegexPattern SubobjectNamePattern = TEXT("(\tUnrealObjectRef )(.+)( = )([0-9]+)(;)");
+		FRegexPattern SubobjectNamePattern(TEXT("(\tUnrealObjectRef )(.+)( = )([0-9]+)(;)"));
 		FRegexMatcher SubobjectNameRegMatcher(SubobjectNamePattern, SchemaLine);
 
 		if (IdRegMatcher.FindNext())
@@ -263,7 +263,7 @@ public:
 		FString ExpectedContent;
 		FFileHelper::LoadFileToString(ExpectedContent, *ExpectedContentFullPath);
 		ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetNextFreeId()));
-		return (GeneratedSchemaContent.Compare(ExpectedContent) == 0);
+		return (CleanSchema(GeneratedSchemaContent).Compare(CleanSchema(ExpectedContent)) == 0);
 	}
 
 	bool ValidateGeneratedSchemaForClass(const FString& FileContent, const UClass* CurrentClass)
@@ -285,6 +285,17 @@ private:
 	}
 
 	int FreeId = 10000;
+
+	// This is needed to ensure the schema generated is the same for both Windows and macOS.
+	// The new-line characters differ which will fail the tests when running it on macOS.
+	FString CleanSchema(const FString& SchemaContent)
+	{
+		FString Content = SchemaContent;
+		Content.ReplaceInline(TEXT("\r"), TEXT(""));
+		Content.ReplaceInline(TEXT("\n"), TEXT(""));
+		Content.ReplaceInline(TEXT(" "), TEXT(""));
+		return Content;
+	}
 };
 
 class SchemaTestFixture
