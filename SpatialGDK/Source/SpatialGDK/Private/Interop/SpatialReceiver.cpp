@@ -1956,11 +1956,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 	else
 	{
 		// Get the RPC target Actor.
-		AActor* Actor = Cast<AActor>(TargetObject);
-		if (Actor == nullptr)
-		{
-			Actor = Cast<UActorComponent>(TargetObject)->GetOwner();
-		}
+		AActor* Actor = TargetObject->GetTypedOuter<AActor>();
 
 		const bool bHasServerEndpointAuthority = StaticComponentView->HasAuthority(Params.ObjectRef.Entity, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 		if (bHasServerEndpointAuthority &&

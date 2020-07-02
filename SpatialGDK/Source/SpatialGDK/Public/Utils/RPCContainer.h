@@ -117,7 +117,6 @@ private:
 	ERPCQueueCommand ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
-
 	bool bAlreadyProcessingRPCs = false;
 
 	ERPCQueueType QueueType = ERPCQueueType::Unknown;

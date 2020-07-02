@@ -130,10 +130,7 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 		}
 	}
 
-	if (NumProcessedParams != 0)
-	{
-		RPCList.RemoveAt(0, NumProcessedParams);
-	}
+	RPCList.RemoveAt(0, NumProcessedParams);
 }
 
 void FRPCContainer::ProcessRPCs()
@@ -198,8 +195,6 @@ ERPCQueueCommand FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	ensure(ProcessingFunction.IsBound());
 	FRPCErrorInfo ErrorInfo = ProcessingFunction.Execute(Params);
-
-	return ErrorInfo.QueueCommand;
 
 	if (ErrorInfo.Success())
 	{

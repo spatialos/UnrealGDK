@@ -69,7 +69,6 @@ public:
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
-
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
