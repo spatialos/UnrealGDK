@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### New Known Issues:
 - Replicated properties using the `COND_SkipOwner` replication condition could still replicate in the first few frames of an actor becoming owned (for example by possessing a pawn, or setting the `Owner` field on an actor, so that it is ultimately owned by a `PlayerController`).
+- Microsoft have fixed a defect in MSVC that previously caused errors when building the Unreal Engine. We detailed a workaround for this issue in GDK version [`0.7.0-preview`](#070-preview---2019-10-11). If you set up the GDK on your computer between the release of 0.7.0` and `0.10.0`, you have perfomed this workaround, which is no longer necessary. You can undo this workaround by:
+1. Open Visual Studio Installer.
+1. Select "Modify" on your Visual Studio 2019 installation.
+1. In the Installation details section uncheck all workloads and components until only **Visual Studio code editor** remains.
+1. Select the following items in the Workloads tab:
+ - **Universal Windows Platform development**
+ - **.NET desktop development**
+   - You must also select the **.NET Framework 4.6.2 development tools**.
+ - **Desktop development with C++**
+5. Select "Modify" to confirm your changes.
 
 ### Breaking Changes:
 - The new SpatialOS Runtime requires the latest spatial CLI version. Run `spatial update` to get the latest version.
