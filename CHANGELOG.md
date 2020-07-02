@@ -19,8 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. In the **Installation details** section, clear all the checkboxes for workloads and components except **Visual Studio Code editor**.
 1. In the **Workloads** tab, select the following items:
  - **Universal Windows Platform development**
- - **.NET desktop development**
-  - You must also select the **.NET Framework 4.6.2 development tools**.
+ - **.NET desktop development** (You must also select the **.NET Framework 4.6.2 development tools**.)
  - **Desktop development with C++**
 5. Select **Modify** to confirm your changes.
 
