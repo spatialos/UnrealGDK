@@ -46,7 +46,6 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
-
 	if (WorkerLoadDelegate.IsBound())
 	{
 		WorkerLoad = WorkerLoadDelegate.Execute();
