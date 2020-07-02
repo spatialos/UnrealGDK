@@ -44,8 +44,9 @@ if ($run_with_spatial) {
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=CookAndGenerateSchema", # Run the commandlet
-        "-cookall", # Make sure it runs for all maps (and other things)
-        "-targetplatform=LinuxServer"
+        "-map="$test_repo_map"",
+        "-targetplatform=LinuxServer",
+        "-cooksinglepackage"
     )
     
     Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
