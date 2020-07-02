@@ -293,7 +293,6 @@ private:
 		FString Content = SchemaContent;
 		Content.ReplaceInline(TEXT("\r"), TEXT(""));
 		Content.ReplaceInline(TEXT("\n"), TEXT(""));
-		Content.ReplaceInline(TEXT(" "), TEXT(""));
 		return Content;
 	}
 };

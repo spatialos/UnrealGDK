@@ -60,7 +60,7 @@ pushd "$(dirname "$0")"
         "${UPROJECT_PATH}" \
         "TestResults" \
         "${TEST_REPO_MAP}" \
-        ".SpatialGDK" \
+        "SpatialGDK." \
         "True"
 
     if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
@@ -71,7 +71,7 @@ pushd "$(dirname "$0")"
             "${UPROJECT_PATH}" \
             "SlowTestResults" \
             "${TEST_REPO_MAP}" \
-            "+SpatialGDKSlow." \
+            "SpatialGDKSlow." \
             "True"
     fi
 popd
