@@ -84,24 +84,22 @@ namespace
 	}
 }
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload, uint64 InRPCId)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
-	, RPCId(InRPCId)
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload, uint64 RPCId)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload)
 {
-	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload), RPCId};
+	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload)};
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
 		if (ApplyFunction(Params))
 		{
-			ExecuteRPCQueueProcessingUpdateFunction(Params);
 			return;
 		}
 	}
@@ -128,7 +126,6 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 
 	if (NumProcessedParams != 0)
 	{
-		ExecuteRPCQueueProcessingUpdateFunction(RPCList[NumProcessedParams - 1]);
 		RPCList.RemoveAt(0, NumProcessedParams);
 	}
 }
@@ -191,11 +188,6 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 	ProcessingFunction = Function;
 }
 
-void FRPCContainer::BindRPCQueueProcessingUpdateFunction(const FRPCQueueProcessingUpdateDelegate& Function)
-{
-	RPCQueueProcessingUpdateDelegate = Function;
-}
-
 bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	ensure(ProcessingFunction.IsBound());
@@ -210,12 +202,4 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	LogRPCError(ErrorInfo, QueueType, Params);
 #endif
 	return ErrorInfo.bShouldDrop;
-}
-
-void FRPCContainer::ExecuteRPCQueueProcessingUpdateFunction(const FPendingRPCParams& Params)
-{
-	if (RPCQueueProcessingUpdateDelegate.IsBound())
-	{
-		RPCQueueProcessingUpdateDelegate.Execute(Params);
-	}
 }

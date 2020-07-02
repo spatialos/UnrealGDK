@@ -69,7 +69,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	RPCService = InRPCService;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
-	IncomingRPCs.BindRPCQueueProcessingUpdateFunction(FRPCQueueProcessingUpdateDelegate::CreateUObject(this, &USpatialReceiver::OnRPCQueueProcessingUpdate));
 	PeriodicallyProcessIncomingRPCs();
 }
 
@@ -2014,12 +2013,13 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		bApplyWithUnresolvedRefs = true;
 	}
 
-	return ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
-}
+	FRPCErrorInfo RPCErrorInfo = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+	if (RPCErrorInfo.ErrorCode == ERPCResult::Success)
+	{
+		RPCService->IncrementAckedRPCID(Params.ObjectRef.Entity, Params.Type);
+	}
 
-void USpatialReceiver::OnRPCQueueProcessingUpdate(const FPendingRPCParams& LastProcessedRPCParams)
-{
-	RPCService->AcknowledgeLastProcessedRPCId(LastProcessedRPCParams.ObjectRef.Entity, LastProcessedRPCParams.Type, LastProcessedRPCParams.RPCId);
+	return RPCErrorInfo;
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
@@ -2194,7 +2194,7 @@ void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
 	IncomingRPCs.DropForEntity(EntityId);
 }
 
-void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload, uint64 RPCId)
+void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -2222,12 +2222,12 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 
-	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload), RPCId);
+	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }
 
-bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId)
+bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)
 {
-	ProcessOrQueueIncomingRPC(FUnrealObjectRef(EntityId, Payload.Offset), Payload, RPCId);
+	ProcessOrQueueIncomingRPC(FUnrealObjectRef(EntityId, Payload.Offset), Payload);
 
 	return true;
 }

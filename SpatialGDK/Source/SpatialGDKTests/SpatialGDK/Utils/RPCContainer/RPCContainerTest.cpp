@@ -41,7 +41,7 @@ namespace
 
 		FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 
-		return FPendingRPCParams{ ObjectRef, Type, MoveTemp(Payload), 0 };
+		return FPendingRPCParams{ ObjectRef, Type, MoveTemp(Payload) };
 	}
 } // anonymous namespace
 

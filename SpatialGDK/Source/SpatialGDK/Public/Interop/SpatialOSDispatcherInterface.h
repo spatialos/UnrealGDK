@@ -31,8 +31,7 @@ public:
 	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAuthorityChange, return;);
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnEntityQueryResponse, return;);
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnExtractIncomingRPC, return false;);
-	virtual void OnRPCQueueProcessingUpdate(const FPendingRPCParams& LastProcessedRPCParams)  PURE_VIRTUAL(SpatialOSDispatcherInterface::OnRPCQueueProcessingUpdate, return;);
+	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnExtractIncomingRPC, return false;);
 	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCommandRequest, return;);
 	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCommandResponse, return;);
 	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnReserveEntityIdsResponse, return;);

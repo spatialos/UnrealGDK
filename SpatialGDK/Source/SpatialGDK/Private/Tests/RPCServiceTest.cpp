@@ -41,7 +41,7 @@ constexpr Worker_EntityId RPCTestEntityId_2 = 42;
 
 const SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, TArray<uint8>({ 1 }, 1));
 
-ExtractRPCDelegate DefaultRPCDelegate = ExtractRPCDelegate::CreateLambda([](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId) {
+ExtractRPCDelegate DefaultRPCDelegate = ExtractRPCDelegate::CreateLambda([](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
 	return true;
 });
 
@@ -432,7 +432,7 @@ RPC_SERVICE_TEST(GIVEN_client_endpoint_with_rpcs_in_view_and_authority_over_serv
 
 	int RPCsExtracted = 0;
 	bool bPayloadsMatch = true;
-	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsExtracted, &bPayloadsMatch](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId) {
+	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsExtracted, &bPayloadsMatch](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
 		RPCsExtracted++;
 		bPayloadsMatch &= CompareRPCPayload(Payload, SimplePayload);
 		bPayloadsMatch &= EntityId == RPCTestEntityId_1;
@@ -469,7 +469,7 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_
 
 	constexpr int MaxRPCsToProccess = 2;
 	int RPCsToProcess = MaxRPCsToProccess;
-	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsToProcess](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint64 RPCId) {
+	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsToProcess](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
 		--RPCsToProcess;
 		return RPCsToProcess >= 0;
 	});

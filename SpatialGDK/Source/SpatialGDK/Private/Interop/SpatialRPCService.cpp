@@ -427,7 +427,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				const bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue(), RPCId);
+				const bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue());
 				if (!bKeepExtracting)
 				{
 					break;
@@ -447,35 +447,21 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 }
 
-void SpatialRPCService::AcknowledgeLastProcessedRPCId(Worker_EntityId EntityId, ERPCType Type, uint64 LastProcessedRPCId)
+void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)
 {
-	uint64 LastSeenRPCId;
-	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
-
 	if (Type == ERPCType::NetMulticast)
 	{
-		LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
+		LastSeenMulticastRPCIds[EntityId]++;
 	}
 	else
 	{
-		LastSeenRPCId = LastAckedRPCIds[EntityTypePair];
-	}
+		EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+		LastAckedRPCIds[EntityTypePair]++;
 
-	if (LastProcessedRPCId > LastSeenRPCId)
-	{
-		if (Type == ERPCType::NetMulticast)
-		{
-			LastSeenMulticastRPCIds[EntityId] = LastProcessedRPCId;
-		}
-		else
-		{
-			LastAckedRPCIds[EntityTypePair] = LastProcessedRPCId;
-			const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
+		const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
+		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
 
-			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
-
-			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, LastProcessedRPCId);
-		}
+		RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, LastAckedRPCIds[EntityTypePair]);
 	}
 }
 
