@@ -239,7 +239,7 @@ void USpatialWorkerConnection::QueueLatestOpList()
 						}
 					}
 				}
-				if (OpList->ops[i].op_type == WORKER_OP_TYPE_COMPONENT_UPDATE && OpList->ops[i].op.component_update.update.component_id == 11599)
+				if (OpList->ops[i].op_type == WORKER_OP_TYPE_COMPONENT_UPDATE /*&& OpList->ops[i].op.component_update.update.component_id == 11599*/)
 				{
 					Schema_Object* SOW = Schema_GetComponentUpdateFields(OpList->ops[i].op.component_update.update.schema_type);
 					//if (Schema_GetBytesLength(SOW, 46) == sizeof(improbable::trace::TraceId) && Schema_GetBytesLength(SOW, 47) == sizeof(improbable::trace::SpanId))
