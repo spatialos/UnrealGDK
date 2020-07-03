@@ -196,7 +196,7 @@ const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
 
 void SpatialOSConnectionHandler::ConnectionDeleter::operator()(Worker_Connection* Connection) const noexcept
 {
-	if (Connection)
+	if (Connection != nullptr)
 	{
 		Worker_Connection_Destroy(Connection);
 	}

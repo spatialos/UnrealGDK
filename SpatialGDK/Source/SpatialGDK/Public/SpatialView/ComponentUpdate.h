@@ -13,7 +13,7 @@ struct ComponentUpdateDeleter
 {
 	void operator()(Schema_ComponentUpdate* ComponentUpdate) const noexcept
 	{
-		if (ComponentUpdate)
+		if (ComponentUpdate != nullptr)
 		{
 			Schema_DestroyComponentUpdate(ComponentUpdate);
 		}

@@ -5,7 +5,7 @@ namespace SpatialGDK
 
 void EntityPresenceRecord::AddEntity(Worker_EntityId EntityId)
 {
-	if (!EntitiesRemoved.RemoveSwap(EntityId))
+	if (EntitiesRemoved.RemoveSingleSwap(EntityId) == 0)
 	{
 		EntitiesAdded.Add(EntityId);
 	}
@@ -13,7 +13,7 @@ void EntityPresenceRecord::AddEntity(Worker_EntityId EntityId)
 
 void EntityPresenceRecord::RemoveEntity(Worker_EntityId EntityId)
 {
-	if (!EntitiesAdded.RemoveSingleSwap(EntityId))
+	if (EntitiesAdded.RemoveSingleSwap(EntityId) == 0)
 	{
 		EntitiesRemoved.Add(EntityId);
 	}
