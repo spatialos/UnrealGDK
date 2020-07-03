@@ -23,7 +23,7 @@ public:
 private:
 	static TSharedPtr<FJsonObject> ParsePIDFile();
 	static void SavePIDInJson(const FString& PID);
-	static FString GetPreviousReceptionistProxyPID();
+	static bool GetPreviousReceptionistProxyPID(FString& OutPID);
 	static void DeletePIDFile();
 
 	FProcHandle ProxyServerProcHandle;

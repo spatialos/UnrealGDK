@@ -82,25 +82,32 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 {
 	FString OutLogMessage;
 	FString PID;
+	FString PreviousPID;
 
 	// Check if any process is blocking the receptionist port
 	if (CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
-		// Try killing the process that blocks the receptionist port if the process blocking the port is a previously running proxy.
-		if (PID == GetPreviousReceptionistProxyPID())
+		if (GetPreviousReceptionistProxyPID(PreviousPID))
 		{
-			bool bProcessKilled = SpatialCommandUtils::TryKillProcessWithPID(PID);
-			if (!bProcessKilled)
+			// Try killing the process that blocks the receptionist port if the process blocking the port is a previously running proxy.
+			if (PID == PreviousPID)
 			{
-				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process that is blocking the port. %s"), *OutLogMessage);
-				return false;
+				bool bProcessKilled = SpatialCommandUtils::TryKillProcessWithPID(PID);
+				if (!bProcessKilled)
+				{
+					UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process that is blocking the port. %s"), *OutLogMessage);
+					return false;
+				}
+
+				UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Successfully killed %s"), *OutLogMessage);
+				return true;
 			}
 
-			UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Successfully killed %s"), *OutLogMessage);
-			return true;
+			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from a different process with PID: %s"), *PID);
+			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from a different process with PID: %s"), *PID);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from an unidentified process with PID: %s"), *PID);
 		return false;
 	}
 
@@ -170,22 +177,23 @@ void FLocalReceptionistProxyServerManager::SavePIDInJson(const FString& PID)
 	}
 }
 
-FString FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID()
+bool FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID(FString& OutPID)
 {
-	FString PID;
-
 	if (TSharedPtr<FJsonObject> JsonParsedProxyInfoFile = ParsePIDFile())
 	{
-		if (JsonParsedProxyInfoFile->TryGetStringField(TEXT("pid"), PID))
+		if (JsonParsedProxyInfoFile->TryGetStringField(TEXT("pid"), OutPID))
 		{
-			return PID;
+			return true;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("'pid' does not exist in %s. Can't read proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Local Receptionist Proxy is running but 'pid' does not exist in %s. Can't read proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
+		return false;
 	}
 
-	PID.Empty();
-	return PID;
+	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local Receptionist Proxy is not running."));
+
+	OutPID.Empty();
+	return true;
 }
 
 void FLocalReceptionistProxyServerManager::DeletePIDFile()
