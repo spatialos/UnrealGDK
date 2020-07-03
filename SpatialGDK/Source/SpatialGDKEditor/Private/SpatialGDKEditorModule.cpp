@@ -97,7 +97,7 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
 	{
 		const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->DevelopmentDeploymentToConnect, EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
+		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->GetPrimaryDeploymentName(), EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
 		
 		if (bSuccess)
 		{

@@ -427,10 +427,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
 
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
-
 	/** Whether to start local server worker when connecting to cloud deployment. If selected, make sure that the cloud deployment you want to connect to is not automatically launching Server-workers. (That your workers have "manual_connection_only" enabled) */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bConnectServerToCloud;
