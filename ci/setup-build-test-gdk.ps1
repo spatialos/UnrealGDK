@@ -80,8 +80,8 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     # We run all tests and networked functional maps
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/SpatialNetworkingMap+/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialZoningMap", "LoadbalancingTestResults", "/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "/Game/Maps/FunctionalTests/SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/SpatialNetworkingMap+/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "/Game/Maps/FunctionalTests/SpatialZoningMap", "LoadbalancingTestResults", "/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
     
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests
