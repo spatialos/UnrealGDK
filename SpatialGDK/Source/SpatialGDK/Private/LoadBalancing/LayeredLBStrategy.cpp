@@ -40,7 +40,17 @@ void ULayeredLBStrategy::Init()
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
 
-		UAbstractLBStrategy* LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		UAbstractLBStrategy* LBStrategy;
+		if (LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogLayeredLBStrategy, Error, TEXT("WorkerLayer %s does not specify a loadbalancing strategy (or it cannot be resolved). Using a 1x1 grid."), *LayerName.ToString());
+			LBStrategy = NewObject<UGridBasedLBStrategy>(this);
+		}
+		else
+		{
+			LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		}
+
 		AddStrategyForLayer(LayerName, LBStrategy);
 
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
