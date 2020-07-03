@@ -5,7 +5,6 @@
 #include "SpatialView/OpList/OpList.h"
 #include "Templates/UniquePtr.h"
 #include <improbable/c_worker.h>
-#include <memory>
 
 namespace SpatialGDK
 {
