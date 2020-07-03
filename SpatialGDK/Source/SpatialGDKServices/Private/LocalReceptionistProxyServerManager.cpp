@@ -152,7 +152,7 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 	return nullptr;
 }
 
-void FLocalReceptionistProxyServerManager::SetPIDInJson(const FString& PID)
+void FLocalReceptionistProxyServerManager::SavePIDInJson(const FString& PID)
 {
 	FString ProxyInfoFileResult;
 	TSharedPtr<FJsonObject> JsonParsedProxyInfoFile = MakeShareable(new FJsonObject());
@@ -237,7 +237,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	// Save the server receptionist proxy process's PID in a Json file
 	if (SpatialCommandUtils::GetProcessInfoFromPort(ReceptionistPort, PID, State))
 	{
-		SetPIDInJson(PID);
+		SavePIDInJson(PID);
 	}
 
 	RunningCloudDeploymentName = CloudDeploymentName;

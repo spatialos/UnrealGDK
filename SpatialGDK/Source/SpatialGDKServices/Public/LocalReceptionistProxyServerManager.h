@@ -22,9 +22,9 @@ public:
 	
 private:
 	static TSharedPtr<FJsonObject> ParsePIDFile();
-	static void SetPIDInJson(const FString& PID);
+	static void SavePIDInJson(const FString& PID);
 	static FString GetPreviousReceptionistProxyPID();
-	void DeletePIDFile();
+	static void DeletePIDFile();
 
 	FProcHandle ProxyServerProcHandle;
 	FString RunningCloudDeploymentName;
