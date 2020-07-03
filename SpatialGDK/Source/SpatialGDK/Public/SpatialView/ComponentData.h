@@ -15,7 +15,7 @@ struct ComponentDataDeleter
 {
 	void operator()(Schema_ComponentData* ComponentData) const noexcept
 	{
-		if (ComponentData)
+		if (ComponentData != nullptr)
 		{
 			Schema_DestroyComponentData(ComponentData);
 		}

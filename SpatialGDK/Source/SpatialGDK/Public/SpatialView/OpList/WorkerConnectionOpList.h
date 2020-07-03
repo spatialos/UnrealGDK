@@ -16,7 +16,7 @@ struct WorkerConnectionOpListData : OpListData
 	{
 		void operator()(Worker_OpList* OpList) const noexcept
 		{
-			if (OpList)
+			if (OpList != nullptr)
 			{
 				Worker_OpList_Destroy(OpList);
 			}
