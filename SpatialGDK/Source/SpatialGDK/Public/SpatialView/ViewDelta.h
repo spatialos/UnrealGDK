@@ -4,11 +4,14 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include "SpatialView/AuthorityRecord.h"
-#include "SpatialView/CommandMessages.h"
 #include "SpatialView/EntityComponentRecord.h"
-#include "SpatialView/OpList/AbstractOpList.h"
+#include "SpatialView/EntityPresenceRecord.h"
+#include "SpatialView/OpList/OpList.h"
+
 #include "Containers/Array.h"
-#include "Templates/UniquePtr.h"
+#include "Containers/Queue.h"
+#include "Containers/Set.h"
+#include "Containers/UnrealString.h"
 #include <improbable/c_worker.h>
 
 namespace SpatialGDK
@@ -17,15 +20,14 @@ namespace SpatialGDK
 class ViewDelta
 {
 public:
-	void AddCreateEntityResponse(CreateEntityResponse Response);
+	void AddOpList(OpList Ops, TSet<EntityComponentId>& ComponentsPresent);
 
-	void SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
-	void AddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void AddComponentAsUpdate(Worker_EntityId EntityId, ComponentData Data);
-	void AddUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
+	bool HasDisconnected() const;
+	uint8 GetConnectionStatus() const;
+	FString GetDisconnectReason() const;
 
-	const TArray<CreateEntityResponse>& GetCreateEntityResponses() const;
+	const TArray<Worker_EntityId>& GetEntitiesAdded() const;
+	const TArray<Worker_EntityId>& GetEntitiesRemoved() const;
 	const TArray<EntityComponentId>& GetAuthorityGained() const;
 	const TArray<EntityComponentId>& GetAuthorityLost() const;
 	const TArray<EntityComponentId>& GetAuthorityLostTemporarily() const;
@@ -34,19 +36,28 @@ public:
 	const TArray<EntityComponentUpdate>& GetUpdates() const;
 	const TArray<EntityComponentCompleteUpdate>& GetCompleteUpdates() const;
 
-	// Returns an array of ops equivalent to the current state of the view delta.
-	// It is expected that Clear should be called between calls to GenerateLegacyOpList.
-	// todo Remove this once the view delta is not read via a legacy op list.
-	TUniquePtr<AbstractOpList> GenerateLegacyOpList() const;
+	const TArray<Worker_Op>& GetWorkerMessages() const;
 
 	void Clear();
 
 private:
-	// todo wrap world command responses in their own record?
-	TArray<CreateEntityResponse> CreateEntityResponses;
+	void ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& ComponentsPresent);
+
+	void HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange);
+	void HandleAddComponent(const Worker_AddComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent);
+	void HandleComponentUpdate(const Worker_ComponentUpdateOp& Update);
+	void HandleRemoveComponent(const Worker_RemoveComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent);
+
+	TArray<Worker_Op> WorkerMessages;
 
 	AuthorityRecord AuthorityChanges;
+	EntityPresenceRecord EntityPresenceChanges;
 	EntityComponentRecord EntityComponentChanges;
+
+	TArray<OpList> OpLists;
+
+	uint8 ConnectionStatus = 0;
+	FString DisconnectReason;
 };
 
 }  // namespace SpatialGDK
