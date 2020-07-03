@@ -37,8 +37,8 @@ int32 EntityQuery::GetNestedConstraintCount(const Worker_Constraint& Constraint)
 	case WORKER_CONSTRAINT_TYPE_AND:
 	{
 		const Worker_AndConstraint& AndConstraint = Constraint.constraint.and_constraint;
-		size_t Sum = 1;
-		for (size_t i = 0; i < AndConstraint.constraint_count; ++i)
+		uint32 Sum = 1;
+		for (uint32 i = 0; i < AndConstraint.constraint_count; ++i)
 		{
 			Sum += GetNestedConstraintCount(AndConstraint.constraints[i]);
 		}
@@ -47,8 +47,8 @@ int32 EntityQuery::GetNestedConstraintCount(const Worker_Constraint& Constraint)
 	case WORKER_CONSTRAINT_TYPE_OR:
 	{
 		const Worker_OrConstraint& OrConstraint = Constraint.constraint.or_constraint;
-		size_t Sum = 1;
-		for (size_t i = 0; i < OrConstraint.constraint_count; ++i)
+		uint32 Sum = 1;
+		for (uint32 i = 0; i < OrConstraint.constraint_count; ++i)
 		{
 			Sum += GetNestedConstraintCount(OrConstraint.constraints[i]);
 		}
@@ -64,7 +64,7 @@ int32 EntityQuery::GetNestedConstraintCount(const Worker_Constraint& Constraint)
 
 void EntityQuery::StoreChildConstraints(const Worker_Constraint& Constraint, int32 Index)
 {
-	const size_t ChildIndex = Constraints.Num();
+	const int32 ChildIndex = Constraints.Num();
 	switch (static_cast<Worker_ConstraintType>(Constraints[Index].constraint_type))
 	{
 	case WORKER_CONSTRAINT_TYPE_ENTITY_ID:

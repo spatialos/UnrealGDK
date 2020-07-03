@@ -13,7 +13,7 @@ struct CommandResponseDeleter
 {
 	void operator()(Schema_CommandResponse* CommandResponse) const noexcept
 	{
-		if (CommandResponse)
+		if (CommandResponse != nullptr)
 		{
 			Schema_DestroyCommandResponse(CommandResponse);
 		}

@@ -55,7 +55,7 @@ OpList SpatialOSConnectionHandler::GetNextOpList()
 			break;
 		}
 
-		if (Id)
+		if (Id != nullptr)
 		{
 			*Id = InternalToUserRequestId.FindAndRemoveChecked(*Id);
 		}
@@ -97,7 +97,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 			break;
 		}
 		default:
-		check(false);
+			checkNoEntry();
 			break;
 		}
 	}
