@@ -14,12 +14,12 @@ class SpatialOSConnectionHandler : public AbstractConnectionHandler
 public:
 	explicit SpatialOSConnectionHandler(Worker_Connection* Connection);
 
-	void Advance() override;
-	uint32 GetOpListCount() override;
-	OpList GetNextOpList() override;
-	void SendMessages(TUniquePtr<MessagesToSend> Messages) override;
-	const FString& GetWorkerId() const override;
-	const TArray<FString>& GetWorkerAttributes() const override;
+	virtual void Advance() override;
+	virtual uint32 GetOpListCount() override;
+	virtual OpList GetNextOpList() override;
+	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) override;
+	virtual const FString& GetWorkerId() const override;
+	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
 private:
 	struct ConnectionDeleter

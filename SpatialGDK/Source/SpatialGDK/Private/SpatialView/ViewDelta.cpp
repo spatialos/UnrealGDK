@@ -110,7 +110,7 @@ void ViewDelta::ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& Componen
 		EntityPresenceChanges.AddEntity(Op.op.add_entity.entity_id);
 		break;
 	case WORKER_OP_TYPE_REMOVE_ENTITY:
-		EntityPresenceChanges.AddEntity(Op.op.remove_entity.entity_id);
+		EntityPresenceChanges.RemoveEntity(Op.op.remove_entity.entity_id);
 		break;
 	case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 	case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
@@ -137,33 +137,33 @@ void ViewDelta::ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& Componen
 	}
 }
 
-void ViewDelta::HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange)
+void ViewDelta::HandleAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
-	AuthorityChanges.SetAuthority(AuthorityChange.entity_id, AuthorityChange.component_id, static_cast<Worker_Authority>(AuthorityChange.authority));
+	AuthorityChanges.SetAuthority(Op.entity_id, Op.component_id, static_cast<Worker_Authority>(Op.authority));
 }
 
-void ViewDelta::HandleAddComponent(const Worker_AddComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent)
+void ViewDelta::HandleAddComponent(const Worker_AddComponentOp& Op, TSet<EntityComponentId>& ComponentsPresent)
 {
-	const EntityComponentId Id = { Component.entity_id, Component.data.component_id };
+	const EntityComponentId Id = { Op.entity_id, Op.data.component_id };
 	if (ComponentsPresent.Contains(Id))
 	{
-		EntityComponentChanges.AddComponentAsUpdate(Id.EntityId, ComponentData::CreateCopy(Component.data.schema_type, Id.ComponentId));
+		EntityComponentChanges.AddComponentAsUpdate(Id.EntityId, ComponentData::CreateCopy(Op.data.schema_type, Id.ComponentId));
 	}
 	else
 	{
 		ComponentsPresent.Add(Id);
-		EntityComponentChanges.AddComponent(Id.EntityId, ComponentData::CreateCopy(Component.data.schema_type, Id.ComponentId));
+		EntityComponentChanges.AddComponent(Id.EntityId, ComponentData::CreateCopy(Op.data.schema_type, Id.ComponentId));
 	}
 }
 
-void ViewDelta::HandleComponentUpdate(const Worker_ComponentUpdateOp& Update)
+void ViewDelta::HandleComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	EntityComponentChanges.AddUpdate(Update.entity_id, ComponentUpdate::CreateCopy(Update.update.schema_type, Update.update.component_id));
+	EntityComponentChanges.AddUpdate(Op.entity_id, ComponentUpdate::CreateCopy(Op.update.schema_type, Op.update.component_id));
 }
 
-void ViewDelta::HandleRemoveComponent(const Worker_RemoveComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent)
+void ViewDelta::HandleRemoveComponent(const Worker_RemoveComponentOp& Op, TSet<EntityComponentId>& ComponentsPresent)
 {
-	const EntityComponentId Id = { Component.entity_id, Component.component_id };
+	const EntityComponentId Id = { Op.entity_id, Op.component_id };
 	// If the component has been added, remove it. Otherwise drop the op.
 	if (ComponentsPresent.Remove(Id))
 	{
