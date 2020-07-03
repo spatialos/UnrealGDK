@@ -43,10 +43,10 @@ public:
 private:
 	void ProcessOp(const Worker_Op& Op, TSet<EntityComponentId>& ComponentsPresent);
 
-	void HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange);
-	void HandleAddComponent(const Worker_AddComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent);
-	void HandleComponentUpdate(const Worker_ComponentUpdateOp& Update);
-	void HandleRemoveComponent(const Worker_RemoveComponentOp& Component, TSet<EntityComponentId>& ComponentsPresent);
+	void HandleAuthorityChange(const Worker_AuthorityChangeOp& Op);
+	void HandleAddComponent(const Worker_AddComponentOp& Op, TSet<EntityComponentId>& ComponentsPresent);
+	void HandleComponentUpdate(const Worker_ComponentUpdateOp& Op);
+	void HandleRemoveComponent(const Worker_RemoveComponentOp& Op, TSet<EntityComponentId>& ComponentsPresent);
 
 	TArray<Worker_Op> WorkerMessages;
 
