@@ -2,46 +2,38 @@
 
 #pragma once
 
-#include "SpatialView/OpList/AbstractOpList.h"
+#include "SpatialView/OpList/OpList.h"
 #include "Templates/UniquePtr.h"
 #include <improbable/c_worker.h>
+#include <memory>
 
 namespace SpatialGDK
 {
 
-class WorkerConnectionOpList : public AbstractOpList
+struct WorkerConnectionOpListData : OpListData
 {
-public:
-	explicit WorkerConnectionOpList(Worker_OpList* OpList)
-	: OpList(OpList)
-	{
-	}
-
-	virtual uint32 GetCount() const override
-	{
-		return OpList->op_count;
-	}
-
-	virtual Worker_Op& operator[](uint32 Index) override
-	{
-		return OpList->ops[Index];
-	}
-
-	virtual const Worker_Op& operator[](uint32 Index) const override
-	{
-		return OpList->ops[Index];
-	}
-
-private:
 	struct Deleter
 	{
-		void operator()(Worker_OpList* Ops) const noexcept
+		void operator()(Worker_OpList* OpList) const noexcept
 		{
-			Worker_OpList_Destroy(Ops);
+			if (OpList)
+			{
+				Worker_OpList_Destroy(OpList);
+			}
 		}
 	};
 
 	TUniquePtr<Worker_OpList, Deleter> OpList;
+
+	explicit WorkerConnectionOpListData(Worker_OpList* OpList) : OpList(OpList)
+	{
+	}
 };
+
+inline OpList GetOpListFromConnection(Worker_Connection* Connection)
+{
+	Worker_OpList* Ops = Worker_Connection_GetOpList(Connection, 0);
+	return {Ops->ops, Ops->op_count, MakeUnique<WorkerConnectionOpListData>(Ops)};
+}
 
 }  // namespace SpatialGDK
