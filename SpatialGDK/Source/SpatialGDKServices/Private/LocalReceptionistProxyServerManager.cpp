@@ -64,11 +64,11 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 		{
 			if (GetProcessName(OutPID, ProcessName))
 			{
-				OutLogMsg = TEXT("%s process with PID: %s"), ProcessName, OutPID;
+				OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
 				return true;
 			}
 
-			OutLogMsg = TEXT("Unknown process with PID: %s."), *OutPID;
+			OutLogMsg = FString::Printf(TEXT("Unknown process with PID: %s."), *OutPID);
 
 			return true;
 		}
@@ -102,12 +102,9 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 				UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Successfully killed %s"), *OutLogMessage);
 				return true;
 			}
-
-			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from a different process with PID: %s"), *PID);
-			return false;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from an unidentified process with PID: %s"), *PID);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from %s."), *OutLogMessage);
 		return false;
 	}
 
@@ -193,7 +190,7 @@ bool FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID(FStri
 	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local Receptionist Proxy is not running."));
 
 	OutPID.Empty();
-	return true;
+	return false;
 }
 
 void FLocalReceptionistProxyServerManager::DeletePIDFile()
@@ -234,7 +231,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	// Check if process run successfully
 	if (!ProxyServerProcHandle.IsValid())
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %s, Error Message: %s"), ExitCode, *StartResult);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
 		ProxyServerProcHandle.Reset();
 		return false;
 	}

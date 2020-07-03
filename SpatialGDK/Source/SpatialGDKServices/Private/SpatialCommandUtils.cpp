@@ -320,6 +320,7 @@ FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunni
 	if (!bProcessSucceeded)
 	{
 		FPlatformProcess::TerminateProc(ProcHandle, true);
+		ProcHandle.Reset();
 	}
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);
