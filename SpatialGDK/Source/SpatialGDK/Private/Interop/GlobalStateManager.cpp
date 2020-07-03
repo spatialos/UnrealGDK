@@ -14,17 +14,14 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineUtils.h"
-#include "GameFramework/GameModeBase.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Kismet/GameplayStatics.h"
 #include "Schema/ServerWorker.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
-#include "Utils/EntityPool.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
@@ -389,6 +386,22 @@ void UGlobalStateManager::TriggerBeginPlay()
 	{
 		SendCanBeginPlayUpdate(true);
 	}
+
+#if !UE_BUILD_SHIPPING
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (NetDriver->IsServer())
+	{
+		// If metrics display is enabled, spawn an Actor to replicate the information to each client.
+		if (SpatialSettings->bEnableMetricsDisplay)
+		{
+			NetDriver->SpatialMetricsDisplay = NetDriver->World->SpawnActor<ASpatialMetricsDisplay>();
+		}
+		if (SpatialSettings->SpatialDebugger != nullptr)
+		{
+			NetDriver->SpatialDebugger = NetDriver->World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+		}
+	}
+#endif
 
 	// This method has early exits internally to ensure the logic is only executed on the correct worker.
 	SetAcceptingPlayers(true);

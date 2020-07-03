@@ -45,7 +45,7 @@ public:
 	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
 	// the next mapping update.
 	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
-	Worker_EntityId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
+	Worker_PartitionId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.

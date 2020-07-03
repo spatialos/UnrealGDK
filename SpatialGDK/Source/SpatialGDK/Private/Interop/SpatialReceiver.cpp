@@ -1544,6 +1544,14 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
 		HandleRPCLegacy(Op);
 		return;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		if (LoadBalanceEnforcer != nullptr)
+		{
+			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
+		}
+		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
 		{

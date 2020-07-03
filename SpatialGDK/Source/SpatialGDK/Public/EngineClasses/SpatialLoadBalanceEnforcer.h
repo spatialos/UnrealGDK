@@ -35,19 +35,21 @@ public:
 	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 
 	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
+	bool EntityNeedsToBeEnforced(const Worker_EntityId EntityId) const;
+
 	// Visible for testing
 	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
-	bool GetAuthorityChangeState(Worker_EntityId EntityId, AuthorityStateChange& OutAuthorityStateChange) const;
+	bool GetAuthorityChangeState(Worker_EntityId EntityId, AuthorityStateChange& OutAuthorityChange) const;
 
-	TArray<AuthorityStateChange> ProcessQueuedAclAssignmentRequests();
+	TArray<AuthorityStateChange> ProcessAuthorityChangeRequests();
 
 private:
-	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
+	void QueueAuthorityAssignmentRequest(const Worker_EntityId EntityId);
 	bool CanEnforce(Worker_EntityId EntityId) const;
 
 	const PhysicalWorkerName WorkerId;
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;
+	TArray<Worker_EntityId> PendingAuthorityChangeRequests;
 };

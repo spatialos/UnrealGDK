@@ -19,8 +19,8 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	: Translator(InTranslator)
 	, Receiver(InReceiver)
 	, Connection(InConnection)
-	, bWorkerEntityQueryInFlight(false)
 	, Partitions({})
+	, bWorkerEntityQueryInFlight(false)
 {}
 
 void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
@@ -28,7 +28,7 @@ void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uin
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"), NumVirtualWorkers);
 
 	// Currently, this should only be called once on startup. In the future we may allow for more flexibility.
-	VirtualWorkersToAssign.SetNum(NumVirtualWorkers);
+	VirtualWorkersToAssign.Reserve(NumVirtualWorkers);
 	for (uint32 i = 1; i <= NumVirtualWorkers; i++)
 	{
 		VirtualWorkersToAssign.Emplace(i);
@@ -58,8 +58,8 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 	else
 	{
 		// When USLB is enabled, the translator stores the partition entities we create.
-		// When USLB is disable, we'll just fill it with invalid IDs.
-		Partitions.SetNum(VirtualWorkersToAssign.Num());
+		// When USLB is disabled, we'll just fill it with invalid IDs.
+		Partitions.Reserve(VirtualWorkersToAssign.Num());
 		for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 		{
 			Partitions.Emplace(PartitionInfo{ SpatialConstants::INVALID_ENTITY_ID, VirtualWorkerId});

@@ -31,7 +31,7 @@ const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVi
 	return nullptr;
 }
 
-Worker_EntityId SpatialVirtualWorkerTranslator::GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const
+Worker_PartitionId SpatialVirtualWorkerTranslator::GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const
 {
 	if (const SpatialVirtualWorkerTranslator::WorkerInformation* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{

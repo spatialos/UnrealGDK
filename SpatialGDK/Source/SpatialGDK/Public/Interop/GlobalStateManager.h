@@ -90,7 +90,6 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 
-	void BecomeAuthoritativeOverAllActors();
 	void SetAllActorRolesBasedOnLBStrategy();
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 

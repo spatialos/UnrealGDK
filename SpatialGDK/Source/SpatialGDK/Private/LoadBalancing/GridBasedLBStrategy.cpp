@@ -125,8 +125,8 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
 	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
-	check(IsReady());
-	check(bIsStrategyUsedOnLocalWorker);
+	//check(IsReady());
+	//check(bIsStrategyUsedOnLocalWorker);
 
 	const FBox2D Interest2D = WorkerCells[VirtualWorker - 1].ExpandBy(InterestBorder);
 

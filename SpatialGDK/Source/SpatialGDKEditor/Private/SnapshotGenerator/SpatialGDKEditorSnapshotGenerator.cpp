@@ -74,17 +74,17 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(PlayerSpawnerData);
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 
 	SetEntityData(SpawnerEntity, Components);
 
@@ -109,7 +109,7 @@ Worker_ComponentData CreateDeploymentData()
 
 Worker_ComponentData CreateGSMShutdownData()
 {
-	Worker_ComponentData GSMShutdownData;
+	Worker_ComponentData GSMShutdownData{};
 	GSMShutdownData.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	GSMShutdownData.schema_type = Schema_CreateComponentData();
 	return GSMShutdownData;
@@ -149,13 +149,13 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
+	const WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
@@ -201,9 +201,9 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
 	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
@@ -244,7 +244,7 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
+	const WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateMetadataData());

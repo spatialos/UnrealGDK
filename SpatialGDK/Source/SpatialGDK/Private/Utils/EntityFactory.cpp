@@ -63,19 +63,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
-	WorkerAttributeSet WorkerAttributeOrSpecificWorker = SpatialConstants::UnrealServerAttributeSet;
 	const VirtualWorkerId IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
-	if (IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-	{
-		const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-		WorkerAttributeOrSpecificWorker = { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) };
-	}
-	else
-	{
-		UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. Actor: %s. Strategy: %s"), *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
-	}
-
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttributeOrSpecificWorker };
+	checkf(IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+		TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. "
+			"Actor: %s. Strategy: %s"), *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
+	const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) } };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
@@ -378,7 +371,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
 		{
 			const Worker_ComponentId ComponentId = ComponentIdIt.Key();
-			const Worker_PartitionId PartitionId = IsClientAuthoritativeComponent(ComponentId) ? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
+			const Worker_PartitionId PartitionId = IsClientAuthoritativeComponent(ComponentId)
+				? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
 			DelegationMap.Add(ComponentId, PartitionId);
 		}
 		DelegationMap.Add(AuthorityDelegation::ComponentId, AuthoritativeServerPartitionId);

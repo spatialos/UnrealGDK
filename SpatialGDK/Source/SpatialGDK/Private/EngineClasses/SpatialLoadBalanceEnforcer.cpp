@@ -45,7 +45,7 @@ void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_Re
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
 			TEXT("Component %d for entity %lld removed. Can no longer enforce the previous request for this entity."),
 			Op.component_id, Op.entity_id);
-		AclWriteAuthAssignmentRequests.Remove(Op.entity_id);
+		PendingAuthorityChangeRequests.Remove(Op.entity_id);
 	}
 }
 
@@ -55,7 +55,7 @@ void SpatialLoadBalanceEnforcer::OnEntityRemoved(const Worker_RemoveEntityOp& Op
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Entity %lld removed. Can no longer enforce the previous request for this entity."),
 			Op.entity_id);
-		AclWriteAuthAssignmentRequests.Remove(Op.entity_id);
+		PendingAuthorityChangeRequests.Remove(Op.entity_id);
 	}
 }
 
@@ -71,7 +71,7 @@ void SpatialLoadBalanceEnforcer::OnAclAuthorityChanged(const Worker_AuthorityCha
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
 				TEXT("ACL authority lost for entity %lld. Can no longer enforce the previous request for this entity."),
 				AuthOp.entity_id);
-			AclWriteAuthAssignmentRequests.Remove(AuthOp.entity_id);
+			PendingAuthorityChangeRequests.Remove(AuthOp.entity_id);
 		}
 		return;
 	}
@@ -95,99 +95,79 @@ void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_Ent
 		return;
 	}
 
-	const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-	const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-
-	check(OwningWorkerId != nullptr);
-	if (OwningWorkerId == nullptr)
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Couldn't find mapped worker for entity %lld. This shouldn't happen! Virtual worker ID: %d"),
-			EntityId, AuthorityIntentComponent->VirtualWorkerId);
-		return;
-	}
-
-	if (*OwningWorkerId == WorkerId && StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("No need to queue newly authoritative entity because this worker is already authoritative. Entity: %lld. Worker: %s."),
-			EntityId, *WorkerId);
-		return;
-	}
-
 	if (AclAssignmentRequestIsQueued(EntityId))
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Avoiding queueing a duplicate ACL assignment request. Entity: %lld. Worker: %s."),
-			EntityId, *WorkerId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Avoiding queueing a duplicate ACL assignment request. "
+			"Entity: %lld. Worker: %s."), EntityId, *WorkerId);
 		return;
 	}
 
-	QueueAclAssignmentRequest(EntityId);
+	QueueAuthorityAssignmentRequest(EntityId);
+}
+
+bool SpatialLoadBalanceEnforcer::EntityNeedsToBeEnforced(const Worker_EntityId EntityId) const
+{
+	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		const AuthorityDelegation* DelegationMap = StaticComponentView->GetComponentData<AuthorityDelegation>(EntityId);
+		const Worker_PartitionId* CurrentAuthoritativePartition = DelegationMap->Delegations.Find(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+		check(CurrentAuthoritativePartition != nullptr);
+
+		const Worker_PartitionId TargetAuthoritativePartition = VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		checkf(TargetAuthoritativePartition != SpatialConstants::INVALID_ENTITY_ID, TEXT("Couldn't find mapped worker for entity %lld. Virtual worker ID: %d"),
+            EntityId, AuthorityIntentComponent->VirtualWorkerId);
+
+		return *CurrentAuthoritativePartition != TargetAuthoritativePartition;
+	}
+
+	const EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	const WorkerRequirementSet* CurrentAuthoritativeWorker = Acl->ComponentWriteAcl.Find(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+	check(CurrentAuthoritativeWorker != nullptr);
+
+	const PhysicalWorkerName* TargetAuthoritativeWorker = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+	checkf(TargetAuthoritativeWorker != nullptr, TEXT("Couldn't find mapped worker for entity %lld. Virtual worker ID: %d"),
+        EntityId, AuthorityIntentComponent->VirtualWorkerId);
+
+	return (*CurrentAuthoritativeWorker)[0][0] == *TargetAuthoritativeWorker;
 }
 
 bool SpatialLoadBalanceEnforcer::AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const
 {
-	return AclWriteAuthAssignmentRequests.Contains(EntityId);
+	return PendingAuthorityChangeRequests.Contains(EntityId);
 }
 
-bool SpatialLoadBalanceEnforcer::GetAuthorityChangeState(Worker_EntityId EntityId, SpatialLoadBalanceEnforcer::AuthorityStateChange& OutAuthorityStateChange) const
+bool SpatialLoadBalanceEnforcer::GetAuthorityChangeState(Worker_EntityId EntityId, AuthorityStateChange& OutAuthorityChange) const
 {
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-	{
-		const AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityDelegation>(EntityId);
-		if (AuthorityDelegationComponent == nullptr)
-		{
-			// This happens if the AuthorityDelegation component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthorityDelegation component has been removed since the request was queued. EntityId: %lld"), EntityId);
-			return false;
-		}
-	}
+	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	checkf(AuthorityIntentComponent != nullptr, TEXT("Can't process entity authority change. AuthorityIntent component has been removed since the request was queued. "
+		"EntityId: %lld"), EntityId)
+		checkf(AuthorityIntentComponent->VirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+			TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld."), EntityId)
 
-	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-	if (AuthorityIntentComponent == nullptr)
-	{
-		// This happens if the AuthorityIntent component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthorityIntent component has been removed since the request was queued. EntityId: %lld"), EntityId);
-		return false;
-	}
-
-	if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld. This should not happen - investigate if you see this warning."), EntityId);
-		return false;
-	}
-
-	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-	if (NetOwningClientWorkerComponent == nullptr)
-	{
-		// This happens if the NetOwningClientWorker component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as NetOwningClientWorker component has been removed since the request was queued. EntityId: %lld"), EntityId);
-		return false;
-	}
+		const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<NetOwningClientWorker>(EntityId);
+	checkf(NetOwningClientWorkerComponent != nullptr, TEXT("Can't process entity authority change. NetOwningClientWorker component has been removed since the request was queued. "
+		"EntityId: %lld"), EntityId);
 
 	const ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	if (ComponentPresenceComponent == nullptr)
-	{
-		// This happens if the ComponentPresence component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as ComponentPresence component has been removed since the request was queued. EntityId: %lld"), EntityId);
-		return false;
-	}
+	checkf(ComponentPresenceComponent != nullptr, TEXT("Can't process entity authority change. ComponentPresence component has been removed since the request was queued. "
+		"EntityId: %lld"), EntityId)
 
-	if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to process ACL assignment; this worker lost authority over the EntityACL since the request was queued."
-            " Source worker ID: %s. Entity ID %lld."), *WorkerId, EntityId);
-		return false;
-	}
+		const EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	checkf(Acl != nullptr, TEXT("Can't process entity authority change. EntityAcl component has been removed since the request was queued. "
+		"EntityId: %lld"), EntityId)
 
-	TArray<Worker_ComponentId> ComponentIds;
+		TArray<Worker_ComponentId> ComponentIds;
 
-	const EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-
-	// With USLB enabled, we grab our current component authorities from the AuthorityDelegation component.
-	// With USLB disabled, it's EntityACL.
+	// With USLB enabled, we get the entity component list from the AuthorityDelegation component.
+	// With USLB disabled, it's the EntityACL component.
 	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 	{
-		AuthorityDelegation* AuthDelegation = StaticComponentView->GetComponentData<AuthorityDelegation>(EntityId);
-		AuthDelegation->Delegations.GetKeys(ComponentIds);
+		const AuthorityDelegation* AuthDelegation = StaticComponentView->GetComponentData<AuthorityDelegation>(EntityId);
+		checkf(AuthDelegation != nullptr, TEXT("Can't process entity authority change. AuthorityDelegation component was removed while the request was queued. "
+			"EntityId: %lld"), EntityId)
+			AuthDelegation->Delegations.GetKeys(ComponentIds);
 	}
 	else
 	{
@@ -200,45 +180,47 @@ bool SpatialLoadBalanceEnforcer::GetAuthorityChangeState(Worker_EntityId EntityI
 		ComponentIds.AddUnique(RequiredComponentId);
 	}
 
-	OutAuthorityStateChange = AuthorityStateChange{
+	OutAuthorityChange = AuthorityStateChange{
 		EntityId,
-        Acl->ReadAcl,
-        ComponentIds,
-        AuthorityIntentComponent->VirtualWorkerId
-    };
+		Acl->ReadAcl,
+		ComponentIds,
+		AuthorityIntentComponent->VirtualWorkerId
+	};
+
+	// Commented this out for now because it only detects changes in authoritative server, not in changes to component presence,
+	// or net owning client worker.
+	//if (!EntityNeedsToBeEnforced)
+	//{
+	//	return false;
+	//}
 
 	return true;
 }
 
-TArray<SpatialLoadBalanceEnforcer::AuthorityStateChange> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+TArray<SpatialLoadBalanceEnforcer::AuthorityStateChange> SpatialLoadBalanceEnforcer::ProcessAuthorityChangeRequests()
 {
-	TArray<AuthorityStateChange> PendingRequests;
+	TArray<AuthorityStateChange> AuthorityChangesToProcess;
+	AuthorityChangesToProcess.Reserve(PendingAuthorityChangeRequests.Num());
 
-	TArray<Worker_EntityId> CompletedRequests;
-	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
-
-	for (Worker_EntityId EntityId : AclWriteAuthAssignmentRequests)
+	for (Worker_EntityId EntityId : PendingAuthorityChangeRequests)
 	{
-		AuthorityStateChange AuthorityChangeData{};
-		const bool bAuthorityChangeDataSuccess = GetAuthorityChangeState(EntityId, AuthorityChangeData);
-
-		if (bAuthorityChangeDataSuccess)
+		AuthorityStateChange AuthorityChange{};
+		const bool bIsAuthorityChangeNeeded = GetAuthorityChangeState(EntityId, AuthorityChange);
+		if (bIsAuthorityChangeNeeded)
 		{
-			PendingRequests.Push(AuthorityChangeData);
+			AuthorityChangesToProcess.Emplace(AuthorityChange);
 		}
-
-		CompletedRequests.Add(EntityId);
 	}
 
-	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const Worker_EntityId& EntityId) { return CompletedRequests.Contains(EntityId); });
+	PendingAuthorityChangeRequests.Empty();
 
-	return PendingRequests;
+	return AuthorityChangesToProcess;
 }
 
-void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::QueueAuthorityAssignmentRequest(const Worker_EntityId EntityId)
 {
 	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
-	AclWriteAuthAssignmentRequests.Add(EntityId);
+	PendingAuthorityChangeRequests.Add(EntityId);
 }
 
 bool SpatialLoadBalanceEnforcer::CanEnforce(Worker_EntityId EntityId) const
@@ -247,9 +229,10 @@ bool SpatialLoadBalanceEnforcer::CanEnforce(Worker_EntityId EntityId) const
 	{
 		return StaticComponentView->HasComponent(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID)
             && StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-            && StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID)
             && StaticComponentView->HasComponent(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID)
-            && StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+            && StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+			// With USLB we also need the AuthorityDelegation component.
+			&& StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID);
 	}
 
 	// We need to be able to see the ACL component

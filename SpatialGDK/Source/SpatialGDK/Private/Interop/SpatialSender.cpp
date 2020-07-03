@@ -2,12 +2,12 @@
 
 #include "Interop/SpatialSender.h"
 
-
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -153,8 +153,7 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	FWorkerComponentUpdate Update = Presence->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-
+	// Short circuit an enforcer update if possible.
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
@@ -299,27 +298,32 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 		}
 		USpatialSender* Sender = WeakSender.Get();
 
-		if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing && Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
-			// SUPER MEGA DEATH HACK
-			// We only want 1 worker to claim the snapshot partition entity. If every worker tries, we could have a
-			// situation where multiple workers receive and subsequently lose authority before authority settles with
-			// the last worker to have their request processed. However, all server-side workers all request entity IDs
-			// at startup, but only the first request with be returned a range of entity IDs beginning at the first
-			// non-taken entity ID in the snapshot (which is 5 at this point in time). If the server worker entity ID
-			// is 5, we know that this worker uniquely perform that entity reservation, and so will be the only worker
-			// to meet this conditional and claim the snapshot partition entity.
-			if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
+
+
+			if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 			{
-				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerEntityId(),
-					SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+				// SUPER MEGA DEATH HACK
+				// We only want 1 worker to claim the snapshot partition entity. If every worker tries, we could have a
+				// situation where multiple workers receive and subsequently lose authority before authority settles with
+				// the last worker to have their request processed. However, all server-side workers all request entity IDs
+				// at startup, but only the first request with be returned a range of entity IDs beginning at the first
+				// non-taken entity ID in the snapshot (which is 5 at this point in time). If the server worker entity ID
+				// is 5, we know that this worker uniquely perform that entity reservation, and so will be the only worker
+				// to meet this conditional and claim the snapshot partition entity.
+				if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
+				{
+					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerEntityId(),
+						SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+				}
+
+				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
+				// interest in the VirtualWorkerTranslator component.
+				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerEntityId(), Op.entity_id);
 			}
-
-			// We claim each server worker entity as a partition so server worker interest which is necessary for getting
-			// interest in the VirtualWorkerTranslator component.
-			Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerEntityId(), Op.entity_id);
-
+			
 			return;
 		}
 
@@ -596,19 +600,12 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 {
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
 
 	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	check(AuthorityIntentComponent != nullptr);
-
-	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
-	{
-		// There may be multiple intent updates triggered by a server worker before the Runtime
-		// notifies this worker that the authority has changed. Ignore the extra calls here.
-		UE_LOG(LogSpatialSender, Log, TEXT("Attempted to update AuthorityIntent twice to the same value. This shouldn't happen. "
-			"Entity ID: %lld. Virtual worker: '%d'"), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
-		return;
-	}
+	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
+		TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
+		*GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId)
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority intent update for entity id %lld. Virtual worker '%d' should become authoritative over %s"),
@@ -617,7 +614,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
+	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+	// This should always happen with USLB.
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
 
@@ -636,13 +634,12 @@ void USpatialSender::EnforceAuthority(const SpatialLoadBalanceEnforcer::Authorit
 void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const
 {
 	check(Request.EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(Request.TargetVirtualWorker != SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 	check(NetDriver->StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID));
 
 	const Worker_PartitionId AuthoritativeServerPartition = NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(Request.TargetVirtualWorker);
 	
-	const Worker_ComponentId ClientRpcAuthComponent = SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer());
-
-	// Remove logic for the below, I don't really understand it.
+	// Temporarily removing teh logic the below, I don't really understand it. Hoping to hit an exception which clarifies.
 
 	// There's a case where this function is called after a Tombstone component is added to the entity (when a startup Actor is deleted).
 	// In this case, we won't be able to access the Actor* via the package map (since the Actor was removed when the Tombstone was added).
@@ -659,11 +656,12 @@ void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnfor
 
 	AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<AuthorityDelegation>(Request.EntityId);
 	check(AuthorityDelegationComponent != nullptr);
-	
+
+	const Worker_ComponentId ClientRpcAuthComponent = SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer());
+
 	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
 	{
-		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
-            || ComponentId == ClientRpcAuthComponent)
+		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID || ComponentId == ClientRpcAuthComponent)
 		{
 			// if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
 			// {
@@ -686,18 +684,16 @@ void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnfor
 
 void USpatialSender::SendEntityACLUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const
 {
-	check(NetDriver);
 	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
-	// Map the authoritative virtual worker to a physical worker name
-	check(NetDriver->VirtualWorkerTranslator != nullptr);
+	// Get the server worker name mapped to the Actor's authoritative virtual worker.
 	const PhysicalWorkerName* DestinationWorkerId = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(Request.TargetVirtualWorker);
 	check(DestinationWorkerId != nullptr)
 	const FString& AuthoritativePhysicalWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { AuthoritativePhysicalWorkerId };
 
 	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
-	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(Request.EntityId);
+	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<NetOwningClientWorker>(Request.EntityId);
 	check(NetOwningClientWorkerComponent != nullptr);
 	const PhysicalWorkerName PossessingClientId = NetOwningClientWorkerComponent->WorkerId.IsSet() ?
         NetOwningClientWorkerComponent->WorkerId.GetValue() :
