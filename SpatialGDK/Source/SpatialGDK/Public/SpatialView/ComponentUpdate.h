@@ -11,7 +11,13 @@ namespace SpatialGDK
 
 struct ComponentUpdateDeleter
 {
-	void operator()(Schema_ComponentUpdate* ComponentUpdate) const noexcept;
+	void operator()(Schema_ComponentUpdate* ComponentUpdate) const noexcept
+	{
+		if (ComponentUpdate)
+		{
+			Schema_DestroyComponentUpdate(ComponentUpdate);
+		}
+	}
 };
 
 using OwningComponentUpdatePtr = TUniquePtr<Schema_ComponentUpdate, ComponentUpdateDeleter>;
@@ -47,6 +53,7 @@ public:
 	Schema_Object* GetEvents() const;
 
 	Schema_ComponentUpdate* GetUnderlying() const;
+	Worker_ComponentUpdate GetWorkerComponentUpdate() const;
 
 	Worker_ComponentId GetComponentId() const;
 
@@ -54,4 +61,5 @@ private:
 	Worker_ComponentId ComponentId;
 	OwningComponentUpdatePtr Update;
 };
+
 } // namespace SpatialGDK
