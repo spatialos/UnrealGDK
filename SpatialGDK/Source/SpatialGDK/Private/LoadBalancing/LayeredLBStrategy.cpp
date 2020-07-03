@@ -121,7 +121,6 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
-	//check(IsReady());
 	if (!VirtualWorkerIdToLayerName.Contains(VirtualWorker))
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), VirtualWorker);
