@@ -253,7 +253,7 @@ void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey Key, Schema_
 	}
 }
 
-TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(const uint8_t* TraceBytes, const uint8_t* SpanBytes)
+void USpatialLatencyTracer::ReceivedFromWire(const uint8_t* TraceBytes, const uint8_t* SpanBytes)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -261,34 +261,9 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(const uint8_t* TraceBy
 
 	TraceKey Key = InvalidTraceKey;
 
-	for (const auto& TracePair : TraceMap)
-	{
-		const TraceKey& _Key = TracePair.Key;
-		const TraceSpan& Span = TracePair.Value;
-
-		if (Span.context().trace_id() == DestContext.trace_id())
-		{
-			Key = _Key;
-			break;
-		}
-	}
-
-	if (Key != InvalidTraceKey)
-	{
-		TraceSpan* Span = TraceMap.Find(Key);
-
-		WriteKeyFrameToTrace(Span, TEXT("Local Trace - Schema Obj Read"));
-	}
-	else
-	{
-		FString SpanMsg = FormatMessage(TEXT("Remote Parent Trace - Schema Obj Read"));
-		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
-
-		Key = GenerateNewTraceKey();
-		TraceMap.Add(Key, MoveTemp(RetrieveTrace));
-	}
-
-	return Key;
+	FString SpanMsg = FormatMessage(TEXT("Payload received and stored"));
+	TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
+	WriteKeyFrameToTrace(&RetrieveTrace, TEXT("Recv from wire"));
 }
 
 TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId)
@@ -331,6 +306,8 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 
 			Key = GenerateNewTraceKey();
 			TraceMap.Add(Key, MoveTemp(RetrieveTrace));
+
+			
 		}
 
 		return Key;

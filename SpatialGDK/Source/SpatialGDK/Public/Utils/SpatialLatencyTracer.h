@@ -135,7 +135,7 @@ public:
 
 	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
-	TraceKey ReadTraceFromSchemaObject(const uint8_t* TraceId, const uint8_t* SpanId);
+	void ReceivedFromWire(const uint8_t* TraceId, const uint8_t* SpanId);
 
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();

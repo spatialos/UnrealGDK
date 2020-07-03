@@ -235,7 +235,15 @@ void USpatialWorkerConnection::QueueLatestOpList()
 						{
 							Schema_Object* SO = Schema_GetObject(SOW, j);
 							//Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(OpList->ops[i].op.component_update.update.schema_type);
-							TraceKey K = Tracer->ReadTraceFromSchemaObject(SO, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+							if (Schema_GetObjectCount(SO, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID) > 0)
+							{
+								Schema_Object* TraceData = Schema_IndexObject(SO, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID, 0);
+
+								const uint8* TraceBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_TRACE_ID);
+								const uint8* SpanBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_SPAN_ID);
+
+								Tracer->ReceivedFromWire(TraceBytes, SpanBytes);
+							}
 						}
 					}
 				}
@@ -258,7 +266,7 @@ void USpatialWorkerConnection::QueueLatestOpList()
 							SpanId.Push((uint8)Schema_IndexUint32(SOW, 47, j));
 						}
 
-						TraceKey K = Tracer->ReadTraceFromSchemaObject(&TraceId[0], &SpanId[0]);
+						Tracer->ReceivedFromWire(&TraceId[0], &SpanId[0]);
 					}
 #if 0
 					USpatialNetDriver* nd = NULL;
