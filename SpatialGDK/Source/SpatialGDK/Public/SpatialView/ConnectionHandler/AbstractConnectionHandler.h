@@ -3,7 +3,7 @@
 #pragma once
 
 #include "SpatialView/MessagesToSend.h"
-#include "SpatialView/OpList/AbstractOpList.h"
+#include "SpatialView/OpList/OpList.h"
 #include "Templates/UniquePtr.h"
 #include <improbable/c_worker.h>
 
@@ -23,18 +23,16 @@ public:
 	virtual uint32 GetOpListCount() = 0;
 
 	// Gets the next queued OpList. If there is no OpList queued then an empty one is returned.
-	virtual TUniquePtr<AbstractOpList> GetNextOpList() = 0;
+	virtual OpList GetNextOpList() = 0;
 
 	// Consumes messages and sends them to the deployment.
 	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) = 0;
 
-	// todo implement this once spatial view can be used without the legacy worker connection.
-	// Return the unique ID for the worker.
-	// virtual const FString& GetWorkerId() const = 0;
+	 // Return the unique ID for the worker.
+	 virtual const FString& GetWorkerId() const = 0;
 
-	// todo implement this once spatial view can be used without the legacy worker connection.
-	// Returns the attributes for the worker.
-	// virtual const TArray<FString>& GetWorkerAttributes() const = 0;
+	 // Returns the attributes for the worker.
+	 virtual const TArray<FString>& GetWorkerAttributes() const = 0;
 };
 
 }  // namespace SpatialGDK
