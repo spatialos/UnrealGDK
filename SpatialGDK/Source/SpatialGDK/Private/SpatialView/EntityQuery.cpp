@@ -50,7 +50,7 @@ int32 EntityQuery::GetNestedConstraintCount(const Worker_Constraint& Constraint)
 		size_t Sum = 1;
 		for (size_t i = 0; i < OrConstraint.constraint_count; ++i)
 		{
-		  Sum += GetNestedConstraintCount(OrConstraint.constraints[i]);
+			Sum += GetNestedConstraintCount(OrConstraint.constraints[i]);
 		}
 		return Sum;
 	}

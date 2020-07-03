@@ -41,9 +41,9 @@ public:
 
 	static CommandResponse CreateCopy(const Schema_CommandResponse* Data, Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex);
 
-	// Creates a copy of the command request.
+	// Creates a copy of the command response.
 	CommandResponse DeepCopy() const;
-	// Releases ownership of the command request.
+	// Releases ownership of the command response.
 	Schema_CommandResponse* Release() &&;
 
 	Schema_Object* GetResponseObject() const;
