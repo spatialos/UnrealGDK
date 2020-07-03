@@ -90,8 +90,16 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 		SpatialMetric.Value = Metric.Value;
 		Metrics.GaugeMetrics.Add(SpatialMetric);
 	}
+	
 	for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
 	{
+		if (Metric.Key == "kcp_resends_by_packet" && Metric.Value.Sum > 0)
+		{
+			for (const auto& X : Metric.Value.Buckets)
+			{
+				UE_LOG(LogSpatialMetrics, Log, TEXT("kcp_resends_by_packet bucket [%.8f] %d"), X.Key, X.Value);
+			}
+		}
 
 		SpatialGDK::HistogramMetric SpatialMetric;
 		SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
