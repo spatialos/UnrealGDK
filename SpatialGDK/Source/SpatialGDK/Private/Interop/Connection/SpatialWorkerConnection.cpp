@@ -248,14 +248,14 @@ void USpatialWorkerConnection::QueueLatestOpList()
 					if (l0 == sizeof(improbable::trace::TraceId) && l1 == sizeof(improbable::trace::SpanId))
 					{
 						TArray<uint8> TraceId;
-						for (int i = 0; i < sizeof(improbable::trace::TraceId); i++)
+						for (int j = 0; j < sizeof(improbable::trace::TraceId); j++)
 						{
-							TraceId.Push((uint8)Schema_IndexUint32(SOW, 46, i));
+							TraceId.Push((uint8)Schema_IndexUint32(SOW, 46, j));
 						}
 						TArray<uint8> SpanId;
-						for (int i = 0; i < sizeof(improbable::trace::SpanId); i++)
+						for (int j = 0; j < sizeof(improbable::trace::SpanId); j++)
 						{
-							SpanId.Push((uint8)Schema_IndexUint32(SOW, 47, i));
+							SpanId.Push((uint8)Schema_IndexUint32(SOW, 47, j));
 						}
 
 						TraceKey K = Tracer->ReadTraceFromSchemaObject(&TraceId[0], &SpanId[0]);
