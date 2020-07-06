@@ -513,6 +513,16 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 		ApplyProperty(Object, FieldId, *ArrayObjectReferences, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, ElementOffset, ParentIndex, bOutReferencesChanged);
 	}
 
+	const int32 MaxOffset = Count * Property->Inner->ElementSize;
+
+	for (auto It = ArrayObjectReferences->CreateIterator(); It; ++It)
+	{
+		if (It.Key() >= MaxOffset)
+		{
+			It.RemoveCurrent();
+		}
+	}
+
 	if (ArrayObjectReferences->Num() > 0)
 	{
 		if (bNewArrayMap)
