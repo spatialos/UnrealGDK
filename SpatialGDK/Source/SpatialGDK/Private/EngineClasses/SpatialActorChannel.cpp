@@ -469,7 +469,6 @@ int64 USpatialActorChannel::ReplicateActor()
 		FString Error(FString::Printf(TEXT("ReplicateActor called while already replicating! %s"), *Describe()));
 		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
 		ensureMsgf(false, TEXT("%s"), *Error);
-		ensureMsgf(false, TEXT("%s"), *Error);
 		return 0;
 	}
 	else if (bActorIsPendingKill)
