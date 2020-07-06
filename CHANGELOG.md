@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 5. Select **Modify** to confirm your changes.
 
 ### Breaking Changes:
+- The `preview` branches have been deprecated. The GDK is now only released to the `release` branch, which is fully tested, stable, and documented. If you have the `preview` branches checked out, you must checkout `release` to recieve the latest changes.
 - The SpatialOS Runtime Standard variant requires the latest version of the SpatialOS CLI. Run `spatial update` to get the latest version.
 - Old snapshots are incompatible with version 0.10 of the GDK. You must generate new snapshots after upgrading to 0.10.
 - The old Inspector is incompatible with the SpatialOS Runtime Standard variant. The Standard variant uses the new Inspector by default.
