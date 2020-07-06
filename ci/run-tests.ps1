@@ -49,6 +49,8 @@ if ($run_with_spatial) {
         "-cooksinglepackage"
     )
     
+    $map_paths = $test_repo_map.Substring($test_repo_map.LastIndexOf("/")+1)
+
     Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-NoShaderCompile", # Prevent shader compilation
@@ -57,7 +59,7 @@ if ($run_with_spatial) {
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=GenerateSnapshot", # Run the commandlet
-        "-MapPaths=`"$test_repo_map.Substring($test_repo_map.LastIndexOf("/")+1)`"" # Which maps to run the commandlet for
+        "-MapPaths=`"$map_paths`"" # Which maps to run the commandlet for
     )
 
     # Create the default snapshot
