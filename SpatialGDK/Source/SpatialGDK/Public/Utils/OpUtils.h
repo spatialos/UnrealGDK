@@ -9,6 +9,7 @@
 namespace SpatialGDK
 {
 void FindFirstOpOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType OpType, Worker_Op** OutOp);
+void FindAllOpsOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType OpType, TArray<Worker_Op*>& FoundOpArray);
 void FindFirstOpOfTypeForComponent(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType OpType, const Worker_ComponentId ComponentId, Worker_Op** OutOp);
 Worker_ComponentId GetComponentId(const Worker_Op* Op);
 } // namespace SpatialGDK
