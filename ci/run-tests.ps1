@@ -44,7 +44,7 @@ if ($run_with_spatial) {
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=CookAndGenerateSchema", # Run the commandlet
-        "-map=$test_repo_map",
+        "-map="$test_repo_map"",
         "-targetplatform=LinuxServer",
         "-cooksinglepackage"
     )
