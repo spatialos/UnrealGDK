@@ -73,6 +73,12 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 			return true;
 		}
 	}
+	else
+	{
+		OutLogMsg = TEXT("Failed to check if a process is blocking the required port.");
+		return false;
+	}
+
 	OutLogMsg = TEXT("No Process is blocking the required port.");
 
 	return false;
@@ -205,6 +211,13 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 {
 	FString StartResult;
 	int32 ExitCode;
+
+	// Do not start receptionist proxy if the cloud deployment name is not specified
+	if (CloudDeploymentName.IsEmpty())
+	{
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("No deployment name has been specified."));
+		return false;
+	}
 
 	// Do not restart the same proxy if you have already a proxy running for the same cloud deployment
 	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress == ListeningAddress && RunningProxyReceptionistPort == ReceptionistPort)
