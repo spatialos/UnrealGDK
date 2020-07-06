@@ -1958,9 +1958,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		// Get the RPC target Actor.
 		AActor* Actor = TargetObject->GetTypedOuter<AActor>();
 
-		if ((Params.Type == ERPCType::ServerReliable ||
-			Params.Type == ERPCType::ServerUnreliable) &&
-			Actor->Role == ROLE_SimulatedProxy)
+		if (Actor != nullptr &&
+			Actor->Role == ROLE_SimulatedProxy &&
+			(Params.Type == ERPCType::ServerReliable ||
+			Params.Type == ERPCType::ServerUnreliable))
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueCommand = ERPCQueueCommand::DropEntireQueue;
