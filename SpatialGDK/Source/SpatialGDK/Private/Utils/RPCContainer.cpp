@@ -122,11 +122,11 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 		{
 		case ERPCQueueCommand::ContinueProcessing:
 			NumProcessedParams++;
+		case ERPCQueueCommand::StopProcessing:
+			break;
 		case ERPCQueueCommand::DropEntireQueue:
 			RPCList.Empty();
 			return;
-		case ERPCQueueCommand::DropRPC:
-			break;
 		}
 	}
 

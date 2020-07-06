@@ -1958,10 +1958,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		// Get the RPC target Actor.
 		AActor* Actor = TargetObject->GetTypedOuter<AActor>();
 
-		const bool bHasServerEndpointAuthority = StaticComponentView->HasAuthority(Params.ObjectRef.Entity, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
-		if (bHasServerEndpointAuthority &&
-			Actor->Role == ROLE_SimulatedProxy &&
-			Params.Type != ERPCType::NetMulticast)
+		if ((Params.Type == ERPCType::ServerReliable ||
+			Params.Type == ERPCType::ServerUnreliable) &&
+			Actor->Role == ROLE_SimulatedProxy)
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueCommand = ERPCQueueCommand::DropEntireQueue;

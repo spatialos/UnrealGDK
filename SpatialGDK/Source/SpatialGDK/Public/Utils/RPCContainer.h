@@ -46,7 +46,7 @@ enum class ERPCResult : uint8
 enum class ERPCQueueCommand : uint8_t
 {
 	ContinueProcessing,
-	DropRPC,
+	StopProcessing,
 	DropEntireQueue
 };
 
