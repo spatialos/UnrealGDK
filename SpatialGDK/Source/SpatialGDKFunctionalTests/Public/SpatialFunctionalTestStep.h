@@ -52,29 +52,47 @@ struct FSpatialFunctionalTestStepDefinition
 	{
 	}
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
 	FString StepName;
 
 	bool bIsNativeDefinition;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
 	FStepIsReadyDelegate IsReadyEvent;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
 	FStepStartDelegate StartEvent;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
 	FStepTickDelegate TickEvent;
 
 	FNativeStepIsReadyDelegate NativeIsReadyEvent;
 	FNativeStepStartDelegate NativeStartEvent;
 	FNativeStepTickDelegate NativeTickEvent;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
 	TArray<FWorkerDefinition> Workers;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
 	float TimeLimit;
 };
 
+UCLASS(BlueprintType, Blueprintable)
+class USpatialFunctionalTestStepDefinitionWrapper : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
+	FString StepName;
+
+	bool bIsNativeDefinition;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
+	FStepIsReadyDelegate IsReadyEvent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
+	FStepStartDelegate StartEvent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test Step Definition")
+	FStepTickDelegate TickEvent;
+};
 
 class SpatialFunctionalTestStep
 {
