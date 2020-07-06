@@ -119,8 +119,6 @@ public:
 
 	void WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
-	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
-	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 

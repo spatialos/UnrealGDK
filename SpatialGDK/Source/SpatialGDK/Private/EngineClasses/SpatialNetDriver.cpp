@@ -373,18 +373,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn an Actor to replicate the information to each client
-	if (IsServer())
+	if (SpatialSettings->bEnableMetricsDisplay)
 	{
-		if (SpatialSettings->bEnableMetricsDisplay)
-		{
-			SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
-		}
-
-		if (SpatialSettings->SpatialDebugger != nullptr)
-		{
-			SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
-		}
+		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 	}
+
+	if (SpatialSettings->SpatialDebugger != nullptr)
+	{
+		SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+	}
+
 #endif
 
 	CreateAndInitializeLoadBalancingClasses();
@@ -2570,13 +2568,6 @@ void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
 	}
 }
 
-// This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
-void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
-{
-	check(SpatialMetricsDisplay == nullptr);
-	SpatialMetricsDisplay = InSpatialMetricsDisplay;
-}
-
 #if WITH_EDITOR
 void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 {
@@ -2587,19 +2578,6 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 bool USpatialNetDriver::IsReady() const
 {
 	return bIsReadyToStart;
-}
-
-// This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
-void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
-{
-	check(!IsServer());
-	if (SpatialDebugger != nullptr)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialDebugger should only be set once on each client!"));
-		return;
-	}
-
-	SpatialDebugger = InSpatialDebugger;
 }
 
 FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()

@@ -46,14 +46,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	NetUpdateFrequency = 1.f;
 
 	NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-
-	// For GDK design reasons, this is the approach chosen to get a pointer
-	// on the net driver to the client ASpatialDebugger.  Various alternatives
-	// were considered and this is the best of a bad bunch.
-	if (NetDriver != nullptr && GetNetMode() == NM_Client)
-	{
-		NetDriver->SetSpatialDebugger(this);
-	}
 }
 
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
