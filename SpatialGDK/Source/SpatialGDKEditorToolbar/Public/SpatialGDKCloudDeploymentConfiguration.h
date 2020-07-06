@@ -54,6 +54,8 @@ private:
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
 
+	FText GetPrimaryDeploymentNameText() const;
+
 	/** Delegate to commit primary deployment name */
 	void OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 

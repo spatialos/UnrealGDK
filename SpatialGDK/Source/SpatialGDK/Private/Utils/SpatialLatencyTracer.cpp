@@ -518,7 +518,7 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 					TrackingTags.Add(ATKey, Key);
 					return true;
 				}
-				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorProperty already exists for trace"), *WorkerId);
+				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorTag already exists for trace"), *WorkerId);
 			}
 			break;
 		}
