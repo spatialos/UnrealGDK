@@ -392,7 +392,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPortWindows(int32 Port, FString& Out
 
 	if (ExitCode == 0 && bSuccess)
 	{
-		// Get the line of the netstat output that contains the port we're looking for. 
+		// Get the line of the netstat output that contains the port we're looking for.
 		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
 		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
 		if (PidMatcher.FindNext())
