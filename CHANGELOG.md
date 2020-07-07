@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 
+### Breaking Changes:
+- SpatialMetrics::WorkerMetricsRecieved is no longer static and the function signature now also receives histogram metrics
+
 ## [`0.10.0`] - 2020-06-15
 
 ### New Known Issues:
