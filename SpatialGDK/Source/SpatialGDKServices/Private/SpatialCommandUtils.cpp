@@ -337,15 +337,37 @@ void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHand
 	}
 }
 
+bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
+{
+	bool bSuccess = false;
+#if PLATFORM_WINDOWS
+	bSuccess = GetProcessInfoFromPortWindows(Port, OutPid, OutState);
+#endif
+
+#if PLATFORM_MAC
+	bSuccess = GetProcessInfoFromPortMacOs(Port, OutPid, OutState, OutProcessName);
+#endif
+
+	return bSuccess;
+}
+
 bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 {
 	int32 ExitCode;
 	FString StdErr;
 
-	const FString TaskKillCmd = TEXT("taskkill");
-	const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
-	FString TaskKillResult;
-	bool bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+#if PLATFORM_WINDOWS
+	const FString KillCmd = TEXT("taskkill");
+	const FString KillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
+#endif
+
+#if PLATFORM_MAC
+	const FString KillCmd = TEXT("kill");
+	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
+#endif
+
+	FString KillResult;
+	bool bSuccess = FPlatformProcess::ExecProcess(*KillCmd, *KillArgs, &ExitCode, &KillResult, &StdErr);
 	bSuccess = bSuccess && ExitCode == 0;
 	if (!bSuccess)
 	{
@@ -355,7 +377,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 	return bSuccess;
 }
 
-bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState)
+bool SpatialCommandUtils::GetProcessInfoFromPortWindows(int32 Port, FString& OutPid, FString& OutState)
 {
 	bool bSuccess = false;
 
@@ -370,13 +392,53 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 
 	if (ExitCode == 0 && bSuccess)
 	{
-		// Get the line of the netstat output that contains the port we're looking for.
+		// Get the line of the netstat output that contains the port we're looking for. 
 		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
 		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
 		if (PidMatcher.FindNext())
 		{
 			OutState = PidMatcher.GetCaptureGroup(2 /* Get the State of the process, which is the second group. */);
 			OutPid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find PID of the process that is blocking %i port."), Port);
+		}
+	}
+	else
+	{
+		bSuccess = false;
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	}
+
+	return bSuccess;
+}
+
+bool SpatialCommandUtils::GetProcessInfoFromPortMacOs(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
+{
+	bool bSuccess = false;
+
+	const FString LsofCmd = FString::Printf(TEXT("lsof"));
+
+	// -i 
+	const FString LsofArgs = FString::Printf(TEXT("-i: %s"), Port);
+
+
+	FString LsofResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*LsofCmd, *LsofArgs, &ExitCode, &LsofResult, &StdErr);
+
+	if (ExitCode == 0 && bSuccess)
+	{
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)")));
+		FRegexMatcher PidMatcher(PidMatcherPattern, LsofResult);
+		if (PidMatcher.FindNext())
+		{
+			OutProcessName = PidMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
+			OutState = PidMatcher.GetCaptureGroup(10 /* Get the State of the process, which is the tenth group. */);
+			OutPid = PidMatcher.GetCaptureGroup(2 /* Get the PID, which is the second group. */);
 		}
 		else
 		{

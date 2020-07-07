@@ -57,11 +57,12 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 {
 	FString State;
 	FString ProcessName;
-	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, OutPID, State);
+	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, OutPID, State, ProcessName);
 	if (bSuccess)
 	{
-		if (State.Contains("LISTENING"))
+		if (State.Contains("LISTEN"))
 		{
+#if PLATFORM_WINDOWS
 			if (GetProcessName(OutPID, ProcessName))
 			{
 				OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
@@ -69,7 +70,11 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 			}
 
 			OutLogMsg = FString::Printf(TEXT("Unknown process with PID: %s."), *OutPID);
+#endif
 
+#if PLATFORM_MAC
+			OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
+#endif
 			return true;
 		}
 	}
@@ -251,9 +256,10 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 
 	FString PID;
 	FString State;
+	FString ProcessName;
 
 	// Save the server receptionist proxy process's PID in a Json file
-	if (SpatialCommandUtils::GetProcessInfoFromPort(ReceptionistPort, PID, State))
+	if (SpatialCommandUtils::GetProcessInfoFromPort(ReceptionistPort, PID, State, ProcessName))
 	{
 		SavePIDInJson(PID);
 	}

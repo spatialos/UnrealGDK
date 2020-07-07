@@ -213,8 +213,9 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 {
 	FString PID;
 	FString State;
+	FString ProcessName;
 
-	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, PID, State);
+	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, PID, State, ProcessName);
 	if (bSuccess)
 	{
 		bSuccess = SpatialCommandUtils::TryKillProcessWithPID(PID);
