@@ -22,7 +22,7 @@ void FindFirstOpOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpT
 	}
 }
 
-void FindAllOpsOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType InOpType, TArray<Worker_Op*>& FoundOpArray)
+void FindAllOpsOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType InOpType, TArray<Worker_Op*>& OutFoundOps)
 {
 	for (const Worker_OpList* OpList : InOpLists)
 	{
@@ -32,7 +32,7 @@ void FindAllOpsOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpTy
 
 			if (Op->op_type == InOpType)
 			{
-				FoundOpArray.Add(Op);
+				OutFoundOps.Add(Op);
 			}
 		}
 	}
