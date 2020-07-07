@@ -801,6 +801,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			}
 		}
 	}
+
+	NetDriver->Connection->Flush();
+
 #if USE_NETWORK_PROFILER
 	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
 #endif
