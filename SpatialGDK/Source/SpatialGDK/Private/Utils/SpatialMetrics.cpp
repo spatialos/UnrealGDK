@@ -11,8 +11,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
-USpatialMetrics::WorkerMetricsDelegate USpatialMetrics::WorkerMetricsRecieved;
-
 void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetServerMaxTickRate, bool bInIsServer)
 {
 	Connection = InConnection;
