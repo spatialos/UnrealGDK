@@ -83,25 +83,28 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	for (const TPair<FString, double>& Metric : WorkerGuageMetricsToForward)
+	if (bIsServer) // Server only for now
 	{
-		SpatialGDK::GaugeMetric SpatialMetric;
-		SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
-		SpatialMetric.Value = Metric.Value;
-		Metrics.GaugeMetrics.Add(SpatialMetric);
-	}
-	for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
-	{
-		SpatialGDK::HistogramMetric SpatialMetric;
-		SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
-		SpatialMetric.Buckets.Reserve(Metric.Value.Buckets.Num());
-		SpatialMetric.Sum = Metric.Value.Sum;
-		for (const TPair<double, uint32>& Bucket : Metric.Value.Buckets)
+		for (const TPair<FString, double>& Metric : WorkerGuageMetricsToForward)
 		{
-			SpatialGDK::HistogramMetricBucket SpatialBucket;
-			SpatialBucket.UpperBound = Bucket.Key;
-			SpatialBucket.Samples = Bucket.Value;
-			SpatialMetric.Buckets.Push(SpatialBucket);
+			SpatialGDK::GaugeMetric SpatialMetric;
+			SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
+			SpatialMetric.Value = Metric.Value;
+			Metrics.GaugeMetrics.Add(SpatialMetric);
+		}
+		for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
+		{
+			SpatialGDK::HistogramMetric SpatialMetric;
+			SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
+			SpatialMetric.Buckets.Reserve(Metric.Value.Buckets.Num());
+			SpatialMetric.Sum = Metric.Value.Sum;
+			for (const TPair<double, uint32>& Bucket : Metric.Value.Buckets)
+			{
+				SpatialGDK::HistogramMetricBucket SpatialBucket;
+				SpatialBucket.UpperBound = Bucket.Key;
+				SpatialBucket.Samples = Bucket.Value;
+				SpatialMetric.Buckets.Push(SpatialBucket);
+			}
 		}
 	}
 

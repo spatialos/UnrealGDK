@@ -57,7 +57,7 @@ public:
 	};
 	typedef TMap<FString, WorkerHistogramValues> WorkerHistogramMetrics;
 	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, WorkerGuageMetric, WorkerHistogramMetrics);
-	static WorkerMetricsDelegate WorkerMetricsRecieved;
+	WorkerMetricsDelegate WorkerMetricsRecieved;
 
 	WorkerGuageMetric WorkerGuageMetricsToForward;
 	WorkerHistogramMetrics WorkerHistogramMetricsToForward;
