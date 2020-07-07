@@ -190,25 +190,47 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 	return Counter;
 }
 
-bool ASpatialFunctionalTest::AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
+void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
-	return DelegationInterface != nullptr ? DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished) : false;
+	if (DelegationInterface != NULL)
+	{
+		bool bAddedDelegation = DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished);
+		ensureMsgf(bAddedDelegation, TEXT("Tried to delegate Actor %s to Server Worker %d but couldn't"), *Actor->GetName(), ServerWorkerId);
+	}
 }
 
-bool ASpatialFunctionalTest::RemoveActorDelegation(AActor* Actor)
+void ASpatialFunctionalTest::RemoveActorDelegation_Implementation(AActor* Actor)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
-	return DelegationInterface != nullptr ? DelegationInterface->RemoveActorDelegation(Actor) : false;
+	if (DelegationInterface != nullptr)
+	{
+		bool bRemovedDelegation = DelegationInterface->RemoveActorDelegation(Actor);
+		ensureMsgf(bRemovedDelegation, TEXT("Tried to remove Delegation from Actor %s but couldn't"), *Actor->GetName());
+	}
 }
 
-bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor)
+bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor, uint8& WorkerId, bool& bIsPersistent)
 {
+	WorkerId = 0;
+	bIsPersistent = 0;
+
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
-	return DelegationInterface != nullptr ? DelegationInterface->HasActorDelegation(Actor) : false;
+	bool bHasDelegation = false;
+
+	if (DelegationInterface != nullptr)
+	{
+		VirtualWorkerId AuxWorkerId;
+
+		bHasDelegation = DelegationInterface->HasActorDelegation(Actor, AuxWorkerId, bIsPersistent);
+
+		WorkerId = static_cast<uint8>(AuxWorkerId);
+	}
+
+	return bHasDelegation;
 }
 
 ISpatialFunctionalTestLBDelegationInterface* ASpatialFunctionalTest::GetDelegationInterface() const

@@ -10,6 +10,8 @@
 /**
  * A 2 by 2 (rows by columns) load balancing strategy for testing zoning features.
  * Has a 500 unit interest border, so the shared interest between workers should be small.
+ * You should use this Grid LBS instead of the UGridBasedLBStrategy because it allows you to
+ * do runtime delegations of Actors to specific Server Workers.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy, public ISpatialFunctionalTestLBDelegationInterface

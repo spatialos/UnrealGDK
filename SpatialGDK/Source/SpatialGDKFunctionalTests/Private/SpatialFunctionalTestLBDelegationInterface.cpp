@@ -5,6 +5,8 @@
 #include "GameFramework/Actor.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/SpatialStatics.h"
+#include "SpatialFunctionalTestWorkerDelegationComponent.h"
+#include "EngineUtils.h"
 
 bool ISpatialFunctionalTestLBDelegationInterface::AddActorDelegation(AActor* Actor, VirtualWorkerId WorkerId, bool bPersistOnTestFinished /*= false*/)
 {
@@ -13,36 +15,24 @@ bool ISpatialFunctionalTestLBDelegationInterface::AddActorDelegation(AActor* Act
 		return false;
 	}
 
-	int64 ActorId = USpatialStatics::GetActorEntityId(Actor);
-
-	if (ActorId == 0)
+	if (!Actor->HasAuthority())
 	{
-		ensureMsgf(false, TEXT("Trying to add delegation for Actor %s but it still doesn't have an Spatial Entity Id"), *Actor->GetName());
+		ensureMsgf(false, TEXT("Only Authority of an Actor can delegate it to another worker. Tried to delegate %s to %d"), *Actor->GetName(), WorkerId);
 		return false;
 	}
 
-	FSpatialFunctionalTestActorDelegation* Delegation = Delegations.Find(ActorId);
-	if (Delegation == nullptr)
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Cast<USpatialFunctionalTestWorkerDelegationComponent>(Actor->GetComponentByClass(USpatialFunctionalTestWorkerDelegationComponent::StaticClass()));
+
+	if( DelegationComponent == nullptr )
 	{
-		FSpatialFunctionalTestActorDelegation NewDelegation;
-		NewDelegation.EntityId = ActorId;
-		NewDelegation.ActorPtr = Actor;
-		NewDelegation.WorkerId = WorkerId;
-		NewDelegation.bPersistOnTestFinished = bPersistOnTestFinished;
-		Delegations.Add(ActorId, NewDelegation);
-		return true;
+		DelegationComponent = NewObject<USpatialFunctionalTestWorkerDelegationComponent>(Actor, "Delegation Component");
+		DelegationComponent->RegisterComponent();
 	}
 
-	if (Delegation->ActorPtr.Get() == nullptr) // was used but no longer is, we can reuse it
-	{
-		Delegation->ActorPtr = Actor;
-		Delegation->WorkerId = WorkerId;
-		Delegation->bPersistOnTestFinished = bPersistOnTestFinished;
-		return true;
-	}
-	// used by something else, should never happen
-	ensureMsgf(false, TEXT("Trying to add delegation for Actor %s but there was already one with the same id for %s, this should never happen"), *Actor->GetName(), *Delegation->ActorPtr->GetName());
-	return false;
+	DelegationComponent->WorkerId = WorkerId;
+	DelegationComponent->bIsPersistent = bPersistOnTestFinished;
+
+	return true;
 }
 
 bool ISpatialFunctionalTestLBDelegationInterface::RemoveActorDelegation(AActor* Actor)
@@ -52,48 +42,57 @@ bool ISpatialFunctionalTestLBDelegationInterface::RemoveActorDelegation(AActor* 
 		return false;
 	}
 
-	int64 ActorId = USpatialStatics::GetActorEntityId(Actor);
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+	if (DelegationComponent == nullptr)
+	{
+		return false;
+	}
 
-	int32 NumRemoved = Delegations.Remove(ActorId);
-	ensureMsgf(NumRemoved == 1, TEXT("Removing delegation for %s, there should be 1 registered but found %d"), *Actor->GetName(), NumRemoved);
-	return NumRemoved > 0;
+	DelegationComponent->DestroyComponent();
+
+	return true;
 }
 
-bool ISpatialFunctionalTestLBDelegationInterface::HasActorDelegation(AActor* Actor)
+bool ISpatialFunctionalTestLBDelegationInterface::HasActorDelegation(AActor* Actor, VirtualWorkerId& WorkerId, bool& bIsPersistent)
 {
+	WorkerId = 0;
+	bIsPersistent = false;
+
 	if (Actor == nullptr)
 	{
 		return false;
 	}
-	FSpatialFunctionalTestActorDelegation* Delegation = Delegations.Find(USpatialStatics::GetActorEntityId(Actor));
-	if (Delegation == nullptr)
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+
+	if (DelegationComponent != nullptr)
 	{
-		return false;
+		WorkerId = DelegationComponent->WorkerId;
+		bIsPersistent = DelegationComponent->bIsPersistent;
+		return true;
 	}
-	if( Delegation->ActorPtr.Get() != Actor )
-	{
-		FString OtherActorName = Delegation->ActorPtr.Get() != nullptr ? Delegation->ActorPtr->GetName() : FString("NULL");
-		ensureMsgf(false, TEXT("Found delegation with id %d, but the Actor references don't match; was expecting %s and got %s"), *Actor->GetName(), *OtherActorName);
-		return false;
-	}
-	return true;
+
+	return false;
 }
 
-void ISpatialFunctionalTestLBDelegationInterface::RemoveAllActorDelegations(bool bRemovePersistent /*= false*/)
+void ISpatialFunctionalTestLBDelegationInterface::RemoveAllActorDelegations(UWorld* World, bool bRemovePersistent /*= false*/)
 {
-	if( bRemovePersistent )
-	{
-		Delegations.Empty();
-		return;
-	}
 
-	auto It = Delegations.CreateIterator();
-	while (It)
+	TActorIterator<AActor> It(World);
+
+	while(It)
 	{
-		if(!It->Value.bPersistOnTestFinished)
+		if( It->HasAuthority() )
 		{
-			It.RemoveCurrent();
+			USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = It->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+			if(DelegationComponent != nullptr)
+			{
+				if (!DelegationComponent->bIsPersistent || bRemovePersistent)
+				{
+					DelegationComponent->DestroyComponent();
+				}
+			}
 		}
+
 		++It;
 	}
 }

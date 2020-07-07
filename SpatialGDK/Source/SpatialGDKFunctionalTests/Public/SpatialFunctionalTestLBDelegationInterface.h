@@ -7,36 +7,31 @@
 #include "SpatialFunctionalTestLBDelegationInterface.generated.h"
 
 /**
- * A 2 by 2 (rows by columns) load balancing strategy for testing zoning features.
- * Has a 500 unit interest border, so the shared interest between workers should be small.
+ * Interface that can be added to Spatial's Load Balancing Strategies to allow you to
+ * delegate Actors to specific Server Workers at runtime.
+ * To guarantee that this delegation system works even when Server Workers don't have
+ * complete World area of interest, we add USpatialFunctionalTestDelegationComponent
+ * to Actors.
  */
 UINTERFACE(MinimalAPI, Blueprintable)
 class USpatialFunctionalTestLBDelegationInterface : public UInterface
 {
-	GENERATED_BODY()
+	GENERATED_BODY() 
 };
-
-struct FSpatialFunctionalTestActorDelegation
-{
-	int64 EntityId = 0;
-	TWeakObjectPtr<AActor> ActorPtr = nullptr;
-	VirtualWorkerId WorkerId = 0;
-	bool bPersistOnTestFinished = false;
-};
-
-
 
 class ISpatialFunctionalTestLBDelegationInterface
 {
 	GENERATED_BODY()
 
 public:
+	// Adds or changes the current Actor Delegation to WorkerId
 	bool AddActorDelegation(AActor* Actor, VirtualWorkerId WorkerId, bool bPersistOnTestFinished = false);
+
+	// Removes an Actor Delegation, which means that it will fallback to the Load Balancing Strategy
 	bool RemoveActorDelegation(AActor* Actor);
-	bool HasActorDelegation(AActor* Actor);
 
-	void RemoveAllActorDelegations(bool bRemovePersistent = false);
+	// If there's an Actor Delegation it will return True, and WorkerId and bIsPersistent will be set accordingly
+	bool HasActorDelegation(AActor* Actor, VirtualWorkerId& WorkerId, bool& bIsPersistent);
 
-protected:
-	TMap<int64, FSpatialFunctionalTestActorDelegation> Delegations;
+	void RemoveAllActorDelegations(UWorld* World, bool bRemovePersistent = false);
 };

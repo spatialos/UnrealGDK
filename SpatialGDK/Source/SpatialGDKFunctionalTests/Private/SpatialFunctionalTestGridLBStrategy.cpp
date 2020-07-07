@@ -3,6 +3,7 @@
 
 #include "SpatialFunctionalTestGridLBStrategy.h"
 #include "GameFramework/Actor.h"
+#include "SpatialFunctionalTestWorkerDelegationComponent.h"
 
 USpatialFunctionalTestGridLBStrategy::USpatialFunctionalTestGridLBStrategy()
 {
@@ -13,20 +14,22 @@ USpatialFunctionalTestGridLBStrategy::USpatialFunctionalTestGridLBStrategy()
 
 bool USpatialFunctionalTestGridLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
-	auto* Delegation = Delegations.Find(Actor.GetUniqueID());
-	if (Delegation != nullptr)
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Actor.FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+
+	if (DelegationComponent != nullptr)
 	{
-		return GetLocalVirtualWorkerId() == Delegation->WorkerId;
+		return GetLocalVirtualWorkerId() == DelegationComponent->WorkerId;
 	}
 	return Super::ShouldHaveAuthority(Actor);
 }
 
 VirtualWorkerId USpatialFunctionalTestGridLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 {
-	auto* Delegation = Delegations.Find(Actor.GetUniqueID());
-	if (Delegation != nullptr)
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Actor.FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+
+	if (DelegationComponent != nullptr)
 	{
-		return Delegation->WorkerId;
+		return DelegationComponent->WorkerId;
 	}
 	return Super::WhoShouldHaveAuthority(Actor);
 }

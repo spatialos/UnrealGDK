@@ -130,14 +130,14 @@ public:
 	int GetNumberOfClientWorkers();
 
 	// # Actor Delegation APIs
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	bool AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished = false);
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	void AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished = false);
+
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	void RemoveActorDelegation(AActor* Actor);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	bool RemoveActorDelegation(AActor* Actor);
-
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	bool HasActorDelegation(AActor* Actor);
+	bool HasActorDelegation(AActor* Actor, uint8& WorkerId, bool& bIsPersistent);
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
