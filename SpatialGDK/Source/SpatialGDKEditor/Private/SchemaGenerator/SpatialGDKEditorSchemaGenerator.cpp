@@ -514,7 +514,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	{
 		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
 		FPaths::MakePlatformFilename(FullPath);
-		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! The file may be locked by another process."), *FullPath)));
+		FMessageDialog::Debugf(FText::Format(LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save Schema Database to '{0}'! The file may be locked by another process."), FText::FromString(FullPath)));
 		return false;
 	}
 	return true;

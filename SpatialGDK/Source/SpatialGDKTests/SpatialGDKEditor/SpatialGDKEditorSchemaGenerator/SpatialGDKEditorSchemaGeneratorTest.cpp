@@ -999,3 +999,5 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endp
 
 	return true;
 }
+
+#undef LOCTEXT_NAMESPACE
