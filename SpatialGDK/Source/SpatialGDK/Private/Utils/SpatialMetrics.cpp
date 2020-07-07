@@ -92,7 +92,6 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	}
 	for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
 	{
-
 		SpatialGDK::HistogramMetric SpatialMetric;
 		SpatialMetric.Key = TCHAR_TO_UTF8(*Metric.Key);
 		SpatialMetric.Buckets.Reserve(Metric.Value.Buckets.Num());
