@@ -90,6 +90,13 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 			SpatialMetric.Value = Metric.Value;
 			Metrics.GaugeMetrics.Add(SpatialMetric);
 		}
+		for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward) 
+		{
+			SpatialGDK::GaugeMetric SpatialMetric;
+			SpatialMetric.Key = TCHAR_TO_UTF8(*(FString("unreal_worker_") + Metric.Key + "_sum"));
+			SpatialMetric.Value = Metric.Value.Sum;
+			Metrics.GaugeMetrics.Add(SpatialMetric);
+		}
 		for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
 		{
 			SpatialGDK::HistogramMetric SpatialMetric;
