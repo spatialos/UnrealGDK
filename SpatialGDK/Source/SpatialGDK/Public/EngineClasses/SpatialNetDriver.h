@@ -14,6 +14,7 @@
 #include "Utils/InterestFactory.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
+#include "LoadBalancing/DynamicLBSInfo.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
@@ -28,6 +29,7 @@ class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class SpatialActorGroupManager;
 class UAbstractLBStrategy;
+class ADynamicLBSInfo;
 class UEntityPool;
 class UGlobalStateManager;
 class USpatialActorChannel;
@@ -152,6 +154,8 @@ public:
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
+	UPROPERTY()
+	ADynamicLBSInfo* DynamicLBSInfo;
 	UPROPERTY()
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
