@@ -362,7 +362,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 #endif
 
 #if PLATFORM_MAC
-	const FString KillCmd = TEXT("kill");
+	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::KillCmdFilePath, TEXT("kill"));
 	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
 #endif
 
@@ -419,10 +419,9 @@ bool SpatialCommandUtils::GetProcessInfoFromPortMacOs(int32 Port, FString& OutPi
 {
 	bool bSuccess = false;
 
-	const FString LsofCmd = FString::Printf(TEXT("lsof"));
-
+	const FString LsofCmd = FPaths::Combine(SpatialGDKServicesConstants::LsofCmdFilePath, TEXT("lsof"));
 	// -i 
-	const FString LsofArgs = FString::Printf(TEXT("-i: %s"), Port);
+	const FString LsofArgs = FString::Printf(TEXT("-i:%d"), Port);
 
 
 	FString LsofResult;
@@ -432,18 +431,18 @@ bool SpatialCommandUtils::GetProcessInfoFromPortMacOs(int32 Port, FString& OutPi
 
 	if (ExitCode == 0 && bSuccess)
 	{
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)")));
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)( \\d+).*(\\(\\S+\\))")));
 		FRegexMatcher PidMatcher(PidMatcherPattern, LsofResult);
 		if (PidMatcher.FindNext())
 		{
 			OutProcessName = PidMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
-			OutState = PidMatcher.GetCaptureGroup(10 /* Get the State of the process, which is the tenth group. */);
 			OutPid = PidMatcher.GetCaptureGroup(2 /* Get the PID, which is the second group. */);
+			OutState = PidMatcher.GetCaptureGroup(3 /* Get the State of the process, which is the third group. */);
 		}
 		else
 		{
 			bSuccess = false;
-			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find PID of the process that is blocking %i port."), Port);
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find PID of the process that is blocking %d port."), Port);
 		}
 	}
 	else
