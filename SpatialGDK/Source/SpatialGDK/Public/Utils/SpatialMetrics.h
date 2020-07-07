@@ -59,9 +59,6 @@ public:
 	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, WorkerGuageMetric, WorkerHistogramMetrics);
 	WorkerMetricsDelegate WorkerMetricsRecieved;
 
-	WorkerGuageMetric WorkerGuageMetricsToForward;
-	WorkerHistogramMetrics WorkerHistogramMetricsToForward;
-
 	// Delegate used to poll for the current player controller's reference
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
 	FControllerRefProviderDelegate ControllerRefProvider;
@@ -70,6 +67,10 @@ public:
 	void SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate);
 	void RemoveCustomMetric(const FString& Metric);
 private:
+
+	// These will be stored and pushed to Grafana
+	WorkerGuageMetric WorkerGuageMetricsToForward;
+	WorkerHistogramMetrics WorkerHistogramMetricsToForward;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
