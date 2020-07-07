@@ -37,7 +37,7 @@ class TestSuite {
     [bool]                            $run_with_spatial
     [ValidateNotNull()]       [string]$additional_cmd_line_args
 
-    TestSuite([TestProjectTarget]$test_project_target, [string] $test_repo_map,
+    TestSuite([TestProjectTarget] $test_project_target, [string] $test_repo_map,
               [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
               [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
         $this.test_project_target = $test_project_target
@@ -58,8 +58,8 @@ class TestSuite {
 [TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject")
 
 # Allow overriding testing branch via environment variable
-if (Test-Path env:GDK_TEST_REPO_BRANCH) {
-    $gdk_test_project.test_repo_branch = $env:GDK_TEST_REPO_BRANCH
+if (Test-Path env:TEST_REPO_BRANCH) {
+    $gdk_test_project.test_repo_branch = $env:TEST_REPO_BRANCH
 }
 if (Test-Path env:NATIVE_TEST_REPO_BRANCH) {
     $native_test_project.test_repo_branch = $env:NATIVE_TEST_REPO_BRANCH
@@ -79,11 +79,8 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     }
 }
 else {
-    # We run all tests and networked functional maps in single-worker mode
+    # We run all tests and networked functional maps
     $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/SpatialNetworkingMap+/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-    # And we run all Zoned tests in multi-worker mode
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialZoningMap", "LoadbalancerTestResults", "/Game/Maps/FunctionalTests/SpatialZoningMap",
-        "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
     
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests

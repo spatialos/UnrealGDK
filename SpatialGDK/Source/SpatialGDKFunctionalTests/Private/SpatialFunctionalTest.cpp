@@ -9,9 +9,8 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTestsPrivate.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogSpatialFunctionalTest, Log, All);
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -251,7 +250,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(), *UEnum::GetValueAsString(TestResult), *Message);
+		UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(), *UEnum::GetValueAsString(TestResult), *Message);
 
 		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
@@ -402,7 +401,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 				FlowController->CrossServerStartStep(CurrentStepIndex);
 			}
 
-			UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s"), *Msg);
+			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
 		}
 		else
 		{
@@ -514,7 +513,7 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 
 	const FString FLowControllerDisplayName = FlowController->GetDisplayName();
 	
-	UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
 	
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
@@ -604,7 +603,7 @@ void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TAr
 		{
 			if (IsValid(Actor))
 			{				
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 				Actor->SetLifeSpan(0.01f);
 			}
 		}
@@ -615,7 +614,7 @@ void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TAr
 		{
 			if (IsValid(Actor))
 			{
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 			}
 		}
 	}

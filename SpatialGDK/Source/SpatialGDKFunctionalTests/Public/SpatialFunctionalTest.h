@@ -142,6 +142,8 @@ public:
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 
+	int GetNumExpectedServers() const { return NumExpectedServers; }
+
 	ISpatialFunctionalTestLBDelegationInterface* GetDelegationInterface() const;
 
 private:

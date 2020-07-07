@@ -9,11 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+### Features:
+- You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
+
+### Bug fixes:
+- `Cloud Deployment Name` field in the dropdown now refers to the same property as `Deployment Name` in the Cloud Deployment Configuration window, so the `Start Deployment` toolbar button will now use the name specified in the dropdown when quickly starting the new deployment without going through the Cloud Deployment Configuration window.
+- `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
+- Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
+
 ## [`0.10.0`] - 2020-06-15
 
 ### New Known Issues:
+- Replicated properties using the `COND_SkipOwner` replication condition could still replicate in the first few frames of an actor becoming owned (for example by possessing a pawn, or setting the `Owner` field on an actor, so that it is ultimately owned by a `PlayerController`).
 
 ### Breaking Changes:
+- The new SpatialOS Runtime requires the latest spatial CLI version. Run 'spatial update' to get the latest version.
+- Inspector V1 is incompatible with the new SpatialOS Runtime. Inspector V2 is used by default instead.
 - Singletons have been removed as a class specifier and you will need to remove your usages of it. Replicating the behavior of former singletons is achievable through ensuring your Actor is spawned once by a single server-side worker in your deployment.
 - `OnConnected` and `OnConnectionFailed` on `SpatialGameInstance` have been renamed to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also blueprint-assignable.
 - The GenerateSchema and GenerateSchemaAndSnapshots commandlet will not generate Schema anymore and has been deprecated in favor of CookAndGenerateSchemaCommandlet (GenerateSchemaAndSnapshots still works with the -SkipSchema option).
@@ -26,12 +37,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secure worker connections are no longer supported for Editor builds. They are still supported for packaged builds.
 
 ### Features:
+- The GDK now uses SpatialOS SDK version [`14.6.1`](https://documentation.improbable.io/sdks-and-data/docs/release-notes#section-14-6-1).
+- Added support for the new standard SpatialOS Runtime, version `0.4.3`.
+- Added support for the new compatibility mode SpatialOS Runtime, version [`14.5.4`](https://forums.improbable.io/t/spatialos-13-runtime-release-notes-14-5-4/7333).
+- Added a new dropdown setting in SpatialGDK Editor Settings that you can use to choose Runtime variant. There is currently Standard and Compatibility Mode. Standard is default, Compatibility Mode can be used if any networking issues arise when updating to the latest GDK version.
+- Added new default deployment templates. The default template changes based on which Runtime variant you have selected and what your current primary deployment region is.
+- Inspector V2 is now supported. Inspector V2 is used by default for the Standard Runtime variant. Inspector V1 remains the default for the Compatibility Mode Runtime variant.
+- The Example Project has a new default game mode: Control. In Control two teams compete to control points on the map. Control points are guarded by NPCs who will join your team if you capture their point.
 - You can now generate valid schema for classes that start with a leading digit. The generated schema class will be prefixed with `ZZ` internally.
 - Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 - Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is helpful if you have established a successful connection but the server worker crashed.
-- The GDK now uses SpatialOS 14.6.1.
 - Added `bWorkerFlushAfterOutgoingNetworkOp` (defaulted false) which publishes changes to the GDK worker queue after RPCs and property replication to allow for lower latencies. Can be used in conjunction with `bRunSpatialWorkerConnectionOnGameThread` to get the lowest available latency at a trade-off with bandwidth.
-- You can now edit the project name field in the `Cloud Deployment Configuration` window.
+- You can now edit the project name field in the `Cloud Deployment Configuration` window. Changes made here are reflected in your project's `spatialos.json` file.
 - Worker types are now defined in the runtime settings.
 - Local deployment will now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per-map in the Intermediate/Improbable folder.
 - A launch configuration editor has been added under the `Configure` toolbar button.
@@ -51,22 +68,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the `Cloud deployment name` field to specify which cloud deployment you want to connect to. If no cloud deployment is specified and you select `Connect to cloud deployment`, it will try to connect to the first running deployment that has the `dev_login` deployment tag.
   - Added the `Editor Settings` field to allow you to quickly get to the **SpatialOS Editor Settings**
 - Added `Build Client Worker` and `Build SimulatedPlayer` checkbox to the Connection dropdown to quickly enable/disable building and including the client worker or simulated player worker in the assembly.
-- Added new icons for the toolbar.
+- Updated the GDK toolbar icons.
 - The port is now respected when travelling via URL, translating to the receptionist port. The `-receptionistPort` command-line argument will still be used for the first connection.
 - Running BuildWorker.bat with <game-name>Client will build the Client target of your project.
 - When changing the project name via the `Cloud Deployment Configuration` window the development authentication token will automatically be regenerated.
 - Changed the names of the following toolbar buttons:
   - `Start` is now called `Start Deployment`
-  - `Deploy` is now called `Configure`
+  - `Deploy` is now called `Cloud`
 - Required fields in the Cloud Deployment Configuration window are now marked with an asterisk.
 - When changing the project name via the `Cloud Deployment` dialog the development authentication token will automatically be regenerated.
 - The SpatialOS project name can now be modified via the **SpatialOS Editor Settings**.
-- Added support for the new SpatialOS Runtime. 
-- Added a new dropdown setting in SpatialGDK Editor Settings to choose Runtime variant. There is currently Standard and Compatibility Mode. Standard is default, Compatibility Mode can be used if any networking issues arise when updating to the latest GDK version.
-- Added new default deployment templates. The default template changes based on which Runtime variant you have selected and your current primary deployment region is.
-- Inspector V2 is now supported. Inspector V2 is used by default for the Standard Runtime variant. Inspector V1 remains the default for the Compatibility Mode Runtime variant.
+- Replaced the `Generate From Current Map` button from the `Cloud Deployment Configuration` window by `Automatically Generate Launch Configuration` checkbox. If ticked, it generates an up to date configuration from the current map when selecting the `Start Deployment` button.
 
-## Bug fixes:
+### Bug fixes:
 - Fix problem where load balanced cloud deploys could fail to start while under heavy load.
 - Fix to avoid using packages still being processed in the async loading thread.
 - Fixed a bug when running GDK setup scripts fail to unzip dependencies sometimes.
@@ -76,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug when creating multiple dynamic subobjects at the same time, when they would fail to be created on clients.
 - OwnerOnly components are now properly replicated when gaining authority over an actor. Previously, they were sometimes only replicated when a value on them changed after already being authoritative.
 - Fixed a rare server crash that could occur when closing an actor channel right after attaching a dynamic subobject to that actor.
+- Fixed a defect in `InstallGDK.bat` which sometimes caused it to incorrectly report `Error: Could not clone...` when repositories had been cloned correctly.
 
 ### Internal:
 Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
@@ -141,7 +156,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
 - Automatically remove UE4CommandLine.txt after finishing a Launch on device session on an Android device (only UnrealEngine 4.24 or above). This is done to prevent the launch session command line from overriding the one built into the APK.
 
-## Bug fixes:
+### Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
 - We now take the `OverrideSpatialNetworking` command line argument into account as early as possible (previously, `LocalDeploymentManager` queried `bSpatialNetworking` before the command line was parsed).
 - Servers now maintain interest in `AlwaysRelevant` Actors.

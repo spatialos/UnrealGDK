@@ -232,9 +232,9 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 		}
 
 		SpatialOSOptions += FString::Printf(TEXT(" -devauthToken %s"), *(SpatialGDKSettings->DevelopmentAuthenticationToken));
-		if (!SpatialGDKSettings->DevelopmentDeploymentToConnect.IsEmpty())
+		if (!SpatialGDKSettings->GetPrimaryDeploymentName().IsEmpty())
 		{
-			SpatialOSOptions += FString::Printf(TEXT(" -deployment %s"), *(SpatialGDKSettings->DevelopmentDeploymentToConnect));
+			SpatialOSOptions += FString::Printf(TEXT(" -deployment %s"), *(SpatialGDKSettings->GetPrimaryDeploymentName()));
 		}
 	}
 

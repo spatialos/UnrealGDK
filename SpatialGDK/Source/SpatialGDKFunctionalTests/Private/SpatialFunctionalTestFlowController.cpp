@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialGDKFunctionalTestsPrivate.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -165,7 +166,7 @@ void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int St
 void ASpatialFunctionalTestFlowController::StartStepInternal(const int StepIndex)
 {
 	const FSpatialFunctionalTestStepDefinition& StepDefinition = OwningTest->GetStepDefinition(StepIndex);
-	UE_LOG(LogTemp, Log, TEXT("Executing step %s on %s"), *StepDefinition.StepName, *GetDisplayName());
+	UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Executing step %s on %s"), *StepDefinition.StepName, *GetDisplayName());
 	SetActorTickEnabled(true);
 	CurrentStep.Owner = OwningTest;
 	CurrentStep.Start(StepDefinition);

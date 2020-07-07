@@ -31,8 +31,8 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ClientWorkerSetValues.SetNum(2);
-	ServerWorkerSetValues.SetNum(2);
+	ClientWorkerSetValues.SetNum(GetNumRequiredClients());
+	ServerWorkerSetValues.SetNum(GetNumExpectedServers());
 
 	{
 		//Step 1 - Set all server values
@@ -151,16 +151,17 @@ void ACrossServerAndClientOrchestrationTest::Assert_ServerStepIsRunningInExpecte
 {
 	// Check if we are using loadbalancing configuration with multiple server workers
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	bool bUsingLoadbalancing = SpatialNetDriver->LoadBalanceStrategy != nullptr;
-	if(bUsingLoadbalancing)
-	{
-		// Check Step is running in expected controller instance
-		AssertEqual_Int(FlowController->ControllerInstanceId, InstanceToRunIn, TEXT("Step executing in expected FlowController instance"), this);
 
-		// Check Step is running in expected worker instance
-		VirtualWorkerId LocalWorkerId = bUsingLoadbalancing ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
-		AssertEqual_Int(LocalWorkerId, InstanceToRunIn, TEXT("Step executing in expected Worker instance"), this);
-	}
+	bool bUsingLoadbalancing = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr;
+
+	VirtualWorkerId LocalWorkerId = bUsingLoadbalancing ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
+	InstanceToRunIn = GetNumExpectedServers() == 1 ? 1 : InstanceToRunIn;
+	
+	// Check Step is running in expected controller instance
+	AssertEqual_Int(FlowController->ControllerInstanceId, InstanceToRunIn, TEXT("Step executing in expected FlowController instance"), this);
+
+	// Check Step is running in expected worker instance
+	AssertEqual_Int(LocalWorkerId, InstanceToRunIn, TEXT("Step executing in expected Worker instance"), this);
 }
 
 void ACrossServerAndClientOrchestrationTest::Assert_ClientStepIsRunningInExpectedEnvironment(int InstanceToRunIn, ASpatialFunctionalTestFlowController* FlowController)

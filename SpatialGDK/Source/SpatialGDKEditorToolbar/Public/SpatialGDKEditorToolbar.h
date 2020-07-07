@@ -4,6 +4,7 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "Framework/SlateDelegates.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
@@ -109,8 +110,8 @@ private:
 	void LocalDeploymentClicked();
 	void CloudDeploymentClicked();
 
-	bool IsLocalDeploymentIPEditable() const;
-	bool AreCloudDeploymentPropertiesEditable() const;
+	static bool IsLocalDeploymentIPEditable();
+	static bool AreCloudDeploymentPropertiesEditable();
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
@@ -140,6 +141,9 @@ private:
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
 	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
+	using IsEnabledFunc = bool();
+	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted, IsEnabledFunc IsEnabled);
+
 	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
 
@@ -159,6 +163,7 @@ private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
+	bool bStopLocalDeploymentOnEndPIE;
 
 	bool bSchemaBuildError;
 
@@ -182,4 +187,6 @@ private:
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	bool bStartingCloudDeployment;
+
+	void GenerateConfigFromCurrentMap();
 };
