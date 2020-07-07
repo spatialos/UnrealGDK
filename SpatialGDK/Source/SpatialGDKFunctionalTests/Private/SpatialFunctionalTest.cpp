@@ -194,7 +194,7 @@ void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, ui
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
-	if (DelegationInterface != NULL)
+	if (DelegationInterface != nullptr)
 	{
 		bool bAddedDelegation = DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished);
 		ensureMsgf(bAddedDelegation, TEXT("Tried to delegate Actor %s to Server Worker %d but couldn't"), *Actor->GetName(), ServerWorkerId);
@@ -536,6 +536,15 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 			if (AuxLocalFlowController != nullptr)
 			{
 				AuxLocalFlowController->OnTestFinished();
+				if (AuxLocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+				{
+					ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+					if (DelegationInterface != nullptr)
+					{
+						DelegationInterface->RemoveAllActorDelegations(GetWorld());
+					}
+				}
 			}
 		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest
