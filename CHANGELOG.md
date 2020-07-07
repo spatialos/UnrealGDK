@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 
 ### Bug fixes:
-- The example simulated player coordinator worker configuration has been updated to correspond to the previously updated authentication flow for simulated players.
+- The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
 - `Cloud Deployment Name` field in the dropdown now refers to the same property as `Deployment Name` in the Cloud Deployment Configuration window, so the `Start Deployment` toolbar button will now use the name specified in the dropdown when quickly starting the new deployment without going through the Cloud Deployment Configuration window.
 - `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
 - Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
