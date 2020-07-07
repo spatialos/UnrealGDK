@@ -55,7 +55,7 @@
 
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
-using SpatialGDK::FindAllOpsOfType;
+using SpatialGDK::AppendAllOpsOfType;
 using SpatialGDK::FindFirstOpOfTypeForComponent;
 using SpatialGDK::InterestFactory;
 using SpatialGDK::RPCPayload;
@@ -2400,7 +2400,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 {
 	TArray<Worker_Op*> FoundOps;
 
-	FindAllOpsOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, FoundOps);
+	AppendAllOpsOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, FoundOps);
 
 	// To correctly initialize the ServerWorkerEntity on each server during op queueing, we need to catch several ops here.
 	// Note that this will break if any other CreateEntity requests are issued during the startup flow.
