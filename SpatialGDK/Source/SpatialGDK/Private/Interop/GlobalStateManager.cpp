@@ -355,6 +355,11 @@ void UGlobalStateManager::BeginDestroy()
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
 			SendCanBeginPlayUpdate(false);
+
+			// Flush the connection and wait a moment to allow the message to propagate.
+			// TODO: UNR-3697 - This needs to be handled more correctly
+			NetDriver->Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
 		}
 	}
 #endif
