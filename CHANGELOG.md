@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Marked all the required fields in the `Cloud Deployment Configuration` dialog box with asterisks.
 - You can now change the project name in Editor Settings.
 - Replaced the `Generate from current map` button in the `Cloud Deployment Configuration` dialog box with a checkbox labelled `Automatically Generate Launch Configuration`. If you select this checkbox, the GDK generates an up-to-date launch configuration file from the current map when you select `Start Deployment`.
+- Android and iOS are now in preview. We support workflows for developing and doing in-studio playtests on Android and iOS devices, and have documentation for these workflows. We also support macOS (also in preview) for developing and testing iOS game clients.
 
 ## Bug fixes:
 - Fixed a problem that caused load balanced cloud deployments to fail to start while under heavy load.
