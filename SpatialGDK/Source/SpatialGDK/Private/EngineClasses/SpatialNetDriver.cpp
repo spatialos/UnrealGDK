@@ -446,14 +446,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
-		else if (*WorldSettings->GetDefaultLockingPolicyClass() == nullptr)
+		else if (*WorldSettings->GetDefaultLayerLockingPolicyClass() == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->GetDefaultLockingPolicyClass());
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->GetDefaultLayerLockingPolicyClass());
 		}
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 	}

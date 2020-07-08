@@ -23,13 +23,14 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_BODY()
 
 public:
-	ASpatialWorldSettings()
-	{
-		if (*MultiWorkerSettingsClass != nullptr)
-		{
-			MultiWorkerSettings = NewObject<USpatialMultiWorkerSettings>(this, MultiWorkerSettingsClass);
-		}
-	};
+	//ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+	//{
+	//	UE_LOG(LogTemp, Log, TEXT("ASpatialWorldSettings constructor"));
+	//	if (*MultiWorkerSettingsClass != nullptr)
+	//	{
+	//		MultiWorkerSettings = NewObject<USpatialMultiWorkerSettings>(this, MultiWorkerSettingsClass);
+	//	}
+	//};
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
@@ -39,44 +40,44 @@ public:
 		return *MultiWorkerSettingsClass != nullptr && MultiWorkerSettingsClass->GetDefaultObject<USpatialMultiWorkerSettings>()->bEnableMultiWorker;
 	}
 
-	const TSubclassOf<UAbstractLBStrategy>& GetDefaultLoadBalancingStrategyClass() const
+	const TSubclassOf<UAbstractLBStrategy>& GetDefaultLayerLoadBalancingStrategyClass() const
 	{
 		check(IsMultiWorkerEnabled());
-		return MultiWorkerSettings->DefaultLayerLoadBalanceStrategy;
+		return GetDefault<USpatialMultiWorkerSettings>(MultiWorkerSettingsClass)->DefaultLayerLoadBalanceStrategy;
 	}
 
-	const TSubclassOf<UAbstractLockingPolicy>& GetDefaultLockingPolicyClass() const
+	const TSubclassOf<UAbstractLockingPolicy>& GetDefaultLayerLockingPolicyClass() const
 	{
 		check(IsMultiWorkerEnabled());
-		return MultiWorkerSettings->DefaultLayerLockingPolicy;
+		return GetDefault<USpatialMultiWorkerSettings>(MultiWorkerSettingsClass)->DefaultLayerLockingPolicy;
 	}
 
-	TMap<FName, FLayerInfo>& GetWorkerLayers()
-	{
-		check(IsMultiWorkerEnabled());
-		return MultiWorkerSettings->WorkerLayers;
-	}
+	//TMap<FName, FLayerInfo>& GetWorkerLayers()
+	//{
+	//	check(IsMultiWorkerEnabled());
+	//	return MultiWorkerSettings->WorkerLayers;
+	//}
 
 	const TMap<FName, FLayerInfo>& GetWorkerLayers() const
 	{
 		check(IsMultiWorkerEnabled());
-		return MultiWorkerSettings->WorkerLayers;
+		return GetDefault<USpatialMultiWorkerSettings>(MultiWorkerSettingsClass)->WorkerLayers;
 	}
 
-	// USED FOR TEST ONLY
-	void SetLoadBalancingStrategyClass(TSubclassOf<UAbstractLBStrategy> LoadBalancingStrategyClass) const
-	{
-		check(IsMultiWorkerEnabled());
-		MultiWorkerSettings->DefaultLayerLoadBalanceStrategy = LoadBalancingStrategyClass;
-	}
+	//// USED FOR TEST ONLY
+	//void SetLoadBalancingStrategyClass(TSubclassOf<UAbstractLBStrategy> LoadBalancingStrategyClass) const
+	//{
+	//	check(IsMultiWorkerEnabled());
+	//	MultiWorkerSettings->DefaultLayerLoadBalanceStrategy = LoadBalancingStrategyClass;
+	//}
 
-	// USED FOR TEST ONLY
-	void SetEnableMultiWorker(bool bEnableMultiWorker) const
-	{
-		MultiWorkerSettings->bEnableMultiWorker = bEnableMultiWorker;
-	}
+	//// USED FOR TEST ONLY
+	//void SetEnableMultiWorker(bool bEnableMultiWorker) const
+	//{
+	//	MultiWorkerSettings->bEnableMultiWorker = bEnableMultiWorker;
+	//}
 
-protected:
-	UPROPERTY()
-	USpatialMultiWorkerSettings* MultiWorkerSettings;
+//protected:
+//	UPROPERTY()
+//	USpatialMultiWorkerSettings* MultiWorkerSettings;
 };

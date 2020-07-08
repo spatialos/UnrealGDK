@@ -11,6 +11,8 @@
 
 #include "AbstractLBStrategy.generated.h"
 
+class USpatialMultiWorkerSettings;
+
 /**
  * This class can be used to define a load balancing strategy.
  * At runtime, all unreal workers will:
@@ -32,7 +34,7 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init() {}
+	virtual void Init(const USpatialMultiWorkerSettings* MultiWorkerSettings) {}
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 

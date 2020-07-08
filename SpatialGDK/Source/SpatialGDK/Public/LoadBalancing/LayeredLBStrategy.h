@@ -5,6 +5,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "CoreMinimal.h"
+#include "LayerInfo.h"
 #include "Math/Box2D.h"
 #include "Math/Vector2D.h"
 
@@ -49,7 +50,7 @@ public:
 	ULayeredLBStrategy();
 
 	/* UAbstractLBStrategy Interface */
-	virtual void Init() override;
+	virtual void Init(const USpatialMultiWorkerSettings* MultiWorkerSettings) override;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -69,7 +70,7 @@ public:
 	/* End UAbstractLBStrategy Interface */
 
 	// This is provided to support the offloading interface in SpatialStatics. It should be removed once users
-	// switch to Load Balancing. 
+	// switch to Load Balancing.
 	bool CouldHaveAuthority(TSubclassOf<AActor> Class) const;
 
 	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
@@ -84,7 +85,10 @@ private:
 	TMap<VirtualWorkerId, FName> VirtualWorkerIdToLayerName;
 
 	UPROPERTY()
-	TMap<FName, UAbstractLBStrategy* > LayerNameToLBStrategy;
+	TMap<FName, UAbstractLBStrategy*> LayerNameToLBStrategy;
+
+	UPROPERTY()
+	USpatialMultiWorkerSettings* MultiWorkerSettings;
 
 	// Returns the name of the first Layer that contains this, or a parent of this class,
 	// or the default actor group, if no mapping is found.

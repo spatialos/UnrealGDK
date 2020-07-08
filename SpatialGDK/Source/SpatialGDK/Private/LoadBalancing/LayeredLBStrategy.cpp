@@ -17,9 +17,9 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
-void ULayeredLBStrategy::Init()
+void ULayeredLBStrategy::Init(USpatialMultiWorkerSettings* InMultiWorkerSettings)
 {
-	Super::Init();
+	MultiWorkerSettings = InMultiWorkerSettings;
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
@@ -35,7 +35,7 @@ void ULayeredLBStrategy::Init()
 	}
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const TPair<FName, FLayerInfo>& Layer : WorldSettings->GetWorkerLayers())
+	for (const TPair<FName, FLayerInfo>& Layer : MultiWorkerSettings->WorkerLayers)
 	{
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
@@ -63,7 +63,7 @@ void ULayeredLBStrategy::Init()
 
 	// Finally, add the default layer.
 	UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
-	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy = WorldSettings->GetDefaultLoadBalancingStrategyClass();
+	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy = MultiWorkerSettings->DefaultLayerLoadBalanceStrategy;
 	if (*DefaultLayerLoadBalanceStrategy == nullptr)
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));

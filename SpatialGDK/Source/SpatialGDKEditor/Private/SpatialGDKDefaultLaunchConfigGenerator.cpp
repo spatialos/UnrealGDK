@@ -111,7 +111,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
 	uint32 NumWorkers = 0;
-	if (WorldSettings->GetDefaultLoadBalancingStrategyClass() == nullptr)
+	if (WorldSettings->GetDefaultLayerLoadBalancingStrategyClass() == nullptr)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing load balancing strategy on map %s"), *World.GetMapName());
 		return 1;
@@ -120,9 +120,9 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 	{
 		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = nullptr;
 		FIntPoint Dimension;
-		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->GetDefaultLoadBalancingStrategyClass()->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
+		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->GetDefaultLayerLoadBalancingStrategyClass()->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
 		{
-			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the default SpatialOS Load balancing strategy from %s"), *WorldSettings->GetDefaultLoadBalancingStrategyClass()->GetName());
+			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the default SpatialOS Load balancing strategy from %s"), *WorldSettings->GetDefaultLayerLoadBalancingStrategyClass()->GetName());
 			NumWorkers += 1;
 		}
 		else
