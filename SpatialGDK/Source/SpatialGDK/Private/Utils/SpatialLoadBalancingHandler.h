@@ -104,6 +104,11 @@ public:
 		}
 	}
 
+	const TMap<AActor*, VirtualWorkerId>& GetActorsToMigrate() const
+	{
+		return ActorsToMigrate;
+	}
+
 	// Sends the migration instructions and update actor authority.
 	void ProcessMigrations()
 	{
