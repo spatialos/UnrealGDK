@@ -173,7 +173,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	for (const Worker_EntityId& Id : Delta.GetEntitiesRemoved())
 	{
 		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
+		Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
 		Op.op.remove_entity.entity_id = Id;
 		Ops.Push(Op);
 	}
