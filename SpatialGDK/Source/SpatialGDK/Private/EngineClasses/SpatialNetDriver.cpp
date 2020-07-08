@@ -1261,13 +1261,14 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			DeletedCount++;
 		}
 
-		// Sort by priority
 		if(MigrationHandler.GetActorsToMigrate().Num() > 0)
 		{
+			// Process actors migrating first, in order to not have them separated if they need to migrate together, and replication rate limiting happens.
 			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriorityAndMigration(MigrationHandler));
 		}
 		else
 		{
+			// Sort by priority 
 			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
 		}
 	}
@@ -1296,23 +1297,25 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	int32 ActorUpdatesThisConnection = 0;
 	int32 ActorUpdatesThisConnectionSent = 0;
 
+	const int32 NumActorsMigrating = MigrationHandler.GetActorsToMigrate().Num();
+
 	// SpatialGDK - Entity creation rate limiting based on config value.
 	uint32 EntityCreationRateLimit = GetDefault<USpatialGDKSettings>()->EntityCreationRateLimit;
 	int32 MaxEntitiesToCreate = (EntityCreationRateLimit > 0) ? EntityCreationRateLimit : INT32_MAX;
-	if (MaxEntitiesToCreate < MigrationHandler.GetActorsToMigrate().Num())
+	if (MaxEntitiesToCreate < NumActorsMigrating)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("EntityCreationRateLimit of %i ignored because %i actors need to migrate"), EntityCreationRateLimit, MigrationHandler.GetActorsToMigrate().Num());
-		MaxEntitiesToCreate = MigrationHandler.GetActorsToMigrate().Num();
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("EntityCreationRateLimit of %i ignored because %i actors need to migrate"), EntityCreationRateLimit, NumActorsMigrating);
+		MaxEntitiesToCreate = NumActorsMigrating;
 	}
 	int32 FinalCreationCount = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
 	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
 	int32 MaxActorsToReplicate = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
-	if (MaxActorsToReplicate < MigrationHandler.GetActorsToMigrate().Num())
+	if (MaxActorsToReplicate < NumActorsMigrating)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("ActorReplicationRateLimit of %i ignored because %i actors need to migrate"), MaxActorsToReplicate, MigrationHandler.GetActorsToMigrate().Num());
-		MaxActorsToReplicate = MigrationHandler.GetActorsToMigrate().Num();
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("ActorReplicationRateLimit of %i ignored because %i actors need to migrate"), MaxActorsToReplicate, NumActorsMigrating);
+		MaxActorsToReplicate = NumActorsMigrating;
 	}
 	int32 FinalReplicatedCount = 0;
 
