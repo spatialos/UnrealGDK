@@ -21,4 +21,6 @@ private:
 public:
 	ATestMovementCharacter();
 
+	UFUNCTION(Server, Reliable)
+	void ServerMoveToLocation(FVector Destination);
 };

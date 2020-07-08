@@ -27,3 +27,8 @@ ATestMovementCharacter::ATestMovementCharacter()
 	CameraComponent->RelativeRotation = FRotator::MakeFromEuler(FVector(0.0f, -10.0f, 180.0f));
 	CameraComponent->SetupAttachment(GetCapsuleComponent());
 }
+
+void ATestMovementCharacter::ServerMoveToLocation_Implementation(FVector Destination)
+{
+	SetActorLocation(Destination);
+}
