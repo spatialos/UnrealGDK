@@ -787,3 +787,5 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 {
 	bAutoDeploy = bInAutoDeploy;
 }
+
+#undef LOCTEXT_NAMESPACE
