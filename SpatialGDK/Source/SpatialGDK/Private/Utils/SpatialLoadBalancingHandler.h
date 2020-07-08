@@ -35,11 +35,12 @@ public:
 	// and collects additional actors to replicate if needed.
 	void HandleLoadBalancing()
 	{
-		TSet<FNetworkObjectInfo*> AdditionalObjectsToConsider;
+		check(NetDriver->LoadBalanceStrategy != nullptr);
+		check(NetDriver->LockingPolicy != nullptr);
 
 		for (AActor* Actor : static_cast<Implementation*>(this)->GetActorsBeingReplicated())
 		{
-			Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+			const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 			if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 			{
 				continue;
@@ -50,16 +51,7 @@ public:
 				continue;
 			}
 
-			if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
-			{
-				const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-				if (DebuggingInfo->IsLocked != bIsLocked)
-				{
-					DebuggingInfo->IsLocked = bIsLocked;
-					FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-					NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-				}
-			}
+			UpdateActorSpatialDebugging(Actor, EntityId);
 
 			// If this object is in the list of actors to migrate, we have already processed its hierarchy.
 			// Remove it from the additional actors to process, and continue.
@@ -69,10 +61,7 @@ public:
 				continue;
 			}
 
-			// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
-			// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-			if (NetDriver->LoadBalanceStrategy != nullptr &&
-				NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+			if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 			{
 				if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
 				{
@@ -134,7 +123,21 @@ protected:
 
 	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;
 
-	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp)
+	void UpdateActorSpatialDebugging(AActor* Actor, Worker_EntityId EntityId) const
+	{
+		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
+		{
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+			if (DebuggingInfo->IsLocked != bIsLocked)
+			{
+				DebuggingInfo->IsLocked = bIsLocked;
+				FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+				NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+			}
+		}
+	}
+
+	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp) const
 	{
 		if (HierarchyActor->GetIsReplicated())
 		{
