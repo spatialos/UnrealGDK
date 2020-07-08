@@ -153,10 +153,6 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	{
 		UpdateServicesRegionFile();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableUserSpaceLoadBalancing))
-	{
-
-	}
 }
 
 bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property)* InProperty) const

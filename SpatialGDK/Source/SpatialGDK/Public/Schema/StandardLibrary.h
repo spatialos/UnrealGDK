@@ -342,7 +342,7 @@ struct AuthorityDelegation : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
+		const uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
 		for (uint32 i = 0; i < DelegationCount; i++)
 		{
 			Schema_Object* Delegation = Schema_IndexObject(ComponentObject, 1, i);
@@ -358,7 +358,7 @@ struct AuthorityDelegation : Component
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		// This is never emptied, so does not need an additional check for cleared fields
-		uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
+		const uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
 		if (DelegationCount > 0)
 		{
 			Delegations.Empty();

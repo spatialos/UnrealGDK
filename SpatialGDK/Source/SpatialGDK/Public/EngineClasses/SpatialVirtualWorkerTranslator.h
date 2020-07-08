@@ -6,11 +6,9 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-#include <WorkerSDK/improbable/c_schema.h>
-
-#include "Containers/Queue.h"
 #include "CoreMinimal.h"
+
+#include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 

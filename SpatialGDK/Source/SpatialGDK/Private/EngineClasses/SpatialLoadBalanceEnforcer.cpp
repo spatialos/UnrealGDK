@@ -29,14 +29,14 @@ void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddC
 {
 	check(HandlesComponent(Op.data.component_id));
 
-	MaybeQueueAclAssignmentRequest(Op.entity_id);
+	MaybeQueueAuthorityChange(Op.entity_id);
 }
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
 	check(HandlesComponent(Op.update.component_id));
 
-	MaybeQueueAclAssignmentRequest(Op.entity_id);
+	MaybeQueueAuthorityChange(Op.entity_id);
 }
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op)
@@ -79,19 +79,21 @@ void SpatialLoadBalanceEnforcer::OnAclAuthorityChanged(const Worker_AuthorityCha
 		return;
 	}
 
-	MaybeQueueAclAssignmentRequest(AuthOp.entity_id);
+	MaybeQueueAuthorityChange(AuthOp.entity_id);
 }
 
-// MaybeQueueAclAssignmentRequest is called from three places.
-// 1) AuthorityIntent change - Intent is not authoritative on this worker - ACL is authoritative on this worker.
-//    (another worker changed the intent, but this worker is responsible for the ACL, so update it.)
-// 2) ACL change - Intent may be anything - ACL just became authoritative on this worker.
-//    (this worker just became responsible, so check to make sure intent and ACL agree.)
-// 3) AuthorityIntent change - Intent is authoritative on this worker but no longer assigned to this worker - ACL is authoritative on this worker.
-//    (this worker had responsibility for both and is giving up authority.)
-// Queuing an ACL assignment request may not occur if the assignment is the same as before, or if the request is already queued,
-// or if we don't meet the predicate required to enforce the assignment.
-void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId)
+// MaybeQueueAuthorityChange can be updated from several places:
+// 1) AuthorityIntent change - If intent changes, we should be updating the entity authoritative server worker.
+// 2) Component additional / removal - If we trying to add a component, we need to update the authority for the new
+//    component.
+// 3) NetOwningClientWorker change - When Actor owner changes, this can result in becoming net owned by a client - if
+//    this happens, we need to set client RPC endpoints (and maybe Heartbeat component) to client authoritative.
+// 3) Load balancing component addition / change - If any of the above happen, but we don't have all the components
+//    locally yet for enforcing an authority change, we can't do. So we reevaluate when we get everything we need (or
+//    something is remotely updated).
+// Queuing an authority change may not occur if the authority is the same as before, or if the request is already
+// queued, or if we don't meet the predicate required to enforce the change.
+void SpatialLoadBalanceEnforcer::MaybeQueueAuthorityChange(const Worker_EntityId EntityId)
 {
 	if (!CanEnforce(EntityId))
 	{
@@ -236,13 +238,6 @@ bool SpatialLoadBalanceEnforcer::GetAuthorityChangeState(Worker_EntityId EntityI
 		ComponentIds,
 		AuthorityIntentComponent->VirtualWorkerId
 	};
-
-	// Commented this out for now because it only detects changes in authoritative server, not in changes to component presence,
-	// or net owning client worker.
-	//if (!EntityNeedsToBeEnforced)
-	//{
-	//	return false;
-	//}
 
 	return true;
 }

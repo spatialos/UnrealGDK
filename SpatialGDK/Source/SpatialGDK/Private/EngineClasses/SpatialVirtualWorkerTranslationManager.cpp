@@ -148,7 +148,7 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionsToEachServerWorkerF
 
 				// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 				// workers, this will need to process UnassignWorker before processing AssignWorker.
-				PhysicalWorkerName WorkerName  = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
+				PhysicalWorkerName WorkerName = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 
 				Worker_EntityId SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
 
@@ -184,15 +184,14 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
 {
-	TArray<FWorkerComponentData> Components =
-		SpatialGDK::EntityFactory::CreatePartitionEntityComponents(PartitionEntityId,
+	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(PartitionEntityId,
 		Translator->NetDriver->InterestFactory.Get(),Translator->LoadBalanceStrategy.Get(), VirtualWorkerId);
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
 	OnCreateWorkerEntityResponse.BindLambda([this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op)
-    {
+	{
         if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
         {
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Successfully created partition entity. "
@@ -208,8 +207,8 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
         	return;
         }
 
-        UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Retrying timed out partition entity creation. "
-        	"Entity: %lld. Virtual Worker: %d"), Op.entity_id, VirtualWorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Retrying timed out partition entity creation. "
+			"Entity: %lld. Virtual Worker: %d"), Op.entity_id, VirtualWorkerId);
 
 		this->SpawnPartitionEntity(Op.entity_id, VirtualWorkerId);
     });
@@ -320,7 +319,7 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 {
 	VirtualToPhysicalWorkerMapping.Add(Partition.VirtualWorker,
 		SpatialVirtualWorkerTranslator::WorkerInformation{ WorkerName, ServerWorkerEntityId, Partition.PartitionEntityId });
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on Worker %s"),
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"),
 		Partition.VirtualWorker, Partition.PartitionEntityId, *WorkerName);
 
 	Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);

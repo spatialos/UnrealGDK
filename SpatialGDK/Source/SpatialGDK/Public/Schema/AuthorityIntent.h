@@ -11,73 +11,73 @@
 namespace SpatialGDK
 {
 
-	// The AuthorityIntent component is a piece of the Zoning solution for the UnrealGDK. For each
-	// entity in SpatialOS, Unreal will use the AuthorityIntent to indicate which Unreal server worker
-	// should be authoritative for the entity. No Unreal worker should write to an entity if the
-	// VirtualWorkerId set here doesn't match the worker's Id. 
-	struct AuthorityIntent : Component
+// The AuthorityIntent component is a piece of the Zoning solution for the UnrealGDK. For each
+// entity in SpatialOS, Unreal will use the AuthorityIntent to indicate which Unreal server worker
+// should be authoritative for the entity. No Unreal worker should write to an entity if the
+// VirtualWorkerId set here doesn't match the worker's Id.
+struct AuthorityIntent : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+
+	AuthorityIntent()
+		: VirtualWorkerId(SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID)
+	{}
+
+	AuthorityIntent(VirtualWorkerId InVirtualWorkerId)
+		: VirtualWorkerId(InVirtualWorkerId)
+	{}
+
+	AuthorityIntent(const Worker_ComponentData& Data)
 	{
-		static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		AuthorityIntent()
-			: VirtualWorkerId(SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID)
-		{}
+		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
+	}
 
-		AuthorityIntent(VirtualWorkerId InVirtualWorkerId)
-			: VirtualWorkerId(InVirtualWorkerId)
-		{}
+	Worker_ComponentData CreateAuthorityIntentData()
+	{
+		return CreateAuthorityIntentData(VirtualWorkerId);
+	}
 
-		AuthorityIntent(const Worker_ComponentData& Data)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	static Worker_ComponentData CreateAuthorityIntentData(VirtualWorkerId InVirtualWorkerId)
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData();
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-			VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
-		}
+		Schema_AddUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID, InVirtualWorkerId);
 
-		Worker_ComponentData CreateAuthorityIntentData()
-		{
-			return CreateAuthorityIntentData(VirtualWorkerId);
-		}
+		return Data;
+	}
 
-		static Worker_ComponentData CreateAuthorityIntentData(VirtualWorkerId InVirtualWorkerId)
-		{
-			Worker_ComponentData Data = {};
-			Data.component_id = ComponentId;
-			Data.schema_type = Schema_CreateComponentData();
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Worker_ComponentUpdate CreateAuthorityIntentUpdate()
+	{
+		return CreateAuthorityIntentUpdate(VirtualWorkerId);
+	}
 
-			Schema_AddUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID, InVirtualWorkerId);
+	static Worker_ComponentUpdate CreateAuthorityIntentUpdate(VirtualWorkerId InVirtualWorkerId)
+	{
+		Worker_ComponentUpdate Update = {};
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate();
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-			return Data;
-		}
+		Schema_AddUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID, InVirtualWorkerId);
 
-		Worker_ComponentUpdate CreateAuthorityIntentUpdate()
-		{
-			return CreateAuthorityIntentUpdate(VirtualWorkerId);
-		}
+		return Update;
+	}
 
-		static Worker_ComponentUpdate CreateAuthorityIntentUpdate(VirtualWorkerId InVirtualWorkerId)
-		{
-			Worker_ComponentUpdate Update = {};
-			Update.component_id = ComponentId;
-			Update.schema_type = Schema_CreateComponentUpdate();
-			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
+	}
 
-			Schema_AddUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID, InVirtualWorkerId);
-
-			return Update;
-		}
-
-		void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-			VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
-		}
-
-		// Id of the Unreal server worker which should be authoritative for the entity.
-		// 0 is reserved as an invalid/unset value.
-		VirtualWorkerId VirtualWorkerId;
-	};
+	// Id of the Unreal server worker which should be authoritative for the entity.
+	// 0 is reserved as an invalid/unset value.
+	VirtualWorkerId VirtualWorkerId;
+};
 
 } // namespace SpatialGDK
 

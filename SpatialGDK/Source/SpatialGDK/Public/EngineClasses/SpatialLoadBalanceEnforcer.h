@@ -34,7 +34,7 @@ public:
 	void OnEntityRemoved(const Worker_RemoveEntityOp& Op);
 	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 
-	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
+	void MaybeQueueAuthorityChange(const Worker_EntityId EntityId);
 	bool EntityNeedsToBeEnforced(const Worker_EntityId EntityId) const;
 
 	// Visible for testing

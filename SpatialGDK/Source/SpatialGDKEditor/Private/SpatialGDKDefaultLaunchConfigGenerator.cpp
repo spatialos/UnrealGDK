@@ -219,12 +219,11 @@ bool ValidateGeneratedLaunchConfig(FSpatialLaunchConfigDescription& LaunchConfig
 
 	if (SpatialGDKRuntimeSettings->bEnableUserSpaceLoadBalancing)
 	{
-		// does this work lol
-		const FString EnableUSLBFlag = TEXT("enable_user_space_authority_assigner");
-		const FString* USLBSetting = LaunchConfigDesc.World.LegacyFlags.Find(EnableUSLBFlag);
-		if (USLBSetting == nullptr || !USLBSetting->Equals(TEXT("true")))
+		const FString EnableUslbFlag = TEXT("enable_user_space_authority_assigner");
+		const FString* UslbSetting = LaunchConfigDesc.World.LegacyFlags.Find(EnableUslbFlag);
+		if (UslbSetting == nullptr || !UslbSetting->Equals(TEXT("true")))
 		{
-			LaunchConfigDesc.World.LegacyFlags.Add(EnableUSLBFlag, TEXT("true"));
+			LaunchConfigDesc.World.LegacyFlags.Add(EnableUslbFlag, TEXT("true"));
 		}
 	}
 

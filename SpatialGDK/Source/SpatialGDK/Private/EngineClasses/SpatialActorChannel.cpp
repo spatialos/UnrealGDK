@@ -1144,11 +1144,13 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		break;
 	}
 
-	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && Actor->IsA<APlayerController>())
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS &&
+		GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing &&
+		Actor->IsA<APlayerController>())
 	{
-		// This field is valid on PlayerControllers. If valid, we want the client worker to claim the PlayerController
-		// as a partition entity ID so the client can become authoritative over relevant components (such as client
-		// RPC endpoints, heartbeat component, etc).
+		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
+		// PlayerController entity as a partition entity so the client can become authoritative over necessary
+		// components (such as client RPC endpoints, heartbeat component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Actor);
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
@@ -1277,7 +1279,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
 		// Short circuit updating the entity authority component.
-		NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
+		NetDriver->LoadBalanceEnforcer->MaybeQueueAuthorityChange(EntityId);
 		bUpdatedThisActor = true;
 	}
 

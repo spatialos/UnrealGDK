@@ -364,7 +364,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 	{
 		// Create AuthorityDelegation from EntityACL component IDs.
-		AuthorityDelegationMap DelegationMap;
+		AuthorityDelegationMap DelegationMap{};
 		const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
 		const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
 

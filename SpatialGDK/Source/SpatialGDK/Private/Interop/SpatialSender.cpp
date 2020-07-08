@@ -154,7 +154,7 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	// Short circuit an enforcer update if possible.
-	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAuthorityChange(EntityId);
 
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
 	{
@@ -196,7 +196,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	// If enforcer is local worker, queue up an EntityACL / AuthorityDelegation update.
-	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAuthorityChange(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -603,7 +603,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
 	// This should always happen with USLB.
-	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAuthorityChange(EntityId);
 }
 
 void USpatialSender::EnforceAuthority(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const
@@ -643,11 +643,6 @@ void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnfor
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID || ComponentId == ClientRpcAuthComponent)
 		{
-			//if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
-			//{
-			//	UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegation update"
-			//		" for entity %lld. This should happen only when startup Actors are deleted."), *NetDriver->Connection->GetWorkerId(), Request.EntityId);
-			//}
 			AuthorityDelegationComponent->Delegations.FindOrAdd(ComponentId, ClientWorkerPartitionId);
 			continue;
 		}

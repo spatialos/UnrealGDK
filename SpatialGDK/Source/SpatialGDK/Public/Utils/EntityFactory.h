@@ -5,11 +5,6 @@
 #include "SpatialCommonTypes.h"
 #include "Utils/SpatialStatics.h"
 
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
-
-#include "InterestFactory.h"
-
 DECLARE_LOG_CATEGORY_EXTERN(LogEntityFactory, Log, All);
 
 class AActor;
@@ -22,6 +17,7 @@ class USpatialPackageMapClient;
 
 namespace SpatialGDK
 {
+class InterestFactory;
 class SpatialRPCService;
 
 struct RPCsOnEntityCreation;
