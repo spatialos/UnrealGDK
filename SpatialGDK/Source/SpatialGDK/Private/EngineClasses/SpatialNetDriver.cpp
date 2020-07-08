@@ -23,6 +23,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "EngineClasses/SpatialReplicationGraph.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -52,6 +53,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
+#include "SpatialNetDriverLoadBalancingHandler.h"
 
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
@@ -1017,6 +1019,11 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		LockingPolicy->OnOwnerUpdated(Actor, OldOwner);
 	}
 
+	if (USpatialReplicationGraph* ReplicationGraph = Cast<USpatialReplicationGraph>(GetReplicationDriver()))
+	{
+		ReplicationGraph->OnOwnerUpdated(Actor, OldOwner);
+	}
+
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -1138,6 +1145,14 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 	return bFoundReadyConnection ? NumClientsToTick : 0;
 }
+
+struct FCompareFActorPriorityAndMigration
+{
+	FORCEINLINE bool operator()(const FActorPriority& A, const FActorPriority& B) const
+	{
+		return B.Priority < A.Priority;
+	}
+};
 
 int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
 {
@@ -1525,8 +1540,16 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
-	TArray<FMigrationInfo> ActorsToMigrate;
-	ServerReplicateActors_HandleLoadBalancing(ConsiderList, ActorsToMigrate);
+	
+	const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(WorldSettings);
+	const bool bIsMultiWorkerEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiWorkerEnabled();
+
+	FSpatialNetDriverLoadBalancingHandler MigrationHandler(this, ConsiderList);
+
+	if (bIsMultiWorkerEnabled)
+	{
+		MigrationHandler.HandleLoadBalancing();
+	}
 
 	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
 
@@ -1572,8 +1595,12 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Process the sorted list of actors for this connection
 	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, PriorityActors, FinalSortedCount, Updated);
 
-	// Once an up to date version of the actors have been sent, do the actual migration.
-	ServerReplicateActors_ProcessMigration(ActorsToMigrate);
+	if (bIsMultiWorkerEnabled)
+	{
+		// Once an up to date version of the actors have been sent, do the actual migration.
+		//ServerReplicateActors_ProcessMigration(ActorsToMigrate);
+		MigrationHandler.ProcessMigrations();
+	}
 
 	// SpatialGDK - Here Unreal would mark relevant actors that weren't processed this frame as bPendingNetUpdate. This is not used in the SpatialGDK and so has been removed.
 
