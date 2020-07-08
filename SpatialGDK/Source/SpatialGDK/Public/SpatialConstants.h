@@ -205,8 +205,8 @@ const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID						 = 3;
 const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID						 = 4;
 
 // ForwardSpawnPlayerRequest type IDs.
-const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 1;
-const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 2;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 1;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 2;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID				 = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
 
