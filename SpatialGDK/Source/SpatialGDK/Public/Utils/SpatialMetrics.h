@@ -57,7 +57,7 @@ public:
 	};
 	typedef TMap<FString, WorkerHistogramValues> WorkerHistogramMetrics;
 	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, WorkerGuageMetric, WorkerHistogramMetrics);
-	WorkerMetricsDelegate WorkerMetricsRecieved;
+	static WorkerMetricsDelegate WorkerMetricsRecieved;
 
 	// Delegate used to poll for the current player controller's reference
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
