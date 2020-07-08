@@ -361,7 +361,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 	const FString KillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
 #endif
 
-#if PLATFORM_MAC
+#elif PLATFORM_MAC
 	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::KillCmdFilePath, TEXT("kill"));
 	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
 #endif
@@ -447,6 +447,11 @@ bool SpatialCommandUtils::GetProcessInfoFromPortMacOs(int32 Port, FString& OutPi
 	}
 	else
 	{
+		if (bSuccess && StdErr.IsEmpty())
+		{
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"));
+		}
+
 		bSuccess = false;
 		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
 	}
