@@ -81,7 +81,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	if (bIsServer) // Server only for now
+	if (bIsServer)
 	{
 		for (const TPair<FString, double>& Metric : WorkerGuageMetricsToForward)
 		{
