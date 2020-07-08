@@ -575,7 +575,7 @@ public:
 	{
 		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
-			return FText::FromString(TEXT("Invalid"));
+			return NSLOCTEXT("SpatialGDKEditorSettings", "InvalidRegion", "Invalid");
 		}
 
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
@@ -611,7 +611,7 @@ public:
 	{
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
 		{
-			return FText::FromString(TEXT("Invalid"));
+			return NSLOCTEXT("SpatialGDKEditorSettings", "InvalidRegion", "Invalid");
 		}
 
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);

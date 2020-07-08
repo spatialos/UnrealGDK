@@ -18,6 +18,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
+#define LOCTEXT_NAMESPACE "SpatialGDKSettings"
+
 namespace
 {
 	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
@@ -142,8 +144,8 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
-				"Failing to do will result in unintended behavior or crashes!"))));
+			LOCTEXT("RegenerateSchemaDynamicSubobjects_Prompt", "You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
+				"Failing to do will result in unintended behavior or crashes!"));
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServicesRegion))
 	{
@@ -232,3 +234,5 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+#undef LOCTEXT_NAMESPACE
