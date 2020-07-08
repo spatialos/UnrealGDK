@@ -226,9 +226,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-	    check(LoadBalanceEnforcer != nullptr)
+	    check(LoadBalanceEnforcer != nullptr);
     	LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
@@ -308,8 +309,11 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
 
-	check(LoadBalanceEnforcer != nullptr);
-	LoadBalanceEnforcer->OnEntityRemoved(Op);
+	if (NetDriver->IsServer())
+	{
+		check(LoadBalanceEnforcer != nullptr);
+		LoadBalanceEnforcer->OnEntityRemoved(Op);
+	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 
@@ -368,10 +372,13 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
 	}
 
-	check(LoadBalanceEnforcer != nullptr);
-	if (LoadBalanceEnforcer->HandlesComponent(Op.component_id))
+	if (NetDriver->IsServer())
 	{
-		LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
+		check(LoadBalanceEnforcer != nullptr);
+		if (LoadBalanceEnforcer->HandlesComponent(Op.component_id))
+		{
+			LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
+		}
 	}
 
 	// We are queuing here because if an Actor is removed from your view, remove component ops will be
@@ -497,7 +504,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing && Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+	if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing
+		&& Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 	{
 		check(LoadBalanceEnforcer != nullptr);
 		LoadBalanceEnforcer->OnAclAuthorityChanged(Op);
@@ -1547,10 +1555,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		if (LoadBalanceEnforcer != nullptr)
-		{
-			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
-		}
+		check(LoadBalanceEnforcer != nullptr)
+		LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
@@ -1830,13 +1836,44 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(Op);
 		return;
 	}
-	else if (Op.response.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+	if (Op.response.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(Op);
 		return;
 	}
+	if (Op.response.component_id == SpatialConstants::WORKER_COMPONENT_ID &&
+		Op.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
+	{
+		ReceiveClaimPartitionResponse(Op);
+		return;
+	}
 
 	ReceiveCommandResponse(Op);
+}
+
+void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
+{
+	const Worker_PartitionId PartitionId = PendingPartitionAssignments.FindAndRemoveChecked(Op.request_id);
+
+	if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("ClaimPartition command timed out. "
+            "Worker sytem entity: %lld. Retrying"), Op.entity_id);
+
+		// We don't worry about checking if we're resending this request twice, setting to the same value should be idempotent.
+		Sender->SendClaimPartitionRequest(Op.entity_id, PartitionId);
+		return;
+	}
+
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("ClaimPartition command failed for a reason other than timeout. "
+            "This is fatal. Partition entity: %lld. Reason: %s"), PartitionId, UTF8_TO_TCHAR(Op.message));
+		return;
+	}
+
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("ClaimPartition command successed. "
+        "Worker sytem entity: %lld. Parititon entity: %lld"), Op.entity_id, PartitionId);
 }
 
 void USpatialReceiver::FlushRetryRPCs()

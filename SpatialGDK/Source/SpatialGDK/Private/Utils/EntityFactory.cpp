@@ -203,7 +203,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateNetOwningClientWorkerData());
+	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor), GetConnectionOwningPartitionId(Channel->Actor)).CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
@@ -365,7 +365,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		// Create AuthorityDelegation from EntityACL component IDs.
 		AuthorityDelegationMap DelegationMap;
-		const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningEntityId(Actor);
+		const Worker_EntityId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
 		const Worker_EntityId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
 
 		for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
@@ -377,6 +377,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		}
 		DelegationMap.Add(AuthorityDelegation::ComponentId, AuthoritativeServerPartitionId);
 		ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+
+		// Short-term workaround just empty WriteACL so trying to debug is less trolly.
+		ComponentWriteAcl = {};
 	}
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
@@ -437,6 +440,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	Components.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), true).CreateUnrealMetadataData());
 	Components.Add(Tombstone().CreateData());
 	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		Components.Add(AuthorityDelegation().CreateAuthorityDelegationData());
+	}
 
 	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)

@@ -835,9 +835,10 @@ void USpatialNetDriver::BeginDestroy()
 	if (Connection != nullptr)
 	{
 		// Delete all load-balancing partition entities if we're translator authoritative.
-		if (VirtualWorkerTranslationManager != nullptr)
+		if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing
+			&& VirtualWorkerTranslationManager != nullptr)
 		{
-			for (const SpatialVirtualWorkerTranslationManager::PartitionInfo& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
+			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
 				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId);
 			}
@@ -2049,6 +2050,17 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
 		SpatialConnection->FlushNet(true);
 	}
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		// Set the PlayerController entity so the AuthorityDelegation client authoritative components can be set
+		// correctly at spawn.
+		USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(SpatialConnection->PlayerController);
+		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Channel->Actor->GetNetConnection());
+		check(NetConnection != nullptr);
+		NetConnection->PlayerControllerEntity = Channel->GetEntityId();
+	}
+
 }
 
 // This function is called for server workers who received the PC over the wire

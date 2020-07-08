@@ -44,12 +44,11 @@ public:
 	TArray<AuthorityStateChange> ProcessAuthorityChangeRequests();
 
 private:
-	void QueueAuthorityAssignmentRequest(const Worker_EntityId EntityId);
 	bool CanEnforce(Worker_EntityId EntityId) const;
 
 	const PhysicalWorkerName WorkerId;
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	TArray<Worker_EntityId> PendingAuthorityChangeRequests;
+	TArray<Worker_EntityId> PendingEntityAuthorityChanges;
 };

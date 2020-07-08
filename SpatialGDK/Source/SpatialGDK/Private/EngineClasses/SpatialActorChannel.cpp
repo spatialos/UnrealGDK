@@ -29,6 +29,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
@@ -215,7 +216,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bNeedOwnerInterestUpdate = false;
 
 	PendingDynamicSubobjects.Empty();
-	SavedConnectionOwningWorkerId.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
 
 	FramesTillDormancyAllowed = 0;
@@ -1044,8 +1044,6 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
-
-	SavedConnectionOwningWorkerId = SpatialGDK::GetConnectionOwningWorkerId(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -1146,17 +1144,14 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		break;
 	}
 
-	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS)
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && Actor->IsA<APlayerController>())
 	{
 		// This field is valid on PlayerControllers. If valid, we want the client worker to claim the PlayerController
 		// as a partition entity ID so the client can become authoritative over relevant components (such as client
 		// RPC endpoints, heartbeat component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Actor);
-		if (Actor->IsA<APlayerController>())
-		{
-			check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
-			Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
-		}
+		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
+		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
 	}
 }
 
@@ -1269,26 +1264,20 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
-	if (SavedConnectionOwningWorkerId != NewClientConnectionWorkerId)
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
+	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+	const FString CurrentClientWorkerId = CurrentNetOwningClientData->WorkerId.IsSet() ? CurrentNetOwningClientData->WorkerId.GetValue() : FString();
+	const FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
+	if (CurrentClientWorkerId != NewClientConnectionWorkerId)
 	{
 		// Update the NetOwningClientWorker component.
-		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
-		SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-		NetOwningClientWorkerData->WorkerId = NewClientConnectionWorkerId;
-		FWorkerComponentUpdate Update = NetOwningClientWorkerData->CreateNetOwningClientWorkerUpdate();
+		CurrentNetOwningClientData->SetWorkerId(NewClientConnectionWorkerId);
+		CurrentNetOwningClientData->SetPartitionId(SpatialGDK::GetConnectionOwningPartitionId(Actor));
+		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Update the EntityACL component (if authoritative).
-		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
-		}
-
+		// Short circuit updating the entity authority component.
 		NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
-
-		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
-
 		bUpdatedThisActor = true;
 	}
 
@@ -1301,9 +1290,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (SavedInterestBucketComponentID != NewInterestBucketComponentId)
 	{
 		Sender->SendInterestBucketComponentChange(EntityId, SavedInterestBucketComponentID, NewInterestBucketComponentId);
-
 		SavedInterestBucketComponentID = NewInterestBucketComponentId;
-
 		bUpdatedThisActor = true;
 	}
 

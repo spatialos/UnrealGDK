@@ -52,6 +52,16 @@ inline FString GetConnectionOwningWorkerId(const AActor* Actor)
 	return FString();
 }
 
+// Effectively, if this Actor is in a player hierarchy, get the PlayerController entity ID.
+inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
+{
+	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
+	{
+		return NetConnection->PlayerControllerEntity;
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
 
 inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const AActor* Actor)
 {
@@ -61,25 +71,6 @@ inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const AActor* Act
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;
-}
-
-// Effectively, if this Actor is in a player hierarchy, get the PlayerController entity ID
-inline Worker_EntityId GetConnectionOwningEntityId(const AActor* Actor)
-{
-	const AActor* Owner = Actor->GetOwner();
-	if (Owner != nullptr)
-	{
-		return GetConnectionOwningEntityId(Owner);
-	}
-
-	if (!Actor->IsA<APlayerController>())
-	{
-		return SpatialConstants::INVALID_ENTITY_ID;
-	}
-
-	check(Actor->GetNetConnection() != nullptr);
-
-	return Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->PackageMap->GetEntityIdFromObject(Actor);
 }
 
 inline FVector GetActorSpatialPosition(const AActor* InActor)

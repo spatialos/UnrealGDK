@@ -217,11 +217,19 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	ClientQuery.FullSnapshotResult = true;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
-	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
-	Query LoadBalanceQuery;
-	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
-	LoadBalanceQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
+	// If USLB disabled, add a query for the load balancing worker ( delegated the EntityACL) to read the components it needs to write updates.
+	if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		Query LoadBalanceQuery;
+		LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
+		LoadBalanceQuery.ResultComponentIds = {
+			SpatialConstants::ENTITY_ACL_COMPONENT_ID,
+            SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+            SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+            SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID
+        };
+		AddComponentQueryPairToInterestComponent(OutInterest,  SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
+	}
 }
 
 bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const

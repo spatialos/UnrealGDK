@@ -2,19 +2,18 @@
 
 #pragma once
 
-#include "Containers/Queue.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
+#include "Containers/Queue.h"
+#include "CoreMinimal.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
 
-#include "CoreMinimal.h"
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
-class SpatialVirtualWorkerTranslator;
 class SpatialOSDispatcherInterface;
 class SpatialOSWorkerInterface;
 
@@ -39,6 +38,7 @@ public:
 	{
 		Worker_EntityId PartitionEntityId;
 		VirtualWorkerId VirtualWorker;
+		Worker_EntityId SimulatingWorkerSystemEntityId;
 	};
 
 	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
@@ -51,7 +51,7 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
-	const TArray<PartitionInfo>& GetAllPartitions() { return Partitions; };
+	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
 
 	SpatialVirtualWorkerTranslator* Translator;
 

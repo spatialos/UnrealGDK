@@ -190,13 +190,17 @@ private:
 	void HandleQueuedOpForAsyncLoad(const Worker_Op& Op);
 	// END TODO
 
+	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
+
 public:
+	FRPCContainer& GetRPCContainer() { return IncomingRPCs; }
+
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
 
-	FRPCContainer& GetRPCContainer() { return IncomingRPCs; }
+	TMap<Worker_RequestId_Key, Worker_PartitionId> PendingPartitionAssignments;
 
 private:
 	UPROPERTY()

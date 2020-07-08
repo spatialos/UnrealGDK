@@ -20,7 +20,7 @@ using namespace SpatialGDK;
 
 struct ConfigureConnection
 {
-	ConfigureConnection(const FConnectionConfig& InConfig, const bool bConnectAsClient, Worker_LogCallback* LogCallback)
+	ConfigureConnection(const FConnectionConfig& InConfig, const bool bConnectAsClient)
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
@@ -112,7 +112,6 @@ struct ConfigureConnection
 	FTCHARToUTF8 WorkerType;
 	FTCHARToUTF8 WorkerSDKLogFilePrefix;
 	Worker_ComponentVtable DefaultVtable{};
-	TArray<Worker_LogsinkParameters> Logsinks;
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
 
@@ -203,7 +202,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	}
 }
 
-void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
@@ -222,7 +221,7 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Alpha
 	ConnectionManager->ProcessLoginTokensResponse(LoginTokens);
 }
 
-void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens)
 {
 	// If LoginTokenResCallback is callable and returns true, return early.
 	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
@@ -263,27 +262,22 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 	ConnectToLocator(&DevAuthConfig);
 }
 
-void USpatialConnectionManager::OnLogCallback(void* UserData, const Worker_LogData* Message)
-{
-	UE_LOG(LogSpatialConnectionManager, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Message->content));
-}
-
 void USpatialConnectionManager::RequestDeploymentLoginTokens()
 {
-	Worker_Alpha_LoginTokensRequest LTParams{};
+	Worker_LoginTokensRequest LTParams{};
 	FTCHARToUTF8 PlayerIdentityToken(*DevAuthConfig.PlayerIdentityToken);
 	LTParams.player_identity_token = PlayerIdentityToken.Get();
 	FTCHARToUTF8 WorkerType(*DevAuthConfig.WorkerType);
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	if (Worker_LoginTokensResponseFuture* LTFuture = Worker_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
 	{
-		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
+		Worker_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
 }
 
-void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken)
 {
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
@@ -305,16 +299,16 @@ void USpatialConnectionManager::StartDevelopmentAuth(const FString& DevAuthToken
 	FTCHARToUTF8 DisplayName(*DevAuthConfig.DisplayName);
 	FTCHARToUTF8 MetaData(*DevAuthConfig.MetaData);
 
-	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	Worker_PlayerIdentityTokenRequest PITParams{};
 	PITParams.development_authentication_token = DAToken.Get();
 	PITParams.player_id = PlayerId.Get();
 	PITParams.display_name = DisplayName.Get();
 	PITParams.metadata = MetaData.Get();
 	PITParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+	if (Worker_PlayerIdentityTokenResponseFuture* PITFuture = Worker_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
 	{
-		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
+		Worker_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
 	}
 }
 
@@ -322,7 +316,7 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 {
 	ReceptionistConfig.PreConnectInit(bConnectAsClient);
 
-	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient, &USpatialConnectionManager::OnLogCallback);
+	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
@@ -341,16 +335,12 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	InLocatorConfig->PreConnectInit(bConnectAsClient);
 
-	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient, &USpatialConnectionManager::OnLogCallback);
+	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);
 
 	Worker_LocatorParameters LocatorParams = {};
-	FString ProjectName;
-	FParse::Value(FCommandLine::Get(), TEXT("projectName"), ProjectName);
-	LocatorParams.project_name = TCHAR_TO_UTF8(*ProjectName);
-	LocatorParams.credentials_type = Worker_LocatorCredentialsTypes::WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS;
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 

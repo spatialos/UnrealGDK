@@ -188,27 +188,15 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		}
 	});
 
-	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
-	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
-
-		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
-		for (auto& ComponentId : NewComponentIds)
-		{
-			EntityACL->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
-		}
-
-		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
-	}
-
 	// Update the ComponentPresence component with the new component IDs.
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	// If enforcer is local worker, queue up an EntityACL / AuthorityDelegation update.
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -301,8 +289,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
-
-
+			
 			if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 			{
 				// SUPER MEGA DEATH HACK
@@ -381,8 +368,8 @@ void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntit
 	UE_LOG(LogSpatialSender, Log, TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId. %lld. "
 		"PartitionId: %lld"), *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	// Need to handle response?
-	Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
+	const Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
+	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
 void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents)
@@ -608,8 +595,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 		*GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId)
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
-	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority intent update for entity id %lld. Virtual worker '%d' should become authoritative over %s"),
-        *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending AuthorityIntent update. Actor: %s. Entity: %lld. Virtual worker: %d."),
+        *NetDriver->Connection->GetWorkerId(), *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
@@ -639,20 +626,13 @@ void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnfor
 
 	const Worker_PartitionId AuthoritativeServerPartition = NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(Request.TargetVirtualWorker);
 	
-	// Temporarily removing teh logic the below, I don't really understand it. Hoping to hit an exception which clarifies.
-
 	// There's a case where this function is called after a Tombstone component is added to the entity (when a startup Actor is deleted).
-	// In this case, we won't be able to access the Actor* via the package map (since the Actor was removed when the Tombstone was added).
-	// Currently, we use the Actor* to grab the
-	// client worker partition ID that should be authoritative over the Heartbeat and client RPC endpoint components (if the entity has them).
-	// As a workaround, since the delegation of deleted Actors should be relevant, we'll just leave the partition ID as invalid if the Actor*
-	// cannot be retrieved.
+	// In this case, we won't be able to access the Actor* via the PackageMap (since the Actor was removed when the Tombstone was added).
+	// Currently, we use the Actor* to grab the client worker partition ID that should be authoritative over the Heartbeat and client
+	// RPC endpoint components (if the entity has them). As a workaround, since the delegation of deleted Actors should be relevant,
+	// we'll just leave the partition ID as invalid if the Actor* cannot be retrieved.
 	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Request.EntityId));
-	const Worker_PartitionId ClientWorkerPartitionId =
-		//Actor != nullptr ?
-		GetConnectionOwningEntityId(Actor)
-		//: SpatialConstants::INVALID_ENTITY_ID
-	;
+	const Worker_PartitionId ClientWorkerPartitionId = Actor != nullptr ? GetConnectionOwningPartitionId(Actor) : SpatialConstants::INVALID_ENTITY_ID;
 
 	AuthorityDelegation* AuthorityDelegationComponent = StaticComponentView->GetComponentData<AuthorityDelegation>(Request.EntityId);
 	check(AuthorityDelegationComponent != nullptr);
@@ -663,11 +643,11 @@ void USpatialSender::SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnfor
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID || ComponentId == ClientRpcAuthComponent)
 		{
-			// if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
-			// {
-			// 	UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegation update"
-			// 		" for entity %lld. This should happen only when startup Actors are deleted"), *NetDriver->Connection->GetWorkerId(), EntityId);
-			// }
+			//if (ClientWorkerPartitionId == SpatialConstants::INVALID_ENTITY_ID)
+			//{
+			//	UE_LOG(LogSpatialSender, Log, TEXT("(%s) ClientWorkerPartitionId was inaccessible when trying to send AuthorityDelegation update"
+			//		" for entity %lld. This should happen only when startup Actors are deleted."), *NetDriver->Connection->GetWorkerId(), Request.EntityId);
+			//}
 			AuthorityDelegationComponent->Delegations.FindOrAdd(ComponentId, ClientWorkerPartitionId);
 			continue;
 		}
@@ -702,10 +682,11 @@ void USpatialSender::SendEntityACLUpdate(const SpatialLoadBalanceEnforcer::Autho
 	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
 	NewAcl->ReadAcl = Request.ReadAcl;
 
+	const Worker_ComponentId ClientRpcAuthComponent = SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer());
+
 	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
 	{
-		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
-            || ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID || ComponentId == ClientRpcAuthComponent)
 		{
 			NewAcl->ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
 			continue;
@@ -1119,23 +1100,6 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-}
-
-// Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
-// This function updates the authority of that component as the owning connection can change.
-void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
-{
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
-
-	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
-	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
-
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), OwningClientOnly);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
-	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-
-	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)

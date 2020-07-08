@@ -62,7 +62,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 		Partitions.Reserve(VirtualWorkersToAssign.Num());
 		for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 		{
-			Partitions.Emplace(PartitionInfo{ SpatialConstants::INVALID_ENTITY_ID, VirtualWorkerId});
+			Partitions.Emplace(PartitionInfo{ SpatialConstants::INVALID_ENTITY_ID, VirtualWorkerId, SpatialConstants::INVALID_ENTITY_ID });
 		}
 		QueryForServerWorkerEntities();
 	}
@@ -144,13 +144,16 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionsToEachServerWorkerF
 			{
 				const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-				const PartitionInfo Partition = Partitions[i];
+				PartitionInfo Partition = Partitions[i];
 
 				// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 				// workers, this will need to process UnassignWorker before processing AssignWorker.
 				PhysicalWorkerName WorkerName  = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 
 				Worker_EntityId SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+
+				// We store this so we can lookup when ClaimPartition commands fail.
+				Partition.SimulatingWorkerSystemEntityId = SystemEntityId;
 
 				AssignPartitionToWorker(WorkerName, Entity.entity_id, SystemEntityId, Partition);
 			}
@@ -216,7 +219,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)
 {
-	Partitions.Emplace(PartitionInfo{ PartitionEntityId, VirtualWorker});
+	Partitions.Emplace(PartitionInfo{ PartitionEntityId, VirtualWorker, SpatialConstants::INVALID_ENTITY_ID });
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Adding translation manager mapping. Virtual worker %d -> Parition entity %lld"),
 		VirtualWorker, PartitionEntityId);
@@ -235,7 +238,6 @@ void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_En
 		{
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" - virtual worker %d -> partition entity %lld"),
 				Partition.VirtualWorker, Partition.PartitionEntityId);
-
 		}
 	}
 }

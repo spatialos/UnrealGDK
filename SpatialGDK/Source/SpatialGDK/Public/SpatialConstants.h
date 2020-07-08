@@ -219,6 +219,7 @@ const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
 
 // NetOwningClientWorker Field IDs.
 const Schema_FieldId NET_OWNING_CLIENT_WORKER_FIELD_ID					 = 1;
+const Schema_FieldId NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID		 = 2;
 
 // UnrealMetadata Field IDs.
 const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID				 = 1;

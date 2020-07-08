@@ -12,4 +12,13 @@ component NetOwningClientWorker {
     // EntityACL entry for the client RPC endpoint (and Heartbeat component, 
     // if present).
     option<string> worker_id = 1;
+    
+    // Only relevant for USLB.
+    // The partition_entity_id is an optional entity ID string that is set
+    // when the relevant Actor or subobject becomes net-owned by a client 
+    // connection. This entity ID is the partition entity ID that the client 
+    // worker claims in order to gain authority over entity components in the 
+    // world. Currently, this will always be the PlayerController spawned during
+    // the connection
+    option<EntityId> partition_entity_id = 2;
 }

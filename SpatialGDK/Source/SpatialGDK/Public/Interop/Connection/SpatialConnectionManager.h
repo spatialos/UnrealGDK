@@ -30,7 +30,7 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 	
-	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
+	using LoginTokenResponseCallback = TFunction<bool(const Worker_LoginTokensResponse*)>;
 	using LogCallback = TFunction<void(const Worker_LogData*)>;
     
     /// Register a callback using this function.
@@ -75,9 +75,9 @@ private:
 	ESpatialConnectionType GetConnectionType() const;
 
 	void StartDevelopmentAuth(const FString& DevAuthToken);
-	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
-	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
-	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
+	static void OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken);
+	static void OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens);
+	void ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens);
 
 private:
 	UPROPERTY()
