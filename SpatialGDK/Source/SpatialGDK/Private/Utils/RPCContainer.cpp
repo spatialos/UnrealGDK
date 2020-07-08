@@ -27,12 +27,6 @@ namespace
 		case ERPCResult::UnresolvedParameters:
 			return TEXT("Unresolved Parameters");
 
-		case ERPCResult::ActorPendingKill:
-			return TEXT("Actor Pending Kill");
-
-		case ERPCResult::TimedOut:
-			return TEXT("Timed Out");
-
 		case ERPCResult::NoActorChannel:
 			return TEXT("No Actor Channel");
 
@@ -56,6 +50,9 @@ namespace
 
 		case ERPCResult::ControllerChannelNotListening:
 			return TEXT("Controller Channel Not Listening");
+
+		case ERPCResult::RPCServiceFailure:
+			return TEXT("SpatialRPCService couldn't handle the RPC");
 
 		default:
 			return TEXT("Unknown");

@@ -25,6 +25,11 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
+USpatialGameInstance::USpatialGameInstance()
+	: Super()
+	, bIsSpatialNetDriverReady(false)
+{}
+
 bool USpatialGameInstance::HasSpatialNetDriver() const
 {
 	bool bHasSpatialNetDriver = false;
@@ -106,31 +111,37 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
+	SpatialWorkerType = Params.SpatialWorkerType;
+	bIsSimulatedPlayer = Params.bIsSimulatedPlayer;
+
+	StartSpatialConnection();
+	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
+}
+#endif
+
+void USpatialGameInstance::StartSpatialConnection()
+{
 	if (HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
+		TryInjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
 	}
 #if TRACE_LIB_ACTIVE
 	else
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
-
-	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
-#endif
 
-void USpatialGameInstance::TryConnectToSpatial()
+void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
 {
-	if (HasSpatialNetDriver())
+	if (!HasPreviouslyConnectedToSpatial())
 	{
-		// If we are using spatial networking then prepare a spatial connection.
-		CreateNewSpatialConnectionManager();
-
+		SetHasPreviouslyConnectedToSpatial();
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
 
@@ -147,19 +158,18 @@ void USpatialGameInstance::TryConnectToSpatial()
 			FCommandLine::Set(*NewCommandLineArgs);
 		}
 	}
-#if TRACE_LIB_ACTIVE
-	else
-	{
-		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
-		SpatialLatencyTracer->SetWorkerId(WorkerName);
-	}
-#endif
 }
 
 void USpatialGameInstance::StartGameInstance()
 {
-	TryConnectToSpatial();
+	if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect())
+	{
+		DisableShouldConnectUsingCommandLineArgs();
+	}
+	else
+	{
+		StartSpatialConnection();
+	}
 
 	Super::StartGameInstance();
 }
@@ -200,12 +210,11 @@ void USpatialGameInstance::Init()
 	Super::Init();
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
-	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 
-	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-	ActorGroupManager->Init();
-
-	checkf(!(GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer && USpatialStatics::IsSpatialOffloadingEnabled()), TEXT("Offloading and the Unreal Load Balancer are enabled at the same time, this is currently not supported. Please change your project settings."));
+	if (HasSpatialNetDriver())
+	{
+		FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
+	}
 }
 
 void USpatialGameInstance::HandleOnConnected()
@@ -219,7 +228,23 @@ void USpatialGameInstance::HandleOnConnected()
 	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
 	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
-	OnConnected.Broadcast();
+
+	OnSpatialConnected.Broadcast();
+}
+
+void USpatialGameInstance::CleanupCachedLevelsAfterConnection()
+{
+	// Cleanup any actors which were created during level load.
+	UWorld* World = GetWorld();
+	check(World != nullptr);
+	for (ULevel* Level : CachedLevelsForNetworkIntialize)
+	{
+		if (World->ContainsLevel(Level))
+		{
+			CleanupLevelInitializedNetworkActors(Level);
+		}
+	}
+	CachedLevelsForNetworkIntialize.Empty();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
@@ -228,13 +253,17 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->ResetWorkerId();
 #endif
-	OnConnectionFailed.Broadcast(Reason);
+	OnSpatialConnectionFailed.Broadcast(Reason);
+}
+
+void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player on SpatialOS. Reason: %s"), *Reason);
+	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
-	const FString WorkerType = GetSpatialWorkerType().ToString();
-
 	if (OwningWorld != GetWorld()
 		|| !OwningWorld->IsServer()
 		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
@@ -246,6 +275,19 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
+	if (bIsSpatialNetDriverReady)
+	{
+		CleanupLevelInitializedNetworkActors(LoadedLevel);
+	}
+	else
+	{
+		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
+	}
+}
+
+void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel)
+{
+	bIsSpatialNetDriverReady = true;
 	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
 	{
 		AActor* Actor = LoadedLevel->Actors[ActorIndex];
@@ -254,7 +296,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 			continue;
 		}
 
-		if (USpatialStatics::IsSpatialOffloadingEnabled())
+		if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()))
 		{
 			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
 			{
@@ -264,7 +306,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 				else
 				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("This worker %s is not the owner of startup actor %s, exchanging Roles"), *GetPathNameSafe(Actor));
 					ENetRole Temp = Actor->Role;
 					Actor->Role = Actor->RemoteRole;
 					Actor->RemoteRole = Temp;

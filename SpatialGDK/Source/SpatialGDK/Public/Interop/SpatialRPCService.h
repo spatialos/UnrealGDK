@@ -13,6 +13,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
+class USpatialLatencyTracer;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
@@ -49,15 +50,16 @@ enum class EPushRPCResult : uint8
 	QueueOverflowed,
 	DropOverflowed,
 	HasAckAuthority,
-	NoRingBufferAuthority
+	NoRingBufferAuthority,
+	EntityBeingCreated
 };
 
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -66,7 +68,7 @@ public:
 		FWorkerComponentUpdate Update;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
-	TArray<Worker_ComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
+	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
 	// Will also store acked IDs locally.
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
@@ -84,7 +86,7 @@ private:
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 
@@ -99,6 +101,7 @@ private:
 private:
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
+	USpatialLatencyTracer* SpatialLatencyTracer;
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;
@@ -111,6 +114,11 @@ private:
 
 	TMap<EntityComponentId, Schema_ComponentUpdate*> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
+
+#if TRACE_LIB_ACTIVE
+	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);
+	TMap<EntityComponentId, TraceKey> PendingTraces;
+#endif
 };
 
 } // namespace SpatialGDK

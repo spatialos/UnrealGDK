@@ -7,6 +7,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Since GDK for Unreal v0.8.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
 **注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
+## [`x.y.z`] - Unreleased
+
+## [`0.10.0`] - 2020-07-08
+
+### New Known Issues:
+- Replicated properties that use the `COND_SkipOwner` replication condition can still replicate in the first few frames of an Actor becoming owned.
+- Microsoft have fixed a defect in MSVC that previously caused errors when building Unreal Engine. We documented a workaround for this issue in GDK version [`0.7.0-preview`](#070-preview---2019-10-11). If you set up the GDK on your computer between the release of `0.7.0` and `0.10.0`, you have performed this workaround, which is no longer necessary. To undo this workaround, follow these steps:
+1. Open Visual Studio Installer.
+1. Select **Modify** on your Visual Studio 2019 installation.
+1. In the **Installation details** section, clear all the checkboxes for workloads and components except **Visual Studio Code editor**.
+1. In the **Workloads** tab, select the following items:
+ - **Universal Windows Platform development**
+ - **.NET desktop development** (You must also select the **.NET Framework 4.6.2 development tools**.)
+ - **Desktop development with C++**
+5. Select **Modify** to confirm your changes.
+
+### Breaking Changes:
+- We've deprecated the `preview` branches. We now only release the GDK to the `release` branch, which is fully tested, stable, and documented. If you have the `preview` branches checked out, you must check out `release` to receive the latest changes.
+- The SpatialOS Runtime Standard variant requires the latest version of the SpatialOS CLI. Run `spatial update` to get the latest version.
+- Old snapshots are incompatible with version 0.10 of the GDK. You must generate new snapshots after upgrading to 0.10.
+- The old Inspector is incompatible with the SpatialOS Runtime Standard variant. The Standard variant uses the new Inspector by default.
+- We’ve removed `Singleton` as a class specifier, and you need to remove your uses of it. You can achieve the behavior of former Singleton Actors by ensuring that your Actor is spawned once by a single server-worker instance in your deployment.
+- We’ve renamed `OnConnected` and `OnConnectionFailed` (on `SpatialGameInstance`) to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also Blueprint-assignable.
+- The `GenerateSchema` and `GenerateSchemaAndSnapshots` commandlets do not generate schema any more. We’ve deprecated them in favor of `CookAndGenerateSchemaCommandlet`. (`GenerateSchemaAndSnapshots` still works if you use the `-SkipSchema` option.)
+- We’ve combined the settings for offloading and load balancing and moved them from the Editor and Runtime Settings to be per map in the World Settings. For more information, see the [offloading tutorial](https://documentation.improbable.io/gdk-for-unreal/docs/multiserver-offloading-1-set-up).
+- We’ve removed the command-line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer`, and GDK load balancing is always enabled. To override a map's `Enable Multi Worker` setting, use the command-line flag `OverrideMultiWorker`.
+- It is now mandatory to run a deployment with result types (previously result types were enabled by default). We’ve removed the Runtime setting `bEnableResultTypes` to reflect this.
+- Whether an Actor is offloaded depends on whether the root owner of that Actor is offloaded. This might affect you if you're using functions such as `IsActorGroupOwnerForActor`.
+- We’ve removed `QueuedOutgoingRPCWaitTime`. All RPC failure cases are now correctly queued or dropped.
+- We’ve removed `Max connection capacity limit` and `Login rate limit` from the generated worker configuration file, because we no longer support them.
+- We no longer support secure worker connections when you run your game within the Unreal Editor. We still support secure worker connections for packaged builds.
+
+### Features:
+- The GDK now uses the SpatialOS Worker SDK version [`14.6.1`](https://documentation.improbable.io/sdks-and-data/docs/release-notes#section-14-6-1).
+- Added support for the SpatialOS Runtime [Standard variant](https://documentation.improbable.io/gdk-for-unreal/docs/the-spatialos-runtime#section-runtime-variants), version 0.4.3.
+- Added support for the SpatialOS Runtime [Compatibility Mode variant](https://documentation.improbable.io/gdk-for-unreal/docs/the-spatialos-runtime#section-runtime-variants), version [`14.5.4`](https://forums.improbable.io/t/spatialos-13-runtime-release-notes-14-5-4/7333).
+- Added a new drop-down menu in Editor Settings so that you can select which SpatialOS Runtime variant to use. The two variants are Standard and Compatibility Mode. For Windows users, Standard is the default, but you can use Compatibility Mode if you experience networking issues when you upgrade to the latest GDK version. For macOS users, Compatibility Mode is the default, and you can’t use Standard. For more information, see [Runtime variants](https://documentation.improbable.io/gdk-for-unreal/docs/the-spatialos-runtime#section-runtime-variants).
+- Added new default game templates. Your default game template depends on the SpatialOS Runtime variant that you have selected, and on your primary deployment region.
+- The SpatialOS Runtime Standard variant uses the new Inspector by default, and is incompatible with the old Inspector. (The Compatibility Mode variant uses the old Inspector by default, and is incompatible with the new Inspector.)
+- The Example Project has a new default game mode: Control. This game mode replaces Deathmatch. In Control, two teams compete to capture control points on the map. NPCs guard the control points, and if you capture an NPC’s control point, then the NPC joins your team.
+- You can now generate valid schema for classes that start with a leading digit. The generated schema classes are prefixed with `ZZ` internally.
+- Handover properties are now automatically replicated when this is required for load balancing. `bEnableHandover` is off by default.
+- Added `OnSpatialPlayerSpawnFailed` delegate to `SpatialGameInstance`. This is useful if you have established a successful connection from the client-worker instance to the SpatialOS Runtime, but the server-worker instance crashed.
+- Added `bWorkerFlushAfterOutgoingNetworkOp` (default false) which sends RPCs and property replication changes over the network immediately, to allow for lower latencies. You can use this with `bRunSpatialWorkerConnectionOnGameThread` to achieve the lowest available latency at a trade-off with bandwidth.
+- You can now edit the project name field in the `Cloud Deployment Configuration` dialog box. Changes that you make here are reflected in your project's `spatialos.json` file.
+- You now define worker types in Runtime Settings.
+- Local deployments now use the map's load balancing strategy to get the launch configuration settings. The launch configuration file is saved per map in the `Intermediate/Improbable` folder.
+- Added a `Launch Configuration Editor` under the Cloud toolbar button.
+- In the `Cloud Deployment Configuration` dialog box you can now generate a launch configuration file from the current map, or you can click through to the `Launch Configuration Editor`.
+- You can now specify worker load in game logic by using `SpatialMetrics::SetWorkerLoadDelegate`.
+- You can now specify deployment tags in the `Cloud Deployment Configuration` dialog box.
+- You can now execute RPCs that were declared in a `UInterface`. Previously, this caused a runtime assertion.
+- Full Scan schema generation now uses the `CookAndGenerateSchema` commandlet, which results in faster and more stable schema generation for big projects.
+- Added an `Open Deployment Page` button to the `Cloud Deployment Configuration` dialog box.
+- The `Start Deployment` button in the `Cloud Deployment Configuration` dialog box now generates schema and a snapshot, builds all selected workers, and uploads the assembly before starting the deployment. There are checkboxes so that you can choose whether to generate schema and a snapshot, and whether to build the game client and add simulated players.
+- When you start a cloud deployment from the Unreal Editor, the cloud deployment now automatically has the dev_login deployment tag.
+- Several command-line parameter changes:
+  - Renamed the `enableProtocolLogging` command-line parameter to `enableWorkerSDKProtocolLogging`.
+  - Added a parameter named enableWorkerSDKOpLogging so that you can log user-level ops. 
+  - Renamed the `protocolLoggingPrefix` parameter to workerSDKLogPrefix. This prefix is used for both protocol logging and op logging.
+  - Added a parameter named `workerSDKLogLevel` that takes the arguments `debug`, `info`, `warning`, and `error`.
+  - Added a parameter named `workerSDKLogFileSize` to control the maximum file size of the Worker SDK log file.
+- The icon on the `Start Deployment` toolbar button now changes depending on the connection flow that you select.
+- Created a new drop-down menu in the GDK toolbar. You can use it to configure how to connect your PIE client or your Launch on Device client:
+  - Choose between `Connect to a local deployment` and `Connect to a cloud deployment` to specify the flow that the client should automatically use when you select `Play` or `Launch`.
+  - Added the `Local Deployment IP` field to specify which local deployment the client should connect to. By default, the IP is `127.0.0.1`.
+  - Added the `Cloud deployment name` field to specify which cloud deployment the client should connect to. If you select Connect to cloud deployment but you don’t specify a cloud deployment, the client tries to connect to the first running deployment that has the `dev_login` deployment tag.
+  - Added the `Editor Settings` field so that you can quickly access the SpatialOS Editor Settings.
+- Added the `Build Client Worker` and `Build Simulated Player` checkboxes to the `Connection` drop-down menu, so that you can quickly choose whether to build and include the client-worker instance and simulated player worker instance in the assembly.
+- Updated the GDK toolbar icons.
+- When you specify a URL to connect a client to a deployment using the Receptionist, the URL port option is now respected. - --- However, in certain circumstances, the initial connection attempt uses the `-receptionistPort` command-line argument.
+- When you run `BuildWorker.bat` with `client`, this now builds the client target of your project.
+- When you change the project name in the `Cloud Deployment Configuration` dialog box, this automatically regenerates the development authentication token.
+- Changed the names of the following toolbar buttons:
+  - `Start` is now called `Start Deployment`
+  - `Deploy` is now called `Cloud`
+- Marked all the required fields in the `Cloud Deployment Configuration` dialog box with asterisks.
+- You can now change the project name in Editor Settings.
+- Replaced the `Generate from current map` button in the `Cloud Deployment Configuration` dialog box with a checkbox labelled `Automatically Generate Launch Configuration`. If you select this checkbox, the GDK generates an up-to-date launch configuration file from the current map when you select `Start Deployment`.
+- Android and iOS are now in preview. We support workflows for developing and doing in-studio playtests on Android and iOS devices, and have documentation for these workflows. We also support macOS (also in preview) for developing and testing iOS game clients.
+
+## Bug fixes:
+- Fixed a problem that caused load balanced cloud deployments to fail to start while under heavy load.
+- Fix to avoid using packages that are still being processed in the asynchronous loading thread.
+- Fixed a bug that sometimes caused GDK setup scripts to fail to unzip dependencies.
+- Fixed a bug where RPCs that were called before calling the `CreateEntityRequest` were not processed as early as possible in the RPC ring buffer system, resulting in startup delays on the client.
+- Fixed a crash that occurred when running a game with `nullrhi` and using `SpatialDebugger`.
+- When you use a URL with options in the command line, we now parse the Receptionist parameters correctly, using the URL if necessary.
+- Fixed a bug that occurred when creating multiple dynamic subobjects at the same time, and caused them to fail to be created on clients.
+- `OwnerOnly` components are now properly replicated when a worker instance gains authority over an Actor. Previously, they were sometimes only replicated when a value on them changed (after the worker instance had already gained authority).
+- Fixed a rare server crash that could occur when closing an Actor channel immediately after attaching a dynamic subobject to that Actor.
+- Fixed a defect in `InstallGDK.bat` that sometimes caused it to incorrectly report `Error: Could not clone…` when repositories were cloned correctly.
+- Actors from the same ownership hierarchy are now handled together when they are load balanced.
+
+## SpatialOS tooling compatibility:
+If you are using the Standard Runtime variant, note the following compatibility issues:
+- The [old Inspector](https://documentation.improbable.io/spatialos-tools/docs/the-inspector) won’t work. You must use the [new Inspector](https://documentation.improbable.io/spatialos-tools/docs/the-new-inspector) instead.
+- In the [Platform SDK in C#](https://documentation.improbable.io/sdks-and-data/docs/platform-csharp-introduction), you can’t set [capacity limits](https://documentation.improbable.io/sdks-and-data/docs/platform-csharp-capacity-limiting) or use the [remote interaction service](https://documentation.improbable.io/sdks-and-data/docs/platform-csharp-remote-interactions). You also can’t use the Platform SDK to take snapshots of cloud deployments, but we’ll fix this snapshot issue in a future release.
+- You can't generate a snapshot of a cloud deployment. We'll fix this in a future release.
+- In the [CLI](https://documentation.improbable.io/spatialos-tools/docs/cli-introduction), the following commands don’t work:
+  - `spatial local worker replace`
+  - `spatial project deployment worker replace`
+  - `spatial local worker-flag set`
+  - `spatial project deployment worker-flag delete`
+  - `spatial project deployment worker-flag set`
+  - `spatial cloud runtime flags set` (We’ll improve debug tooling and add functionality to [dynamically change worker flag values](https://documentation.improbable.io/gdk-for-unreal/docs/worker-flags#section-change-worker-flag-values-while-the-deployment-is-running) in future releases.)
+
+If you need any of the functionality mentioned above, [change your Runtime variant to Compatibility Mode](https://documentation.improbable.io/gdk-for-unreal/docs/the-spatialos-runtime#section-change-your-runtime-variant).
+
+### Internal:
+Features listed in this section are not ready to use. However, in the spirit of open development, we record every change that we make to the GDK.
+
+- The SpatialOS GDK for Unreal is now released automatically using Buildkite CI. This should result in more frequent releases.
+- Improbable now measures the non-functional characteristics of the GDK in Buildkite CI. This enables us to reason about and improve these characteristics. We track them as non-functional requirements (NFRs).
+
 ## [`0.9.0`] - 2020-05-05
 
 ### New Known Issues:
@@ -64,6 +179,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabled RPC ring buffers by default. We'll remove the legacy RPC mode in a future release.
 - Removed the `bPackRPCs` property and the `--OverrideRPCPacking` flag.
 - Added `OnClientOwnershipGained` and `OnClientOwnershipLost` events on Actors and Actor Components. These events trigger when an Actor is added to or removed from the ownership hierarchy of a client's PlayerController.
+- Automatically remove UE4CommandLine.txt after finishing a Launch on device session on an Android device (only UnrealEngine 4.24 or above). This is done to prevent the launch session command line from overriding the one built into the APK.
 
 ## Bug fixes:
 - Queued RPCs no longer spam logs when an entity is deleted.
@@ -115,10 +231,11 @@ Features listed in this section are not ready to use. However, in the spirit of 
 ### External contributors:
 @DW-Sebastien
 
-## [`0.8.1`] - 2020-03-17 
+
+## [`0.8.1`] - 2020-03-17
 
 ### English version
-### Adapted from 0.8.1-preview 
+### Adapted from 0.8.1-preview
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.

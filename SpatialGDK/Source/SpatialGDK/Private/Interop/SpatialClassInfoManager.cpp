@@ -17,18 +17,16 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/SpatialActorGroupManager.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 {
 	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
-
-	check(InActorGroupManager != nullptr);
-	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
@@ -138,13 +136,12 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
-	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
-
+	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
+		if (bTrackHandoverProperties && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -187,7 +184,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	{
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
-		if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
+		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 		{
 			return;
 		}
@@ -221,7 +218,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
+			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 			{
 				return;
 			}
@@ -237,18 +234,6 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		});
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
-	}
-
-	if (UClass* ActorClass = Info->Class.Get())
-	{
-		if (ActorClass->IsChildOf<AActor>())
-		{
-			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
-			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
-
-			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
-				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
-		}
 	}
 }
 
@@ -279,6 +264,23 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 	}
 }
 
+bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
+{
+	// There's currently a bug that lets handover data get sent to clients in the initial
+	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
+	// properties on clients, we can prevent that spam.
+	if (!NetDriver->IsServer())
+	{
+		return true;
+	}
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
+	check(Strategy != nullptr);
+	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+}
+
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
 {
 	if (FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
@@ -301,7 +303,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* 
 	{
 		CreateClassInfoForClass(Class);
 	}
-	
+
 	return ClassInfoMap[Class].Get();
 }
 

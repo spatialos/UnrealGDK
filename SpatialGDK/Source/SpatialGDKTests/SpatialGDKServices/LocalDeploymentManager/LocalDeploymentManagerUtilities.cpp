@@ -7,6 +7,7 @@
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 #include "CoreMinimal.h"
 
@@ -60,7 +61,7 @@ bool FStartDeployment::Update()
 		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
-		const FString RuntimeVersion = SpatialGDKSettings->GetSpatialOSRuntimeVersionForLocal();
+		const FString RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 		{
@@ -74,13 +75,15 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
-			LaunchConfigDescription.SetLevelEditorPlaySettingsWorkerTypes();
+			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
+			FWorkerTypeLaunchSection Conf;
+
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
 			{
 				return;
 			}
+			SetLevelEditorPlaySettingsWorkerType(Conf);
 
 			if (LocalDeploymentManager->IsLocalDeploymentRunning())
 			{
