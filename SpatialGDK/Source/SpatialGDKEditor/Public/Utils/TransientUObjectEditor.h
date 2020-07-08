@@ -19,11 +19,11 @@ class SPATIALGDKEDITOR_API UTransientUObjectEditor : public UObject
 public:
 
 	template <typename T>
-	static T* LaunchTransientUObjectEditor(const FString& EditorName, TSharedPtr<SWindow> ParentWindow)
+	static T* LaunchTransientUObjectEditor(const FText& EditorName, TSharedPtr<SWindow> ParentWindow)
 	{
 		return Cast<T>(LaunchTransientUObjectEditor(EditorName, T::StaticClass(), ParentWindow));
 	}
 
 private:
-	static UTransientUObjectEditor* LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow);
+	static UTransientUObjectEditor* LaunchTransientUObjectEditor(const FText& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow);
 };
