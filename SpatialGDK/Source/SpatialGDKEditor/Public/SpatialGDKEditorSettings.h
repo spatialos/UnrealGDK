@@ -359,26 +359,26 @@ private:
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Assembly name"))
+	UPROPERTY(config)
 	FString AssemblyName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment name"))
+	UPROPERTY(config)
 	FString PrimaryDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cloud launch configuration path"))
+	UPROPERTY(config)
 	FFilePath PrimaryLaunchConfigPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Snapshot path"))
+	UPROPERTY(config)
 	FFilePath SnapshotPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
+	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Main Deployment Cluster"))
+	UPROPERTY(config)
 	FString MainDeploymentCluster;
 
 	/** Tags used when launching a deployment */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment tags"))
+	UPROPERTY(config)
 	FString DeploymentTags;
 
 	UPROPERTY(config)
@@ -427,24 +427,20 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
 
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
-
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
+	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Simulated Player Cluster"))
+	UPROPERTY(config)
 	FString SimulatedPlayerCluster;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
+	UPROPERTY(config)
 	bool bSimulatedPlayersIsEnabled;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Deployment name"))
+	UPROPERTY(config)
 	FString SimulatedPlayerDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
+	UPROPERTY(config)
 	uint32 NumberOfSimulatedPlayers;
 
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
@@ -571,10 +567,7 @@ public:
 	void SetSnapshotPath(const FString& Path);
 	FORCEINLINE FString GetSnapshotPath() const
 	{
-		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		return SnapshotPath.FilePath.IsEmpty()
-			? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
-			: SnapshotPath.FilePath;
+		return SnapshotPath.FilePath;
 	}
 
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);
@@ -703,8 +696,8 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 
 	void SetDevelopmentAuthenticationToken(const FString& Token);
-	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
 
+	static bool IsValidIP(const FString& IP);
 	void SetExposedRuntimeIP(const FString& RuntimeIP);
 
 	void SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType);

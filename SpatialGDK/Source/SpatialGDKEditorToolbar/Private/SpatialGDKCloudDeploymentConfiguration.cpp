@@ -227,7 +227,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetPrimaryDeploymentName()))
+									.Text(this, &SSpatialGDKCloudDeploymentConfiguration::GetPrimaryDeploymentNameText)
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentNameCommited)
 									.ErrorReporting(DeploymentNameInputErrorReporting)
@@ -260,6 +260,27 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetSnapshotPath)
 									.FileTypeFilter(TEXT("Snapshot files (*.snapshot)|*.snapshot"))
 									.OnPathPicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnSnapshotPathPicked)
+								]
+							]
+							// Automatically Generate Launch Configuration
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Automatically Generate Launch Configuration"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to automatically generate the launch configuration from the current map when a cloud deployment is started."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateCloudLaunchConfigEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateCloudLaunchConfig)
 								]
 							]
 							// Primary Launch Config + File Picker
@@ -311,26 +332,6 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
 									.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor)
 									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::CanPickOrEditCloudLaunchConfig)
-								]
-							]
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Automatically Generate Launch Configuration"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to automatically generate the launch configuration from the current map when a cloud deployment is started."))))
-								]
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(SCheckBox)
-									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateCloudLaunchConfigEnabled)
-									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateCloudLaunchConfig)
 								]
 							]
 							// Primary Deployment Region Picker
@@ -768,6 +769,12 @@ void SSpatialGDKCloudDeploymentConfiguration::OnDeploymentAssemblyCommited(const
 	SpatialGDKSettings->SetAssemblyName(InputAssemblyName);
 }
 
+FText SSpatialGDKCloudDeploymentConfiguration::GetPrimaryDeploymentNameText() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FText::FromString(SpatialGDKEditorSettings->GetPrimaryDeploymentName());
+}
+
 void SSpatialGDKCloudDeploymentConfiguration::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
 {
 	FString NewProjectName = InText.ToString();
@@ -880,11 +887,14 @@ TSharedRef<SWidget> SSpatialGDKCloudDeploymentConfiguration::OnGetSimulatedPlaye
 
 	if (pEnum != nullptr)
 	{
-		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		for (int32 EnumIdx = 0; EnumIdx < pEnum->NumEnums() - 1; EnumIdx++)
 		{
-			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			if (!pEnum->HasMetaData(TEXT("Hidden"), EnumIdx))
+			{
+				int64 CurrentEnumValue = pEnum->GetValueByIndex(EnumIdx);
+				FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
+				MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			}
 		}
 	}
 

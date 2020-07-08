@@ -222,7 +222,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		bPersistSpatialConnection = URL.HasOption(*SpatialConstants::ClientsStayConnectedURLOption);
 	}
 
-	if (!bPersistSpatialConnection)
+	if (GameInstance->GetSpatialConnectionManager() == nullptr)
+	{
+		GameInstance->CreateNewSpatialConnectionManager();
+	}
+	else if (!bPersistSpatialConnection)
 	{
 		GameInstance->DestroySpatialConnectionManager();
 		GameInstance->CreateNewSpatialConnectionManager();
@@ -747,6 +751,12 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		return;
 	}
 
+	if (NetDriver->LoadBalanceStrategy->GetMinimumRequiredWorkers() > 1)
+	{
+		UE_LOG(LogGameMode, Error, TEXT("Server travel is not supported on a deployment with multiple workers."));
+		return;
+	}
+
 	NetDriver->GlobalStateManager->ResetGSM();
 
 	GameMode->StartToLeaveMap();
@@ -829,6 +839,11 @@ void USpatialNetDriver::BeginDestroy()
 		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
+
+			// Flush the connection and wait a moment to allow the message to propagate.
+			// TODO: UNR-3697 - This needs to be handled more correctly
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
 		}
 
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
@@ -2506,6 +2521,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 	else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 	{
+		GlobalStateManager->QueryTranslation();
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
 		return false;
 	}
@@ -2557,7 +2573,12 @@ void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
-	check(SpatialMetricsDisplay == nullptr);
+	check(!IsServer());
+	if (SpatialMetricsDisplay != nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialMetricsDisplay should only be set once on each client!"));
+		return;
+	}
 	SpatialMetricsDisplay = InSpatialMetricsDisplay;
 }
 
