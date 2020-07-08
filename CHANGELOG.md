@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`0.10.0`] - 2020-06-15
+## [`0.10.0`] - 2020-07-08
 
 ### New Known Issues:
 - Replicated properties that use the `COND_SkipOwner` replication condition can still replicate in the first few frames of an Actor becoming owned.
