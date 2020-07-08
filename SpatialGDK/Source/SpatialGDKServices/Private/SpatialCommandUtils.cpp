@@ -359,8 +359,6 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 #if PLATFORM_WINDOWS
 	const FString KillCmd = TEXT("taskkill");
 	const FString KillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
-#endif
-
 #elif PLATFORM_MAC
 	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::KillCmdFilePath, TEXT("kill"));
 	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
