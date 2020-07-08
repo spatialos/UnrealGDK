@@ -431,7 +431,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPortMacOs(int32 Port, FString& OutPi
 
 	if (ExitCode == 0 && bSuccess)
 	{
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)( \\d+).*(\\(\\S+\\))")));
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)( *\\d+).*(\\(\\S+\\))")));
 		FRegexMatcher PidMatcher(PidMatcherPattern, LsofResult);
 		if (PidMatcher.FindNext())
 		{
