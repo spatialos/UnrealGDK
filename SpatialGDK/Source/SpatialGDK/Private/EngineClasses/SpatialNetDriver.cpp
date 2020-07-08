@@ -23,11 +23,11 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "EngineClasses/SpatialReplicationGraph.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -53,7 +53,6 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
-#include "SpatialNetDriverLoadBalancingHandler.h"
 
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
@@ -1019,11 +1018,6 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		LockingPolicy->OnOwnerUpdated(Actor, OldOwner);
 	}
 
-	if (USpatialReplicationGraph* ReplicationGraph = Cast<USpatialReplicationGraph>(GetReplicationDriver()))
-	{
-		ReplicationGraph->OnOwnerUpdated(Actor, OldOwner);
-	}
-
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -1598,7 +1592,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	if (bIsMultiWorkerEnabled)
 	{
 		// Once an up to date version of the actors have been sent, do the actual migration.
-		//ServerReplicateActors_ProcessMigration(ActorsToMigrate);
 		MigrationHandler.ProcessMigrations();
 	}
 

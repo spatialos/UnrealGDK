@@ -50,23 +50,6 @@ inline FString GetConnectionOwningWorkerId(const AActor* Actor)
 	return FString();
 }
 
-template <typename Functor>
-void ForeachReplicatedActorInHierarchy(AActor* HierarchyActor, Functor&& InFunctor)
-{
-	if (HierarchyActor)
-	{
-		if (HierarchyActor->GetIsReplicated())
-		{
-			InFunctor(HierarchyActor);
-		}
-
-		for (AActor* Child : HierarchyActor->Children)
-		{
-			ForeachReplicatedActorInHierarchy(Child, InFunctor);
-		}
-	}
-}
-
 inline FVector GetActorSpatialPosition(const AActor* InActor)
 {
 	FVector Location = FVector::ZeroVector;
