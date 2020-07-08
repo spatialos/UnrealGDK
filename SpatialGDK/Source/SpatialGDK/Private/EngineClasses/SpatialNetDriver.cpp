@@ -1261,9 +1261,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			DeletedCount++;
 		}
 
-		if(MigrationHandler.GetActorsToMigrate().Num() > 0)
+		if (MigrationHandler.GetActorsToMigrate().Num() > 0)
 		{
-			// Process actors migrating first, in order to not have them separated if they need to migrate together, and replication rate limiting happens.
+			// Process actors migrating first, in order to not have them separated if they need to migrate together and replication rate limiting happens.
 			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriorityAndMigration(MigrationHandler));
 		}
 		else

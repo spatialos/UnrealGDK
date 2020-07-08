@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#pragma once
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -9,15 +11,15 @@
 #include "Schema/SpatialDebugging.h"
 #include "Utils/SpatialActorUtils.h"
 
-// Template class to handle LoadBalancing for a collection of actors.
-// Since different systems (NetDriver, ReplicationGraph) have different types for actor collection
-// and different ways to declare dependencies between actors, a CRTP pattern is used to have the
+// Template class to handle load balancing for a collection of Actors.
+// Since different systems (NetDriver, ReplicationGraph) have different types for Actor collection
+// and different ways to declare dependencies between Actors, a CRTP pattern is used to have the
 // implementation class provide access to these information.
 // The methods to provide are :
 //  - GetActorsBeingReplicated() -> returns a range-for compatible iterator over AActor being replicated this frame
-//  - AddActorToReplicate(AActor* Actor) -> inform that an additional actor should be replicated this frame (a dependent actor)
-//  - RemoveAdditionalActor(AActor* Actor) -> inform that an actor we signaled as needing to replicate was encountered in the list of replicated actor, and does not need additional handling
-//  - GetDependentActors(AActor* Actor) -> returns a range-for compatible iterator over AActor that depends on the given actor (and should be migrated together)
+//  - AddActorToReplicate(AActor* Actor) -> inform that an additional Actor should be replicated this frame (a dependent Actor)
+//  - RemoveAdditionalActor(AActor* Actor) -> inform that an Actor we signaled as needing to replicate was encountered in the list of replicated Actor, and does not need additional handling
+//  - GetDependentActors(AActor* Actor) -> returns a range-for compatible iterator over AActor that depends on the given Actor (and should be migrated together)
 template <typename Implementation>
 class TSpatialLoadBalancingHandler
 {
