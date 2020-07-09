@@ -24,7 +24,6 @@ FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 {
 }
 
-
 bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FString& OutPID, FString& OutLogMsg)
 {
 	FString State;
@@ -34,19 +33,15 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 	{
 		if (State.Contains("LISTEN"))
 		{
-
 			OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
 			return true;
 		}
-	}
-	else
-	{
-		OutLogMsg = TEXT("Failed to check if a process is blocking the required port.");
+
+		OutLogMsg = TEXT("No Process is blocking the required port.");
 		return false;
 	}
 
-	OutLogMsg = TEXT("No Process is blocking the required port.");
-
+	OutLogMsg = TEXT("Failed to check if a process is blocking the required port.");
 	return false;
 }
 
@@ -59,12 +54,12 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	// Check if any process is blocking the receptionist port
 	if (!CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The required port is not blocked!"));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The required port is not blocked! %s"), *OutLogMessage);
 		return true;
 	}
 
-	// Get the previous running proxy's
-	if(GetPreviousReceptionistProxyPID(PreviousPID))
+	// Get the previous running proxy's PID
+	if (GetPreviousReceptionistProxyPID(PreviousPID))
 	{
 		// Try killing the process that blocks the receptionist port if the process blocking the port is a previously running proxy.
 		if (FCString::Atoi(*PID) == FCString::Atoi(*PreviousPID))

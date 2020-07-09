@@ -392,8 +392,6 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
-	bool bSuccess = false;
-
 #if PLATFORM_WINDOWS
 	const FString Command = FString::Printf(TEXT("netstat"));
 	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
@@ -407,7 +405,8 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 	FString Result;
 	int32 ExitCode;
 	FString StdErr;
-	bSuccess = FPlatformProcess::ExecProcess(*Command, *Args, &ExitCode, &Result, &StdErr);
+
+	bool bSuccess = FPlatformProcess::ExecProcess(*Command, *Args, &ExitCode, &Result, &StdErr);
 
 	if (ExitCode == 0 && bSuccess)
 	{
@@ -415,7 +414,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 		// Get the line of the netstat output that contains the port we're looking for.
 		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
 #elif PLATFORM_MAC
-		//Get the line that contains the name, pid and state of the process.
+		// Get the line that contains the name, pid and state of the process.
 		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)( *\\d+).*(\\(\\S+\\))")));
 #endif
 		FRegexMatcher PidMatcher(PidMatcherPattern, Result);
@@ -434,28 +433,26 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 			OutPid = PidMatcher.GetCaptureGroup(2 /* Get the PID, which is the second group. */);
 			OutState = PidMatcher.GetCaptureGroup(3 /* Get the State of the process, which is the third group. */);
 #endif
+			return true;
 		}
-		else
-		{
-			bSuccess = false;
-			UE_LOG(LogSpatialCommandUtils, Log, TEXT("There is no process blocking %d port."), Port);
-		}
+
+#if PLATFORM_WINDOWS
+		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"), Port);
+		return false;
+#endif
+		 
 	}
-	else
-	{
 
 #if PLATFORM_MAC
-		if (bSuccess && StdErr.IsEmpty())
-		{
-			UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"));
-			return false;
-		}
-#endif
-		bSuccess = false;
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	if (bSuccess && StdErr.IsEmpty())
+	{
+		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"));
+		return false;
 	}
+#endif
 
-	return bSuccess;
+	UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	return false;
 }
 
 #undef LOCTEXT_NAMESPACE
