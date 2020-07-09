@@ -13,20 +13,11 @@ pushd "$(dirname "$0")"
     BUILD_HOME="${3:-"$(pwd)/../.."}"
 
     UNREAL_PATH="${BUILD_HOME}/UnrealEngine"
-<<<<<<< HEAD
-    TEST_UPROJECT_NAME="UnrealGDKTestGyms"
-    TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
-    TEST_REPO_MAP="SpatialNetworkingMap"
-    TEST_PROJECT_NAME="GDKTestGyms"
-    CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}" 
-    SLOW_NETWORKING_TESTS=false
-=======
     TEST_UPROJECT_NAME="GDKTestGyms"
     TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
     TEST_REPO_MAP="EmptyGym"
     TEST_PROJECT_NAME="GDKTestGyms"
     CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}"
->>>>>>> update ci scripts to run tests and use test gyms
 
     # Download Unreal Engine
     echo "--- get-unreal-engine"
