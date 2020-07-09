@@ -105,7 +105,7 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditorModule, Error, TEXT("Failed to start local receptionist proxy server"));
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("ReceptionistProxyFailure", "Failed to start local receptionist proxy server. See the logs for more information."));
 		}
 
 		return bSuccess;
