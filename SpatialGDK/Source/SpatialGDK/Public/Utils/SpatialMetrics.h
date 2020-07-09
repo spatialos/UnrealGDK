@@ -56,8 +56,8 @@ public:
 		double Sum;
 	};
 	typedef TMap<FString, WorkerHistogramValues> WorkerHistogramMetrics;
-	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, WorkerGuageMetric, WorkerHistogramMetrics);
-	static WorkerMetricsDelegate WorkerMetricsRecieved;
+	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, const WorkerGuageMetric&, const WorkerHistogramMetrics&);
+	WorkerMetricsDelegate WorkerMetricsUpdated; 
 
 	// Delegate used to poll for the current player controller's reference
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
@@ -68,9 +68,9 @@ public:
 	void RemoveCustomMetric(const FString& Metric);
 private:
 
-	// These will be stored and pushed to Grafana
-	WorkerGuageMetric WorkerGuageMetricsToForward;
-	WorkerHistogramMetrics WorkerHistogramMetricsToForward;
+	// Worker SDK metrics
+	WorkerGuageMetric WorkerSDKGaugeMetrics;
+	WorkerHistogramMetrics WorkerSDKHistogramMetrics;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

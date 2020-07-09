@@ -83,17 +83,19 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 
 	if (bIsServer)
 	{
-		for (const TPair<FString, double>& Metric : WorkerGuageMetricsToForward)
+		for (const TPair<FString, double>& Metric : WorkerSDKGaugeMetrics)
 		{
 			SpatialGDK::GaugeMetric SpatialMetric;
-			SpatialMetric.Key = TCHAR_TO_UTF8(*(FString("unreal_worker_") + Metric.Key));
+			SpatialMetric.Key = "unreal_worker_";
+			SpatialMetric.Key += TCHAR_TO_UTF8(*Metric.Key);
 			SpatialMetric.Value = Metric.Value;
 			Metrics.GaugeMetrics.Add(SpatialMetric);
 		}
-		for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerHistogramMetricsToForward)
+		for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerSDKHistogramMetrics)
 		{
 			SpatialGDK::HistogramMetric SpatialMetric;
-			SpatialMetric.Key = TCHAR_TO_UTF8(*(FString("unreal_worker_") + Metric.Key));
+			SpatialMetric.Key = "unreal_worker_";
+			SpatialMetric.Key += TCHAR_TO_UTF8(*Metric.Key);
 			SpatialMetric.Buckets.Reserve(Metric.Value.Buckets.Num());
 			SpatialMetric.Sum = Metric.Value.Sum;
 			for (const TPair<double, uint32>& Bucket : Metric.Value.Buckets)
@@ -353,35 +355,29 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 	int32 NumHistogramMetrics = Op->op.metrics.metrics.histogram_metric_count;
 	if (NumGuageMetrics > 0 || NumHistogramMetrics > 0)
 	{
-		// Construct a map to store all the metrics and pass it to the users delegate
-		WorkerGuageMetric GuageMetrics;
-		WorkerHistogramMetrics HistogramMetrics;
+		FString StringTmp;
+		StringTmp.Reserve(128);
 
-		GuageMetrics.Reserve(NumGuageMetrics);
 		for (int32 i = 0; i < NumGuageMetrics; i++)
 		{
-			GuageMetrics.Add(Op->op.metrics.metrics.gauge_metrics[i].key, Op->op.metrics.metrics.gauge_metrics[i].value);
+			StringTmp = Op->op.metrics.metrics.gauge_metrics[i].key;
+			WorkerSDKGaugeMetrics.FindOrAdd(StringTmp) = Op->op.metrics.metrics.gauge_metrics[i].value;
 		}
 
-		HistogramMetrics.Reserve(NumHistogramMetrics);
 		for (int32 i = 0; i < NumHistogramMetrics; i++)
 		{
-			WorkerHistogramValues Histogram;
+			StringTmp = Op->op.metrics.metrics.histogram_metrics[i].key;
+			WorkerHistogramValues& HistogramMetrics =  WorkerSDKHistogramMetrics.FindOrAdd(StringTmp);
+			HistogramMetrics.Sum = Op->op.metrics.metrics.histogram_metrics[i].sum;
 			int32 NumBuckets = Op->op.metrics.metrics.histogram_metrics[i].bucket_count;
-			Histogram.Buckets.Reserve(NumBuckets);
-			Histogram.Sum = Op->op.metrics.metrics.histogram_metrics[i].sum;
+			HistogramMetrics.Buckets.SetNum(NumBuckets);
 			for (int32 j = 0; j < NumBuckets; j++)
 			{
-				Histogram.Buckets.Push(TTuple<double, uint32>{ Op->op.metrics.metrics.histogram_metrics[i].buckets[j].upper_bound, Op->op.metrics.metrics.histogram_metrics[i].buckets[j].samples });
+				HistogramMetrics.Buckets[j] = TTuple<double, uint32>{ Op->op.metrics.metrics.histogram_metrics[i].buckets[j].upper_bound, Op->op.metrics.metrics.histogram_metrics[i].buckets[j].samples };
 			}
-			HistogramMetrics.Add(Op->op.metrics.metrics.histogram_metrics[i].key, Histogram);
 		}
 
-		WorkerMetricsRecieved.Broadcast(GuageMetrics, HistogramMetrics);
-
-		// Also forward these to metrics reporting
-		WorkerGuageMetricsToForward = MoveTemp(GuageMetrics);
-		WorkerHistogramMetricsToForward = MoveTemp(HistogramMetrics);
+		WorkerMetricsUpdated.Broadcast(WorkerSDKGaugeMetrics, WorkerSDKHistogramMetrics);
 	}
 }
 
