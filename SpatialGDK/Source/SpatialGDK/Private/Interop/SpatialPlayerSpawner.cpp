@@ -324,7 +324,7 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 	const FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
 	if (PlayerStartRef != FUnrealObjectRef::NULL_OBJECT_REF)
 	{
-		bool bUnresolvedRef;
+		bool bUnresolvedRef = false;
 		AActor* PlayerStart = Cast<AActor>(FUnrealObjectRef::ToObjectPtr(PlayerStartRef, NetDriver->PackageMap, bUnresolvedRef));
 		bRequestHandledSuccessfully = !bUnresolvedRef;
 
