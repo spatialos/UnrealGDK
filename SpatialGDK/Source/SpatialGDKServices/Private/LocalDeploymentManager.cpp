@@ -25,7 +25,7 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
-static const FString SpatialServiceVersion(TEXT("20200603.093801.6c37c65988"));
+static const FString SpatialServiceVersion(TEXT("20200611.170527.924b1f1c45"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
@@ -274,7 +274,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 		}
 	}
 
-	if (!bSpatialServiceInProjectDirectory)
+	if (!bSpatialServiceInProjectDirectory && bSpatialServiceRunning)
 	{
 		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("StopSpatialServiceFromDifferentProject", "An instance of the SpatialOS Runtime is running with another project. Would you like to stop it and start the Runtime for this project?")) == EAppReturnType::Yes)
 		{
@@ -787,3 +787,5 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 {
 	bAutoDeploy = bInAutoDeploy;
 }
+
+#undef LOCTEXT_NAMESPACE

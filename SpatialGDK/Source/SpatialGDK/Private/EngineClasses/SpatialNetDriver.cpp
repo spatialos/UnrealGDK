@@ -2568,7 +2568,12 @@ void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
-	check(SpatialMetricsDisplay == nullptr);
+	check(!IsServer());
+	if (SpatialMetricsDisplay != nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialMetricsDisplay should only be set once on each client!"));
+		return;
+	}
 	SpatialMetricsDisplay = InSpatialMetricsDisplay;
 }
 

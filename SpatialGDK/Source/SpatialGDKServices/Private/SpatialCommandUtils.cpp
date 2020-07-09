@@ -140,7 +140,7 @@ FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, 
 		nullptr, nullptr, nullptr);
 }
 
-bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FString& OutErrorMessage)
+bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FText& OutErrorMessage)
 {
 	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
 	if (bIsRunningInChina)
@@ -161,7 +161,7 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 		{
 			JsonRootObject->TryGetStringField("error", ErrorMessage);
 		}
-		OutErrorMessage = FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *ErrorMessage);
+		OutErrorMessage = FText::Format(LOCTEXT("UnableToGenerateDevAuthToken_Error", "Unable to generate a development authentication token. Result: {0}"), FText::FromString(ErrorMessage));
 		return false;
 	};
 
@@ -178,7 +178,7 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 	TSharedPtr<FJsonObject> JsonRootObject;
 	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
 	{
-		OutErrorMessage = FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
+		OutErrorMessage = FText::Format(LOCTEXT("UnableToParseDevAuthToken_Error", "Unable to parse the received development authentication token. Result: {0}"), FText::FromString(DevAuthTokenResult));
 		return false;
 	}
 
@@ -186,14 +186,14 @@ bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& 
 	const TSharedPtr<FJsonObject>* JsonDataObject;
 	if (!(JsonRootObject->TryGetObjectField("json_data", JsonDataObject)))
 	{
-		OutErrorMessage = FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
+		OutErrorMessage = FText::Format(LOCTEXT("UnableToParseJson_Error", "Unable to parse the received json data. Result: {0}"), FText::FromString(DevAuthTokenResult));
 		return false;
 	}
 
 	FString TokenSecret;
 	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
 	{
-		OutErrorMessage = FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult);
+		OutErrorMessage = FText::Format(LOCTEXT("UnableToParseTokenSecretFromJson_Error", "Unable to parse the token_secret field inside the received json data. Result: {0}"), FText::FromString(DevAuthTokenResult));
 		return false;
 	}
 

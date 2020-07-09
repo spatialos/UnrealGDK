@@ -6,26 +6,42 @@ param(
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine"
 )
 
-class TestSuite {
+class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_url
     [ValidateNotNullOrEmpty()][string]$test_repo_branch
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
-    [ValidateNotNullOrEmpty()][string]$test_repo_map
     [ValidateNotNullOrEmpty()][string]$test_project_name
+    
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name) {
+        $this.test_repo_url = $test_repo_url
+        $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
+        $this.test_project_name = $test_project_name
+        
+        # If the testing repo has a branch with the same name as the current branch, use that
+        $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
+        if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+            $this.test_repo_branch = $gdk_branch
+        }
+        else {
+            $this.test_repo_branch = "master"
+        }
+    }
+}
+
+class TestSuite {
+    [ValidateNotNullOrEmpty()][TestProjectTarget]$test_project_target
+    [ValidateNotNullOrEmpty()][string]$test_repo_map
     [ValidateNotNullOrEmpty()][string]$test_results_dir
     [ValidateNotNullOrEmpty()][string]$tests_path
     [ValidateNotNull()]       [string]$additional_gdk_options
     [bool]                            $run_with_spatial
     [ValidateNotNull()]       [string]$additional_cmd_line_args
 
-    TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map,
-              [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
+    TestSuite([TestProjectTarget] $test_project_target, [string] $test_repo_map,
+              [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
               [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
-        $this.test_repo_url = $test_repo_url
-        $this.test_repo_branch = $test_repo_branch
-        $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
+        $this.test_project_target = $test_project_target
         $this.test_repo_map = $test_repo_map
-        $this.test_project_name = $test_project_name
         $this.test_results_dir = $test_results_dir
         $this.tests_path = $tests_path
         $this.additional_gdk_options = $additional_gdk_options
@@ -34,53 +50,45 @@ class TestSuite {
     }
 }
 
-[string] $test_repo_url = "git@github.com:improbable/UnrealGDKEngineNetTest.git"
-[string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
-[string] $test_project_name = "NetworkTestProject"
-[string] $test_repo_branch = "master"
 [string] $user_gdk_settings = "$env:GDK_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
-# If the testing repo has a branch with the same name as the current branch, use that
-$testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
-    $test_repo_branch = $gdk_branch
-}
+[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms")
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject")
 
 # Allow overriding testing branch via environment variable
 if (Test-Path env:TEST_REPO_BRANCH) {
-    $test_repo_branch = $env:TEST_REPO_BRANCH
+    $gdk_test_project.test_repo_branch = $env:TEST_REPO_BRANCH
+}
+if (Test-Path env:NATIVE_TEST_REPO_BRANCH) {
+    $native_test_project.test_repo_branch = $env:NATIVE_TEST_REPO_BRANCH
 }
 
 $tests = @()
 
-# If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
-# There are basically two situations here: either we are trying to run tests, in which case we use EngineNetTest
-# Or, we try different build targets, in which case we use UnrealGDKTestGyms
-if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
-    $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
-    $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
-    $test_project_name = "GDKTestGyms"
-
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "EmptyGym", "$test_project_name", "TestResults", "SpatialGDK.", "$user_gdk_settings", $True, "$user_cmd_line_args")
+if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
+    # We run spatial tests against Vanilla UE4
+    $tests += [TestSuite]::new($gdk_test_project, "NetworkingMap", "VanillaTestResults", "/Game/Maps/FunctionalTests/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+    
+    if ($env:SLOW_NETWORKING_TESTS -like "true") {
+        $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
+        
+        # And if slow, we run NetTest functional maps against Vanilla UE4 as well
+        $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "NativeNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+    }
 }
 else {
-    if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "NetworkingMap", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
-    }
-    else {
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialNetworkingMap", "$test_project_name", "TestResults", "SpatialGDK.+/Game/SpatialNetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "SpatialZoningMap", "$test_project_name", "LoadbalancerTestResults", "/Game/SpatialZoningMap",
-            "bEnableMultiWorker=True;$user_gdk_settings", $True, "$user_cmd_line_args")
-    }
-
+    # We run all tests and networked functional maps
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/SpatialNetworkingMap+/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
-        $tests[0].tests_path += "+/Game/NetworkingMap"
-        if($env:TEST_CONFIG -ne "Native") {
-            $tests[0].tests_path += "+SpatialGDKSlow."
-        }
+        # And if slow, we run GDK slow tests
+        $tests[0].tests_path += "+SpatialGDKSlow."
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
+        
+        # And NetTests functional maps against GDK as well
+        $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "GDKNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 }
 
@@ -88,7 +96,7 @@ else {
 
 # Guard against other runs not cleaning up after themselves
 Foreach ($test in $tests) {
-    $test_project_name = $test.test_project_name
+    $test_project_name = $test.test_project_target.test_project_name
     & $PSScriptRoot"\cleanup.ps1" `
         -project_name "$test_project_name"
 }
@@ -116,11 +124,11 @@ class CachedProject {
 $projects_cached = @()
 
 Foreach ($test in $tests) {
-    $test_repo_url = $test.test_repo_url
-    $test_repo_branch = $test.test_repo_branch
-    $test_repo_relative_uproject_path = $test.test_repo_relative_uproject_path
+    $test_repo_url = $test.test_project_target.test_repo_url
+    $test_repo_branch = $test.test_project_target.test_repo_branch
+    $test_repo_relative_uproject_path = $test.test_project_target.test_repo_relative_uproject_path
+    $test_project_name = $test.test_project_target.test_project_name
     $test_repo_map = $test.test_repo_map
-    $test_project_name = $test.test_project_name
     $test_results_dir = $test.test_results_dir
     $tests_path = $test.tests_path
     $additional_gdk_options = $test.additional_gdk_options

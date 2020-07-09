@@ -17,7 +17,7 @@
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
-#define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
+#define LOCTEXT_NAMESPACE "SpatialGDKEditorSettings"
 
 const FString& FRuntimeVariantVersion::GetVersionForLocal() const
 {
@@ -46,6 +46,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
+	, bStopLocalDeploymentOnEndPIE(false)
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, CookAndGeneratePlatform("")
@@ -68,10 +69,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-#if PLATFORM_MAC
-	return CompatibilityModeRuntimeVersion;
-#endif
-
 	switch (Variant)
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
@@ -96,18 +93,27 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
 	{
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
 
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, ExposedRuntimeIP))
+	{
+		if (!USpatialGDKEditorSettings::IsValidIP(ExposedRuntimeIP))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("InputValidIP_Prompt", "Please input a valid IP address."));
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid IP address: %s"), *ExposedRuntimeIP);
+			// Reset IP to empty instead of keeping the invalid value.
+			SetExposedRuntimeIP(TEXT(""));
+			return;
+		}
 	}
 }
 
@@ -374,17 +380,17 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	bool bValid = true;
 	if (!IsProjectNameValid(FSpatialGDKServicesModule::GetProjectName()))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsAssemblyNameValid(AssemblyName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsDeploymentNameValid(PrimaryDeploymentName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
@@ -407,7 +413,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	{
 		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
 			bValid = false;
 		}
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
@@ -447,10 +453,11 @@ void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString&
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+bool USpatialGDKEditorSettings::IsValidIP(const FString& IP)
 {
-	DevelopmentDeploymentToConnect = Deployment;
-	SaveConfig();
+	const FRegexPattern IpV4PatternRegex(SpatialConstants::Ipv4Pattern);
+	FRegexMatcher IpV4RegexMatcher(IpV4PatternRegex, IP);
+	return IP.IsEmpty() || IpV4RegexMatcher.FindNext();
 }
 
 void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
@@ -488,11 +495,7 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-#if PLATFORM_MAC
-	switch (ESpatialOSRuntimeVariant::CompatibilityMode)
-#else
 	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-#endif
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
 		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
@@ -514,3 +517,5 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 		}
 	}
 }
+
+#undef LOCTEXT_NAMESPACE
