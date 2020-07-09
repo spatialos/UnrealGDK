@@ -38,7 +38,7 @@ public:
 	bool EntityNeedsToBeEnforced(const Worker_EntityId EntityId) const;
 
 	// Visible for testing
-	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
+	bool AuthorityChangeRequestIsQueued(const Worker_EntityId EntityId) const;
 	bool GetAuthorityChangeState(Worker_EntityId EntityId, AuthorityStateChange& OutAuthorityChange) const;
 
 	TArray<AuthorityStateChange> ProcessAuthorityChangeRequests();

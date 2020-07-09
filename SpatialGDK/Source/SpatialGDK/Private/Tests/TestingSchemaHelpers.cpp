@@ -20,5 +20,5 @@ void TestingSchemaHelpers::AddTranslationComponentDataMapping(Schema_Object* Com
 {
 	Schema_Object* SchemaObject = Schema_AddObject(ComponentDataFields, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	Schema_AddUint32(SchemaObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, VWId);
-	SpatialGDK::AddStringToSchema(SchemaObject, SpatialConstants::MAPPING_PARTITION_ID, WorkerName);
+	SpatialGDK::AddStringToSchema(SchemaObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, WorkerName);
 }

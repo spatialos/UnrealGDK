@@ -43,7 +43,7 @@ void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_Re
 {
 	check(HandlesComponent(Op.component_id));
 
-	if (AclAssignmentRequestIsQueued(Op.entity_id))
+	if (AuthorityChangeRequestIsQueued(Op.entity_id))
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
 			TEXT("Component %d for entity %lld removed. Can no longer enforce the previous request for this entity."),
@@ -54,7 +54,7 @@ void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_Re
 
 void SpatialLoadBalanceEnforcer::OnEntityRemoved(const Worker_RemoveEntityOp& Op)
 {
-	if (AclAssignmentRequestIsQueued(Op.entity_id))
+	if (AuthorityChangeRequestIsQueued(Op.entity_id))
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Entity %lld removed. Can no longer enforce the previous request for this entity."),
 			Op.entity_id);
@@ -69,7 +69,7 @@ void SpatialLoadBalanceEnforcer::OnAclAuthorityChanged(const Worker_AuthorityCha
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (AclAssignmentRequestIsQueued(AuthOp.entity_id))
+		if (AuthorityChangeRequestIsQueued(AuthOp.entity_id))
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
 				TEXT("ACL authority lost for entity %lld. Can no longer enforce the previous request for this entity."),
@@ -105,7 +105,7 @@ void SpatialLoadBalanceEnforcer::MaybeQueueAuthorityChange(const Worker_EntityId
 		return;
 	}
 
-	if (AclAssignmentRequestIsQueued(EntityId))
+	if (AuthorityChangeRequestIsQueued(EntityId))
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Avoiding queueing a duplicate ACL assignment request. "
 			"Entity: %lld. Worker: %s."), EntityId, *WorkerId);
@@ -185,7 +185,7 @@ bool SpatialLoadBalanceEnforcer::EntityNeedsToBeEnforced(const Worker_EntityId E
 	return AuthorityChangeRequired;
 }
 
-bool SpatialLoadBalanceEnforcer::AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const
+bool SpatialLoadBalanceEnforcer::AuthorityChangeRequestIsQueued(const Worker_EntityId EntityId) const
 {
 	return PendingEntityAuthorityChanges.Contains(EntityId);
 }

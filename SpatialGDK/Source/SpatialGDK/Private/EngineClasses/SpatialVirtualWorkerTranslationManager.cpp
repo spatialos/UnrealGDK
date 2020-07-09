@@ -70,7 +70,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWorkerIds()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Spawnings partition entities for %d virtual workers"), VirtualWorkersToAssign.Num());
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Spawning partition entities for %d virtual workers"), VirtualWorkersToAssign.Num());
 	for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 	{
 		const Worker_EntityId PartitionEntityId = Translator->NetDriver->PackageMap->AllocateNewEntityId();

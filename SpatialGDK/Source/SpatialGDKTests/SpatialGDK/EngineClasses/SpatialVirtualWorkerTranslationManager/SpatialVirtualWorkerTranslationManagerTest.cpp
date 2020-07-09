@@ -33,7 +33,7 @@ EntityQueryDelegate* SetupQueryDelegateTests(SpatialVirtualWorkerTranslationMana
 
 	// Let the Manager know it should have authority. This should trigger an EntityQuery and register a response delegate.
 	Manager->AuthorityChanged(QueryOp);
-	Worker_RequestId EntityQueryRequestId = Connection->GetLastRequestId();
+	const Worker_RequestId EntityQueryRequestId = Connection->GetLastRequestId();
 	EntityQueryDelegate* Delegate = Dispatcher->GetEntityQueryDelegate(EntityQueryRequestId);
 	Connection->ClearLastEntityQuery();
 
