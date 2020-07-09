@@ -3,7 +3,7 @@
 pushd "$(dirname "$0")"
 
     UNREAL_PATH="${1:-"$(pwd)/../../UnrealEngine"}"
-    BUILD_PROJECT="${2:-NetworkTestProject}"
+    BUILD_PROJECT="${2:-GDKTestGyms}"
 
     PROJECT_ABSOLUTE_PATH="$(pwd)/../../${BUILD_PROJECT}"
     GDK_IN_TEST_REPO="${PROJECT_ABSOLUTE_PATH}/Game/Plugins/UnrealGDK"
