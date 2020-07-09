@@ -1948,10 +1948,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 	else
 	{
 		// Get the RPC target Actor.
-		AActor* Actor = TargetObject->GetTypedOuter<AActor>();
+		AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
 
-		if (Actor != nullptr &&
-			Actor->Role == ROLE_SimulatedProxy &&
+		if (Actor->Role == ROLE_SimulatedProxy &&
 			(Params.Type == ERPCType::ServerReliable ||
 			Params.Type == ERPCType::ServerUnreliable))
 		{
