@@ -24,34 +24,6 @@ FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 {
 }
 
-bool FLocalReceptionistProxyServerManager::GetProcessName(const FString& PID, FString& OutProcessName)
-{
-	bool bSuccess = false;
-	OutProcessName = TEXT("");
-	const FString TaskListCmd = TEXT("tasklist");
-
-	// Get the task list line for the process with PID 
-	const FString TaskListArgs = FString::Printf(TEXT(" /fi \"PID eq %s\" /nh /fo:csv"), *PID);
-	FString TaskListResult;
-	int32 ExitCode;
-	FString StdErr;
-	bSuccess = FPlatformProcess::ExecProcess(*TaskListCmd, *TaskListArgs, &ExitCode, &TaskListResult, &StdErr);
-	if (ExitCode == 0 && bSuccess)
-	{
-		FRegexPattern ProcessNamePattern(TEXT("\"(.+?)\""));
-		FRegexMatcher ProcessNameMatcher(ProcessNamePattern, TaskListResult);
-		if (ProcessNameMatcher.FindNext())
-		{
-			OutProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
-
-			return true;
-		}
-	}
-
-	UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to get the name of the process that is blocking the required port."));
-	
-	return false;
-}
 
 bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FString& OutPID, FString& OutLogMsg)
 {
@@ -62,19 +34,8 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 	{
 		if (State.Contains("LISTEN"))
 		{
-#if PLATFORM_WINDOWS
-			if (GetProcessName(OutPID, ProcessName))
-			{
-				OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
-				return true;
-			}
 
-			OutLogMsg = FString::Printf(TEXT("Unknown process with PID: %s."), *OutPID);
-#endif
-
-#if PLATFORM_MAC
 			OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
-#endif
 			return true;
 		}
 	}
@@ -96,32 +57,36 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	FString PreviousPID;
 
 	// Check if any process is blocking the receptionist port
-	if (CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
+	if (!CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
-		if (GetPreviousReceptionistProxyPID(PreviousPID))
-		{
-			// Try killing the process that blocks the receptionist port if the process blocking the port is a previously running proxy.
-			if (PID == PreviousPID)
-			{
-				bool bProcessKilled = SpatialCommandUtils::TryKillProcessWithPID(PID);
-				if (!bProcessKilled)
-				{
-					UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process that is blocking the port. %s"), *OutLogMessage);
-					return false;
-				}
-
-				UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Successfully killed %s"), *OutLogMessage);
-				return true;
-			}
-		}
-
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from %s."), *OutLogMessage);
-		return false;
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The required port is not blocked!"));
+		return true;
 	}
 
-	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The required port is not blocked!"));
-	return true;
+	// Get the previous running proxy's
+	if(GetPreviousReceptionistProxyPID(PreviousPID))
+	{
+		// Try killing the process that blocks the receptionist port if the process blocking the port is a previously running proxy.
+		if (FCString::Atoi(*PID) == FCString::Atoi(*PreviousPID))
+		{
+			bool bProcessKilled = SpatialCommandUtils::TryKillProcessWithPID(PID);
+			if (bProcessKilled)
+			{
+				UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Successfully killed %s"), *OutLogMessage);
+			}
+			else
+			{
+				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process that is blocking the port. %s"), *OutLogMessage);
+			}
+
+			return bProcessKilled;
+		}
+	}
+
+	UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("The required port is blocked from %s."), *OutLogMessage);
+	return false;
 }
+
 
 void FLocalReceptionistProxyServerManager::Init(int32 Port)
 {
@@ -175,7 +140,7 @@ void FLocalReceptionistProxyServerManager::SavePIDInJson(const FString& PID)
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&ProxyInfoFileResult);
 	if (!FJsonSerializer::Serialize(JsonParsedProxyInfoFile.ToSharedRef(), JsonWriter))
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write PID to parsed proxy info file. Unable to serialize content to json file."));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write PID to parsed proxy info file. Unable toS serialize content to json file."));
 		return;
 	}
 	if (!FFileHelper::SaveStringToFile(ProxyInfoFileResult, *SpatialGDKServicesConstants::ProxyInfoFilePath))
@@ -197,7 +162,7 @@ bool FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID(FStri
 		return false;
 	}
 
-	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local Receptionist Proxy is not running."));
+	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local Receptionist Proxy is not running or the %s file got deleted."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
 
 	OutPID.Empty();
 	return false;
@@ -248,7 +213,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	// Check if process run successfully
 	if (!ProxyServerProcHandle.IsValid())
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
 		ProxyServerProcHandle.Reset();
 		return false;
 	}

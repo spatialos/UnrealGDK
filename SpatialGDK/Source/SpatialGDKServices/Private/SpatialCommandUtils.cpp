@@ -337,18 +337,33 @@ void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHand
 	}
 }
 
-bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
+bool SpatialCommandUtils::GetProcessName(const FString& PID, FString& OutProcessName)
 {
 	bool bSuccess = false;
-#if PLATFORM_WINDOWS
-	bSuccess = GetProcessInfoFromPortWindows(Port, OutPid, OutState);
-#endif
+	OutProcessName = TEXT("");
+	const FString TaskListCmd = TEXT("tasklist");
 
-#if PLATFORM_MAC
-	bSuccess = GetProcessInfoFromPortMacOs(Port, OutPid, OutState, OutProcessName);
-#endif
+	// Get the task list line for the process with PID 
+	const FString TaskListArgs = FString::Printf(TEXT(" /fi \"PID eq %s\" /nh /fo:csv"), *PID);
+	FString TaskListResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*TaskListCmd, *TaskListArgs, &ExitCode, &TaskListResult, &StdErr);
+	if (ExitCode == 0 && bSuccess)
+	{
+		FRegexPattern ProcessNamePattern(TEXT("\"(.+?)\""));
+		FRegexMatcher ProcessNameMatcher(ProcessNamePattern, TaskListResult);
+		if (ProcessNameMatcher.FindNext())
+		{
+			OutProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
 
-	return bSuccess;
+			return true;
+		}
+	}
+
+	UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Failed to get the name of the process that is blocking the required port."));
+
+	return false;
 }
 
 bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
@@ -375,81 +390,67 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 	return bSuccess;
 }
 
-bool SpatialCommandUtils::GetProcessInfoFromPortWindows(int32 Port, FString& OutPid, FString& OutState)
+bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
 	bool bSuccess = false;
 
-	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
-
+#if PLATFORM_WINDOWS
+	const FString Command = FString::Printf(TEXT("netstat"));
 	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
-	const FString NetStatArgs = TEXT("-n -o -a");
-	FString NetStatResult;
+	const FString Args = TEXT("-n -o -a");
+#elif PLATFORM_MAC
+	const FString Command = FPaths::Combine(SpatialGDKServicesConstants::LsofCmdFilePath, TEXT("lsof"));
+	// -i:Port list the processes that are running on Port
+	const FString Args = FString::Printf(TEXT("-i:%d"), Port);
+#endif
+
+	FString Result;
 	int32 ExitCode;
 	FString StdErr;
-	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
+	bSuccess = FPlatformProcess::ExecProcess(*Command, *Args, &ExitCode, &Result, &StdErr);
 
 	if (ExitCode == 0 && bSuccess)
 	{
+#if PLATFORM_WINDOWS
 		// Get the line of the netstat output that contains the port we're looking for.
 		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
-		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
+#elif PLATFORM_MAC
+		//Get the line that contains the name, pid and state of the process.
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)( *\\d+).*(\\(\\S+\\))")));
+#endif
+		FRegexMatcher PidMatcher(PidMatcherPattern, Result);
 		if (PidMatcher.FindNext())
 		{
+
+#if PLATFORM_WINDOWS
 			OutState = PidMatcher.GetCaptureGroup(2 /* Get the State of the process, which is the second group. */);
 			OutPid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
-		}
-		else
-		{
-			bSuccess = false;
-			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find PID of the process that is blocking %i port."), Port);
-		}
-	}
-	else
-	{
-		bSuccess = false;
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
-	}
-
-	return bSuccess;
-}
-
-bool SpatialCommandUtils::GetProcessInfoFromPortMacOs(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
-{
-	bool bSuccess = false;
-
-	const FString LsofCmd = FPaths::Combine(SpatialGDKServicesConstants::LsofCmdFilePath, TEXT("lsof"));
-	// -i 
-	const FString LsofArgs = FString::Printf(TEXT("-i:%d"), Port);
-
-
-	FString LsofResult;
-	int32 ExitCode;
-	FString StdErr;
-	bSuccess = FPlatformProcess::ExecProcess(*LsofCmd, *LsofArgs, &ExitCode, &LsofResult, &StdErr);
-
-	if (ExitCode == 0 && bSuccess)
-	{
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(\\S+)( *\\d+).*(\\(\\S+\\))")));
-		FRegexMatcher PidMatcher(PidMatcherPattern, LsofResult);
-		if (PidMatcher.FindNext())
-		{
+			if (!GetProcessName(OutPid, OutProcessName))
+			{
+				OutProcessName = "Unknown";
+			}
+#elif PLATFORM_MAC
 			OutProcessName = PidMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
 			OutPid = PidMatcher.GetCaptureGroup(2 /* Get the PID, which is the second group. */);
 			OutState = PidMatcher.GetCaptureGroup(3 /* Get the State of the process, which is the third group. */);
+#endif
 		}
 		else
 		{
 			bSuccess = false;
-			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find PID of the process that is blocking %d port."), Port);
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("There is no process blocking %d port."), Port);
 		}
 	}
 	else
 	{
+
+#if PLATFORM_MAC
 		if (bSuccess && StdErr.IsEmpty())
 		{
 			UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"));
+			return false;
 		}
-
+#endif
 		bSuccess = false;
 		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
 	}
