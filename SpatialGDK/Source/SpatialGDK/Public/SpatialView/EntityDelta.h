@@ -10,101 +10,101 @@ namespace SpatialGDK
 {
 
 struct CompleteUpdateData {
-	Schema_ComponentData* data;
-	Schema_Object* events;
+	Schema_ComponentData* Data;
+	Schema_Object* Events;
 };
 
 struct ComponentChange
 {
-	explicit ComponentChange(Worker_ComponentId id, Schema_ComponentData* data)
-		: component_id(id), type(kAdd), data(data)
+	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentData* Data)
+		: ComponentId(Id), Type(ADD), Data(Data)
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId id, Schema_ComponentUpdate* update)
-		: component_id(id), type(kUpdate), update(update)
+	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentUpdate* Update)
+		: ComponentId(Id), Type(UPDATE), Update(Update)
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId id, Schema_ComponentData* data, Schema_Object* events)
-		: component_id(id), type(kCompleteUpdate), complete_update{data, events}
+	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentData* Data, Schema_Object* Events)
+		: ComponentId(Id), Type(COMPLETE_UPDATE), CompleteUpdate{Data, Events}
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId id) : component_id(id), type(kRemove)
+	explicit ComponentChange(Worker_ComponentId id) : ComponentId(id), Type(REMOVE)
 	{
 	}
 
-	Worker_ComponentId component_id;
-	enum { kAdd, kRemove, kUpdate, kCompleteUpdate } type;
+	Worker_ComponentId ComponentId;
+	enum { ADD, REMOVE, UPDATE, COMPLETE_UPDATE } Type;
 	union
 	{
-		Schema_ComponentData* data;
-		Schema_ComponentUpdate* update;
-		CompleteUpdateData complete_update;
+		Schema_ComponentData* Data;
+		Schema_ComponentUpdate* Update;
+		CompleteUpdateData CompleteUpdate;
 	};
 };
 
 struct AuthorityChange
 {
-	AuthorityChange(Worker_ComponentId id, int type)
-		: component_id(id), type(static_cast<AuthorityType>(type))
+	AuthorityChange(Worker_ComponentId Id, int Type)
+		: ComponentId(Id), Type(static_cast<AuthorityType>(Type))
 	{
 	}
 
-	Worker_ComponentId component_id;
+	Worker_ComponentId ComponentId;
 	enum AuthorityType
 	{
-		kAuthorityGained = 1,
-		kAuthorityLost = 2,
-		kAuthorityLostTemporarily = 3
-	} type;
+		AUTHORITY_GAINED = 1,
+		AUTHORITY_LOST = 2,
+		AUTHORITY_LOST_TEMPORARILY = 3
+	} Type;
 };
 
 /** Pointer to an array and a size that can be used in a ranged based for.  */
 template <typename T>
 class ComponentSpan {
 public:
-	ComponentSpan() : elements(nullptr), count(0) {}
-	ComponentSpan(const T* elements, int32 count) : elements(elements), count(count) {}
+	ComponentSpan() : Elements(nullptr), Count(0) {}
+	ComponentSpan(const T* Elements, int32 Count) : Elements(Elements), Count(Count) {}
 
 	const T* begin() const
 	{
-		return elements;
+		return Elements;
 	}
 
 	const T* end() const
 	{
-		return elements + count;
+		return Elements + Count;
 	}
 
-	size_t size() const
+	int32 Num() const
 	{
-		return count;
+		return Count;
 	}
 
-	const T& operator[](size_t i) const
+	const T& operator[](int32 Index) const
 	{
-		return elements[i];
+		return Elements[Index];
 	}
 
-	const T* data() const
+	const T* GetData() const
 	{
-		return elements;
+		return Elements;
 	}
 
 private:
-	const T* elements;
-	int32 count;
+	const T* Elements;
+	int32 Count;
 };
 
 struct EntityDelta
 {
-	Worker_EntityId entity_id;
-	bool added;
-	bool removed;
-	ComponentSpan<ComponentChange> component_changes;
-	ComponentSpan<AuthorityChange> authority_changes;
+	Worker_EntityId EntityId;
+	bool bAdded;
+	bool bRemoved;
+	ComponentSpan<ComponentChange> ComponentChanges;
+	ComponentSpan<AuthorityChange> AuthorityChanges;
 };
 
 } // namespace SpatialGDK

@@ -12,6 +12,23 @@
 namespace SpatialGDK
 {
 
+/**
+ * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
+ * EntityDeltas are sorted by entity ID.
+ * Within an EntityDelta the component and authority changes are ordered by component ID.
+ *
+ * Rough outline of how it works.
+ * Input a set of op lists. These should not have any unfinished critical sections in them.
+ * Take all ops corresponding to entity components and sort them into entity order then component
+ * order within that. Put all other ops in some other list to be read without pre-processing. For
+ * ops related to components added, updated, and removed: For each entity-component look at the last
+ * op received and check if the component is currently in the view. From this you can work out if
+ * the net effect on component was added, removed or updated. If updated read whichever ops are
+ * needed to work out what the total update was. For ops related to authority do the same but
+ * checking the view to see the current authority state. For add and remove entity ops it's the same
+ * again. If an entity is removed, skip reading the received ops and check the view to see what
+ * components or authority to remove.
+ */
 class ViewDelta
 {
 public:
@@ -28,112 +45,108 @@ public:
 private:
 	struct ReceivedComponentChange
 	{
-		explicit ReceivedComponentChange(const Worker_AddComponentOp& op);
-		explicit ReceivedComponentChange(const Worker_ComponentUpdateOp& op);
-		explicit ReceivedComponentChange(const Worker_RemoveComponentOp& op);
+		explicit ReceivedComponentChange(const Worker_AddComponentOp& Op);
+		explicit ReceivedComponentChange(const Worker_ComponentUpdateOp& Op);
+		explicit ReceivedComponentChange(const Worker_RemoveComponentOp& Op);
 
-		Worker_EntityId entity_id;
-		Worker_ComponentId component_id;
-		enum { kAdd, kUpdate, kRemove } type;
+		Worker_EntityId EntityId;
+		Worker_ComponentId ComponentId;
+		enum { ADD, UPDATE, REMOVE } Type;
 		union
 		{
-			Schema_ComponentData* component_added;
-			Schema_ComponentUpdate* component_update;
+			Schema_ComponentData* ComponentAdded;
+			Schema_ComponentUpdate* ComponentUpdate;
 		};
 	};
 
 	struct ReceivedEntityChange
 	{
-		Worker_EntityId entity_id;
-		bool added;
+		Worker_EntityId EntityId;
+		bool Added;
 	};
 
 	struct DifferentEntity
 	{
-		Worker_EntityId entity_id;
-		bool operator()(const ReceivedEntityChange& e) const;
-		bool operator()(const ReceivedComponentChange& op) const;
-		bool operator()(const Worker_AuthorityChangeOp& op) const;
+		Worker_EntityId EntityId;
+		bool operator()(const ReceivedEntityChange& E) const;
+		bool operator()(const ReceivedComponentChange& Op) const;
+		bool operator()(const Worker_AuthorityChangeOp& Op) const;
 	};
 
 	struct DifferentEntityComponent
 	{
-		Worker_EntityId entity_id;
+		Worker_EntityId EntityId;
 		Worker_ComponentId component_id;
-		bool operator()(const ReceivedComponentChange& op) const;
-		bool operator()(const Worker_AuthorityChangeOp& op) const;
+		bool operator()(const ReceivedComponentChange& Op) const;
+		bool operator()(const Worker_AuthorityChangeOp& Op) const;
 	};
 
 	struct EntityComponentComparison
 	{
-		bool operator()(const ReceivedComponentChange& lhs, const ReceivedComponentChange& rhs) const;
-		bool operator()(const Worker_AuthorityChangeOp& lhs, const Worker_AuthorityChangeOp& rhs) const;
+		bool operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const;
+		bool operator()(const Worker_AuthorityChangeOp& Lhs, const Worker_AuthorityChangeOp& Rhs) const;
 	};
 
 	struct EntityComparison
 	{
-		bool operator()(const ReceivedEntityChange& lhs, const ReceivedEntityChange& rhs) const;
+		bool operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const;
 	};
-
-	using EntityChanges = TArray<ReceivedEntityChange>;
-	using ComponentChanges = TArray<ReceivedComponentChange>;
-	using AuthorityChanges = TArray<Worker_AuthorityChangeOp>;
 
 	// Calculate and return the net component added in [`start`, `end`).
 	// Also add the resulting component to `components`.
 	// The accumulated component change in this range must component add.
-	static ComponentChange CalculateAdd(ReceivedComponentChange* start,
-										ReceivedComponentChange* end,
-										TArray<ComponentData>& components);
+	static ComponentChange CalculateAdd(ReceivedComponentChange* Start,
+										ReceivedComponentChange* End,
+										TArray<ComponentData>& Components);
 
 	// Calculate and return the net complete update in [`start`, `end`).
 	// Also set `component` to match.
 	// The accumulated component change in this range must be an update or a complete-update or
 	// `startingData` and `startingEvents` should be non null.
-	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* start,ReceivedComponentChange* end,
-		Schema_ComponentData* starting_data, Schema_ComponentUpdate* starting_events, ComponentData& component);
+	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start,ReceivedComponentChange* End,
+		Schema_ComponentData* Data, Schema_ComponentUpdate* Events, ComponentData& Component);
 
 	// Calculate and return the net complete update in [`start`, `end`).
 	// Also apply the update to `component`.
 	// The accumulated component change in this range must be an update or a complete-update.
-	static ComponentChange CalculateUpdate(ReceivedComponentChange* start, ReceivedComponentChange* end, ComponentData& component);
+	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
 
-	void ProcessOp(Worker_Op& op);
-	void PopulateEntityDeltas(EntityView& view);
+	void ProcessOp(Worker_Op& Op);
+	void PopulateEntityDeltas(EntityView& View);
 
 	// Adds component changes to `entity_delta` and updates `components` accordingly.
 	// `it` must point to the first element with a given entity ID.
 	// Returns an iterator to the next entity in the component changes list.
-	ReceivedComponentChange* ProcessEntityComponentChanges(ReceivedComponentChange* it, ReceivedComponentChange* End,
-		TArray<ComponentData>& components, EntityDelta& entity_delta);
+	ReceivedComponentChange* ProcessEntityComponentChanges(ReceivedComponentChange* It, ReceivedComponentChange* End,
+		TArray<ComponentData>& Components, EntityDelta& Delta);
 
 	// Adds authority changes to `entity_delta` and updates `authority` accordingly.
 	// `it` must point to the first element with a given entity ID.
 	// Returns an iterator to the next entity in the authority changes list.
-	Worker_AuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* it, Worker_AuthorityChangeOp* End,
-		TArray<Worker_ComponentId>& authority, EntityDelta& entity_delta);
+	Worker_AuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
+		TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
 
 	// Sets `added` and `removed` fields in the `entity_delta`.
 	// `it` must point to the first element with a given entity ID.
 	// `view_it` must point to the same entity in the view or end if it doesn't exist.
 	// Returns an iterator to the next entity in the authority changes list.
 	// After returning `view_it` will point to that entity in the view or end if it doesn't exist.
-	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* entity_it, ReceivedEntityChange* End,
-		EntityDelta& entity_delta, EntityViewElement** view_it, EntityView& view);
+	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End,
+		EntityDelta& Delta, EntityViewElement** ViewElement, EntityView& View);
 
-	EntityChanges entity_changes;
-	ComponentChanges component_changes;
-	AuthorityChanges authority_changes;
+	TArray<ReceivedEntityChange> EntityChanges;
+	TArray<ReceivedComponentChange> ComponentChanges;
+	TArray<Worker_AuthorityChangeOp> AuthorityChanges;
 
-	uint8 connection_status_code = 0;
-	FString connection_status_message;
+	uint8 ConnectionStatusCode = 0;
+	FString ConnectionStatusMessage;
 
-	TArray<EntityDelta> entity_deltas;
-	TArray<Worker_Op> worker_messages;
+	TArray<EntityDelta> EntityDeltas;
+	TArray<Worker_Op> WorkerMessages;
 
-	TArray<AuthorityChange> authority_change_storage;
-	TArray<ComponentChange> component_change_storage;
-	TArray<OpList> op_list_storage;
+	TArray<AuthorityChange> AuthorityChangesForDelta;
+	TArray<ComponentChange> ComponentChangesForDelta;
+	TArray<OpList> OpListStorage;
 };
 
 }  // namespace SpatialGDK

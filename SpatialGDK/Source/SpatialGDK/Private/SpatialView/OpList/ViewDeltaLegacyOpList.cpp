@@ -54,88 +54,88 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		StartCriticalSection.op.critical_section.in_critical_section = 1;
 		Ops.Add(StartCriticalSection);
 
-		if (Entity.added)
+		if (Entity.bAdded)
 		{
 			Worker_Op Op = {};
 			Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
-			Op.op.add_entity.entity_id = Entity.entity_id;
+			Op.op.add_entity.entity_id = Entity.EntityId;
 			Ops.Push(Op);
 		}
 
-		for (const ComponentChange& Change : Entity.component_changes)
+		for (const ComponentChange& Change : Entity.ComponentChanges)
 		{
-			if (Change.type == ComponentChange::kAdd)
+			if (Change.Type == ComponentChange::ADD)
 			{
 				Worker_Op Op = {};
 				Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
-				Op.op.add_component.entity_id = Entity.entity_id;
-				Op.op.add_component.data = Worker_ComponentData{ nullptr, Change.component_id, Change.data, nullptr };
+				Op.op.add_component.entity_id = Entity.EntityId;
+				Op.op.add_component.data = Worker_ComponentData{ nullptr, Change.ComponentId, Change.Data, nullptr };
 				Ops.Push(Op);
 			}
 		}
 
-		for (const AuthorityChange& Change : Entity.authority_changes)
+		for (const AuthorityChange& Change : Entity.AuthorityChanges)
 		{
-			if (Change.type == AuthorityChange::kAuthorityLost || Change.type == AuthorityChange::kAuthorityLostTemporarily)
+			if (Change.Type == AuthorityChange::AUTHORITY_LOST || Change.Type == AuthorityChange::AUTHORITY_LOST_TEMPORARILY)
 			{
 				Worker_Op Op = {};
 				Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-				Op.op.authority_change.entity_id = Entity.entity_id;
-				Op.op.authority_change.component_id = Change.component_id;
+				Op.op.authority_change.entity_id = Entity.EntityId;
+				Op.op.authority_change.component_id = Change.ComponentId;
 				Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 				Ops.Push(Op);
 			}
 		}
 
-		for (const ComponentChange& Change : Entity.component_changes)
+		for (const ComponentChange& Change : Entity.ComponentChanges)
 		{
-			if (Change.type == ComponentChange::kCompleteUpdate)
+			if (Change.Type == ComponentChange::COMPLETE_UPDATE)
 			{
 				// We deliberately ignore the events update here to avoid breaking code that expects each update to contain data.
 				Worker_Op AddOp = {};
 				AddOp.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
-				AddOp.op.add_component.entity_id = Entity.entity_id;
-				AddOp.op.add_component.data = Worker_ComponentData{ nullptr, Change.component_id, Change.complete_update.data, nullptr };
+				AddOp.op.add_component.entity_id = Entity.EntityId;
+				AddOp.op.add_component.data = Worker_ComponentData{ nullptr, Change.ComponentId, Change.CompleteUpdate.Data, nullptr };
 				Ops.Push(AddOp);
 			}
 
-			if (Change.type == ComponentChange::kUpdate)
+			if (Change.Type == ComponentChange::UPDATE)
 			{
 				Worker_Op Op = {};
 				Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
-				Op.op.component_update.entity_id = Entity.entity_id;
-				Op.op.component_update.update = Worker_ComponentUpdate{ nullptr, Change.component_id, Change.update, nullptr };
+				Op.op.component_update.entity_id = Entity.EntityId;
+				Op.op.component_update.update = Worker_ComponentUpdate{ nullptr, Change.ComponentId, Change.Update, nullptr };
 				Ops.Push(Op);
 			}
 
-			if (Change.type == ComponentChange::kRemove)
+			if (Change.Type == ComponentChange::REMOVE)
 			{
 				Worker_Op Op = {};
 				Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
-				Op.op.remove_component.entity_id = Entity.entity_id;
-				Op.op.remove_component.component_id = Change.component_id;
+				Op.op.remove_component.entity_id = Entity.EntityId;
+				Op.op.remove_component.component_id = Change.ComponentId;
 				Ops.Push(Op);
 			}
 		}
 
-		for (const AuthorityChange& Change : Entity.authority_changes)
+		for (const AuthorityChange& Change : Entity.AuthorityChanges)
 		{
-			if (Change.type == AuthorityChange::kAuthorityGained || Change.type == AuthorityChange::kAuthorityLostTemporarily)
+			if (Change.Type == AuthorityChange::AUTHORITY_GAINED || Change.Type == AuthorityChange::AUTHORITY_LOST_TEMPORARILY)
 			{
 				Worker_Op Op = {};
 				Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-				Op.op.authority_change.entity_id = Entity.entity_id;
-				Op.op.authority_change.component_id = Change.component_id;
+				Op.op.authority_change.entity_id = Entity.EntityId;
+				Op.op.authority_change.component_id = Change.ComponentId;
 				Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
 				Ops.Push(Op);
 			}
 		}
 
-		if (Entity.removed)
+		if (Entity.bRemoved)
 		{
 			Worker_Op Op = {};
 			Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
-			Op.op.remove_entity.entity_id = Entity.entity_id;
+			Op.op.remove_entity.entity_id = Entity.EntityId;
 			Ops.Push(Op);
 		}
 
