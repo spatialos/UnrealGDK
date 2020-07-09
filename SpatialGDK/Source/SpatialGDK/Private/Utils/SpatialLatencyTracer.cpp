@@ -9,7 +9,9 @@
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Utils/SchemaUtils.h"
 
+#include "Engine/Engine.h"
 #include <sstream>
+
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 
@@ -370,7 +372,7 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 }
 
 bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
-{	 
+{
 	// TODO: UNR-2787 - Improve mutex-related latency
 	// This functions might spike because of the Mutex below
 	SCOPE_CYCLE_COUNTER(STAT_BeginLatencyTraceRPC_Internal);

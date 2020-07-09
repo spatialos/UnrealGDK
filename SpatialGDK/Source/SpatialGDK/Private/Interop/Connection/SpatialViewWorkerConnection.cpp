@@ -1,6 +1,9 @@
 #include "Interop/Connection/SpatialViewWorkerConnection.h"
 
+
+#include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/ConnectionHandler/TracingConnectionHandler.h"
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
@@ -23,8 +26,45 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 void USpatialViewWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
-	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler = MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn);
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(Handler));
+	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> SpatialOSHandler = MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn);
+	TUniquePtr<SpatialGDK::TracingConnectionHandler> TracingHandler = MakeUnique<SpatialGDK::TracingConnectionHandler>(MoveTemp(SpatialOSHandler));
+	TracingConnectionHandler = TracingHandler.Get();
+
+	TracingHandler->AddCallback = [this](int32 TraceId)
+	{
+		FWorkerComponentData TraceOnly;
+#if TRACE_LIB_ACTIVE
+		TraceOnly.Trace = TraceId;
+#endif  // TRACE_LIB_ACTIVE
+		SpatialGDK::FAddComponent Data(0, TraceOnly);
+		OnDequeueMessage.Broadcast(&Data);
+	};
+
+	TracingHandler->UpdateCallback = [this](int32 TraceId)
+	{
+		FWorkerComponentUpdate TraceOnly;
+#if TRACE_LIB_ACTIVE
+		TraceOnly.Trace = TraceId;
+#endif  // TRACE_LIB_ACTIVE
+		SpatialGDK::FComponentUpdate Update(0, TraceOnly);
+		OnDequeueMessage.Broadcast(&Update);
+	};
+
+	TracingHandler->EntityCreationCallback = [this](TArray<int32> TraceIds)
+	{
+		TArray<FWorkerComponentData> TraceOnlyData;
+		TraceOnlyData.Reserve(TraceIds.Num());
+		for (int32 Id : TraceIds)
+		{
+			const int32 Index = TraceOnlyData.Emplace();
+#if TRACE_LIB_ACTIVE
+			TraceOnlyData[Index].Trace = Id;
+#endif  // TRACE_LIB_ACTIVE
+		}
+		SpatialGDK::FCreateEntityRequest Request(MoveTemp(TraceOnlyData), nullptr);
+		OnDequeueMessage.Broadcast(&Request);
+	};
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(TracingHandler));
 }
 
 void USpatialViewWorkerConnection::FinishDestroy()
@@ -56,6 +96,19 @@ Worker_RequestId USpatialViewWorkerConnection::SendReserveEntityIdsRequest(uint3
 Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
 {
 	check(Coordinator.IsValid());
+	if (EntityId != nullptr)
+	{
+		for (const FWorkerComponentData& Data : Components)
+		{
+			TracingConnectionHandler->SetEntityCreationTrace(*EntityId, Data.component_id, Data.Trace);
+		}
+	}
+
+	SpatialGDK::FCreateEntityRequest TraceMessage(MoveTemp(Components), EntityId);
+	OnEnqueueMessage.Broadcast(&TraceMessage);
+	Components = MoveTemp(TraceMessage.Components);
+
+
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId  : TOptional<Worker_EntityId>();
 	TArray<SpatialGDK::ComponentData> Data;
 	Data.Reserve(Components.Num());
@@ -75,6 +128,13 @@ Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_En
 void USpatialViewWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
 {
 	check(Coordinator.IsValid());
+	auto TraceMessage = SpatialGDK::FAddComponent(EntityId, *ComponentData);
+	OnEnqueueMessage.Broadcast(&TraceMessage);
+	if (ComponentData->Trace != 0)
+	{
+		TracingConnectionHandler->SetAddComponentTrace(EntityId, ComponentData->component_id, ComponentData->Trace);
+	}
+
 	return Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData));
 }
 
@@ -87,6 +147,13 @@ void USpatialViewWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId,
 void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
 {
 	check(Coordinator.IsValid());
+	auto TraceMessage = SpatialGDK::FComponentUpdate(EntityId, *ComponentUpdate);
+	OnEnqueueMessage.Broadcast(&TraceMessage);
+	if (ComponentUpdate->Trace != 0)
+	{
+		TracingConnectionHandler->SetComponentUpdateTrace(EntityId, ComponentUpdate->component_id, ComponentUpdate->Trace);
+	}
+
 	return Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate));
 }
 

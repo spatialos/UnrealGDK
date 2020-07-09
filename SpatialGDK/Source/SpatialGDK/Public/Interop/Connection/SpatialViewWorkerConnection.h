@@ -4,6 +4,7 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/ConnectionHandler/TracingConnectionHandler.h"
 #include "SpatialView/ViewCoordinator.h"
 #include "SpatialView/OpList/OpList.h"
 
@@ -45,4 +46,6 @@ public:
 	virtual void Flush() override;
 private:
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
+
+	SpatialGDK::TracingConnectionHandler* TracingConnectionHandler;
 };
