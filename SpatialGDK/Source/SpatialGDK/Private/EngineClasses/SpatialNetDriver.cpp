@@ -45,6 +45,7 @@
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
@@ -1142,7 +1143,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 struct FCompareFActorPriorityAndMigration
 {
-	FCompareFActorPriorityAndMigration(FSpatialNetDriverLoadBalancingHandler& InMigrationHandler)
+	FCompareFActorPriorityAndMigration(FSpatialLoadBalancingHandler& InMigrationHandler)
 		: MigrationHandler(InMigrationHandler)
 	{
 	}
@@ -1164,10 +1165,10 @@ struct FCompareFActorPriorityAndMigration
 		return false;
 	}
 
-	FSpatialNetDriverLoadBalancingHandler& MigrationHandler;
+	FSpatialLoadBalancingHandler& MigrationHandler;
 };
 
-int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialNetDriverLoadBalancingHandler& MigrationHandler, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
+int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialLoadBalancingHandler& MigrationHandler, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
 {
 	// Since this function signature is copied from NetworkDriver.cpp, I don't want to change the signature. But we expect
 	// that the input connection will be the SpatialOS server connection to the runtime (the first client connection),
@@ -1278,7 +1279,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	return FinalSortedCount;
 }
 
-void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialNetDriverLoadBalancingHandler& MigrationHandler, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
+void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialLoadBalancingHandler& MigrationHandler, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialProcessPrioritizedActors);
 
@@ -1577,11 +1578,14 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(WorldSettings);
 	const bool bIsMultiWorkerEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiWorkerEnabled();
 
-	FSpatialNetDriverLoadBalancingHandler MigrationHandler(this, ConsiderList);
+	//FSpatialNetDriverLoadBalancingHandler MigrationHandler(this, ConsiderList);
+	FSpatialLoadBalancingHandler MigrationHandler(this);
+	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
 
 	if (bIsMultiWorkerEnabled)
 	{
-		MigrationHandler.HandleLoadBalancing();
+		MigrationHandler.HandleLoadBalancing(LoadBalancingContext);
+		LoadBalancingContext.UpdateWithAdditionalActors();
 	}
 
 	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());

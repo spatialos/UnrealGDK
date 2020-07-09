@@ -2,17 +2,17 @@
 
 #include "SpatialNetDriverLoadBalancingHandler.h"
 
-FSpatialNetDriverLoadBalancingHandler::FSpatialNetDriverLoadBalancingHandler(USpatialNetDriver* InNetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
-	: TSpatialLoadBalancingHandler<FSpatialNetDriverLoadBalancingHandler>(InNetDriver)
+#include "EngineClasses/SpatialNetDriver.h"
+
+FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
+	: NetDriver(InNetDriver)
 	, NetworkObjects(InOutNetworkObjects)
 {
 
 }
 
-void FSpatialNetDriverLoadBalancingHandler::HandleLoadBalancing()
+void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 {
-	TSpatialLoadBalancingHandler<FSpatialNetDriverLoadBalancingHandler>::HandleLoadBalancing();
-
 	// Processing actors that we pull from actor hierarchies, in order to migrate them together.
 	// This loop is extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
 	for (auto ActorInfoIter = AdditionalActorsToReplicate.CreateIterator(); ActorInfoIter; ++ActorInfoIter)
@@ -53,12 +53,12 @@ void FSpatialNetDriverLoadBalancingHandler::HandleLoadBalancing()
 	}
 }
 
-FSpatialNetDriverLoadBalancingHandler::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingHandler::GetActorsBeingReplicated()
+FSpatialNetDriverLoadBalancingContext::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingContext::GetActorsBeingReplicated()
 {
 	return FNetworkObjectsArrayAdaptor(NetworkObjects);
 }
 
-void FSpatialNetDriverLoadBalancingHandler::RemoveAdditionalActor(AActor* Actor)
+void FSpatialNetDriverLoadBalancingContext::RemoveAdditionalActor(AActor* Actor)
 {
 	if (FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
 	{
@@ -66,7 +66,7 @@ void FSpatialNetDriverLoadBalancingHandler::RemoveAdditionalActor(AActor* Actor)
 	}
 }
 
-void FSpatialNetDriverLoadBalancingHandler::AddActorToReplicate(AActor* Actor)
+void FSpatialNetDriverLoadBalancingContext::AddActorToReplicate(AActor* Actor)
 {
 	if(FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
 	{
@@ -74,7 +74,7 @@ void FSpatialNetDriverLoadBalancingHandler::AddActorToReplicate(AActor* Actor)
 	}
 }
 
-TArray<AActor*>& FSpatialNetDriverLoadBalancingHandler::GetDependentActors(AActor* Actor)
+TArray<AActor*>& FSpatialNetDriverLoadBalancingContext::GetDependentActors(AActor* Actor)
 {
 	return Actor->Children;
 }
