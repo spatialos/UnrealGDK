@@ -36,12 +36,9 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 			OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
 			return true;
 		}
-
-		OutLogMsg = TEXT("No Process is blocking the required port.");
-		return false;
 	}
 
-	OutLogMsg = TEXT("Failed to check if a process is blocking the required port.");
+	OutLogMsg = TEXT("No Process is blocking the required port or Failed to check if process is blocked.");
 	return false;
 }
 
@@ -54,7 +51,7 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	// Check if any process is blocking the receptionist port
 	if (!CheckIfPortIsBound(ReceptionistPort, PID, OutLogMessage))
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The required port is not blocked! %s"), *OutLogMessage);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The required port is not blocked: %s"), *OutLogMessage);
 		return true;
 	}
 

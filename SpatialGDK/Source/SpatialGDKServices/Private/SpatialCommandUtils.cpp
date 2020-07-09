@@ -399,7 +399,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 #elif PLATFORM_MAC
 	const FString Command = FPaths::Combine(SpatialGDKServicesConstants::LsofCmdFilePath, TEXT("lsof"));
 	// -i:Port list the processes that are running on Port
-	const FString Args = FString::Printf(TEXT("-i:%d"), Port);
+	const FString Args = FString::Printf(TEXT("-i:%i"), Port);
 #endif
 
 	FString Result;
@@ -437,7 +437,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 		}
 
 #if PLATFORM_WINDOWS
-		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"), Port);
+		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port %i is not blocked!"), Port);
 		return false;
 #endif
 		 
@@ -446,7 +446,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 #if PLATFORM_MAC
 	if (bSuccess && StdErr.IsEmpty())
 	{
-		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port is not blocked!"));
+		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port %i is not blocked!"), Port);
 		return false;
 	}
 #endif
