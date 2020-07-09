@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "Components/SceneComponent.h"
-#include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
@@ -63,14 +61,19 @@ inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const AActor* Actor)
+inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const APlayerController* PC)
 {
-	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
+	const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PC->GetNetConnection());
+	checkf(NetConnection != nullptr, TEXT("PlayerController did not have NetConnection when trying to find client system entity ID."));
+
+	if (NetConnection->ConnectionClientWorkerSystemEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		return NetConnection->ConnectionClientWorkerSystemEntityId;
+		UE_LOG(LogTemp, Error, TEXT("Client system entity ID was invalid on a PlayerController. "
+			"This is expected after the PlayerController migrates, the client system entioty ID is currently only "
+			"used on the spawning server."));
 	}
 
-	return SpatialConstants::INVALID_ENTITY_ID;
+	return NetConnection->ConnectionClientWorkerSystemEntityId;
 }
 
 inline FVector GetActorSpatialPosition(const AActor* InActor)

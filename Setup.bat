@@ -112,7 +112,6 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
     spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\schema\standard_library.zip"
     spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-vc141_md-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc141_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
 if defined DOWNLOAD_MOBILE (
