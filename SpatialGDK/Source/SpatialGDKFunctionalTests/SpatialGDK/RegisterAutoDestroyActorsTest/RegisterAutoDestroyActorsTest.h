@@ -21,7 +21,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ARegisterAutoDestroyActorsTestPart1 : public
 	ARegisterAutoDestroyActorsTestPart1();
 
 	virtual void BeginPlay() override;
-
 };
 
 UCLASS()

@@ -77,7 +77,7 @@ FString FSpatialGDKEditorModule::GetDevAuthToken() const
 
 FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 {
-	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+	return GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName();
 }
 
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const
@@ -103,7 +103,7 @@ bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-		if (!Settings->DevelopmentDeploymentToConnect.IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->DevelopmentDeploymentToConnect, bIsRunningInChina, OutErrorMessage))
+		if (!Settings->GetPrimaryDeploymentName().IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->GetPrimaryDeploymentName(), bIsRunningInChina, OutErrorMessage))
 		{
 			return false;
 		}

@@ -53,8 +53,6 @@ public:
 
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
-	virtual void GatherRelevantActors(TArray<AActor*>& OutActors) const override;
-
 	// # Test APIs
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
@@ -67,8 +65,6 @@ public:
 
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
-
-	void DeleteActorsRegisteredForAutoDestroy();
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -94,24 +90,24 @@ public:
 
 	// Add Steps for Blueprints
 	
-	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
-	void AddUniversalStep(FString StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ToolTip = "Adds a Step that runs on All Clients and Servers"))
+	void AddUniversalStep(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
-	void AddClientStep(FString StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ClientId = "1", ToolTip = "Adds a Step that runs on Clients. Client Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Clients (there's also a convenience function GetAllWorkersId())"))
+	void AddClientStep(const FString& StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
-	void AddServerStep(FString StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ServerId = "1", ToolTip = "Adds a Step that runs on Servers. Server Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Servers (there's also a convenience function GetAllWorkersId())"))
+	void AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	void AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition);
 
 	// Add Steps for C++
-	FSpatialFunctionalTestStepDefinition& AddUniversalStep(FString StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
-	FSpatialFunctionalTestStepDefinition& AddClientStep(FString StepName, int ClientId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddClientStep(const FString& StepName, int ClientId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
-	FSpatialFunctionalTestStepDefinition& AddServerStep(FString StepName, int ServerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddServerStep(const FString& StepName, int ServerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
 	// Start Running a Step
 	void StartStep(const int StepIndex);
@@ -132,8 +128,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfClientWorkers();
 
+	// Convenience function that returns the Id used for executing steps on all Servers / Clients
+	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"), Category = "Spatial Functional Test")
+	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
+	int GetNumExpectedServers() const { return NumExpectedServers; }
 
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
@@ -167,12 +168,12 @@ private:
 
 	void SetupClientPlayerRegistrationFlow();
 
-	//UFUNCTION(CrossServer, Reliable)
-	//void CrossServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
 
-	//UFUNCTION(Server, Reliable)
-	//void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
+	UFUNCTION(Server, Reliable)
+	void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastAutoDestroyActors();
+	void MulticastAutoDestroyActors(const TArray<AActor*>& ActorsToDestroy);
 };

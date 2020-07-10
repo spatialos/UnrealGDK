@@ -9,10 +9,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "AutoDestroyComponent.h"
-#include "Kismet/GameplayStatics.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogSpatialFunctionalTest, Log, All);
+#include "SpatialGDKFunctionalTestsPrivate.h"
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -23,6 +20,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	NetUpdateFrequency = 100.0f;
 	
 	bAlwaysRelevant = true;
+
+	PrimaryActorTick.TickInterval = 0.0f;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
@@ -94,20 +93,11 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
-	//if (HasAuthority())
-	if (ActorToAutoDestroy->HasAuthority())
+	if (HasAuthority())
 	{
-		//Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
-
-		UAutoDestroyComponent* AutoDestroyComponent = NewObject<UAutoDestroyComponent>(ActorToAutoDestroy);
-		AutoDestroyComponent->SetIsReplicated(true); 
-		AutoDestroyComponent->AttachToComponent(ActorToAutoDestroy->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-		AutoDestroyComponent->RegisterComponent();
-
-		//UE_LOG(LogTemp, Warning, TEXT("Registered ACharacter %s for destruction"), *(ActorToAutoDestroy->GetName()));
-
+		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
 	}
-	/*else if(LocalFlowController != nullptr)
+	else if(LocalFlowController != nullptr)
 	{
 		if(LocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
 		{
@@ -117,7 +107,7 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 		{
 			ServerRegisterAutoDestroyActor(ActorToAutoDestroy);
 		}
-	}*/
+	}
 }
 
 bool ASpatialFunctionalTest::IsReady_Implementation()
@@ -155,7 +145,7 @@ void ASpatialFunctionalTest::StartTest()
 void ASpatialFunctionalTest::FinishStep()
 {
 	auto* AuxLocalFlowController = GetLocalFlowController();
-	checkf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
+	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if(AuxLocalFlowController != nullptr)
 	{
 		AuxLocalFlowController->NotifyStepFinished();
@@ -204,13 +194,11 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(), *UEnum::GetValueAsString(TestResult), *Message);
+		UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(), *UEnum::GetValueAsString(TestResult), *Message);
 
 		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
-		MulticastAutoDestroyActors();
-
-		DeleteActorsRegisteredForAutoDestroy();
+		MulticastAutoDestroyActors(AutoDestroyActors);
 
 		Super::FinishTest(TestResult, Message);
 	}
@@ -220,29 +208,6 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		if (AuxLocalFlowController != nullptr)
 		{
 			AuxLocalFlowController->NotifyFinishTest(TestResult, Message);
-		}
-	}
-}
-
-void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
-{
-	// Delete actors registered for auto destroy
-
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
-
-	UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Delete actors registered for auto destroy: found %d actors "), FoundActors.Num());
-
-	for (int32 ActorIndex = 0; ActorIndex < FoundActors.Num(); ++ActorIndex)
-	{
-		AActor* FoundActor = FoundActors[ActorIndex];
-		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<UAutoDestroyComponent>();
-		if (AutoDestroyComponent != NULL)
-		{
-			UE_LOG(LogSpatialFunctionalTest, Display, TEXT("Delete actor %s "), *(FoundActor->GetName()));
-			//UE_LOG(LogTemp, Warning, TEXT("Delete ACharacter %s"), *(FoundActor->GetName()));
-			// will be removed next frame
-			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
 }
@@ -277,13 +242,13 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 
 ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowController()
 {
-	checkf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen, but falling back to finding it in World"));
+	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
 	return LocalFlowController;
 }
 
 // Add Steps for Blueprints
 
-void ASpatialFunctionalTest::AddUniversalStep(FString StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddUniversalStep(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -299,7 +264,7 @@ void ASpatialFunctionalTest::AddUniversalStep(FString StepName, const FStepIsRea
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddClientStep(FString StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddClientStep(const FString& StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -314,7 +279,7 @@ void ASpatialFunctionalTest::AddClientStep(FString StepName, int ClientId, const
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddServerStep(FString StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -380,7 +345,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 				FlowController->CrossServerStartStep(CurrentStepIndex);
 			}
 
-			UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s"), *Msg);
+			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
 		}
 		else
 		{
@@ -391,7 +356,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 
 // Add Steps for C++
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddUniversalStep(FString StepName, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -418,7 +383,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddUniversalStep(F
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddClientStep(FString StepName, int ClientId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddClientStep(const FString& StepName, int ClientId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -444,7 +409,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddClientStep(FStr
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddServerStep(FString StepName, int ServerId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddServerStep(const FString& StepName, int ServerId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -492,12 +457,12 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 
 	const FString FLowControllerDisplayName = FlowController->GetDisplayName();
 	
-	UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
 	
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
 		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FLowControllerDisplayName);
-		checkf(false, TEXT("%s"), *ErrorMsg);
+		ensureMsgf(false, TEXT("%s"), *ErrorMsg);
 		FinishTest(EFunctionalTestResult::Error, ErrorMsg);
 	}
 }
@@ -554,79 +519,38 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 	));
 }
 
-//void ASpatialFunctionalTest::CrossServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
-//{
-//	RegisterAutoDestroyActor(ActorToAutoDestroy);
-//}
-//
-//void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
-//{
-//	CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
-//}
-
-void ASpatialFunctionalTest::GatherRelevantActors(TArray<AActor*>& OutActors) const
+void ASpatialFunctionalTest::CrossServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
 {
-	if (ObservationPoint)
-	{
-		OutActors.AddUnique(ObservationPoint);
-	}
-
-	/*for (auto Actor : AutoDestroyActors)
-	{
-		if (Actor)
-		{
-			OutActors.AddUnique(Actor);
-		}
-	}*/
-
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
-
-	for (int32 ActorIndex = 0; ActorIndex < FoundActors.Num(); ++ActorIndex)
-	{
-		AActor* FoundActor = FoundActors[ActorIndex];
-
-		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<UAutoDestroyComponent>();
-		if (AutoDestroyComponent != NULL)
-		{
-			OutActors.AddUnique(FoundActor);
-		}
-
-	}
-
-
-	OutActors.Append(DebugGatherRelevantActors());
+	RegisterAutoDestroyActor(ActorToAutoDestroy);
 }
 
-void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation()
+void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
+{
+	CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
+}
+
+void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TArray<AActor*>& ActorsToDestroy)
 {
 	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
 	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s MulticastAutoDestroyActors_Implementation No Authority"), *DisplayName);
-
-
-		DeleteActorsRegisteredForAutoDestroy();
-		/*for (AActor* Actor : ActorsToDestroy)
+		for (AActor* Actor : ActorsToDestroy)
 		{
 			if (IsValid(Actor))
 			{				
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 				Actor->SetLifeSpan(0.01f);
 			}
-		}*/
+		}
 	}
 	else
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("% MulticastAutoDestroyActors_Implementation Authority"), *DisplayName);
-
-
-		/*for (AActor* Actor : ActorsToDestroy)
+		for (AActor* Actor : ActorsToDestroy)
 		{
 			if (IsValid(Actor))
 			{
-				UE_LOG(LogSpatialFunctionalTest, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
+				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
 			}
-		}*/
+		}
 	}
 }

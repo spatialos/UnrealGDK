@@ -518,7 +518,7 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 					TrackingTags.Add(ATKey, Key);
 					return true;
 				}
-				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorProperty already exists for trace"), *WorkerId);
+				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorTag already exists for trace"), *WorkerId);
 			}
 			break;
 		}
@@ -540,7 +540,7 @@ void USpatialLatencyTracer::ResolveKeyInLatencyPayload(FSpatialLatencyPayload& P
 		const TraceKey& Key = TracePair.Key;
 		const TraceSpan& Span = TracePair.Value;
 
-		if (memcmp(Span.context().trace_id().data(), Payload.TraceId.GetData(), sizeof(Payload.TraceId)) == 0)
+		if (memcmp(Span.context().trace_id().data(), Payload.TraceId.GetData(), Payload.TraceId.Num()) == 0)
 		{
 			WriteKeyFrameToTrace(&Span, TEXT("Local Trace - Payload Obj Read"));
 			Payload.Key = Key;

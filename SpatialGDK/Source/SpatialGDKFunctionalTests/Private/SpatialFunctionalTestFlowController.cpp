@@ -5,13 +5,15 @@
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialGDKFunctionalTestsPrivate.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {	
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	
+
+	PrimaryActorTick.TickInterval = 0.0f;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bTickEvenWhenPaused = true;
@@ -94,7 +96,7 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 
 void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 {
-	checkf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or it's logic is calling FinishStep multiple times"));
+	ensureMsgf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or it's logic is calling FinishStep multiple times"));
 	if (CurrentStep.bIsRunning)
 	{
 		if (ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
@@ -165,7 +167,7 @@ void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int St
 void ASpatialFunctionalTestFlowController::StartStepInternal(const int StepIndex)
 {
 	const FSpatialFunctionalTestStepDefinition& StepDefinition = OwningTest->GetStepDefinition(StepIndex);
-	UE_LOG(LogTemp, Log, TEXT("Executing step %s on %s"), *StepDefinition.StepName, *GetDisplayName());
+	UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Executing step %s on %s"), *StepDefinition.StepName, *GetDisplayName());
 	SetActorTickEnabled(true);
 	CurrentStep.Owner = OwningTest;
 	CurrentStep.Start(StepDefinition);

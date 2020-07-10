@@ -40,21 +40,25 @@ void ULayeredLBStrategy::Init()
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
 
-		UAbstractLBStrategy* LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		UAbstractLBStrategy* LBStrategy;
+		if (LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogLayeredLBStrategy, Error, TEXT("WorkerLayer %s does not specify a loadbalancing strategy (or it cannot be resolved). Using a 1x1 grid."), *LayerName.ToString());
+			LBStrategy = NewObject<UGridBasedLBStrategy>(this);
+		}
+		else
+		{
+			LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		}
+
 		AddStrategyForLayer(LayerName, LBStrategy);
 
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
-			if (ClassPtr.IsValid())
-			{
-				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
-				ClassPathToLayer.Add(ClassPtr, LayerName);
-			}
-			else
-			{
-				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
-			}
+			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
+			ClassPathToLayer.Add(ClassPtr, LayerName);
+
 		}
 	}
 
@@ -70,6 +74,14 @@ void ULayeredLBStrategy::Init()
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+
+		// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with
+		// some parts of the hierarchy on different layers. This provides a way to specify that.
+		for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->ExplicitDefaultActorClasses)
+		{
+			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr.GetAssetName());
+			ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
+		}
 	}
 }
 

@@ -70,7 +70,17 @@
       "Type": "Editor",
       "LoadingPhase": "PreLoadingScreen",
       "WhitelistPlatforms": [
-        "Win64"
+        "Win64",
+        "Mac"
+      ]
+    },
+    {
+      "Name": "SpatialGDKFunctionalTests",
+      "Type": "Editor",
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [ 
+        "Win64",
+        "Mac"
       ]
     },
     {
