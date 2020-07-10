@@ -25,6 +25,7 @@ class USoundBase;
 
 struct FWorkerTypeLaunchSection;
 class UAbstractRuntimeLoadBalancingStrategy;
+class ASpatialDebuggerEditor;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -78,6 +79,7 @@ private:
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
+	void ToggleSpatialDebuggerEditor();
 	bool StartNativeIsVisible() const;
 	bool StartNativeCanExecute() const;
 
@@ -189,4 +191,7 @@ private:
 	bool bStartingCloudDeployment;
 
 	void GenerateConfigFromCurrentMap();
+
+	// Used to show worker boundaries in the editor
+	ASpatialDebuggerEditor* SpatialDebuggerEditor;
 };

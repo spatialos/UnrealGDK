@@ -48,8 +48,10 @@
 #include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Utils/LaunchConfigurationEditor.h"
+#include "Utils/SpatialDebuggerEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
+
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
@@ -290,6 +292,10 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GDKRuntimeSettings,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GDKRuntimeSettingsClicked)
 	);
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor)
+	);
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -493,6 +499,13 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GDKRuntimeSettings);
 	}
 	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("SpatialDebbugerEditorSettings");
+	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
+	}
+	MenuBuilder.EndSection();
+	
 
 	return MenuBuilder.MakeWidget();
 }
@@ -729,6 +742,26 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 		OnShowSuccessNotification(TEXT("Spatial service stopped!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
 	});
+}
+
+void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
+{
+	// Don't try and start spatial editor debugger spatial networking is disabled.
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to toggle spatial debugger in editor but spatial networking is disabled."));
+		return;
+	}
+
+	if (SpatialDebuggerEditor == NULL)
+	{
+		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+		check(EditorWorld);
+
+		SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>();
+	}
+
+	SpatialDebuggerEditor->SpatialToggleDebugger();
 }
 
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()

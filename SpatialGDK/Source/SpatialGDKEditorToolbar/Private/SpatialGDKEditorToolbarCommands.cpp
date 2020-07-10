@@ -26,6 +26,7 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(GDKRuntimeSettings, "Runtime Settings", "Open the SpatialOS GDK Runtime Settings", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(LocalDeployment, "Connect to a local deployment", "Automatically connect to a local deployment", EUserInterfaceActionType::RadioButton, FInputChord());
 	UI_COMMAND(CloudDeployment, "Connect to a cloud deployment", "Automatically connect to a cloud deployment", EUserInterfaceActionType::RadioButton, FInputChord());
+	UI_COMMAND(ToggleSpatialDebuggerEditor, "Toggle Spatial Debugger Editor", "Toggle worker boundaries in editor", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

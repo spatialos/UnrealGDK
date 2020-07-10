@@ -85,6 +85,62 @@ void ULayeredLBStrategy::Init()
 	}
 }
 
+void ULayeredLBStrategy::Init(UWorld* World)
+{
+	Super::Init(World);
+
+	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
+
+	if (!bIsMultiWorkerEnabled)
+	{
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Multi-Worker has been disabled. Creating LBStrategy for the Default Layer"));
+		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
+		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+		return;
+	}
+
+	// For each Layer, add a LB Strategy for that layer.
+	for (const TPair<FName, FLayerInfo>& Layer : WorldSettings->WorkerLayers)
+	{
+		const FName& LayerName = Layer.Key;
+		const FLayerInfo& LayerInfo = Layer.Value;
+
+		UAbstractLBStrategy* LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		AddStrategyForLayer(LayerName, LBStrategy);
+
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
+		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
+		{
+			if (ClassPtr.IsValid())
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+				ClassPathToLayer.Add(ClassPtr, LayerName);
+			}
+			else
+			{
+				UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Invalid class not added %s"), *ClassPtr.GetAssetName());
+			}
+		}
+	}
+
+	// Finally, add the default layer.
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
+	if (WorldSettings->DefaultLayerLoadBalanceStrategy == nullptr)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
+		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+	}
+	else
+	{
+		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
+		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+	}
+}
+
 void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
 	if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
@@ -259,7 +315,7 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
-	check(IsReady());
+//	check(IsReady());
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 

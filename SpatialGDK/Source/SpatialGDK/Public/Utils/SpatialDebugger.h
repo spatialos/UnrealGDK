@@ -64,7 +64,7 @@ public:
 	virtual void OnAuthorityGained() override;
 
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
-	void SpatialToggleDebugger();
+	virtual void  SpatialToggleDebugger();
 
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
@@ -130,6 +130,12 @@ public:
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
+protected:
+	FDelegateHandle DrawDebugDelegateHandle;
+
+	void CreateWorkerRegions();
+	void DestroyWorkerRegions();
+
 private:
 	void LoadIcons();
 
@@ -143,8 +149,6 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	void CreateWorkerRegions();
-	void DestroyWorkerRegions();
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
@@ -168,7 +172,7 @@ private:
 	// Mapping of the entities a client has checked out
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
 
-	FDelegateHandle DrawDebugDelegateHandle;
+
 	FDelegateHandle OnEntityAddedHandle;
 	FDelegateHandle OnEntityRemovedHandle;
 
