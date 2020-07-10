@@ -91,13 +91,13 @@ public:
 
 	// Add Steps for Blueprints
 	
-	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ToolTip = "Adds a Step that runs on All Clients and Servers"))
 	void AddUniversalStep(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ClientId = "1", ToolTip = "Adds a Step that runs on Clients. Client Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Clients (there's also a convenience function GetAllWorkersId())"))
 	void AddClientStep(const FString& StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ServerId = "1", ToolTip = "Adds a Step that runs on Servers. Server Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Servers (there's also a convenience function GetAllWorkersId())"))
 	void AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
@@ -129,13 +129,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfClientWorkers();
 
+	// Convenience function that returns the Id used for executing steps on all Servers / Clients
+	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"), Category = "Spatial Functional Test")
+	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
+
 	// # Actor Delegation APIs
 	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
 	void AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished = false);
 
 	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
 	void RemoveActorDelegation(AActor* Actor);
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	bool HasActorDelegation(AActor* Actor, uint8& WorkerId, bool& bIsPersistent);
 

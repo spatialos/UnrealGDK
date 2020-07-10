@@ -73,6 +73,10 @@ generate_build_configuration_steps () {
             done
         fi
     else
+        if [[ -n "${SLOW_NETWORKING_TESTS:-}" ]]; then
+            export SLOW_NETWORKING_TESTS
+        fi
+
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             # MacOS Development Editor build configuration
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "Editor" "Development"
