@@ -50,6 +50,8 @@ namespace SpatialGDKServicesConstants
 	const FString ProxyFileDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable")));
 	const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("ServerReceptionistProxyInfo.json"));
 
+#if PLATFORM_MAC
 	const FString LsofCmdFilePath = TEXT("/usr/sbin/");
 	const FString KillCmdFilePath = TEXT("/bin/");
+#endif
 }

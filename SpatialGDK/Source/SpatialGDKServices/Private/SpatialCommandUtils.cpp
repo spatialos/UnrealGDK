@@ -339,6 +339,12 @@ void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHand
 
 bool SpatialCommandUtils::GetProcessName(const FString& PID, FString& OutProcessName)
 {
+
+#if PLATFORM_MAC
+	UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Failed to get the name of the process that is blocking the required port. To get the name of the process in MacOS you need to use SpatialCommandUtils::GetProcessInfoFromPort."));
+	return false;
+#endif 
+
 	bool bSuccess = false;
 	OutProcessName = TEXT("");
 	const FString TaskListCmd = TEXT("tasklist");
@@ -356,7 +362,6 @@ bool SpatialCommandUtils::GetProcessName(const FString& PID, FString& OutProcess
 		if (ProcessNameMatcher.FindNext())
 		{
 			OutProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
-
 			return true;
 		}
 	}
@@ -444,7 +449,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 	}
 
 #if PLATFORM_MAC
-	if (bSuccess && StdErr.IsEmpty())
+	if (bSuccess && ExitCode == 1 && StdErr.IsEmpty())
 	{
 		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port %i is not blocked!"), Port);
 		return false;

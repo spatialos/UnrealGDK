@@ -29,13 +29,10 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 	FString State;
 	FString ProcessName;
 	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, OutPID, State, ProcessName);
-	if (bSuccess)
+	if (bSuccess && State.Contains("LISTEN"))
 	{
-		if (State.Contains("LISTEN"))
-		{
-			OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
-			return true;
-		}
+		OutLogMsg = FString::Printf(TEXT("%s process with PID: %s"), *ProcessName, *OutPID);
+		return true;
 	}
 
 	OutLogMsg = TEXT("No Process is blocking the required port or Failed to check if process is blocked.");
@@ -117,7 +114,6 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 		}
 
 		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
-
 	}
 
 	return nullptr;
@@ -193,7 +189,7 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	{
 		if (!TryStopReceptionistProxyServer())
 		{
-			UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Failed to stop previous proxy server!"));
+			UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to stop previous proxy server!"));
 			return false;
 		}
 
