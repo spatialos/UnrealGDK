@@ -16,7 +16,6 @@
 #include "SpatialConstants.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
@@ -38,7 +37,7 @@ namespace
 namespace SpatialGDK
 {
 
-ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, SpatialGDK::TracerSharedPtr InLatencyTracer)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)

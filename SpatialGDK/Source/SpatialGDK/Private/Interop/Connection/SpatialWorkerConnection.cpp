@@ -4,6 +4,7 @@
 
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -162,6 +163,13 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return CachedWorkerAttributes;
 }
 
+void USpatialWorkerConnection::BindLatencyTracer(SpatialGDK::TracerSharedPtr InTracer)
+{
+#if TRACE_LIB_ACTIVE
+	Tracer = InTracer;
+#endif
+}
+
 void USpatialWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
@@ -230,7 +238,12 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
-		OnDequeueMessage.Broadcast(OutgoingMessage.Get());
+#if TRACE_LIB_ACTIVE
+		if (Tracer.IsValid())
+		{
+			Tracer->OnDequeueMessage(OutgoingMessage.Get());
+		}
+#endif
 
 		static const Worker_UpdateParameters DisableLoopback{ /*loopback*/ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
 
@@ -462,6 +475,11 @@ void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
 	auto Message = MakeUnique<T>(Forward<ArgsType>(Args)...);
-	OnEnqueueMessage.Broadcast(Message.Get());
+#if TRACE_LIB_ACTIVE
+	if (Tracer.IsValid())
+	{
+		Tracer->OnEnqueueMessage(Message.Get());
+	}
+#endif
 	OutgoingMessagesQueue.Enqueue(MoveTemp(Message));
 }

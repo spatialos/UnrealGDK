@@ -131,6 +131,7 @@ void USpatialGameInstance::StartSpatialConnection()
 	else
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
+		// This needs to be done after UGameInstance::Init() is called where SpatialWorkerType is set
 		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
@@ -225,8 +226,7 @@ void USpatialGameInstance::HandleOnConnected()
 	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
 
 	USpatialWorkerConnection* WorkerConnection = SpatialConnectionManager->GetWorkerConnection();
-	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
+	WorkerConnection->BindLatencyTracer(SpatialLatencyTracer->GetTracer());
 #endif
 
 	OnSpatialConnected.Broadcast();

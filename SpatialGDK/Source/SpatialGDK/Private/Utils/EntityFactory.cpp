@@ -252,7 +252,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
+	TracerSharedPtr Tracer = USpatialLatencyTracer::GetTracer(Actor);
 
 	ComponentFactory DataFactory(false, NetDriver, Tracer);
 

@@ -7,13 +7,13 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
+#include "Utils/SpatialLatencyTracerData.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
-class USpatialLatencyTracer;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
@@ -57,7 +57,7 @@ enum class EPushRPCResult : uint8
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, SpatialGDK::TracerSharedPtr SpatialLatencyTracer);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
@@ -101,7 +101,7 @@ private:
 private:
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
-	USpatialLatencyTracer* SpatialLatencyTracer;
+	SpatialGDK::TracerSharedPtr SpatialLatencyTracer;
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;
