@@ -14,6 +14,58 @@
 //  - AddActorToReplicate(AActor* Actor) -> inform that an additional Actor should be replicated this frame (a dependent Actor)
 //  - RemoveAdditionalActor(AActor* Actor) -> inform that an Actor we signaled as needing to replicate was encountered in the list of replicated Actor, and does not need additional handling
 //  - GetDependentActors(AActor* Actor) -> returns a range-for compatible iterator over AActor that depends on the given Actor (and should be migrated together)
+//  - IsActorReadyForMigration(AActor* Actor) -> called on dependent actors, to check if they are ready to be replicated and migrated
+//
+// Example iteration context : 
+//
+//struct FSpatialNetDriverLoadBalancingContext
+//{
+//	FSpatialNetDriverLoadBalancingContext(TArray<AActor*>& InReplicatedActors)
+//		: ReplicatedActors(InReplicatedActors)
+//	{
+//
+//	}
+//
+//	TArray<AActor*>&  GetActorsBeingReplicated()
+//	{
+//		return ReplicatedActors;
+//	}
+//
+//	void RemoveAdditionalActor(AActor* Actor)
+//	{
+//		AdditionalActorsToReplicate.Remove(Actor);
+//	}
+//
+//	void AddActorToReplicate(AActor* Actor)
+//	{
+//		AdditionalActorsToReplicate.Add(Actor);
+//	}
+//
+//	TArray<AActor*>& GetDependentActors(AActor* Actor)
+//	{
+//		return Actor->Children;
+//	}
+//
+//	void UpdateWithAdditionalActors()
+//	{
+//		for (AActor* AdditionalActor : AdditionalActorsToReplicate)
+//		{
+//			ReplicatedActors.Add(AdditionalActor);
+//		}
+//	}
+//
+//	bool IsActorReadyForMigration(AActor* Actor)
+//	{
+//		return Actor->GetIsReplicated() && Actor->HasAuthority();
+//	}
+//
+//protected:
+//
+//	TSet<AActor*> AdditionalActorsToReplicate;
+//
+//	TArray<AActor*>& ReplicatedActors;
+//};
+
 class FSpatialLoadBalancingHandler
 {
 public:
@@ -23,7 +75,7 @@ public:
 	// Iterates over the list of actors to replicate, to check if they should migrate to another worker
 	// and collects additional actors to replicate if needed.
 	template <typename ReplicationContext>
-	void HandleLoadBalancing(ReplicationContext& iCtx)
+	void EvaluateActorsToMigrate(ReplicationContext& iCtx)
 	{
 		check(NetDriver->LoadBalanceStrategy != nullptr);
 		check(NetDriver->LockingPolicy != nullptr);
@@ -32,14 +84,14 @@ public:
 		{
 			AActor* NetOwner;
 			VirtualWorkerId NewAuthWorkerId;
-			ProcessActorResult Result = ProcessSingleActor(Actor, NetOwner, NewAuthWorkerId);
+			EvaluateActorResult Result = EvaluateSingleActor(Actor, NetOwner, NewAuthWorkerId);
 			switch (Result)
 			{
-				case Migrate:
-					CollectActorsToMigrate(iCtx, NetOwner, Actor, NewAuthWorkerId);
+			case EvaluateActorResult::Migrate:
+				CollectActorsToMigrate(iCtx, NetOwner, Actor, NewAuthWorkerId);
 				break;
-				case RemoveAdditional:
-					iCtx.RemoveAdditionalActor(Actor);
+			case EvaluateActorResult::RemoveAdditional:
+				iCtx.RemoveAdditionalActor(Actor);
 				break;
 			}
 		}
@@ -54,27 +106,24 @@ public:
 	void ProcessMigrations();
 
 protected:
-	USpatialNetDriver* NetDriver;
+	
+	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
 
-	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;
+	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
 
-	void UpdateActorSpatialDebugging(AActor* Actor, Worker_EntityId EntityId) const;
-
-	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp) const;
-
-	enum ProcessActorResult
+	enum class EvaluateActorResult
 	{
-		None,								// Actor not concerned by load balancing
-		Migrate,						// Actor should migrate
-		RemoveAdditional		// Actor is already marked as migrating.
+		None,	// Actor not concerned by load balancing
+		Migrate,	// Actor should migrate
+		RemoveAdditional	// Actor is already marked as migrating.
 	};
 
-	ProcessActorResult ProcessSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
+	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
 
 	template <typename ReplicationContext>
 	void CollectActorsToMigrate(ReplicationContext& iCtx, AActor* Actor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination)
 	{
-		if (Actor->GetIsReplicated() && Actor->HasAuthority())
+		if (iCtx.IsActorReadyForMigration(Actor))
 		{
 			if(Actor != OriginalActorBeingConsidered)
 			{
@@ -88,4 +137,8 @@ protected:
 			CollectActorsToMigrate(iCtx, Child, OriginalActorBeingConsidered, Destination);
 		}
 	}
+
+	USpatialNetDriver* NetDriver;
+
+	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;
 };

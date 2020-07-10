@@ -3,6 +3,7 @@
 #include "SpatialNetDriverLoadBalancingHandler.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 
 FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
 	: NetDriver(InNetDriver)
@@ -13,35 +14,10 @@ FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USp
 
 void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 {
-	// Processing actors that we pull from actor hierarchies, in order to migrate them together.
-	// This loop is extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
 	for (auto ActorInfoIter = AdditionalActorsToReplicate.CreateIterator(); ActorInfoIter; ++ActorInfoIter)
 	{
 		FNetworkObjectInfo* ActorInfo = *ActorInfoIter;
 		AActor* Actor = ActorInfo->Actor;
-
-		if (Actor->IsPendingKillPending())
-		{
-			continue;
-		}
-
-		// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
-		if (!Actor->IsActorInitialized())
-		{
-			continue;
-		}
-
-		// Don't send actors that may still be streaming in or out
-		ULevel* Level = Actor->GetLevel();
-		if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
-		{
-			continue;
-		}
-
-		if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
-		{
-			continue;
-		}
 
 		ActorInfo->bPendingNetUpdate = false;
 
@@ -51,6 +27,55 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 		// Add it to the consider list.
 		NetworkObjects.Add(ActorInfo);
 	}
+}
+
+bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+{
+	// Basic replication and authority checks.
+	if (!Actor->GetIsReplicated()
+		|| !Actor->HasAuthority())
+	{
+		return false;
+	}
+
+	// These checks are extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
+
+	if (Actor->IsPendingKillPending())
+	{
+		return false;
+	}
+
+	// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
+	if (!Actor->IsActorInitialized())
+	{
+		return false;
+	}
+
+	// Don't send actors that may still be streaming in or out
+	ULevel* Level = Actor->GetLevel();
+	if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
+	{
+		return false;
+	}
+
+	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
+	{
+		return false;
+	}
+
+	// Additional check that the actor is seen by the spatial runtime.
+	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return false;
+	}
+
+	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 FSpatialNetDriverLoadBalancingContext::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingContext::GetActorsBeingReplicated()

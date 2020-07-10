@@ -15,26 +15,26 @@ FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* In
 
 }
 
-FSpatialLoadBalancingHandler::ProcessActorResult FSpatialLoadBalancingHandler::ProcessSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId)
+FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId)
 {
 	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		return None;
+		return EvaluateActorResult::None;
 	}
 
 	if (!Actor->HasAuthority())
 	{
-		return None;
+		return EvaluateActorResult::None;
 	}
 
-	UpdateActorSpatialDebugging(Actor, EntityId);
+	UpdateSpatialDebugInfo(Actor, EntityId);
 
 	// If this object is in the list of actors to migrate, we have already processed its hierarchy.
 	// Remove it from the additional actors to process, and continue.
 	if (ActorsToMigrate.Contains(Actor))
 	{
-		return RemoveAdditional;
+		return EvaluateActorResult::RemoveAdditional;
 	}
 
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
@@ -43,9 +43,7 @@ FSpatialLoadBalancingHandler::ProcessActorResult FSpatialLoadBalancingHandler::P
 		{
 			AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
 
-			uint64 HierarchyAuthorityReceivedTimestamp = 0;
-
-			GetLatestAuthorityChangeFromHierarchy(NetOwner, HierarchyAuthorityReceivedTimestamp);
+			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
 
 			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
 			const float MigrationBackoffTimeInSeconds = 1.0f;
@@ -56,7 +54,7 @@ FSpatialLoadBalancingHandler::ProcessActorResult FSpatialLoadBalancingHandler::P
 			}
 			else
 			{
-				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*NetOwner);
 				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
 					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
@@ -65,13 +63,13 @@ FSpatialLoadBalancingHandler::ProcessActorResult FSpatialLoadBalancingHandler::P
 				{
 					OutNetOwner = NetOwner;
 					OutWorkerId = NewAuthVirtualWorkerId;
-					return Migrate;
+					return EvaluateActorResult::Migrate;
 				}
 			}
 		}
 	}
 
-	return None;
+	return EvaluateActorResult::None;
 }
 
 void FSpatialLoadBalancingHandler::ProcessMigrations()
@@ -91,7 +89,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 	ActorsToMigrate.Empty();
 }
 
-void FSpatialLoadBalancingHandler::UpdateActorSpatialDebugging(AActor* Actor, Worker_EntityId EntityId) const
+void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
 {
 	if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
 	{
@@ -105,21 +103,21 @@ void FSpatialLoadBalancingHandler::UpdateActorSpatialDebugging(AActor* Actor, Wo
 	}
 }
 
-void FSpatialLoadBalancingHandler::GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp) const
+uint64 FSpatialLoadBalancingHandler::GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const
 {
-	if (HierarchyActor->GetIsReplicated())
+	uint64 LatestTimestamp = 0;
+	for (const AActor* Child : HierarchyActor->Children)
+	{
+		LatestTimestamp = FMath::Max(LatestTimestamp, GetLatestAuthorityChangeFromHierarchy(Child));
+	}
+
+	if (HierarchyActor->GetIsReplicated() && HierarchyActor->HasAuthority())
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
 		{
-			if (Channel->GetAuthorityReceivedTimestamp() > OutTimestamp)
-			{
-				OutTimestamp = Channel->GetAuthorityReceivedTimestamp();
-			}
+			LatestTimestamp = FMath::Max(LatestTimestamp, Channel->GetAuthorityReceivedTimestamp());
 		}
 	}
 
-	for (const AActor* Child : HierarchyActor->Children)
-	{
-		GetLatestAuthorityChangeFromHierarchy(Child, OutTimestamp);
-	}
+	return LatestTimestamp;
 }

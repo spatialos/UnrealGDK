@@ -1148,7 +1148,7 @@ struct FCompareActorPriorityAndMigration
 	{
 	}
 
-	FORCEINLINE bool operator()(const FActorPriority& A, const FActorPriority& B) const
+	bool operator()(const FActorPriority& A, const FActorPriority& B) const
 	{
 		const bool AMigrates = MigrationHandler.GetActorsToMigrate().Contains(A.ActorInfo->Actor);
 		const bool BMigrates = MigrationHandler.GetActorsToMigrate().Contains(B.ActorInfo->Actor);
@@ -1583,7 +1583,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	if (bIsMultiWorkerEnabled)
 	{
-		MigrationHandler.HandleLoadBalancing(LoadBalancingContext);
+		MigrationHandler.EvaluateActorsToMigrate(LoadBalancingContext);
 		LoadBalancingContext.UpdateWithAdditionalActors();
 	}
 

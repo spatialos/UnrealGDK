@@ -46,6 +46,8 @@ struct FSpatialNetDriverLoadBalancingContext
 
 	void UpdateWithAdditionalActors();
 
+	bool IsActorReadyForMigration(AActor*);
+
 protected:
 
 	USpatialNetDriver* NetDriver;
