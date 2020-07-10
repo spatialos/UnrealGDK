@@ -6,10 +6,10 @@
 #include "SpatialFunctionalTestWorkerDelegationComponent.h"
 
 USpatialFunctionalTestGridLBStrategy::USpatialFunctionalTestGridLBStrategy()
+	: Super()
 {
 	Rows = 2;
 	Cols = 2;
-	InterestBorder = 500.0f;
 }
 
 bool USpatialFunctionalTestGridLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
