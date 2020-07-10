@@ -1141,9 +1141,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 	return bFoundReadyConnection ? NumClientsToTick : 0;
 }
 
-struct FCompareFActorPriorityAndMigration
+struct FCompareActorPriorityAndMigration
 {
-	FCompareFActorPriorityAndMigration(FSpatialLoadBalancingHandler& InMigrationHandler)
+	FCompareActorPriorityAndMigration(FSpatialLoadBalancingHandler& InMigrationHandler)
 		: MigrationHandler(InMigrationHandler)
 	{
 	}
@@ -1265,7 +1265,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		if (MigrationHandler.GetActorsToMigrate().Num() > 0)
 		{
 			// Process actors migrating first, in order to not have them separated if they need to migrate together and replication rate limiting happens.
-			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriorityAndMigration(MigrationHandler));
+			Sort(OutPriorityActors, FinalSortedCount, FCompareActorPriorityAndMigration(MigrationHandler));
 		}
 		else
 		{
@@ -1578,7 +1578,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(WorldSettings);
 	const bool bIsMultiWorkerEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiWorkerEnabled();
 
-	//FSpatialNetDriverLoadBalancingHandler MigrationHandler(this, ConsiderList);
 	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
 
