@@ -232,6 +232,7 @@ void USpatialLatencyTracer::WriteAndEndTrace(const TraceKey Key, const FString& 
 		{
 			Trace->End();
 			TraceMap.Remove(Key);
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("MCS: Remote trace key found, ending - %s %d"), *TraceDesc, Key);
 		}
 		else if (GetWorld()->GetNetMode() != NM_Client)
 		{
