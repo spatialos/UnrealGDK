@@ -48,6 +48,9 @@ public:
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	void BindLatencyTracer(class USpatialLatencyTracer* Tracer);
+	class USpatialLatencyTracer* Tracer;
+
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
 
