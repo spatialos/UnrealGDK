@@ -368,6 +368,12 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
+
+		if (TraceSpan* Trace = TraceMap.Find(ComponentUpdate->Update.Trace))
+		{
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("MCS: Dequeue called for %d"), ComponentUpdate->Update.Trace);
+		}
+
 		WriteAndEndTrace(ComponentUpdate->Update.Trace, TEXT("Sent componentUpdate to Worker SDK"), true);
 	}
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
