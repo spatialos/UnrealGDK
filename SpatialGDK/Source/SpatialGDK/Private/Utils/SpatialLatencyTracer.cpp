@@ -340,6 +340,13 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
 		WriteToLatencyTrace(ComponentUpdate->Update.Trace, TEXT("Moved componentUpdate to Worker queue"));
+
+		FScopeLock Lock(&Mutex);
+
+		if (TraceSpan* Trace = TraceMap.Find(ComponentUpdate->Update.Trace))
+		{
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("MCS: Enqueue called for %d"), ComponentUpdate->Update.Trace);
+		}
 	}
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
 	{
