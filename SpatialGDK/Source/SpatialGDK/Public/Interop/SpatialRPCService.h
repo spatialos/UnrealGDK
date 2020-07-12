@@ -14,6 +14,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
 class USpatialLatencyTracer;
+struct FTracerInterop;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
@@ -57,7 +58,7 @@ enum class EPushRPCResult : uint8
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> SpatialLatencyTracer);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
@@ -101,7 +102,7 @@ private:
 private:
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
-	USpatialLatencyTracer* SpatialLatencyTracer;
+	TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> SpatialLatencyTracer;
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;

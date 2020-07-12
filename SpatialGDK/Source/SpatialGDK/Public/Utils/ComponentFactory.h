@@ -15,6 +15,7 @@ class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
 class USpatialLatencyTracer;
+struct FTracerInterop;
 class USpatialPackageMapClient;
 
 class UNetDriver;
@@ -28,7 +29,7 @@ namespace SpatialGDK
 class SPATIALGDK_API ComponentFactory
 {
 public:
-	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* LatencyTracer);
+	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> LatencyTracer);
 
 	TArray<FWorkerComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, uint32& OutBytesWritten);
 	TArray<FWorkerComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, uint32& OutBytesWritten);
@@ -55,7 +56,7 @@ private:
 
 	bool bInterestHasChanged;
 
-	USpatialLatencyTracer* LatencyTracer;
+	TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> LatencyTracer;
 };
 
 } // namespace SpatialGDK
