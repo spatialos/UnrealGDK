@@ -49,13 +49,6 @@ public:
 	const TArray<FString>& GetWorkerAttributes() const;
 
 	void BindLatencyTracer(class USpatialLatencyTracer* Tracer);
-	class USpatialLatencyTracer* Tracer;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnEnqueueMessage OnEnqueueMessage;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnDequeueMessage OnDequeueMessage;
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
@@ -90,4 +83,7 @@ private:
 
 	// Coordinates the async worker ops thread.
 	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
+
+	// Used to coordinate logging tracer events
+	TWeakObjectPtr<USpatialLatencyTracer> Tracer;
 };
