@@ -232,16 +232,7 @@ void USpatialLatencyTracer::WriteAndEndTrace(const TraceKey Key, const FString& 
 		{
 			Trace->End();
 			TraceMap.Remove(Key);
-			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("MCS: Remote trace key found, ending - %s %d"), *TraceDesc, Key);
 		}
-		else if (GetWorld()->GetNetMode() != NM_Client)
-		{
-			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("MCS: Trace key not found in root map during end call - %s %d"), *TraceDesc, Key);
-		}
-	}
-	else if (Key != InvalidTraceKey)
-	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("MCS: Trace key not found in map during end call - %s %d"), *TraceDesc, Key);
 	}
 }
 
@@ -562,7 +553,6 @@ void USpatialLatencyTracer::ResolveKeyInLatencyPayload(FSpatialLatencyPayload& P
 		const TraceKey& Key = TracePair.Key;
 		const TraceSpan& Span = TracePair.Value;
 
-		check(sizeof(improbable::trace::TraceId) == Payload.TraceId.Num());
 		if (memcmp(Span.context().trace_id().data(), Payload.TraceId.GetData(), Payload.TraceId.Num()) == 0)
 		{
 			WriteKeyFrameToTrace(&Span, TEXT("Local Trace - Payload Obj Read"));

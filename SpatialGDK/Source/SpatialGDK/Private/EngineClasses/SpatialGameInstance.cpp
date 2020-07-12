@@ -127,6 +127,15 @@ void USpatialGameInstance::StartSpatialConnection()
 		TryInjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
+		// This needs to be done after UGameInstance::Init() is called where SpatialWorkerType is set
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 }
 
 void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
@@ -207,15 +216,6 @@ void USpatialGameInstance::Init()
 	{
 		FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 	}
-#if TRACE_LIB_ACTIVE
-	else
-	{
-		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		// This needs to be done after UGameInstance::Init() is called where SpatialWorkerType is set
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
-		SpatialLatencyTracer->SetWorkerId(WorkerName);
-	}
-#endif
 }
 
 void USpatialGameInstance::HandleOnConnected()
