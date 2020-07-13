@@ -19,7 +19,7 @@
  * - Setup:
  *   - The Server spawns 4 CubeWithReferences objects and sets up their references.
  * - Test:
- *	 - The test contains 2 runs of the same flow: Client 1 moves its character to 6 specific locations and, after arriving at each location, it checks that:
+ *	 - The test contains 2 runs of the same flow: Client 1 moves its character to 4 specific locations and, after arriving at each location, it checks that:
  *			1) The correct amount of cubes are present in the world, based on the default NetCullDistanceSquared of the PlayerController.
  *			2) The references to the replicated actors are correct.
  * - Clean-up:
