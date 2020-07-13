@@ -44,9 +44,15 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 	{  // Step 2 - Wait 5 seconds allow characters to transition to new workers
 
 		// Setup timer for next step
-		double endTime = FPlatformTime::Seconds() + 5;
+		double endTime; 
+		bool startedTimer = false;
 
-	   AddServerStep(TEXT("SERVER__1_Wait_5_Seconds"), 1, [endTime](ASpatialFunctionalTest* NetTest) -> bool {
+	   AddServerStep(TEXT("SERVER__1_Wait_5_Seconds"), 1, [startedTimer, endTime](ASpatialFunctionalTest* NetTest) mutable -> bool {
+		   if (!startedTimer)
+		    {
+			   endTime = FPlatformTime::Seconds() + 5;
+			   startedTimer = true;
+		    }
 		    double currentTime = FPlatformTime::Seconds();
 			
 			return (currentTime > endTime);

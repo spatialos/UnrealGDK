@@ -132,9 +132,12 @@ public:
 	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"), Category = "Spatial Functional Test")
 	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
 
+	virtual void GatherRelevantActors(TArray<AActor*>& OutActors) const override;
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 	int GetNumExpectedServers() const { return NumExpectedServers; }
+	void DeleteActorsRegisteredForAutoDestroy();
 
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
@@ -168,12 +171,6 @@ private:
 
 	void SetupClientPlayerRegistrationFlow();
 
-	UFUNCTION(CrossServer, Reliable)
-	void CrossServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
-
-	UFUNCTION(Server, Reliable)
-	void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
-
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastAutoDestroyActors(const TArray<AActor*>& ActorsToDestroy);
+	void MulticastAutoDestroyActors();
 };
