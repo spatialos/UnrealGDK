@@ -100,6 +100,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static void Debug_SendTestTrace();
 
+	void SetWorkerId(const FString& NewWorkerId);
+	void ResetWorkerId();
+
 	// Thread-safe tracer data
-	SpatialGDK::TracerSharedPtr TracerInterop;
+	SpatialGDK::TracerSharedPtr Tracer;
 };

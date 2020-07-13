@@ -133,7 +133,7 @@ void USpatialGameInstance::StartSpatialConnection()
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
 		// This needs to be done after UGameInstance::Init() is called where SpatialWorkerType is set
 		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
-		SpatialLatencyTracer->GetTracer()->SetWorkerId(WorkerName);
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
 }
@@ -223,7 +223,7 @@ void USpatialGameInstance::HandleOnConnected()
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
 #if TRACE_LIB_ACTIVE
-	SpatialLatencyTracer->GetTracer()->SetWorkerId(SpatialWorkerId);
+	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
 
 	USpatialWorkerConnection* WorkerConnection = SpatialConnectionManager->GetWorkerConnection();
 	WorkerConnection->BindLatencyTracer(SpatialLatencyTracer->GetTracer());
@@ -251,7 +251,7 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 #if TRACE_LIB_ACTIVE
-	SpatialLatencyTracer->GetTracer()->ResetWorkerId();
+	SpatialLatencyTracer->ResetWorkerId();
 #endif
 	OnSpatialConnectionFailed.Broadcast(Reason);
 }
