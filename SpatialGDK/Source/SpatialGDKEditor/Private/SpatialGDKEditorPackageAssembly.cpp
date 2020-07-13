@@ -153,11 +153,11 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 			ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 			if (Status == EPackageAssemblyStatus::ASSEMBLY_EXISTS)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Assembly_Exists", "The assembly with the specified name has previously been uploaded. Enable the 'Force Overwrite on Upload' option in the Cloud Deployment dialog to overwrite the existing assembly or specify a different assembly name."));
+				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("AssemblyExists_Error", "The assembly with the specified name has previously been uploaded. Enable the 'Force Overwrite on Upload' option in the Cloud Deployment dialog to overwrite the existing assembly or specify a different assembly name."));
 			}
 			else if (Status == EPackageAssemblyStatus::BAD_PROJECT_NAME)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("Bad_Project_Name", "The project name appears to be incorrect or you do not have permissions for this project. You can edit the project name from the Cloud Deployment dialog."));
+				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("BadProjectName_Error", "The project name appears to be incorrect or you do not have permissions for this project. You can edit the project name from the Cloud Deployment dialog."));
 			}
 			else if (Status == EPackageAssemblyStatus::NONE)
 			{
@@ -208,7 +208,7 @@ void FSpatialGDKPackageAssembly::ShowTaskStartedNotification(const FString& Noti
 	Info.ButtonDetails.Add(
 		FNotificationButtonInfo(
 			LOCTEXT("PackageAssemblyTaskCancel", "Cancel"),
-			LOCTEXT("PackageAssemblyTaskCancelToolTip", "Cancels execution of this task."),
+			LOCTEXT("PackageAssemblyTaskCancel_ToolTip", "Cancels execution of this task."),
 			FSimpleDelegate::CreateRaw(this, &FSpatialGDKPackageAssembly::HandleCancelButtonClicked),
 			SNotificationItem::CS_Pending
 		)
