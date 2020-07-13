@@ -51,142 +51,14 @@ namespace
 #endif
 }  // anonymous namespace
 
-USpatialLatencyTracer::USpatialLatencyTracer()
-{
 #if TRACE_LIB_ACTIVE
-	TracerInterop = MakeShared<FTracerInterop, ESPMode::ThreadSafe>();
-#endif
-}
-
-void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
+namespace SpatialGDK
 {
-#if TRACE_LIB_ACTIVE
-	using namespace improbable::exporters::trace;
-
-	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
-
-	if (UE_GET_LOG_VERBOSITY(LogSpatialLatencyTracing) >= ELogVerbosity::Verbose)
-	{
-		std::cout.rdbuf(&UStream);
-		std::cerr.rdbuf(&UStream);
-
-		StdoutExporter::Register();
-	}
-#endif // TRACE_LIB_ACTIVE
-}
-
-bool USpatialLatencyTracer::SetTraceMetadata(UObject* WorldContextObject, const FString& NewTraceMetadata)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		Tracer->TraceMetadata = NewTraceMetadata;
-		return true;
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->BeginLatencyTrace_Internal(TraceDesc, OutLatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::ContinueLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, FunctionName, ETraceType::RPC, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& PropertyName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, PropertyName, ETraceType::Property, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, Tag, ETraceType::Tagged, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::EndLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->EndLatencyTrace_Internal(LatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-FSpatialLatencyPayload USpatialLatencyTracer::RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag)
-{
-#if TRACE_LIB_ACTIVE
-	if (auto Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->RetrievePayload_Internal(Actor, Tag);
-	}
-#endif
-	return FSpatialLatencyPayload{};
-}
-
-TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> USpatialLatencyTracer::GetTracer(UObject* WorldContextObject)
-{
-#if TRACE_LIB_ACTIVE
-	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
-	if (World == nullptr)
-	{
-		World = GWorld;
-	}
-
-	if (USpatialGameInstance* GameInstance = World->GetGameInstance<USpatialGameInstance>())
-	{
-		return GameInstance->GetSpatialLatencyTracer()->TracerInterop;
-	}
-#endif
-	return nullptr;
-}
-
-TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> USpatialLatencyTracer::GetTracer()
-{
-	return TracerInterop;
-}
-
-#if TRACE_LIB_ACTIVE
 
 FTracerInterop::FTracerInterop()
 {
 	ResetWorkerId();
 	FParse::Value(FCommandLine::Get(), TEXT("traceMetadata"), TraceMetadata);
-}
-
-bool FTracerInterop::IsValidKey(const TraceKey Key)
-{
-	FScopeLock Lock(&Mutex);
-	return (TraceMap.Find(Key) != nullptr);
 }
 
 TraceKey FTracerInterop::RetrievePendingTrace(const UObject* Obj, const UFunction* Function)
@@ -606,8 +478,132 @@ FString FTracerInterop::FormatMessage(const FString& Message, bool bIncludeMetad
 		return FString::Printf(TEXT("%s (%s)"), *Message, *WorkerId.Left(18));
 	}
 }
-
+} // namespace SpatialGDK
 #endif // TRACE_LIB_ACTIVE
+
+USpatialLatencyTracer::USpatialLatencyTracer()
+{
+#if TRACE_LIB_ACTIVE
+	TracerInterop = MakeShared<SpatialGDK::FTracerInterop, ESPMode::ThreadSafe>();
+#endif
+}
+
+void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
+{
+#if TRACE_LIB_ACTIVE
+	using namespace improbable::exporters::trace;
+
+	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
+
+	if (UE_GET_LOG_VERBOSITY(LogSpatialLatencyTracing) >= ELogVerbosity::Verbose)
+	{
+		std::cout.rdbuf(&UStream);
+		std::cerr.rdbuf(&UStream);
+
+		StdoutExporter::Register();
+	}
+#endif // TRACE_LIB_ACTIVE
+}
+
+bool USpatialLatencyTracer::SetTraceMetadata(UObject* WorldContextObject, const FString& NewTraceMetadata)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		Tracer->TraceMetadata = NewTraceMetadata;
+		return true;
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
+bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->BeginLatencyTrace_Internal(TraceDesc, OutLatencyPayload);
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
+bool USpatialLatencyTracer::ContinueLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->ContinueLatencyTrace_Internal(Actor, FunctionName, ETraceType::RPC, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
+bool USpatialLatencyTracer::ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& PropertyName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->ContinueLatencyTrace_Internal(Actor, PropertyName, ETraceType::Property, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
+bool USpatialLatencyTracer::ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->ContinueLatencyTrace_Internal(Actor, Tag, ETraceType::Tagged, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
+bool USpatialLatencyTracer::EndLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayload)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->EndLatencyTrace_Internal(LatencyPayload);
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
+FSpatialLatencyPayload USpatialLatencyTracer::RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag)
+{
+#if TRACE_LIB_ACTIVE
+	if (auto Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->RetrievePayload_Internal(Actor, Tag);
+	}
+#endif
+	return FSpatialLatencyPayload{};
+}
+
+SpatialGDK::TracerSharedPtr USpatialLatencyTracer::GetTracer(UObject* WorldContextObject)
+{
+#if TRACE_LIB_ACTIVE
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
+	if (World == nullptr)
+	{
+		World = GWorld;
+	}
+
+	if (USpatialGameInstance* GameInstance = World->GetGameInstance<USpatialGameInstance>())
+	{
+		return GameInstance->GetSpatialLatencyTracer()->TracerInterop;
+	}
+#endif
+	return nullptr;
+}
+
+SpatialGDK::TracerSharedPtr USpatialLatencyTracer::GetTracer()
+{
+	return TracerInterop;
+}
 
 void USpatialLatencyTracer::Debug_SendTestTrace()
 {

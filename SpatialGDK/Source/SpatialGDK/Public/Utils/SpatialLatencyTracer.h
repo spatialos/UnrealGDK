@@ -21,11 +21,6 @@ class AActor;
 class UFunction;
 class USpatialGameInstance;
 
-namespace SpatialGDK
-{
-	struct FOutgoingMessage;
-}  // namespace SpatialGDK
-
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
 **/
@@ -40,6 +35,9 @@ namespace ETraceType
 	};
 }
 
+namespace SpatialGDK
+{
+struct FOutgoingMessage;
 
 struct FTracerInterop
 {
@@ -51,7 +49,6 @@ public:
 
 	FTracerInterop();
 
-	bool IsValidKey(TraceKey Key);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
@@ -105,6 +102,10 @@ private:
 
 #endif // TRACE_LIB_ACTIVE
 };
+
+using TracerSharedPtr = TSharedPtr<FTracerInterop, ESPMode::ThreadSafe>;
+
+}  // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialLatencyTracer : public UObject
@@ -187,12 +188,12 @@ public:
 	static FSpatialLatencyPayload RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag);
 
 	// Internal GDK usage, shouldn't be used by game code
-	static TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> GetTracer(UObject* WorldContextObject);
-	TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> GetTracer();
+	static SpatialGDK::TracerSharedPtr GetTracer(UObject* WorldContextObject);
+	SpatialGDK::TracerSharedPtr GetTracer();
 
 	// Used for testing trace functionality, will send a debug trace in three parts from this worker
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static void Debug_SendTestTrace();
 
-	TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> TracerInterop;
+	SpatialGDK::TracerSharedPtr TracerInterop;
 };

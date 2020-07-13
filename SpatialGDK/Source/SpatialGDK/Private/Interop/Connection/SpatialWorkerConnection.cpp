@@ -163,7 +163,7 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return CachedWorkerAttributes;
 }
 
-void USpatialWorkerConnection::BindLatencyTracer(TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> InTracer)
+void USpatialWorkerConnection::BindLatencyTracer(SpatialGDK::TracerSharedPtr InTracer)
 {
 #if TRACE_LIB_ACTIVE
 	Tracer = InTracer;

@@ -58,7 +58,7 @@ enum class EPushRPCResult : uint8
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> SpatialLatencyTracer);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, SpatialGDK::TracerSharedPtr SpatialLatencyTracer);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
@@ -102,7 +102,7 @@ private:
 private:
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
-	TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> SpatialLatencyTracer;
+	SpatialGDK::TracerSharedPtr SpatialLatencyTracer;
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;

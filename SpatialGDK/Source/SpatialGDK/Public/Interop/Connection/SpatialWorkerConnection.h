@@ -48,7 +48,7 @@ public:
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void BindLatencyTracer(TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> Tracer);
+	void BindLatencyTracer(SpatialGDK::TracerSharedPtr Tracer);
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
@@ -85,5 +85,5 @@ private:
 	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
 
 	// Used to coordinate logging tracer events
-	TSharedPtr<FTracerInterop, ESPMode::ThreadSafe> Tracer;
+	SpatialGDK::TracerSharedPtr Tracer;
 };
