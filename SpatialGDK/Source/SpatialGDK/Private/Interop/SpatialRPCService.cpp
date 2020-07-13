@@ -468,7 +468,7 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 			return;
 		}
 
-		*LastAckedRPCId++;
+		(*LastAckedRPCId)++;
 	}
 	else
 	{
@@ -481,7 +481,7 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 			return;
 		}
 
-		*LastAckedRPCId++;
+		(*LastAckedRPCId)++;
 
 		const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
 		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
