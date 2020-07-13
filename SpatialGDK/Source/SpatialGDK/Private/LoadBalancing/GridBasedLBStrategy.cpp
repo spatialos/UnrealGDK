@@ -21,9 +21,9 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 {
 }
 
-void UGridBasedLBStrategy::Init()
+void UGridBasedLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings)
 {
-	Super::Init();
+	Super::Init(MultiWorkerSettings);
 
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 

@@ -9,6 +9,7 @@
 #include "Utils/SpatialActorUtils.h"
 
 #include "Templates/Tuple.h"
+#include "Containers/Map.h"
 
 DEFINE_LOG_CATEGORY(LogLayeredLBStrategy);
 
@@ -17,25 +18,14 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
-void ULayeredLBStrategy::Init(USpatialMultiWorkerSettings* InMultiWorkerSettings)
+void ULayeredLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings)
 {
-	MultiWorkerSettings = InMultiWorkerSettings;
+	Super::Init(MultiWorkerSettings);
 
-	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
-
-	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
-	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
-
-	if (!bIsMultiWorkerEnabled)
-	{
-		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Either multiworker settings are not set or EnableMultiWorker is unset. Creating LBStrategy for the Default Layer"));
-		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
-		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
-		return;
-	}
+	check(MultiWorkerSettings.WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const TPair<FName, FLayerInfo>& Layer : MultiWorkerSettings->WorkerLayers)
+	for (const TPair<FName, FLayerInfo>& Layer : MultiWorkerSettings.WorkerLayers)
 	{
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
@@ -61,28 +51,28 @@ void ULayeredLBStrategy::Init(USpatialMultiWorkerSettings* InMultiWorkerSettings
 		}
 	}
 
-	// Finally, add the default layer.
-	UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
-	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy = MultiWorkerSettings->DefaultLayerLoadBalanceStrategy;
-	if (*DefaultLayerLoadBalanceStrategy == nullptr)
-	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
-		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
-	}
-	else
-	{
-		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, DefaultLayerLoadBalanceStrategy);
-		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+	//// Finally, add the default layer.
+	//UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for the Default Layer."));
+	//TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy = MultiWorkerSettings->DefaultLayerLoadBalanceStrategy;
+	//if (*DefaultLayerLoadBalanceStrategy == nullptr)
+	//{
+	//	UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+	//	UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
+	//	AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+	//}
+	//else
+	//{
+	//	UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, DefaultLayerLoadBalanceStrategy);
+	//	AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 
-		// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with
-		// some parts of the hierarchy on different layers. This provides a way to specify that.
-		for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->ExplicitDefaultActorClasses)
-		{
-			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr.GetAssetName());
-			ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
-		}
-	}
+	//	// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with
+	//	// some parts of the hierarchy on different layers. This provides a way to specify that.
+	//	for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->ExplicitDefaultActorClasses)
+	//	{
+	//		UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr.GetAssetName());
+	//		ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
+	//	}
+	//}
 }
 
 void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)

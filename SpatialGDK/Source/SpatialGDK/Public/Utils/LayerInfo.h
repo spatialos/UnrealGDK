@@ -18,6 +18,11 @@ struct FLayerInfo
 	{
 	}
 
+	FLayerInfo(FName InName, TSet<TSoftClassPtr<AActor>> InActorClasses, TSubclassOf<UAbstractLBStrategy> InLoadBalanceStrategy)
+		: Name(InName)
+		, ActorClasses(InActorClasses)
+		, LoadBalanceStrategy(InLoadBalanceStrategy) {}
+
 	UPROPERTY()
 	FName Name;
 

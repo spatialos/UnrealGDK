@@ -424,14 +424,24 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
-	// Check for CLI overriden multiworker settings
+	const UWorld* World = GetWorld();
+	check(World != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+	check(WorldSettings != nullptr);
+
+	const bool bIsMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
+
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = *WorldSettings->MultiWorkerSettingsClass != nullptr ?
+        *WorldSettings->MultiWorkerSettingsClass :
+        USpatialMultiWorkerSettings::StaticClass();
+
+	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
 
 	if (IsServer())
 	{
 		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
-		LoadBalanceStrategy->Init();
+		LoadBalanceStrategy->Init(*MultiWorkerSettings);
 		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 	}
 
@@ -441,19 +451,18 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 		if (!bIsMultiWorkerEnabled)
 		{
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
-		else if (*WorldSettings->GetDefaultLayerLockingPolicyClass() == nullptr)
+		else if (MultiWorkerSettings->LockingPolicy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->GetDefaultLayerLockingPolicyClass());
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, MultiWorkerSettings->LockingPolicy);
 		}
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 	}

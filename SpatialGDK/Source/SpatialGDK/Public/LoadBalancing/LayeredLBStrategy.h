@@ -4,8 +4,9 @@
 
 #include "LoadBalancing/AbstractLBStrategy.h"
 
+#include "Utils/LayerInfo.h"
+
 #include "CoreMinimal.h"
-#include "LayerInfo.h"
 #include "Math/Box2D.h"
 #include "Math/Vector2D.h"
 
@@ -13,27 +14,9 @@
 
 class SpatialVirtualWorkerTranslator;
 class UAbstractLockingPolicy;
+class UAbstractSpatialMultiWorkerSettings;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLayeredLBStrategy, Log, All)
-
-USTRUCT()
-struct FLBLayerInfo
-{
-	GENERATED_BODY()
-
-	FLBLayerInfo() : Name(NAME_None)
-	{
-	}
-
-	UPROPERTY()
-	FName Name;
-
-	UPROPERTY(EditAnywhere, Category = "Load Balancing")
-	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Category = "Load Balancing")
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
-};
 
 /**
  * A load balancing strategy that wraps multiple LBStrategies. The user can define "Layers" of work, which are
@@ -50,7 +33,7 @@ public:
 	ULayeredLBStrategy();
 
 	/* UAbstractLBStrategy Interface */
-	virtual void Init(const USpatialMultiWorkerSettings* MultiWorkerSettings) override;
+	virtual void Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings) override;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -86,9 +69,6 @@ private:
 
 	UPROPERTY()
 	TMap<FName, UAbstractLBStrategy*> LayerNameToLBStrategy;
-
-	UPROPERTY()
-	USpatialMultiWorkerSettings* MultiWorkerSettings;
 
 	// Returns the name of the first Layer that contains this, or a parent of this class,
 	// or the default actor group, if no mapping is found.
