@@ -209,7 +209,7 @@ void ASpatialFunctionalTest::RemoveActorDelegation_Implementation(AActor* Actor)
 	if (DelegationInterface != nullptr)
 	{
 		bool bRemovedDelegation = DelegationInterface->RemoveActorDelegation(Actor);
-		ensureMsgf(bRemovedDelegation, TEXT("Tried to remove Delegation from Actor %s but couldn't"), *Actor->GetName());
+		ensureMsgf(bRemovedDelegation, TEXT("Tried to remove Delegation from Actor %s but couldn't"), *GetNameSafe(Actor));
 	}
 }
 
