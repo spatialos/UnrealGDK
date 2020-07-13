@@ -55,6 +55,7 @@
 
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
+using SpatialGDK::AppendAllOpsOfType;
 using SpatialGDK::FindFirstOpOfTypeForComponent;
 using SpatialGDK::InterestFactory;
 using SpatialGDK::RPCPayload;
@@ -2399,13 +2400,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 {
 	TArray<Worker_Op*> FoundOps;
 
-	Worker_Op* EntityQueryResponseOp = nullptr;
-	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &EntityQueryResponseOp);
-
-	if (EntityQueryResponseOp != nullptr)
-	{
-		FoundOps.Add(EntityQueryResponseOp);
-	}
+	AppendAllOpsOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, FoundOps);
 
 	// To correctly initialize the ServerWorkerEntity on each server during op queueing, we need to catch several ops here.
 	// Note that this will break if any other CreateEntity requests are issued during the startup flow.
@@ -2573,7 +2568,12 @@ void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
-	check(SpatialMetricsDisplay == nullptr);
+	check(!IsServer());
+	if (SpatialMetricsDisplay != nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialMetricsDisplay should only be set once on each client!"));
+		return;
+	}
 	SpatialMetricsDisplay = InSpatialMetricsDisplay;
 }
 

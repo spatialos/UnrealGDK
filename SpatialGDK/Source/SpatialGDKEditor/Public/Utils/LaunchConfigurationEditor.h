@@ -8,6 +8,7 @@
 #include "LaunchConfigurationEditor.generated.h"
 
 class ULaunchConfigurationEditor;
+class SWindow;
 
 DECLARE_DELEGATE_OneParam(FOnSpatialOSLaunchConfigurationSaved, const FString&)
 

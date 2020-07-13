@@ -17,7 +17,7 @@
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
-#define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
+#define LOCTEXT_NAMESPACE "SpatialGDKEditorSettings"
 
 const FString& FRuntimeVariantVersion::GetVersionForLocal() const
 {
@@ -56,6 +56,9 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
+	, bConnectServerToCloud(false)
+	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
+	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bPackageMobileCommandLineArgs(false)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
@@ -108,7 +111,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	{
 		if (!USpatialGDKEditorSettings::IsValidIP(ExposedRuntimeIP))
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Please input a valid IP address.")));
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("InputValidIP_Prompt", "Please input a valid IP address."));
 			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid IP address: %s"), *ExposedRuntimeIP);
 			// Reset IP to empty instead of keeping the invalid value.
 			SetExposedRuntimeIP(TEXT(""));
@@ -266,6 +269,12 @@ void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetConnectServerToCloud(bool bIsEnabled)
+{
+	bConnectServerToCloud = bIsEnabled;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetGenerateSchema(bool bGenerate)
 {
 	bGenerateSchema = bGenerate;
@@ -380,17 +389,17 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	bool bValid = true;
 	if (!IsProjectNameValid(FSpatialGDKServicesModule::GetProjectName()))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsAssemblyNameValid(AssemblyName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsDeploymentNameValid(PrimaryDeploymentName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
@@ -413,7 +422,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	{
 		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
 			bValid = false;
 		}
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
@@ -517,3 +526,5 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 		}
 	}
 }
+
+#undef LOCTEXT_NAMESPACE

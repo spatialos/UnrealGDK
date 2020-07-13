@@ -531,6 +531,8 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 	int Count = GetPropertyCount(Object, FieldId, Property->Inner);
 	ArrayHelper.Resize(Count);
 
+	ArrayObjectReferences->Empty(Count);
+
 	for (int i = 0; i < Count; i++)
 	{
 		int32 ElementOffset = i * Property->Inner->ElementSize;

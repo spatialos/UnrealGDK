@@ -14,6 +14,8 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
 
+#define LOCTEXT_NAMESPACE "SpatialLaunchConfigurationEditor"
+
 void ULaunchConfigurationEditor::PostInitProperties()
 {
 	Super::PostInitProperties();
@@ -159,7 +161,7 @@ void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWin
 	}
 
 	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(FText::FromString(TEXT("Launch Configuration Editor")))
+		.Title(LOCTEXT("LaunchConfigurationEditor_Title", "Launch Configuration Editor"))
 		.ClientSize(FVector2D(600, 400))
 		[
 			SNew(SBorder)
@@ -189,3 +191,5 @@ void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWin
 		FSlateApplication::Get().AddModalWindow(NewSlateWindow, nullptr);
 	}
 }
+
+#undef LOCTEXT_NAMESPACE
