@@ -10,17 +10,18 @@
 /**
  * This test automates the Net Reference Test gym, which tested that references to replicated actors are stable when actors go in and out of relevance.
  * This test also adds an interest check on top of the previously mentioned Gym.
- * NOTE: This test requires a specific GameMode, PlayerController and Map, trying to run this test on a different Map than SpatialTestNetReferenceMap will result in the test failing.
+ * NOTE: This test requires a specific GameMode, trying to run this test on a different GameMode other than SpatialTestNetReferenceGameMode will result in the test failing.
  * 
  * The test includes a single server and two client workers. For performance considerations, the only client that is executing the test is Client 1.
  * The flow is as follows:
  * - Setup:
- *   - The majority of the setup is done in the map itself, that is placing 4 CubeWithReferences objects and correctly setting their locations and references.
+ *   - The Server spawns 4 CubeWithReferences objects and sets up their references.
  * - Test:
  *	 - The test contains 2 runs of the same flow: Client 1 moves its character to 6 specific locations and, after arriving at each location, it checks that:
  *			1) The correct amount of cubes are present in the world, based on the default NetCullDistanceSquared of the PlayerController.
  *			2) The references to the replicated actors are correct.
  * - Clean-up:
+ *	- The Server destroys the previously spawned CubeWithReferences
  *  - The test variables are reset before the test finishes so that it can be ran multiple times.
  */
 
@@ -44,6 +45,34 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 void ASpatialTestNetReference::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AddServerStep(TEXT("SpatialTestNetReferenceServerSetup"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		// Set up the cubes' spawn locations
+		TArray<FVector> CubeLocations;
+		CubeLocations.Add(FVector(10000.0f, -10000.0f, 40.0f));
+		CubeLocations.Add(FVector(10000.0f, 10000.0f, 40.0f));
+		CubeLocations.Add(FVector(-10000.0f, 10000.0f, 40.0f));
+		CubeLocations.Add(FVector(-10000.0f, -10000.0f, 40.0f));
+
+		// Spawn the cubes
+		TArray<ACubeWithReferences*> TestCubes;
+		int NumberOfCubes = CubeLocations.Num();
+
+		for (int i = 0; i < NumberOfCubes; ++i)
+		{
+			ACubeWithReferences* CubeWithReferences = NetTest->GetWorld()->SpawnActor<ACubeWithReferences>(CubeLocations[i], FRotator::ZeroRotator, FActorSpawnParameters());
+			TestCubes.Add(CubeWithReferences);
+		}
+
+		// Set the cubes' references
+		for (int i = 0; i < NumberOfCubes; ++i)
+		{
+			TestCubes[i]->Neighbour1 = TestCubes[(i + 1) % NumberOfCubes];
+			TestCubes[i]->Neighbour2 = TestCubes[(i + NumberOfCubes -1) % NumberOfCubes];
+		}
+
+		NetTest->FinishStep();
+		});
 
 	AddClientStep(TEXT("SpatialTestNetReferenceClientExecuteTest"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 		ASpatialTestNetReference* Test = Cast<ASpatialTestNetReference>(NetTest);
@@ -132,5 +161,18 @@ void ASpatialTestNetReference::BeginPlay()
 				Test->FinishStep();
 			}
 		}
+	});
+
+	AddServerStep(TEXT("SpatialTestNetReferenceServerCleanup"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		// Destroy the previously spawned cubes
+		TArray<AActor*> SpawnedCubes;
+		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ACubeWithReferences::StaticClass(), SpawnedCubes);
+
+		for (AActor* CubeToDestroy : SpawnedCubes)
+		{
+			CubeToDestroy->Destroy();
+		}
+
+		NetTest->FinishStep();
 	});
 }
