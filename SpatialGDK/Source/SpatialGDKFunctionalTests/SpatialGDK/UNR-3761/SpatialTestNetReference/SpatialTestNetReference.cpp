@@ -6,6 +6,8 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMovement/TestMovementCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "CubeWithReferences.h"
+#include "SpatialGDKSettings.h"
+
 
 /**
  * This test automates the Net Reference Test gym, which tested that references to replicated actors are stable when actors go in and out of relevance.
@@ -69,6 +71,10 @@ void ASpatialTestNetReference::BeginPlay()
 			TestCubes[i]->Neighbour2 = TestCubes[(i + NumberOfCubes -1) % NumberOfCubes];
 		}
 
+		// Set the PositionUpdateFrequency to a higher value so that the amount of waiting time before checking the references can be smaller, decreasing the overall duration of the test
+		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
+		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
+
 		NetTest->FinishStep();
 		});
 
@@ -90,11 +96,12 @@ void ASpatialTestNetReference::BeginPlay()
 		if (PlayerCharacter->GetActorLocation().Equals(Test->TestLocations[CurrentMoveIndex].Key, 0.25f))
 		{
 			// Wait for a second as it may take some time for the references to be updated correctly
-			if (Test->TimerHelper < 1.0f)
+			if (Test->TimerHelper < 0.1f)
 			{
 				Test->TimerHelper += DeltaTime;
 				return;
 			}
+
 
 			// Reset the timer so that it can be used for the next move
 			Test->TimerHelper = 0.0f;
@@ -170,6 +177,10 @@ void ASpatialTestNetReference::BeginPlay()
 		{
 			CubeToDestroy->Destroy();
 		}
+
+		// Reset the PositionUpdateFrequency
+		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 1.0f;
+		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
 		NetTest->FinishStep();
 	});
