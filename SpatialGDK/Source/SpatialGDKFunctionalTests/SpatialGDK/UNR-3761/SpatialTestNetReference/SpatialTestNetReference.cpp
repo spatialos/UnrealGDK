@@ -34,12 +34,10 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 	LocationIndex = 0;
 	TimerHelper = 0.0f;
 
-	TestLocations.Add(TPair<FVector, int> (FVector(-15000.0f, -15000.0f, 40.0f), 1));
-	TestLocations.Add(TPair<FVector, int> (FVector(0.0f, -15000.0f, 40.0f), 2));
+	TestLocations.Add(TPair<FVector, int> (FVector(0.0f, -15000.0f, 40.0f), 1));
+	TestLocations.Add(TPair<FVector, int>(FVector(5000.0f, -5000.0f, 40.0f), 2));
+	TestLocations.Add(TPair<FVector, int>(FVector(5000.0f, 1000.0f, 40.0f), 3));
 	TestLocations.Add(TPair<FVector, int> (FVector(0.0f, 0.0f, 40.0f), 4));
-	TestLocations.Add(TPair<FVector, int> (FVector(-15000.0f, 0.0f, 40.0f), 2));
-	TestLocations.Add(TPair<FVector, int> (FVector(-15000.0f, 15000.0f, 40.0f), 1));
-	TestLocations.Add(TPair<FVector, int> (FVector(0.0f, 15000.0f, 40.0f), 2));
 }
 
 void ASpatialTestNetReference::BeginPlay()
@@ -49,10 +47,10 @@ void ASpatialTestNetReference::BeginPlay()
 	AddServerStep(TEXT("SpatialTestNetReferenceServerSetup"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
 		// Set up the cubes' spawn locations
 		TArray<FVector> CubeLocations;
-		CubeLocations.Add(FVector(10000.0f, -10000.0f, 40.0f));
-		CubeLocations.Add(FVector(10000.0f, 10000.0f, 40.0f));
-		CubeLocations.Add(FVector(-10000.0f, 10000.0f, 40.0f));
-		CubeLocations.Add(FVector(-10000.0f, -10000.0f, 40.0f));
+		CubeLocations.Add(FVector(0.0f, -10000.0f, 40.0f));
+		CubeLocations.Add(FVector(10000.0f, 0.0f, 40.0f));
+		CubeLocations.Add(FVector(0.0f, 10000.0f, 40.0f));
+		CubeLocations.Add(FVector(-10000.0f, 0.0f, 40.0f));
 
 		// Spawn the cubes
 		TArray<ACubeWithReferences*> TestCubes;
