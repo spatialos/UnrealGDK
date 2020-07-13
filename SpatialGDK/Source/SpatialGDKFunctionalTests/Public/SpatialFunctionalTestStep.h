@@ -36,9 +36,9 @@ struct FWorkerDefinition
 	UPROPERTY(BlueprintReadWrite, Category="Spatial Functional Test")
 	ESpatialFunctionalTestFlowControllerType ControllerType;
 	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
-	int32 WorkerId;
+	int WorkerId;
 
-	static const int32 ALL_WORKERS_ID = 0;
+	static const int ALL_WORKERS_ID = 0;
 };
 
 USTRUCT(BlueprintType)
