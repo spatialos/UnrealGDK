@@ -629,7 +629,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueCommand::ContinueProcessing };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueCommand::DropEntireQueue };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -643,7 +643,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 	if (Channel == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueCommand::ContinueProcessing };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueCommand::DropEntireQueue };
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
@@ -736,10 +736,10 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 	{
-		ERPCQueueCommand QueueCommand = ERPCQueueCommand::ContinueProcessing;
+		ERPCQueueCommand QueueCommand = ERPCQueueCommand::DropEntireQueue;
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
-			if (!WillHaveAuthorityOverActor(TargetActor, TargetObjectRef.Entity))
+			if (WillHaveAuthorityOverActor(TargetActor, TargetObjectRef.Entity))
 			{
 				QueueCommand = ERPCQueueCommand::StopProcessing;
 			}

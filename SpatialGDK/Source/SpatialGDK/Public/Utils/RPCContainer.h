@@ -69,7 +69,7 @@ struct FRPCErrorInfo
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
-	ERPCQueueCommand QueueCommand = ERPCQueueCommand::ContinueProcessing;
+	ERPCQueueCommand QueueCommand = ERPCQueueCommand::StopProcessing;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
