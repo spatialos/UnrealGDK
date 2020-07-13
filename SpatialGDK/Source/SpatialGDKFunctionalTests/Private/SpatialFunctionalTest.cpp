@@ -198,7 +198,7 @@ void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, ui
 	if (DelegationInterface != nullptr)
 	{
 		bool bAddedDelegation = DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished);
-		ensureMsgf(bAddedDelegation, TEXT("Tried to delegate Actor %s to Server Worker %d but couldn't"), *Actor->GetName(), ServerWorkerId);
+		ensureMsgf(bAddedDelegation, TEXT("Tried to delegate Actor %s to Server Worker %d but couldn't"), *GetNameSafe(Actor), ServerWorkerId);
 	}
 }
 
