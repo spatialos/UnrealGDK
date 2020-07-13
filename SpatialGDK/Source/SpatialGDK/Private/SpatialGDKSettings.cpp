@@ -24,6 +24,7 @@ namespace
 {
 	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
 	{
+#if !UE_BUILD_SHIPPING || ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for shipping
 		if(FParse::Param(CommandLine, Parameter))
 		{
 			bOutValue = true;
@@ -36,11 +37,13 @@ namespace
 				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
 			}
 		}
+#endif
 		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
 	}
 
 	void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<bool>& bOutValue)
 	{
+#if !UE_BUILD_SHIPPING || ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for shipping
 		if (FParse::Param(CommandLine, Parameter))
 		{
 			bOutValue = true;
@@ -53,6 +56,7 @@ namespace
 				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
 			}
 		}
+#endif
 		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
 	}
 }
