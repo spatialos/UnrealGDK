@@ -461,17 +461,32 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 {
 	if (Type == ERPCType::NetMulticast)
 	{
-		LastSeenMulticastRPCIds[EntityId]++;
+		uint64* LastAckedRPCId = LastSeenMulticastRPCIds.Find(EntityId);
+		if (LastAckedRPCId == nullptr)
+		{
+			UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked multicast RPC id. Entity: %lld"), EntityId);
+			return;
+		}
+
+		*LastAckedRPCId++;
 	}
 	else
 	{
 		EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
-		LastAckedRPCIds[EntityTypePair]++;
+
+		uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
+		if (LastAckedRPCId == nullptr)
+		{
+			UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+			return;
+		}
+
+		*LastAckedRPCId++;
 
 		const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
 		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
 
-		RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, LastAckedRPCIds[EntityTypePair]);
+		RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 	}
 }
 
