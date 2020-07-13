@@ -7,7 +7,9 @@
 #include "SpatialFunctionalTestWorkerDelegationComponent.generated.h"
 
 /*
- * Actor Component that allows you to delegate its Actor to a specific Server Worker.
+ * Actor Component for Functional Testing purposes only that allows you to delegate its Actor to a specific Server Worker.
+ * Note that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load
+ * Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface.
  */
 UCLASS(BlueprintType)
 class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestWorkerDelegationComponent : public UActorComponent

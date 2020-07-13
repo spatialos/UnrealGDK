@@ -76,10 +76,7 @@ bool ISpatialFunctionalTestLBDelegationInterface::HasActorDelegation(AActor* Act
 
 void ISpatialFunctionalTestLBDelegationInterface::RemoveAllActorDelegations(UWorld* World, bool bRemovePersistent /*= false*/)
 {
-
-	TActorIterator<AActor> It(World);
-
-	while(It)
+	for(TActorIterator<AActor> It(World); It; ++It)
 	{
 		if( It->HasAuthority() )
 		{
@@ -92,7 +89,5 @@ void ISpatialFunctionalTestLBDelegationInterface::RemoveAllActorDelegations(UWor
 				}
 			}
 		}
-
-		++It;
 	}
 }

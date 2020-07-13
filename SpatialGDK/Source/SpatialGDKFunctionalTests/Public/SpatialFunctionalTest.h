@@ -134,13 +134,13 @@ public:
 	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
 
 	// # Actor Delegation APIs
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip="Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
 	void AddActorDelegation(AActor* Actor, uint8 ServerWorkerId, bool bPersistOnTestFinished = false);
 
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
 	void RemoveActorDelegation(AActor* Actor);
 	
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Check is the Actor has it's authority delegated to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
 	bool HasActorDelegation(AActor* Actor, uint8& WorkerId, bool& bIsPersistent);
 
 protected:
