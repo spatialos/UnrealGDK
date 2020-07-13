@@ -17,7 +17,7 @@ bool ISpatialFunctionalTestLBDelegationInterface::AddActorDelegation(AActor* Act
 
 	if (!Actor->HasAuthority())
 	{
-		ensureMsgf(false, TEXT("Only Authority of an Actor can delegate it to another worker. Tried to delegate %s to %d"), *Actor->GetName(), WorkerId);
+		ensureMsgf(false, TEXT("Only the worker authoritative over an Actor can delegate it to another worker. Tried to delegate %s to %d"), *Actor->GetName(), WorkerId);
 		return false;
 	}
 
