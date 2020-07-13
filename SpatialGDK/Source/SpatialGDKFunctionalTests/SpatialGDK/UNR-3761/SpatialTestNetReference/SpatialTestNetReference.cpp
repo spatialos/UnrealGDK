@@ -12,7 +12,6 @@
 /**
  * This test automates the Net Reference Test gym, which tested that references to replicated actors are stable when actors go in and out of relevance.
  * This test also adds an interest check on top of the previously mentioned Gym.
- * NOTE: This test requires a specific GameMode, trying to run this test on a different GameMode other than SpatialTestNetReferenceGameMode will result in the test failing.
  * 
  * The test includes a single server and two client workers. For performance considerations, the only client that is executing the test is Client 1.
  * The flow is as follows:
@@ -39,7 +38,7 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 	TestLocations.Add(TPair<FVector, int> (FVector(0.0f, -15000.0f, 40.0f), 1));
 	TestLocations.Add(TPair<FVector, int>(FVector(5000.0f, -5000.0f, 40.0f), 2));
 	TestLocations.Add(TPair<FVector, int>(FVector(5000.0f, 1000.0f, 40.0f), 3));
-	TestLocations.Add(TPair<FVector, int> (FVector(0.0f, 0.0f, 40.0f), 4));
+	TestLocations.Add(TPair<FVector, int> (FVector(100.0f, 100.0f, 40.0f), 4));
 }
 
 void ASpatialTestNetReference::BeginPlay()
@@ -47,6 +46,8 @@ void ASpatialTestNetReference::BeginPlay()
 	Super::BeginPlay();
 
 	AddServerStep(TEXT("SpatialTestNetReferenceServerSetup"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		ASpatialTestNetReference* Test = Cast<ASpatialTestNetReference>(NetTest);
+
 		// Set up the cubes' spawn locations
 		TArray<FVector> CubeLocations;
 		CubeLocations.Add(FVector(0.0f, -10000.0f, 40.0f));
@@ -75,7 +76,19 @@ void ASpatialTestNetReference::BeginPlay()
 		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
 		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
-		NetTest->FinishStep();
+
+		// Spawn the TestMovementCharacter actor for client 1 to possess.
+		for (ASpatialFunctionalTestFlowController* FlowController : Test->GetFlowControllers())
+		{
+			if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client && FlowController->ControllerInstanceId == 1)
+			{
+				ATestMovementCharacter* TestCharacter = Test->GetWorld()->SpawnActor<ATestMovementCharacter>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
+				AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+				PlayerController->Possess(TestCharacter);
+			}
+		}
+
+		Test->FinishStep();
 		});
 
 	AddClientStep(TEXT("SpatialTestNetReferenceClientExecuteTest"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
@@ -93,7 +106,7 @@ void ASpatialTestNetReference::BeginPlay()
 		}
 
 		// After arriving at the correct location, perform the required checks
-		if (PlayerCharacter->GetActorLocation().Equals(Test->TestLocations[CurrentMoveIndex].Key, 0.25f))
+		if (PlayerCharacter->GetActorLocation().Equals(Test->TestLocations[CurrentMoveIndex].Key, 1.0f))
 		{
 			// Wait for a second as it may take some time for the references to be updated correctly
 			if (Test->TimerHelper < 0.1f)
@@ -170,12 +183,19 @@ void ASpatialTestNetReference::BeginPlay()
 
 	AddServerStep(TEXT("SpatialTestNetReferenceServerCleanup"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
 		// Destroy the previously spawned cubes
-		TArray<AActor*> SpawnedCubes;
-		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ACubeWithReferences::StaticClass(), SpawnedCubes);
+		TArray<AActor*> SpawnedObjects;
+		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ACubeWithReferences::StaticClass(), SpawnedObjects);
 
-		for (AActor* CubeToDestroy : SpawnedCubes)
+		for (AActor* CubeToDestroy : SpawnedObjects)
 		{
 			CubeToDestroy->Destroy();
+		}
+
+		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ATestMovementCharacter::StaticClass(), SpawnedObjects);
+
+		for (AActor* CharacterToDestroy : SpawnedObjects)
+		{
+			CharacterToDestroy->Destroy();
 		}
 
 		// Reset the PositionUpdateFrequency
