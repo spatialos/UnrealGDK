@@ -56,6 +56,9 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
+	, bConnectServerToCloud(false)
+	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
+	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bPackageMobileCommandLineArgs(false)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
@@ -263,6 +266,12 @@ void USpatialGDKEditorSettings::SetForceAssemblyOverwrite(bool bForce)
 void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
 {
 	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetConnectServerToCloud(bool bIsEnabled)
+{
+	bConnectServerToCloud = bIsEnabled;
 	SaveConfig();
 }
 

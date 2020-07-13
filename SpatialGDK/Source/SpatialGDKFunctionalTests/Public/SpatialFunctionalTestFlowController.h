@@ -9,7 +9,7 @@
 
 namespace
 {
-	constexpr uint8 INVALID_FLOW_CONTROLLER_ID = 0;
+	constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
 }
 
 class ASpatialFunctionalTest;
@@ -51,7 +51,7 @@ public:
 	ESpatialFunctionalTestFlowControllerType ControllerType;
 
 	UPROPERTY(Replicated)
-	uint8 ControllerInstanceId; //client defined by login order; server maps to virtual worker
+	int ControllerInstanceId; //client defined by login order; server maps to virtual worker
 
 	// Prettier way to display type+id combo since it can be quite useful
 	const FString GetDisplayName();
@@ -65,7 +65,7 @@ public:
 	// Each server worker will assign local client ids, this function will be used by
 	// the Test owner server worker to guarantee they are all unique
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetControllerInstanceId(uint8 NewControllerInstanceId);
+	void CrossServerSetControllerInstanceId(int NewControllerInstanceId);
 
 private:
 	// Current Step being executed
