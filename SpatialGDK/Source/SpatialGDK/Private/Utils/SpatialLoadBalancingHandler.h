@@ -56,7 +56,7 @@
 //
 //	bool IsActorReadyForMigration(AActor* Actor)
 //	{
-//		return Actor->GetIsReplicated() && Actor->HasAuthority();
+//		return Actor->HasAuthority();
 //	}
 //
 //protected:
@@ -65,6 +65,8 @@
 //
 //	TArray<AActor*>& ReplicatedActors;
 //};
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 
 class FSpatialLoadBalancingHandler
 {
@@ -88,7 +90,18 @@ public:
 			switch (Result)
 			{
 			case EvaluateActorResult::Migrate:
-				CollectActorsToMigrate(iCtx, NetOwner, Actor, NewAuthWorkerId);
+				if (CollectActorsToMigrate(iCtx, NetOwner, NetOwner->HasAuthority()))
+				{
+					for (AActor* ActorToMigrate : TempActorsToMigrate)
+					{
+						if (ActorToMigrate != Actor)
+						{
+							iCtx.AddActorToReplicate(ActorToMigrate);
+						}
+						ActorsToMigrate.Add(ActorToMigrate, NewAuthWorkerId);
+					}
+				}
+				TempActorsToMigrate.Empty();
 				break;
 			case EvaluateActorResult::RemoveAdditional:
 				iCtx.RemoveAdditionalActor(Actor);
@@ -121,24 +134,46 @@ protected:
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
 
 	template <typename ReplicationContext>
-	void CollectActorsToMigrate(ReplicationContext& iCtx, AActor* Actor, const AActor* OriginalActorBeingConsidered, VirtualWorkerId Destination)
+	bool CollectActorsToMigrate(ReplicationContext& iCtx, AActor* Actor, bool bNetOwnerHasAuth)
 	{
-		if (iCtx.IsActorReadyForMigration(Actor))
+		if(Actor->GetIsReplicated())
 		{
-			if(Actor != OriginalActorBeingConsidered)
+			if (!iCtx.IsActorReadyForMigration(Actor))
 			{
-				iCtx.AddActorToReplicate(Actor);
+				// Prevents an Actor hierarchy from migrating if one of its actor is not ready.
+				// Child Actors are always allowed to join the owner.
+				// This is a band aid to prevent Actors from being left behind,
+				// although it has the risk of creating an infinite lock if the child is unable to become ready.
+				if(bNetOwnerHasAuth)
+				{
+					AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
+					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
+						TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s is not ready."),
+						*HierarchyRoot->GetName(),
+						*Actor->GetName());
+
+					return false;
+				}
 			}
-			ActorsToMigrate.Add(Actor, Destination);
+			else
+			{
+				TempActorsToMigrate.Add(Actor);
+			}
 		}
 
 		for (AActor* Child : iCtx.GetDependentActors(Actor))
 		{
-			CollectActorsToMigrate(iCtx, Child, OriginalActorBeingConsidered, Destination);
+			if (!CollectActorsToMigrate(iCtx, Child, bNetOwnerHasAuth))
+			{
+				return false;
+			}
 		}
+
+		return true;
 	}
 
 	USpatialNetDriver* NetDriver;
 
 	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;
+	TSet<AActor*> TempActorsToMigrate;
 };

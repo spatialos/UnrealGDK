@@ -31,9 +31,8 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 
 bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	// Basic replication and authority checks.
-	if (!Actor->GetIsReplicated()
-		|| !Actor->HasAuthority())
+	// Auth check.
+	if (!Actor->HasAuthority())
 	{
 		return false;
 	}

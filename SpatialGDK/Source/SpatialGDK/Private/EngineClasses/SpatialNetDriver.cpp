@@ -1303,11 +1303,6 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// SpatialGDK - Entity creation rate limiting based on config value.
 	uint32 EntityCreationRateLimit = GetDefault<USpatialGDKSettings>()->EntityCreationRateLimit;
 	int32 MaxEntitiesToCreate = (EntityCreationRateLimit > 0) ? EntityCreationRateLimit : INT32_MAX;
-	if (MaxEntitiesToCreate < NumActorsMigrating)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("EntityCreationRateLimit of %i ignored because %i actors need to migrate"), EntityCreationRateLimit, NumActorsMigrating);
-		MaxEntitiesToCreate = NumActorsMigrating;
-	}
 	int32 FinalCreationCount = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.

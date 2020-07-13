@@ -9,6 +9,8 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/SpatialDebugging.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
+
 FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 {
