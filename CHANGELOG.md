@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
 - Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
 - Fixed bug causing this error to fire: "ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset"
+- Error logged when LoadBalancingStrategy can't locate a worker to take authority over an Actor has been improved to include the Spatial Position of the Actor.
 
 ## [`0.10.0`] - 2020-07-08
 
