@@ -47,7 +47,7 @@ namespace
 }
 
 // Rewrite of FPropertyEditorModule::CreateFloatingDetailsView to use the detail property view in a new window.
-UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow)
+UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FText& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow)
 {
 	if (!ObjectClass)
 	{
@@ -125,7 +125,7 @@ UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(c
 	}
 
 	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(FText::FromString(EditorName))
+		.Title(EditorName)
 		[
 			SNew(SBorder)
 			.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
