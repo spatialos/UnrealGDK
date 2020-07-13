@@ -89,9 +89,12 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
 	GetMutableDefault<USpatialGDKSettings>()->SetServicesRegion(bUseChinaServicesRegion ? EServicesRegion::CN : EServicesRegion::Default);
 
+	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
+
+	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 
 	OnAutoStartLocalDeploymentChanged();
 
@@ -115,6 +118,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
+
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 }
 
@@ -155,6 +160,8 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 
 void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
+	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
+
 	if (bStopSpatialOnExit)
 	{
 		LocalDeploymentManager->TryStopLocalDeployment();
@@ -1018,6 +1025,8 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 	SpatialGDKEditorSettings->SetSpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment);
 
 	OnAutoStartLocalDeploymentChanged();
+
+	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 }
 
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
@@ -1056,7 +1065,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				? PropertyChangedEvent.Property->GetFName()
 				: NAME_None;
 		FString PropertyNameStr = PropertyName.ToString();
-		if (PropertyNameStr == TEXT("bStopSpatialOnExit"))
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStopSpatialOnExit))
 		{
 			/*
 			* This updates our own local copy of bStopSpatialOnExit as Settings change.
@@ -1066,13 +1075,17 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			*/
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
-		else if (PropertyNameStr == TEXT("bStopLocalDeploymentOnEndPIE"))
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStopLocalDeploymentOnEndPIE))
 		{
 			bStopLocalDeploymentOnEndPIE = Settings->bStopLocalDeploymentOnEndPIE;
 		}
-		else if (PropertyNameStr == TEXT("bAutoStartLocalDeployment"))
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bAutoStartLocalDeployment))
 		{
 			OnAutoStartLocalDeploymentChanged();
+		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bConnectServerToCloud))
+		{
+			LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 		}
 	}
 }
@@ -1226,7 +1239,6 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		}
 	}
 }
-
 
 void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 {

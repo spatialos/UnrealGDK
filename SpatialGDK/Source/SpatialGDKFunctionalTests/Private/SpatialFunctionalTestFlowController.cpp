@@ -12,7 +12,8 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 {	
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	
+
+	PrimaryActorTick.TickInterval = 0.0f;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bTickEvenWhenPaused = true;
