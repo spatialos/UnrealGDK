@@ -7,14 +7,13 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
+#include "Utils/SpatialLatencyTracerData.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
-class USpatialLatencyTracer;
-struct SpatialLatencyTracerData;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 

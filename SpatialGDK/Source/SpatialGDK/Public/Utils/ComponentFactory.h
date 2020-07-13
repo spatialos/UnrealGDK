@@ -5,7 +5,7 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 #include "Utils/RepDataUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
+#include "Utils/SpatialLatencyTracerData.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
