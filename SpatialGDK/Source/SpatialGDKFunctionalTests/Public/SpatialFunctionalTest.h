@@ -8,6 +8,7 @@
 #include "EngineUtils.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestStep.h"
+#include "SpatialFunctionalTestLBDelegationInterface.h"
 #include "SpatialFunctionalTest.generated.h"
 
 namespace 
@@ -132,9 +133,22 @@ public:
 	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"), Category = "Spatial Functional Test")
 	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
 
+	// # Actor Delegation APIs
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip="Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	void AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished = false);
+
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	void RemoveActorDelegation(AActor* Actor);
+	
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Check is the Actor has it's authority delegated to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	bool HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent);
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
+
 	int GetNumExpectedServers() const { return NumExpectedServers; }
+
+	ISpatialFunctionalTestLBDelegationInterface* GetDelegationInterface() const;
 
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
