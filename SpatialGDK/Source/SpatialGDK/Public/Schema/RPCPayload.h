@@ -31,7 +31,7 @@ struct RPCPayload
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 
 #if TRACE_LIB_ACTIVE
-		if (auto Tracer = USpatialLatencyTracer::GetTracer(nullptr))
+		if (auto Tracer = ::USpatialLatencyTracer::GetTracer(nullptr))
 		{
 			Trace = Tracer->ReadTraceFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 		}
@@ -48,7 +48,7 @@ struct RPCPayload
 		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
 
 #if TRACE_LIB_ACTIVE
-		if (auto Tracer = USpatialLatencyTracer::GetTracer(nullptr))
+		if (auto Tracer = ::USpatialLatencyTracer::GetTracer(nullptr))
 		{
 			Tracer->WriteTraceToSchemaObject(Trace, RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 		}
