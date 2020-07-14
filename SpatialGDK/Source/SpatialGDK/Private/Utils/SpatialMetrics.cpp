@@ -353,7 +353,7 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 {
 	int32 NumGaugeMetrics = Op->op.metrics.metrics.gauge_metric_count;
 	int32 NumHistogramMetrics = Op->op.metrics.metrics.histogram_metric_count;
-	if (NumGaugeMetrics > 0 || NumHistogramMetrics > 0)
+	if (NumGaugeMetrics > 0 || NumHistogramMetrics > 0) // We store these here so we can forward them with our metrics submission
 	{
 		FString StringTmp;
 		StringTmp.Reserve(128);
@@ -379,7 +379,10 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 			}
 		}
 
-		WorkerMetricsUpdated.Broadcast(WorkerSDKGaugeMetrics, WorkerSDKHistogramMetrics);
+		if (WorkerMetricsUpdated.IsBound())
+		{
+			WorkerMetricsUpdated.Broadcast(WorkerSDKGaugeMetrics, WorkerSDKHistogramMetrics);
+		}
 	}
 }
 
