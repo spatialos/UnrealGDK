@@ -360,20 +360,22 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 
 		for (int32 i = 0; i < NumGuageMetrics; i++)
 		{
-			StringTmp = Op->op.metrics.metrics.gauge_metrics[i].key;
-			WorkerSDKGaugeMetrics.FindOrAdd(StringTmp) = Op->op.metrics.metrics.gauge_metrics[i].value;
+			const Worker_GaugeMetric& WorkerMetric = Op->op.metrics.metrics.gauge_metrics[i];
+			StringTmp = WorkerMetric.key;
+			WorkerSDKGaugeMetrics.FindOrAdd(StringTmp) = WorkerMetric.value;
 		}
 
 		for (int32 i = 0; i < NumHistogramMetrics; i++)
 		{
-			StringTmp = Op->op.metrics.metrics.histogram_metrics[i].key;
-			WorkerHistogramValues& HistogramMetrics =  WorkerSDKHistogramMetrics.FindOrAdd(StringTmp);
-			HistogramMetrics.Sum = Op->op.metrics.metrics.histogram_metrics[i].sum;
-			int32 NumBuckets = Op->op.metrics.metrics.histogram_metrics[i].bucket_count;
+			const Worker_HistogramMetric& WorkerMetric = Op->op.metrics.metrics.histogram_metrics[i];
+			StringTmp = WorkerMetric.key;
+			WorkerHistogramValues& HistogramMetrics = WorkerSDKHistogramMetrics.FindOrAdd(StringTmp);
+			HistogramMetrics.Sum = WorkerMetric.sum;
+			int32 NumBuckets = WorkerMetric.bucket_count;
 			HistogramMetrics.Buckets.SetNum(NumBuckets);
 			for (int32 j = 0; j < NumBuckets; j++)
 			{
-				HistogramMetrics.Buckets[j] = TTuple<double, uint32>{ Op->op.metrics.metrics.histogram_metrics[i].buckets[j].upper_bound, Op->op.metrics.metrics.histogram_metrics[i].buckets[j].samples };
+				HistogramMetrics.Buckets[j] = TTuple<double, uint32>{ WorkerMetric.buckets[j].upper_bound, WorkerMetric.buckets[j].samples };
 			}
 		}
 
