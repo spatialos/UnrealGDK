@@ -19,7 +19,7 @@ class SPATIALGDK_API ADynamicLBSInfo : public AInfo
 public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
+	void Init(const TArray<FBox2D> WorkerCells);
 	virtual void OnAuthorityGained() override;
 
 	UPROPERTY(ReplicatedUsing = OnRep_DynamicWorkerCells)

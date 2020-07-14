@@ -439,9 +439,10 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
 		}
-		LoadBalanceStrategy->Init();
 
 		DynamicLBSInfo = GetWorld()->SpawnActor<ADynamicLBSInfo>();
+
+		LoadBalanceStrategy->Init();
 	}
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());

@@ -28,44 +28,34 @@ void ADynamicLBSInfo::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME_CONDITION(ADynamicLBSInfo, ActorCounters, COND_SimulatedOnly);
 }
 
-void ADynamicLBSInfo::BeginPlay()
+void ADynamicLBSInfo::Init(const TArray<FBox2D> WorkerCells)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("%s [DynamicLBSInfo] BeginPlay(), HasAuthority = %s"), *FDateTime::Now().ToString(), HasAuthority() ? "true" : "false");
-
 	NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-
-	if (HasAuthority() && NetDriver->LoadBalanceStrategy)
+	if (HasAuthority())
 	{
-		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
+		DynamicWorkerCells.SetNum(WorkerCells.Num());
+		ActorCounters.SetNum(WorkerCells.Num());
+		for (int i = 0; i < WorkerCells.Num(); i++)
 		{
-			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
-			DynamicWorkerCells.SetNum(LBStrategyRegions.Num());
-			ActorCounters.SetNum(LBStrategyRegions.Num());
-
-			for (int i = 0; i < LBStrategyRegions.Num(); i++)
-			{
-				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				DynamicWorkerCells[i] = FBox2D(LBStrategyRegion.Value.Min, LBStrategyRegion.Value.Max);
-
-				//ActorCounters[i] = 0;
-			}
+			DynamicWorkerCells[i] = FBox2D(WorkerCells[i].Min, WorkerCells[i].Max);
+			ActorCounters[i] = 0;
 		}
 	}
 }
 
 void ADynamicLBSInfo::OnAuthorityGained()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("%s [DynamicLBSInfo] OnAuthorityGained()"), *FDateTime::Now().ToString());
+	//UE_LOG(LogDynamicLBStrategy, Warning, TEXT("%s [DynamicLBSInfo] OnAuthorityGained()"), *FDateTime::Now().ToString());
 }
 
 void ADynamicLBSInfo::OnRep_DynamicWorkerCells()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("[DynamicLBSInfo] worker cells changed!!!"));
+	//UE_LOG(LogDynamicLBStrategy, Warning, TEXT("[DynamicLBSInfo] VirtualWorker[%d] received worker cells change!!!"), NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 }
 
 void ADynamicLBSInfo::OnRep_ActorCounters()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[DynamicLBSInfo] actor counters changed!!!"));
+	//UE_LOG(LogDynamicLBStrategy, Warning, TEXT("[DynamicLBSInfo] VirtualWorker[%d] received actor counters change!!!"), NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 }
 
 uint32 ADynamicLBSInfo::GetActorCounter(const VirtualWorkerId TargetWorkerId)
