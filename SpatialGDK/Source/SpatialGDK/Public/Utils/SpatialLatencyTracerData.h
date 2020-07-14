@@ -40,7 +40,7 @@ struct FOutgoingMessage;
 
 class SPATIALGDK_API SpatialLatencyTracerData
 {
-	friend class USpatialLatencyTracer;
+	friend class ::USpatialLatencyTracer;
 
 public:
 
