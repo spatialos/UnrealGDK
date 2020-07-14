@@ -770,8 +770,7 @@ int64 USpatialActorChannel::ReplicateActor()
 				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
-					const FVector SpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s (Spatial position: %s)"), *GetNameSafe(Actor), *SpatialPosition.ToString());
+					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *GetNameSafe(Actor));
 				}
 				else
 				{
