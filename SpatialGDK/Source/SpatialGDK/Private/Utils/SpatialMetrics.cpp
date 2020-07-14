@@ -351,14 +351,14 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int Pa
 
 void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 {
-	int32 NumGuageMetrics = Op->op.metrics.metrics.gauge_metric_count;
+	int32 NumGaugeMetrics = Op->op.metrics.metrics.gauge_metric_count;
 	int32 NumHistogramMetrics = Op->op.metrics.metrics.histogram_metric_count;
-	if (NumGuageMetrics > 0 || NumHistogramMetrics > 0)
+	if (NumGaugeMetrics > 0 || NumHistogramMetrics > 0)
 	{
 		FString StringTmp;
 		StringTmp.Reserve(128);
 
-		for (int32 i = 0; i < NumGuageMetrics; i++)
+		for (int32 i = 0; i < NumGaugeMetrics; i++)
 		{
 			const Worker_GaugeMetric& WorkerMetric = Op->op.metrics.metrics.gauge_metrics[i];
 			StringTmp = WorkerMetric.key;
