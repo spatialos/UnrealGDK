@@ -1,0 +1,20 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
+#include "SpatialFunctionalTestStep.h"
+#include "SpatialFunctionalTestBlueprintLibrary.generated.h"
+
+
+UCLASS(meta = (ScriptName = "SpatialFunctionalTestLibrary"))
+class USpatialFunctionalTestBlueprintLibrary : public UBlueprintFunctionLibrary
+{
+	GENERATED_BODY()
+
+public:
+
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent,Workers"))
+	static FSpatialFunctionalTestStepDefinition MakeStepDefinition(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, const TArray<FWorkerDefinition>& Workers, const float StepTimeLimit);
+};

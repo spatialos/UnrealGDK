@@ -27,7 +27,7 @@ namespace
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
  */
-UCLASS(Blueprintable, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
+UCLASS(Blueprintable/*, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation")*/)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest
 {
 	GENERATED_BODY()
@@ -100,8 +100,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ServerId = "1", ToolTip = "Adds a Step that runs on Servers. Server Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Servers (there's also a convenience function GetAllWorkersId())"))
 	void AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition);
+	// Add Steps for Blueprints and C++
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a complete Definition. This allows you to define a Step and add it / re-use it multiple times.\n\nSee also CreateStepDefinition()."))
+	void AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a partial Definition, allowing you to redefine at adding time where you want it to run.\nBoth Servers and Clients have WorkerId start with 1. If you use 0, it runs on all Servers / Clients.\n\nSee also CreateStepDefinition()."))
+	void AddStepFromDefinitionSingle(const FSpatialFunctionalTestStepDefinition& StepDefinition, ESpatialFunctionalTestFlowControllerType WorkerType = ESpatialFunctionalTestFlowControllerType::Server, int WorkerId = 1);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a partial Definition, allowing you to redefine at adding time where you want it to run.\nIt is a more extensible version of AddStepFromDefinitionSingle(), where you can pass array with multiple specific Workers.\n\nSee also CreateStepDefinition()."))
+	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers);
 
 	// Add Steps for C++
 	FSpatialFunctionalTestStepDefinition& AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);

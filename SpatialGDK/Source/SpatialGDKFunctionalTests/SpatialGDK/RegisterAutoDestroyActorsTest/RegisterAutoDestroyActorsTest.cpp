@@ -101,6 +101,6 @@ void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
 			NetTest->FinishStep();
 		});
 
-		AddGenericStep(StepDefinition);
+		AddStepFromDefinition(StepDefinition);
 	}
 }

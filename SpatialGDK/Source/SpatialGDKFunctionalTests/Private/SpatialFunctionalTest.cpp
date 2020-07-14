@@ -352,9 +352,29 @@ void ASpatialFunctionalTest::AddServerStep(const FString& StepName, int ServerId
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition)
+void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition)
 {
+	ensureMsgf(StepDefinition.Workers.Num() > 0, TEXT("Adding a StepDefinition without Workers"));
+
 	StepDefinitions.Add(StepDefinition);
+}
+
+void ASpatialFunctionalTest::AddStepFromDefinitionSingle(const FSpatialFunctionalTestStepDefinition& StepDefinition, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId)
+{
+	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
+
+	StepDefinitionCopy.Workers.Add(FWorkerDefinition{WorkerType, WorkerId});
+
+	AddStepFromDefinition(StepDefinitionCopy);
+}
+
+void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers)
+{
+	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
+
+	StepDefinitionCopy.Workers.Append(Workers);
+
+	AddStepFromDefinition(StepDefinitionCopy);
 }
 
 void ASpatialFunctionalTest::StartStep(const int StepIndex)
