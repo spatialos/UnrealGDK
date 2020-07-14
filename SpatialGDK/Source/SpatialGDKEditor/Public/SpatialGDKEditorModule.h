@@ -45,6 +45,7 @@ private:
 	virtual FString GetSpatialOSCloudDeploymentName() const override;
 	virtual bool ShouldConnectServerToCloud() const override;
 	virtual bool TryStartLocalReceptionistProxyServer() const override;
+	virtual bool ForEveryWorker(TFunction<void(const FName&, int32)> Function) const override;
 
 	virtual bool CanExecuteLaunch() const override;
 	virtual bool CanStartPlaySession(FText& OutErrorMessage) const override;
