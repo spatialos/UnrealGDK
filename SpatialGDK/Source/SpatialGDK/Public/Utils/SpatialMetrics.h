@@ -49,9 +49,15 @@ public:
 	void HandleWorkerMetrics(Worker_Op* Op);
 
 	// The user can bind their own delegate to handle worker metrics.
-	typedef TMap<FString, double> WorkerMetrics;
-	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, WorkerMetrics);
-	static WorkerMetricsDelegate WorkerMetricsRecieved;
+	typedef TMap<FString, double> WorkerGaugeMetric;
+	struct WorkerHistogramValues
+	{
+		TArray<TPair<double, uint32>> Buckets; // upper-bound, count
+		double Sum;
+	};
+	typedef TMap<FString, WorkerHistogramValues> WorkerHistogramMetrics;
+	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, const WorkerGaugeMetric&, const WorkerHistogramMetrics&);
+	WorkerMetricsDelegate WorkerMetricsUpdated; 
 
 	// Delegate used to poll for the current player controller's reference
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
@@ -61,6 +67,10 @@ public:
 	void SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate);
 	void RemoveCustomMetric(const FString& Metric);
 private:
+
+	// Worker SDK metrics
+	WorkerGaugeMetric WorkerSDKGaugeMetrics;
+	WorkerHistogramMetrics WorkerSDKHistogramMetrics;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
