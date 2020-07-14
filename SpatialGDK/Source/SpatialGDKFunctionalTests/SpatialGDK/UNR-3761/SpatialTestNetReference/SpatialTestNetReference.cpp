@@ -73,9 +73,8 @@ void ASpatialTestNetReference::BeginPlay()
 		}
 
 		// Set the PositionUpdateFrequency to a higher value so that the amount of waiting time before checking the references can be smaller, decreasing the overall duration of the test
+		Test->PreviousPositionUpdateFrequency = GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
 		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
-		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
-
 
 		// Spawn the TestMovementCharacter actor for client 1 to possess.
 		for (ASpatialFunctionalTestFlowController* FlowController : Test->GetFlowControllers())
@@ -84,6 +83,10 @@ void ASpatialTestNetReference::BeginPlay()
 			{
 				ATestMovementCharacter* TestCharacter = Test->GetWorld()->SpawnActor<ATestMovementCharacter>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
 				AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+
+				Test->OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
+				Test->RegisterAutoDestroyActor(TestCharacter);
+
 				PlayerController->Possess(TestCharacter);
 			}
 		}
@@ -181,27 +184,24 @@ void ASpatialTestNetReference::BeginPlay()
 		}
 	});
 
-	AddServerStep(TEXT("SpatialTestNetReferenceServerCleanup"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+	AddServerStep(TEXT("SpatialTestNetReferenceServerCleanup"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		ASpatialTestNetReference* Test = Cast<ASpatialTestNetReference>(NetTest);
+
 		// Destroy the previously spawned cubes
 		TArray<AActor*> SpawnedObjects;
-		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ACubeWithReferences::StaticClass(), SpawnedObjects);
+		UGameplayStatics::GetAllActorsOfClass(Test->GetWorld(), ACubeWithReferences::StaticClass(), SpawnedObjects);
 
 		for (AActor* CubeToDestroy : SpawnedObjects)
 		{
 			CubeToDestroy->Destroy();
 		}
 
-		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ATestMovementCharacter::StaticClass(), SpawnedObjects);
-
-		for (AActor* CharacterToDestroy : SpawnedObjects)
-		{
-			CharacterToDestroy->Destroy();
-		}
+		// Possess the original pawn, so that the spawned character can get destroyed correctly
+		Test->OriginalPawn.Key->Possess(Test->OriginalPawn.Value);
 
 		// Reset the PositionUpdateFrequency
-		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 1.0f;
-		GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
+		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = Test->PreviousPositionUpdateFrequency;
 
-		NetTest->FinishStep();
+		Test->FinishStep();
 	});
 }

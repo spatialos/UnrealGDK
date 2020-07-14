@@ -24,4 +24,8 @@ public:
 
 	// Helper variable used to wait for some time before performing an action
 	float TimerHelper;
+
+	TPair<AController*, APawn*> OriginalPawn;
+
+	float PreviousPositionUpdateFrequency;
 };
