@@ -125,6 +125,14 @@ void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& Fil
 	{
 		if (FileChange.Action == FFileChangeData::FCA_Added)
 		{
+#if PLATFORM_MAC
+			// Unreal does not support IDirectoryWatcher::WatchOptions::IgnoreChangesInSubtree for macOS.
+			// We need to double-check whether the current file really is a directory.
+			if (!FPaths::DirectoryExists(FileChange.Filename))
+			{
+				continue;
+			}
+#endif
 			// Now we can start reading the new log file in the new log folder.
 			ResetPollingLogFile(FPaths::Combine(FileChange.Filename, LaunchLogFilename));
 			return;
