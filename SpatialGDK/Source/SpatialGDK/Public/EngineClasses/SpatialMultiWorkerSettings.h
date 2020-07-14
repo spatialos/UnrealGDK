@@ -5,7 +5,6 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
-#include "SceneOutliner/Private/SceneOutlinerActorInfoColumn.h"
 #include "Utils/LayerInfo.h"
 
 #include "Templates/SubclassOf.h"
