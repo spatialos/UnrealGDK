@@ -1,5 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "EngineClasses/SpatialMultiWorkerSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
@@ -46,7 +47,7 @@ UWorld* GetAnyGameWorld()
 void CreateStrategy(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight, uint32 LocalWorkerId)
 {
 	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
-	Strat->Init();
+	Strat->Init(nullptr);
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(LocalWorkerId);
 }
@@ -182,7 +183,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_minimum_required_workers_i
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
 	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
-	Strat->Init();
+	Strat->Init(nullptr);
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 
 	TestFalse("IsReady Before LocalVirtualWorkerId Set", Strat->IsReady());
@@ -199,7 +200,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	// Take the top right corner, as then all our testing numbers can be positive.
 	// Create the Strategy manually so we can set an interest border.
 	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.f);
-	Strat->Init();
+	Strat->Init(nullptr);
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(4);
 
@@ -216,7 +217,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	TestEqual("Edge length in x is as expected", Box.EdgeLength.X, TestEdgeLength);
 	TestEqual("Edge length in z is as expected", Box.EdgeLength.Z, TestEdgeLength);
 
-	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here. 
+	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here.
 	TestTrue("Edge length in y is greater than 0", Box.EdgeLength.Y > 0);
 
 	return true;

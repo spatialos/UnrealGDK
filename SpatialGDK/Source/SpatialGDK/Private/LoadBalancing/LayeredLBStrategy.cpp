@@ -18,14 +18,14 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
-void ULayeredLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings)
+void ULayeredLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings)
 {
 	Super::Init(MultiWorkerSettings);
 
-	check(MultiWorkerSettings.WorkerLayers.Num() != 0);
+	check(MultiWorkerSettings->WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const TPair<FName, FLayerInfo>& Layer : MultiWorkerSettings.WorkerLayers)
+	for (const TPair<FName, FLayerInfo>& Layer : MultiWorkerSettings->WorkerLayers)
 	{
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
@@ -301,5 +301,5 @@ FName ULayeredLBStrategy::GetLayerNameForActor(const AActor& Actor) const
 void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLBStrategy* LBStrategy)
 {
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
-	LayerNameToLBStrategy[LayerName]->Init();
+	LayerNameToLBStrategy[LayerName]->Init(nullptr);
 }

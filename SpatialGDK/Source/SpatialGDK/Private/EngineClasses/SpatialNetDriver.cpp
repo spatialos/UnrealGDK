@@ -424,48 +424,44 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
-	const UWorld* World = GetWorld();
-	check(World != nullptr);
+	if (!IsServer())
+	{
+		return;
+	}
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+	const UWorld* CurrentWorld = GetWorld();
+	check(CurrentWorld != nullptr);
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
 	check(WorldSettings != nullptr);
 
-	const bool bIsMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
+	const bool bMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
 
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = *WorldSettings->MultiWorkerSettingsClass != nullptr ?
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = bMultiWorkerEnabled ?
         *WorldSettings->MultiWorkerSettingsClass :
         USpatialMultiWorkerSettings::StaticClass();
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
 
-	if (IsServer())
-	{
-		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
-		LoadBalanceStrategy->Init(*MultiWorkerSettings);
-		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
-	}
+	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
+	LoadBalanceStrategy->Init(MultiWorkerSettings);
+	LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	if (IsServer())
-	{
-		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+	LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (!bIsMultiWorkerEnabled)
-		{
-			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
-		}
-		else if (MultiWorkerSettings->LockingPolicy == nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
-			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
-		}
-		else
-		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, MultiWorkerSettings->LockingPolicy);
-		}
-		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
+	const TSubclassOf<UAbstractLockingPolicy> LockingPolicyClass = bMultiWorkerEnabled && *MultiWorkerSettings->LockingPolicy != nullptr ?
+		*MultiWorkerSettings->LockingPolicy :
+		UOwnershipLockingPolicy::StaticClass();
+
+	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 	}
+
+	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
+	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
@@ -631,7 +627,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		IsReady())
+		(IsReady() && USpatialStatics::IsActorGroupOwnerForActor(Actor)))
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over,
 		// when they should be in a different Layer.

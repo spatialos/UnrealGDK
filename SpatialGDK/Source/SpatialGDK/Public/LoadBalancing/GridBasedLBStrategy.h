@@ -37,7 +37,7 @@ public:
 	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
 
 /* UAbstractLBStrategy Interface */
-	virtual void Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings) override;
+	virtual void Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings) override;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;

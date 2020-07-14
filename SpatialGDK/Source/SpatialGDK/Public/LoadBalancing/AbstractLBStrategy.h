@@ -34,7 +34,7 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings) {}
+	virtual void Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings) {}
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 

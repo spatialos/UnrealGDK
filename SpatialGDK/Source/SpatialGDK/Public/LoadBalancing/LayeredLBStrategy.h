@@ -33,7 +33,7 @@ public:
 	ULayeredLBStrategy();
 
 	/* UAbstractLBStrategy Interface */
-	virtual void Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings) override;
+	virtual void Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings) override;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -59,6 +59,8 @@ public:
 	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
 	// Currently, this is just the default strategy.
 	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
+
+	const TMap<FName, UAbstractLBStrategy*>& GetWorkerLayers() const { return LayerNameToLBStrategy; }
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;

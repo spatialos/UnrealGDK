@@ -21,7 +21,7 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 {
 }
 
-void UGridBasedLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings& MultiWorkerSettings)
+void UGridBasedLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings)
 {
 	Super::Init(MultiWorkerSettings);
 

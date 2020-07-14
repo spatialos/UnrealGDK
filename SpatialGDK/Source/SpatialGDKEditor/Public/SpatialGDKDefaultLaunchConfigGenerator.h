@@ -14,7 +14,7 @@ struct FSpatialLaunchConfigDescription;
 
 uint32 SPATIALGDKEDITOR_API GetWorkerCountFromWorldSettings(const UWorld& World);
 
-bool SPATIALGDKEDITOR_API TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstractRuntimeLoadBalancingStrategy*& OutStrategy, FIntPoint& OutWorldDimension);
+// bool SPATIALGDKEDITOR_API TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstractRuntimeLoadBalancingStrategy*& OutStrategy, FIntPoint& OutWorldDimension);
 
 bool SPATIALGDKEDITOR_API FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, FIntPoint& OutWorldDimensions);
 
