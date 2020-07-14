@@ -53,7 +53,6 @@ public:
 	}
 
 private:
-
 	/** Enable running different server worker types to split the simulation. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;
