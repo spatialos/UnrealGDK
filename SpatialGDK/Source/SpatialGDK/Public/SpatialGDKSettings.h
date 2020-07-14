@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
@@ -223,7 +224,7 @@ public:
 
 private:
 #if WITH_EDITOR
-	bool CanEditChange(const UProperty* InProperty) const override;
+	bool CanEditChange(const GDK_PROPERTY(Property)* InProperty) const override;
 
 	void UpdateServicesRegionFile();
 #endif

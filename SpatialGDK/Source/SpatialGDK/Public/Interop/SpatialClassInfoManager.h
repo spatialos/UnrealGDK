@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaDatabase.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -41,12 +43,12 @@ struct FHandoverPropertyInfo
 	uint16 Handle;
 	int32 Offset;
 	int32 ArrayIdx;
-	UProperty* Property;
+	GDK_PROPERTY(Property)* Property;
 };
 
 struct FInterestPropertyInfo
 {
-	UProperty* Property;
+	GDK_PROPERTY(Property)* Property;
 	int32 Offset;
 };
 
