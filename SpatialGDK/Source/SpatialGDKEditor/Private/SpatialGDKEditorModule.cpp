@@ -2,7 +2,6 @@
 
 #include "SpatialGDKEditorModule.h"
 
-#include "EditorExtension/GridLBStrategyEditorExtension.h"
 #include "GeneralProjectSettings.h"
 #include "Editor.h"
 #include "ISettingsContainer.h"

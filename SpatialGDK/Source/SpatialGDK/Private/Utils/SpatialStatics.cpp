@@ -73,8 +73,12 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
-			return IsSpatialNetworkingEnabled() && WorldSettings->IsMultiWorkerEnabled() && MultiWorkerSettings->WorkerLayers.Num() > 1;
+			if (*WorldSettings->MultiWorkerSettingsClass != nullptr)
+			{
+				const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+				return IsSpatialNetworkingEnabled() && WorldSettings->IsMultiWorkerEnabled() && MultiWorkerSettings->WorkerLayers.Num() > 1;
+			}
+				
 		}
 	}
 

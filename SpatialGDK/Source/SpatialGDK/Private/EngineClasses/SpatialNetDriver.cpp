@@ -641,16 +641,16 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		return;
 	}
 
-	//if (LoadBalanceStrategy != nullptr)
-	//{
-	//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
-	//		LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-	//}
-	//else
-	//{
-	//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
-	//		*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
-	//}
+	if (LoadBalanceStrategy != nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
+			LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
+			*GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
+	}
 
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();

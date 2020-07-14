@@ -2,7 +2,6 @@
 
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 
-#include "EditorExtension/LBStrategyEditorExtension.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKEditorModule.h"
@@ -116,29 +115,6 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
 
 	const uint32 NumWorkers = MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()->GetMinimumRequiredWorkerCount();
-
-	// for (const auto& Layer : WorldSettings->GetWorkerLayers())
-	// {
-	// 	const FName& LayerKey = Layer.Key;
-	// 	const FLayerInfo& LayerInfo = Layer.Value;
-	//
-	// 	UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrategy = nullptr;
-	// 	FIntPoint Dimension;
-	// 	if (LayerInfo.LoadBalanceStrategy == nullptr)
-	// 	{
-	// 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on layer %s"), *LayerKey.ToString());
-	// 		NumWorkers += 1;
-	// 	}
-	// 	else if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrategy, Dimension))
-	// 	{
-	// 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy for layer %s"), *LayerKey.ToString());
-	// 		NumWorkers += 1;
-	// 	}
-	// 	else
-	// 	{
-	// 		NumWorkers += LoadBalancingStrategy->GetNumberOfWorkersForPIE();
-	// 	}
-	// }
 
 	return NumWorkers;
 }

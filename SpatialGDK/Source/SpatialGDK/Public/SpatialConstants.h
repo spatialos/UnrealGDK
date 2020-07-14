@@ -232,7 +232,7 @@ const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
 
-static const FName DefaultLayer = FName(TEXT("UnrealWorker"));
+static const FName DefaultLayer = FName(TEXT("Default Layer"));
 
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};

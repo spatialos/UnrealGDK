@@ -221,8 +221,8 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_layered_strat_of_two_by_four_grid_strat_singleton_s
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	USpatialMultiWorkerSettings MultiWorkerSettings{};
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerOne"), FLayerInfo{TEXT("LayerOne"), {}, UTwoByFourLBGridStrategy::StaticClass()});
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerTwo"), FLayerInfo{TEXT("LayerTwo"), {}, UGridBasedLBStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerOne"), {}, UTwoByFourLBGridStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerTwo"), {}, UGridBasedLBStrategy::StaticClass()});
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, &MultiWorkerSettings, {}));
@@ -238,8 +238,8 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_2_single_cell_strats_and_default_s
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	USpatialMultiWorkerSettings MultiWorkerSettings{};
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerOne"), FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerTwo"), FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
 
 	this->AddExpectedError("LayeredLBStrategy was not given enough VirtualWorkerIds to meet the demands of the layer strategies.",
 		EAutomationExpectedErrorFlags::MatchType::Contains, 1);
@@ -258,8 +258,8 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_2_single_cell_grid_strats_and_defa
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	USpatialMultiWorkerSettings MultiWorkerSettings{};
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerOne"), FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerTwo"), FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
 
 	// The two single strategies plus the default strategy require 3 virtual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
@@ -291,7 +291,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	USpatialMultiWorkerSettings MultiWorkerSettings{};
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerOne"), FLayerInfo{TEXT("LayerOne"), {ADefaultPawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerOne"), {ADefaultPawn::StaticClass()}, UGridBasedLBStrategy::StaticClass()});
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, &MultiWorkerSettings, {}));
@@ -344,8 +344,8 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	USpatialMultiWorkerSettings MultiWorkerSettings{};
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerOne"), FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerTwo"), FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, &MultiWorkerSettings, {}));
@@ -368,8 +368,8 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_two_actors_of_different_types_and_same_positions_ma
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
 	USpatialMultiWorkerSettings MultiWorkerSettings{};
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerOne"), FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
-	MultiWorkerSettings.WorkerLayers.Add(TEXT("LayerTwo"), FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerOne"), {ALayer1Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
+	MultiWorkerSettings.WorkerLayers.Add(FLayerInfo{TEXT("LayerTwo"), {ALayer2Pawn::StaticClass()}, UTwoByFourLBGridStrategy::StaticClass()});
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, &MultiWorkerSettings, {}));

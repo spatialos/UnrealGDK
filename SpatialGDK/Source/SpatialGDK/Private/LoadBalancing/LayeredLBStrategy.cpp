@@ -25,15 +25,13 @@ void ULayeredLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings* MultiWo
 	check(MultiWorkerSettings->WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const TPair<FName, FLayerInfo>& Layer : MultiWorkerSettings->WorkerLayers)
+	for (const FLayerInfo& LayerInfo : MultiWorkerSettings->WorkerLayers)
 	{
-		const FName& LayerName = Layer.Key;
-		const FLayerInfo& LayerInfo = Layer.Value;
-
 		UAbstractLBStrategy* LBStrategy;
 		if (LayerInfo.LoadBalanceStrategy == nullptr)
 		{
-			UE_LOG(LogLayeredLBStrategy, Error, TEXT("WorkerLayer %s does not specify a loadbalancing strategy (or it cannot be resolved). Using a 1x1 grid."), *LayerName.ToString());
+			UE_LOG(LogLayeredLBStrategy, Error, TEXT("WorkerLayer %s does not specify a loadbalancing strategy "
+				"(or it cannot be resolved). Using a 1x1 grid."), *LayerInfo.Name.ToString());
 			LBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		}
 		else
@@ -41,13 +39,13 @@ void ULayeredLBStrategy::Init(const UAbstractSpatialMultiWorkerSettings* MultiWo
 			LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
 		}
 
-		AddStrategyForLayer(LayerName, LBStrategy);
+		AddStrategyForLayer(LayerInfo.Name, LBStrategy);
 
-		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerInfo.Name.ToString());
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
 			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
-			ClassPathToLayer.Add(ClassPtr, LayerName);
+			ClassPathToLayer.Add(ClassPtr, LayerInfo.Name);
 		}
 	}
 
@@ -250,7 +248,16 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
 	check(IsReady());
-	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
+
+	if (LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer))
+	{ 
+		return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
+	}
+
+	UE_LOG(LogLayeredLBStrategy, Warning, TEXT("Load balancing strategy does not contain default layer. "
+		"This is needed to render worker debug visualization. Class: %s"), *GetNameSafe(this));
+
+	return nullptr;
 }
 
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const

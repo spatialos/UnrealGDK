@@ -26,7 +26,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGridBasedLBStrategy, Log, All)
  * Intended Usage: Create a data-only blueprint subclass and change
  * the Cols, Rows, WorldWidth, WorldHeight.
  */
-UCLASS(Blueprintable)
+UCLASS(Blueprintable, HideDropdown)
 class SPATIALGDK_API UGridBasedLBStrategy : public UAbstractLBStrategy
 {
 	GENERATED_BODY()
@@ -74,7 +74,6 @@ protected:
 	float InterestBorder;
 
 private:
-
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
@@ -82,4 +81,20 @@ private:
 	bool bIsStrategyUsedOnLocalWorker;
 
 	static bool IsInside(const FBox2D& Box, const FVector2D& Location);
+};
+
+UCLASS(Blueprintable)
+class SPATIALGDK_API USingleWorkerStrategy : public UGridBasedLBStrategy
+{
+	GENERATED_BODY()
+
+public:
+	USingleWorkerStrategy()
+	{
+		Rows = 1;
+		Cols = 1;
+		WorldWidth = 1000000.f;
+		WorldHeight = 1000000.f;
+		InterestBorder = 0.f;
+	}
 };
