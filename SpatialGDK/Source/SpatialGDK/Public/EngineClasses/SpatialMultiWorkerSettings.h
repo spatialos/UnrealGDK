@@ -15,6 +15,8 @@
 
 class UAbstractLockingPolicy;
 
+#define LOCTEXT_NAMESPACE "SpatialMultiWorkerSettings"
+
 namespace SpatialGDK
 {
 const FName DefaultLayerName = TEXT("Default");
