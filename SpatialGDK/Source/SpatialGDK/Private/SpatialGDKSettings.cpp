@@ -37,7 +37,7 @@ namespace
 				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
 			}
 		}
-#endif
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
 		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
 	}
 
@@ -56,7 +56,7 @@ namespace
 				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
 			}
 		}
-#endif
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
 		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
 	}
 }
