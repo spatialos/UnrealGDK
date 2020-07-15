@@ -1234,8 +1234,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 {
 	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
-		SCOPE_CYCLE_COUNTER(STAT_IsAuthoritativeServer);
-		if (!IsAuthoritativeServer())
+		if (!IsReadyForReplication())
 		{
 			return;
 		}
