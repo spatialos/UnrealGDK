@@ -101,6 +101,9 @@ public:
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
 	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
+
+	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -131,7 +134,6 @@ private:
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
 
-	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& Params, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
@@ -197,6 +199,8 @@ public:
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
+
+	FRPCContainer& GetRPCContainer() { return IncomingRPCs; }
 
 private:
 	UPROPERTY()

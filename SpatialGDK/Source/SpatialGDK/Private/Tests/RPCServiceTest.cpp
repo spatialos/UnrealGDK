@@ -1,11 +1,18 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CoreMinimal.h"
+#include "Engine/Engine.h"
+#include "GameFramework/GameStateBase.h"
+#include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Misc/AutomationTest.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Tests/TestActor.h"
+#include "Tests/AutomationCommon.h"
+#include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestingComponentViewHelpers.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/RPCRingBuffer.h"
@@ -23,6 +30,12 @@ enum ERPCEndpointType : uint8_t
 	CLIENT_AUTH,
 	SERVER_AND_CLIENT_AUTH,
 	NO_AUTH
+};
+
+struct TestData
+{
+	UWorld* TestWorld = nullptr;
+	AActor* Actor = nullptr;
 };
 
 struct EntityPayload
@@ -44,7 +57,6 @@ const SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, TArray
 ExtractRPCDelegate DefaultRPCDelegate = ExtractRPCDelegate::CreateLambda([](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
 	return true;
 });
-
 
 Worker_Authority GetClientAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
 {
@@ -494,5 +506,130 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_
 	}
 
 	TestTrue("Returning false in extraction callback correctly stopped processing RPCs", bTestPassed);
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForWorld, TSharedPtr<TestData>, Data);
+bool FWaitForWorld::Update()
+{
+	UWorld* World = nullptr;
+	const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
+	for (const FWorldContext& Context : WorldContexts)
+	{
+		if ((Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game)
+			&& (Context.World() != nullptr))
+		{
+			World = Context.World();
+			break;
+		}
+	}
+
+	if (World != nullptr && World->AreActorsInitialized())
+	{
+		AGameStateBase* GameState = World->GetGameState();
+		if (GameState != nullptr && GameState->HasMatchStarted())
+		{
+			Data->TestWorld = World;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSpawnActor, TSharedPtr<TestData>, Data);
+bool FSpawnActor::Update()
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.bNoFail = true;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AActor* Actor = Data->TestWorld->SpawnActor<ATestActor>(SpawnParams);
+	Data->Actor = Actor;
+
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForActor, TSharedPtr<TestData>, Data);
+bool FWaitForActor::Update()
+{
+	AActor* Actor = Data->Actor;
+	return (IsValid(Actor) && Actor->IsActorInitialized() && Actor->HasActorBegunPlay());
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FDropRPCQueueTest, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data);
+bool FDropRPCQueueTest::Update()
+{
+	if (!ensure(Test != nullptr))
+	{
+		return true;
+	}
+
+	if (!ensure(Data != nullptr) ||
+		!ensure(Data->Actor != nullptr))
+	{
+		Test->TestTrue("Returning false in extraction callback correctly stopped processing RPCs", false);
+	}
+
+	AActor* Actor = Data->Actor;
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Data->TestWorld->NetDriver);
+	Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+
+	Schema_ComponentData* ClientComponentData = Schema_CreateComponentData();
+	Schema_Object* ClientSchemaObject = Schema_GetComponentDataFields(ClientComponentData);
+
+	// Write RPC to ring buffer.
+	const FRPCInfo& RPCInfo = SpatialNetDriver->ClassInfoManager->GetRPCInfo(Actor, ATestActor::StaticClass()->FindFunctionByName("TestServerRPC"));
+	const SpatialGDK::RPCPayload RPCPayload = SpatialGDK::RPCPayload(0, RPCInfo.Index, TArray<uint8>({}, 0));
+	SpatialGDK::RPCRingBufferUtils::WriteRPCToSchema(ClientSchemaObject, ERPCType::ClientReliable, 1, RPCPayload);
+
+	const ERPCEndpointType EndpointType = SERVER_AUTH;
+	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(*SpatialNetDriver->StaticComponentView,
+		EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
+		ClientComponentData,
+		GetClientAuthorityFromRPCEndpointType(EndpointType));
+	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(*SpatialNetDriver->StaticComponentView,
+		EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
+		GetServerAuthorityFromRPCEndpointType(EndpointType));
+
+	SpatialGDK::SpatialRPCService* RPCService = SpatialNetDriver->GetRPCService();
+	RPCService->OnEndpointAuthorityGained(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
+
+	bool bSuccess = false;
+	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&SpatialNetDriver, &bSuccess](const FPendingRPCParams& Params) {
+
+		FRPCErrorInfo RPCErrorInfo = SpatialNetDriver->Receiver->ApplyRPC(Params);
+		bSuccess = RPCErrorInfo.ErrorCode == ERPCResult::NoAuthority;
+		bSuccess &= RPCErrorInfo.QueueCommand == ERPCQueueCommand::DropEntireQueue;
+
+		return RPCErrorInfo;
+	});
+
+	// Bind new process function.
+	FRPCContainer& RPCContainer = SpatialNetDriver->Receiver->GetRPCContainer();
+	RPCContainer.BindProcessingFunction(RPCDelegate);
+
+	// Change actor authority and process.
+	Actor->Role = ROLE_SimulatedProxy;
+	RPCService->ExtractRPCsForEntity(EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
+
+	RPCContainer.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(SpatialNetDriver->Receiver, &USpatialReceiver::ApplyRPC));
+
+	Test->TestTrue("Returning false in extraction callback correctly stopped processing RPCs", bSuccess);
+
+	return true;
+}
+
+RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_over_WHEN_we_process_the_rpc_THEN_return_DropEntireQueue_queue_command)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FDropRPCQueueTest(this, Data));
+
 	return true;
 }
