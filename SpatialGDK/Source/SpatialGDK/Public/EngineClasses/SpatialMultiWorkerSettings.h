@@ -55,7 +55,7 @@ private:
 	void ValidateLockingPolicyIsSet();
 };
 
-UCLASS(Blueprintable)
+UCLASS(Blueprintable, HideDropdown)
 class SPATIALGDK_API USpatialMultiWorkerSettings : public UAbstractSpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
