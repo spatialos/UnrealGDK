@@ -819,10 +819,13 @@ bool RunSchemaCompiler()
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
 	FString SchemaDescriptorOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"));
+	FString SchemaBundleOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	const FString& SchemaCompilerBaseArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path "), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
+	const FString& SchemaCompilerBaseArgs = FString::Printf(
+		TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --bundle_out=\"%s\" --load_all_schema_on_schema_path "),
+		*SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput, *SchemaBundleOutput);
 
 	// If there's already a compiled schema dir, blow it away so we don't have lingering artifacts from previous generation runs.
 	if (FPaths::DirectoryExists(CompiledSchemaDir))
