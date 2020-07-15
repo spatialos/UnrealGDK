@@ -9,7 +9,7 @@
 
 
 UCLASS(meta = (ScriptName = "SpatialFunctionalTestLibrary"))
-class USpatialFunctionalTestBlueprintLibrary : public UBlueprintFunctionLibrary
+class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestBlueprintLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 

@@ -2,12 +2,6 @@
 
 #include "SpatialFunctionalTestStep.h"
 
-#include "Engine/World.h"
-#include "Net/UnrealNetwork.h"
-#include "Engine/Engine.h"
-#include "SpatialFunctionalTestFlowController.h"
-#include "SpatialFunctionalTest.h"
-
 SpatialFunctionalTestStep::SpatialFunctionalTestStep()
 	: bIsRunning(false)
 	, bIsReady(false)

@@ -27,7 +27,7 @@ namespace
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
  */
-UCLASS(Blueprintable/*, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation")*/)
+UCLASS(Blueprintable, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest
 {
 	GENERATED_BODY()
@@ -101,6 +101,7 @@ public:
 	void AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	// Add Steps for Blueprints and C++
+
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a complete Definition. This allows you to define a Step and add it / re-use it multiple times.\n\nSee also CreateStepDefinition()."))
 	void AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition);
 
@@ -111,6 +112,7 @@ public:
 	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers);
 
 	// Add Steps for C++
+
 	FSpatialFunctionalTestStepDefinition& AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
 	FSpatialFunctionalTestStepDefinition& AddClientStep(const FString& StepName, int ClientId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
