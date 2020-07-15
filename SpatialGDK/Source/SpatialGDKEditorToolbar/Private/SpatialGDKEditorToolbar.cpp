@@ -98,6 +98,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnAutoStartLocalDeploymentChanged();
 
+#if ENGINE_MINOR_VERSION < 25
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
 		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
@@ -108,6 +109,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			VerifyAndStartDeployment();
 		}
 	});
+#endif
 
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
