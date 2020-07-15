@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
 
 ### Bug fixes:
+- The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
 - `Cloud Deployment Name` field in the dropdown now refers to the same property as `Deployment Name` in the Cloud Deployment Configuration window, so the `Start Deployment` toolbar button will now use the name specified in the dropdown when quickly starting the new deployment without going through the Cloud Deployment Configuration window.
 - `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
 - Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
