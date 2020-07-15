@@ -352,7 +352,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Dispatcher = MakeUnique<SpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
-
+	
 	// TODO: UNR-2452
 	// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 	// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
@@ -395,9 +395,26 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()));
 	}
 
+	//setup event logs
+	FString WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+	TFunction<uint32()> LoadbalancingId = []() -> uint32 { return 0; };
+	if(VirtualWorkerTranslator != nullptr)
+	{
+		LoadbalancingId = [this]() -> uint32 { return VirtualWorkerTranslator->GetLocalVirtualWorkerId(); };
+	}
+	EventLogger = MakeShared<GDKStructuredEventLogger>(
+		//"{log directory}",
+		"LoggingDirectory\\",
+		Connection->GetWorkerId().Left(17),
+		WorkerType,
+		LoadbalancingId); //todo: injection root for file name
+	EventLogger->Start();
+	EventProcessor = GDKEventsToStructuredLogs(EventLogger);
+	//setup event logs
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get());
-	Receiver->Init(this, &TimerManager, RPCService.Get());
+	Sender->Init(this, &TimerManager, RPCService.Get(), &EventProcessor);
+	Receiver->Init(this, &TimerManager, RPCService.Get(), &EventProcessor);
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -865,6 +882,11 @@ void USpatialNetDriver::BeginDestroy()
 		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 	}
 #endif
+
+	if (EventLogger.IsValid())
+	{
+		EventLogger->End();
+	}
 }
 
 void USpatialNetDriver::PostInitProperties()
