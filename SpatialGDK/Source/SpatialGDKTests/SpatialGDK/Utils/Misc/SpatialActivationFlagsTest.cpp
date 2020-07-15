@@ -67,7 +67,7 @@ struct SpatialActivationFlagTestFixture
 {
 	SpatialActivationFlagTestFixture(FAutomationTestBase& Test)
 	{
-		ProjectPath = FPaths::GetProjectFilePath();
+		ProjectPath = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
 		CommandLineArgs = ProjectPath;
 		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDKSlow.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
 		CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
