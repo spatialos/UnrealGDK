@@ -83,7 +83,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bRunSpatialWorkerConnectionOnGameThread(false)
+	, bRunSpatialWorkerConnectionOnGameThread(true)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
 	, MaxRPCRingBufferSize(32)
