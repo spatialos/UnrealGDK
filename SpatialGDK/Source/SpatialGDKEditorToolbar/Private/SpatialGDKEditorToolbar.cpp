@@ -780,13 +780,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-		// USingleWorkerRuntimeStrategy* DefaultStrategy = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
-		// UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = DefaultStrategy;
-
-		// if (TryGetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, LaunchConfigDescription.World.Dimensions))
-		// {
-		// 	LoadBalancingStrat->AddToRoot();
-		// }
 
 		FWorkerTypeLaunchSection Conf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
 		// Force manual connection to true as this is the config for PIE.
@@ -810,11 +803,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
 		}
-
-		// if (LoadBalancingStrat != DefaultStrategy)
-		// {
-		// 	LoadBalancingStrat->RemoveFromRoot();
-		// }
 	}
 	else
 	{

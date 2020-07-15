@@ -4,15 +4,17 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
-#include "CoreMinimal.h"
+#include "Containers/Set.h"
+#include "GameFramework/Actor.h"
+#include "Templates/SubclassOf.h"
+#include "UObject/Class.h"
+#include "UObject/NameTypes.h"
+#include "UObject/SoftObjectPtr.h"
 
 #include "LayerInfo.generated.h"
 
 class UAbstractLBStrategy;
 class UAbstractLockingPolicy;
-class USingleWorkerStrategy;
-
-const FName NewLayerName = TEXT("New Layer");
 
 USTRUCT()
 struct FLayerInfo
@@ -20,7 +22,7 @@ struct FLayerInfo
 	GENERATED_BODY()
 
 	FLayerInfo()
-		: Name(NewLayerName)
+		: Name(TEXT("New Layer"))
 		, ActorClasses({})
 		, LoadBalanceStrategy(USingleWorkerStrategy::StaticClass())
 	{

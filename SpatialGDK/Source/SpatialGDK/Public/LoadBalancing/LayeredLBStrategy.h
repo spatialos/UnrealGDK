@@ -6,8 +6,8 @@
 
 #include "Utils/LayerInfo.h"
 
+#include "Containers/Map.h"
 #include "CoreMinimal.h"
-#include "Math/Box2D.h"
 #include "Math/Vector2D.h"
 
 #include "LayeredLBStrategy.generated.h"
@@ -32,8 +32,10 @@ class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 public:
 	ULayeredLBStrategy();
 
+	void SetLayers(const TArray<FLayerInfo>& WorkerLayers);
+
 	/* UAbstractLBStrategy Interface */
-	virtual void Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings) override;
+	virtual void Init() override {};
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -59,8 +61,6 @@ public:
 	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
 	// Currently, this is just the default strategy.
 	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
-
-	const TMap<FName, UAbstractLBStrategy*>& GetWorkerLayers() const { return LayerNameToLBStrategy; }
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;

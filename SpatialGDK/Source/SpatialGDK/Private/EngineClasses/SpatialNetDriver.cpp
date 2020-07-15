@@ -437,28 +437,30 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	const bool bMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
 
+	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = bMultiWorkerEnabled ?
         *WorldSettings->MultiWorkerSettingsClass :
         USpatialMultiWorkerSettings::StaticClass();
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
 
+	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
+	}
+
+	const TSubclassOf<UAbstractLockingPolicy> LockingPolicyClass = bMultiWorkerEnabled && *MultiWorkerSettings->LockingPolicy != nullptr ?
+        *MultiWorkerSettings->LockingPolicy :
+        UOwnershipLockingPolicy::StaticClass();
+
 	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
-	LoadBalanceStrategy->Init(MultiWorkerSettings);
+	LoadBalanceStrategy->Init();
+	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
 	LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
 	LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
-
-	const TSubclassOf<UAbstractLockingPolicy> LockingPolicyClass = bMultiWorkerEnabled && *MultiWorkerSettings->LockingPolicy != nullptr ?
-		*MultiWorkerSettings->LockingPolicy :
-		UOwnershipLockingPolicy::StaticClass();
-
-	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
-	}
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);

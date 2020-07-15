@@ -1,7 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma once
-
 #include "EngineClasses/SpatialMultiWorkerSettings.h"
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
@@ -37,9 +35,15 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 
 uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() const
 {
-	ULayeredLBStrategy* LbStrategy = NewObject<ULayeredLBStrategy>();
-	LbStrategy->Init(this);
-	return LbStrategy->GetMinimumRequiredWorkers();
+	uint32 WorkerCount = 0;
+
+	for (const FLayerInfo& LayerInfo : WorkerLayers)
+	{
+		check(*LayerInfo.LoadBalanceStrategy != nullptr);
+		WorkerCount += GetDefault<UAbstractLBStrategy>(*LayerInfo.LoadBalanceStrategy)->GetMinimumRequiredWorkers();
+	}
+
+	return WorkerCount;
 }
 
 void UAbstractSpatialMultiWorkerSettings::ValidateNonEmptyWorkerLayers()
@@ -48,7 +52,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNonEmptyWorkerLayers()
 	{
 		WorkerLayers.Emplace(SpatialGDK::DefaultLayerInfo);
 		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("EmptyWorkerLayer_Prompt", "Having an empty worker layers map is invalid. "
+			FText::Format(LOCTEXT("EmptyWorkerLayer_Prompt", "You need at least one layer in your settings. "
 			"Adding back the default layer. File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }
@@ -63,16 +67,17 @@ void UAbstractSpatialMultiWorkerSettings::ValidateSomeLayerHasActorClass()
 
 	if (!bHasTopLevelActorClass)
 	{
-		WorkerLayers[0].ActorClasses.Add(AActor::StaticClass()); FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("MissingActorLayer_Prompt", "Some worker layer must contain the root Actor class. "
-			"Adding AActor to the first worker layer entry. File: {0}"), FText::FromString(GetNameSafe(this))));
+		WorkerLayers[0].ActorClasses.Add(AActor::StaticClass());
+		FMessageDialog::Open(EAppMsgType::Ok,FText::Format(LOCTEXT("MissingActorLayer_Prompt",
+			"Some worker layer must contain the root Actor class. Adding AActor to the first worker layer entry. "
+			"File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }
 
 void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongLayers()
 {
-	TSet<TSoftClassPtr<AActor>> FoundActorClasses;
-	TSet<TSoftClassPtr<AActor>> DuplicatedActorClasses;
+	TSet<TSoftClassPtr<AActor>> FoundActorClasses{};
+	TSet<TSoftClassPtr<AActor>> DuplicatedActorClasses{};
 
 	for (FLayerInfo& Layer : WorkerLayers)
 	{
@@ -136,28 +141,28 @@ void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveUniqueNonemptyNam
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::Format(LOCTEXT("BadLayerName_Prompt", "Found a worker layer with a duplicate name. "
-				"This has been fixed, please check your configuration. File: {0}"), FText::FromString(GetNameSafe(this))));
+				"This has been fixed, please check your layers. File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }
 
 void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveLoadBalancingStrategy()
 {
-	bool bSomeLayerNameWasChanged = false;
+	bool bSomeLayerWasMissingStrategy = false;
 
 	for (FLayerInfo& Layer : WorkerLayers)
 	{
 		if (*Layer.LoadBalanceStrategy == nullptr)
 		{
-			bSomeLayerNameWasChanged |= true;
-			Layer.LoadBalanceStrategy = UGridBasedLBStrategy::StaticClass();
+			bSomeLayerWasMissingStrategy |= true;
+			Layer.LoadBalanceStrategy = USingleWorkerStrategy::StaticClass();
 		}
 	}
 
-	if (bSomeLayerNameWasChanged)
+	if (bSomeLayerWasMissingStrategy)
 	{
-		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("UnsetLoadBalancingStrategy_Prompt", "Found a worker layer with an unset load balancing strategy. "
-				"Defaulting to a 1x1 grid. File: {0}"), FText::FromString(GetNameSafe(this))));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("UnsetLoadBalancingStrategy_Prompt",
+			"Found a worker layer with an unset load balancing strategy. Defaulting to a 1x1 grid. "
+			"File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }
 
@@ -167,7 +172,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateLockingPolicyIsSet()
 	{
 		LockingPolicy = UOwnershipLockingPolicy::StaticClass();
 		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("UnsetLockingPolicy_Prompt", "Locking policy must be set. Resetting to default policy."
-				"File: {0}"), FText::FromString(GetNameSafe(this))));
+			FText::Format(LOCTEXT("UnsetLockingPolicy_Prompt", "Locking policy must be set. "
+				"Resetting to default policy. File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }

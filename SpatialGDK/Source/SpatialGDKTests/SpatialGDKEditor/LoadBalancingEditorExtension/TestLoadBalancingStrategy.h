@@ -7,7 +7,6 @@
 #include "TestLoadBalancingStrategy.generated.h"
 
 class SpatialVirtualWorkerTranslator;
-class UAbstractSpatialMultiWorkerSettings;
 
 UCLASS()
 class UDummyLoadBalancingStrategy : public UAbstractLBStrategy
@@ -19,7 +18,7 @@ public:
 
 
 	/* UAbstractLBStrategy Interface */
-	void Init(const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings) override
+	void Init() override
 	{
 	}
 
