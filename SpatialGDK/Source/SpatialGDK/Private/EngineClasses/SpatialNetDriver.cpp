@@ -882,7 +882,6 @@ void USpatialNetDriver::BeginDestroy()
 	}
 #endif
 
-	ActorGroupManager = nullptr;
 	if (EventLogger.IsValid())
 	{
 		EventLogger->End();

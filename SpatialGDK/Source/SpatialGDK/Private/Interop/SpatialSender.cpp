@@ -94,7 +94,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
 
 	EventProcessor->SendCreateEntity(Channel->Actor, CreateEntityRequestId);
-	
+
 	return CreateEntityRequestId;
 }
 
@@ -586,7 +586,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	EventProcessor->SendAuthorityIntentUpdate(Actor, NewAuthoritativeVirtualWorkerId);
-	
+
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
@@ -667,32 +667,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		{
 			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 		}
-	}
-
-	return FRPCErrorInfo{ TargetObject, Function, Result, false };
-}
-
-#if !UE_BUILD_SHIPPING
-void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType, Worker_RequestId LocalRequestId)
-{
-	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
-	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
-
-#if TRACE_LIB_ACTIVE
-	EventProcessor->SendRPC(Actor, Function, Payload.Trace);
-#else
-	EventProcessor->SendRPC(Actor, Function, InvalidTraceKey, LocalRequestId);
-#endif
-}
-#endif
-
-bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity)
-{
-	bool WillHaveAuthorityOverActor = true;
-
-	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
-	{
-		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
+		else
 		{
 			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
 		}
@@ -715,7 +690,7 @@ void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* F
 
 	OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Payload);
 #if !UE_BUILD_SHIPPING
-			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
+	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
 #endif // !UE_BUILD_SHIPPING
 }
 
@@ -743,7 +718,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 			EntityId, CommandRequest.component_id, *Function->GetName());
 	}
 #if !UE_BUILD_SHIPPING
-		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, RequestId);
+	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, RequestId);
 #endif // !UE_BUILD_SHIPPING
 }
 
@@ -781,10 +756,7 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 	Connection->MaybeFlush();
 #if !UE_BUILD_SHIPPING
-			if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
-			{
-				TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
-			}
+	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
 #endif // !UE_BUILD_SHIPPING
 
 	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
@@ -801,10 +773,9 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 	}
 
 #if !UE_BUILD_SHIPPING
+	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
+	{
 		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
-#endif // !UE_BUILD_SHIPPING
-		Connection->MaybeFlush();
-		return ERPCResult::Success;
 	}
 #endif // !UE_BUILD_SHIPPING
 
@@ -840,10 +811,15 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 }
 
 #if !UE_BUILD_SHIPPING
-void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
+void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType, Worker_RequestId LocalRequestId)
 {
 	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+#if TRACE_LIB_ACTIVE
+	EventProcessor->SendRPC(Actor, Function, Payload.Trace);
+#else
+	EventProcessor->SendRPC(Actor, Function, InvalidTraceKey, LocalRequestId);
+#endif
 }
 #endif
 
@@ -1070,7 +1046,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-	EventProcessor->SendCommandResponse(RequestId, false);
+	EventProcessor->SendCommandResponse(RequestId, true);
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
@@ -1120,8 +1096,6 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		else
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld"), EntityId);
-			auto RequestID = Connection->SendDeleteEntityRequest(EntityId);
-			EventProcessor->SendDeleteEntity(Actor, EntityId, RequestID);
 		}
 	}
 	else
@@ -1131,6 +1105,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 		Connection->SendDeleteEntityRequest(EntityId);
+		auto RequestID = Connection->SendDeleteEntityRequest(EntityId);
+		EventProcessor->SendDeleteEntity(Actor, EntityId, RequestID);
 	}
 }
 
