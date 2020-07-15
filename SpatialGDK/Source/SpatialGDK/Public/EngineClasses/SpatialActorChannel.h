@@ -71,7 +71,7 @@ struct FObjectReferences
 	TUniquePtr<FObjectReferencesMap>	Array;
 	int32								ShadowOffset;
 	int32								ParentIndex;
-	GDK_PROPERTY(Property)*							Property;
+	GDK_PROPERTY(Property)*				Property;
 };
 
 struct FPendingSubobjectAttachment
