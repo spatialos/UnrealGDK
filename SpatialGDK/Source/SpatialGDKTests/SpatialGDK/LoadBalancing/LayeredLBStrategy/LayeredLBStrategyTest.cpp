@@ -112,7 +112,7 @@ bool FSetupStrategy::Update()
 {
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(TestData->TestWorld->GetWorldSettings());
 	WorldSettings->DefaultLayerLoadBalanceStrategy = UGridBasedLBStrategy::StaticClass();
-	WorldSettings->bEnableMultiWorker = true;
+	WorldSettings->SetMultiWorkerEnabled(true);
 
 	auto& Strat = TestData->Strat;
 	Strat->Init();
