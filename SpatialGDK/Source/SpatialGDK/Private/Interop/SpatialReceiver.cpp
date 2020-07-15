@@ -1937,9 +1937,8 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
-	const bool bTimeExpired = SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued;
 
-	if (UnresolvedRefs.Num() == 0 || bTimeExpired)
+	if (UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
 	{
 		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 		FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1955,7 +1954,7 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 			It->DestroyValue_InContainer(Parms);
 		}
 
-		if (UnresolvedRefs.Num() > 0 && bTimeExpired &&
+		if (UnresolvedRefs.Num() > 0 &&
 			!SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type) &&
 			(Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
 		{
@@ -1964,7 +1963,7 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 				return FString::Printf(TEXT("EntityId: %lld"), Ref.Entity);
 			});
 
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executed RPC %s::%s with unresolved references (%s) after %f seconds of queueing.  Owner name: %s"), *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued, *GetNameSafe(TargetObject->GetOuter()));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing.  Owner name: %s"), *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued, *GetNameSafe(TargetObject->GetOuter()));
 		}
 
 		return ERPCResult::Success;
