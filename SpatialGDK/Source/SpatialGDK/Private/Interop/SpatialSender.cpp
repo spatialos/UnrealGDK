@@ -1046,7 +1046,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-	EventProcessor->SendCommandResponse(RequestId, true);
+	EventProcessor->SendCommandResponse(RequestId, false);
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.

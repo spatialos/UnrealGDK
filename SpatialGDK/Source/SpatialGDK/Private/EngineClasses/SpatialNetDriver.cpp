@@ -403,7 +403,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		LoadbalancingId = [this]() -> uint32 { return VirtualWorkerTranslator->GetLocalVirtualWorkerId(); };
 	}
 	EventLogger = MakeShared<GDKStructuredEventLogger>(
-		"{log directory}",
+		//"{log directory}",
+		"LoggingDirectory\\",
 		Connection->GetWorkerId().Left(17),
 		WorkerType,
 		LoadbalancingId); //todo: injection root for file name
