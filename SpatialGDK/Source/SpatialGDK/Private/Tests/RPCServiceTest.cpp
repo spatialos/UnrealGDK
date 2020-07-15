@@ -615,7 +615,7 @@ bool FDropRPCQueueTest::Update()
 
 	RPCContainer.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(SpatialNetDriver->Receiver, &USpatialReceiver::ApplyRPC));
 
-	Test->TestTrue("Returning false in extraction callback correctly stopped processing RPCs", bSuccess);
+	Test->TestTrue("Correct RPC queue command was returned by the receiver after attempting to process an RPC without authority over the actor.", bSuccess);
 
 	return true;
 }
