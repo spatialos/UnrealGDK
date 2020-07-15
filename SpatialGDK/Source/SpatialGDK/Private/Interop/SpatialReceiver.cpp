@@ -1934,8 +1934,6 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	RPCPayload PayloadCopy = PendingRPCParams.Payload;
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs, UnresolvedRefs);
 
-	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
@@ -1945,6 +1943,7 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	{
 		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 		FMemory::Memzero(Parms, Function->ParmsSize);
+		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 		RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
 		TargetObject->ProcessEvent(Function, Parms);
