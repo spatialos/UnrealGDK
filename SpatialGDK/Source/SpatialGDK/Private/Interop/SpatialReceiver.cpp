@@ -1936,11 +1936,12 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 
-	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
-
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	if (UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
+	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
+	const bool bTimeExpired = SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued;
+
+	if (UnresolvedRefs.Num() == 0 || bTimeExpired)
 	{
 		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 		FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1955,7 +1956,7 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 			It->DestroyValue_InContainer(Parms);
 		}
 
-		if (UnresolvedRefs.Num() > 0 &&
+		if (UnresolvedRefs.Num() > 0 && bTimeExpired &&
 			!SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type) &&
 			(Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
 		{
