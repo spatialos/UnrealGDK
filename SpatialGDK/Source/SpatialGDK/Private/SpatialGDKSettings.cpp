@@ -24,7 +24,7 @@ namespace
 {
 	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
 	{
-#if !UE_BUILD_SHIPPING || ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
+#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
 		if(FParse::Param(CommandLine, Parameter))
 		{
 			bOutValue = true;
@@ -43,7 +43,7 @@ namespace
 
 	void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<bool>& bOutValue)
 	{
-#if !UE_BUILD_SHIPPING || ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
+#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
 		if (FParse::Param(CommandLine, Parameter))
 		{
 			bOutValue = true;
