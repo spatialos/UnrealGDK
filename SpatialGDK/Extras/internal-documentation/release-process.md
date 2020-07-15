@@ -29,6 +29,7 @@ Take a look at the top of the build page, where you'll notice a new [annotation]
 "Draft release: [url]"
 1. Open every draft release link and click publish on each one.
 1. Notify @techwriters in [#docs](https://improbable.slack.com/archives/C0TBQAB5X) that they may publish the new version of the docs.
+1. Notify China Infra team [sync the release branch to Gitee](https://buildkite.com/improbable/platform-copybara) and add the release tag by manually.
 1. Announce the release in:
 
 * Forums
