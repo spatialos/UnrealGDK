@@ -269,6 +269,8 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 const FString LOCAL_HOST   = TEXT("127.0.0.1");
 const uint16  DEFAULT_PORT = 7777;
 
+const uint16  DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT = 7777;
+
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
 const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;

@@ -2,6 +2,7 @@
 
 #include "SpatialCommandUtils.h"
 
+#include "Internationalization/Regex.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -277,6 +278,184 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 	}
 
 	OutErrorMessage = FText::Format(LOCTEXT("DevLoginTagNotAvailable", "The cloud deployment {0} does not have the {1} tag associated with it. The client won't be able to connect to the deployment."), FText::FromString(DeploymentName), FText::FromString(SpatialGDKServicesConstants::DevLoginDeploymentTag));
+	return false;
+}
+
+FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 Port , FString &OutResult, int32 &OutExitCode)
+{
+	FString Command = FString::Printf(TEXT("cloud connect external %s --listening_address %s --local_receptionist_port %i"), *CloudDeploymentName, *ListeningAddress, Port);
+
+	if (bIsRunningInChina)
+	{
+		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
+	}
+
+	FProcHandle ProcHandle;
+
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
+
+	ProcHandle = FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, nullptr, 1 /*PriorityModifer*/, *SpatialGDKServicesConstants::SpatialOSDirectory, WritePipe);
+
+	bool bProcessSucceeded = false;
+	bool bProcessFinished = false;
+	if (ProcHandle.IsValid())
+	{
+		while (!bProcessFinished && !bProcessSucceeded)
+		{
+			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &OutExitCode);
+
+			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+			bProcessSucceeded = OutResult.Contains("The receptionist proxy is available");
+
+			FPlatformProcess::Sleep(0.01f);
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s'"), *SpatialGDKServicesConstants::SpatialExe, *Command, *SpatialGDKServicesConstants::SpatialOSDirectory);
+	}
+
+	if (!bProcessSucceeded)
+	{
+		FPlatformProcess::TerminateProc(ProcHandle, true);
+		ProcHandle.Reset();
+	}
+
+	FPlatformProcess::ClosePipe(0, ReadPipe);
+	FPlatformProcess::ClosePipe(0, WritePipe);
+
+	return ProcHandle;
+}
+
+void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHandle)
+{
+	if (ProcHandle.IsValid())
+	{
+		FPlatformProcess::TerminateProc(ProcHandle, true);
+	}
+}
+
+bool SpatialCommandUtils::GetProcessName(const FString& PID, FString& OutProcessName)
+{
+#if PLATFORM_MAC
+	UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Failed to get the name of the process that is blocking the required port. To get the name of the process in MacOS you need to use SpatialCommandUtils::GetProcessInfoFromPort."));
+	return false;
+#else
+	bool bSuccess = false;
+	OutProcessName = TEXT("");
+	const FString TaskListCmd = TEXT("tasklist");
+
+	// Get the task list line for the process with PID 
+	const FString TaskListArgs = FString::Printf(TEXT(" /fi \"PID eq %s\" /nh /fo:csv"), *PID);
+	FString TaskListResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*TaskListCmd, *TaskListArgs, &ExitCode, &TaskListResult, &StdErr);
+	if (ExitCode == 0 && bSuccess)
+	{
+		FRegexPattern ProcessNamePattern(TEXT("\"(.+?)\""));
+		FRegexMatcher ProcessNameMatcher(ProcessNamePattern, TaskListResult);
+		if (ProcessNameMatcher.FindNext())
+		{
+			OutProcessName = ProcessNameMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
+			return true;
+		}
+	}
+
+	UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Failed to get the name of the process that is blocking the required port."));
+
+	return false;
+#endif
+}
+
+bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
+{
+	int32 ExitCode;
+	FString StdErr;
+
+#if PLATFORM_WINDOWS
+	const FString KillCmd = TEXT("taskkill");
+	const FString KillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
+#elif PLATFORM_MAC
+	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::KillCmdFilePath, TEXT("kill"));
+	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
+#endif
+
+	FString KillResult;
+	bool bSuccess = FPlatformProcess::ExecProcess(*KillCmd, *KillArgs, &ExitCode, &KillResult, &StdErr);
+	bSuccess = bSuccess && ExitCode == 0;
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to kill process with PID %s. Error: %s"), *PID, *StdErr);
+	}
+
+	return bSuccess;
+}
+
+bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
+{
+#if PLATFORM_WINDOWS
+	const FString Command = FString::Printf(TEXT("netstat"));
+	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
+	const FString Args = TEXT("-n -o -a");
+#elif PLATFORM_MAC
+	const FString Command = FPaths::Combine(SpatialGDKServicesConstants::LsofCmdFilePath, TEXT("lsof"));
+	// -i:Port list the processes that are running on Port
+	const FString Args = FString::Printf(TEXT("-i:%i"), Port);
+#endif
+
+	FString Result;
+	int32 ExitCode;
+	FString StdErr;
+
+	bool bSuccess = FPlatformProcess::ExecProcess(*Command, *Args, &ExitCode, &Result, &StdErr);
+
+	if (ExitCode == 0 && bSuccess)
+	{
+#if PLATFORM_WINDOWS
+		// Get the line of the netstat output that contains the port we're looking for.
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
+#elif PLATFORM_MAC
+		// Get the line that contains the name, pid and state of the process.
+		FRegexPattern PidMatcherPattern(TEXT("(\\S+)( *\\d+).*(\\(\\S+\\))"));
+#endif
+		FRegexMatcher PidMatcher(PidMatcherPattern, Result);
+		if (PidMatcher.FindNext())
+		{
+
+#if PLATFORM_WINDOWS
+			OutState = PidMatcher.GetCaptureGroup(2 /* Get the State of the process, which is the second group. */);
+			OutPid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+			if (!GetProcessName(OutPid, OutProcessName))
+			{
+				OutProcessName = TEXT("Unknown");
+			}
+#elif PLATFORM_MAC
+			OutProcessName = PidMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
+			OutPid = PidMatcher.GetCaptureGroup(2 /* Get the PID, which is the second group. */);
+			OutState = PidMatcher.GetCaptureGroup(3 /* Get the State of the process, which is the third group. */);
+#endif
+			return true;
+		}
+
+#if PLATFORM_WINDOWS
+		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port %i is not blocked!"), Port);
+		return false;
+#endif
+		 
+	}
+
+#if PLATFORM_MAC
+	if (bSuccess && ExitCode == 1 && StdErr.IsEmpty())
+	{
+		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port %i is not blocked!"), Port);
+		return false;
+	}
+#endif
+
+	UE_LOG(LogSpatialCommandUtils, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
 	return false;
 }
 
