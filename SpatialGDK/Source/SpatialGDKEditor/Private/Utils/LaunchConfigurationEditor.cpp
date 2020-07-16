@@ -13,6 +13,7 @@
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
+#include "Utils/GDKPropertyMacros.h"
 
 #define LOCTEXT_NAMESPACE "SpatialLaunchConfigurationEditor"
 
@@ -61,11 +62,7 @@ namespace
 	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 	{
-#if ENGINE_MINOR_VERSION <= 24
-		const UProperty& Property = PropertyAndParent.Property;
-#else
-		const FProperty& Property = PropertyAndParent.Property;
-#endif
+		const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
 
 		if (bHaveTemplate)
 		{
