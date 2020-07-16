@@ -170,7 +170,7 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 		IUATHelperModule::Get().CreateUatTask(UATCommandLine,
 			FText::FromString(PlatformName),
 			LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
-			LOCTEXT("CookAndGenerateSchemaTaskName", "Generating Schema"),
+			LOCTEXT("CookAndGenerateSchemaTaskShortName", "Generating Schema"),
 			FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")));
 
 		return true;
@@ -226,6 +226,13 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 	}
 }
 
+bool FSpatialGDKEditor::IsSchemaGenerated()
+{
+	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
+}
+
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -261,7 +268,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 		return true;
 	});
 
-	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::FromString(FString::Printf(TEXT("Loading %d Assets before generating schema"), FoundAssets.Num())));
+	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::Format(LOCTEXT("LoadingAssets_Text", "Loading {0} Assets before generating schema"), FoundAssets.Num()));
 
 	for (const FAssetData& Data : FoundAssets)
 	{
@@ -269,7 +276,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 		{
 			return false;
 		}
-		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
+		Progress.EnterProgressFrame(1, FText::Format(LOCTEXT("LoadingSingleAsset_Text", "Loading {0}"), FText::FromName(Data.AssetName)));
 
 		const FString* GeneratedClassPathPtr = nullptr;
 
@@ -346,8 +353,11 @@ bool FSpatialGDKEditor::FullScanRequired()
 
 void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
 {
-	FSpatialGDKServicesModule::SetProjectName(InProjectName);
-	SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	if (!FSpatialGDKServicesModule::GetProjectName().Equals(InProjectName))
+	{
+		FSpatialGDKServicesModule::SetProjectName(InProjectName);
+		SpatialGDKDevAuthTokenGeneratorInstance->AsyncGenerateDevAuthToken();
+	}
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

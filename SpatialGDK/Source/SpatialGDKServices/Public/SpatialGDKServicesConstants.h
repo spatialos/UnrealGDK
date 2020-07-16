@@ -29,7 +29,29 @@ namespace SpatialGDKServicesConstants
 	const FString SpotExe = CreateExePath(GDKProgramPath, TEXT("spot"));
 	const FString SchemaCompilerExe = CreateExePath(GDKProgramPath, TEXT("schema_compiler"));
 	const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
-	const FString SpatialOSRuntimePinnedVersion("14.5.1");
 	const FString SpatialOSConfigFileName = TEXT("spatialos.json");
 	const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
+
+	const FString SpatialOSRuntimePinnedStandardVersion         = TEXT("0.4.3");
+	const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
+
+	const FString InspectorURL   = TEXT("http://localhost:31000/inspector");
+	const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
+
+	const FString PinnedStandardRuntimeTemplate               = TEXT("n1standard4_std40_action1g1");
+	const FString PinnedCompatibilityModeRuntimeTemplate      = TEXT("n1standard4_std40_r0500");
+	const FString PinnedChinaStandardRuntimeTemplate          = TEXT("s5large16_std50_action1g1");
+	const FString PinnedChinaCompatibilityModeRuntimeTemplate = TEXT("s5large16_std50_r0500");
+	
+	const FString DevLoginDeploymentTag = TEXT("dev_login");
+
+	const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
+
+	const FString ProxyFileDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable")));
+	const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("ServerReceptionistProxyInfo.json"));
+
+#if PLATFORM_MAC
+	const FString LsofCmdFilePath = TEXT("/usr/sbin/");
+	const FString KillCmdFilePath = TEXT("/bin/");
+#endif
 }

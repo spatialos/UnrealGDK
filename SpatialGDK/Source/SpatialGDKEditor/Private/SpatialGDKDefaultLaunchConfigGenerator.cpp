@@ -72,19 +72,6 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerTyp
 				}
 			Writer->WriteObjectEnd();
 		Writer->WriteArrayEnd();
-		if (WorkerConfig.MaxConnectionCapacityLimit > 0)
-		{
-			Writer->WriteObjectStart(TEXT("connection_capacity_limit"));
-				Writer->WriteValue(TEXT("max_capacity"), WorkerConfig.MaxConnectionCapacityLimit);
-			Writer->WriteObjectEnd();
-		}
-		if (WorkerConfig.bLoginRateLimitEnabled)
-		{
-			Writer->WriteObjectStart(TEXT("login_rate_limit"));
-				Writer->WriteValue(TEXT("duration"), WorkerConfig.LoginRateLimit.Duration);
-				Writer->WriteValue(TEXT("requests_per_duration"), WorkerConfig.LoginRateLimit.RequestsPerDuration);
-			Writer->WriteObjectEnd();
-		}
 	Writer->WriteObjectEnd();
 
 	return true;
@@ -128,7 +115,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	if (WorldSettings->bEnableMultiWorker == false)
+	if (WorldSettings->IsMultiWorkerEnabled() == false)
 	{
 		return 1;
 	}
@@ -162,7 +149,12 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 
 		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = nullptr;
 		FIntPoint Dimension;
-		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
+		if (LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on layer %s"), *LayerKey.ToString());
+			NumWorkers += 1;
+		}
+		else if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
 		{
 			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy for layer %s"), *LayerKey.ToString());
 			NumWorkers += 1;
@@ -180,7 +172,7 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 
-	if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (WorldSettings == nullptr || !WorldSettings->IsMultiWorkerEnabled())
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No SpatialWorldSettings on map %s"), *World.GetMapName());
 		return false;
@@ -233,7 +225,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json
-			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
+			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.GetTemplate()); // Template section
 			Writer->WriteObjectStart(TEXT("world")); // World section begin
 				Writer->WriteObjectStart(TEXT("dimensions"));
 				Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
@@ -272,7 +264,6 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 				// Write the client worker section
 				FWorkerTypeLaunchSection ClientWorker;
 				ClientWorker.WorkerPermissions.bAllPermissions = true;
-				ClientWorker.bLoginRateLimitEnabled = false;
 				WriteWorkerSection(Writer, SpatialConstants::DefaultClientWorkerType, ClientWorker);
 			Writer->WriteArrayEnd(); // Worker section end
 		Writer->WriteObjectEnd(); // End of json
@@ -299,7 +290,7 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 	{
 		if (*EnableChunkInterest == TEXT("true"))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("ChunkInterestNotSupported_Prompt", "The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?"));
 
 			if (Result == EAppReturnType::Yes)
 			{

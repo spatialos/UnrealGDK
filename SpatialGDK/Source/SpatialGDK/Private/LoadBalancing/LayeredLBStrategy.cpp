@@ -17,28 +17,18 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
-ULayeredLBStrategy::~ULayeredLBStrategy()
-{
-	for (const auto& Elem : LayerNameToLBStrategy)
-	{
-		Elem.Value->RemoveFromRoot();
-	}
-}
-
 void ULayeredLBStrategy::Init()
 {
 	Super::Init();
 
 	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	check(Settings->bEnableMultiWorker);
-
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 
-	if (WorldSettings == nullptr)
+	if (!bIsMultiWorkerEnabled)
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("If EnableMultiWorker is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy."));
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Multi-Worker has been disabled. Creating LBStrategy for the Default Layer"));
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UGridBasedLBStrategy>(this);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
 		return;
@@ -50,14 +40,25 @@ void ULayeredLBStrategy::Init()
 		const FName& LayerName = Layer.Key;
 		const FLayerInfo& LayerInfo = Layer.Value;
 
-		UAbstractLBStrategy* LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		UAbstractLBStrategy* LBStrategy;
+		if (LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogLayeredLBStrategy, Error, TEXT("WorkerLayer %s does not specify a loadbalancing strategy (or it cannot be resolved). Using a 1x1 grid."), *LayerName.ToString());
+			LBStrategy = NewObject<UGridBasedLBStrategy>(this);
+		}
+		else
+		{
+			LBStrategy = NewObject<UAbstractLBStrategy>(this, LayerInfo.LoadBalanceStrategy);
+		}
+
 		AddStrategyForLayer(LayerName, LBStrategy);
 
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerName.ToString());
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
-			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr->GetName());
+			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
 			ClassPathToLayer.Add(ClassPtr, LayerName);
+
 		}
 	}
 
@@ -73,11 +74,27 @@ void ULayeredLBStrategy::Init()
 	{
 		UAbstractLBStrategy* DefaultLBStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->DefaultLayerLoadBalanceStrategy);
 		AddStrategyForLayer(SpatialConstants::DefaultLayer, DefaultLBStrategy);
+
+		// Any class not specified on one of the other layers will be on the default layer. However, some games may have a class hierarchy with
+		// some parts of the hierarchy on different layers. This provides a way to specify that.
+		for (const TSoftClassPtr<AActor>& ClassPtr : WorldSettings->ExplicitDefaultActorClasses)
+		{
+			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class to default layer %s."), *ClassPtr.GetAssetName());
+			ClassPathToLayer.Add(ClassPtr, SpatialConstants::DefaultLayer);
+		}
 	}
 }
 
 void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
+	if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error,
+			TEXT("The Local Virtual Worker Id cannot be set twice. Current value: %d Requested new value: %d"),
+			LocalVirtualWorkerId, InLocalVirtualWorkerId);
+		return;
+	}
+
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 	for (const auto& Elem : LayerNameToLBStrategy)
 	{
@@ -99,7 +116,7 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -129,7 +146,7 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	}
 
 	const AActor* RootOwner = &Actor;
-	while (RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -293,7 +310,6 @@ FName ULayeredLBStrategy::GetLayerNameForActor(const AActor& Actor) const
 
 void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLBStrategy* LBStrategy)
 {
-	LBStrategy->AddToRoot();
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
 	LayerNameToLBStrategy[LayerName]->Init();
 }

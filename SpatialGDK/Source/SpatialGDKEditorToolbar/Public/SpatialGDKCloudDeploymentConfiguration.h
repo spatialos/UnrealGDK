@@ -54,6 +54,8 @@ private:
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
 
+	FText GetPrimaryDeploymentNameText() const;
+
 	/** Delegate to commit primary deployment name */
 	void OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 
@@ -80,6 +82,15 @@ private:
 
 	/** Delegate called when the user selects a region code from the dropdown for the primary deployment */
 	void OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue);
+
+	/** Delegate to determine whether the region picker is visible. */
+	EVisibility GetRegionPickerVisibility() const;
+
+	/** Delegate to determine whether the primary region picker is enabled. */
+	bool IsPrimaryRegionPickerEnabled() const;
+
+	/** Delegate to determine whether the simulated player region picker is enabled. */
+	bool IsSimulatedPlayerRegionPickerEnabled() const;
 
 	/** Delegate to commit main deployment cluster */
 	void OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType);
@@ -122,7 +133,9 @@ private:
 	bool IsUsingCustomRuntimeVersion() const;
 	FText GetSpatialOSRuntimeVersionToUseText() const;
 
-	FReply OnGenerateConfigFromCurrentMap();
+	ECheckBoxState IsAutoGenerateCloudLaunchConfigEnabled() const;
+	bool CanPickOrEditCloudLaunchConfig() const;
+	void OnCheckedAutoGenerateCloudLaunchConfig(ECheckBoxState NewCheckedState);
 
 	FReply OnOpenLaunchConfigEditor();
 

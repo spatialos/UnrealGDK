@@ -12,6 +12,8 @@
 
 #include "SpatialConstants.generated.h"
 
+#define LOCTEXT_NAMESPACE "SpatialConstants"
+
 UENUM()
 enum class ERPCType : uint8
 {
@@ -203,8 +205,8 @@ const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID						 = 3;
 const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID						 = 4;
 
 // ForwardSpawnPlayerRequest type IDs.
-const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 1;
-const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 2;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 1;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 2;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID				 = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
 
@@ -240,7 +242,7 @@ const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
+const FString SpatialSessionIdURLOption		= TEXT("spatialSessionId=");
 
 const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
 const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
@@ -249,13 +251,13 @@ const uint16 LOCATOR_PORT     = 443;
 const FString CONSOLE_HOST    = TEXT("console.improbable.io");
 const FString CONSOLE_HOST_CN = TEXT("console.spatialoschina.com");
 
-const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-const FString AssemblyPatternHint = TEXT("Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
-const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
-const FString ProjectPatternHint = TEXT("Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
-const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
-const FString DeploymentPatternHint = TEXT("Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
-const FString Ipv4Pattern = TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
+const FString AssemblyPattern		= TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FText AssemblyPatternHint		= LOCTEXT("AssemblyPatternHint", "Assembly name may only contain alphanumeric characters, '_', '.', or '-', and must be between 5 and 64 characters long.");
+const FString ProjectPattern		= TEXT("^[a-z0-9_]{3,32}$");
+const FText ProjectPatternHint		= LOCTEXT("ProjectPatternHint", "Project name may only contain lowercase alphanumeric characters or '_', and must be between 3 and 32 characters long.");
+const FString DeploymentPattern		= TEXT("^[a-z0-9_]{2,32}$");
+const FText DeploymentPatternHint	= LOCTEXT("DeploymentPatternHint", "Deployment name may only contain lowercase alphanumeric characters or '_', and must be between 2 and 32 characters long.");
+const FString Ipv4Pattern			= TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 {
@@ -266,6 +268,8 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 
 const FString LOCAL_HOST   = TEXT("127.0.0.1");
 const uint16  DEFAULT_PORT = 7777;
+
+const uint16  DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT = 7777;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
@@ -395,3 +399,5 @@ inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 } // ::SpatialConstants
 
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
+
+#undef LOCTEXT_NAMESPACE

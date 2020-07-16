@@ -60,6 +60,11 @@ FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 	return &LocalDeploymentManager;
 }
 
+FLocalReceptionistProxyServerManager* FSpatialGDKServicesModule::GetLocalReceptionistProxyServerManager()
+{
+	return &LocalReceptionistProxyServerManager;
+}
+
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));

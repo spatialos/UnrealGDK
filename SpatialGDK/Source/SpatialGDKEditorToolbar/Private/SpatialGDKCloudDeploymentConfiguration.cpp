@@ -18,7 +18,7 @@
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
-#include "Utils/LaunchConfigEditor.h"
+#include "Utils/LaunchConfigurationEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SFilePathPicker.h"
@@ -46,6 +46,8 @@
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKCloudDeploymentConfiguration);
+
+#define LOCTEXT_NAMESPACE "SpatialGDKCloudDeploymentConfiguration"
 
 namespace
 {
@@ -81,8 +83,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 			.Padding(2.0f, 0.0f)
 			[
 				SNew(STextBlock)
-				.Text(FText::FromString(FString(TEXT("*"))))
-				.ToolTipText(FText::FromString(FString(TEXT("Required field"))))
+				.Text(LOCTEXT("RequiredFieldAsterisk", "*"))
+				.ToolTipText(LOCTEXT("RequiredField_Tooltip", "Required field"))
 				.ColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f))
 			];
 	};
@@ -126,8 +128,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									AddRequiredFieldAsterisk(
 										SNew(STextBlock)
-										.Text(FText::FromString(FString(TEXT("Project Name"))))
-										.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+										.Text(LOCTEXT("ProjectName_Label", "Project Name"))
+										.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
 									)
 								]
 								+ SHorizontalBox::Slot()
@@ -135,7 +137,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(ProjectName))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+									.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnProjectNameCommitted)
 									.ErrorReporting(ProjectNameInputErrorReporting)
 								]
@@ -151,8 +153,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									AddRequiredFieldAsterisk(
 										SNew(STextBlock)
-										.Text(FText::FromString(FString(TEXT("Assembly Name"))))
-										.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
+										.Text(LOCTEXT("AssemblyName_Label", "Assembly Name"))
+										.ToolTipText(LOCTEXT("AssemblyName_Tooltip", "The name of the assembly."))
 									)
 								]
 								+ SHorizontalBox::Slot()
@@ -160,7 +162,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetAssemblyName()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
+									.ToolTipText(LOCTEXT("AssemblyName_Tooltip", "The name of the assembly."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentAssemblyCommited)
 									.ErrorReporting(AssemblyNameInputErrorReporting)
 								]
@@ -175,10 +177,10 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Use GDK Pinned Version"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to use the SpatialOS Runtime version associated to the current GDK version"))))
+									.Text(LOCTEXT("UseGDKPinnedRuntime_Label", "Use GDK Pinned Version For Cloud"))
+									.ToolTipText(LOCTEXT("UseGDKPinnedRuntime_Tooltip", "Whether to use the SpatialOS Runtime version associated to the current GDK version for cloud deployments"))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SCheckBox)
@@ -195,10 +197,10 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Runtime Version"))))
-									.ToolTipText(FText::FromString(FString(TEXT("User supplied version of the SpatialOS runtime to use"))))
+									.Text(LOCTEXT("RuntimeVersion_Label", "Runtime Version"))
+									.ToolTipText(LOCTEXT("RuntimeVersion_Tooltip", "User supplied version of the SpatialOS runtime to use"))
 								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
@@ -208,7 +210,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsUsingCustomRuntimeVersion)
 								]
 							]
-							// Pirmary Deployment Name 
+							// Primary Deployment Name
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -219,16 +221,16 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									AddRequiredFieldAsterisk(
 										SNew(STextBlock)
-										.Text(FText::FromString(FString(TEXT("Deployment Name"))))
-										.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
+										.Text(LOCTEXT("PrimaryDeploymentName_Label", "Deployment Name"))
+										.ToolTipText(LOCTEXT("PrimaryDeploymentName_Tooltip", "The name of the cloud deployment. Must be unique."))
 									)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetPrimaryDeploymentName()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
+									.Text(this, &SSpatialGDKCloudDeploymentConfiguration::GetPrimaryDeploymentNameText)
+									.ToolTipText(LOCTEXT("PrimaryDeploymentName_Tooltip", "The name of the cloud deployment. Must be unique."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentNameCommited)
 									.ErrorReporting(DeploymentNameInputErrorReporting)
 								]
@@ -244,8 +246,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									AddRequiredFieldAsterisk(
 										SNew(STextBlock)
-										.Text(FText::FromString(FString(TEXT("Snapshot File"))))
-										.ToolTipText(FText::FromString(FString(TEXT("The relative path to the snapshot file."))))
+										.Text(LOCTEXT("SnapshotFile_Label", "Snapshot File"))
+										.ToolTipText(LOCTEXT("SnapshotFile_Tooltip", "The relative path to the snapshot file."))
 									)
 								]
 								+ SHorizontalBox::Slot()
@@ -254,12 +256,33 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SFilePathPicker)
 									.BrowseButtonImage(FEditorStyle::GetBrush("PropertyWindow.Button_Ellipsis"))
 									.BrowseButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
-									.BrowseButtonToolTip(FText::FromString(FString(TEXT("Path to the snapshot file."))))
+									.BrowseButtonToolTip(LOCTEXT("SnapshotFilePicker_Tooltip", "Path to the snapshot file."))
 									.BrowseDirectory(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath())
-									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
+									.BrowseTitle(LOCTEXT("SnapshotFilePicker_Title", "File picker..."))
 									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetSnapshotPath)
 									.FileTypeFilter(TEXT("Snapshot files (*.snapshot)|*.snapshot"))
 									.OnPathPicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnSnapshotPathPicked)
+								]
+							]
+							// Automatically Generate Launch Configuration
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(LOCTEXT("AutoGenerateCloudLaunchConfig_Label", "Automatically Generate Launch Configuration"))
+									.ToolTipText(LOCTEXT("AutoGenerateCloudLaunchConfig_Tooltip", "Whether to automatically generate the launch configuration from the current map when a cloud deployment is started."))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateCloudLaunchConfigEnabled)
+									.OnCheckStateChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateCloudLaunchConfig)
 								]
 							]
 							// Primary Launch Config + File Picker
@@ -273,8 +296,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								[
 									AddRequiredFieldAsterisk(
 										SNew(STextBlock)
-										.Text(FText::FromString(FString(TEXT("Launch Config File"))))
-										.ToolTipText(FText::FromString(FString(TEXT("The relative path to the launch configuration file."))))
+										.Text(LOCTEXT("LaunchConfigFile_Label", "Launch Config File"))
+										.ToolTipText(LOCTEXT("LaunchConfigFile_Tooltip", "The relative path to the launch configuration file."))
 									)
 								]
 								+ SHorizontalBox::Slot()
@@ -283,52 +306,29 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SFilePathPicker)
 									.BrowseButtonImage(FEditorStyle::GetBrush("PropertyWindow.Button_Ellipsis"))
 									.BrowseButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
-									.BrowseButtonToolTip(FText::FromString(FString(TEXT("Path to the launch configuration file."))))
+									.BrowseButtonToolTip(LOCTEXT("LaunchConfigFilePicker_Tooltip", "Path to the launch configuration file."))
 									.BrowseDirectory(SpatialGDKServicesConstants::SpatialOSDirectory)
-									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
+									.BrowseTitle(LOCTEXT("LaunchConfigFilePicker_Title", "File picker..."))
 									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLaunchConfigPath)
 									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryLaunchConfigPathPicked)
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::CanPickOrEditCloudLaunchConfig)
 								]
 							]
 							+ SVerticalBox::Slot()
-								.AutoHeight()
-								.Padding(2.0f)
-								[
-									SNew(SHorizontalBox)
-									+ SHorizontalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT(""))))
-								.ToolTipText(FText::FromString(FString(TEXT(""))))
-								]
-							+ SHorizontalBox::Slot()
+								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SButton)
-									.Text(FText::FromString(FString(TEXT("Generate from current map"))))
-									.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap)
-								]
-								]
-							+ SVerticalBox::Slot()
-								.AutoHeight()
-								.Padding(2.0f)
-								[
-									SNew(SHorizontalBox)
-									+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT(""))))
-								.ToolTipText(FText::FromString(FString(TEXT(""))))
-								]
-							+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(SButton)
-									.Text(FText::FromString(FString(TEXT("Open Launch Configuration editor"))))
+									.Text(LOCTEXT("OpenLaunchConfig_Label", "Open Launch Configuration editor"))
 									.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor)
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::CanPickOrEditCloudLaunchConfig)
 								]
 							]
 							// Primary Deployment Region Picker
@@ -337,12 +337,13 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
+								.Visibility(this, &SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Region"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The region in which the deployment will be deployed."))))
+									.Text(LOCTEXT("PrimaryDeploymentRegion_Label", "Region"))
+									.ToolTipText(LOCTEXT("PrimaryDeploymentRegion_Tooltip", "The region in which the deployment will be deployed."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -350,10 +351,11 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SComboButton)
 									.OnGetMenuContent(this, &SSpatialGDKCloudDeploymentConfiguration::OnGetPrimaryDeploymentRegionCode)
 									.ContentPadding(FMargin(2.0f, 2.0f))
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsPrimaryRegionPickerEnabled)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
-										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryRegionCode)
+										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryRegionCodeText)
 									]
 								]
 							]
@@ -367,15 +369,15 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.Text(LOCTEXT("PrimaryDeploymentCluster_Label", "Deployment Cluster"))
+									.ToolTipText(LOCTEXT("PrimaryDeploymentCluster_Tooltip", "The name of the cluster to deploy to. Region code will be ignored if this is specified."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetMainDeploymentCluster()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(LOCTEXT("PrimaryDeploymentCluster_Tooltip", "The name of the cluster to deploy to. Region code will be ignored if this is specified."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited, ETextCommit::Default)
 								]
@@ -390,15 +392,15 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Deployment Tags"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
+									.Text(LOCTEXT("DeploymentTags_Label", "Deployment Tags"))
+									.ToolTipText(LOCTEXT("DeploymentTags_Tooltip", "Tags for the deployment (separated by spaces)."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetDeploymentTags()))
-									.ToolTipText(FText::FromString(FString(TEXT("Tags for the deployment (separated by spaces)."))))
+									.ToolTipText(LOCTEXT("DeploymentTags_Tooltip", "Tags for the deployment (separated by spaces)."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentTagsCommitted)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnDeploymentTagsCommitted, ETextCommit::Default)
 								]
@@ -419,7 +421,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.HAlign(HAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(FText::FromString(FString(TEXT("Simulated Players"))))
+								.Text(LOCTEXT("SimulatedPlayers_Label", "Simulated Players"))
 							]
 							// Toggle Simulated Players
 							+ SVerticalBox::Slot()
@@ -431,7 +433,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Add simulated players"))))
+									.Text(LOCTEXT("EnableSimulatedPlayers_Label", "Add simulated players"))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -451,15 +453,15 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Deployment Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the simulated player deployment."))))
+									.Text(LOCTEXT("SimPlayerDeploymentName_Label", "Deployment Name"))
+									.ToolTipText(LOCTEXT("SimPlayerDeploymentName_Tooltip", "The name of the simulated player deployment."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetSimulatedPlayerDeploymentName()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the simulated player deployment."))))
+									.ToolTipText(LOCTEXT("SimPlayerDeploymentName_Tooltip", "The name of the simulated player deployment."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentNameCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentNameCommited, ETextCommit::Default)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
@@ -475,14 +477,14 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Number of Simulated Players"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The number of Simulated Players to be launch and connect to the game."))))
+									.Text(LOCTEXT("NumberOfSimulatedPlayers_Label", "Number of Simulated Players"))
+									.ToolTipText(LOCTEXT("NumberOfSimulatedPlayers_Tooltip", "The number of Simulated Players to launch and connect to the game."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SSpinBox<uint32>)
-									.ToolTipText(FText::FromString(FString(TEXT("Number of Simulated Players."))))
+									.ToolTipText(LOCTEXT("NumberOfSimulatedPlayers_Tooltip", "The number of Simulated Players to launch and connect to the game."))
 									.MinValue(1)
 									.MaxValue(8192)
 									.Value(SpatialGDKSettings->GetNumberOfSimulatedPlayers())
@@ -496,12 +498,13 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
+								.Visibility(this, &SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility)
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Region"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The region in which the simulated player deployment will be deployed."))))
+									.Text(LOCTEXT("SimPlayerRegion_Label", "Region"))
+									.ToolTipText(LOCTEXT("SimPlayerRegion_Tooltip", "The region in which the simulated player deployment will be deployed."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -509,7 +512,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									SNew(SComboButton)
 									.OnGetMenuContent(this, &SSpatialGDKCloudDeploymentConfiguration::OnGetSimulatedPlayerDeploymentRegionCode)
 									.ContentPadding(FMargin(2.0f, 2.0f))
-									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
+									.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayerRegionPickerEnabled)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
@@ -527,15 +530,15 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Deployment Cluster"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.Text(LOCTEXT("SimPlayerCluster_Label", "Deployment Cluster"))
+									.ToolTipText(LOCTEXT("SimPlayerCluster_Tooltip", "The name of the cluster to deploy to. Region code will be ignored if this is specified."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKSettings->GetSimulatedPlayerCluster()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the cluster to deploy to."))))
+									.ToolTipText(LOCTEXT("SimPlayerCluster_Tooltip", "The name of the cluster to deploy to. Region code will be ignored if this is specified."))
 									.OnTextCommitted(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerClusterCommited)
 									.OnTextChanged(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerClusterCommited, ETextCommit::Default)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
@@ -557,7 +560,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 							.HAlign(HAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(FText::FromString(FString(TEXT("Assembly Configuration"))))
+								.Text(LOCTEXT("AssemblyConfiguration_Label", "Assembly Configuration"))
 							]
 							// Build and Upload Assembly
 							+ SVerticalBox::Slot()
@@ -569,8 +572,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to build and upload the assembly when starting the cloud deployment."))))
+									.Text(LOCTEXT("BuildAndUploadAssembly_Label", "Build and Upload Assembly"))
+									.ToolTipText(LOCTEXT("BuildAndUploadAssembly_Tooltip", "Whether to build and upload the assembly when starting the cloud deployment."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -590,8 +593,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Generate Schema"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the schema automatically when building the assembly."))))
+									.Text(LOCTEXT("GenerateSchema_Label", "Generate Schema"))
+									.ToolTipText(LOCTEXT("GenerateSchema_Tooltip", "Whether to generate the schema automatically when building the assembly."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -612,8 +615,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Generate Snapshot"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to generate the snapshot automatically when building the assembly."))))
+									.Text(LOCTEXT("GenerateSnapshot_Label", "Generate Snapshot"))
+									.ToolTipText(LOCTEXT("GenerateSnapshot_Tooltip", "Whether to generate the snapshot automatically when building the assembly."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -634,8 +637,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Build Configuration"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The configuration to build."))))
+									.Text(LOCTEXT("BuildConfiguration_Label", "Build Configuration"))
+									.ToolTipText(LOCTEXT("BuildConfiguration_Tooltip", "The configuration to build."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -661,8 +664,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Build Client Worker"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to build the client worker as part of the assembly."))))
+									.Text(LOCTEXT("BuildClientWorker_Label", "Build Client Worker"))
+									.ToolTipText(LOCTEXT("BuildClientWorker_Tooltip", "Whether to build the client worker as part of the assembly."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -683,8 +686,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 								.FillWidth(1.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Force Overwrite on Upload"))))
-									.ToolTipText(FText::FromString(FString(TEXT("Whether to overwrite an existing assembly when uploading."))))
+									.Text(LOCTEXT("ForceOverwriteAssembly_Label", "Force Overwrite on Upload"))
+									.ToolTipText(LOCTEXT("ForceOverwriteAssembly_Tooltip", "Whether to overwrite an existing assembly when uploading."))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -720,7 +723,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									[
 										SNew(SButton)
 										.HAlign(HAlign_Center)
-										.Text(FText::FromString(FString(TEXT("Open Deployment Page"))))
+										.Text(LOCTEXT("OpenDeploymentPage_Label", "Open Deployment Page"))
 										.OnClicked(this, &SSpatialGDKCloudDeploymentConfiguration::OnOpenCloudDeploymentPageClicked)
 										.IsEnabled(this, &SSpatialGDKCloudDeploymentConfiguration::CanOpenCloudDeploymentPage)
 									]
@@ -736,7 +739,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 									[
 										SNew(SButton)
 										.HAlign(HAlign_Center)
-										.Text(FText::FromString(FString(TEXT("Start Deployment"))))
+										.Text(LOCTEXT("StartDeployment_Label", "Start Deployment"))
 										.OnClicked_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::OnStartCloudDeployment)
 										.IsEnabled_Raw(ToolbarPtr, &FSpatialGDKEditorToolbarModule::CanStartCloudDeployment)
 									]
@@ -761,6 +764,12 @@ void SSpatialGDKCloudDeploymentConfiguration::OnDeploymentAssemblyCommited(const
 
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->SetAssemblyName(InputAssemblyName);
+}
+
+FText SSpatialGDKCloudDeploymentConfiguration::GetPrimaryDeploymentNameText() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FText::FromString(SpatialGDKEditorSettings->GetPrimaryDeploymentName());
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
@@ -796,13 +805,13 @@ void SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentNameCommited(co
 void SSpatialGDKCloudDeploymentConfiguration::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersion(NewCheckedState == ECheckBoxState::Checked);
+	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersionForCloud(SpatialGDKSettings->RuntimeVariant, NewCheckedState == ECheckBoxState::Checked);
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(InText.ToString());
+	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(SpatialGDKSettings->RuntimeVariant, InText.ToString());
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnSnapshotPathPicked(const FString& PickedPath)
@@ -830,15 +839,36 @@ TSharedRef<SWidget> SSpatialGDKCloudDeploymentConfiguration::OnGetPrimaryDeploym
 
 	if (pEnum != nullptr)
 	{
-		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		for (int32 EnumIdx = 0; EnumIdx < pEnum->NumEnums() - 1; EnumIdx++)
 		{
-			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			if (!pEnum->HasMetaData(TEXT("Hidden"), EnumIdx))
+			{
+				int64 CurrentEnumValue = pEnum->GetValueByIndex(EnumIdx);
+				FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
+				MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			}
 		}
 	}
 
 	return MenuBuilder.MakeWidget();
+}
+
+EVisibility SSpatialGDKCloudDeploymentConfiguration::GetRegionPickerVisibility() const
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->IsRunningInChina() ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible;
+}
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsPrimaryRegionPickerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->GetMainDeploymentCluster().IsEmpty();
+}
+
+bool SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayerRegionPickerEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->IsSimulatedPlayersEnabled() && SpatialGDKEditorSettings->GetSimulatedPlayerCluster().IsEmpty();
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnDeploymentClusterCommited(const FText& InText, ETextCommit::Type InCommitType)
@@ -854,11 +884,14 @@ TSharedRef<SWidget> SSpatialGDKCloudDeploymentConfiguration::OnGetSimulatedPlaye
 
 	if (pEnum != nullptr)
 	{
-		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		for (int32 EnumIdx = 0; EnumIdx < pEnum->NumEnums() - 1; EnumIdx++)
 		{
-			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			if (!pEnum->HasMetaData(TEXT("Hidden"), EnumIdx))
+			{
+				int64 CurrentEnumValue = pEnum->GetValueByIndex(EnumIdx);
+				FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
+				MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			}
 		}
 	}
 
@@ -973,56 +1006,49 @@ ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsSimulatedPlayersEnable
 ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsUsingGDKPinnedRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->GetUseGDKPinnedRuntimeVersion() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
+	return RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 bool SSpatialGDKCloudDeploymentConfiguration::IsUsingCustomRuntimeVersion() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return !SpatialGDKSettings->GetUseGDKPinnedRuntimeVersion();
+	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
+	return !RuntimeVersion.GetUseGDKPinnedRuntimeVersionForCloud();
 }
 
 FText SSpatialGDKCloudDeploymentConfiguration::GetSpatialOSRuntimeVersionToUseText() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString& RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
-	return FText::FromString(RuntimeVersion);
+	const FRuntimeVariantVersion& RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion();
+	const FString& RuntimeVersionString = RuntimeVersion.GetVersionForCloud();
+	return FText::FromString(RuntimeVersionString);
 }
 
-FReply SSpatialGDKCloudDeploymentConfiguration::OnGenerateConfigFromCurrentMap()
+bool SSpatialGDKCloudDeploymentConfiguration::CanPickOrEditCloudLaunchConfig() const
 {
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-	check(EditorWorld != nullptr);
+	const USpatialGDKEditorSettings* SpatialGKDSettings = GetDefault<USpatialGDKEditorSettings>();
+	return !SpatialGKDSettings->ShouldAutoGenerateCloudLaunchConfig();
+}
 
-	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+ECheckBoxState SSpatialGDKCloudDeploymentConfiguration::IsAutoGenerateCloudLaunchConfigEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGKDSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGKDSettings->ShouldAutoGenerateCloudLaunchConfig() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-
-	FillWorkerConfigurationFromCurrentMap(ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
-
-	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
-
-	OnPrimaryLaunchConfigPathPicked(LaunchConfig);
-
-	return FReply::Handled();
+void SSpatialGDKCloudDeploymentConfiguration::OnCheckedAutoGenerateCloudLaunchConfig(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetAutoGenerateCloudLaunchConfigEnabledState(NewCheckedState == ECheckBoxState::Checked);
 }
 
 FReply SSpatialGDKCloudDeploymentConfiguration::OnOpenLaunchConfigEditor()
 {
-	ULaunchConfigurationEditor* Editor = UTransientUObjectEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>("Launch Configuration Editor", ParentWindowPtr.Pin());
-
-	Editor->OnConfigurationSaved.BindLambda([WeakThis = TWeakPtr<SWidget>(this->AsShared())](ULaunchConfigurationEditor*, const FString& FilePath)
-	{
-		if (TSharedPtr<SWidget> This = WeakThis.Pin())
-		{
-			static_cast<SSpatialGDKCloudDeploymentConfiguration*>(This.Get())->OnPrimaryLaunchConfigPathPicked(FilePath);
-		}
-	}
-	);
+	ULaunchConfigurationEditor::OpenModalWindow(ParentWindowPtr.Pin(), [](const FString& FilePath) {
+		USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		SpatialGDKSettings->SetPrimaryLaunchConfigPath(FilePath);
+	});
 
 	return FReply::Handled();
 }
@@ -1134,3 +1160,5 @@ bool SSpatialGDKCloudDeploymentConfiguration::CanOpenCloudDeploymentPage() const
 {
 	return !FSpatialGDKServicesModule::GetProjectName().IsEmpty();
 }
+
+#undef LOCTEXT_NAMESPACE

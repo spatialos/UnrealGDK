@@ -4,6 +4,7 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "Framework/SlateDelegates.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
@@ -13,6 +14,7 @@
 
 #include "CloudDeploymentConfiguration.h"
 #include "LocalDeploymentManager.h"
+#include "LocalReceptionistProxyServerManager.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -109,8 +111,8 @@ private:
 	void LocalDeploymentClicked();
 	void CloudDeploymentClicked();
 
-	bool IsLocalDeploymentIPEditable() const;
-	bool AreCloudDeploymentPropertiesEditable() const;
+	static bool IsLocalDeploymentIPEditable();
+	static bool AreCloudDeploymentPropertiesEditable();
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
@@ -128,6 +130,7 @@ private:
 	bool CanBuildAndUpload() const;
 
 	void OnBuildSuccess();
+	void OnStartCloudDeploymentFinished();
 
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
@@ -139,6 +142,9 @@ private:
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
 	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
+	using IsEnabledFunc = bool();
+	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted, IsEnabledFunc IsEnabled);
+
 	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
 
@@ -149,7 +155,6 @@ private:
 	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;
-	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
 
@@ -159,6 +164,7 @@ private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
+	bool bStopLocalDeploymentOnEndPIE;
 
 	bool bSchemaBuildError;
 
@@ -176,8 +182,13 @@ private:
 	TSharedPtr<SSpatialGDKCloudDeploymentConfiguration> CloudDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
+	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
+
+	bool bStartingCloudDeployment;
+
+	void GenerateConfigFromCurrentMap();
 };

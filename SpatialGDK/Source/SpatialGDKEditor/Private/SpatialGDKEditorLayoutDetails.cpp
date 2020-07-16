@@ -18,6 +18,8 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKSettings.h"
 
+#define LOCTEXT_NAMESPACE "SpatialGDKEditorLayoutDetails"
+
 TSharedRef<IDetailCustomization> FSpatialGDKEditorLayoutDetails::MakeInstance()
 {
 	return MakeShareable(new FSpatialGDKEditorLayoutDetails);
@@ -37,44 +39,17 @@ void FSpatialGDKEditorLayoutDetails::ForceRefreshLayout()
 void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	CurrentLayout = &DetailBuilder;
-	const USpatialGDKSettings* GDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* GDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	TSharedPtr<IPropertyHandle> UsePinnedVersionProperty = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseGDKPinnedRuntimeVersion));
+	GDKEditorSettings->OnDefaultTemplateNameRequireUpdate.AddSP(this, &FSpatialGDKEditorLayoutDetails::ForceRefreshLayout);
 
-	IDetailPropertyRow* CustomRow = DetailBuilder.EditDefaultProperty(UsePinnedVersionProperty);
-
-	FString PinnedVersionDisplay = FString::Printf(TEXT("GDK Pinned Version : %s"), *SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion);
 	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
-
-	CustomRow->CustomWidget()
-		.NameContent()
-		[
-			UsePinnedVersionProperty->CreatePropertyNameWidget()
-		]
-		.ValueContent()
-		[
-			SNew(SHorizontalBox)
-			+SHorizontalBox::Slot()
-			.HAlign(HAlign_Left)
-			.AutoWidth()
-			[
-				UsePinnedVersionProperty->CreatePropertyValueWidget()
-			]
-			+SHorizontalBox::Slot()
-			.Padding(5)
-			.HAlign(HAlign_Center)
-			.AutoWidth()
-			[
-				SNew(STextBlock)
-				.Text(FText::FromString(PinnedVersionDisplay))
-			]
-		];
 
 	ProjectNameInputErrorReporting = SNew(SPopupErrorText);
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
 	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
-	CloudConnectionCategory.AddCustomRow(FText::FromString("Project Name"))
+	CloudConnectionCategory.AddCustomRow(LOCTEXT("ProjectName_Filter", "Project Name"))
 		.NameContent()
 		[
 			SNew(SHorizontalBox)
@@ -82,8 +57,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			.FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(FText::FromString(FString(TEXT("Project Name"))))
-				.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+				.Text(LOCTEXT("ProjectName_Label", "Project Name"))
+				.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
 			]
 		]
 		.ValueContent()
@@ -96,13 +71,13 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			[
 				SNew(SEditableTextBox)
 				.Text(FText::FromString(ProjectName))
-				.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+				.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
 				.OnTextCommitted(this, &FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted)
 				.ErrorReporting(ProjectNameInputErrorReporting)
 			]
 		];
 
-	CloudConnectionCategory.AddCustomRow(FText::FromString("Generate Development Authentication Token"))
+	CloudConnectionCategory.AddCustomRow(LOCTEXT("GenerateDevAuthToken_Filter", "Generate Development Authentication Token"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
 		.MinDesiredWidth(250)
@@ -112,12 +87,13 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken)
 			.Content()
 			[
-				SNew(STextBlock).Text(FText::FromString("Generate Dev Auth Token"))
+				SNew(STextBlock)
+				.Text(LOCTEXT("GenerateDevAuthToken_Label", "Generate Dev Auth Token"))
 			]
 		];
 		
 	IDetailCategoryBuilder& MobileCategory = DetailBuilder.EditCategory("Mobile");
-	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to Android device"))
+	MobileCategory.AddCustomRow(LOCTEXT("PushCommandLineAndroid_Filter", "Push SpatialOS settings to Android device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
 		.MinDesiredWidth(550)
@@ -131,7 +107,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToAndroidDevice)
 				.Content()
 				[
-					SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
+					SNew(STextBlock)
+					.Text(LOCTEXT("PushCommandLineAndroid_Label", "Push SpatialOS settings to Android device"))
 				]
 			]
 			+ SHorizontalBox::Slot()
@@ -142,12 +119,13 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::RemoveCommandLineFromAndroidDevice)
 				.Content()
 				[
-					SNew(STextBlock).Text(FText::FromString("Remove SpatialOS settings from Android device"))
+					SNew(STextBlock)
+					.Text(LOCTEXT("RemoveCommandLineAndroid_Label", "Remove SpatialOS settings from Android device"))
 				]
 			]
 		];
 
-	MobileCategory.AddCustomRow(FText::FromString("Push SpatialOS settings to iOS device"))
+	MobileCategory.AddCustomRow(LOCTEXT("PushCommandLineIOS_Filter", "Push SpatialOS settings to iOS device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
 		.MinDesiredWidth(275)
@@ -157,7 +135,8 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToIOSDevice)
 			.Content()
 			[
-				SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
+				SNew(STextBlock)
+				.Text(LOCTEXT("PushCommandLineIOS_Label", "Push SpatialOS settings to iOS device"))
 			]
 		];
 }
@@ -175,3 +154,5 @@ void FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted(const FText& InText,
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 	SpatialGDKEditorInstance->SetProjectName(NewProjectName);
 }
+
+#undef LOCTEXT_NAMESPACE
