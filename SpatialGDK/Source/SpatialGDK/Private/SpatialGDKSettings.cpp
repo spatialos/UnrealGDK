@@ -5,7 +5,9 @@
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+
 #include "SpatialConstants.h"
+#include "Utils/GDKPropertyMacros.h"
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
@@ -153,7 +155,7 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	}
 }
 
-bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
+bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property)* InProperty) const
 {
 	if (!InProperty)
 	{
@@ -226,7 +228,7 @@ void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 	ServicesRegion = NewRegion;
 
 	// Save in default config so this applies for other platforms e.g. Linux, Android.
-	UProperty* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	GDK_PROPERTY(Property)* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
 	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
 }
 
