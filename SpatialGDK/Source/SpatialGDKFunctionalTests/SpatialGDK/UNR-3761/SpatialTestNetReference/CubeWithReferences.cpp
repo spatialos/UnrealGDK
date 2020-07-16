@@ -2,22 +2,12 @@
 
 
 #include "CubeWithReferences.h"
-#include "Components/StaticMeshComponent.h"
-#include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
 
 ACubeWithReferences::ACubeWithReferences()
 {
-	bReplicates = true;
 	bNetLoadOnClient = false;
 	bNetLoadOnNonAuthServer = true;
-
-	CubeComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CubeComponent"));
-	CubeComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")));
-	CubeComponent->SetMaterial(0, LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
-	CubeComponent->SetVisibility(true);
-
-	RootComponent = CubeComponent;
 }
 
 int ACubeWithReferences::CountValidNeighbours()
@@ -26,12 +16,12 @@ int ACubeWithReferences::CountValidNeighbours()
 
 	if (IsValid(Neighbour1))
 	{
-	 	ValidNeighbours ++;
+	 	ValidNeighbours++;
 	}
 
 	if (IsValid(Neighbour2))
 	{
-		ValidNeighbours ++;
+		ValidNeighbours++;
 	}
 
 	return ValidNeighbours;

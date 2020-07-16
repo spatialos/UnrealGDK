@@ -14,16 +14,18 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestNetReference : public ASpatialFu
 public:
 	ASpatialTestNetReference();
 
+	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
+
 	virtual void BeginPlay() override;
 
 	// Array used to store the locations in which the character will perform the references check and the number of cubes that should be visible at that location
 	TArray<TPair<FVector, int>> TestLocations;
 
-	// Helper variable used as an index in the CharacterTestLocations array.
-	int LocationIndex;
+	// Helper array used to store the relative locations of the camera, so that it can see all cubes from every test location, used for visual debugging
+	TArray<FVector> CameraRelativeLocations;
 
-	// Helper variable used to wait for some time before performing an action
-	float TimerHelper;
+	// Helper rotator used to store the relative rotation of the camera so that it can see all cubes from every test location, used for visual debugging
+	FRotator CameraRelativeRotation;
 
 	TPair<AController*, APawn*> OriginalPawn;
 

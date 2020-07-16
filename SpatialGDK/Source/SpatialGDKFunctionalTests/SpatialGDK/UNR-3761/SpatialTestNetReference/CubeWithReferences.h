@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "ReplicatedTestActorBase.h"
 #include "CubeWithReferences.generated.h"
 
 UCLASS()
-class ACubeWithReferences : public AActor
+class ACubeWithReferences : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
 
@@ -18,12 +18,9 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY()
-	UStaticMeshComponent* CubeComponent;
-
-	UPROPERTY(Replicated, EditAnywhere, Category="Neighbours")
+	UPROPERTY(Replicated)
 	ACubeWithReferences* Neighbour1;
 
-	UPROPERTY(Replicated, EditAnywhere, Category="Neighbours")
+	UPROPERTY(Replicated)
 	ACubeWithReferences* Neighbour2;
 };
