@@ -48,12 +48,6 @@ public:
 	virtual PhysicalWorkerName GetWorkerId() const override;
 	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnEnqueueMessage OnEnqueueMessage;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnDequeueMessage OnDequeueMessage;
-
 	virtual void ProcessOutgoingMessages() override;
 	virtual void MaybeFlush() override;
 	virtual void Flush() override;
