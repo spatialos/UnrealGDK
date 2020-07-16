@@ -1,20 +1,24 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CoreMinimal.h"
+
+//Engine
 #include "Engine/Engine.h"
 #include "GameFramework/GameStateBase.h"
-#include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialRPCService.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Misc/AutomationTest.h"
-#include "Schema/RPCPayload.h"
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestActor.h"
 #include "Tests/TestDefinitions.h"
 #include "Tests/TestingComponentViewHelpers.h"
+
+//GDK
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialRPCService.h"
+#include "Interop/SpatialStaticComponentView.h"
+#include "Schema/RPCPayload.h"
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/RPCRingBuffer.h"
 
 #define RPC_SERVICE_TEST(TestName) \
