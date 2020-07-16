@@ -599,12 +599,12 @@ bool FDropRPCQueueTest::Update()
 	SpatialGDK::SpatialRPCService* RPCService = SpatialNetDriver->GetRPCService();
 	RPCService->OnEndpointAuthorityGained(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 
-	bool bSuccess = false;
-	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&SpatialNetDriver, &bSuccess](const FPendingRPCParams& Params)
+	bool bTestSuccess = false;
+	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&SpatialNetDriver, &bTestSuccess](const FPendingRPCParams& Params)
 	{
 		FRPCErrorInfo RPCErrorInfo = SpatialNetDriver->Receiver->ApplyRPC(Params);
-		bSuccess = RPCErrorInfo.ErrorCode == ERPCResult::NoAuthority;
-		bSuccess &= RPCErrorInfo.QueueCommand == ERPCQueueCommand::DropEntireQueue;
+		bTestSuccess = RPCErrorInfo.ErrorCode == ERPCResult::NoAuthority;
+		bTestSuccess &= RPCErrorInfo.QueueCommand == ERPCQueueCommand::DropEntireQueue;
 
 		return RPCErrorInfo;
 	});
@@ -619,7 +619,7 @@ bool FDropRPCQueueTest::Update()
 
 	RPCContainer.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(SpatialNetDriver->Receiver, &USpatialReceiver::ApplyRPC));
 
-	Test->TestTrue("Correct RPC queue command was returned by the receiver after attempting to process an RPC without authority over the actor.", bSuccess);
+	Test->TestTrue("Correct RPC queue command was returned by the receiver after attempting to process an RPC without authority over the actor.", bTestSuccess);
 
 	return true;
 }
