@@ -189,29 +189,6 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 	return Counter;
 }
 
-void ASpatialFunctionalTest::GatherRelevantActors(TArray<AActor*>& OutActors)  const
-{
-	if (ObservationPoint)
-	{
-		OutActors.AddUnique(ObservationPoint);
-	}
-
-	if (UWorld* World = GEngine->GetWorldFromContextObject(GetWorld(), EGetWorldErrorMode::LogAndReturnNull))
-	{
-		for (TActorIterator<AActor> It(World, AActor::StaticClass()); It; ++It)
-		{
-			AActor* FoundActor = *It;
-			UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<USpatialFunctionalTestAutoDestroyComponent>();
-			if (AutoDestroyComponent != NULL)
-			{
-				OutActors.AddUnique(FoundActor);
-			}
-		}
-	}
-
-	OutActors.Append(DebugGatherRelevantActors());
-}
-
 void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
@@ -611,19 +588,17 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 {
 	// Delete actors marked for auto destruction
-	if (UWorld* World = GEngine->GetWorldFromContextObject(GetWorld(), EGetWorldErrorMode::LogAndReturnNull))
+	for (TActorIterator<AActor> It(GetWorld(), AActor::StaticClass()); It; ++It)
 	{
-		for (TActorIterator<AActor> It(World, AActor::StaticClass()); It; ++It)
+		AActor* FoundActor = *It;
+		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<USpatialFunctionalTestAutoDestroyComponent>();
+		if (AutoDestroyComponent != nullptr)
 		{
-			AActor* FoundActor = *It;
-			UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<USpatialFunctionalTestAutoDestroyComponent>();
-			if (AutoDestroyComponent != NULL)
-			{
-				// will be removed next frame
-				FoundActor->SetLifeSpan(0.01f);
-			}
+			// will be removed next frame
+			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
+	
 }
 
 
