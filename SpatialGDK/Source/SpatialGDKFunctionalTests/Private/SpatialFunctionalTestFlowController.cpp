@@ -50,7 +50,7 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	}
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerSetControllerInstanceId_Implementation(uint8 NewControllerInstanceId)
+void ASpatialFunctionalTestFlowController::CrossServerSetControllerInstanceId_Implementation(int NewControllerInstanceId)
 {
 	ControllerInstanceId = NewControllerInstanceId;
 }

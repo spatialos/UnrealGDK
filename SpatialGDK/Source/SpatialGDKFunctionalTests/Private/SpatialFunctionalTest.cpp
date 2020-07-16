@@ -10,6 +10,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -188,6 +189,63 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 		}
 	}
 	return Counter;
+}
+
+void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
+{
+	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+	if (DelegationInterface != nullptr)
+	{
+		bool bAddedDelegation = DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished);
+		ensureMsgf(bAddedDelegation, TEXT("Tried to delegate Actor %s to Server Worker %d but couldn't"), *GetNameSafe(Actor), ServerWorkerId);
+	}
+}
+
+void ASpatialFunctionalTest::RemoveActorDelegation_Implementation(AActor* Actor)
+{
+	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+	if (DelegationInterface != nullptr)
+	{
+		bool bRemovedDelegation = DelegationInterface->RemoveActorDelegation(Actor);
+		ensureMsgf(bRemovedDelegation, TEXT("Tried to remove Delegation from Actor %s but couldn't"), *GetNameSafe(Actor));
+	}
+}
+
+bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent)
+{
+	WorkerId = 0;
+	bIsPersistent = 0;
+
+	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+	bool bHasDelegation = false;
+
+	if (DelegationInterface != nullptr)
+	{
+		VirtualWorkerId AuxWorkerId;
+
+		bHasDelegation = DelegationInterface->HasActorDelegation(Actor, AuxWorkerId, bIsPersistent);
+
+		WorkerId = AuxWorkerId;
+	}
+
+	return bHasDelegation;
+}
+
+ISpatialFunctionalTestLBDelegationInterface* ASpatialFunctionalTest::GetDelegationInterface() const
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (SpatialNetDriver)
+	{
+		ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+		if(LayeredLBStrategy != nullptr)
+		{
+			return Cast<ISpatialFunctionalTestLBDelegationInterface>(LayeredLBStrategy->GetLBStrategyForVisualRendering());
+		}
+	}
+	return nullptr;
 }
 
 void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const FString& Message)
@@ -479,6 +537,15 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 			if (AuxLocalFlowController != nullptr)
 			{
 				AuxLocalFlowController->OnTestFinished();
+				if (AuxLocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+				{
+					ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
+
+					if (DelegationInterface != nullptr)
+					{
+						DelegationInterface->RemoveAllActorDelegations(GetWorld());
+					}
+				}
 			}
 		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest

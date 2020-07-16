@@ -11,8 +11,9 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
-#include "Utils/SchemaUtils.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
 
@@ -170,7 +171,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
-	TArray<UProperty*> RepNotifies;
+	TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
@@ -237,7 +238,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
-					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+					GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
 					if (ArrayProperty == nullptr)
 					{
 						UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"), *Object.GetName());
@@ -290,7 +291,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				{
 					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the client RPCs component.
-					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
+					GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
 					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
 						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
@@ -352,7 +353,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 		uint8* Data = (uint8*)&Object + PropertyInfo.Offset;
 
-		if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
+		if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(PropertyInfo.Property))
 		{
 			ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, PropertyInfo.Offset, -1, -1, bOutReferencesChanged);
 		}
@@ -362,14 +363,14 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		}
 	}
 
-	Channel.PostReceiveSpatialUpdate(&Object, TArray<UProperty*>());
+	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>());
 }
 
-void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
+void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, GDK_PROPERTY(Property)* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyProperty);
 
-	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	if (GDK_PROPERTY(StructProperty)* StructProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property))
 	{
 		TArray<uint8> ValueData = IndexBytesFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
@@ -396,56 +397,56 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			bOutReferencesChanged = true;
 		}
 	}
-	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	else if (GDK_PROPERTY(BoolProperty)* BoolProperty = GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(Property))
 	{
 		BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, FieldId, Index) != 0);
 	}
-	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	else if (GDK_PROPERTY(FloatProperty)* FloatProperty = GDK_CASTFIELD<GDK_PROPERTY(FloatProperty)>(Property))
 	{
 		FloatProperty->SetPropertyValue(Data, Schema_IndexFloat(Object, FieldId, Index));
 	}
-	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	else if (GDK_PROPERTY(DoubleProperty)* DoubleProperty = GDK_CASTFIELD<GDK_PROPERTY(DoubleProperty)>(Property))
 	{
 		DoubleProperty->SetPropertyValue(Data, Schema_IndexDouble(Object, FieldId, Index));
 	}
-	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	else if (GDK_PROPERTY(Int8Property)* Int8Property = GDK_CASTFIELD<GDK_PROPERTY(Int8Property)>(Property))
 	{
 		Int8Property->SetPropertyValue(Data, (int8)Schema_IndexInt32(Object, FieldId, Index));
 	}
-	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	else if (GDK_PROPERTY(Int16Property)* Int16Property = GDK_CASTFIELD<GDK_PROPERTY(Int16Property)>(Property))
 	{
 		Int16Property->SetPropertyValue(Data, (int16)Schema_IndexInt32(Object, FieldId, Index));
 	}
-	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	else if (GDK_PROPERTY(IntProperty)* IntProperty = GDK_CASTFIELD<GDK_PROPERTY(IntProperty)>(Property))
 	{
 		IntProperty->SetPropertyValue(Data, Schema_IndexInt32(Object, FieldId, Index));
 	}
-	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	else if (GDK_PROPERTY(Int64Property)* Int64Property = GDK_CASTFIELD<GDK_PROPERTY(Int64Property)>(Property))
 	{
 		Int64Property->SetPropertyValue(Data, Schema_IndexInt64(Object, FieldId, Index));
 	}
-	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	else if (GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Property))
 	{
 		ByteProperty->SetPropertyValue(Data, (uint8)Schema_IndexUint32(Object, FieldId, Index));
 	}
-	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	else if (GDK_PROPERTY(UInt16Property)* UInt16Property = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
 	{
 		UInt16Property->SetPropertyValue(Data, (uint16)Schema_IndexUint32(Object, FieldId, Index));
 	}
-	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	else if (GDK_PROPERTY(UInt32Property)* UInt32Property = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
 	{
 		UInt32Property->SetPropertyValue(Data, Schema_IndexUint32(Object, FieldId, Index));
 	}
-	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	else if (GDK_PROPERTY(UInt64Property)* UInt64Property = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
 	{
 		UInt64Property->SetPropertyValue(Data, Schema_IndexUint64(Object, FieldId, Index));
 	}
-	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	else if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property))
 	{
 		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (Cast<USoftObjectProperty>(Property))
+		if (GDK_CASTFIELD<GDK_PROPERTY(SoftObjectProperty)>(Property))
 		{
 			FSoftObjectPtr* ObjectPtr = reinterpret_cast<FSoftObjectPtr*>(Data);
 			*ObjectPtr = FUnrealObjectRef::ToSoftObjectPath(ObjectRef);
@@ -479,19 +480,19 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			}
 		}
 	}
-	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	else if (GDK_PROPERTY(NameProperty)* NameProperty = GDK_CASTFIELD<GDK_PROPERTY(NameProperty)>(Property))
 	{
 		NameProperty->SetPropertyValue(Data, FName(*IndexStringFromSchema(Object, FieldId, Index)));
 	}
-	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	else if (GDK_PROPERTY(StrProperty)* StrProperty = GDK_CASTFIELD<GDK_PROPERTY(StrProperty)>(Property))
 	{
 		StrProperty->SetPropertyValue(Data, IndexStringFromSchema(Object, FieldId, Index));
 	}
-	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	else if (GDK_PROPERTY(TextProperty)* TextProperty = GDK_CASTFIELD<GDK_PROPERTY(TextProperty)>(Property))
 	{
 		TextProperty->SetPropertyValue(Data, FText::FromString(IndexStringFromSchema(Object, FieldId, Index)));
 	}
-	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	else if (GDK_PROPERTY(EnumProperty)* EnumProperty = GDK_CASTFIELD<GDK_PROPERTY(EnumProperty)>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
@@ -508,7 +509,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 }
 
-void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
+void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, GDK_PROPERTY(ArrayProperty)* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyArray);
 
@@ -560,77 +561,77 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 	}
 }
 
-uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property)
+uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property)* Property)
 {
-	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	if (GDK_PROPERTY(StructProperty)* StructProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property))
 	{
 		return Schema_GetBytesCount(Object, FieldId);
 	}
-	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	else if (GDK_PROPERTY(BoolProperty)* BoolProperty = GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(Property))
 	{
 		return Schema_GetBoolCount(Object, FieldId);
 	}
-	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	else if (GDK_PROPERTY(FloatProperty)* FloatProperty = GDK_CASTFIELD<GDK_PROPERTY(FloatProperty)>(Property))
 	{
 		return Schema_GetFloatCount(Object, FieldId);
 	}
-	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	else if (GDK_PROPERTY(DoubleProperty)* DoubleProperty = GDK_CASTFIELD<GDK_PROPERTY(DoubleProperty)>(Property))
 	{
 		return Schema_GetDoubleCount(Object, FieldId);
 	}
-	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	else if (GDK_PROPERTY(Int8Property)* Int8Property = GDK_CASTFIELD<GDK_PROPERTY(Int8Property)>(Property))
 	{
 		return Schema_GetInt32Count(Object, FieldId);
 	}
-	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	else if (GDK_PROPERTY(Int16Property)* Int16Property = GDK_CASTFIELD<GDK_PROPERTY(Int16Property)>(Property))
 	{
 		return Schema_GetInt32Count(Object, FieldId);
 	}
-	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	else if (GDK_PROPERTY(IntProperty)* IntProperty = GDK_CASTFIELD<GDK_PROPERTY(IntProperty)>(Property))
 	{
 		return Schema_GetInt32Count(Object, FieldId);
 	}
-	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	else if (GDK_PROPERTY(Int64Property)* Int64Property = GDK_CASTFIELD<GDK_PROPERTY(Int64Property)>(Property))
 	{
 		return Schema_GetInt64Count(Object, FieldId);
 	}
-	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	else if (GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Property))
 	{
 		return Schema_GetUint32Count(Object, FieldId);
 	}
-	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	else if (GDK_PROPERTY(UInt16Property)* UInt16Property = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
 	{
 		return Schema_GetUint32Count(Object, FieldId);
 	}
-	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	else if (GDK_PROPERTY(UInt32Property)* UInt32Property = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
 	{
 		return Schema_GetUint32Count(Object, FieldId);
 	}
-	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	else if (GDK_PROPERTY(UInt64Property)* UInt64Property = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
 	{
 		return Schema_GetUint64Count(Object, FieldId);
 	}
-	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	else if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property))
 	{
 		return Schema_GetObjectCount(Object, FieldId);
 	}
-	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	else if (GDK_PROPERTY(NameProperty)* NameProperty = GDK_CASTFIELD<GDK_PROPERTY(NameProperty)>(Property))
 	{
 		return Schema_GetBytesCount(Object, FieldId);
 	}
-	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	else if (GDK_PROPERTY(StrProperty)* StrProperty = GDK_CASTFIELD<GDK_PROPERTY(StrProperty)>(Property))
 	{
 		return Schema_GetBytesCount(Object, FieldId);
 	}
-	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	else if (GDK_PROPERTY(TextProperty)* TextProperty = GDK_CASTFIELD<GDK_PROPERTY(TextProperty)>(Property))
 	{
 		return Schema_GetBytesCount(Object, FieldId);
 	}
-	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
+	else if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property))
 	{
 		return GetPropertyCount(Object, FieldId, ArrayProperty->Inner);
 	}
-	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	else if (GDK_PROPERTY(EnumProperty)* EnumProperty = GDK_CASTFIELD<GDK_PROPERTY(EnumProperty)>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
