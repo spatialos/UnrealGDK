@@ -306,7 +306,7 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowContro
 
 // Add Steps for Blueprints
 
-void ASpatialFunctionalTest::AddStep(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
