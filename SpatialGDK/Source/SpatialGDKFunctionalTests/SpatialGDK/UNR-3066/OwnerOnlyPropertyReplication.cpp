@@ -46,7 +46,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 	Super::BeginPlay();
 
 	{	// Step 1 - Set TestIntProp to 42.
-		AddStep(TEXT("ServerCreateActor"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 			Test->Pawn = Test->GetWorld()->SpawnActor<AOwnerOnlyTestPawn>(FVector::ZeroVector, FRotator::ZeroRotator);
 			Test->Pawn->SetReplicates(true);
@@ -57,7 +57,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{	// Step 2 - Check on client that TestInt didn't replicate.
-		AddStep(TEXT("ClientNoReplicationBeforePossess"), ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID,
+		AddStep(TEXT("ClientNoReplicationBeforePossess"), FWorkerDefinition::AllClients,
 			[](ASpatialFunctionalTest* NetTest) -> bool {
 				AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 				return IsValid(Test->Pawn);
@@ -74,7 +74,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{	// Step 3 - Possess actor.
-		AddStep(TEXT("ServerPossessActor"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerPossessActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 			if (Test->Pawn)
 			{
@@ -90,7 +90,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{	// Step 4 - Check on client that TestInt did replicate now on owning client.
-		AddStep(TEXT("ClientCheckReplicationAfterPossess"), ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID,
+		AddStep(TEXT("ClientCheckReplicationAfterPossess"), FWorkerDefinition::AllClients,
 			[](ASpatialFunctionalTest* NetTest) -> bool {
 				AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 				return IsValid(Test->Pawn);
@@ -125,7 +125,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{	// Step 5 - Change value on server.
-		AddStep(TEXT("ServerChangeValue"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerChangeValue"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 			if (Test->Pawn)
 			{
@@ -136,7 +136,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{	// Step 6 - Check that value was replicated on owning client.
-		AddStep(TEXT("ClientCheckReplicationAfterChange"), ESpatialFunctionalTestFlowControllerType::Server, FWorkerDefinition::ALL_WORKERS_ID, nullptr, nullptr,
+		AddStep(TEXT("ClientCheckReplicationAfterChange"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 				AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 				const FSpatialFunctionalTestStepDefinition StepDefinition = Test->GetStepDefinition(Test->GetCurrentStepIndex());
@@ -166,7 +166,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{ // Step 7 - Put back original Pawns
-		AddStep(TEXT("ServerPossessOriginalPawns"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerPossessOriginalPawns"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 			for (const auto& OriginalPawnPair : Test->OriginalPawns)
 			{

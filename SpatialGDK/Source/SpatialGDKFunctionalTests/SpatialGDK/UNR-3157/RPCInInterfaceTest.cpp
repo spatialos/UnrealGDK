@@ -23,7 +23,7 @@ void ARPCInInterfaceTest::BeginPlay()
 	Super::BeginPlay();
 
 	{	// Step 1 - Create actor
-		AddStep(TEXT("ServerCreateActor"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 
 			ASpatialFunctionalTestFlowController* Client1FlowController = Test->GetFlowController(ESpatialFunctionalTestFlowControllerType::Client, 1);
@@ -40,7 +40,7 @@ void ARPCInInterfaceTest::BeginPlay()
 			});
 	}
 	{ // Step 2 - Make sure client has ownership of Actor
-		AddStep(TEXT("ClientCheckOwnership"), ESpatialFunctionalTestFlowControllerType::Client, 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("ClientCheckOwnership"), FWorkerDefinition::Client(1), nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 			if (IsValid(Test->TestActor) && Test->TestActor->GetOwner() == Test->GetLocalFlowController()->GetOwner())
 			{
@@ -49,7 +49,7 @@ void ARPCInInterfaceTest::BeginPlay()
 			});
 	}
 	{	// Step 3 - Call client RPC on interface
-		AddStep(TEXT("ServerCallRPC"), ESpatialFunctionalTestFlowControllerType::Server, 1, [](ASpatialFunctionalTest* NetTest) -> bool {
+		AddStep(TEXT("ServerCallRPC"), FWorkerDefinition::Server(1), [](ASpatialFunctionalTest* NetTest) -> bool {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				return IsValid(Test->TestActor);
 			}, [](ASpatialFunctionalTest* NetTest) {
@@ -59,7 +59,7 @@ void ARPCInInterfaceTest::BeginPlay()
 			});
 	}
 	{	// Step 4 - Check RPC was received on client
-		AddStep(TEXT("ClientCheckRPC"), ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID, [](ASpatialFunctionalTest* NetTest) -> bool {
+		AddStep(TEXT("ClientCheckRPC"), FWorkerDefinition::AllClients, [](ASpatialFunctionalTest* NetTest) -> bool {
 				ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				return IsValid(Test->TestActor);
 			}, 

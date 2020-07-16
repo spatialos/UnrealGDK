@@ -25,7 +25,7 @@ enum class ESpatialFunctionalTestFlowControllerType : uint8
 {
 	Server,
 	Client,
-	All
+	All		// Special type that allows you to reference all the Servers and Clients
 };
 
 
@@ -34,12 +34,31 @@ struct FWorkerDefinition
 {
 	GENERATED_BODY()
 
+	// Type of Worker, usually Server or Client.
 	UPROPERTY(BlueprintReadWrite, Category="Spatial Functional Test")
-	ESpatialFunctionalTestFlowControllerType ControllerType;
-	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
-	int WorkerId;
+	ESpatialFunctionalTestFlowControllerType Type = ESpatialFunctionalTestFlowControllerType::Server;
 
+	// Ids of Workers start from 1.
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
+	int Id = 1;
+
+	// Id that represents all workers, useful when you want to run a Step on all Clients or Servers.
 	static const int ALL_WORKERS_ID = 0;
+
+	// Definition that represents all workers (both Client and Server).
+	static const FWorkerDefinition AllWorkers;
+
+	// Definition that represents all Server workers
+	static const FWorkerDefinition AllServers;
+
+	// Definition that represents all Client workers
+	static const FWorkerDefinition AllClients;
+
+	// Helper for Server Worker Definition
+	static FWorkerDefinition Server(int ServerId);
+
+	// Helper for Client Worker Definition
+	static FWorkerDefinition Client(int ClientId);
 };
 
 USTRUCT(BlueprintType)
@@ -53,11 +72,15 @@ struct FSpatialFunctionalTestStepDefinition
 	{
 	}
 
+	// Description so that in the logs you can clearly identify Test Steps
 	UPROPERTY()
 	FString StepName;
 
+	// Given that we support different delegate types for C++ and BP
+	// this is a variable to distinguish what kind you're running
 	bool bIsNativeDefinition;
 
+	// BP Delegates
 	UPROPERTY()
 	FStepIsReadyDelegate IsReadyEvent;
 	UPROPERTY()
@@ -65,13 +88,16 @@ struct FSpatialFunctionalTestStepDefinition
 	UPROPERTY()
 	FStepTickDelegate TickEvent;
 
+	// C++ Delegates
 	FNativeStepIsReadyDelegate NativeIsReadyEvent;
 	FNativeStepStartDelegate NativeStartEvent;
 	FNativeStepTickDelegate NativeTickEvent;
 
+	// Workers the Test Step should run on
 	UPROPERTY()
 	TArray<FWorkerDefinition> Workers;
 
+	// Maximum time it can take to finish this Step; if <= 0 it fallback to the time limit of the whole Test
 	UPROPERTY()
 	float TimeLimit;
 };

@@ -306,7 +306,7 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowContro
 
 // Add Steps for Blueprints
 
-void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
@@ -316,7 +316,7 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, ESpatialF
 	StepDefinition.TickEvent = TickEvent;
 	StepDefinition.TimeLimit = StepTimeLimit;
 
-	StepDefinition.Workers.Add(FWorkerDefinition{ WorkerType, WorkerId });
+	StepDefinition.Workers.Add(Worker);
 
 	StepDefinitions.Add(StepDefinition);
 }
@@ -338,8 +338,8 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 
 		for (const FWorkerDefinition& Worker : StepDefinition.Workers)
 		{
-			ESpatialFunctionalTestFlowControllerType WorkerType = Worker.ControllerType;
-			int WorkerId = Worker.WorkerId;
+			ESpatialFunctionalTestFlowControllerType WorkerType = Worker.Type;
+			int WorkerId = Worker.Id;
 			if (NumExpectedServers == 1 && WorkerType == ESpatialFunctionalTestFlowControllerType::Server)
 			{
 				// make sure that tests made for multi server also run on single server
@@ -384,7 +384,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 
 // Add Steps for C++
 
-FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
+FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FString& StepName, const FWorkerDefinition& Worker, FIsReadyEventFunc IsReadyEvent /*= nullptr*/, FStartEventFunc StartEvent /*= nullptr*/, FTickEventFunc TickEvent /*= nullptr*/, float StepTimeLimit /*= 0.0f*/)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
@@ -403,7 +403,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 	}
 	StepDefinition.TimeLimit = StepTimeLimit;
 
-	StepDefinition.Workers.Add(FWorkerDefinition{ WorkerType, WorkerId });
+	StepDefinition.Workers.Add(Worker);
 
 	StepDefinitions.Add(StepDefinition);
 
