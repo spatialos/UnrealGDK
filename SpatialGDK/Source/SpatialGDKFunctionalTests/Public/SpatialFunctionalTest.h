@@ -52,6 +52,7 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
+	// Should be called from the server with authority over this actor
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
 	// # Test APIs
