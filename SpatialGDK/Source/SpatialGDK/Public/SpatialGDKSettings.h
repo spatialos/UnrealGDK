@@ -324,7 +324,7 @@ public:
 	/**
 	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
 	  */
-	UPROPERTY(EditAnywhere, Config, Category="Logging")
+	UPROPERTY(Config)
 	bool bEnableMultiWorkerDebuggingWarnings;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false."))

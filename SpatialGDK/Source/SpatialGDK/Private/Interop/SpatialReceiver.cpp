@@ -1945,12 +1945,13 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
+	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	if (UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
+	if (UnresolvedRefCount == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
 	{
 		TargetObject->ProcessEvent(Function, Parms);
 
-		if (UnresolvedRefs.Num() > 0 &&
+		if (UnresolvedRefCount > 0 &&
 			!SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type) &&
 			(Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
 		{
