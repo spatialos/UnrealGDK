@@ -1955,7 +1955,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			Params.Type == ERPCType::ServerUnreliable))
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
-			ErrorInfo.QueueCommand = ERPCQueueCommand::DropEntireQueue;
+			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
 		}
 		else
 		{
@@ -1982,7 +1982,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueCommand::StopProcessing };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -1990,7 +1990,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueCommand::ContinueProcessing };
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 
 	bool bApplyWithUnresolvedRefs = false;

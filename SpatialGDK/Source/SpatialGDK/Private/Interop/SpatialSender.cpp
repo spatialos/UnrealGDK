@@ -629,7 +629,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueCommand::DropEntireQueue };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::DropEntireQueue };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -637,13 +637,13 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueCommand::ContinueProcessing };
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 	if (Channel == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueCommand::DropEntireQueue };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueProcessResult::DropEntireQueue };
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
@@ -736,15 +736,15 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 	{
-		ERPCQueueCommand QueueCommand = ERPCQueueCommand::DropEntireQueue;
+		ERPCQueueProcessResult QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
 			if (TargetActor->HasAuthority())
 			{
-				QueueCommand = ERPCQueueCommand::StopProcessing;
+				QueueProcessResult = ERPCQueueProcessResult::StopProcessing;
 			}
 		}
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, QueueCommand };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, QueueProcessResult };
 	}
 
 	FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);

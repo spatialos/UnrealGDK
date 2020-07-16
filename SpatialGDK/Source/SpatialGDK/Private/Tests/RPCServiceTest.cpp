@@ -553,7 +553,7 @@ bool FDropRPCQueueTest::Update()
 	{
 		FRPCErrorInfo RPCErrorInfo = Receiver->ApplyRPC(Params);
 		bTestSuccess = RPCErrorInfo.ErrorCode == ERPCResult::NoAuthority;
-		bTestSuccess &= RPCErrorInfo.QueueCommand == ERPCQueueCommand::DropEntireQueue;
+		bTestSuccess &= RPCErrorInfo.QueueProcessResult == ERPCQueueProcessResult::DropEntireQueue;
 
 		return RPCErrorInfo;
 	});

@@ -69,7 +69,7 @@ namespace
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
 			QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			ErrorInfo.QueueCommand == ERPCQueueCommand::ContinueProcessing ? TEXT("queued") : TEXT("dropped"),
+			ErrorInfo.QueueProcessResult == ERPCQueueProcessResult::ContinueProcessing ? TEXT("queued") : TEXT("dropped"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
@@ -101,11 +101,11 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, E
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
-		const ERPCQueueCommand QueueCommand = ApplyFunction(Params);
-		switch (QueueCommand)
+		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);
+		switch (QueueProcessResult)
 		{
-		case ERPCQueueCommand::ContinueProcessing:
-		case ERPCQueueCommand::DropEntireQueue:
+		case ERPCQueueProcessResult::ContinueProcessing:
+		case ERPCQueueProcessResult::DropEntireQueue:
 			return;
 		}
 	}
@@ -120,14 +120,14 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		const ERPCQueueCommand QueueCommand = ApplyFunction(Params);
-		switch (QueueCommand)
+		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);
+		switch (QueueProcessResult)
 		{
-		case ERPCQueueCommand::ContinueProcessing:
+		case ERPCQueueProcessResult::ContinueProcessing:
 			NumProcessedParams++;
-		case ERPCQueueCommand::StopProcessing:
+		case ERPCQueueProcessResult::StopProcessing:
 			break;
-		case ERPCQueueCommand::DropEntireQueue:
+		case ERPCQueueProcessResult::DropEntireQueue:
 			RPCList.Empty();
 			return;
 		}
@@ -194,19 +194,19 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 	ProcessingFunction = Function;
 }
 
-ERPCQueueCommand FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
+ERPCQueueProcessResult FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	ensure(ProcessingFunction.IsBound());
 	FRPCErrorInfo ErrorInfo = ProcessingFunction.Execute(Params);
 
 	if (ErrorInfo.Success())
 	{
-		return ERPCQueueCommand::ContinueProcessing;
+		return ERPCQueueProcessResult::ContinueProcessing;
 	}
 
 #if !UE_BUILD_SHIPPING
 	LogRPCError(ErrorInfo, QueueType, Params);
 #endif
 
-	return ErrorInfo.QueueCommand;
+	return ErrorInfo.QueueProcessResult;
 }
