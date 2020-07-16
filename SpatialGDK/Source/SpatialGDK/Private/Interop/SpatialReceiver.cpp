@@ -15,6 +15,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EventsInstrumentation/EventProcessor.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -56,7 +57,7 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -68,8 +69,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
-	EventProcessor = InEventProcessor;
-	
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
 	PeriodicallyProcessIncomingRPCs();
 }
@@ -2889,4 +2888,9 @@ void USpatialReceiver::CleanupRepStateMap(FSpatialObjectRepState& RepState)
 			}
 		}
 	}
+}
+
+void USpatialReceiver::SetEventProcessor(GDKEventsToStructuredLogs* InEventProcessor)
+{
+	EventProcessor = InEventProcessor;
 }

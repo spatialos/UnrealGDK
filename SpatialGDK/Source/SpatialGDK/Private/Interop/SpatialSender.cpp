@@ -11,6 +11,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EventsInstrumentation/EventProcessor.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -58,7 +59,7 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -68,8 +69,6 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
-
-	EventProcessor = InEventProcessor;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
@@ -719,7 +718,7 @@ void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* F
 
 	OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Payload);
 #if !UE_BUILD_SHIPPING
-	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
+	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 }
 
@@ -747,7 +746,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 			EntityId, CommandRequest.component_id, *Function->GetName());
 	}
 #if !UE_BUILD_SHIPPING
-	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
+	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, RequestId);
 #endif // !UE_BUILD_SHIPPING
 }
 
@@ -785,7 +784,7 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 	Connection->MaybeFlush();
 #if !UE_BUILD_SHIPPING
-	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
+	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 
 	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
@@ -804,7 +803,7 @@ void USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 #if !UE_BUILD_SHIPPING
 	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
 	{
-		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type, -1);
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 	}
 #endif // !UE_BUILD_SHIPPING
 
@@ -904,8 +903,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 		TargetObjectRef.Entity, RetryRPC->ComponentId, *RetryRPC->Function->GetName(), RetryRPC->Attempts);
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
 
-	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
-	EventProcessor->SendRPCRetry(Channel->Actor, RetryRPC->Function, RetryRPC->Attempts, RequestId);
+	EventProcessor->SendRPCRetry(Cast<AActor>(TargetObject), RetryRPC->Function, RetryRPC->Attempts, RequestId);
 }
 
 void USpatialSender::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel)
@@ -1167,4 +1165,9 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 #if WITH_EDITOR
 	NetDriver->TrackTombstone(EntityId);
 #endif
+}
+
+void USpatialSender::SetEventProcessor(GDKEventsToStructuredLogs* InEventProcessor)
+{
+	EventProcessor = InEventProcessor;
 }

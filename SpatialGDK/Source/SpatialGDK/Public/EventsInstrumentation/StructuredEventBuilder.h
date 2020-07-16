@@ -35,7 +35,8 @@ public:
 		if (Actor != nullptr)
 		{
 			Data.Type = Actor->GetClass()->GetName();
-			Data.Name = Actor->GetFullName();
+			Data.DisplayName = Actor->GetName();
+			Data.FullName = Actor->GetFullName();
 		}
 		return Data;
 	}

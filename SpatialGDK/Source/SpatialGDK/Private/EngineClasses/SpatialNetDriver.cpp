@@ -392,25 +392,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()));
 	}
 
-	//setup event logs
-	FString WorkerType = GameInstance->GetSpatialWorkerType().ToString();
-	TFunction<uint32()> LoadbalancingId = []() -> uint32 { return 0; };
-	if(VirtualWorkerTranslator != nullptr)
-	{
-		LoadbalancingId = [this]() -> uint32 { return VirtualWorkerTranslator->GetLocalVirtualWorkerId(); };
-	}
-	EventLogger = MakeShared<GDKStructuredEventLogger>(
-		"{log directory}",
-		Connection->GetWorkerId().Left(17),
-		WorkerType,
-		LoadbalancingId); //todo: injection root for file name
-	EventLogger->Start();
-	EventProcessor = GDKEventsToStructuredLogs(EventLogger);
-	//setup event logs
+	SetupEventProcessor();
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get(), &EventProcessor);
-	Receiver->Init(this, &TimerManager, RPCService.Get(), &EventProcessor);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -2616,4 +2602,33 @@ void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
+}
+
+void USpatialNetDriver::SetupEventProcessor()
+{
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+
+	FString WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+	TFunction<uint32()> LoadbalancingId = []() -> uint32 { return 0; };
+	if(VirtualWorkerTranslator != nullptr)
+	{
+		LoadbalancingId = [this]() -> uint32 { return VirtualWorkerTranslator->GetLocalVirtualWorkerId(); };
+	}
+
+	EventLogger = MakeShared<GDKStructuredEventLogger>(
+		"event-logs",
+		Connection->GetWorkerId().Left(17),
+		WorkerType,
+		LoadbalancingId); //todo: injection root for file name
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableStructuredLogging)
+	{
+		EventLogger->Start();
+	}
+
+	EventProcessor = GDKEventsToStructuredLogs(EventLogger);
+
+	Sender->SetEventProcessor(&EventProcessor);
+	Receiver->SetEventProcessor(&EventProcessor);
 }

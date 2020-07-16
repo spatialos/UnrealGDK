@@ -315,4 +315,7 @@ public:
 	/** Experimental feature to use SpatialView layer when communicating with the Worker */
 	UPROPERTY(Config)
 	bool bUseSpatialView;
+
+	UPROPERTY(EditAnywhere, config, Category = "Logging")
+	bool bEnableStructuredLogging;
 };

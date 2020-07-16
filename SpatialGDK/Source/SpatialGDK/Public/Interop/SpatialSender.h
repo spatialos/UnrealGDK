@@ -18,9 +18,9 @@
 
 #include "SpatialSender.generated.h"
 
-class GDKEventsToStructuredLogs;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
+class GDKEventsToStructuredLogs;
 class USpatialActorChannel;
 class SpatialDispatcher;
 class USpatialNetDriver;
@@ -67,11 +67,8 @@ class SPATIALGDK_API USpatialSender : public UObject
 {
 	GENERATED_BODY()
 
-private:
-	GDKEventsToStructuredLogs* EventProcessor;
-	
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
@@ -160,7 +157,7 @@ private:
 
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING
-	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType, Worker_RequestId LocalRequestId);
+	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType, Worker_RequestId LocalRequestId = -1);
 #endif
 
 	bool WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity);
@@ -196,4 +193,10 @@ private:
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+private:
+	GDKEventsToStructuredLogs* EventProcessor;
+
+public:
+	void SetEventProcessor(GDKEventsToStructuredLogs* InEventProcessor);
 };

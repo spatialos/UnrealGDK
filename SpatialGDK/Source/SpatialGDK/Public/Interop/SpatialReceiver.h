@@ -26,6 +26,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
+class GDKEventsToStructuredLogs;
 class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
@@ -54,11 +55,8 @@ class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 {
 	GENERATED_BODY()
 
-private:
-	GDKEventsToStructuredLogs* EventProcessor;
-
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, GDKEventsToStructuredLogs* InEventProcessor);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;
@@ -265,4 +263,10 @@ private:
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 	// END TODO
+
+private:
+	GDKEventsToStructuredLogs* EventProcessor;
+
+public:
+	void SetEventProcessor(GDKEventsToStructuredLogs* InEventProcessor);
 };

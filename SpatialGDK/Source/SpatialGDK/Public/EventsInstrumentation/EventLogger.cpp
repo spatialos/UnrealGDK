@@ -1,8 +1,8 @@
 #include "EventLogger.h"
 
 GDKStructuredEventLogger::GDKStructuredEventLogger(FString LogFilePrefix, FString WorkerId, FString WorkerType, const TFunction<uint32()>& LoadbalancingWorkerIdGetter)
-	: LocalWorkerId(WorkerId),
-	LogDirectory(LogFilePrefix),
+	: LogDirectory(LogFilePrefix),
+	LocalWorkerId(WorkerId),
 	LocalWorkerType(WorkerType),
 	LocalVirtualWorkerIdGetter(LoadbalancingWorkerIdGetter)
 {
@@ -18,12 +18,14 @@ GDKStructuredEventLogger::~GDKStructuredEventLogger()
 
 void GDKStructuredEventLogger::Start()
 {
-	FString FileName = LogDirectory + LocalWorkerId + TEXT(".log");
+	FString LogDirectoryPath = FPaths::Combine(FPaths::ProjectLogDir(), LogDirectory);
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if(PlatformFile.CreateDirectoryTree(*LogDirectory))
+	if(PlatformFile.CreateDirectoryTree(*LogDirectoryPath))
 	{
-		IFileHandle* FileHandle = PlatformFile.OpenWrite(*FileName, true);
+		FString FileName = LocalWorkerId + TEXT(".log");
+		FString FilePath = FPaths::Combine(LogDirectoryPath, FileName);
+		IFileHandle* FileHandle = PlatformFile.OpenWrite(*FilePath, true);
 		if(FileHandle != nullptr)
 		{
 			WriteHandle.Reset(FileHandle);
@@ -32,6 +34,10 @@ void GDKStructuredEventLogger::Start()
 }
 void GDKStructuredEventLogger::End()
 {
+	if (!WriteHandle.Get())
+	{
+		return;
+	}
 	WriteHandle->Flush();
 }
 

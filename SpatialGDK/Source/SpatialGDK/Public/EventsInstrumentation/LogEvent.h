@@ -48,7 +48,10 @@ public:
 	FString Type;
 
 	UPROPERTY()
-	FString Name;
+	FString FullName;
+
+	UPROPERTY()
+	FString DisplayName;
 };
 
 USTRUCT()

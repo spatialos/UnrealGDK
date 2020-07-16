@@ -175,7 +175,7 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+	void DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor);
 
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
@@ -183,6 +183,10 @@ public:
 
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
+
+	// IsReady evaluates the GSM, Load Balancing system, and others to get a holistic
+	// view of whether the SpatialNetDriver is ready to assume normal operations.
+	bool IsReady() const;
 
 private:
 
@@ -199,9 +203,6 @@ private:
 
 	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
-	TSharedPtr<GDKStructuredEventLogger> EventLogger;
-	GDKEventsToStructuredLogs EventProcessor;
-	
 	FTimerManager TimerManager;
 
 	bool bAuthoritativeDestruction;
@@ -289,4 +290,10 @@ private:
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
 	bool ClientCanSendPlayerSpawnRequests();
+
+private:
+	TSharedPtr<GDKStructuredEventLogger> EventLogger;
+	GDKEventsToStructuredLogs EventProcessor;
+
+	void SetupEventProcessor();
 };

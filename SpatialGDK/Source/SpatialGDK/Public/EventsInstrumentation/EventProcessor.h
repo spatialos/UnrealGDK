@@ -55,8 +55,8 @@ public:
 	void SendRPC(AActor* Target, UFunction* RPCName, TraceKey TraceId, Worker_RequestId LocalRequestId);
 	//todo: RPCs have some internal failure conditions before send which look interesting to capture such as target having been destroyed already
 	void SendRPCRetry(AActor* Target, UFunction* RPCName, int AttemptNumber, Worker_RequestId LocalRequestId);
-	//todo: GDK currently doesn't seem to have tracking in place for the TraceKey which lives in SpatialGDK::RPCPayload (not available for teh retry flow)
-	
+	//todo: GDK currently doesn't seem to have tracking in place for the TraceKey which lives in SpatialGDK::RPCPayload (not available for the retry flow)
+
 	void SendCommandResponse(Worker_RequestId LocalRequestId, bool success);
 
 	//todo: flow triggering these sometimes queue requests; log the actual flushes?
