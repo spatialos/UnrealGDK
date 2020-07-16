@@ -151,7 +151,8 @@ int64 USpatialStatics::GetActorEntityId(const AActor* Actor)
 	{
 		return static_cast<int64>(SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor));
 	}
-	return 0;
+
+	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
 FString USpatialStatics::EntityIdToString(int64 EntityId)
