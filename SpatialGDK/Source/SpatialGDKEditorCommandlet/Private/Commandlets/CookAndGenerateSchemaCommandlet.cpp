@@ -7,6 +7,8 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 
+#include "Misc/CommandLine.h"
+
 using namespace SpatialGDKEditor::Schema;
 
 DEFINE_LOG_CATEGORY(LogCookAndGenerateSchemaCommandlet);
@@ -103,7 +105,13 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Starting Cook Command."));
-	int32 CookResult = Super::Main(CmdLineParams);
+
+	const FString AdditionalCookParam(TEXT(" -cookloadonly"));
+	FString NewCmdLine = CmdLineParams;
+	NewCmdLine.Append(AdditionalCookParam);
+	FCommandLine::Append(*AdditionalCookParam);
+
+	int32 CookResult = Super::Main(NewCmdLine);
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook Command Completed."));
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());

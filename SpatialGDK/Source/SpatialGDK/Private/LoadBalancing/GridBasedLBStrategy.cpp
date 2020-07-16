@@ -113,11 +113,12 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %f, %f"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], Actor2DLocation.X, Actor2DLocation.Y);
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], *Actor2DLocation.ToString());
 			return VirtualWorkerIds[i];
 		}
 	}
 
+	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"), *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 

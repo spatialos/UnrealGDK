@@ -64,24 +64,24 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
-	
+
 	virtual void PostInitProperties() override;
 
-	/** 
+	/**
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
-	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment 
+	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count"))
 	uint32 EntityPoolInitialReservationCount;
 
-	/** 
-	 * Specifies when the SpatialOS Runtime should reserve a new batch of entity IDs: the value is the number of un-used entity 
+	/**
+	 * Specifies when the SpatialOS Runtime should reserve a new batch of entity IDs: the value is the number of un-used entity
 	 * IDs left in the entity pool which triggers the SpatialOS Runtime to reserve new entity IDs
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Pool Refresh Threshold"))
 	uint32 EntityPoolRefreshThreshold;
 
-	/** 
+	/**
 	* Specifies the number of new entity IDs the SpatialOS Runtime reserves when `Pool refresh threshold` triggers a new batch.
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Refresh Count"))
@@ -91,9 +91,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (DisplayName = "Heartbeat Interval (seconds)"))
 	float HeartbeatIntervalSeconds;
 
-	/** 
-	* Specifies the maximum amount of time, in seconds, that the server-worker instances wait for a game client to send heartbeat events. 
-	* (If the timeout expires, the game client has disconnected.) 
+	/**
+	* Specifies the maximum amount of time, in seconds, that the server-worker instances wait for a game client to send heartbeat events.
+	* (If the timeout expires, the game client has disconnected.)
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (DisplayName = "Heartbeat Timeout (seconds)"))
 	float HeartbeatTimeoutSeconds;
@@ -113,7 +113,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Maximum Actors replicated per tick"))
 	uint32 ActorReplicationRateLimit;
 
-	/** 
+	/**
 	* Specifies the maximum number of entities created by the SpatialOS Runtime per tick. Not respected when using the Replication Graph.
 	* (The SpatialOS Runtime handles entity creation separately from Actor replication to ensure it can handle entity creation requests under load.)
 	* Note: if you set the value to 0, there is no limit to the number of entities created per tick. However, too many entities created at the same time might overload the SpatialOS Runtime, which can negatively affect your game.
@@ -151,6 +151,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
+	/** Seconds to wait before retying all queued outgoing RPCs. If 0 there will not be retried on a timer. */
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
+	float QueuedOutgoingRPCRetryTime;
+
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
 	float PositionUpdateFrequency;
@@ -171,9 +175,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (DisplayName = "Metrics Report Rate (seconds)"))
 	float MetricsReportRate;
 
-	/** 
-	* By default the SpatialOS Runtime reports server-worker instance’s load in frames per second (FPS). 
-	* Select this to switch so it reports as seconds per frame. 
+	/**
+	* By default the SpatialOS Runtime reports server-worker instance’s load in frames per second (FPS).
+	* Select this to switch so it reports as seconds per frame.
 	* This value is visible as 'Load' in the Inspector, next to each worker.
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics")
@@ -314,4 +318,10 @@ public:
 	  * the map's config with a 1x1 grid.
 	  */
 	TOptional<bool> bOverrideMultiWorker;
+
+	/**
+	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
+	  */
+	UPROPERTY(Config)
+	bool bEnableMultiWorkerDebuggingWarnings;
 };

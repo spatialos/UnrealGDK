@@ -18,6 +18,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
+#define LOCTEXT_NAMESPACE "SpatialGDKSettings"
+
 namespace
 {
 	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
@@ -70,6 +72,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
+	, QueuedOutgoingRPCRetryTime(1.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -99,6 +102,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
+	, bEnableMultiWorkerDebuggingWarnings(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -111,6 +115,7 @@ void USpatialGDKSettings::PostInitProperties()
 	const TCHAR* CommandLine = FCommandLine::Get();
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("OverrideMultiWorker"), TEXT("Multi-Worker"), bOverrideMultiWorker);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableMultiWorkerDebuggingWarnings"), TEXT("Multi-Worker Debugging Warnings"), bEnableMultiWorkerDebuggingWarnings);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
@@ -139,8 +144,8 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
-				"Failing to do will result in unintended behavior or crashes!"))));
+			LOCTEXT("RegenerateSchemaDynamicSubobjects_Prompt", "You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
+				"Failing to do will result in unintended behavior or crashes!"));
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServicesRegion))
 	{
@@ -219,17 +224,15 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 {
 	ServicesRegion = NewRegion;
-	SaveConfig();
+
+	// Save in default config so this applies for other platforms e.g. Linux, Android.
+	UProperty* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
 }
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
-#if UE_EDITOR || UE_SERVER
-	return false;
-#else
-	bool bIsServer = false;
-	const TCHAR* CommandLine = FCommandLine::Get();
-	FParse::Bool(CommandLine, TEXT("-server"), bIsServer);
-	return !bIsServer && bPreventClientCloudDeploymentAutoConnect;
-#endif
+	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+#undef LOCTEXT_NAMESPACE

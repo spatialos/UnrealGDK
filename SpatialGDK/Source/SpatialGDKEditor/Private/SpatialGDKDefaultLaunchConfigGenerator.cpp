@@ -115,7 +115,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	if (WorldSettings->bEnableMultiWorker == false)
+	if (WorldSettings->IsMultiWorkerEnabled() == false)
 	{
 		return 1;
 	}
@@ -149,7 +149,12 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 
 		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = nullptr;
 		FIntPoint Dimension;
-		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
+		if (LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on layer %s"), *LayerKey.ToString());
+			NumWorkers += 1;
+		}
+		else if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
 		{
 			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy for layer %s"), *LayerKey.ToString());
 			NumWorkers += 1;
@@ -167,7 +172,7 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 
-	if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (WorldSettings == nullptr || !WorldSettings->IsMultiWorkerEnabled())
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No SpatialWorldSettings on map %s"), *World.GetMapName());
 		return false;
@@ -285,7 +290,7 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 	{
 		if (*EnableChunkInterest == TEXT("true"))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("ChunkInterestNotSupported_Prompt", "The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?"));
 
 			if (Result == EAppReturnType::Yes)
 			{
