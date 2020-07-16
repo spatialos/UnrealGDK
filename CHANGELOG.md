@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SpatialMetrics::WorkerMetricsRecieved is no longer static and the function signature now also receives histogram metrics.
 - Log an error including Position when GridBasedLBStrategy can't locate a worker to take authority over an Actor.
 - Changed the SpatialGDK Setting bEnableMultiWorker to private, to enforce usage of IsMultiWorkerEnabled which respects the `-OverrideMultiWorker` flag.
+- No longer assert when SpatialStatics::GetActorEntityId() is passed a nullptr, return SpatialConstants::INVALID_ENTITY_ID instead.
 
 ## [`0.10.0`] - 2020-07-08
 
