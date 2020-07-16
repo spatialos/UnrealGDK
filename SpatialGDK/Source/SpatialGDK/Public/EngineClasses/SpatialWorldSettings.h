@@ -20,10 +20,6 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_BODY()
 
 public:
-	/** Enable running different server worker types to split the simulation. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
-
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy;
 
@@ -50,4 +46,14 @@ public:
 		}
 		return bEnableMultiWorker;
 	}
+
+	void SetMultiWorkerEnabled(bool IsEnabled)
+	{
+		bEnableMultiWorker = IsEnabled;
+	}
+
+private:
+	/** Enable running different server worker types to split the simulation. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
+	bool bEnableMultiWorker;
 };
