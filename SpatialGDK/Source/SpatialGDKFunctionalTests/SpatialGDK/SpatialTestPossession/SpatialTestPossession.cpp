@@ -32,7 +32,7 @@ void ASpatialTestPossession::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddServerStep(TEXT("SpatialTestPossessionServerSetupStep"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+	AddStep(TEXT("SpatialTestPossessionServerSetupStep"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 		ASpatialTestPossession* Test = Cast<ASpatialTestPossession>(NetTest);
 
 		float YToSpawnAt = -60.0f;
@@ -62,7 +62,7 @@ void ASpatialTestPossession::BeginPlay()
 		Test->FinishStep();
 		});
 
-	AddClientStep(TEXT("SpatialTestPossessionClientCheckStep"), 0,
+	AddStep(TEXT("SpatialTestPossessionClientCheckStep"), ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID,
 		[](ASpatialFunctionalTest* NetTest) -> bool {
 			AController* PlayerController = Cast<AController>(NetTest->GetLocalFlowController()->GetOwner());
 			return IsValid(PlayerController->GetPawn());
@@ -79,7 +79,7 @@ void ASpatialTestPossession::BeginPlay()
 			Test->FinishStep();
 		});
 
-	AddServerStep(TEXT("SpatialTestPossessionServerPossessOldPawns"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+	AddStep(TEXT("SpatialTestPossessionServerPossessOldPawns"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 		ASpatialTestPossession* Test = Cast<ASpatialTestPossession>(NetTest);
 		for (const auto& OriginalPawnPair : Test->OriginalPawns)
 		{

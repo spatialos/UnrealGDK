@@ -91,24 +91,14 @@ public:
 
 	// Add Steps for Blueprints
 	
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ToolTip = "Adds a Step that runs on All Clients and Servers"))
-	void AddUniversalStep(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
-
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ClientId = "1", ToolTip = "Adds a Step that runs on Clients. Client Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Clients (there's also a convenience function GetAllWorkersId())"))
-	void AddClientStep(const FString& StepName, int ClientId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
-
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ServerId = "1", ToolTip = "Adds a Step that runs on Servers. Server Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Servers (there's also a convenience function GetAllWorkersId())"))
-	void AddServerStep(const FString& StepName, int ServerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", WorkerId = "1", ToolTip = "Adds a Step that runs on Servers. Server Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Servers (there's also a convenience function GetAllWorkersId())"))
+	void AddStep(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	void AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition);
 
 	// Add Steps for C++
-	FSpatialFunctionalTestStepDefinition& AddUniversalStep(const FString& StepName, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
-
-	FSpatialFunctionalTestStepDefinition& AddClientStep(const FString& StepName, int ClientId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
-
-	FSpatialFunctionalTestStepDefinition& AddServerStep(const FString& StepName, int ServerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddStep(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
 	// Start Running a Step
 	void StartStep(const int StepIndex);

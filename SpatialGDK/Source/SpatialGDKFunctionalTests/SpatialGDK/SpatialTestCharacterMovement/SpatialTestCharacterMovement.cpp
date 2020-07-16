@@ -51,7 +51,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 	Super::BeginPlay();
 
 	// Universal setup step to create the TriggerBox and to set the 2 helper variables
-	AddUniversalStep(TEXT("UniversalSetupStep"), nullptr, [](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("UniversalSetupStep"), ESpatialFunctionalTestFlowControllerType::All, 0, nullptr, [](ASpatialFunctionalTest* NetTest) {
 		ASpatialTestCharacterMovement* Test = Cast<ASpatialTestCharacterMovement>(NetTest);
 		Test->bCharacterReachedDestination = false;
 		Test->ElapsedTime = 0.0f;
@@ -70,7 +70,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		});
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
-	AddServerStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), 1, nullptr, [this](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [this](ASpatialFunctionalTest* NetTest) {
 		ASpatialTestCharacterMovement* Test = Cast<ASpatialTestCharacterMovement>(NetTest);
 
 		for (ASpatialFunctionalTestFlowController* FlowController : NetTest->GetFlowControllers())
@@ -99,7 +99,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		});
 
 	// Client 1 moves his character and asserts that it reached the Destination locally.
-	AddClientStep(TEXT("SpatialTestCharacterMovementClient1Move"), 1,
+	AddStep(TEXT("SpatialTestCharacterMovementClient1Move"), ESpatialFunctionalTestFlowControllerType::Client, 1,
 		[](ASpatialFunctionalTest* NetTest) -> bool {
 			AController* PlayerController = Cast<AController>(NetTest->GetLocalFlowController()->GetOwner());
 			// Since the character is simulating gravity, it will drop from the original position close to (0, 0, 40), depending on the size of the CapsuleComponent in the TestMovementCharacter
@@ -126,7 +126,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		});
 
 	// Server asserts that the character of client 1 has reached the Destination.
-	AddServerStep(TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+	AddStep(TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 		ASpatialTestCharacterMovement* Test = Cast<ASpatialTestCharacterMovement>(NetTest);
 
 		Test->AssertTrue(Test->bCharacterReachedDestination, TEXT("Player character has reached the destination on the server."));
@@ -135,7 +135,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		});
 
 	// Client 2 asserts that the character of client 1 has reached the Destination.
-	AddClientStep(TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), 2, nullptr, [](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), ESpatialFunctionalTestFlowControllerType::Client, 2, nullptr, [](ASpatialFunctionalTest* NetTest) {
 		ASpatialTestCharacterMovement* Test = Cast<ASpatialTestCharacterMovement>(NetTest);
 
 		Test->AssertTrue(Test->bCharacterReachedDestination, TEXT("Player character has reached the destination on the simulated proxy"));
@@ -145,7 +145,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 
 	// Universal clean-up step to delete the TriggerBox from all connected clients and servers		
-	AddUniversalStep(TEXT("SpatialTestCharacterMovementUniversalCleanUp"), nullptr, [](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestCharacterMovementUniversalCleanUp"), ESpatialFunctionalTestFlowControllerType::Server, 0, nullptr, [](ASpatialFunctionalTest* NetTest) {
 		TArray<AActor*> FoundTriggers;
 		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ATriggerBox::StaticClass(), FoundTriggers);
 

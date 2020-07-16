@@ -24,7 +24,8 @@ UENUM()
 enum class ESpatialFunctionalTestFlowControllerType : uint8
 {
 	Server,
-	Client
+	Client,
+	All
 };
 
 

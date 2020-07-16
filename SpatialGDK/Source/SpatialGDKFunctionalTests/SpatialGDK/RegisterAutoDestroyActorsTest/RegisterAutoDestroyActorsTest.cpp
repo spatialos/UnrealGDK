@@ -17,7 +17,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 {
 	Super::BeginPlay();
 	{ // Step 1 - Spawn Actor On Auth 
-		AddServerStep(TEXT("SERVER_1_Spawn"), 1, nullptr, [](ASpatialFunctionalTest* NetTest){
+		AddStep(TEXT("SERVER_1_Spawn"), ESpatialFunctionalTestFlowControllerType::Server, 1, nullptr, [](ASpatialFunctionalTest* NetTest){
 			UWorld* World = NetTest->GetWorld();
 			int NumVirtualWorkers = NetTest->GetNumberOfServerWorkers();
 
@@ -37,7 +37,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 	}
 
 	{ // Step 2 - Check If Clients have it
-		AddClientStep(TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::ALL_WORKERS_ID, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime){
+		AddStep(TEXT("CLIENT_ALL_CheckActorsSpawned"), ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime){
 				int NumCharactersFound = 0;
 				int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
 				UWorld* World = NetTest->GetWorld();
@@ -54,7 +54,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 	}
 
 	{ // Step 3 - Destroy by second server that doesn't have authority
-		AddServerStep(TEXT("SERVER_2_RegisterAutoDestroyActors"), 2, [](ASpatialFunctionalTest* NetTest) -> bool {
+		AddStep(TEXT("SERVER_2_RegisterAutoDestroyActors"), ESpatialFunctionalTestFlowControllerType::Server, 2, [](ASpatialFunctionalTest* NetTest) -> bool {
 			int NumCharactersFound = 0;
 			int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
 			UWorld* World = NetTest->GetWorld();
