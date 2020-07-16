@@ -83,13 +83,15 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 				checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
 
-				if (FlowController->ControllerInstanceId == 1)
+				int FlowControllerId = FlowController->ControllerInstanceId;
+
+				if (FlowControllerId == 1)
 				{
 					PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
 				}
 				else
 				{
-					PlayerCharacter->SetActorLocation(FVector(100.0f, 300.0f, 50.0f));
+					PlayerCharacter->SetActorLocation(FVector(100.0f + 100*FlowControllerId, 300.0f, 50.0f));
 				}
 			}
 
@@ -104,7 +106,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
 			// Since the character is simulating gravity, it will drop from the original position close to (0, 0, 40), depending on the size of the CapsuleComponent in the TestMovementCharacter
-			return IsValid(PlayerCharacter) && PlayerCharacter->GetActorLocation().Equals(FVector(0.0f,0.0f,40.0f), 0.5f);
+			return IsValid(PlayerCharacter) && PlayerCharacter->GetActorLocation().Equals(FVector(0.0f,0.0f,40.0f), 2.0f);
 		}, 
 		nullptr,
 		[this](ASpatialFunctionalTest* NetTest, float DeltaTime)
@@ -112,14 +114,14 @@ void ASpatialTestCharacterMovement::BeginPlay()
 			AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-			PlayerCharacter->AddMovementInput(PlayerCharacter->GetActorForwardVector(), 1.0f);
+			PlayerCharacter->AddMovementInput(FVector(1,0,0), 1.0f);
 
 			if(bCharacterReachedDestination)
 			{
 				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
 				FinishStep();
 			}
-		}, 1.0f);
+		}, 3.0f);
 
 	// Server asserts that the character of client 1 has reached the Destination.
 	AddServerStep(TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), 1, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
