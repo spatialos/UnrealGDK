@@ -101,7 +101,7 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, E
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
-		ERPCQueueCommand QueueCommand = ApplyFunction(Params);
+		const ERPCQueueCommand QueueCommand = ApplyFunction(Params);
 		switch (QueueCommand)
 		{
 		case ERPCQueueCommand::ContinueProcessing:
@@ -120,7 +120,7 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		ERPCQueueCommand QueueCommand = ApplyFunction(Params);
+		const ERPCQueueCommand QueueCommand = ApplyFunction(Params);
 		switch (QueueCommand)
 		{
 		case ERPCQueueCommand::ContinueProcessing:

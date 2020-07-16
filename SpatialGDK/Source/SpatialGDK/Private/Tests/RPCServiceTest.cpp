@@ -10,11 +10,11 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Tests/TestActor.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
-#include "Tests/TestingComponentViewHelpers.h"
+#include "Tests/TestActor.h"
 #include "Tests/TestDefinitions.h"
+#include "Tests/TestingComponentViewHelpers.h"
 #include "Utils/RPCRingBuffer.h"
 
 #define RPC_SERVICE_TEST(TestName) \

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
 #include "TestActor.generated.h"
 
 UCLASS()
@@ -17,7 +18,6 @@ class ATestActor : public AActor
 	}
 
 public:
-
 	UFUNCTION(Server, Reliable)
 	void TestServerRPC();
 	void TestServerRPC_Implementation() {};

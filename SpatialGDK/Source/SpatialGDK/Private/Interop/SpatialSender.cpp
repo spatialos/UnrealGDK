@@ -739,7 +739,7 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 		ERPCQueueCommand QueueCommand = ERPCQueueCommand::DropEntireQueue;
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
-			if (WillHaveAuthorityOverActor(TargetActor, TargetObjectRef.Entity))
+			if (TargetActor->HasAuthority())
 			{
 				QueueCommand = ERPCQueueCommand::StopProcessing;
 			}
@@ -813,24 +813,6 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
-
-bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity)
-{
-	bool bWillHaveAuthorityOverActor = true;
-
-	if (NetDriver->VirtualWorkerTranslator != nullptr)
-	{
-		if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
-		{
-			if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
-			{
-				bWillHaveAuthorityOverActor = false;
-			}
-		}
-	}
-
-	return bWillHaveAuthorityOverActor;
-}
 
 void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 {
