@@ -10,8 +10,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
-#include "Kismet/GameplayStatics.h"
-#include "AutoDestroyComponent.h"
+#include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 
 
@@ -99,14 +98,14 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 {
 	if (ActorToAutoDestroy->HasAuthority())
 	{
-		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
-
 		// Add component to actor to auto destroy when test finishes
-		UAutoDestroyComponent* AutoDestroyComponent = NewObject<UAutoDestroyComponent>(ActorToAutoDestroy);
-		AutoDestroyComponent->SetIsReplicated(true);
+		USpatialFunctionalTestAutoDestroyComponent* AutoDestroyComponent = NewObject<USpatialFunctionalTestAutoDestroyComponent>(ActorToAutoDestroy);
 		AutoDestroyComponent->AttachToComponent(ActorToAutoDestroy->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 		AutoDestroyComponent->RegisterComponent();
-
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Should only register to auto destroy actor from worker that spawned actor. Actor %s"), ActorToAutoDestroy->GetDebugName);
 	}
 }
 
@@ -197,16 +196,16 @@ void ASpatialFunctionalTest::GatherRelevantActors(TArray<AActor*>& OutActors)  c
 		OutActors.AddUnique(ObservationPoint);
 	}
 
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
-
-	for (int32 ActorIndex = 0; ActorIndex < FoundActors.Num(); ++ActorIndex)
+	if (UWorld* World = GEngine->GetWorldFromContextObject(GetWorld(), EGetWorldErrorMode::LogAndReturnNull))
 	{
-		AActor* FoundActor = FoundActors[ActorIndex];
-		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<UAutoDestroyComponent>();
-		if (AutoDestroyComponent != NULL)
+		for (TActorIterator<AActor> It(World, AActor::StaticClass()); It; ++It)
 		{
-			OutActors.AddUnique(FoundActor);
+			AActor* FoundActor = *It;
+			UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<USpatialFunctionalTestAutoDestroyComponent>();
+			if (AutoDestroyComponent != NULL)
+			{
+				OutActors.AddUnique(FoundActor);
+			}
 		}
 	}
 
@@ -278,10 +277,6 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 
 		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
-
-		MulticastAutoDestroyActors();
-
-		DeleteActorsRegisteredForAutoDestroy();
 
 		Super::FinishTest(TestResult, Message);
 	}
@@ -577,6 +572,8 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 		{
 			NotifyTestFinishedObserver();
 		}
+
+		DeleteActorsRegisteredForAutoDestroy();
 	}
 }
 
@@ -614,26 +611,18 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 {
 	// Delete actors marked for auto destruction
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
-
-	for (int32 ActorIndex = 0; ActorIndex < FoundActors.Num(); ++ActorIndex)
+	if (UWorld* World = GEngine->GetWorldFromContextObject(GetWorld(), EGetWorldErrorMode::LogAndReturnNull))
 	{
-		AActor* FoundActor = FoundActors[ActorIndex];
-		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<UAutoDestroyComponent>();
-		if (AutoDestroyComponent != NULL)
+		for (TActorIterator<AActor> It(World, AActor::StaticClass()); It; ++It)
 		{
-			// will be removed next frame
-			FoundActor->SetLifeSpan(0.01f);
+			AActor* FoundActor = *It;
+			UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<USpatialFunctionalTestAutoDestroyComponent>();
+			if (AutoDestroyComponent != NULL)
+			{
+				// will be removed next frame
+				FoundActor->SetLifeSpan(0.01f);
+			}
 		}
-	}
-}
-
-void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation()
-{
-	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
-	{
-		DeleteActorsRegisteredForAutoDestroy();
 	}
 }
 

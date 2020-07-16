@@ -184,7 +184,4 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastAutoDestroyActors();
 };
