@@ -1929,10 +1929,18 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 
 ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams)
 {
+	ERPCResult Result = Result = ERPCResult::UnresolvedParameters;;
+
+	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
+	FMemory::Memzero(Parms, Function->ParmsSize);
+
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	TSet<FUnrealObjectRef> MappedRefs;
 	RPCPayload PayloadCopy = PendingRPCParams.Payload;
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs, UnresolvedRefs);
+
+	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
@@ -1940,19 +1948,7 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 
 	if (UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
 	{
-		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
-		FMemory::Memzero(Parms, Function->ParmsSize);
-		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-		RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
-
 		TargetObject->ProcessEvent(Function, Parms);
-
-		// Destroy the parameters.
-		// warning: highly dependent on UObject::ProcessEvent freeing of parms!
-		for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-		{
-			It->DestroyValue_InContainer(Parms);
-		}
 
 		if (UnresolvedRefs.Num() > 0 &&
 			!SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type) &&
@@ -1966,10 +1962,16 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing.  Owner name: %s"), *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued, *GetNameSafe(TargetObject->GetOuter()));
 		}
 
-		return ERPCResult::Success;
+		Result = ERPCResult::Success;
 	}
 
-	return ERPCResult::UnresolvedParameters;
+	// Destroy the parameters.
+	// warning: highly dependent on UObject::ProcessEvent freeing of parms!
+	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	{
+		It->DestroyValue_InContainer(Parms);
+	}
+	return Result;
 }
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
