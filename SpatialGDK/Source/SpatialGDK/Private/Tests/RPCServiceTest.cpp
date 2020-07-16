@@ -461,57 +461,6 @@ RPC_SERVICE_TEST(GIVEN_client_endpoint_with_rpcs_in_view_and_authority_over_serv
 	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_THEN_some_rpcs_persist_on_component)
-{
-	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-
-	Schema_ComponentData* ClientComponentData = Schema_CreateComponentData();
-	Schema_Object* ClientSchemaObject = Schema_GetComponentDataFields(ClientComponentData);
-	SpatialGDK::RPCRingBufferUtils::WriteRPCToSchema(ClientSchemaObject, ERPCType::ClientReliable, 1, SimplePayload);
-	SpatialGDK::RPCRingBufferUtils::WriteRPCToSchema(ClientSchemaObject, ERPCType::ClientReliable, 2, SimplePayload);
-	SpatialGDK::RPCRingBufferUtils::WriteRPCToSchema(ClientSchemaObject, ERPCType::ClientReliable, 3, SimplePayload);
-	SpatialGDK::RPCRingBufferUtils::WriteRPCToSchema(ClientSchemaObject, ERPCType::ClientReliable, 4, SimplePayload);
-	SpatialGDK::RPCRingBufferUtils::WriteRPCToSchema(ClientSchemaObject, ERPCType::ClientReliable, 5, SimplePayload);
-
-	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(*StaticComponentView,
-		RPCTestEntityId_1, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-		ClientComponentData,
-		GetClientAuthorityFromRPCEndpointType(SERVER_AUTH));
-
-	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(*StaticComponentView,
-		RPCTestEntityId_1, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-		GetServerAuthorityFromRPCEndpointType(SERVER_AUTH));
-
-	constexpr int MaxRPCsToProccess = 2;
-	int RPCsToProcess = MaxRPCsToProccess;
-	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsToProcess](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
-		--RPCsToProcess;
-		return RPCsToProcess >= 0;
-	});
-
-	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH, RPCDelegate, StaticComponentView);
-
-	RPCService.ExtractRPCsForEntity(RPCTestEntityId_1, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
-
-	TArray<SpatialGDK::SpatialRPCService::UpdateToSend> UpdateToSendArray = RPCService.GetRPCsAndAcksToSend();
-
-	bool bTestPassed = false;
-	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& UpdateToSend) {
-		return (UpdateToSend.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
-	});
-
-	if (Update != nullptr)
-	{
-		const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update->Update.schema_type);
-		uint64 Ack = 0;
-		SpatialGDK::RPCRingBufferUtils::ReadAckFromSchema(ComponentObject, ERPCType::ClientReliable, Ack);
-		bTestPassed = MaxRPCsToProccess == Ack;
-	}
-
-	TestTrue("Returning false in extraction callback correctly stopped processing RPCs", bTestPassed);
-	return true;
-}
-
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForWorld, TSharedPtr<TestData>, Data);
 bool FWaitForWorld::Update()
 {
@@ -571,7 +520,7 @@ bool FDropRPCQueueTest::Update()
 	if (!ensure(Data != nullptr) ||
 		!ensure(Data->Actor != nullptr))
 	{
-		Test->TestTrue("Returning false in extraction callback correctly stopped processing RPCs", false);
+		Test->TestTrue("Correct RPC queue command was returned by the receiver after attempting to process an RPC without authority over the actor", false);
 	}
 
 	AActor* Actor = Data->Actor;
@@ -595,13 +544,14 @@ bool FDropRPCQueueTest::Update()
 		EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
 		GetServerAuthorityFromRPCEndpointType(EndpointType));
 
+	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 	SpatialGDK::SpatialRPCService* RPCService = SpatialNetDriver->GetRPCService();
 	RPCService->OnEndpointAuthorityGained(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 
 	bool bTestSuccess = false;
-	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&SpatialNetDriver, &bTestSuccess](const FPendingRPCParams& Params)
+	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&Receiver, &bTestSuccess](const FPendingRPCParams& Params)
 	{
-		FRPCErrorInfo RPCErrorInfo = SpatialNetDriver->Receiver->ApplyRPC(Params);
+		FRPCErrorInfo RPCErrorInfo = Receiver->ApplyRPC(Params);
 		bTestSuccess = RPCErrorInfo.ErrorCode == ERPCResult::NoAuthority;
 		bTestSuccess &= RPCErrorInfo.QueueCommand == ERPCQueueCommand::DropEntireQueue;
 
@@ -609,16 +559,16 @@ bool FDropRPCQueueTest::Update()
 	});
 
 	// Bind new process function.
-	FRPCContainer& RPCContainer = SpatialNetDriver->Receiver->GetRPCContainer();
+	FRPCContainer& RPCContainer = Receiver->GetRPCContainer();
 	RPCContainer.BindProcessingFunction(RPCDelegate);
 
 	// Change actor authority and process.
 	Actor->Role = ROLE_SimulatedProxy;
 	RPCService->ExtractRPCsForEntity(EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
 
-	RPCContainer.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(SpatialNetDriver->Receiver, &USpatialReceiver::ApplyRPC));
+	RPCContainer.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::ApplyRPC));
 
-	Test->TestTrue("Correct RPC queue command was returned by the receiver after attempting to process an RPC without authority over the actor.", bTestSuccess);
+	Test->TestTrue("Correct RPC queue command was returned by the receiver after attempting to process an RPC without authority over the actor", bTestSuccess);
 
 	return true;
 }
