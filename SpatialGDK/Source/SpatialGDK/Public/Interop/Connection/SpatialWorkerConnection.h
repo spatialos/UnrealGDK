@@ -30,6 +30,12 @@ public:
 	virtual void MaybeFlush() PURE_VIRTUAL(USpatialWorkerConnection::MaybeFlush, return;);
 	virtual void Flush() PURE_VIRTUAL(USpatialWorkerConnection::Flush, return;);
 
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnEnqueueMessage OnEnqueueMessage;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnDequeueMessage OnDequeueMessage;
+
 private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;
