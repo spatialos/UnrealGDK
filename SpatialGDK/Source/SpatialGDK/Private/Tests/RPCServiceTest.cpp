@@ -596,8 +596,8 @@ bool FDropRPCQueueTest::Update()
 	RPCService->OnEndpointAuthorityGained(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 
 	bool bSuccess = false;
-	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&SpatialNetDriver, &bSuccess](const FPendingRPCParams& Params) {
-
+	FProcessRPCDelegate RPCDelegate = FProcessRPCDelegate::CreateLambda([&SpatialNetDriver, &bSuccess](const FPendingRPCParams& Params)
+	{
 		FRPCErrorInfo RPCErrorInfo = SpatialNetDriver->Receiver->ApplyRPC(Params);
 		bSuccess = RPCErrorInfo.ErrorCode == ERPCResult::NoAuthority;
 		bSuccess &= RPCErrorInfo.QueueCommand == ERPCQueueCommand::DropEntireQueue;
