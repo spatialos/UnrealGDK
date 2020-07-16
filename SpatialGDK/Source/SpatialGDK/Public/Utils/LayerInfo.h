@@ -4,12 +4,7 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
-#include "Containers/Set.h"
-#include "GameFramework/Actor.h"
-#include "Templates/SubclassOf.h"
-#include "UObject/Class.h"
-#include "UObject/NameTypes.h"
-#include "UObject/SoftObjectPtr.h"
+#include "CoreMinimal.h"
 
 #include "LayerInfo.generated.h"
 

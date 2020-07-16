@@ -8,10 +8,8 @@
 #include "SpatialConstants.h"
 #include "Utils/LayerInfo.h"
 
-#include "Containers/Array.h"
-#include "GameFramework/Actor.h"
-#include "Templates/SubclassOf.h"
-#include "UObject/Object.h"
+#include "CoreMinimal.h"
+#include "Engine/DataAsset.h"
 
 #include "SpatialMultiWorkerSettings.generated.h"
 
@@ -23,7 +21,7 @@ const FLayerInfo DefaultLayerInfo = { SpatialConstants::DefaultLayer, {AActor::S
 }
 
 UCLASS(NotBlueprintable)
-class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UObject
+class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UDataAsset
 {
 	GENERATED_BODY()
 
