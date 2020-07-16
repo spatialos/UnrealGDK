@@ -328,6 +328,6 @@ public:
 	UPROPERTY(Config)
 	bool bEnableMultiWorkerDebuggingWarnings;
 
-	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false."))
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 };
