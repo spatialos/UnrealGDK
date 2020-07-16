@@ -7,7 +7,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "Misc/AutomationTest.h"
 #include "Tests/AutomationCommon.h"
-#include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestActor.h"
 #include "Tests/TestDefinitions.h"
 #include "Tests/TestingComponentViewHelpers.h"
