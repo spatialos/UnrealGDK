@@ -91,13 +91,18 @@ public:
 
 	// Add Steps for Blueprints
 	
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", WorkerId = "1", ToolTip = "Adds a Step that runs on Servers. Server Worker Ids start from 1.\n\nIf you pass 0 it will run on All the Servers (there's also a convenience function GetAllWorkersId())"))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", WorkerId = "1", ToolTip = "Adds a Test Step. You can define if you want to run on Server, Client of All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored)."))
 	void AddStep(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	void AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition);
 
 	// Add Steps for C++
+	/**
+	 * Adds a Step to the Test. You can define if you want to run on Server, Client or All.
+	 * Worker Ids start from 1. If you pass FWorkerDefinition::ALL_WORKERS_ID (GetAllWorkersId()) it will run on all the Servers / Clients.
+	 * If you pass WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).
+	 */
 	FSpatialFunctionalTestStepDefinition& AddStep(const FString& StepName, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
 	// Start Running a Step
