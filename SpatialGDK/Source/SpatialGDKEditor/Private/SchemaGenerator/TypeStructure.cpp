@@ -5,6 +5,7 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
 using namespace SpatialGDKEditor::Schema;
@@ -41,7 +42,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
 			// Recurse into properties if they're structs.
-			if (PropertyPair.Value->Property->IsA<UStructProperty>())
+			if (PropertyPair.Value->Property->IsA<GDK_PROPERTY(StructProperty)>())
 			{
 				VisitAllProperties(PropertyPair.Value->Type, Visitor);
 			}
@@ -51,7 +52,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 
 // GenerateChecksum is a method which replicates how Unreal generates it's own CompatibleChecksum for RepLayout Cmds.
 // The original code can be found in the Unreal Engine's RepLayout. We use this to ensure we have the correct property at run-time.
-uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
+uint32 GenerateChecksum(GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
 {
 	uint32 Checksum = 0;
 	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);            // Evolve checksum on name
@@ -60,7 +61,7 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 	return Checksum;
 }
 
-TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex)
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, uint32 StaticArrayIndex)
 {
 	TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 	PropertyNode->Property = Property;
@@ -84,15 +85,15 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	TypeNode->Type = Type;
 
 	// Iterate through each property in the struct.
-	for (TFieldIterator<UProperty> It(Type); It; ++It)
+	for (TFieldIterator<GDK_PROPERTY(Property)> It(Type); It; ++It)
 	{
-		UProperty* Property = *It;
+		GDK_PROPERTY(Property)* Property = *It;
 
 		// Create property node and add it to the AST.
 		TSharedPtr<FUnrealProperty> PropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, StaticArrayIndex);
 
 		// If this property not a struct or object (which can contain more properties), stop here.
-		if (!Property->IsA<UStructProperty>() && !Property->IsA<UObjectProperty>())
+		if (!Property->IsA<GDK_PROPERTY(StructProperty)>() && !Property->IsA<GDK_PROPERTY(ObjectProperty)>())
 		{
 			for (int i = 1; i < Property->ArrayDim; i++)
 			{
@@ -102,9 +103,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 
 		// If this is a struct property, then get the struct type and recurse into it.
-		if (Property->IsA<UStructProperty>())
+		if (Property->IsA<GDK_PROPERTY(StructProperty)>())
 		{
-			UStructProperty* StructProperty = Cast<UStructProperty>(Property);
+			GDK_PROPERTY(StructProperty)* StructProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property);
 
 			// This is the property for the 0th struct array member.
 			uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
@@ -135,7 +136,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		//   2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
 		//      might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored there
 		//		during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
-		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+		GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(Property);
 		check(ObjectProperty);
 
 		// If this is a property of a struct, assume it's a weak reference.
@@ -209,7 +210,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 			}
 		}
-	} // END TFieldIterator<UProperty>
+	} // END TFieldIterator<GDK_PROPERTY(Property)>
 
 	// Blueprint components don't exist on the CDO so we need to iterate over the
 	// BlueprintGeneratedClass (and all of its blueprint parents) to find all blueprint components
@@ -227,7 +228,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 				for (auto& PropertyPair : TypeNode->Properties)
 				{
-					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyPair.Key);
+					GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(PropertyPair.Key);
 					if (ObjectProperty == nullptr) continue;
 					TSharedPtr<FUnrealProperty> PropertyNode = PropertyPair.Value;
 
@@ -266,7 +267,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 
 		// Jump over invalid replicated property types
-		if (Cmd.Property->IsA<UDelegateProperty>() || Cmd.Property->IsA<UMulticastDelegateProperty>() || Cmd.Property->IsA<UInterfaceProperty>())
+		if (Cmd.Property->IsA<GDK_PROPERTY(DelegateProperty)>() || Cmd.Property->IsA<GDK_PROPERTY(MulticastDelegateProperty)>() || Cmd.Property->IsA<GDK_PROPERTY(InterfaceProperty)>())
 		{
 			continue;
 		}
@@ -362,7 +363,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	{
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
-			if (UStructProperty* StructProp = Cast<UStructProperty>(PropertyInfo->Property))
+			if (GDK_PROPERTY(StructProperty)* StructProp = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(PropertyInfo->Property))
 			{
 				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
 				{
@@ -468,10 +469,10 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
-		UProperty* Property = PropertyPair.Key;
+		GDK_PROPERTY(Property)* Property = PropertyPair.Key;
 		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
 
-		if (Property->IsA<UObjectProperty>() && PropertyTypeInfo.IsValid())
+		if (Property->IsA<GDK_PROPERTY(ObjectProperty)>() && PropertyTypeInfo.IsValid())
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
