@@ -96,11 +96,7 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
-	if (ActorToAutoDestroy == nullptr)
-	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Actor to auto destroy is NULL"));
-	}
-	else if (ActorToAutoDestroy->HasAuthority())
+	if (ActorToAutoDestroy != nullptr && ActorToAutoDestroy->HasAuthority())
 	{
 		// Add component to actor to auto destroy when test finishes
 		USpatialFunctionalTestAutoDestroyComponent* AutoDestroyComponent = NewObject<USpatialFunctionalTestAutoDestroyComponent>(ActorToAutoDestroy);
@@ -109,7 +105,7 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Should only register to auto destroy from the authoritative worker of the actor. Actor %s"), ActorToAutoDestroy->GetDebugName);
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Should only register to auto destroy from the authoritative worker of the actor: %s"), *GetNameSafe(ActorToAutoDestroy));
 	}
 }
 
@@ -604,7 +600,3 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 	}
 	
 }
-
-
-
-

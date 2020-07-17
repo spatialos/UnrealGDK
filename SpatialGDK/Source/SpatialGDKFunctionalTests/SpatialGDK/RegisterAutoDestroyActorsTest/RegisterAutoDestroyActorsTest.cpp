@@ -64,7 +64,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			UWorld* World = NetTest->GetWorld();
 			for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
 			{
-				if ((*It)->HasAuthority())
+				if (It->HasAuthority())
 				{
 					++NumCharactersFound;
 				}
@@ -76,7 +76,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			UWorld* World = NetTest->GetWorld();
 			for (TActorIterator<ACharacter> It(World); It; ++It)
 			{
-				if ((*It)->HasAuthority())
+				if (It->HasAuthority())
 				{
 					NetTest->AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *((*It)->GetName())));
 					NetTest->RegisterAutoDestroyActor(*It);
