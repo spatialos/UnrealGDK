@@ -52,6 +52,7 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
+	// Should be called from the server with authority over this actor
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
 	// # Test APIs
@@ -152,6 +153,7 @@ protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 
 	int GetNumExpectedServers() const { return NumExpectedServers; }
+	void DeleteActorsRegisteredForAutoDestroy();
 
 	ISpatialFunctionalTestLBDelegationInterface* GetDelegationInterface() const;
 
@@ -186,13 +188,4 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
-
-	UFUNCTION(CrossServer, Reliable)
-	void CrossServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
-
-	UFUNCTION(Server, Reliable)
-	void ServerRegisterAutoDestroyActor(AActor* ActorToAutoDestroy);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastAutoDestroyActors(const TArray<AActor*>& ActorsToDestroy);
 };

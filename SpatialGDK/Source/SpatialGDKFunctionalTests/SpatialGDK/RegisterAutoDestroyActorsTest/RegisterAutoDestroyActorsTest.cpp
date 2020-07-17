@@ -26,14 +26,18 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			// and spawn them in that radius
 			FVector SpawnPosition = FVector(200.0f, -200.0f, 0.0f);
 			FRotator SpawnPositionRotator = FRotator(0.0f, 360.0f / NumVirtualWorkers, 0.0f);
-			for(int i = 0; i != NumVirtualWorkers; ++i)
+			for (int i = 0; i != NumVirtualWorkers; ++i)
 			{
 				ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
-				NetTest->AssertTrue(IsValid(Character), FString::Printf(TEXT("Spawned ACharacter in worker %s"), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i+1)->GetDisplayName()));
+				NetTest->AssertTrue(IsValid(Character), FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *(Character->GetName()), *NetTest->GetFlowController(ESpatialFunctionalTestFlowControllerType::Server, i + 1)->GetDisplayName()));
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
+			
+
 			NetTest->FinishStep();
 		});
+
+		
 	}
 
 	{ // Step 2 - Check If Clients have it
@@ -53,14 +57,17 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 		}, 5.0f);
 	}
 
-	{ // Step 3 - Destroy by second server that doesn't have authority
-		AddStep(TEXT("SERVER_2_RegisterAutoDestroyActors"), FWorkerDefinition::Server(2), [](ASpatialFunctionalTest* NetTest) -> bool {
+	{ // Step 3 - Destroy by all servers that have authority
+		AddStep(TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllWorkers, [](ASpatialFunctionalTest* NetTest) -> bool {
 			int NumCharactersFound = 0;
-			int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
+			int NumCharactersExpected = 1;
 			UWorld* World = NetTest->GetWorld();
 			for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
 			{
-				++NumCharactersFound;
+				if (It->HasAuthority())
+				{
+					++NumCharactersFound;
+				}
 			}
 
 			return NumCharactersFound == NumCharactersExpected;
@@ -69,8 +76,11 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			UWorld* World = NetTest->GetWorld();
 			for (TActorIterator<ACharacter> It(World); It; ++It)
 			{
-				NetTest->AssertTrue(IsValid(*It), TEXT("Registering ACharacter for destruction"));
-				NetTest->RegisterAutoDestroyActor(*It);
+				if (It->HasAuthority())
+				{
+					NetTest->AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *((*It)->GetName())));
+					NetTest->RegisterAutoDestroyActor(*It);
+				}
 			}
 			NetTest->FinishStep();
 		}, nullptr, 5.0f);
