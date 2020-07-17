@@ -480,24 +480,25 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 
 void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)
 {
-	if (Type != ERPCType::NetMulticast)
+	if (Type == ERPCType::NetMulticast)
 	{
-		EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
-
-		uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
-		if (LastAckedRPCId == nullptr)
-		{
-			UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
-			return;
-		}
-
-		(*LastAckedRPCId)++;
-
-		const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
-		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
-
-		RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
+		return;
 	}
+
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+	uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
+	if (LastAckedRPCId == nullptr)
+	{
+		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+		return;
+	}
+
+	++(*LastAckedRPCId);
+
+	const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
+
+	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
 
 void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload)
