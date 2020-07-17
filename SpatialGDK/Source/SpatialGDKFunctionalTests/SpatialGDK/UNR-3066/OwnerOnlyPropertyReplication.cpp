@@ -78,7 +78,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 			if (Test->Pawn)
 			{
-				ASpatialFunctionalTestFlowController* FlowController = Test->GetFlowController(ESpatialFunctionalTestFlowControllerType::Client, 1);
+				ASpatialFunctionalTestFlowController* FlowController = Test->GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 
 				Test->OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
@@ -101,7 +101,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 				if (Test->Pawn)
 				{
 					ASpatialFunctionalTestFlowController* FlowController = Test->GetLocalFlowController();
-					if (FlowController->ControllerInstanceId == 1)
+					if (FlowController->WorkerDefinition.Id == 1)
 					{
 						if (Test->Pawn->GetController() == FlowController->GetOwner() && Test->Pawn->TestInt == 42)
 						{
@@ -144,7 +144,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 				if (Test->Pawn)
 				{
 					ASpatialFunctionalTestFlowController* FlowController = Test->GetLocalFlowController();
-					if (FlowController->ControllerInstanceId == 1)
+					if (FlowController->WorkerDefinition.Id == 1)
 					{
 						if (Test->Pawn->TestInt == 666)
 						{

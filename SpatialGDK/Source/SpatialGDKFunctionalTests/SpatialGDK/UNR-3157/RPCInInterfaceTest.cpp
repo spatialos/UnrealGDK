@@ -26,7 +26,7 @@ void ARPCInInterfaceTest::BeginPlay()
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 
-			ASpatialFunctionalTestFlowController* Client1FlowController = Test->GetFlowController(ESpatialFunctionalTestFlowControllerType::Client, 1);
+			ASpatialFunctionalTestFlowController* Client1FlowController = Test->GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 			Test->TestActor = Test->GetWorld()->SpawnActor<ARPCInInterfaceActor>();
 			Test->AssertIsValid(Test->TestActor, "Actor exists", Test);

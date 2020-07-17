@@ -118,7 +118,7 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 	{
 		if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
 		{
-			if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
 				++NumRegisteredServers;
 			}
@@ -168,7 +168,7 @@ int ASpatialFunctionalTest::GetNumberOfServerWorkers()
 	int Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
-		if (FlowController != nullptr && FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 		{
 			++Counter;
 		}
@@ -181,7 +181,7 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 	int Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
-		if (FlowController != nullptr && FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client)
+		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 		{
 			++Counter;
 		}
@@ -286,7 +286,7 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 		return;
 	}
 
-	if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client)
+	if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 	{
 		// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
 		FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
@@ -335,17 +335,17 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 
 		for (const FWorkerDefinition& Worker : StepDefinition.Workers)
 		{
-			ESpatialFunctionalTestFlowControllerType WorkerType = Worker.Type;
+			ESpatialFunctionalTestWorkerType WorkerType = Worker.Type;
 			int WorkerId = Worker.Id;
-			if (NumExpectedServers == 1 && WorkerType == ESpatialFunctionalTestFlowControllerType::Server)
+			if (NumExpectedServers == 1 && WorkerType == ESpatialFunctionalTestWorkerType::Server)
 			{
 				// make sure that tests made for multi server also run on single server
 				WorkerId = 1;
 			}
 			for (auto* FlowController : FlowControllers)
 			{
-				if (WorkerType == ESpatialFunctionalTestFlowControllerType::All
-					|| ( FlowController->ControllerType == WorkerType && (WorkerId <= FWorkerDefinition::ALL_WORKERS_ID || FlowController->ControllerInstanceId == WorkerId)))
+				if (WorkerType == ESpatialFunctionalTestWorkerType::All
+					|| ( FlowController->WorkerDefinition.Type == WorkerType && (WorkerId <= FWorkerDefinition::ALL_WORKERS_ID || FlowController->WorkerDefinition.Id == WorkerId)))
 				{
 					FlowControllersExecutingStep.AddUnique(FlowController);
 				}
@@ -408,11 +408,11 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 }
 
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestFlowControllerType ControllerType, int InstanceId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType ControllerType, int InstanceId)
 {
 	for (auto* FlowController : FlowControllers)
 	{
-		if (FlowController->ControllerType == ControllerType && FlowController->ControllerInstanceId == InstanceId)
+		if (FlowController->WorkerDefinition.Type == ControllerType && FlowController->WorkerDefinition.Id == InstanceId)
 		{
 			return FlowController;
 		}
@@ -451,7 +451,7 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 			if (AuxLocalFlowController != nullptr)
 			{
 				AuxLocalFlowController->OnTestFinished();
-				if (AuxLocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+				if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 				{
 					ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 

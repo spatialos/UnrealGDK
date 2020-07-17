@@ -8,18 +8,18 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialFunctionalTest.h"
 
-const FWorkerDefinition FWorkerDefinition::AllWorkers = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::All, FWorkerDefinition::ALL_WORKERS_ID };
-const FWorkerDefinition FWorkerDefinition::AllServers = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::Server, FWorkerDefinition::ALL_WORKERS_ID };
-const FWorkerDefinition FWorkerDefinition::AllClients = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID };
+const FWorkerDefinition FWorkerDefinition::AllWorkers = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::All, FWorkerDefinition::ALL_WORKERS_ID };
+const FWorkerDefinition FWorkerDefinition::AllServers = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, FWorkerDefinition::ALL_WORKERS_ID };
+const FWorkerDefinition FWorkerDefinition::AllClients = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client, FWorkerDefinition::ALL_WORKERS_ID };
 
 FWorkerDefinition FWorkerDefinition::Server(int ServerId)
 {
-	return FWorkerDefinition{ESpatialFunctionalTestFlowControllerType::Server, ServerId};
+	return FWorkerDefinition{ESpatialFunctionalTestWorkerType::Server, ServerId};
 }
 
 FWorkerDefinition FWorkerDefinition::Client(int ClientId)
 {
-	return FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::Client, ClientId };
+	return FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client, ClientId };
 }
 
 SpatialFunctionalTestStep::SpatialFunctionalTestStep()

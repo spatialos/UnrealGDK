@@ -40,7 +40,7 @@ void ASpatialTestPossession::BeginPlay()
 
 		for (ASpatialFunctionalTestFlowController* FlowController : Test->GetFlowControllers())
 		{
-			if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
 				continue;
 			}

@@ -40,7 +40,7 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 			//Send CrossServer RPC to Test actor to set the flag for this server flow controller instance
 			ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
 			ASpatialFunctionalTestFlowController* FlowController = CrossServerTest->GetLocalFlowController();
-			CrossServerTest->CrossServerSetTestValue(FlowController->ControllerType, FlowController->ControllerInstanceId);
+			CrossServerTest->CrossServerSetTestValue(FlowController->WorkerDefinition.Type, FlowController->WorkerDefinition.Id);
 			CrossServerTest->FinishStep();
 			});
 	}
@@ -115,10 +115,10 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 	}
 }
 
-void ACrossServerAndClientOrchestrationTest::CrossServerSetTestValue_Implementation(ESpatialFunctionalTestFlowControllerType ControllerType, uint8 ChangedInstance)
+void ACrossServerAndClientOrchestrationTest::CrossServerSetTestValue_Implementation(ESpatialFunctionalTestWorkerType ControllerType, uint8 ChangedInstance)
 {
 	uint8 FlagIndex = ChangedInstance - 1;
-	if(ControllerType == ESpatialFunctionalTestFlowControllerType::Client)
+	if(ControllerType == ESpatialFunctionalTestWorkerType::Client)
 	{
 		if(FlagIndex >= ClientWorkerSetValues.Num())
 		{
@@ -158,7 +158,7 @@ void ACrossServerAndClientOrchestrationTest::Assert_ServerStepIsRunningInExpecte
 	InstanceToRunIn = GetNumExpectedServers() == 1 ? 1 : InstanceToRunIn;
 	
 	// Check Step is running in expected controller instance
-	AssertEqual_Int(FlowController->ControllerInstanceId, InstanceToRunIn, TEXT("Step executing in expected FlowController instance"), this);
+	AssertEqual_Int(FlowController->WorkerDefinition.Id, InstanceToRunIn, TEXT("Step executing in expected FlowController instance"), this);
 
 	// Check Step is running in expected worker instance
 	AssertEqual_Int(LocalWorkerId, InstanceToRunIn, TEXT("Step executing in expected Worker instance"), this);
@@ -168,7 +168,7 @@ void ACrossServerAndClientOrchestrationTest::Assert_ClientStepIsRunningInExpecte
 {
 	// Check Step is running in expected controller instance
 	// We can't check against clients as clients don't have natural logical IDs, Controllers are mapped by login order
-	AssertEqual_Int(FlowController->ControllerInstanceId, InstanceToRunIn, TEXT("Step executing in expected FlowController instance"), this);
+	AssertEqual_Int(FlowController->WorkerDefinition.Id, InstanceToRunIn, TEXT("Step executing in expected FlowController instance"), this);
 }
 
 bool ACrossServerAndClientOrchestrationTest::CheckAllValuesHaveBeenSetAndCanBeLocallyRead()

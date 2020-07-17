@@ -75,7 +75,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 		for (ASpatialFunctionalTestFlowController* FlowController : NetTest->GetFlowControllers())
 		{
-			if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
 				continue;
 			}
@@ -85,7 +85,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 			checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
 
-			if (FlowController->ControllerInstanceId == 1)
+			if (FlowController->WorkerDefinition.Id == 1)
 			{
 				PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
 			}

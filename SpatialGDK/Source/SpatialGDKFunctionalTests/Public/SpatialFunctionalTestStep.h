@@ -21,7 +21,7 @@ DECLARE_DELEGATE_OneParam(FNativeStepStartDelegate, ASpatialFunctionalTest*);
 DECLARE_DELEGATE_TwoParams(FNativeStepTickDelegate, ASpatialFunctionalTest*, float /*DeltaTime*/);
 
 UENUM()
-enum class ESpatialFunctionalTestFlowControllerType : uint8
+enum class ESpatialFunctionalTestWorkerType : uint8
 {
 	Server,
 	Client,
@@ -35,11 +35,11 @@ struct FWorkerDefinition
 	GENERATED_BODY()
 
 	// Type of Worker, usually Server or Client.
-	UPROPERTY(BlueprintReadWrite, Category="Spatial Functional Test")
-	ESpatialFunctionalTestFlowControllerType Type = ESpatialFunctionalTestFlowControllerType::Server;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spatial Functional Test")
+	ESpatialFunctionalTestWorkerType Type = ESpatialFunctionalTestWorkerType::Server;
 
 	// Ids of Workers start from 1.
-	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test")
 	int Id = 1;
 
 	// Id that represents all workers, useful when you want to run a Step on all Clients or Servers.
@@ -59,6 +59,16 @@ struct FWorkerDefinition
 
 	// Helper for Client Worker Definition
 	static FWorkerDefinition Client(int ClientId);
+
+	bool operator == (const FWorkerDefinition& Other)
+	{
+		return Type == Other.Type && Id == Other.Id;
+	};
+
+	bool operator != (const FWorkerDefinition& Other)
+	{
+		return Type != Other.Type || Id != Other.Id;
+	};
 };
 
 USTRUCT(BlueprintType)

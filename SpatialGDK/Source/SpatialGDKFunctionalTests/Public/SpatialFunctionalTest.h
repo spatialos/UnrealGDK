@@ -82,7 +82,7 @@ public:
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
 
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestFlowControllerType ControllerType, int InstanceId);
+	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType ControllerType, int InstanceId);
 
 	// Get the FlowController that is Local to this instance
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
