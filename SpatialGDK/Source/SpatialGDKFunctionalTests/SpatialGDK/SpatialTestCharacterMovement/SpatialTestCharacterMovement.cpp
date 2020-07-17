@@ -145,7 +145,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 
 	// Universal clean-up step to delete the TriggerBox from all connected clients and servers		
-	AddStep(TEXT("SpatialTestCharacterMovementUniversalCleanUp"), FWorkerDefinition::AllServers, nullptr, [](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestCharacterMovementUniversalCleanUp"), FWorkerDefinition::AllWorkers, nullptr, [](ASpatialFunctionalTest* NetTest) {
 		TArray<AActor*> FoundTriggers;
 		UGameplayStatics::GetAllActorsOfClass(NetTest->GetWorld(), ATriggerBox::StaticClass(), FoundTriggers);
 

@@ -130,7 +130,7 @@ public:
 	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"), Category = "Spatial Functional Test")
 	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
 
-	UFUNCTION(BlueprintPure, meta=(ToolTip = "Returns a Worker Defnition that represents all of the Servers and Clients"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Servers and Clients"), Category = "Spatial Functional Test")
 	FWorkerDefinition GetAllWorkers() { return FWorkerDefinition::AllWorkers; }
 
 	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Servers"), Category = "Spatial Functional Test")

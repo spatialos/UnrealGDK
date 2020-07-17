@@ -8,7 +8,7 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialFunctionalTest.h"
 
-const FWorkerDefinition FWorkerDefinition::AllWorkers = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::All, 0 };
+const FWorkerDefinition FWorkerDefinition::AllWorkers = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::All, FWorkerDefinition::ALL_WORKERS_ID };
 const FWorkerDefinition FWorkerDefinition::AllServers = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::Server, FWorkerDefinition::ALL_WORKERS_ID };
 const FWorkerDefinition FWorkerDefinition::AllClients = FWorkerDefinition{ ESpatialFunctionalTestFlowControllerType::Client, FWorkerDefinition::ALL_WORKERS_ID };
 
