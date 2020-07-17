@@ -47,6 +47,7 @@
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebuggerEditor.h"
 
@@ -1014,7 +1015,7 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible() const
 void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 {
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	UProperty* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
+	GDK_PROPERTY(Property)* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());
