@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Net/RepLayout.h"
 
+#include "Utils/GDKPropertyMacros.h"
+
 /*
 
 This file contains functions to generate an abstract syntax tree which is used by the code generating in
@@ -76,14 +78,14 @@ struct FUnrealType
 	UStruct* Type;
 	UObject* Object; // Actual instance of the object. Could be the CDO or a Subobject on the CDO/BlueprintGeneratedClass
 	FName Name; // Name for the object. This is either the name of the object itself, or the name of the property in the blueprint
-	TMultiMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
+	TMultiMap<GDK_PROPERTY(Property)*, TSharedPtr<FUnrealProperty>> Properties;
 	TWeakPtr<FUnrealProperty> ParentProperty;
 };
 
 // A node which represents a single property.
 struct FUnrealProperty
 {
-	UProperty* Property;
+	GDK_PROPERTY(Property)* Property;
 	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
 	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
 	TSharedPtr<FUnrealHandoverData> HandoverData; // Only set if property is marked for handover (and not replicated).
@@ -133,10 +135,10 @@ void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor);
 
 // Generates a unique checksum for the Property that allows matching to Unreal's RepLayout Cmds.
-uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex);
+uint32 GenerateChecksum(GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, int32 StaticArrayIndex);
 
 // Creates a new FUnrealProperty for the included UProperty, generates a checksum for it and then adds it to the TypeNode included.
-TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, UProperty* Property, uint32 ParentChecksum, uint32 StaticArrayIndex);
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, uint32 StaticArrayIndex);
 
 // Generates an AST from an Unreal UStruct or UClass.
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex);

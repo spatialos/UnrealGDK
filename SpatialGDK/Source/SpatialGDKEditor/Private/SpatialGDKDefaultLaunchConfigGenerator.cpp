@@ -115,7 +115,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	if (WorldSettings->bEnableMultiWorker == false)
+	if (WorldSettings->IsMultiWorkerEnabled() == false)
 	{
 		return 1;
 	}
@@ -172,7 +172,7 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 
-	if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (WorldSettings == nullptr || !WorldSettings->IsMultiWorkerEnabled())
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No SpatialWorldSettings on map %s"), *World.GetMapName());
 		return false;

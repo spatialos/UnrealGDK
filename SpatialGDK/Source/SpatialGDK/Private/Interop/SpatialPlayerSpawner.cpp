@@ -331,13 +331,12 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 		if (bRequestHandledSuccessfully)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %s. PlayerStart: %s"), *ClientWorkerId, *PlayerStart->GetName());
+			PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 		}
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s"), *ClientWorkerId);
 		}
-
-		PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 	}
 	else
 	{
