@@ -30,6 +30,7 @@ void ASpatialDebuggerEditor::BeginPlay()
 {
 	// Destroy editor worker regions before game runs 
 	DestroyWorkerRegions();
+	Destroy();
 }
 
 void ASpatialDebuggerEditor::Destroyed()

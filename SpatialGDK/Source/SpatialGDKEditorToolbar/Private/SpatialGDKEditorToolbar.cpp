@@ -795,6 +795,15 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld);
+
+	// Remove editor worker boundary display, if present
+	for (TActorIterator<ASpatialDebuggerEditor> It(EditorWorld); It; ++It)
+	{
+		It->Destroy();
+	}
+
 	if (!IsSnapshotGenerated())
 	{
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
@@ -821,9 +830,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		{
 			LocalDeploymentManager->SetRedeployRequired();
 		}
-
-		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-		check(EditorWorld);
 
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 

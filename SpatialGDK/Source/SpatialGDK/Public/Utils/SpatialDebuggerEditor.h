@@ -14,7 +14,7 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 {
 	GENERATED_UCLASS_BODY()
 
-		virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
 	virtual void SpatialToggleDebugger() override;
