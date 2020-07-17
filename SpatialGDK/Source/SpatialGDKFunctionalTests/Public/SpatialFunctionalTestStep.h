@@ -97,7 +97,7 @@ struct FSpatialFunctionalTestStepDefinition
 	UPROPERTY()
 	TArray<FWorkerDefinition> Workers;
 
-	// Maximum time it can take to finish this Step; if <= 0 it fallback to the time limit of the whole Test
+	// Maximum time it can take to finish this Step; if <= 0 it falls back to the time limit of the whole Test
 	UPROPERTY()
 	float TimeLimit;
 };
@@ -122,4 +122,3 @@ public:
 	
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 };
-
