@@ -39,4 +39,6 @@ public:
 private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;
+
+	Trace_EventTracer* EventTracer;
 };

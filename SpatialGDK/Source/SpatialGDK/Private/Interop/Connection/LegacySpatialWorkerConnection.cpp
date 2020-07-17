@@ -6,6 +6,8 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
+#include <WorkerSDK/improbable/c_trace.h>
+
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
@@ -13,6 +15,11 @@ using namespace SpatialGDK;
 void ULegacySpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
 	WorkerConnection = WorkerConnectionIn;
+
+	Trace_EventTracer_Parameters parameters = {};
+	parameters.callback = MyTraceCallback;
+	EventTracer = Trace_EventTracer_Create(&parameters);
+	Trace_EventTracer_Enable(EventTracer);
 
 	CacheWorkerAttributes();
 
@@ -41,6 +48,9 @@ void ULegacySpatialWorkerConnection::FinishDestroy()
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Destroying SpatialWorkerconnection."));
 
 	DestroyConnection();
+
+	Trace_EventTracer_Disable(EventTracer);
+	Trace_EventTracer_Destroy(EventTracer);
 
 	Super::FinishDestroy();
 }
@@ -251,6 +261,9 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		case EOutgoingMessageType::CreateEntityRequest:
 		{
+			Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+			Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
 #if TRACE_LIB_ACTIVE
@@ -272,6 +285,9 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 				ComponentData,
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
+
+			Trace_EventTracer_UnsetActiveSpanId(EventTracer);
+
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:
@@ -285,12 +301,18 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		case EOutgoingMessageType::AddComponent:
 		{
+			Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+			Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+
 			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
 
 			Worker_Connection_SendAddComponent(WorkerConnection,
 				Message->EntityId,
 				&Message->Data,
 				&DisableLoopback);
+
+			Trace_EventTracer_UnsetActiveSpanId(EventTracer);
+
 			break;
 		}
 		case EOutgoingMessageType::RemoveComponent:
@@ -316,6 +338,9 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		case EOutgoingMessageType::CommandRequest:
 		{
+			Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+			Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+
 			FCommandRequest* Message = static_cast<FCommandRequest*>(OutgoingMessage.Get());
 
 			static const Worker_CommandParameters DefaultCommandParams{};
@@ -324,6 +349,9 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 				&Message->Request,
 				nullptr,
 				&DefaultCommandParams);
+
+			Trace_EventTracer_UnsetActiveSpanId(EventTracer);
+
 			break;
 		}
 		case EOutgoingMessageType::CommandResponse:
