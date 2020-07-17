@@ -131,6 +131,12 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	checkf(NumRegisteredServers <= NumExpectedServers, TEXT("There's more servers registered than expected, this shouldn't happen"));
 
+	// Allow time for clients to connect, then check that enough clients connected
+	if (NumRegisteredClients < NumRequiredClients && TimeRunningStep >= 0.5f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("In test %s, the number of connected clients is less than the number of required clients: Current connected clients: %d, Required clients: %d!"), *GetName(), NumRegisteredClients, NumRequiredClients);
+	}
+
 	return Super::IsReady_Implementation() && NumRegisteredClients >= NumRequiredClients && NumExpectedServers == NumRegisteredServers;
 }
 
