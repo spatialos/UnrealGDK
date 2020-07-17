@@ -28,6 +28,7 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -244,33 +245,48 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	Receiver = NetDriver->Receiver;
 }
 
-void USpatialActorChannel::DeleteEntityIfAuthoritative()
+void USpatialActorChannel::RetireEntityIfAuthoritative()
 {
 	if (NetDriver->Connection == nullptr)
 	{
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
-
-	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
-
-	if (bHasAuthority)
+	if (!NetDriver->IsAuthoritativeDestructionAllowed())
 	{
-		// Workaround to delay the delete entity request if tearing off.
-		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
-		if (Actor != nullptr && Actor->GetTearOff())
+		return;
+	}
+
+	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
+	if (Actor != nullptr)
+	{
+		if (bHasAuthority)
 		{
-			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
-			// Since the entity deletion is delayed, this creates a situation,
-			// when the Actor is torn off, but still replicates.
-			// Disabling replication makes RPC calls impossible for this Actor.
+			// Workaround to delay the delete entity request if tearing off.
+			// Task to improve this: UNR-841
+			if (Actor->GetTearOff())
+			{
+				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
+				// Since the entity deletion is delayed, this creates a situation,
+				// when the Actor is torn off, but still replicates.
+				// Disabling replication makes RPC calls impossible for this Actor.
+				Actor->SetReplicates(false);
+			}
+			else
+			{
+				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+			}
+		}
+		else if (bCreatedEntity) // We have not gained authority yet
+		{
 			Actor->SetReplicates(false);
+			Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
-		else
-		{
-			Sender->RetireEntity(EntityId);
-		}
+	}
+	else
+	{
+		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("RetireEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
 	}
 }
 
@@ -287,7 +303,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			CloseReason != EChannelCloseReason::Dormancy)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			DeleteEntityIfAuthoritative();
+			RetireEntityIfAuthoritative();
 		}
 #endif // WITH_EDITOR
 
@@ -329,7 +345,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else
 	{
-		DeleteEntityIfAuthoritative();
+		RetireEntityIfAuthoritative();
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
@@ -631,21 +647,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			bCreatedEntity = true;
 
-			// We preemptively set the Actor role to SimulatedProxy if:
-			//  - offloading is disabled (with offloading we never give up authority since we're always spawning authoritatively),
-			//  - load balancing is disabled (since the legacy behaviour is to wait until Spatial tells us we have authority) OR
-			//  - load balancing is enabled AND our lb strategy says this worker shouldn't have authority AND the Actor isn't locked.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() &&
-				(!SpatialGDKSettings->bEnableUnrealLoadBalancer
-					|| (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))))
+			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
+			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
+			if (NetDriver->LoadBalanceStrategy == nullptr)
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
-
-				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
-				{
-					UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-				}
 			}
 		}
 		else
@@ -739,7 +746,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
+	if (NetDriver->LoadBalanceStrategy != nullptr &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
@@ -764,7 +771,7 @@ int64 USpatialActorChannel::ReplicateActor()
 				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
-					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *GetNameSafe(Actor));
 				}
 				else
 				{
@@ -1159,7 +1166,7 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
+void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property)*>& RepNotifies)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
@@ -1175,7 +1182,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
+		UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor is invalid after trying to create entity"));
 		return;
 	}
 
@@ -1286,11 +1293,11 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	}
 }
 
-void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
+void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property)*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
-	RepNotifies.RemoveAll([&](UProperty* Property)
+	RepNotifies.RemoveAll([&](GDK_PROPERTY(Property)* Property)
 	{
 		for (auto& ObjRef : RefMap)
 		{
@@ -1307,7 +1314,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 			}
 
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
-			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || Cast<UArrayProperty>(Property) != nullptr;
+			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property) != nullptr;
 			if (bIsSameRepNotify && !bIsArray)
 			{
 				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());
@@ -1391,11 +1398,6 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
-		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
-		if (!GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-		{
-			Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
-		}
 
 		Actor->SetIsOwnedByClient(bNetOwned);
 

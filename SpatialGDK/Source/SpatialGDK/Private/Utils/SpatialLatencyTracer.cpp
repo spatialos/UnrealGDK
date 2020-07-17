@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
@@ -66,7 +67,7 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
-	if (LogSpatialLatencyTracing.GetVerbosity() >= ELogVerbosity::Verbose)
+	if (UE_GET_LOG_VERBOSITY(LogSpatialLatencyTracing) >= ELogVerbosity::Verbose)
 	{
 		std::cout.rdbuf(&UStream);
 		std::cerr.rdbuf(&UStream);
@@ -188,7 +189,7 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 	return ReturnKey;
 }
 
-TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const UProperty* Property)
+TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property)* Property)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -499,7 +500,7 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 			}
 			break;
 		case ETraceType::Property:
-			if (const UProperty* Property = ActorClass->FindPropertyByName(*Target))
+			if (const GDK_PROPERTY(Property)* Property = ActorClass->FindPropertyByName(*Target))
 			{
 				ActorPropertyKey APKey{ Actor, Property };
 				if (TrackingProperties.Find(APKey) == nullptr)
@@ -518,7 +519,7 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 					TrackingTags.Add(ATKey, Key);
 					return true;
 				}
-				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorProperty already exists for trace"), *WorkerId);
+				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorTag already exists for trace"), *WorkerId);
 			}
 			break;
 		}
@@ -540,7 +541,7 @@ void USpatialLatencyTracer::ResolveKeyInLatencyPayload(FSpatialLatencyPayload& P
 		const TraceKey& Key = TracePair.Key;
 		const TraceSpan& Span = TracePair.Value;
 
-		if (memcmp(Span.context().trace_id().data(), Payload.TraceId.GetData(), sizeof(Payload.TraceId)) == 0)
+		if (memcmp(Span.context().trace_id().data(), Payload.TraceId.GetData(), Payload.TraceId.Num()) == 0)
 		{
 			WriteKeyFrameToTrace(&Span, TEXT("Local Trace - Payload Obj Read"));
 			Payload.Key = Key;

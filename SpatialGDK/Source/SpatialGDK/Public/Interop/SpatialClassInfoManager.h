@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaDatabase.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -22,6 +24,7 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
+	case COND_ReplayOrOwner:
 	case COND_OwnerOnly:
 		return SCHEMA_OwnerOnly;
 	default:
@@ -40,12 +43,12 @@ struct FHandoverPropertyInfo
 	uint16 Handle;
 	int32 Offset;
 	int32 ArrayIdx;
-	UProperty* Property;
+	GDK_PROPERTY(Property)* Property;
 };
 
 struct FInterestPropertyInfo
 {
-	UProperty* Property;
+	GDK_PROPERTY(Property)* Property;
 	int32 Offset;
 };
 
@@ -73,12 +76,8 @@ struct FClassInfo
 
 	// Only for Subobject classes
 	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
-
-	FName ActorGroup;
-	FName WorkerType;
 };
 
-class SpatialActorGroupManager;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
@@ -90,7 +89,7 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 
 public:
 
-	bool TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager);
+	bool TryInit(USpatialNetDriver* InNetDriver);
 
 	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
 	// when running with an out-of-date schema database.
@@ -148,8 +147,6 @@ private:
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
-
-	SpatialActorGroupManager* ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

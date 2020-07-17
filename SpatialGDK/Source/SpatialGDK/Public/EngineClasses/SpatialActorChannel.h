@@ -13,6 +13,7 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/SpatialStatics.h"
 
@@ -38,7 +39,7 @@ struct FObjectReferences
 		, Property(Other.Property) {}
 
 	// Single property constructor
-	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty)
 		: bSingleProp(true), bFastArrayProp(false), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty)
 	{
 		if (bUnresolved)
@@ -52,11 +53,11 @@ struct FObjectReferences
 	}
 
 	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs, TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty, bool InFastArrayProp = false)
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs, TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty, bool InFastArrayProp = false)
 		: MappedRefs(MoveTemp(InDynamicRefs)), UnresolvedRefs(MoveTemp(InUnresolvedRefs)), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	// Array constructor
-	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty)
 		: bSingleProp(false), bFastArrayProp(false), Array(InArray), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	TSet<FUnrealObjectRef>				MappedRefs;
@@ -70,12 +71,11 @@ struct FObjectReferences
 	TUniquePtr<FObjectReferencesMap>	Array;
 	int32								ShadowOffset;
 	int32								ParentIndex;
-	UProperty*							Property;
+	GDK_PROPERTY(Property)*				Property;
 };
 
 struct FPendingSubobjectAttachment
 {
-	USpatialActorChannel* Channel;
 	const FClassInfo* Info;
 	TWeakObjectPtr<UObject> Subobject;
 
@@ -137,8 +137,8 @@ public:
 
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
-			// If the entity already exists, make sure we have spatial authority before we replicate with Offloading, because we pretend to have local authority
-			if (USpatialStatics::IsSpatialOffloadingEnabled() && !bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			// If the entity already exists, make sure we have spatial authority before we replicate.
+			if (!bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 			{
 				return false;
 			}
@@ -171,32 +171,7 @@ public:
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	inline bool IsAuthoritativeClient() const
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-		{
-			return bIsAuthClient;
-		}
-
-		// If we aren't using result types, we have to actually look at the ACL to see if we should be authoritative or not to guess if we are going to receive authority
-		// in order to send dynamic interest overrides correctly for this client. If we don't do this there's a good chance we will see that there is no server RPC endpoint
-		// on this entity when we try to send any RPCs immediately after checking out the entity, which can lead to inconsistent state.
-		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
-		{
-			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))) {
-				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
-				{
-					for (const FString& Attribute : AttributeSet)
-					{
-						if (WorkerAttributes.Contains(Attribute))
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
-
-		return false;
+		return bIsAuthClient;
 	}
 
 	// Sets the server and client authorities for this SpatialActorChannel based on the StaticComponentView
@@ -263,11 +238,11 @@ public:
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
+	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property)*>& RepNotifies);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
-	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
+	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property)*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 
 	void UpdateShadowData();
 	void UpdateSpatialPositionWithFrequencyCheck();
@@ -294,7 +269,7 @@ protected:
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
 
-	void DeleteEntityIfAuthoritative();
+	void RetireEntityIfAuthoritative();
 
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 

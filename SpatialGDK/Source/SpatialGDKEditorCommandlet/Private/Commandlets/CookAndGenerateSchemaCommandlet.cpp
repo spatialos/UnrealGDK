@@ -4,6 +4,10 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
+
+#include "Misc/CommandLine.h"
 
 using namespace SpatialGDKEditor::Schema;
 
@@ -80,6 +84,12 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 0;
 	}
 
+	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
+	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
+
 	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		ResetSchemaGeneratorStateAndCleanupFolders();
@@ -95,7 +105,13 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Starting Cook Command."));
-	int32 CookResult = Super::Main(CmdLineParams);
+
+	const FString AdditionalCookParam(TEXT(" -cookloadonly"));
+	FString NewCmdLine = CmdLineParams;
+	NewCmdLine.Append(AdditionalCookParam);
+	FCommandLine::Append(*AdditionalCookParam);
+
+	int32 CookResult = Super::Main(NewCmdLine);
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook Command Completed."));
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());

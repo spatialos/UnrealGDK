@@ -59,6 +59,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
+	bTranslationQueryInFlight = false;
 }
 
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
@@ -354,31 +355,14 @@ void UGlobalStateManager::BeginDestroy()
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
 			SendCanBeginPlayUpdate(false);
+
+			// Flush the connection and wait a moment to allow the message to propagate.
+			// TODO: UNR-3697 - This needs to be handled more correctly
+			NetDriver->Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
 		}
 	}
 #endif
-}
-
-void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
-{
-	// This logic is not used in offloading.
-	if (USpatialStatics::IsSpatialOffloadingEnabled())
-	{
-		return;
-	}
-
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated())
-			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
-			}
-		}
-	}
 }
 
 void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
@@ -412,14 +396,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-		{
-			SetAllActorRolesBasedOnLBStrategy();
-		}
-		else
-		{
-			BecomeAuthoritativeOverAllActors();
-		}
+		SetAllActorRolesBasedOnLBStrategy();
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
@@ -457,6 +434,7 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 // This is so clients know when to connect to the deployment.
 void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 {
+	// Build a constraint for the GSM.
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 
@@ -484,10 +462,6 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			if (NetDriver->VirtualWorkerTranslator.IsValid())
-			{
-				ApplyVirtualWorkerMappingFromQueryResponse(Op);
-			}
 			ApplyDeploymentMapDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
@@ -496,7 +470,53 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
 }
 
-void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+void UGlobalStateManager::QueryTranslation()
+{
+	if (bTranslationQueryInFlight)
+	{
+		// Only allow one in flight query. Retries will be handled by the SpatialNetDriver.
+		return;
+	}
+
+	// Build a constraint for the Virtual Worker Translation.
+	Worker_ComponentConstraint TranslationComponentConstraint{};
+	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+
+	Worker_Constraint TranslationConstraint{};
+	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
+
+	Worker_EntityQuery TranslationQuery{};
+	TranslationQuery.constraint = TranslationConstraint;
+	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+
+	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+	bTranslationQueryInFlight = true;
+
+	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
+	EntityQueryDelegate TranslationQueryDelegate;
+	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op)
+	{
+		if (!WeakGlobalStateManager.IsValid())
+		{
+			// The GSM was destroyed before receiving the response.
+			return;
+		}
+
+		UGlobalStateManager* GlobalStateManager = WeakGlobalStateManager.Get();
+		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+		{
+			if (GlobalStateManager->NetDriver->VirtualWorkerTranslator.IsValid())
+			{
+				GlobalStateManager->ApplyVirtualWorkerMappingFromQueryResponse(Op);
+			}
+		}
+		GlobalStateManager->bTranslationQueryInFlight = false;
+	});
+	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
+}
+
+void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
 {
 	check(NetDriver->VirtualWorkerTranslator.IsValid());
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)

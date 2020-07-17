@@ -2,18 +2,15 @@
 
 #pragma once
 
-#include "Utils/SpatialActorGroupManager.h"
-
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
-
-DECLARE_MULTICAST_DELEGATE(FOnWorkerTypesChanged)
 
 class ASpatialDebugger;
 
@@ -68,24 +65,24 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
-	
+
 	virtual void PostInitProperties() override;
 
-	/** 
+	/**
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
-	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment 
+	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count"))
 	uint32 EntityPoolInitialReservationCount;
 
-	/** 
-	 * Specifies when the SpatialOS Runtime should reserve a new batch of entity IDs: the value is the number of un-used entity 
+	/**
+	 * Specifies when the SpatialOS Runtime should reserve a new batch of entity IDs: the value is the number of un-used entity
 	 * IDs left in the entity pool which triggers the SpatialOS Runtime to reserve new entity IDs
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Pool Refresh Threshold"))
 	uint32 EntityPoolRefreshThreshold;
 
-	/** 
+	/**
 	* Specifies the number of new entity IDs the SpatialOS Runtime reserves when `Pool refresh threshold` triggers a new batch.
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Refresh Count"))
@@ -95,9 +92,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (DisplayName = "Heartbeat Interval (seconds)"))
 	float HeartbeatIntervalSeconds;
 
-	/** 
-	* Specifies the maximum amount of time, in seconds, that the server-worker instances wait for a game client to send heartbeat events. 
-	* (If the timeout expires, the game client has disconnected.) 
+	/**
+	* Specifies the maximum amount of time, in seconds, that the server-worker instances wait for a game client to send heartbeat events.
+	* (If the timeout expires, the game client has disconnected.)
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (DisplayName = "Heartbeat Timeout (seconds)"))
 	float HeartbeatTimeoutSeconds;
@@ -117,7 +114,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Maximum Actors replicated per tick"))
 	uint32 ActorReplicationRateLimit;
 
-	/** 
+	/**
 	* Specifies the maximum number of entities created by the SpatialOS Runtime per tick. Not respected when using the Replication Graph.
 	* (The SpatialOS Runtime handles entity creation separately from Actor replication to ensure it can handle entity creation requests under load.)
 	* Note: if you set the value to 0, there is no limit to the number of entities created per tick. However, too many entities created at the same time might overload the SpatialOS Runtime, which can negatively affect your game.
@@ -155,9 +152,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
-	/** Seconds to wait before dropping an outgoing RPC.*/
-	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Dropping Outgoing RPC"))
-	float QueuedOutgoingRPCWaitTime;
+	/** Seconds to wait before retying all queued outgoing RPCs. If 0 there will not be retried on a timer. */
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
+	float QueuedOutgoingRPCRetryTime;
 
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
@@ -179,9 +176,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (DisplayName = "Metrics Report Rate (seconds)"))
 	float MetricsReportRate;
 
-	/** 
-	* By default the SpatialOS Runtime reports server-worker instance’s load in frames per second (FPS). 
-	* Select this to switch so it reports as seconds per frame. 
+	/**
+	* By default the SpatialOS Runtime reports server-worker instance’s load in frames per second (FPS).
+	* Select this to switch so it reports as seconds per frame.
 	* This value is visible as 'Load' in the Inspector, next to each worker.
 	*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics")
@@ -195,13 +192,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
-	/**
-	* Adds granular result types for queries.
-	* Granular here means specifically the required Unreal components for spawning other actors and all data type components.
-	*/
-	UPROPERTY(config)
-	bool bEnableResultTypes;
-
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
@@ -213,26 +203,10 @@ private:
 
 public:
 
-	bool GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const;
+	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
-
-	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	FWorkerType DefaultWorkerType;
-
-	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	bool bEnableOffloading;
-
-	/** Actor Group configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
-	TMap<FName, FActorGroupInfo> ActorGroups;
-
-	/** Available server worker types. */
-	UPROPERTY(EditAnywhere, Config, Category = "Workers")
-	TSet<FName> ServerWorkerTypes;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
@@ -240,14 +214,6 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
-
-	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-	bool bEnableUnrealLoadBalancer;
-
-	/** EXPERIMENTAL: Worker type to assign for load balancing. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	FWorkerType LoadBalancingWorkerType;
 
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
@@ -258,7 +224,9 @@ public:
 
 private:
 #if WITH_EDITOR
-	bool CanEditChange(const UProperty* InProperty) const override;
+	bool CanEditChange(const GDK_PROPERTY(Property)* InProperty) const override;
+
+	void UpdateServicesRegionFile();
 #endif
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
@@ -275,6 +243,8 @@ public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
+
+	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
 
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
@@ -308,6 +278,8 @@ public:
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 
+	void SetServicesRegion(EServicesRegion::Type NewRegion);
+
 	/** Enable to use the new net cull distance component tagging form of interest */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableNetCullDistanceInterest;
@@ -324,12 +296,12 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
 	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
 
-	/** Use TLS encryption for UnrealClient workers connection. May impact performance. */
-	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	/** Use TLS encryption for UnrealClient workers connection. May impact performance. Only works in non-editor builds. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection", meta = (DisplayName = "Use Secure Client Connection In Packaged Builds"))
 	bool bUseSecureClientConnection;
 
-	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. */
-	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. Only works in non-editor builds. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection", meta = (DisplayName = "Use Secure Server Connection In Packaged Builds"))
 	bool bUseSecureServerConnection;
 
 	/**
@@ -344,11 +316,18 @@ public:
 	UPROPERTY(Config)
 	bool bUseSpatialView;
 
-public:
-	// UI Hidden settings passed through from SpatialGDKEditorSettings
-	bool bUseDevelopmentAuthenticationFlow;
-	FString DevelopmentAuthenticationToken;
-	FString DevelopmentDeploymentToConnect;
+	/**
+	  * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
+	  * the map's config with a 1x1 grid.
+	  */
+	TOptional<bool> bOverrideMultiWorker;
 
-	mutable FOnWorkerTypesChanged OnWorkerTypesChangedDelegate;
+	/**
+	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
+	  */
+	UPROPERTY(Config)
+	bool bEnableMultiWorkerDebuggingWarnings;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
+	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 };

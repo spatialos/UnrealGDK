@@ -12,6 +12,8 @@
 #include "Widgets/SToolTip.h"
 #include "Widgets/Text/STextBlock.h"
 
+#define LOCTEXT_NAMESPACE "SpatialLaunchConfigCustomization"
+
 TSharedRef<IPropertyTypeCustomization> FSpatialLaunchConfigCustomization::MakeInstance()
 {
 	return MakeShared<FSpatialLaunchConfigCustomization>();
@@ -27,6 +29,8 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 	TArray<UObject*> EditedObject;
 	StructPropertyHandle->GetOuterObjects(EditedObject);
 
+	const FName& PinnedGDKRuntimeLocalPropertyName = GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, bUseDefaultTemplateForRuntimeVariant);
+
 	if (EditedObject.Num() == 0)
 	{
 		return;
@@ -40,60 +44,50 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 	{
 		TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(ChildIdx);
 
-		// Layout regular properties as usual.
-		if (ChildProperty->GetProperty()->GetName() != "ServerWorkersMap")
+		if (ChildProperty->GetProperty()->GetFName() == PinnedGDKRuntimeLocalPropertyName)
 		{
-			StructBuilder.AddProperty(ChildProperty.ToSharedRef());
-			continue;
-		}
+			// Place the pinned template name for this runtime variant in the pinned template field.
 
-		// Layout ServerWorkers map in a way that does not allow resizing and key edition.
-		uint32 NumEntries;
-		ChildProperty->GetNumChildren(NumEntries);
+			void* StructPtr;
+			check(StructPropertyHandle->GetValueData(StructPtr) == FPropertyAccess::Success);
 
-		IDetailGroup& NewGroup = StructBuilder.AddGroup("ServerWorkersMap", ChildProperty->GetPropertyDisplayName());
-		NewGroup.HeaderRow()
-		.NameContent()
-		[
-			SNew(STextBlock).Text(FText::FromString(TEXT("Server Workers")))
-		]
-		.ValueContent()
-		[
-			SNew(STextBlock).Text(FText::FromString(FString::Printf(TEXT("%i Elements"), NumEntries)))
-		];
+			const FSpatialLaunchConfigDescription* LaunchConfigDesc = reinterpret_cast<const FSpatialLaunchConfigDescription*>(StructPtr);
 
-		for (uint32 EntryIdx = 0; EntryIdx < NumEntries; ++EntryIdx)
-		{
-			TSharedPtr<IPropertyHandle> EntryProp = ChildProperty->GetChildHandle(EntryIdx);
-			check(EntryProp != nullptr);
-			TSharedPtr<IPropertyHandle> EntryKeyProp = EntryProp->GetKeyHandle();
-			check(EntryKeyProp != nullptr);
-			
-			FName* KeyPtr = reinterpret_cast<FName*>(EntryKeyProp->GetValueBaseAddress(reinterpret_cast<uint8*>(EditedObject[0])));
+			FText PinnedTemplateDisplay = FText::Format(LOCTEXT("DefaultTemplate", "Default: {0}"), FText::FromString(LaunchConfigDesc->GetDefaultTemplateForRuntimeVariant()));
 
-			IDetailGroup& Entry = NewGroup.AddGroup(*KeyPtr, FText::FromName(*KeyPtr));
-			uint32 NumEntryFields;
-			EntryProp->GetNumChildren(NumEntryFields);
+			IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
-			for (uint32 EntryField = 0; EntryField < NumEntryFields; ++EntryField)
-			{
-				TSharedPtr<IPropertyHandle> EntryFieldProp = EntryProp->GetChildHandle(EntryField);
-
-				// Skip the load balancing property in the Editor settings.
-				if (bIsInSettings && EntryFieldProp->GetProperty()->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, WorkerLoadBalancing))
-				{
-					continue;
-				}
-
-				Entry.AddPropertyRow(EntryFieldProp.ToSharedRef()).CustomWidget(true).NameContent()
+			CustomRow.CustomWidget()
+				.NameContent()
 				[
-					EntryFieldProp->CreatePropertyNameWidget()
+					ChildProperty->CreatePropertyNameWidget()
 				]
 				.ValueContent()
 				[
-					EntryFieldProp->CreatePropertyValueWidget()
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+				.HAlign(HAlign_Left)
+				.AutoWidth()
+				[
+					ChildProperty->CreatePropertyValueWidget()
+				]
+				+ SHorizontalBox::Slot()
+				.Padding(5)
+				.HAlign(HAlign_Center)
+				.AutoWidth()
+				[
+					SNew(STextBlock)
+					.Text(PinnedTemplateDisplay)
+				]
 				];
-			}
-		}		
+		}
+		else
+		{
+			// Layout regular properties as usual.
+			StructBuilder.AddProperty(ChildProperty.ToSharedRef());
+			continue;
+		}
 	}
 }
+
+#undef LOCTEXT_NAMESPACE

@@ -6,6 +6,8 @@
 #include "Tests/AutomationCommon.h"
 #include "Runtime/EngineSettings/Public/EngineSettings.h"
 
+#include "Utils/GDKPropertyMacros.h"
+
 namespace
 {
 	bool bEarliestFlag;
@@ -67,7 +69,7 @@ struct SpatialActivationFlagTestFixture
 {
 	SpatialActivationFlagTestFixture(FAutomationTestBase& Test)
 	{
-		ProjectPath = FPaths::GetProjectFilePath();
+		ProjectPath = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
 		CommandLineArgs = ProjectPath;
 		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDKSlow.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
 		CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
@@ -77,7 +79,7 @@ struct SpatialActivationFlagTestFixture
 		CommandLineArgs.Append(TEXT(" -nullRHI"));
 		CommandLineArgs.Append(TEXT(" -stdout"));
 
-		SpatialFlagProperty = Cast<UBoolProperty>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
+		SpatialFlagProperty = GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
 		Test.TestNotNull("Property existence", SpatialFlagProperty);
 
 		ProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
@@ -104,7 +106,7 @@ struct SpatialActivationFlagTestFixture
 
 private:
 	FString ProjectPath;
-	UBoolProperty* SpatialFlagProperty;
+	GDK_PROPERTY(BoolProperty)* SpatialFlagProperty;
 	UGeneralProjectSettings* ProjectSettings;
 	void* SpatialFlagPtr;
 	bool bSavedFlagValue;

@@ -5,13 +5,22 @@
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+
 #include "SpatialConstants.h"
+#include "Utils/GDKPropertyMacros.h"
 
 #if WITH_EDITOR
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/FileHelper.h"
 #include "Settings/LevelEditorPlaySettings.h"
+
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
+
+#define LOCTEXT_NAMESPACE "SpatialGDKSettings"
 
 namespace
 {
@@ -31,6 +40,23 @@ namespace
 		}
 		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
 	}
+
+	void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<bool>& bOutValue)
+	{
+		if (FParse::Param(CommandLine, Parameter))
+		{
+			bOutValue = true;
+		}
+		else
+		{
+			TCHAR TempStr[16];
+			if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
+			{
+				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
+			}
+		}
+		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
+	}
 }
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -48,7 +74,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
-	, QueuedOutgoingRPCWaitTime(30.0f)
+	, QueuedOutgoingRPCRetryTime(1.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -57,13 +83,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
-	, bEnableResultTypes(true)
 	, ServicesRegion(EServicesRegion::Default)
-	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
-	, bEnableOffloading(false)
-	, ServerWorkerTypes( { SpatialConstants::DefaultServerWorkerType } )
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bEnableUnrealLoadBalancer(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -83,7 +104,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
-	, bUseDevelopmentAuthenticationFlow(false)
+	, bEnableMultiWorkerDebuggingWarnings(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -94,24 +115,21 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableOffloading);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableUnrealLoadBalancer);
+	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("OverrideMultiWorker"), TEXT("Multi-Worker"), bOverrideMultiWorker);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableMultiWorkerDebuggingWarnings"), TEXT("Multi-Worker Debugging Warnings"), bEnableMultiWorkerDebuggingWarnings);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideResultTypes"), TEXT("Result types"), bEnableResultTypes);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"), TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
-	
-	
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->bEnableOffloading = bEnableOffloading;
-	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+	PlayInSettings->DefaultWorkerType = SpatialConstants::DefaultServerWorkerType;
 #endif
 }
 
@@ -123,27 +141,21 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	// Use MemberProperty here so we report the correct member name for nested changes
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableOffloading))
-	{
-		GetMutableDefault<ULevelEditorPlaySettings>()->bEnableOffloading = bEnableOffloading;
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultWorkerType))
-	{
-		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
+	// TODO(UNR-3569): Engine PR to remove bEnableOffloading from ULevelEditorPlaySettings.
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
-				"Failing to do will result in unintended behavior or crashes!"))));
+			LOCTEXT("RegenerateSchemaDynamicSubobjects_Prompt", "You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
+				"Failing to do will result in unintended behavior or crashes!"));
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServicesRegion))
 	{
-		OnWorkerTypesChangedDelegate.Broadcast();
+		UpdateServicesRegionFile();
 	}
 }
 
-bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
+bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property)* InProperty) const
 {
 	if (!InProperty)
 	{
@@ -151,11 +163,6 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 	}
 
 	const FName Name = InProperty->GetFName();
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUseRPCRingBuffers))
-	{
-		return !bEnableUnrealLoadBalancer;
-	}
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
 	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, RPCRingBufferSizeMap)
@@ -167,7 +174,27 @@ bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
 	return true;
 }
 
-#endif
+void USpatialGDKSettings::UpdateServicesRegionFile()
+{
+	// Create or remove an empty file in the plugin directory indicating whether to use China services region.
+	const FString UseChinaServicesRegionFilepath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename);
+	if (IsRunningInChina())
+	{
+		if (!FPaths::FileExists(UseChinaServicesRegionFilepath))
+		{
+			FFileHelper::SaveStringToFile(TEXT(""), *UseChinaServicesRegionFilepath);
+		}
+	}
+	else
+	{
+		if (FPaths::FileExists(UseChinaServicesRegionFilepath))
+		{
+			FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*UseChinaServicesRegionFilepath);
+		}
+	}
+}
+
+#endif // WITH_EDITOR
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
@@ -183,7 +210,7 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
-	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+	return bUseRPCRingBuffers;
 }
 
 float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
@@ -196,11 +223,28 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 	return RPCQueueWarningDefaultTimeout;
 }
 
-bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const
+bool USpatialGDKSettings::ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const
 {
-#if WITH_EDITOR
+	if (const bool* LogSetting = RPCTypeAllowUnresolvedParamMap.Find(Type))
+	{
+		return *LogSetting;
+	}
+
 	return false;
-#else
-	return bIsClient && bPreventClientCloudDeploymentAutoConnect;
-#endif
+}
+
+void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
+{
+	ServicesRegion = NewRegion;
+
+	// Save in default config so this applies for other platforms e.g. Linux, Android.
+	GDK_PROPERTY(Property)* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
+}
+
+bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
+{
+	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+#undef LOCTEXT_NAMESPACE

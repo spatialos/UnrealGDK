@@ -5,6 +5,8 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 
+#include "Utils/GDKPropertyMacros.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 /**
@@ -51,14 +53,11 @@ private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
 
-	// Build the checkout radius constraints for client workers
-	FrequencyConstraints CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
-	
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
-	SchemaResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	SchemaResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	SchemaResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	SchemaResultType CreateClientNonAuthInterestResultType();
+	SchemaResultType CreateClientAuthInterestResultType();
+	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
 
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
@@ -90,10 +89,7 @@ private:
 	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;
 
-	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
-
-	// If the result types flag is flipped, set the specified result type.
-	void SetResultType(Query& OutQuery, const SchemaResultType& InResultType) const;
+	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase)* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;

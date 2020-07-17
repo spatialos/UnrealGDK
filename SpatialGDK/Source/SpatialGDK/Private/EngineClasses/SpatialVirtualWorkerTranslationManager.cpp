@@ -19,14 +19,15 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	, bWorkerEntityQueryInFlight(false)
 {}
 
-void SpatialVirtualWorkerTranslationManager::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
+void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
 {
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"), NumVirtualWorkers);
+
 	// Currently, this should only be called once on startup. In the future we may allow for more
-	// flexibility. 
-	check(UnassignedVirtualWorkers.IsEmpty());
-	for (VirtualWorkerId VirtualWorkerId : InVirtualWorkerIds)
+	// flexibility.
+	for (uint32 i = 1; i <= NumVirtualWorkers; i++)
 	{
-		UnassignedVirtualWorkers.Enqueue(VirtualWorkerId);
+		UnassignedVirtualWorkers.Enqueue(i);
 	}
 }
 
@@ -115,13 +116,13 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
 
 	WriteMappingToSchema(UpdateObject);
 
-	check(Connection != nullptr);
-	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
-
 	// The Translator on the worker which hosts the manager won't get the component update notification,
 	// so send it across directly.
 	check(Translator != nullptr);
 	Translator->ApplyVirtualWorkerManagerData(UpdateObject);
+
+	check(Connection != nullptr);
+	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 }
 
 void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
@@ -172,7 +173,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" Processing ServerWorker Entity query response"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Processing ServerWorker Entity query response"));
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 

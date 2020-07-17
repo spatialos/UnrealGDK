@@ -2,25 +2,34 @@
 
 #include "SpatialGDKEditorModule.h"
 
-#include "GeneralProjectSettings.h"
-#include "ISettingsModule.h"
-#include "ISettingsContainer.h"
-#include "ISettingsSection.h"
-#include "PropertyEditor/Public/PropertyEditorModule.h"
-
 #include "EditorExtension/GridLBStrategyEditorExtension.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialGDKEditorSettings.h"
+#include "GeneralProjectSettings.h"
+#include "ISettingsContainer.h"
+#include "ISettingsModule.h"
+#include "ISettingsSection.h"
+#include "LocalReceptionistProxyServerManager.h"
+#include "Misc/MessageDialog.h"
+#include "PropertyEditor/Public/PropertyEditorModule.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandLineArgsManager.h"
 #include "SpatialGDKEditorLayoutDetails.h"
+#include "SpatialGDKEditorPackageAssembly.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
-#include "Utils/LaunchConfigEditor.h"
-#include "Utils/LaunchConfigEditorLayoutDetails.h"
+#include "Utils/LaunchConfigurationEditor.h"
+#include "SpatialRuntimeVersionCustomization.h"
 #include "WorkerTypeCustomization.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
+	, CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
 {
 
 }
@@ -30,6 +39,12 @@ void FSpatialGDKEditorModule::StartupModule()
 	RegisterSettings();
 
 	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
+	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
+	CommandLineArgsManager->Init();
+
+	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
@@ -52,6 +67,11 @@ FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
 	return GetDefault<USpatialGDKEditorSettings>()->ExposedRuntimeIP;
 }
 
+bool FSpatialGDKEditorModule::ShouldStartPIEClientsWithLocalLaunchOnDevice() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->bStartPIEClientsWithLocalLaunchOnDevice;
+}
+
 bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
 {
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
@@ -64,7 +84,141 @@ FString FSpatialGDKEditorModule::GetDevAuthToken() const
 
 FString FSpatialGDKEditorModule::GetSpatialOSCloudDeploymentName() const
 {
-	return GetDefault<USpatialGDKEditorSettings>()->DevelopmentDeploymentToConnect;
+	return GetDefault<USpatialGDKEditorSettings>()->GetPrimaryDeploymentName();
+}
+
+bool FSpatialGDKEditorModule::ShouldConnectServerToCloud() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->IsConnectServerToCloudEnabled();
+}
+
+bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
+{
+	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
+	{
+		const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
+		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->GetPrimaryDeploymentName(), EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
+		
+		if (bSuccess)
+		{
+			UE_LOG(LogSpatialGDKEditorModule, Log, TEXT("Successfully started local receptionist proxy server!"));
+		}
+		else
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("ReceptionistProxyFailure", "Failed to start local receptionist proxy server. See the logs for more information."));
+		}
+
+		return bSuccess;
+	}
+
+	return true;
+}
+
+bool FSpatialGDKEditorModule::CanExecuteLaunch() const
+{
+	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
+}
+
+bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
+{
+	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
+	{
+		OutErrorMessage = LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar.");
+		return false;
+	}
+
+	if (ShouldConnectToCloudDeployment())
+	{
+		if (GetDevAuthToken().IsEmpty())
+		{
+			OutErrorMessage = LOCTEXT("MissingDevelopmentAuthenticationToken", "You have to generate or provide a development authentication token in the SpatialOS GDK Editor Settings section to enable connecting to a cloud deployment.");
+			return false;
+		}
+
+		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
+		if (!Settings->GetPrimaryDeploymentName().IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->GetPrimaryDeploymentName(), bIsRunningInChina, OutErrorMessage))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool FSpatialGDKEditorModule::CanStartPlaySession(FText& OutErrorMessage) const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	return CanStartSession(OutErrorMessage);
+}
+
+bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return true;
+	}
+
+	if (ShouldConnectToLocalDeployment() && GetSpatialOSLocalDeploymentIP().IsEmpty())
+	{
+		OutErrorMessage = LOCTEXT("MissingLocalDeploymentIP", "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable connecting to a local deployment.");
+		return false;
+	}
+
+	return CanStartSession(OutErrorMessage);
+}
+
+FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
+{
+	FString CommandLine;
+	if (ShouldConnectToLocalDeployment())
+	{
+		CommandLine = FString::Printf(TEXT("%s -useExternalIpForBridge true"), *GetSpatialOSLocalDeploymentIP());
+	}
+	else if (ShouldConnectToCloudDeployment())
+	{
+		CommandLine = TEXT("connect.to.spatialos -devAuthToken ") + GetDevAuthToken();
+		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
+		if (!CloudDeploymentName.IsEmpty())
+		{
+			CommandLine += TEXT(" -deployment ") + CloudDeploymentName;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditorModule, Display, TEXT("Cloud deployment name is empty. If there are multiple running deployments with 'dev_login' tag, the game will choose one randomly."));
+		}
+	}
+	return CommandLine;
+}
+
+bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
+{
+	return GetDefault<USpatialGDKEditorSettings>()->bPackageMobileCommandLineArgs;
+}
+
+bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
+{
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		// Always start the PIE server(s) if Spatial networking is disabled.
+		return true;
+	}
+
+	if (ShouldConnectToLocalDeployment())
+	{
+		// Start the PIE server(s) if we're connecting to a local deployment.
+		return true;
+	}
+	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
+	{
+		// Start the PIE server(s) if we're connecting to a cloud deployment and using receptionist proxy for the server(s).
+		return true;
+	}
+	return false;
 }
 
 void FSpatialGDKEditorModule::RegisterSettings()
@@ -100,8 +254,8 @@ void FSpatialGDKEditorModule::RegisterSettings()
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
 	PropertyModule.RegisterCustomPropertyTypeLayout("SpatialLaunchConfigDescription", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialLaunchConfigCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout("RuntimeVariantVersion", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialRuntimeVersionCustomization::MakeInstance));
 	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
-	PropertyModule.RegisterCustomClassLayout(ULaunchConfigurationEditor::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FLaunchConfigEditorLayoutDetails::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()

@@ -19,18 +19,15 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Utils/SpatialActorGroupManager.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 {
 	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
-
-	check(InActorGroupManager != nullptr);
-	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
@@ -141,9 +138,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 
 	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
-	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
+	for (TFieldIterator<GDK_PROPERTY(Property)> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
-		UProperty* Property = *PropertyIt;
+		GDK_PROPERTY(Property)* Property = *PropertyIt;
 
 		if (bTrackHandoverProperties && (Property->PropertyFlags & CPF_Handover))
 		{
@@ -239,18 +236,6 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
-
-	if (UClass* ActorClass = Info->Class.Get())
-	{
-		if (ActorClass->IsChildOf<AActor>())
-		{
-			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
-			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
-
-			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
-				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
-		}
-	}
 }
 
 void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
@@ -291,15 +276,10 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 	}
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bEnableUnrealLoadBalancer)
-	{
-		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
-		if (ensure(Strategy != nullptr))
-		{
-			return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
-		}
-	}
-	return Settings->bEnableHandover;
+
+	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
+	check(Strategy != nullptr);
+	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)

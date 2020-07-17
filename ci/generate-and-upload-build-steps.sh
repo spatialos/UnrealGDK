@@ -52,9 +52,7 @@ generate_build_configuration_steps () {
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
 
             # Linux Development NoEditor build configuration
-            if [[ "${ENGINE_NET_TEST:-false}" != "true" ]]; then
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
-            fi
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
         else
             echo "Building for all supported configurations. Generating the appropriate steps..."
 
@@ -75,6 +73,10 @@ generate_build_configuration_steps () {
             done
         fi
     else
+        if [[ -n "${SLOW_NETWORKING_TESTS:-}" ]]; then
+            export SLOW_NETWORKING_TESTS
+        fi
+
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             # MacOS Development Editor build configuration
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "Editor" "Development"

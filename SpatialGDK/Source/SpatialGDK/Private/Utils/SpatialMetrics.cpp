@@ -11,8 +11,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
-USpatialMetrics::WorkerMetricsDelegate USpatialMetrics::WorkerMetricsRecieved;
-
 void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetServerMaxTickRate, bool bInIsServer)
 {
 	Connection = InConnection;
@@ -27,6 +25,10 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
+
+	UserSuppliedMetric Delegate;
+	Delegate.BindUObject(this, &USpatialMetrics::GetAverageFPS);
+	SetCustomMetric(SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS, Delegate);
 }
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
@@ -51,18 +53,62 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 		WorkerLoad = CalculateLoad();
 	}
 
-	SpatialGDK::GaugeMetric DynamicFPSGauge;
-	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
-	DynamicFPSGauge.Value = AverageFPS;
+	SpatialGDK::SpatialMetrics Metrics;
+	Metrics.Load = WorkerLoad;
+	
+	// User supplied metrics
+	TArray<FString> UnboundMetrics;
+	for (const TPair<FString, UserSuppliedMetric>& Gauge : UserSuppliedMetrics)
+	{
+		if (Gauge.Value.IsBound())
+		{
+			SpatialGDK::GaugeMetric Metric;
 
-	SpatialGDK::SpatialMetrics DynamicFPSMetrics;
-	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
-	DynamicFPSMetrics.Load = WorkerLoad;
+			Metric.Key = TCHAR_TO_UTF8(*Gauge.Key);
+			Metric.Value = Gauge.Value.Execute();
+			Metrics.GaugeMetrics.Add(Metric);
+		}
+		else
+		{
+			UnboundMetrics.Add(Gauge.Key);
+		}
+	}
+	for (const FString& KeyToRemove : UnboundMetrics)
+	{
+		UserSuppliedMetrics.Remove(KeyToRemove);
+	}
 
 	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	Connection->SendMetrics(DynamicFPSMetrics);
+	if (bIsServer)
+	{
+		for (const TPair<FString, double>& Metric : WorkerSDKGaugeMetrics)
+		{
+			SpatialGDK::GaugeMetric SpatialMetric;
+			SpatialMetric.Key = "unreal_worker_";
+			SpatialMetric.Key += TCHAR_TO_UTF8(*Metric.Key);
+			SpatialMetric.Value = Metric.Value;
+			Metrics.GaugeMetrics.Add(SpatialMetric);
+		}
+		for (const TPair<FString, WorkerHistogramValues>& Metric : WorkerSDKHistogramMetrics)
+		{
+			SpatialGDK::HistogramMetric SpatialMetric;
+			SpatialMetric.Key = "unreal_worker_";
+			SpatialMetric.Key += TCHAR_TO_UTF8(*Metric.Key);
+			SpatialMetric.Buckets.Reserve(Metric.Value.Buckets.Num());
+			SpatialMetric.Sum = Metric.Value.Sum;
+			for (const TPair<double, uint32>& Bucket : Metric.Value.Buckets)
+			{
+				SpatialGDK::HistogramMetricBucket SpatialBucket;
+				SpatialBucket.UpperBound = Bucket.Key;
+				SpatialBucket.Samples = Bucket.Value;
+				SpatialMetric.Buckets.Push(SpatialBucket);
+			}
+		}
+	}
+
+	Connection->SendMetrics(Metrics);
 }
 
 // Load defined as performance relative to target frame time or just frame time based on config value.
@@ -305,22 +351,59 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int Pa
 
 void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 {
-	if (WorkerMetricsRecieved.IsBound())
+	int32 NumGaugeMetrics = Op->op.metrics.metrics.gauge_metric_count;
+	int32 NumHistogramMetrics = Op->op.metrics.metrics.histogram_metric_count;
+	if (NumGaugeMetrics > 0 || NumHistogramMetrics > 0) // We store these here so we can forward them with our metrics submission
 	{
-		int32 NumMetrics = Op->op.metrics.metrics.gauge_metric_count;
+		FString StringTmp;
+		StringTmp.Reserve(128);
 
-		if (NumMetrics > 0)
+		for (int32 i = 0; i < NumGaugeMetrics; i++)
 		{
-			// Construct a map to store all the metrics and pass it to the users delegate
-			TMap<FString, double> WorkerMetrics;
-			WorkerMetrics.Reserve(NumMetrics);
-
-			for (int32 i = 0; i < NumMetrics; i++)
-			{
-				WorkerMetrics.Add(Op->op.metrics.metrics.gauge_metrics[i].key, Op->op.metrics.metrics.gauge_metrics[i].value);
-			}
-
-			WorkerMetricsRecieved.Broadcast(WorkerMetrics);
+			const Worker_GaugeMetric& WorkerMetric = Op->op.metrics.metrics.gauge_metrics[i];
+			StringTmp = WorkerMetric.key;
+			WorkerSDKGaugeMetrics.FindOrAdd(StringTmp) = WorkerMetric.value;
 		}
+
+		for (int32 i = 0; i < NumHistogramMetrics; i++)
+		{
+			const Worker_HistogramMetric& WorkerMetric = Op->op.metrics.metrics.histogram_metrics[i];
+			StringTmp = WorkerMetric.key;
+			WorkerHistogramValues& HistogramMetrics = WorkerSDKHistogramMetrics.FindOrAdd(StringTmp);
+			HistogramMetrics.Sum = WorkerMetric.sum;
+			int32 NumBuckets = WorkerMetric.bucket_count;
+			HistogramMetrics.Buckets.SetNum(NumBuckets);
+			for (int32 j = 0; j < NumBuckets; j++)
+			{
+				HistogramMetrics.Buckets[j] = TTuple<double, uint32>{ WorkerMetric.buckets[j].upper_bound, WorkerMetric.buckets[j].samples };
+			}
+		}
+
+		if (WorkerMetricsUpdated.IsBound())
+		{
+			WorkerMetricsUpdated.Broadcast(WorkerSDKGaugeMetrics, WorkerSDKHistogramMetrics);
+		}
+	}
+}
+
+void USpatialMetrics::SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate)
+{
+	UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Adding custom metric %s (%s)"), *Metric, Delegate.GetUObject() ? *GetNameSafe(Delegate.GetUObject()) : TEXT("Not attached to UObject"));
+	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
+	{
+		*ExistingMetric = Delegate;
+	}
+	else
+	{
+		UserSuppliedMetrics.Add(Metric, Delegate);
+	}
+}
+
+void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
+{
+	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
+	{
+		UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Removing custom metric %s (%s)"), *Metric, ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
+		UserSuppliedMetrics.Remove(Metric);
 	}
 }

@@ -23,7 +23,6 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -37,11 +36,10 @@ DEFINE_LOG_CATEGORY(LogEntityFactory);
 namespace SpatialGDK
 {
 
-EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialActorGroupManager* InActorGroupManager, SpatialRPCService* InRPCService)
+EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
 	, ClassInfoManager(InClassInfoManager)
-	, ActorGroupManager(InActorGroupManager)
 	, RPCService(InRPCService)
 { }
 
@@ -53,56 +51,27 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	FString ClientWorkerAttribute = GetConnectionOwningWorkerId(Actor);
 
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+	WorkerRequirementSet AnyServerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
-	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
+	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
-
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
-
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-
-	const FName AclAuthoritativeWorkerType = SpatialSettings->bEnableOffloading ?
-		ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor)) :
-		Info.WorkerType;
-
-	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ AclAuthoritativeWorkerType.ToString() };
-	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-
-	// Add Load Balancer Attribute if we are using the load balancer.
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
+	WorkerAttributeSet WorkerAttributeOrSpecificWorker = SpatialConstants::UnrealServerAttributeSet;
+	const VirtualWorkerId IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
+	if (IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	{
-		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
-		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
-		AnyServerOrOwningClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
-
-		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
-		check(LBStrategy != nullptr);
-		const UAbstractLockingPolicy* LockingPolicy = NetDriver->LockingPolicy;
-		check(LockingPolicy != nullptr);
-
-		IntendedVirtualWorkerId = LockingPolicy->IsLocked(Actor) ? LBStrategy->GetLocalVirtualWorkerId() : LBStrategy->WhoShouldHaveAuthority(*Actor);
-		if (IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		{
-			const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-			WorkerAttributeOrSpecificWorker = { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) };
-		}
-		else
-		{
-			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
-		}
+		const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+		WorkerAttributeOrSpecificWorker = { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) };
+	}
+	else
+	{
+		UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. Actor: %s. Strategy: %s"), *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 	}
 
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttributeOrSpecificWorker };
@@ -128,8 +97,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AnyServerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
 		ComponentWriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
@@ -147,19 +120,6 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		{
 			ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
 		}
-	}
-
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
-	{
-		const WorkerRequirementSet ACLRequirementSet = { SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName) };
-		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
-		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	}
-	else
-	{
-		const WorkerAttributeSet ACLAttributeSet = { AclAuthoritativeWorkerType.ToString() };
-		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
-		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 	}
 
 	if (Actor->IsNetStartupActor())
@@ -250,34 +210,26 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateNetOwningClientWorkerData());
+	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
 	}
 
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
-	{
-		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
-	}
-
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		if (SpatialSettings->bEnableUnrealLoadBalancer)
-		{
-			check(NetDriver->VirtualWorkerTranslator != nullptr);
+		check(NetDriver->VirtualWorkerTranslator != nullptr);
 
-			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-			FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-			FColor IntentColor = PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
+		const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+		FColor IntentColor = PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
 
-			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 
-			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId, IntentColor, bIsLocked);
-			ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
-		}
-
+		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId, IntentColor, bIsLocked);
+		ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
 		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 #endif
@@ -439,24 +391,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	const UClass* Class = Actor->GetClass();
 
 	// Construct an ACL for a read-only entity.
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
-
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
-
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
-
-	// Add Zoning Attribute if we are using the load balancer.
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
-	{
-		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
-		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
-	}
+	WorkerRequirementSet AnyServerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))

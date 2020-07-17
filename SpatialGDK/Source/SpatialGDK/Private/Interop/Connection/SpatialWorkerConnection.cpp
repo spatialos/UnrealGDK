@@ -21,7 +21,14 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 		if (OpsProcessingThread == nullptr)
 		{
 			bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterOutgoingNetworkOp;
-			ThreadWaitCondition.Emplace(bCanWake, 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
+			float WaitTimeS = 1.0f / (GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
+			int32 WaitTimeMs = static_cast<int32>(FTimespan::FromSeconds(WaitTimeS).GetTotalMilliseconds());
+			if (WaitTimeMs <= 0)
+			{
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Clamping wait time for worker ops thread to the minimum rate of 1ms."));
+				WaitTimeMs = 1; 
+			}
+			ThreadWaitCondition.Emplace(bCanWake, WaitTimeMs);
 
 			InitializeOpsProcessingThread();
 		}
@@ -443,9 +450,8 @@ void USpatialWorkerConnection::Flush()
 	{
 		ProcessOutgoingMessages();
 	}
-	else
+	else if (ensure(ThreadWaitCondition.IsSet()))
 	{
-		check(ThreadWaitCondition.IsSet());
 		ThreadWaitCondition->Wake(); // No-op if wake is not enabled.
 	}
 }

@@ -61,7 +61,7 @@ bool FStartDeployment::Update()
 		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
-		const FString RuntimeVersion = SpatialGDKSettings->GetSpatialOSRuntimeVersionForLocal();
+		const FString RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 		{
@@ -77,17 +77,13 @@ bool FStartDeployment::Update()
 
 			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			TMap<FName, FWorkerTypeLaunchSection> WorkerConfigMap;
-
 			FWorkerTypeLaunchSection Conf;
-			Conf.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
-			WorkerConfigMap.Add(AutomationWorkerType, Conf);
 
-			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkerConfigMap))
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
 			{
 				return;
 			}
-			SetLevelEditorPlaySettingsWorkerTypes(WorkerConfigMap);
+			SetLevelEditorPlaySettingsWorkerType(Conf);
 
 			if (LocalDeploymentManager->IsLocalDeploymentRunning())
 			{

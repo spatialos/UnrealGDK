@@ -25,7 +25,7 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
-static const FString SpatialServiceVersion(TEXT("20200311.145308.ef0fc31004"));
+static const FString SpatialServiceVersion(TEXT("20200611.170527.924b1f1c45"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
@@ -211,46 +211,14 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 
 bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 {
-	bool bSuccess = true;
+	FString PID;
+	FString State;
+	FString ProcessName;
 
-	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
-
-	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
-	const FString NetStatArgs = TEXT("-n -o -a");
-	FString NetStatResult;
-	int32 ExitCode;
-	FString StdErr;
-	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
-
-	if (ExitCode == ExitCodeSuccess && bSuccess)
+	bool bSuccess = SpatialCommandUtils::GetProcessInfoFromPort(Port, PID, State, ProcessName);
+	if (bSuccess)
 	{
-		// Get the line of the netstat output that contains the port we're looking for.
-		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
-		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
-		if (PidMatcher.FindNext())
-		{
-			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
-
-			const FString TaskKillCmd = TEXT("taskkill");
-			const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
-			FString TaskKillResult;
-			bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
-			bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
-			if (!bSuccess)
-			{
-				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
-			}
-		}
-		else
-		{
-			bSuccess = false;
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port."));
-		}
-	}
-	else
-	{
-		bSuccess = false;
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+		bSuccess = SpatialCommandUtils::TryKillProcessWithPID(PID);
 	}
 
 	return bSuccess;
@@ -274,7 +242,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 		}
 	}
 
-	if (!bSpatialServiceInProjectDirectory)
+	if (!bSpatialServiceInProjectDirectory && bSpatialServiceRunning)
 	{
 		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("StopSpatialServiceFromDifferentProject", "An instance of the SpatialOS Runtime is running with another project. Would you like to stop it and start the Runtime for this project?")) == EAppReturnType::Yes)
 		{
@@ -429,7 +397,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to authenticate against SpatialOS while attempting to start a local deployment."));
 		}
 		bStartingDeployment = false;
 
@@ -714,7 +682,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
+				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to start deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 
 			ExposedRuntimeIP = TEXT("");
 			bSpatialServiceInProjectDirectory = false;
@@ -787,3 +755,5 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 {
 	bAutoDeploy = bInAutoDeploy;
 }
+
+#undef LOCTEXT_NAMESPACE
