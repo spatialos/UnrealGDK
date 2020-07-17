@@ -131,8 +131,6 @@ public:
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 protected:
-	FDelegateHandle DrawDebugDelegateHandle;
-
 	void CreateWorkerRegions();
 	void DestroyWorkerRegions();
 
@@ -172,7 +170,7 @@ private:
 	// Mapping of the entities a client has checked out
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
 
-
+	FDelegateHandle DrawDebugDelegateHandle;
 	FDelegateHandle OnEntityAddedHandle;
 	FDelegateHandle OnEntityRemovedHandle;
 
