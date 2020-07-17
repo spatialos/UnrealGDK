@@ -115,22 +115,17 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddServerStep(TEXT("SpatialTestNetReferenceServerMove"), 1, nullptr, [this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest)
 			{
-				for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-				{
-					if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client && FlowController->ControllerInstanceId == 1)
-					{
-						APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-						ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+				ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestFlowControllerType::Client, 1);
+				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-						// Move the character to the correct location
-						PlayerCharacter->SetActorLocation(TestLocations[CurrentMoveIndex].Key);
+				// Move the character to the correct location
+				PlayerCharacter->SetActorLocation(TestLocations[CurrentMoveIndex].Key);
 
-						// Update the camera location for visual debugging
-						PlayerCharacter->UpdateCameraLocationAndRotation(CameraRelativeLocations[CurrentMoveIndex], CameraRelativeRotation);
+				// Update the camera location for visual debugging
+				PlayerCharacter->UpdateCameraLocationAndRotation(CameraRelativeLocations[CurrentMoveIndex], CameraRelativeRotation);
 
-						FinishStep();
-					}
-				}
+				FinishStep();
 			});
 
 		AddClientStep(TEXT("SpatialTestNetReferenceClientCheckMovement"), 1, nullptr, nullptr, [this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime)
