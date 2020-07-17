@@ -136,7 +136,7 @@ void AOwnerOnlyPropertyReplication::BeginPlay()
 			});
 	}
 	{	// Step 6 - Check that value was replicated on owning client.
-		AddStep(TEXT("ClientCheckReplicationAfterChange"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		AddStep(TEXT("ClientCheckReplicationAfterChange"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 				AOwnerOnlyPropertyReplication* Test = Cast<AOwnerOnlyPropertyReplication>(NetTest);
 				const FSpatialFunctionalTestStepDefinition StepDefinition = Test->GetStepDefinition(Test->GetCurrentStepIndex());
