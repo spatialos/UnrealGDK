@@ -17,7 +17,7 @@
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
-#define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
+#define LOCTEXT_NAMESPACE "SpatialGDKEditorSettings"
 
 const FString& FRuntimeVariantVersion::GetVersionForLocal() const
 {
@@ -46,29 +46,32 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
+	, bStopLocalDeploymentOnEndPIE(false)
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
+	, bIsAutoGenerateCloudConfigEnabled(true)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
+	, bConnectServerToCloud(false)
+	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
+	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
+	, bPackageMobileCommandLineArgs(false)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
+	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-#if PLATFORM_MAC
-	return CompatibilityModeRuntimeVersion;
-#endif
-
 	switch (Variant)
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
@@ -93,18 +96,27 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
 	{
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
 
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
-
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, ExposedRuntimeIP))
+	{
+		if (!USpatialGDKEditorSettings::IsValidIP(ExposedRuntimeIP))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("InputValidIP_Prompt", "Please input a valid IP address."));
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid IP address: %s"), *ExposedRuntimeIP);
+			// Reset IP to empty instead of keeping the invalid value.
+			SetExposedRuntimeIP(TEXT(""));
+			return;
+		}
 	}
 }
 
@@ -186,7 +198,8 @@ void USpatialGDKEditorSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 
 void USpatialGDKEditorSettings::SetSnapshotPath(const FString& Path)
 {
-	SnapshotPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	// If a non-empty path is specified, convert it to full, otherwise just empty the field.
+	SnapshotPath.FilePath = Path.IsEmpty() ? TEXT("") : FPaths::ConvertRelativePathToFull(Path);
 	SaveConfig();
 }
 
@@ -232,6 +245,12 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
+{
+	bIsAutoGenerateCloudConfigEnabled = IsEnabled;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetBuildAndUploadAssembly(bool bBuildAndUpload)
 {
 	bBuildAndUploadAssembly = bBuildAndUpload;
@@ -247,6 +266,12 @@ void USpatialGDKEditorSettings::SetForceAssemblyOverwrite(bool bForce)
 void USpatialGDKEditorSettings::SetBuildClientWorker(bool bBuild)
 {
 	bBuildClientWorker = bBuild;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetConnectServerToCloud(bool bIsEnabled)
+{
+	bConnectServerToCloud = bIsEnabled;
 	SaveConfig();
 }
 
@@ -364,17 +389,17 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	bool bValid = true;
 	if (!IsProjectNameValid(FSpatialGDKServicesModule::GetProjectName()))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. %s"), *SpatialConstants::ProjectPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsAssemblyNameValid(AssemblyName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. %s"), *SpatialConstants::AssemblyPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsDeploymentNameValid(PrimaryDeploymentName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
@@ -387,7 +412,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
 		bValid = false;
 	}
-	if (GetPrimaryLaunchConfigPath().IsEmpty())
+	if (GetPrimaryLaunchConfigPath().IsEmpty() && !bIsAutoGenerateCloudConfigEnabled)
 	{
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
 		bValid = false;
@@ -397,7 +422,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	{
 		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint);
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
 			bValid = false;
 		}
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
@@ -437,10 +462,11 @@ void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString&
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetDevelopmentDeploymentToConnect(const FString& Deployment)
+bool USpatialGDKEditorSettings::IsValidIP(const FString& IP)
 {
-	DevelopmentDeploymentToConnect = Deployment;
-	SaveConfig();
+	const FRegexPattern IpV4PatternRegex(SpatialConstants::Ipv4Pattern);
+	FRegexMatcher IpV4RegexMatcher(IpV4PatternRegex, IP);
+	return IP.IsEmpty() || IpV4RegexMatcher.FindNext();
 }
 
 void USpatialGDKEditorSettings::SetExposedRuntimeIP(const FString& RuntimeIP)
@@ -478,11 +504,7 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-#if PLATFORM_MAC
-	switch (ESpatialOSRuntimeVariant::CompatibilityMode)
-#else
 	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
-#endif
 	{
 	case ESpatialOSRuntimeVariant::CompatibilityMode:
 		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
@@ -504,3 +526,5 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 		}
 	}
 }
+
+#undef LOCTEXT_NAMESPACE

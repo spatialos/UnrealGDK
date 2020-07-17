@@ -173,13 +173,20 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	bConnectAsClient = bInitAsClient;
 
 	const ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
-	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment() && bInitAsClient)
+	if (SpatialGDKEditorModule != nullptr && SpatialGDKEditorModule->ShouldConnectToCloudDeployment())
 	{
-		DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
-		DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		DevAuthConfig.UseExternalIp = true;
-		StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
-		return;
+		if (bInitAsClient)
+		{
+			DevAuthConfig.Deployment = SpatialGDKEditorModule->GetSpatialOSCloudDeploymentName();
+			DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+			DevAuthConfig.UseExternalIp = true;
+			StartDevelopmentAuth(SpatialGDKEditorModule->GetDevAuthToken());
+			return;
+		}
+		else if (SpatialGDKEditorModule->ShouldConnectServerToCloud())
+		{
+			ReceptionistConfig.UseExternalIp = true;
+		}
 	}
 
 	switch (GetConnectionType())
@@ -410,6 +417,7 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 	bool bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
 	if (bSuccessfullyLoaded)
 	{
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up locator config from command line arguments"));
 		SetConnectionType(ESpatialConnectionType::Locator);
 		LocatorConfig.WorkerType = SpatialWorkerType;
 	}
@@ -418,11 +426,13 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 		bSuccessfullyLoaded = DevAuthConfig.TryLoadCommandLineArgs();
 		if (bSuccessfullyLoaded)
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully set up dev auth config from command line arguments"));
 			SetConnectionType(ESpatialConnectionType::DevAuthFlow);
 			DevAuthConfig.WorkerType = SpatialWorkerType;
 		}
 		else
 		{
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up receptionist config from command line arguments"));
 			bSuccessfullyLoaded = ReceptionistConfig.TryLoadCommandLineArgs();
 			SetConnectionType(ESpatialConnectionType::Receptionist);
 			ReceptionistConfig.WorkerType = SpatialWorkerType;
@@ -434,6 +444,8 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 
 void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
 {
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Setting up connection config from URL"));
+
 	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
 		FString LocatorHostOverride;

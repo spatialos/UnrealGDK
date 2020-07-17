@@ -17,6 +17,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -100,6 +101,7 @@ public:
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
+	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -131,7 +133,7 @@ private:
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
-	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
+	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 
@@ -141,7 +143,7 @@ private:
 
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
-	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped);
+	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property)*>& RepNotifies, bool& bOutSomeObjectsWereMapped);
 
 	void ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
@@ -262,4 +264,16 @@ private:
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 	// END TODO
+
+	struct DeferredRetire
+	{
+		Worker_EntityId EntityId;
+		Worker_ComponentId ActorClassId;
+		bool bIsNetStartupActor;
+		bool bNeedsTearOff;
+	};
+	TArray<DeferredRetire> EntitiesToRetireOnAuthorityGain;
+	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
+	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
+	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
 };

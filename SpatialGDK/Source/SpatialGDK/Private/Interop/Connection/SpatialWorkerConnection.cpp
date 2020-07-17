@@ -450,9 +450,8 @@ void USpatialWorkerConnection::Flush()
 	{
 		ProcessOutgoingMessages();
 	}
-	else
+	else if (ensure(ThreadWaitCondition.IsSet()))
 	{
-		check(ThreadWaitCondition.IsSet());
 		ThreadWaitCondition->Wake(); // No-op if wake is not enabled.
 	}
 }

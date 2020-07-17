@@ -10,6 +10,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #include "Engine/World.h"
@@ -167,11 +168,8 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 		AddPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
-	if (InActor->GetNetConnection() != nullptr)
-	{
-		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest, InEntityId);
-	}
+	// Clients need to see owner only and server RPC components on entities they have authority over
+	AddClientSelfInterest(ResultInterest, InEntityId);
 
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest, InEntityId);
@@ -209,7 +207,9 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
 	ClientQuery.Constraint.EntityIdConstraint = EntityId;
-	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
+	// Temp fix for invalid initial auth server checkout constraints - UNR-3683
+	// Using full snapshot ensures all components are available on checkout. Remove when root issue is resolved.
+	ClientQuery.FullSnapshotResult = true;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
 	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
@@ -450,16 +450,16 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	for (const FInterestPropertyInfo& PropertyInfo : InInfo.InterestProperties)
 	{
 		uint8* Data = (uint8*)InActor + PropertyInfo.Offset;
-		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))
+		if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(PropertyInfo.Property))
 		{
 			AddObjectToConstraint(ObjectProperty, Data, AlwaysInterestedConstraint);
 		}
-		else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
+		else if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(PropertyInfo.Property))
 		{
 			FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 			for (int i = 0; i < ArrayHelper.Num(); i++)
 			{
-				AddObjectToConstraint(Cast<UObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), AlwaysInterestedConstraint);
+				AddObjectToConstraint(GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), AlwaysInterestedConstraint);
 			}
 		}
 		else
@@ -526,7 +526,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	return LevelConstraint;
 }
 
-void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
+void InterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase)* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 
