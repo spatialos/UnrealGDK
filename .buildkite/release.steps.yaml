@@ -88,3 +88,14 @@ steps:
     concurrency: 1
     concurrency_group: "unrealgdk-release"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+
+ # Stage 5: Mirror the release code from Github to Gitee
+  - trigger: platform-copybara
+    label: "Run platform-copybara"
+    depends_on: Release
+      build:
+        message: "Triggered from UnrealGDK Release"
+        commit: "HEAD"
+        branch: "MASTER"
+    concurrency: 1
+    concurrency_group: "unrealgdk-release"
