@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
@@ -188,7 +189,7 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 	return ReturnKey;
 }
 
-TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const UProperty* Property)
+TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property)* Property)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -499,7 +500,7 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 			}
 			break;
 		case ETraceType::Property:
-			if (const UProperty* Property = ActorClass->FindPropertyByName(*Target))
+			if (const GDK_PROPERTY(Property)* Property = ActorClass->FindPropertyByName(*Target))
 			{
 				ActorPropertyKey APKey{ Actor, Property };
 				if (TrackingProperties.Find(APKey) == nullptr)

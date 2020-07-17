@@ -4,11 +4,12 @@
 
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "Utils/GDKPropertyMacros.h"
 
 namespace SpatialGDK
 {
 
-bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
@@ -19,7 +20,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDri
 	NetDeltaInfo.NetSerializeCB = &SerializeCB;
 	NetDeltaInfo.Object = Object;
 
-	UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty);
+	GDK_PROPERTY(StructProperty)* ParentStruct = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(ParentProperty);
 	check(ParentStruct);
 	void* Destination = ParentStruct->ContainerPtrToValuePtr<void>(Object, ArrayIndex);
 
@@ -29,7 +30,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDri
 	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Destination);
 }
 
-bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
@@ -40,7 +41,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	NetDeltaInfo.NetSerializeCB = &SerializeCB;
 	NetDeltaInfo.Object = Object;
 
-	UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty);
+	GDK_PROPERTY(StructProperty)* ParentStruct = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(ParentProperty);
 	check(ParentStruct);
 	void* Source = ParentStruct->ContainerPtrToValuePtr<void>(Object, ArrayIndex);
 
