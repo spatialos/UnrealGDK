@@ -2502,7 +2502,7 @@ void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
 		{
 			SpatialReceiver->IncomingRPCs.ProcessRPCs();
 		}
-	}, GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime, true);
+	}, GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCFlushTime, true);
 }
 
 bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
