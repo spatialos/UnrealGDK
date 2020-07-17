@@ -64,6 +64,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 			}
 
 			TriggerBox->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMovement::OnOverlapBegin);
+			RegisterAutoDestroyActor(TriggerBox);
 
 			FinishStep();
 		});
@@ -142,18 +143,4 @@ void ASpatialTestCharacterMovement::BeginPlay()
 				FinishStep();
 			}
 		}, 1.0f);
-
-	// Universal clean-up step to delete the TriggerBox from all connected clients and servers		
-	AddUniversalStep(TEXT("SpatialTestCharacterMovementUniversalCleanUp"), nullptr, [this](ASpatialFunctionalTest* NetTest)
-		{
-			TArray<AActor*> FoundTriggers;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATriggerBox::StaticClass(), FoundTriggers);
-
-			for (auto TriggerToDestroy : FoundTriggers)
-			{
-				TriggerToDestroy->Destroy();
-			}
-
-			FinishStep();
-		});
 }
