@@ -12,6 +12,7 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
 using namespace SpatialGDKEditor::Schema;
@@ -40,76 +41,76 @@ ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
-FString PropertyToSchemaType(UProperty* Property)
+FString PropertyToSchemaType(GDK_PROPERTY(Property)* Property)
 {
 	FString DataType;
 
-	if (Property->IsA(UStructProperty::StaticClass()))
+	if (Property->IsA(GDK_PROPERTY(StructProperty)::StaticClass()))
 	{
-		UStructProperty* StructProp = Cast<UStructProperty>(Property);
+		GDK_PROPERTY(StructProperty)* StructProp = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
 		DataType = TEXT("bytes");
 	}
-	else if (Property->IsA(UBoolProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(BoolProperty)::StaticClass()))
 	{
 		DataType = TEXT("bool");
 	}
-	else if (Property->IsA(UFloatProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(FloatProperty)::StaticClass()))
 	{
 		DataType = TEXT("float");
 	}
-	else if (Property->IsA(UDoubleProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(DoubleProperty)::StaticClass()))
 	{
 		DataType = TEXT("double");
 	}
-	else if (Property->IsA(UInt8Property::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(Int8Property)::StaticClass()))
 	{
 		DataType = TEXT("int32");
 	}
-	else if (Property->IsA(UInt16Property::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(Int16Property)::StaticClass()))
 	{
 		DataType = TEXT("int32");
 	}
-	else if (Property->IsA(UIntProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(IntProperty)::StaticClass()))
 	{
 		DataType = TEXT("int32");
 	}
-	else if (Property->IsA(UInt64Property::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(Int64Property)::StaticClass()))
 	{
 		DataType = TEXT("int64");
 	}
-	else if (Property->IsA(UByteProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(ByteProperty)::StaticClass()))
 	{
 		DataType = TEXT("uint32"); // uint8 not supported in schema.
 	}
-	else if (Property->IsA(UUInt16Property::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(UInt16Property)::StaticClass()))
 	{
 		DataType = TEXT("uint32");
 	}
-	else if (Property->IsA(UUInt32Property::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(UInt32Property)::StaticClass()))
 	{
 		DataType = TEXT("uint32");
 	}
-	else if (Property->IsA(UUInt64Property::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(UInt64Property)::StaticClass()))
 	{
 		DataType = TEXT("uint64");
 	}
-	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()) || Property->IsA(UTextProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(NameProperty)::StaticClass()) || Property->IsA(GDK_PROPERTY(StrProperty)::StaticClass()) || Property->IsA(GDK_PROPERTY(TextProperty)::StaticClass()))
 	{
 		DataType = TEXT("string");
 	}
-	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(ObjectPropertyBase)::StaticClass()))
 	{
 		DataType = TEXT("UnrealObjectRef");
 	}
-	else if (Property->IsA(UArrayProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(ArrayProperty)::StaticClass()))
 	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
+		DataType = PropertyToSchemaType(GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property)->Inner);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
-	else if (Property->IsA(UEnumProperty::StaticClass()))
+	else if (Property->IsA(GDK_PROPERTY(EnumProperty)::StaticClass()))
 	{
-		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
+		DataType = GetEnumDataType(GDK_CASTFIELD<GDK_PROPERTY(EnumProperty)>(Property));
 	}
 	else
 	{
@@ -212,8 +213,8 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
-		UProperty* Property = PropertyPair.Key;
-		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+		GDK_PROPERTY(Property)* Property = PropertyPair.Key;
+		GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(Property);
 
 		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
 
@@ -368,15 +369,15 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 	{
 		for (auto& PropertyPair : PropertyGroup.Value)
 		{
-			UProperty* Property = PropertyPair.Value->Property;
-			if (Property->IsA<UObjectPropertyBase>())
+			GDK_PROPERTY(Property)* Property = PropertyPair.Value->Property;
+			if (Property->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
 			{
 				bShouldIncludeCoreTypes = true;
 			}
 
-			if (Property->IsA<UArrayProperty>())
+			if (Property->IsA<GDK_PROPERTY(ArrayProperty)>())
 			{
-				if (Cast<UArrayProperty>(Property)->Inner->IsA<UObjectPropertyBase>())
+				if (GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property)->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
 				{
 					bShouldIncludeCoreTypes = true;
 				}
@@ -404,7 +405,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		if (Group == REP_MultiClient && Class->IsChildOf<UActorComponent>())
 		{
 			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
-			const UProperty* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
+			const GDK_PROPERTY(Property)* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
 
 			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
 			{
@@ -563,7 +564,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		if (Group == REP_MultiClient && Class->IsChildOf<AActor>())
 		{
 			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_TEAROFF_ID);
-			const UProperty* ReplicatesProp = AActor::StaticClass()->FindPropertyByName("bTearOff");
+			const GDK_PROPERTY(Property)* ReplicatesProp = AActor::StaticClass()->FindPropertyByName("bTearOff");
 
 			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
 			{
