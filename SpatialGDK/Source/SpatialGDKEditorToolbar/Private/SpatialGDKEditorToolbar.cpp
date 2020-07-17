@@ -27,6 +27,7 @@
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "EngineUtils.h"
 
 #include "CloudDeploymentConfiguration.h"
 #include "SpatialCommandUtils.h"
@@ -761,11 +762,24 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 		return;
 	}
 
-	if (SpatialDebuggerEditor == NULL)
-	{
-		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-		check(EditorWorld);
+	// Check if there is already a SpatialDebuggerEditor for this map
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld);
 
+	TArray<ASpatialDebuggerEditor*> SpatialDebuggerEditors;
+	
+	for (TActorIterator<ASpatialDebuggerEditor> It(EditorWorld); It; ++It)
+	{
+		ASpatialDebuggerEditor* Actor = *It;
+		SpatialDebuggerEditors.Add(Actor);
+	}
+	
+	// There should be a maximum of one spatial debugger editor for each world
+	check(SpatialDebuggerEditors.Num() <= 1);
+
+	// If no spatial debugger editor found then intialise one
+	if (SpatialDebuggerEditors.Num() == 0)
+	{
 		SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>();
 	}
 
