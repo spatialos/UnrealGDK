@@ -4,7 +4,7 @@
 #include "SpatialTestReplicatedStartupActor.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "Kismet/GameplayStatics.h"
-#include "ReplicatedActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "Net/UnrealNetwork.h"
 #include "ReplicatedStartupActorPlayerController.h"
@@ -46,7 +46,7 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 	AddClientStep(TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::ALL_WORKERS_ID, nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			TArray<AActor*> ReplicatedActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedActor::StaticClass(), ReplicatedActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), ReplicatedActors);
 
 			checkf(ReplicatedActors.Num() == 1, TEXT("There should be exactly 1 replicated actor"));
 
