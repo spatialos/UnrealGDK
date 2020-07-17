@@ -93,7 +93,6 @@ steps:
   - block: "Unblock mirror code to gitee"
     prompt: "This action will mirror all of the release code to gitee."
 
-
   - trigger: platform-copybara
     label: "Run platform-copybara"
     depends_on: Release
