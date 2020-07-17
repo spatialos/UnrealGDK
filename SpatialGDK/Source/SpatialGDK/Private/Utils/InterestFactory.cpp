@@ -10,6 +10,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #include "Engine/World.h"
@@ -449,16 +450,16 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	for (const FInterestPropertyInfo& PropertyInfo : InInfo.InterestProperties)
 	{
 		uint8* Data = (uint8*)InActor + PropertyInfo.Offset;
-		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))
+		if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(PropertyInfo.Property))
 		{
 			AddObjectToConstraint(ObjectProperty, Data, AlwaysInterestedConstraint);
 		}
-		else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
+		else if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(PropertyInfo.Property))
 		{
 			FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 			for (int i = 0; i < ArrayHelper.Num(); i++)
 			{
-				AddObjectToConstraint(Cast<UObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), AlwaysInterestedConstraint);
+				AddObjectToConstraint(GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), AlwaysInterestedConstraint);
 			}
 		}
 		else
@@ -525,7 +526,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	return LevelConstraint;
 }
 
-void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
+void InterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase)* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 

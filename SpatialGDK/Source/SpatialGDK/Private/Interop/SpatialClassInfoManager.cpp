@@ -19,6 +19,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
@@ -137,9 +138,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 
 	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
-	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
+	for (TFieldIterator<GDK_PROPERTY(Property)> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
-		UProperty* Property = *PropertyIt;
+		GDK_PROPERTY(Property)* Property = *PropertyIt;
 
 		if (bTrackHandoverProperties && (Property->PropertyFlags & CPF_Handover))
 		{

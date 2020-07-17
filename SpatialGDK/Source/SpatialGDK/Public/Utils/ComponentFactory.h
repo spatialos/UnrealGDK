@@ -4,6 +4,7 @@
 
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -18,7 +19,6 @@ class USpatialLatencyTracer;
 class USpatialPackageMapClient;
 
 class UNetDriver;
-class UProperty;
 
 enum EReplicatedPropertyGroup : uint32;
 
@@ -47,7 +47,7 @@ private:
 
 	uint32 FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds);
+	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property)* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
