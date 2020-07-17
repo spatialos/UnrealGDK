@@ -107,6 +107,7 @@ private:
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;
+	TMap<EntityRPCType, uint64> LastSeenRPCIds;
 
 	// Stored here for things we have authority over.
 	TMap<EntityRPCType, uint64> LastAckedRPCIds;

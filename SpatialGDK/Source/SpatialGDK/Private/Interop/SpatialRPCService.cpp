@@ -326,6 +326,8 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
 		const ClientEndpoint* Endpoint = View->GetComponentData<ClientEndpoint>(EntityId);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCAck);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint->UnreliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
@@ -335,6 +337,8 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	{
 		const ServerEndpoint* Endpoint = View->GetComponentData<ServerEndpoint>(EntityId);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCAck);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint->UnreliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
@@ -374,15 +378,20 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
+
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	{
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
@@ -414,7 +423,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 	else
 	{
-		LastSeenRPCId = LastAckedRPCIds[EntityTypePair];
+		LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
 	}
 
 	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
@@ -455,22 +464,23 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, last sent ID: %d, last seen ID: %d"),
 			EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
 	}
+
+	if (LastProcessedRPCId > LastSeenRPCId)
+	{
+		if (Type == ERPCType::NetMulticast)
+		{
+			LastSeenMulticastRPCIds[EntityId] = LastProcessedRPCId;
+		}
+		else
+		{
+			LastSeenRPCIds[EntityTypePair] = LastProcessedRPCId;
+		}
+	}
 }
 
 void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)
 {
-	if (Type == ERPCType::NetMulticast)
-	{
-		uint64* LastAckedRPCId = LastSeenMulticastRPCIds.Find(EntityId);
-		if (LastAckedRPCId == nullptr)
-		{
-			UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked multicast RPC id. Entity: %lld"), EntityId);
-			return;
-		}
-
-		(*LastAckedRPCId)++;
-	}
-	else
+	if (Type != ERPCType::NetMulticast)
 	{
 		EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
 

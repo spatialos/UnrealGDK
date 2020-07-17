@@ -1971,6 +1971,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Trying to execute Server RPC %s::%s without authority over the target actor. RPCs for this actor will be dropped."), *GetNameSafe(TargetObject), *GetNameSafe(Function));
 		}
 		else
 		{
