@@ -723,6 +723,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
 		{		
 			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+			//UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor %s 's NewAuthVirtualWorkerId: %d, ShouldHaveAuthority: %d"), *Actor->GetFName().ToString(), NewAuthVirtualWorkerId, NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor));
 			if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 			{
 				Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
