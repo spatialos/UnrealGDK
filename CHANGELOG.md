@@ -12,12 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
+- Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
 
 ### Bug fixes:
+- The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
 - `Cloud Deployment Name` field in the dropdown now refers to the same property as `Deployment Name` in the Cloud Deployment Configuration window, so the `Start Deployment` toolbar button will now use the name specified in the dropdown when quickly starting the new deployment without going through the Cloud Deployment Configuration window.
 - `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
 - Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
-- Fixed bug causing this error to fire: "ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset"
+- Fixed bug causing this error to fire: "ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset".
+- SpatialMetrics::WorkerMetricsRecieved is no longer static and the function signature now also receives histogram metrics.
+- Log an error including Position when GridBasedLBStrategy can't locate a worker to take authority over an Actor.
+- Changed the SpatialGDK Setting bEnableMultiWorker to private, to enforce usage of IsMultiWorkerEnabled which respects the `-OverrideMultiWorker` flag.
+- No longer assert when SpatialStatics::GetActorEntityId() is passed a nullptr, return SpatialConstants::INVALID_ENTITY_ID instead.
 
 ## [`0.10.0`] - 2020-07-08
 

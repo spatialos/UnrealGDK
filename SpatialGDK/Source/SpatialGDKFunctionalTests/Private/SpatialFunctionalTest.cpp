@@ -10,7 +10,9 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
+
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -94,20 +96,16 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
-	if (HasAuthority())
+	if (ActorToAutoDestroy != nullptr && ActorToAutoDestroy->HasAuthority())
 	{
-		Super::RegisterAutoDestroyActor(ActorToAutoDestroy);
+		// Add component to actor to auto destroy when test finishes
+		USpatialFunctionalTestAutoDestroyComponent* AutoDestroyComponent = NewObject<USpatialFunctionalTestAutoDestroyComponent>(ActorToAutoDestroy);
+		AutoDestroyComponent->AttachToComponent(ActorToAutoDestroy->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		AutoDestroyComponent->RegisterComponent();
 	}
-	else if(LocalFlowController != nullptr)
+	else
 	{
-		if(LocalFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
-		{
-			CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
-		}
-		else
-		{
-			ServerRegisterAutoDestroyActor(ActorToAutoDestroy);
-		}
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Should only register to auto destroy from the authoritative worker of the actor: %s"), *GetNameSafe(ActorToAutoDestroy));
 	}
 }
 
@@ -256,7 +254,6 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 
 		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
-		MulticastAutoDestroyActors(AutoDestroyActors);
 
 		Super::FinishTest(TestResult, Message);
 	}
@@ -552,6 +549,8 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 		{
 			NotifyTestFinishedObserver();
 		}
+
+		DeleteActorsRegisteredForAutoDestroy();
 	}
 }
 
@@ -586,38 +585,18 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 	));
 }
 
-void ASpatialFunctionalTest::CrossServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
+void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 {
-	RegisterAutoDestroyActor(ActorToAutoDestroy);
-}
-
-void ASpatialFunctionalTest::ServerRegisterAutoDestroyActor_Implementation(AActor* ActorToAutoDestroy)
-{
-	CrossServerRegisterAutoDestroyActor(ActorToAutoDestroy);
-}
-
-void ASpatialFunctionalTest::MulticastAutoDestroyActors_Implementation(const TArray<AActor*>& ActorsToDestroy)
-{
-	FString DisplayName = LocalFlowController ? LocalFlowController->GetDisplayName() : TEXT("UNKNOWN");
-	if (!HasAuthority()) // Authority already handles it in Super::FinishTest
+	// Delete actors marked for auto destruction
+	for (TActorIterator<AActor> It(GetWorld(), AActor::StaticClass()); It; ++It)
 	{
-		for (AActor* Actor : ActorsToDestroy)
+		AActor* FoundActor = *It;
+		UActorComponent* AutoDestroyComponent = FoundActor->FindComponentByClass<USpatialFunctionalTestAutoDestroyComponent>();
+		if (AutoDestroyComponent != nullptr)
 		{
-			if (IsValid(Actor))
-			{				
-				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s trying to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
-				Actor->SetLifeSpan(0.01f);
-			}
+			// will be removed next frame
+			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
-	else
-	{
-		for (AActor* Actor : ActorsToDestroy)
-		{
-			if (IsValid(Actor))
-			{
-				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s TEST_AUTH - will have tried to delete actor: %s ; result now would be: %s"), *DisplayName, *Actor->GetName(), Actor->Role == ROLE_Authority ? TEXT("SUCCESS") : TEXT("FAILURE"));
-			}
-		}
-	}
+	
 }
