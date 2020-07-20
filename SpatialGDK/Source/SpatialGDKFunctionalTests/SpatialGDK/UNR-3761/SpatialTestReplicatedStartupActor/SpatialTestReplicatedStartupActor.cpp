@@ -12,9 +12,10 @@
 
 /**
  * This test automates the ReplicatedStartupActor gym. The gym was used for:
- * - QA workflows Test Replicated startup actor are correctly spawned on all clients
+ * - QA workflows Test Replicated startup actors are correctly spawned on all clients
  * - To support QA test case "C1944 Replicated startup actors are correctly spawned on all clients"
- * NOTE: This test requires a specific Map, with a custom GameMode and PlayerController, trying to run this test on a different Map will make it fail.
+ * NOTE: This test requires a specific Map with a ReplicatedTestActorBase placed on the map and in the interest of the players and
+ *		 a custom GameMode and PlayerController, trying to run this test on a different Map will make it fail.
  *
  * The flow is as follows:
  * - Setup:
@@ -43,7 +44,13 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddClientStep(TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::ALL_WORKERS_ID, nullptr, [this](ASpatialFunctionalTest* NetTest)
+	AddStep(TEXT("SpatialTestReplicatedStartupActorClientsSetup"),FWorkerDefinition::AllClients, [this](ASpatialFunctionalTest* NetTest)
+		{
+			// Make sure that the PlayerController has been set before trying to do anything with it, this might prevent Null Pointer exceptions being thrown when UE ticks at a relatively slow rate
+			AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+			return IsValid(PlayerController);
+		},
+		[this](ASpatialFunctionalTest* NetTest)
 		{
 			TArray<AActor*> ReplicatedActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), ReplicatedActors);
@@ -57,7 +64,7 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 			FinishStep();
 		});
 
-	AddClientStep(TEXT("SpatialTestReplicatedStarupActorClientsCheckStep"), FWorkerDefinition::ALL_WORKERS_ID, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+	AddStep(TEXT("SpatialTestReplicatedStarupActorClientsCheckStep"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			if (bIsValidReference)
 			{
