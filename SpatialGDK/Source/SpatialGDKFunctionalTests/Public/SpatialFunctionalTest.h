@@ -92,18 +92,15 @@ public:
 
 	// Add Steps for Blueprints
 	
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (DisplayName = "Add Step", AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ToolTip = "Adds a Test Step. Check GetAllWorkers(), GetAllServerWorkers() and GetAllClientWorkers() for convenience.\n\nIf you split the Worker pin you can define if you want to run on Server, Client or All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored)."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (DisplayName = "Add Step", AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ToolTip = "Adds a Test Step. Check GetAllWorkers(), GetAllServerWorkers() and GetAllClientWorkers() for convenience.\n\nIf you split the Worker pin you can define if you want to run on Server, Client or All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).\n\nKeep in mind you can split the Worker pin for convenience."))
 	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	// Add Steps for Blueprints and C++
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a complete Definition. This allows you to define a Step and add it / re-use it multiple times.\n\nSee also CreateStepDefinition()."))
-	void AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience."))
+	void AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition, const FWorkerDefinition& Worker);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a partial Definition, allowing you to redefine at adding time where you want it to run.\nBoth Servers and Clients have WorkerId start with 1. If you use 0, it runs on all Servers / Clients.\n\nSee also CreateStepDefinition()."))
-	void AddStepFromDefinitionSingle(const FSpatialFunctionalTestStepDefinition& StepDefinition, ESpatialFunctionalTestFlowControllerType WorkerType = ESpatialFunctionalTestFlowControllerType::Server, int WorkerId = 1);
-
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a partial Definition, allowing you to redefine at adding time where you want it to run.\nIt is a more extensible version of AddStepFromDefinitionSingle(), where you can pass array with multiple specific Workers.\n\nSee also CreateStepDefinition()."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience.\nIt is a more extensible version of AddStepFromDefinition(), where you can pass array with multiple specific Workers."))
 	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers);
 
 	// Add Steps for C++

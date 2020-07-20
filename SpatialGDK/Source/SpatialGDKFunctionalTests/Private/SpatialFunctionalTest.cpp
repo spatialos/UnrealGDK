@@ -318,20 +318,13 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition)
-{
-	ensureMsgf(StepDefinition.Workers.Num() > 0, TEXT("Adding a StepDefinition without Workers"));
-
-	StepDefinitions.Add(StepDefinition);
-}
-
-void ASpatialFunctionalTest::AddStepFromDefinitionSingle(const FSpatialFunctionalTestStepDefinition& StepDefinition, ESpatialFunctionalTestFlowControllerType WorkerType, int WorkerId)
+void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition, const FWorkerDefinition& Worker)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
 
-	StepDefinitionCopy.Workers.Add(FWorkerDefinition{WorkerType, WorkerId});
+	StepDefinitionCopy.Workers.Add(Worker);
 
-	AddStepFromDefinition(StepDefinitionCopy);
+	StepDefinitions.Add(StepDefinitionCopy);
 }
 
 void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers)
@@ -340,7 +333,7 @@ void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctional
 
 	StepDefinitionCopy.Workers.Append(Workers);
 
-	AddStepFromDefinition(StepDefinitionCopy);
+	StepDefinitions.Add(StepDefinitionCopy);
 }
 
 void ASpatialFunctionalTest::StartStep(const int StepIndex)
