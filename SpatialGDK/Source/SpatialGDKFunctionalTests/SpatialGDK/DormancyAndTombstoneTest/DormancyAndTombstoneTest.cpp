@@ -32,7 +32,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 	Super::BeginPlay();
 
 	{	// Step 1 - Set TestIntProp to 1.
-		AddServerStep(TEXT("ServerSetTestIntPropTo1"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerSetTestIntPropTo1"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			int Counter = 0;
 			int ExpectedDormancyActors = 1;
 			for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
@@ -47,7 +47,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 			});
 	}
 	{	// Step 2 - Observe TestIntProp on client should still be 0.
-		AddClientStep(TEXT("ClientCheckValue"), 0, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("ClientCheckValue"), FWorkerDefinition::AllClients, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 
 			bool bPassesChecks = true;
 
@@ -72,7 +72,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 	}
 
 	{	// Step 3 - Delete the test actor on the server.
-		AddServerStep(TEXT("ServerDeleteActor"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			int Counter = 0;
 			int ExpectedDormancyActors = 1;
 			for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
@@ -87,7 +87,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 	}
 
 	{	// Step 4 - Observe the test actor has been deleted on the client.
-		AddClientStep(TEXT("ClientCheckActorDestroyed"), 0, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("ClientCheckActorDestroyed"), FWorkerDefinition::AllClients, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 			int Counter = 0;
 			int ExpectedDormancyActors = 0;
 			for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
