@@ -69,7 +69,7 @@ namespace
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
 			QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			ErrorInfo.bShouldDrop ? TEXT("dropped") : TEXT("queued"),
+			ErrorInfo.QueueProcessResult == ERPCQueueProcessResult::ContinueProcessing ? TEXT("queued") : TEXT("dropped"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
@@ -101,8 +101,11 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, E
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
-		if (ApplyFunction(Params))
+		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);
+		switch (QueueProcessResult)
 		{
+		case ERPCQueueProcessResult::ContinueProcessing:
+		case ERPCQueueProcessResult::DropEntireQueue:
 			return;
 		}
 	}
@@ -117,15 +120,19 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		if (ApplyFunction(Params))
+		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);
+		switch (QueueProcessResult)
 		{
+		case ERPCQueueProcessResult::ContinueProcessing:
 			NumProcessedParams++;
-		}
-		else
-		{
+		case ERPCQueueProcessResult::StopProcessing:
 			break;
+		case ERPCQueueProcessResult::DropEntireQueue:
+			RPCList.Empty();
+			return;
 		}
 	}
+
 	RPCList.RemoveAt(0, NumProcessedParams);
 }
 
@@ -187,20 +194,19 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 	ProcessingFunction = Function;
 }
 
-bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
+ERPCQueueProcessResult FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	ensure(ProcessingFunction.IsBound());
 	FRPCErrorInfo ErrorInfo = ProcessingFunction.Execute(Params);
 
 	if (ErrorInfo.Success())
 	{
-		return true;
+		return ERPCQueueProcessResult::ContinueProcessing;
 	}
-	else
-	{
+
 #if !UE_BUILD_SHIPPING
-		LogRPCError(ErrorInfo, QueueType, Params);
+	LogRPCError(ErrorInfo, QueueType, Params);
 #endif
-		return ErrorInfo.bShouldDrop;
-	}
+
+	return ErrorInfo.QueueProcessResult;
 }

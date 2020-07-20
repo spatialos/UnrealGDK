@@ -5,6 +5,7 @@
 #include "Engine/Classes/Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
+#include "Net/UnrealNetwork.h"
 #include "Components/CapsuleComponent.h"
 
 ATestMovementCharacter::ATestMovementCharacter()
@@ -40,4 +41,10 @@ ATestMovementCharacter::ATestMovementCharacter()
 	CameraComponent->SetRelativeRotation(CameraRotation);
 #endif
 	CameraComponent->SetupAttachment(GetCapsuleComponent());
+}
+
+void ATestMovementCharacter::UpdateCameraLocationAndRotation_Implementation(FVector NewLocation, FRotator NewRotation)
+{
+	CameraComponent->SetRelativeLocation(NewLocation);
+	CameraComponent->SetRelativeRotation(NewRotation);
 }
