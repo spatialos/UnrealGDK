@@ -461,7 +461,7 @@ RPC_SERVICE_TEST(GIVEN_client_endpoint_with_rpcs_in_view_and_authority_over_serv
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForWorld, TSharedPtr<TestData>, Data);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForWorld, TestData*, Data);
 bool FWaitForWorld::Update()
 {
 	UWorld* World = nullptr;
@@ -489,7 +489,7 @@ bool FWaitForWorld::Update()
 	return false;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSpawnActor, TSharedPtr<TestData>, Data);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSpawnActor, TestData*, Data);
 bool FSpawnActor::Update()
 {
 	FActorSpawnParameters SpawnParams;
@@ -502,14 +502,14 @@ bool FSpawnActor::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForActor, TSharedPtr<TestData>, Data);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForActor, TestData*, Data);
 bool FWaitForActor::Update()
 {
 	AActor* Actor = Data->Actor;
 	return (IsValid(Actor) && Actor->IsActorInitialized() && Actor->HasActorBegunPlay());
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FDropRPCQueueTest, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FDropRPCQueueTest, FAutomationTestBase*, Test, TestData*, Data);
 bool FDropRPCQueueTest::Update()
 {
 	if (!ensure(Test != nullptr))
@@ -577,7 +577,7 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_ov
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
+	TestData* Data =  new TestData;
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data));
