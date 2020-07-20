@@ -266,7 +266,6 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 {
 	if (OwningWorld != GetWorld()
 		|| !OwningWorld->IsServer()
-		|| OwningWorld->NetDriver == nullptr
 		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
 		|| (OwningWorld->WorldType != EWorldType::PIE
 			&& OwningWorld->WorldType != EWorldType::Game

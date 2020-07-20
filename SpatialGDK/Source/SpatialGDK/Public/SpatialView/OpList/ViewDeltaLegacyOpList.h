@@ -2,38 +2,21 @@
 
 #pragma once
 
-#include "SpatialView/OpList/AbstractOpList.h"
+#include "SpatialView/OpList/OpList.h"
+#include "SpatialView/ViewDelta.h"
 #include "Containers/Array.h"
-#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
 
-class ViewDeltaLegacyOpList : public AbstractOpList
+struct ViewDeltaLegacyOpListData: OpListData
 {
-public:
-	explicit ViewDeltaLegacyOpList(TArray<Worker_Op> OpList)
-	: OpList(MoveTemp(OpList))
-	{
-	}
-
-	virtual uint32 GetCount() const override
-	{
-		return OpList.Num();
-	}
-
-	virtual Worker_Op& operator[](uint32 Index) override
-	{
-		return OpList[Index];
-	}
-
-	virtual const Worker_Op& operator[](uint32 Index) const override
-	{
-		return OpList[Index];
-	}
-
-private:
-	TArray<Worker_Op> OpList;
+	TArray<Worker_Op> Ops;
+	// Used to store UTF8 disconnect string.
+	ViewDelta Delta;
+	TUniquePtr<char[]> DisconnectReason;
 };
 
+/** Creates an OpList from a ViewDelta. */
+OpList GetOpListFromViewDelta(ViewDelta Delta);
 }  // namespace SpatialGDK

@@ -1,0 +1,104 @@
+---
+common: &common
+  agents:
+    - "capable_of_building=gdk-for-unreal"
+    - "environment=production"
+    - "permission_set=builder"
+    - "platform=linux"  # if you need a different platform, configure this: macos|linux|windows.
+    - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-20-04-27-095849-bk10828-316979f1}"
+    - "scaler_version=2"
+    - "working_hours_time_zone=london"
+
+  retry:
+    automatic:
+        # This is designed to trap and retry failures because agent lost connection. Agent exits with -1 in this case.
+      - exit_status: -1
+        limit: 3
+
+steps:
+  # Stage 0: Tell Buildkite what you want to release.
+  - block: "Configure your release."
+    prompt: "Fill out these details for your release."
+    fields:
+      - text: "UnrealGDK component release version"
+        key: "gdk-version"
+        required: true
+        hint: "The name of component release version you want to create release candidates for. For example: `0.12.2` or `1.0.1`."
+
+      - text: "UnrealGDK source branch"
+        key: "gdk-source-branch"
+        required: true
+        hint: "The branch you want to create UnrealGDK, UnrealGDKExampleProject, UnrealGDKTestGyms, TestGymBuildKite & UnrealGDKEngineNetTest, release candidates from."
+        default: "master"
+
+      - text: "UnrealEngine source branches"
+        key: "engine-source-branches"
+        required: true
+        hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line with the primary Engine version at the top."
+        default: "4.24-SpatialOSUnrealGDK\n4.23-SpatialOSUnrealGDK"
+
+  # Stage 1: Prepare the release candidates. Prepare steps create a PR and upload metadata but do not release anything.
+  - label: "Prepare the release"
+    command: ci/prepare-release.sh
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+    concurrency: 1
+    concurrency_group: "unrealgdk-release"
+
+  - wait
+  
+# Stage 2: Builds all UnrealEngine release candidates, compresses and uploads Engine artifacts to Google Cloud Storage for use by test pipelines.
+  - label: "Build & upload all UnrealEngine release candidates"
+    command: ci/generate-unrealengine-premerge-trigger.sh | tee /dev/fd/2 | buildkite-agent pipeline upload
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+    concurrency: 1
+    concurrency_group: "unrealgdk-release"
+    #TODO: This step is actually not strictly necessary. It will be removed as part of: UNR-3662
+    skip: true
+
+ # Stage 3: Run all tests against the release candidates.
+ # Block steps require a human to click a button. This 
+  - block: "Run all tests"
+    prompt: "This action triggers all tests. Tests depend on the presence of unrealengine-premerge artifacts in Google Cloud Storage. Only click OK if the above unrealengine-premerge build(s) have passed."
+
+  - label: "Trigger all automated tests"
+    command: ci/generate-release-qa-trigger.sh | tee /dev/fd/2 | buildkite-agent pipeline upload
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+    concurrency: 1
+    concurrency_group: "unrealgdk-release"
+  
+  - wait
+
+  # Stage 4: Promote the release candiates to their respective release branches.
+
+  # Block steps require a human to click a button, this is a safety precaution.
+  - block: "Unblock the release"
+    prompt: "This action will merge all release candidates into their respective release branches."
+
+  - label: Release
+    command: ci/release.sh
+    concurrency: 1
+    concurrency_group: "unrealgdk-release"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+
+ # Stage 5: Mirror the release code from Github to Gitee
+  - block: "Unblock mirror code to gitee"
+    prompt: "This action will mirror all of the release code to gitee."
+
+  - trigger: platform-copybara
+    label: "Run platform-copybara"
+    depends_on: Release
+      build:
+        message: "Triggered from UnrealGDK Release"
+        commit: "HEAD"
+        branch: "master"
+    concurrency: 1
+    concurrency_group: "unrealgdk-release"

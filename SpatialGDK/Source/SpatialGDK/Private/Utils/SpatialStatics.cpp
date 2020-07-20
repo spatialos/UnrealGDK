@@ -70,8 +70,10 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
 	if (World != nullptr)
 	{
-		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-		return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0;
+		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+		{
+			return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0 && WorldSettings->IsMultiWorkerEnabled();
+		}
 	}
 
 	return false;
@@ -84,8 +86,9 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
+	// Offloading using the Unreal Load Balancing always load balances based on the owning actor.
 	const AActor* RootOwner = Actor;
-	while (RootOwner->bUseNetOwnerActorGroup && RootOwner->GetOwner() != nullptr)
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
 	{
 		RootOwner = RootOwner->GetOwner();
 	}
@@ -101,8 +104,20 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 		return false;
 	}
 
+	if (World->IsNetMode(NM_Client))
+	{
+		return false;
+	}
+
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
+		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
+		if (!SpatialNetDriver->IsReady())
+		{
+			UE_LOG(LogSpatial, Error, TEXT("Called IsActorGroupOwnerForClass before NotifyBeginPlay has been called is invalid. Actor class: %s"), *GetNameSafe(ActorClass));
+			return true;
+		}
+
 		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
 		{
 			return LBStrategy->CouldHaveAuthority(ActorClass);
@@ -127,12 +142,17 @@ void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText 
 
 int64 USpatialStatics::GetActorEntityId(const AActor* Actor)
 {
-	check(Actor);
+	if (Actor == nullptr)
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
 	{
 		return static_cast<int64>(SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor));
 	}
-	return 0;
+
+	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
 FString USpatialStatics::EntityIdToString(int64 EntityId)

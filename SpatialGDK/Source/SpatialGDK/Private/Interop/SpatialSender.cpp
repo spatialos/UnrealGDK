@@ -70,6 +70,12 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	RPCService = InRPCService;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
+
+	// Attempt to send RPCs that might have been queued while waiting for authority over entities this worker created.
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime > 0.0f)
+	{
+		PeriodicallyProcessOutgoingRPCs();
+	}
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
@@ -106,6 +112,18 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	}
 
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
+void USpatialSender::PeriodicallyProcessOutgoingRPCs()
+{
+	FTimerHandle Timer;
+	TimerManager->SetTimer(Timer, [WeakThis = TWeakObjectPtr<USpatialSender>(this)]()
+	{
+		if (USpatialSender* SpatialSender = WeakThis.Get())
+		{
+			SpatialSender->OutgoingRPCs.ProcessRPCs();
+		}
+	}, GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
 }
 
 void USpatialSender::SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)
@@ -507,6 +525,19 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 	}
 }
 
+void USpatialSender::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	FWorkerComponentUpdate ComponentUpdate = {};
+
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	Schema_AddBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID, 1);
+
+	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+}
+
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 #if !UE_BUILD_SHIPPING
@@ -598,7 +629,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, true };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::DropEntireQueue };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -606,13 +637,13 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 	if (Channel == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, true };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueProcessResult::DropEntireQueue };
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
@@ -626,8 +657,14 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 	if (bUseRPCRingBuffer && RPCService != nullptr)
 	{
-		SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		}
+		else
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+		}
 	}
 
 	if (Channel->bCreatingNewEntity && Function->HasAnyFunctionFlags(FUNC_NetClient))
@@ -699,13 +736,15 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 	{
-		bool bShouldDrop = true;
+		ERPCQueueProcessResult QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
-			bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, TargetObjectRef.Entity);
+			if (TargetActor->HasAuthority())
+			{
+				QueueProcessResult = ERPCQueueProcessResult::StopProcessing;
+			}
 		}
-
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, QueueProcessResult };
 	}
 
 	FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
@@ -719,10 +758,10 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 }
 
-void USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
+	const EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
 	if (Result == EPushRPCResult::Success)
 	{
@@ -739,18 +778,31 @@ void USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 	switch (Result)
 	{
 	case EPushRPCResult::QueueOverflowed:
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, function: %s"),
+			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
 	case EPushRPCResult::DropOverflowed:
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
+			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
 	case EPushRPCResult::HasAckAuthority:
-		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		UE_LOG(LogSpatialSender, Warning,
+			TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"),
+			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
 	case EPushRPCResult::NoRingBufferAuthority:
 		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
-		break;
+		UE_LOG(LogSpatialSender, Log,
+			TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"),
+			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
+	case EPushRPCResult::EntityBeingCreated:
+		UE_LOG(LogSpatialSender, Log,
+			TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be queued. Actor: %s, entity: %lld, function: %s"),
+			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return false;
+	default:
+		return true;
 	}
 }
 
@@ -761,24 +813,6 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
-
-bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity)
-{
-	bool WillHaveAuthorityOverActor = true;
-
-	if (NetDriver->VirtualWorkerTranslator != nullptr)
-	{
-		if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
-		{
-			if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
-			{
-				WillHaveAuthorityOverActor = false;
-			}
-		}
-	}
-
-	return WillHaveAuthorityOverActor;
-}
 
 void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 {
@@ -1023,11 +1057,20 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
 		if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
+			UE_LOG(LogSpatialSender, Log, TEXT("Adding tombstone to entity: %lld"), EntityId);
 			AddTombstoneToEntity(EntityId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld"), EntityId);
 		}
 	}
 	else
 	{
+		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
+		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+
+		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }

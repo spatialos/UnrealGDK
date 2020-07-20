@@ -1,6 +1,9 @@
 # Visual Studio Code user specific files
 .vscode/
 
+# IDEA user files
+.idea/
+
 # Visual Studio 2015 user specific files
 .vs/
 
@@ -80,6 +83,9 @@ Generated/
 logs/
 
 Scripts/spatialos.*.build.json
+
+# Docker needs this sln to build the Release Tool
+!ci/Tools.sln
 
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln

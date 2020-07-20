@@ -9,6 +9,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 
+#include "Utils/GDKPropertyMacros.h"
 
 namespace
 {
@@ -21,15 +22,18 @@ namespace
 	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 	{
-		const UProperty& Property = PropertyAndParent.Property;
+		const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
 
 		if (bHaveTemplate)
 		{
+#if ENGINE_MINOR_VERSION <= 24
 			const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
+#else
+			const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
+#endif
 			const bool bDisableEditOnTemplate = PropertyOwnerClass
 				&& PropertyOwnerClass->IsNative()
 				&& Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
-
 			if (bDisableEditOnTemplate)
 			{
 				return false;
@@ -47,7 +51,7 @@ namespace
 }
 
 // Rewrite of FPropertyEditorModule::CreateFloatingDetailsView to use the detail property view in a new window.
-UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow)
+UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FText& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow)
 {
 	if (!ObjectClass)
 	{
@@ -125,7 +129,7 @@ UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(c
 	}
 
 	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(FText::FromString(EditorName))
+		.Title(EditorName)
 		[
 			SNew(SBorder)
 			.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
