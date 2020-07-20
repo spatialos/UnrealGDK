@@ -1975,13 +1975,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		else
 		{
 			TargetObject->ProcessEvent(Function, Parms);
-
-			if (RPCType != ERPCType::CrossServer &&
-				RPCType != ERPCType::NetMulticast)
-			{
-				RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
-			}
-
+			RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
 			ErrorInfo.ErrorCode = ERPCResult::Success;
 		}
 	}
