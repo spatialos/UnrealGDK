@@ -27,12 +27,12 @@ enum class ERPCResult : uint8
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,
+	NoAuthority,
 
 	// Sender specific
 	NoActorChannel,
 	SpatialActorChannelNotListening,
 	NoNetConnection,
-	NoAuthority,
 	InvalidRPCType,
 
 	// Specific to packing
@@ -43,6 +43,13 @@ enum class ERPCResult : uint8
 	RPCServiceFailure,
 
 	Unknown
+};
+
+enum class ERPCQueueProcessResult : uint8_t
+{
+	ContinueProcessing,
+	StopProcessing,
+	DropEntireQueue
 };
 
 enum class ERPCQueueType : uint8_t
@@ -62,7 +69,7 @@ struct FRPCErrorInfo
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
-	bool bShouldDrop = false;
+	ERPCQueueProcessResult QueueProcessResult = ERPCQueueProcessResult::StopProcessing;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
@@ -109,7 +116,7 @@ private:
 	using RPCContainerType = TMap<ERPCType, FRPCMap>;
 
 	void ProcessRPCs(FArrayOfParams& RPCList);
-	bool ApplyFunction(FPendingRPCParams& Params);
+	ERPCQueueProcessResult ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
 	bool bAlreadyProcessingRPCs = false;

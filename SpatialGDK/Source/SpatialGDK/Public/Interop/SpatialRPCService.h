@@ -70,10 +70,12 @@ public:
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
-	// Will also store acked IDs locally.
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+
+	// Will also store acked IDs locally.
+	void IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type);
 
 	void OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId);
 	void OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId);
@@ -105,6 +107,7 @@ private:
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;
+	TMap<EntityRPCType, uint64> LastSeenRPCIds;
 
 	// Stored here for things we have authority over.
 	TMap<EntityRPCType, uint64> LastAckedRPCIds;
