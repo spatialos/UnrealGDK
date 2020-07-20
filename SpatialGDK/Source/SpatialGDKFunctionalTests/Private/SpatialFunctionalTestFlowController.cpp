@@ -32,8 +32,7 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray< FL
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bReadyToRegisterWithTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bIsReadyToRunTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, OwningTest);
-	DOREPLIFETIME(ASpatialFunctionalTestFlowController, ControllerType);
-	DOREPLIFETIME(ASpatialFunctionalTestFlowController, ControllerInstanceId);
+	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
 
 void ASpatialFunctionalTestFlowController::OnAuthorityGained()
@@ -50,9 +49,9 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	}
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerSetControllerInstanceId_Implementation(int NewControllerInstanceId)
+void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(int NewWorkerId)
 {
-	ControllerInstanceId = NewControllerInstanceId;
+	WorkerDefinition.Id = NewWorkerId;
 }
 
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
@@ -66,7 +65,7 @@ void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 
 	if (IsLocalController())
 	{
-		if (ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 		{
 			bIsReadyToRunTest = true;
 		}
@@ -84,7 +83,7 @@ void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementatio
 
 void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(int StepIndex)
 {
-	if (ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		StartStepInternal(StepIndex);
 	}
@@ -99,7 +98,7 @@ void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 	ensureMsgf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or it's logic is calling FinishStep multiple times"));
 	if (CurrentStep.bIsRunning)
 	{
-		if (ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 		{
 			CrossServerNotifyStepFinished();
 		}
@@ -139,7 +138,7 @@ void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResul
 {
 	StopStepInternal();
 
-	if (ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		ServerNotifyFinishTestInternal(TestResult, Message);
 	}
@@ -151,7 +150,7 @@ void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResul
 
 const FString ASpatialFunctionalTestFlowController::GetDisplayName()
 {
-	return FString::Printf(TEXT("[%s:%d]"), (ControllerType == ESpatialFunctionalTestFlowControllerType::Server ? TEXT("Server") : TEXT("Client")), ControllerInstanceId);
+	return FString::Printf(TEXT("[%s:%d]"), (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server ? TEXT("Server") : TEXT("Client")), WorkerDefinition.Id);
 }
 
 void ASpatialFunctionalTestFlowController::OnTestFinished()
