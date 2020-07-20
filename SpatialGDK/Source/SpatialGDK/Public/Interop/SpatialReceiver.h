@@ -24,8 +24,6 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-
-
 #include "SpatialReceiver.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
