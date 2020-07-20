@@ -5,6 +5,7 @@
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/LayerInfo.h"
+#include "Utils/SpatialStatics.h"
 
 #include "GameFramework/WorldSettings.h"
 #include "Templates/SubclassOf.h"
@@ -22,7 +23,7 @@ public:
 
 	bool IsMultiWorkerEnabled() const
 	{
-		if (*MultiWorkerSettingsClass == nullptr)
+		if (!USpatialStatics::IsSpatialNetworkingEnabled())
 		{
 			return false;
 		}

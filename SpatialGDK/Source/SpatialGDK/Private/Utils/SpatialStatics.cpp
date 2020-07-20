@@ -67,6 +67,18 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
+bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UWorld* World)
+{
+	if (World == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
+		return false;
+	}
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	return WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
+}
+
 bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
 	if (World != nullptr)
