@@ -186,6 +186,8 @@ public:
 	// view of whether the SpatialNetDriver is ready to assume normal operations.
 	bool IsReady() const;
 
+	SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
+
 private:
 
 	TUniquePtr<SpatialDispatcher> Dispatcher;
