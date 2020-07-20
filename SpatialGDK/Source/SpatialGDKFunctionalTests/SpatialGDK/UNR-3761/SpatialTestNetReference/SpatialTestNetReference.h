@@ -30,4 +30,6 @@ public:
 	TPair<AController*, APawn*> OriginalPawn;
 
 	float PreviousPositionUpdateFrequency;
+
+	float TimerHelper = 0.0f;
 };
