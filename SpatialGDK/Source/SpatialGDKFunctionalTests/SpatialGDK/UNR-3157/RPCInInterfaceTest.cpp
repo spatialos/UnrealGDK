@@ -23,10 +23,10 @@ void ARPCInInterfaceTest::BeginPlay()
 	Super::BeginPlay();
 
 	{	// Step 1 - Create actor
-		AddServerStep(TEXT("ServerCreateActor"), 1, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 
-			ASpatialFunctionalTestFlowController* Client1FlowController = Test->GetFlowController(ESpatialFunctionalTestFlowControllerType::Client, 1);
+			ASpatialFunctionalTestFlowController* Client1FlowController = Test->GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 			Test->TestActor = Test->GetWorld()->SpawnActor<ARPCInInterfaceActor>();
 			Test->AssertIsValid(Test->TestActor, "Actor exists", Test);
@@ -40,7 +40,7 @@ void ARPCInInterfaceTest::BeginPlay()
 			});
 	}
 	{ // Step 2 - Make sure client has ownership of Actor
-		AddClientStep(TEXT("ClientCheckOwnership"), 1, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("ClientCheckOwnership"), FWorkerDefinition::Client(1), nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 			if (IsValid(Test->TestActor) && Test->TestActor->GetOwner() == Test->GetLocalFlowController()->GetOwner())
 			{
@@ -49,7 +49,7 @@ void ARPCInInterfaceTest::BeginPlay()
 			});
 	}
 	{	// Step 3 - Call client RPC on interface
-		AddServerStep(TEXT("ServerCallRPC"), 1, [](ASpatialFunctionalTest* NetTest) -> bool {
+		AddStep(TEXT("ServerCallRPC"), FWorkerDefinition::Server(1), [](ASpatialFunctionalTest* NetTest) -> bool {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				return IsValid(Test->TestActor);
 			}, [](ASpatialFunctionalTest* NetTest) {
@@ -59,7 +59,7 @@ void ARPCInInterfaceTest::BeginPlay()
 			});
 	}
 	{	// Step 4 - Check RPC was received on client
-		AddClientStep(TEXT("ClientCheckRPC"), 0, [](ASpatialFunctionalTest* NetTest) -> bool {
+		AddStep(TEXT("ClientCheckRPC"), FWorkerDefinition::AllClients, [](ASpatialFunctionalTest* NetTest) -> bool {
 				ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				return IsValid(Test->TestActor);
 			}, 
