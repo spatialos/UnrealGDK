@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "EngineClasses/SpatialMultiWorkerSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "TestLayeredLBStrategy.h"
 #include "Utils/LayerInfo.h"
 

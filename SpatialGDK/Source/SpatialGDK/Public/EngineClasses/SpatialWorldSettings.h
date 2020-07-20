@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "EngineClasses/SpatialMultiWorkerSettings.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/LayerInfo.h"
 

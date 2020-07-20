@@ -4,7 +4,6 @@
 
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKSettings.h"
-#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 #include "Editor.h"
 #include "DesktopPlatformModule.h"

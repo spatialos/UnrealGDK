@@ -46,13 +46,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
+#if WITH_EDITOR
 private:
+	void ValidateFirstLayerIsDefaultLayer();
 	void ValidateNonEmptyWorkerLayers();
 	void ValidateSomeLayerHasActorClass();
 	void ValidateNoActorClassesDuplicatedAmongLayers();
 	void ValidateAllLayersHaveUniqueNonemptyNames();
 	void ValidateAllLayersHaveLoadBalancingStrategy();
 	void ValidateLockingPolicyIsSet();
+#endif
 };
 
 UCLASS(Blueprintable, HideDropdown)

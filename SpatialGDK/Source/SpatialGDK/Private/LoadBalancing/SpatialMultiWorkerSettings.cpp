@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EngineClasses/SpatialMultiWorkerSettings.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -20,6 +20,7 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 
 	if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, WorkerLayers))
 	{
+		ValidateFirstLayerIsDefaultLayer();
 		ValidateNonEmptyWorkerLayers();
 		ValidateSomeLayerHasActorClass();
 		ValidateNoActorClassesDuplicatedAmongLayers();
@@ -44,6 +45,13 @@ uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() cons
 	}
 
 	return WorkerCount;
+}
+
+#if WITH_EDITOR
+void UAbstractSpatialMultiWorkerSettings::ValidateFirstLayerIsDefaultLayer()
+{
+	// We currently rely on this for rendering debug information.
+	WorkerLayers[0].Name = SpatialConstants::DefaultLayer;
 }
 
 void UAbstractSpatialMultiWorkerSettings::ValidateNonEmptyWorkerLayers()
@@ -98,7 +106,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongL
 
 	if (DuplicatedActorClasses.Num() > 0)
 	{
-		FString DuplicatedActorsList = "";
+		FString DuplicatedActorsList = TEXT("");
 		for (const TSoftClassPtr<AActor> DuplicatedClass : DuplicatedActorClasses)
 		{
 			DuplicatedActorsList.Append(FString::Printf(TEXT("%s, "), *DuplicatedClass.GetAssetName()));
@@ -116,9 +124,6 @@ void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveUniqueNonemptyNam
 
 	uint32 LayerCount = 1;
 
-	// We currently rely on this for rendering debug information.
-	WorkerLayers[0].Name = SpatialConstants::DefaultLayer;
-
 	for (FLayerInfo& Layer : WorkerLayers)
 	{
 		const FName FallbackLayerName = *FString::Printf(TEXT("Layer %d"), LayerCount);
@@ -128,10 +133,10 @@ void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveUniqueNonemptyNam
 			Layer.Name = FallbackLayerName;
 		}
 
-        if (FoundLayerNames.Contains(Layer.Name))
-        {
+		if (FoundLayerNames.Contains(Layer.Name))
+		{
 			bSomeLayerNameWasChanged |= true;
-        }
+		}
 
 		FoundLayerNames.Add(Layer.Name);
 		LayerCount++;
@@ -176,3 +181,4 @@ void UAbstractSpatialMultiWorkerSettings::ValidateLockingPolicyIsSet()
 				"Resetting to default policy. File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }
+#endif
