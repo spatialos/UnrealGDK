@@ -154,7 +154,7 @@ public:
 
 	/** Seconds to wait before attempting to reprocess queued incoming RPCs */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Attempting To Reprocess Queued Incoming RPCs"))
-	float QueuedIncomingRPCFlushTime;
+	float QueuedIncomingRPCRetryTime;
 
 	/** Seconds to wait before retying all queued outgoing RPCs. If 0 there will not be retried on a timer. */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
