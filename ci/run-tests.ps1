@@ -44,11 +44,10 @@ if ($run_with_spatial) {
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=CookAndGenerateSchema", # Run the commandlet
-        "-map=$test_repo_map",
-        "-targetplatform=LinuxServer",
-        "-cooksinglepackage"
+        "-cookall", # Make sure it runs for all maps (and other things)
+        "-targetplatform=LinuxServer"
     )
-
+    
     Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-NoShaderCompile", # Prevent shader compilation
@@ -57,13 +56,12 @@ if ($run_with_spatial) {
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=GenerateSnapshot", # Run the commandlet
-        "-MapPaths=`"$test_repo_path`"" # Which maps to run the commandlet for
+        "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
 
-    $snapshot_path = $test_repo_map.Substring($test_repo_map.LastIndexOf("/")+1)
     # Create the default snapshot
     Copy-Item -Force `
-        -Path "$test_repo_path\spatial\snapshots\$snapshot_path.snapshot" `
+        -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
         -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
 }
 
