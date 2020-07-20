@@ -35,20 +35,15 @@ bool CanProcessActor(const AActor* Actor)
 		return false;
 	}
 
-	if (!USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
-	{
-		return false;
-	}
-
 	return true;
 }
 } // anonymous namespace
 
-ActorLockToken ULockingStatics::AcquireLock(AActor* Actor)
+FLockingToken ULockingStatics::AcquireLock(AActor* Actor)
 {
-	if (!CanProcessActor(Actor))
+	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
 	{
-		return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;
+		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
 	}
 
 	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
@@ -61,7 +56,7 @@ ActorLockToken ULockingStatics::AcquireLock(AActor* Actor)
 	UE_LOG(LogLocking, Verbose, TEXT("LockingComponent called AcquireLock. Actor: %s. Token: %lld. New lock count: %d"),
 		*Actor->GetName(), LockToken, NewLockCount);
 
-	return LockToken;
+	return FLockingToken{ LockToken };
 }
 
 bool ULockingStatics::IsLocked(const AActor* Actor)
@@ -71,21 +66,25 @@ bool ULockingStatics::IsLocked(const AActor* Actor)
 		return false;
 	}
 
-	const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
+	// If multi worker is disabled, we want the server to behave as if it always has authority, and so we say the Actor is locked.
+	if (!USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	{
+		return true;
+	}
 
-	return NetDriver->LockingPolicy->IsLocked(Actor);
+	return Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy->IsLocked(Actor);
 }
 
-void ULockingStatics::ReleaseLock(const AActor* Actor, ActorLockToken LockToken)
+void ULockingStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 {
-	if (!CanProcessActor(Actor))
+	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
 	{
 		return;
 	}
 
 	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
-	LockingPolicy->ReleaseLock(LockToken);
+	LockingPolicy->ReleaseLock(LockToken.Token);
 
-    UE_LOG(LogLocking, Verbose, TEXT("LockingComponent called ReleaseLock. Actor: %s. Token: %lld. Resulting lock count: %d"),
-        *Actor->GetName(), LockToken, LockingPolicy->GetActorLockCount(Actor));
+	UE_LOG(LogLocking, Verbose, TEXT("LockingComponent called ReleaseLock. Actor: %s. Token: %lld. Resulting lock count: %d"),
+		*Actor->GetName(), LockToken.Token, LockingPolicy->GetActorLockCount(Actor));
 }

@@ -137,7 +137,7 @@ bool UOwnershipLockingPolicy::IsLockedHierarchyRoot(const AActor* Actor) const
 
 bool UOwnershipLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier)
 {
-	ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
+	const ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
 	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 	{
 		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token"));
@@ -156,8 +156,8 @@ bool UOwnershipLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, co
 		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %s."), *DelegateLockIdentifier);
 		return false;
 	}
-	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
-	bool bReleaseSucceeded = ReleaseLock(LockToken);
+	const ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
+	const bool bReleaseSucceeded = ReleaseLock(LockToken);
 	return bReleaseSucceeded;
 }
 
@@ -201,7 +201,7 @@ void UOwnershipLockingPolicy::OnExplicitlyLockedActorDeleted(AActor* DestroyedAc
 	}
 
 	// Delete Actor from local mapping.
-	MigrationLockElement ActorLockingState = ActorToLockingState.FindAndRemoveChecked(DestroyedActor);
+	const MigrationLockElement ActorLockingState = ActorToLockingState.FindAndRemoveChecked(DestroyedActor);
 
 	// Update ownership path Actor mapping to remove this Actor.
 	RemoveOwnershipHierarchyRootInformation(ActorLockingState.HierarchyRoot, DestroyedActor);
