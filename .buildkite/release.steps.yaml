@@ -95,6 +95,7 @@ steps:
 
   - trigger: platform-copybara
     label: "Run platform-copybara"
+    depends_on: Release
       build:
         message: "Triggered from UnrealGDK Release"
         commit: "HEAD"
