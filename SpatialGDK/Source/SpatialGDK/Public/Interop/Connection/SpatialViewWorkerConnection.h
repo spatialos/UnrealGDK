@@ -1,27 +1,27 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
-
-#include "Interop/Connection/OutgoingMessages.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialCommonTypes.h"
-#include "Utils/SpatialLatencyTracer.h"
+#include "SpatialView/ViewCoordinator.h"
+#include "SpatialView/OpList/OpList.h"
 
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
+#include "SpatialViewWorkerConnection.generated.h"
 
-// The SpatialOSWorkerConnectionSpy is intended to be a very minimal implementation of a WorkerConnection which just records then swallows
-// any data sent through it. It is intended to be extended with methods to query for what data has been sent through it.
-//
-// Only a few methods have meaningful implementations. You are intended to extend the implementations whenever needed
-// for testing code which uses the WorkerConnection.
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialViewWorkerConnection, Log, All);
 
-class SpatialOSWorkerConnectionSpy : public SpatialOSWorkerInterface
+UCLASS()
+class SPATIALGDK_API USpatialViewWorkerConnection : public USpatialWorkerConnection
 {
-public:
-	SpatialOSWorkerConnectionSpy();
+	GENERATED_BODY()
 
+public:
+	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) override;
+	virtual void FinishDestroy() override;
+	virtual void DestroyConnection() override;
+
+	// Worker Connection Interface
 	virtual TArray<SpatialGDK::OpList> GetOpList() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId) override;
@@ -37,14 +37,12 @@ public:
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
-	// The following methods are used to query for state in tests.
-	const Worker_EntityQuery* GetLastEntityQuery();
-	void ClearLastEntityQuery();
+	virtual PhysicalWorkerName GetWorkerId() const override;
+	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
-	Worker_RequestId GetLastRequestId();
-
+	virtual void ProcessOutgoingMessages() override;
+	virtual void MaybeFlush() override;
+	virtual void Flush() override;
 private:
-	Worker_RequestId NextRequestId;
-
-	const Worker_EntityQuery* LastEntityQuery;
+	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
 };

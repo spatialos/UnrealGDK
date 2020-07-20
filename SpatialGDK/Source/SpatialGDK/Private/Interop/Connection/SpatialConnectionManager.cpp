@@ -2,15 +2,17 @@
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 
+#include "SpatialGDKSettings.h"
+#include "Interop/Connection/LegacySpatialWorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/SpatialViewWorkerConnection.h"
+#include "Utils/ErrorCodeRemapping.h"
+
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
-
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SpatialGDKSettings.h"
-#include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
@@ -376,13 +378,21 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+				if (Settings->bUseSpatialView)
+				{
+					SpatialConnectionManager->WorkerConnection = NewObject<USpatialViewWorkerConnection>();
+				}
+				else
+				{
+					SpatialConnectionManager->WorkerConnection = NewObject<ULegacySpatialWorkerConnection>();
+				}
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
 			{
-				uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
 
 				// TODO: Try to reconnect - UNR-576
