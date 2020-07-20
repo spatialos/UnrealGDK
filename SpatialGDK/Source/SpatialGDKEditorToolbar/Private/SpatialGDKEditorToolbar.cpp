@@ -25,6 +25,7 @@
 #include "Misc/MessageDialog.h"
 #include "Sound/SoundBase.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
@@ -520,11 +521,10 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateBetterEditableTextWidg
 		.FillWidth(1.f)
 		.VAlign(VAlign_Bottom)
 		[
-			SNew(SEditableText)
+			SNew(SEditableTextBox)
 			.OnTextCommitted_Static(OnTextCommitted)
 			.Text(Text)
 			.SelectAllTextWhenFocused(true)
-			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Static(IsEnabled)
 			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
 		];
