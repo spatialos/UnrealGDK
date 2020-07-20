@@ -28,6 +28,7 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
@@ -1702,7 +1703,6 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		{
 			ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 		}
-
 	}
 }
 
@@ -1927,38 +1927,73 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	}
 }
 
-ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
+FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams)
 {
-	ERPCResult Result = ERPCResult::Unknown;
+	FRPCErrorInfo ErrorInfo = { TargetObject, Function, ERPCResult::UnresolvedParameters };
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	TSet<FUnrealObjectRef> MappedRefs;
-	RPCPayload PayloadCopy = Payload;
+	RPCPayload PayloadCopy = PendingRPCParams.Payload;
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs, UnresolvedRefs);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
-	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
+	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
+	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
+
+	if (UnresolvedRefCount == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
 	{
-		TargetObject->ProcessEvent(Function, Parms);
-		Result = ERPCResult::Success;
-	}
-	else
-	{
-		Result = ERPCResult::UnresolvedParameters;
+		if (UnresolvedRefCount > 0 &&
+			!SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type) &&
+			(Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
+		{
+			const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref)
+			{
+				return Ref.ToString();
+			});
+
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing.  Owner name: %s"), *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued, *GetNameSafe(TargetObject->GetOuter()));
+		}
+
+		// Get the RPC target Actor.
+		AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
+		ERPCType RPCType = PendingRPCParams.Type;
+
+		if (Actor->Role == ROLE_SimulatedProxy &&
+			(RPCType == ERPCType::ServerReliable ||
+			 RPCType == ERPCType::ServerUnreliable))
+		{
+			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
+			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
+		}
+		else
+		{
+			TargetObject->ProcessEvent(Function, Parms);
+
+			if (RPCType != ERPCType::CrossServer &&
+				RPCType != ERPCType::NetMulticast)
+			{
+				RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
+			}
+
+			ErrorInfo.ErrorCode = ERPCResult::Success;
+		}
 	}
 
 	// Destroy the parameters.
 	// warning: highly dependent on UObject::ProcessEvent freeing of parms!
-	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-	return Result;
+
+	return ErrorInfo;
 }
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
@@ -1968,7 +2003,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -1976,23 +2011,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo };
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 
-	bool bApplyWithUnresolvedRefs = false;
-	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
-	{
-		if ((Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
-		}
-		bApplyWithUnresolvedRefs = true;
-	}
-
-	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
-
-	return FRPCErrorInfo{ TargetObject, Function, Result };
+	return ApplyRPCInternal(TargetObject, Function, Params);
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
@@ -2287,7 +2309,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		}
 
 		bool bSomeObjectsWereMapped = false;
-		TArray<UProperty*> RepNotifies;
+		TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
@@ -2310,7 +2332,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	}
 }
 
-void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped)
+void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property)*>& RepNotifies, bool& bOutSomeObjectsWereMapped)
 {
 	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
 	{
@@ -2325,7 +2347,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		FObjectReferences& ObjectReferences = It.Value();
 
-		UProperty* Property = ObjectReferences.Property;
+		GDK_PROPERTY(Property)* Property = ObjectReferences.Property;
 
 		// ParentIndex is -1 for handover properties
 		bool bIsHandover = ObjectReferences.ParentIndex == -1;
@@ -2335,7 +2357,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (ObjectReferences.Array)
 		{
-			UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property);
+			GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property);
 			check(ArrayProperty != nullptr);
 
 			if (!bIsHandover)
@@ -2395,7 +2417,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (ObjectReferences.bSingleProp)
 			{
-				UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property);
+				GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property);
 				check(ObjectProperty);
 
 				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
@@ -2407,8 +2429,8 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				TSet<FUnrealObjectRef> NewUnresolvedRefs;
 				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewMappedRefs, NewUnresolvedRefs);
 
-				check(Property->IsA<UArrayProperty>());
-				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(Cast<UArrayProperty>(Property));
+				check(Property->IsA<GDK_PROPERTY(ArrayProperty)>());
+				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property));
 
 				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent->ArrayIndex, Parent->Property, NetDeltaStruct);
 
@@ -2419,10 +2441,10 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				TSet<FUnrealObjectRef> NewMappedRefs;
 				TSet<FUnrealObjectRef> NewUnresolvedRefs;
 				FSpatialNetBitReader BitReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewMappedRefs, NewUnresolvedRefs);
-				check(Property->IsA<UStructProperty>());
+				check(Property->IsA<GDK_PROPERTY(StructProperty)>());
 
 				bool bHasUnresolved = false;
-				ReadStructProperty(BitReader, Cast<UStructProperty>(Property), NetDriver, Data + AbsOffset, bHasUnresolved);
+				ReadStructProperty(BitReader, GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property), NetDriver, Data + AbsOffset, bHasUnresolved);
 
 				ObjectReferences.MappedRefs.Append(NewMappedRefs);
 			}
