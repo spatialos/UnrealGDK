@@ -577,7 +577,7 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_ov
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
+	TSharedPtr<TestData> Data = MakeShared<TestData>();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data));
