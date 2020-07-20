@@ -7,9 +7,6 @@
   * [Examples: improving your release notes](#examples-improving-your-release-notes)
   * [Examples of good release notes](#examples-of-good-release-notes)
 * [Adding release notes](#adding-release-notes)
-  * [About the release notes tool](#about-the-release-notes-tool)
-  * [How to...](#how-to)
-  * [Directory structure and relevant files](#directory-structure-and-relevant-files)
 
 Release notes are a chance for us to show off the new stuff we've done, and also demonstrate
 that we're actively fixing bugs and improving things.

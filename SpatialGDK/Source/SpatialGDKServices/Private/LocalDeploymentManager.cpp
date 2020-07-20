@@ -8,7 +8,6 @@
 #include "Editor.h"
 #include "FileCache.h"
 #include "GeneralProjectSettings.h"
-#include "Interop/Connection/EditorWorkerController.h"
 #include "Internationalization/Regex.h"
 #include "Internationalization/Internationalization.h"
 #include "IPAddress.h"

@@ -51,7 +51,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 	Super::BeginPlay();
 
 	// Universal setup step to create the TriggerBox and to set the helper variable
-	AddUniversalStep(TEXT("UniversalSetupStep"), nullptr, [this](ASpatialFunctionalTest* NetTest)
+	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			bCharacterReachedDestination = false;
 
@@ -70,11 +70,11 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		});
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
-	AddServerStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), 1, nullptr, [this](ASpatialFunctionalTest* NetTest)
+	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
-				if (FlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Server)
+				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 				{
 					continue;
 				}
@@ -84,7 +84,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 				checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
 
-				int FlowControllerId = FlowController->ControllerInstanceId;
+				int FlowControllerId = FlowController->WorkerDefinition.Id;
 
 				if (FlowControllerId == 1)
 				{
@@ -100,7 +100,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		});
 
 	// Client 1 moves his character and asserts that it reached the Destination locally.
-	AddClientStep(TEXT("SpatialTestCharacterMovementClient1Move"), 1,
+	AddStep(TEXT("SpatialTestCharacterMovementClient1Move"), FWorkerDefinition::Client(1),
 		[](ASpatialFunctionalTest* NetTest) -> bool
 		{
 			AController* PlayerController = Cast<AController>(NetTest->GetLocalFlowController()->GetOwner());
@@ -125,7 +125,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		}, 3.0f);
 
 	// Server asserts that the character of client 1 has reached the Destination.
-	AddServerStep(TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), 1, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+	AddStep(TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			if (bCharacterReachedDestination)
 			{
@@ -135,7 +135,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 		}, 1.0f);
 
 	// Client 2 asserts that the character of client 1 has reached the Destination.
-	AddClientStep(TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), 2, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+	AddStep(TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), FWorkerDefinition::Client(2), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			if (bCharacterReachedDestination)
 			{
