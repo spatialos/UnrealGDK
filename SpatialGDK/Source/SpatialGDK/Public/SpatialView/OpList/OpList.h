@@ -14,10 +14,6 @@ struct OpListData {
 
 struct OpList
 {
-	OpList() = default;
-	OpList(OpList&&) = default;
-	OpList& operator=(OpList&&) = default;
-
 	Worker_Op* Ops;
 	uint32 Count;
 	TUniquePtr<OpListData> Storage;
