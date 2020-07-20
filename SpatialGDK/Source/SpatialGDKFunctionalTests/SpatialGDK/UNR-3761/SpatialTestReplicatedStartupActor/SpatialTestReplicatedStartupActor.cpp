@@ -44,7 +44,7 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddStep(TEXT("SpatialTestReplicatedStartupActorClientsSetup"),FWorkerDefinition::AllClients, [this](ASpatialFunctionalTest* NetTest)
+	AddStep(TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::AllClients, [this](ASpatialFunctionalTest* NetTest)
 		{
 			// Make sure that the PlayerController has been set before trying to do anything with it, this might prevent Null Pointer exceptions being thrown when UE ticks at a relatively slow rate
 			AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
