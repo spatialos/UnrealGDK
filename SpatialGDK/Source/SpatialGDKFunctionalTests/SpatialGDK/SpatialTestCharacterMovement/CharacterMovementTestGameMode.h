@@ -9,9 +9,8 @@
 /**
  * GameMode used for the SpatialTestCharacterMovementMap
  */
-UCLASS(Blueprintable)
+UCLASS()
 class ACharacterMovementTestGameMode : public AGameModeBase
 {
 	GENERATED_UCLASS_BODY()
-	
 };
