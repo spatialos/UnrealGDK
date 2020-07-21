@@ -15,6 +15,6 @@ class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestBlueprintLibrary : pub
 
 public:
 
-	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent"))
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", NativeMakeFunc))
 	static FSpatialFunctionalTestStepDefinition MakeStepDefinition(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, const float StepTimeLimit);
 };
