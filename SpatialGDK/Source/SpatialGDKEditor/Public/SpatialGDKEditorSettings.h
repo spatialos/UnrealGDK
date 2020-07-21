@@ -328,6 +328,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on stop play in editor"))
+	bool bStopLocalDeploymentOnEndPIE;
+
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on exit"))
 	bool bStopSpatialOnExit;
@@ -424,10 +427,17 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
 
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
+	/** Whether to start local server worker when connecting to cloud deployment. If selected, make sure that the cloud deployment you want to connect to is not automatically launching Server-workers. (That your workers have "manual_connection_only" enabled) */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
+	bool bConnectServerToCloud;
 
+	/** Port on which the receptionist proxy will be available. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
+	int32 LocalReceptionistPort;
+
+	/** Network address to bind the receptionist proxy to. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Listening Address"))
+	FString ListeningAddress;
 private:
 	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
@@ -576,7 +586,7 @@ public:
 	{
 		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
-			return FText::FromString(TEXT("Invalid"));
+			return NSLOCTEXT("SpatialGDKEditorSettings", "InvalidRegion", "Invalid");
 		}
 
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
@@ -612,7 +622,7 @@ public:
 	{
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
 		{
-			return FText::FromString(TEXT("Invalid"));
+			return NSLOCTEXT("SpatialGDKEditorSettings", "InvalidRegion", "Invalid");
 		}
 
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
@@ -672,6 +682,12 @@ public:
 		return SimulatedPlayerDeploymentName;
 	}
 
+	void SetConnectServerToCloud(bool bIsEnabled);
+	FORCEINLINE bool IsConnectServerToCloudEnabled() const
+	{
+		return bConnectServerToCloud;
+	}
+
 	void SetSimulatedPlayerCluster(const FString& NewCluster);
 	FORCEINLINE FString GetSimulatedPlayerCluster() const
 	{
@@ -697,8 +713,8 @@ public:
 	bool IsDeploymentConfigurationValid() const;
 
 	void SetDevelopmentAuthenticationToken(const FString& Token);
-	void SetDevelopmentDeploymentToConnect(const FString& Deployment);
 
+	static bool IsValidIP(const FString& IP);
 	void SetExposedRuntimeIP(const FString& RuntimeIP);
 
 	void SetSpatialOSNetFlowType(ESpatialOSNetFlow::Type NetFlowType);

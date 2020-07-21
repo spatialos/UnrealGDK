@@ -170,7 +170,7 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 		IUATHelperModule::Get().CreateUatTask(UATCommandLine,
 			FText::FromString(PlatformName),
 			LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
-			LOCTEXT("CookAndGenerateSchemaTaskName", "Generating Schema"),
+			LOCTEXT("CookAndGenerateSchemaTaskShortName", "Generating Schema"),
 			FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")));
 
 		return true;
@@ -268,7 +268,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 		return true;
 	});
 
-	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::FromString(FString::Printf(TEXT("Loading %d Assets before generating schema"), FoundAssets.Num())));
+	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::Format(LOCTEXT("LoadingAssets_Text", "Loading {0} Assets before generating schema"), FoundAssets.Num()));
 
 	for (const FAssetData& Data : FoundAssets)
 	{
@@ -276,7 +276,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 		{
 			return false;
 		}
-		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
+		Progress.EnterProgressFrame(1, FText::Format(LOCTEXT("LoadingSingleAsset_Text", "Loading {0}"), FText::FromName(Data.AssetName)));
 
 		const FString* GeneratedClassPathPtr = nullptr;
 

@@ -5,7 +5,9 @@
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+
 #include "SpatialConstants.h"
+#include "Utils/GDKPropertyMacros.h"
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
@@ -17,6 +19,8 @@
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
+
+#define LOCTEXT_NAMESPACE "SpatialGDKSettings"
 
 namespace
 {
@@ -122,11 +126,6 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"), TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
-
-#if WITH_EDITOR
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->DefaultWorkerType = SpatialConstants::DefaultServerWorkerType;
-#endif
 }
 
 #if WITH_EDITOR
@@ -142,8 +141,8 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
-				"Failing to do will result in unintended behavior or crashes!"))));
+			LOCTEXT("RegenerateSchemaDynamicSubobjects_Prompt", "You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
+				"Failing to do will result in unintended behavior or crashes!"));
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServicesRegion))
 	{
@@ -151,7 +150,7 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	}
 }
 
-bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
+bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property)* InProperty) const
 {
 	if (!InProperty)
 	{
@@ -219,12 +218,22 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 	return RPCQueueWarningDefaultTimeout;
 }
 
+bool USpatialGDKSettings::ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const
+{
+	if (const bool* LogSetting = RPCTypeAllowUnresolvedParamMap.Find(Type))
+	{
+		return *LogSetting;
+	}
+
+	return false;
+}
+
 void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 {
 	ServicesRegion = NewRegion;
 
 	// Save in default config so this applies for other platforms e.g. Linux, Android.
-	UProperty* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	GDK_PROPERTY(Property)* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
 	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
 }
 
@@ -232,3 +241,5 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+#undef LOCTEXT_NAMESPACE

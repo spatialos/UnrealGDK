@@ -1,17 +1,22 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewCoordinator.h"
+#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 namespace SpatialGDK
 {
 
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
-: ConnectionHandler(MoveTemp(ConnectionHandler))
+	: ConnectionHandler(MoveTemp(ConnectionHandler)), NextRequestId(1)
 {
-	Delta = View.GenerateViewDelta();
 }
 
-void ViewCoordinator::Advance()
+ViewCoordinator::~ViewCoordinator()
+{
+	FlushMessagesToSend();
+}
+
+OpList ViewCoordinator::Advance()
 {
 	ConnectionHandler->Advance();
 	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
@@ -19,7 +24,7 @@ void ViewCoordinator::Advance()
 	{
 		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
 	}
-	Delta = View.GenerateViewDelta();
+	return GetOpListFromViewDelta(View.GenerateViewDelta());
 }
 
 void ViewCoordinator::FlushMessagesToSend()
@@ -42,49 +47,66 @@ void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_Compo
 	View.SendRemoveComponent(EntityId, ComponentId);
 }
 
-const TArray<CreateEntityResponse>& ViewCoordinator::GetCreateEntityResponses() const
+Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis)
 {
-	return Delta->GetCreateEntityResponses();
+	View.SendReserveEntityIdsRequest({NextRequestId, NumberOfEntityIds, TimeoutMillis});
+	return NextRequestId++;
 }
 
-const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityGained() const
+Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
+	TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis)
 {
-	return Delta->GetAuthorityGained();
+	View.SendCreateEntityRequest({NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis});
+	return NextRequestId++;
 }
 
-const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityLost() const
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis)
 {
-	return Delta->GetAuthorityLost();
+	View.SendDeleteEntityRequest({NextRequestId, EntityId, TimeoutMillis});
+	return NextRequestId++;
 }
 
-const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityLostTemporarily() const
+Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis)
 {
-	return Delta->GetAuthorityLostTemporarily();
+	View.SendEntityQueryRequest({NextRequestId, MoveTemp(Query), TimeoutMillis});
+	return NextRequestId++;
 }
 
-const TArray<EntityComponentData>& ViewCoordinator::GetComponentsAdded() const
+Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
+	TOptional<uint32> TimeoutMillis)
 {
-	return Delta->GetComponentsAdded();
+	View.SendEntityCommandRequest({EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis});
+	return NextRequestId++;
 }
 
-const TArray<EntityComponentId>& ViewCoordinator::GetComponentsRemoved() const
+void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response)
 {
-	return Delta->GetComponentsRemoved();
+	View.SendEntityCommandResponse({RequestId, MoveTemp(Response)});
 }
 
-const TArray<EntityComponentUpdate>& ViewCoordinator::GetUpdates() const
+void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message)
 {
-	return Delta->GetUpdates();
+	View.SendEntityCommandFailure({RequestId, MoveTemp(Message)});
 }
 
-const TArray<EntityComponentCompleteUpdate>& ViewCoordinator::GetCompleteUpdates() const
+void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 {
-	return Delta->GetCompleteUpdates();
+	View.SendMetrics(MoveTemp(Metrics));
 }
 
-TUniquePtr<AbstractOpList> ViewCoordinator::GenerateLegacyOpList() const
+void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
 {
-	return Delta->GenerateLegacyOpList();
+	View.SendLogMessage({Level, LoggerName, MoveTemp(Message)});
+}
+
+const FString& ViewCoordinator::GetWorkerId() const
+{
+	return ConnectionHandler->GetWorkerId();
+}
+
+const TArray<FString>& ViewCoordinator::GetWorkerAttributes() const
+{
+	return ConnectionHandler->GetWorkerAttributes();
 }
 
 }  // namespace SpatialGDK

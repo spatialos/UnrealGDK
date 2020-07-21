@@ -95,16 +95,6 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 } // anonymous namespace
 
-void SetLevelEditorPlaySettingsWorkerType(const FWorkerTypeLaunchSection& InWorker)
-{
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-
-	PlayInSettings->WorkerTypesToLaunch.Empty(1);
-
-	// TODO: Engine PR to remove PlayInSettings WorkerType map.
-	PlayInSettings->WorkerTypesToLaunch.Add(SpatialConstants::DefaultServerWorkerType, InWorker.NumEditorInstances);
-}
-
 uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
@@ -115,7 +105,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	if (WorldSettings->bEnableMultiWorker == false)
+	if (WorldSettings->IsMultiWorkerEnabled() == false)
 	{
 		return 1;
 	}
@@ -172,7 +162,7 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 
-	if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (WorldSettings == nullptr || !WorldSettings->IsMultiWorkerEnabled())
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No SpatialWorldSettings on map %s"), *World.GetMapName());
 		return false;
@@ -290,7 +280,7 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 	{
 		if (*EnableChunkInterest == TEXT("true"))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("ChunkInterestNotSupported_Prompt", "The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?"));
 
 			if (Result == EAppReturnType::Yes)
 			{
