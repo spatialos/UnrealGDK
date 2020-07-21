@@ -101,7 +101,7 @@ public:
 	void AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition, const FWorkerDefinition& Worker);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience.\nIt is a more extensible version of AddStepFromDefinition(), where you can pass array with multiple specific Workers."))
-	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers);
+	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers);
 
 	// Add Steps for C++
 	/**

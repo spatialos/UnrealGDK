@@ -327,7 +327,7 @@ void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestS
 	StepDefinitions.Add(StepDefinitionCopy);
 }
 
-void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, TArray<FWorkerDefinition> Workers)
+void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
 
