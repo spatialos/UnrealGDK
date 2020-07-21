@@ -245,17 +245,17 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	{
 		Schema_AddUint32(Object, FieldId, (uint32)ByteProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(UInt16Property)* UInt16Property = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
+	else if (GDK_PROPERTY(UInt16Property)* UInt16PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
 	{
-		Schema_AddUint32(Object, FieldId, (uint32)UInt16Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, (uint32)UInt16PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(UInt32Property)* UInt32Property = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
+	else if (GDK_PROPERTY(UInt32Property)* UInt32PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
 	{
-		Schema_AddUint32(Object, FieldId, UInt32Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, UInt32PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(UInt64Property)* UInt64Property = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
+	else if (GDK_PROPERTY(UInt64Property)* UInt64PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
 	{
-		Schema_AddUint64(Object, FieldId, UInt64Property->GetPropertyValue(Data));
+		Schema_AddUint64(Object, FieldId, UInt64PropertyPtr->GetPropertyValue(Data));
 	}
 	else if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property))
 	{
