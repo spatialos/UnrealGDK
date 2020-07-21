@@ -3,6 +3,7 @@
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKEditorModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"

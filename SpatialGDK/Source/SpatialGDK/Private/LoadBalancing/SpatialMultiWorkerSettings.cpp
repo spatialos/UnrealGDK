@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
