@@ -1,6 +1,7 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/LegacySpatialWorkerConnection.h"
+#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
@@ -9,14 +10,14 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
 
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
+void ULegacySpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
 	WorkerConnection = WorkerConnectionIn;
 
 	CacheWorkerAttributes();
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();    
-	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
 		if (OpsProcessingThread == nullptr)
 		{
@@ -26,7 +27,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			if (WaitTimeMs <= 0)
 			{
 				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Clamping wait time for worker ops thread to the minimum rate of 1ms."));
-				WaitTimeMs = 1; 
+				WaitTimeMs = 1;
 			}
 			ThreadWaitCondition.Emplace(bCanWake, WaitTimeMs);
 
@@ -35,7 +36,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	}
 }
 
-void USpatialWorkerConnection::FinishDestroy()
+void ULegacySpatialWorkerConnection::FinishDestroy()
 {
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Destroying SpatialWorkerconnection."));
 
@@ -44,7 +45,7 @@ void USpatialWorkerConnection::FinishDestroy()
 	Super::FinishDestroy();
 }
 
-void USpatialWorkerConnection::DestroyConnection()
+void ULegacySpatialWorkerConnection::DestroyConnection()
 {
 	Stop(); // Stop OpsProcessingThread
 	if (OpsProcessingThread != nullptr)
@@ -69,100 +70,106 @@ void USpatialWorkerConnection::DestroyConnection()
 	KeepRunning.AtomicSet(true);
 }
 
-TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
+TArray<OpList> ULegacySpatialWorkerConnection::GetOpList()
 {
-	TArray<Worker_OpList*> OpLists;
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		QueueLatestOpList();
+	}
+
+	TArray<OpList> OpLists;
 	while (!OpListQueue.IsEmpty())
 	{
-		Worker_OpList* OutOpList;
+		OpList OutOpList;
 		OpListQueue.Dequeue(OutOpList);
-		OpLists.Add(OutOpList);
+		OpLists.Add(MoveTemp(OutOpList));
 	}
 
 	return OpLists;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
+Worker_RequestId ULegacySpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	QueueOutgoingMessage<FReserveEntityIdsRequest>(NumOfEntities);
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
 {
 	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
 	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId);
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
+void ULegacySpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
 {
 	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
 }
 
-void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate)
+void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
 {
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	QueueOutgoingMessage<FCommandRequest>(EntityId, *Request, CommandId);
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
+void ULegacySpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
 {
 	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response);
 }
 
-void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+void ULegacySpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
 }
 
-void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
+void ULegacySpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
 {
 	QueueOutgoingMessage<FLogMessage>(Level, LoggerName, Message);
 }
 
-void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
+void ULegacySpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
 	QueueOutgoingMessage<FComponentInterest>(EntityId, MoveTemp(ComponentInterest));
 }
 
-Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
+Worker_RequestId ULegacySpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	QueueOutgoingMessage<FEntityQueryRequest>(*EntityQuery);
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
+void ULegacySpatialWorkerConnection::SendMetrics(SpatialMetrics Metrics)
 {
-	QueueOutgoingMessage<FMetrics>(Metrics);
+	QueueOutgoingMessage<FMetrics>(MoveTemp(Metrics));
 }
 
-PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
+PhysicalWorkerName ULegacySpatialWorkerConnection::GetWorkerId() const
 {
 	return PhysicalWorkerName(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
-const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
+const TArray<FString>& ULegacySpatialWorkerConnection::GetWorkerAttributes() const
 {
 	return CachedWorkerAttributes;
 }
 
-void USpatialWorkerConnection::CacheWorkerAttributes()
+void ULegacySpatialWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
 
@@ -179,7 +186,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-uint32 USpatialWorkerConnection::Run()
+uint32 ULegacySpatialWorkerConnection::Run()
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
@@ -194,12 +201,12 @@ uint32 USpatialWorkerConnection::Run()
 	return 0;
 }
 
-void USpatialWorkerConnection::Stop()
+void ULegacySpatialWorkerConnection::Stop()
 {
 	KeepRunning.AtomicSet(false);
 }
 
-void USpatialWorkerConnection::InitializeOpsProcessingThread()
+void ULegacySpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
@@ -207,20 +214,17 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 	check(OpsProcessingThread);
 }
 
-void USpatialWorkerConnection::QueueLatestOpList()
+void ULegacySpatialWorkerConnection::QueueLatestOpList()
 {
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	if (OpList->op_count > 0)
+	OpList Ops = GetOpListFromConnection(WorkerConnection);
+
+	if (Ops.Count > 0)
 	{
-		OpListQueue.Enqueue(OpList);
-	}
-	else
-	{
-		Worker_OpList_Destroy(OpList);
+		OpListQueue.Enqueue(MoveTemp(Ops));
 	}
 }
 
-void USpatialWorkerConnection::ProcessOutgoingMessages()
+void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 {
 	bool bSentData = false;
 	while (!OutgoingMessagesQueue.IsEmpty())
@@ -377,46 +381,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FMetrics* Message = static_cast<FMetrics*>(OutgoingMessage.Get());
 
-			// Do the conversion here so we can store everything on the stack.
-			Worker_Metrics WorkerMetrics;
-
-			WorkerMetrics.load = Message->Metrics.Load.IsSet() ? &Message->Metrics.Load.GetValue() : nullptr;
-
-			TArray<Worker_GaugeMetric> WorkerGaugeMetrics;
-			WorkerGaugeMetrics.SetNum(Message->Metrics.GaugeMetrics.Num());
-			for (int i = 0; i < Message->Metrics.GaugeMetrics.Num(); i++)
-			{
-				WorkerGaugeMetrics[i].key = Message->Metrics.GaugeMetrics[i].Key.c_str();
-				WorkerGaugeMetrics[i].value = Message->Metrics.GaugeMetrics[i].Value;
-			}
-
-			WorkerMetrics.gauge_metric_count = static_cast<uint32_t>(WorkerGaugeMetrics.Num());
-			WorkerMetrics.gauge_metrics = WorkerGaugeMetrics.GetData();
-
-			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
-			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
-			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
-			WorkerHistogramMetricBuckets.SetNum(Message->Metrics.HistogramMetrics.Num());
-			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
-			{
-				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
-				WorkerHistogramMetrics[i].sum = Message->Metrics.HistogramMetrics[i].Sum;
-
-				WorkerHistogramMetricBuckets[i].SetNum(Message->Metrics.HistogramMetrics[i].Buckets.Num());
-				for (int j = 0; j < Message->Metrics.HistogramMetrics[i].Buckets.Num(); j++)
-				{
-					WorkerHistogramMetricBuckets[i][j].upper_bound = Message->Metrics.HistogramMetrics[i].Buckets[j].UpperBound;
-					WorkerHistogramMetricBuckets[i][j].samples = Message->Metrics.HistogramMetrics[i].Buckets[j].Samples;
-				}
-
-				WorkerHistogramMetrics[i].bucket_count = static_cast<uint32_t>(WorkerHistogramMetricBuckets[i].Num());
-				WorkerHistogramMetrics[i].buckets = WorkerHistogramMetricBuckets[i].GetData();
-			}
-
-			WorkerMetrics.histogram_metric_count = static_cast<uint32_t>(WorkerHistogramMetrics.Num());
-			WorkerMetrics.histogram_metrics = WorkerHistogramMetrics.GetData();
-
-			Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
+			Message->Metrics.SendToConnection(WorkerConnection);
 			break;
 		}
 		default:
@@ -434,7 +399,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 	}
 }
 
-void USpatialWorkerConnection::MaybeFlush()
+void ULegacySpatialWorkerConnection::MaybeFlush()
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->bWorkerFlushAfterOutgoingNetworkOp)
@@ -443,7 +408,7 @@ void USpatialWorkerConnection::MaybeFlush()
 	}
 }
 
-void USpatialWorkerConnection::Flush()
+void ULegacySpatialWorkerConnection::Flush()
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->bRunSpatialWorkerConnectionOnGameThread)
@@ -457,7 +422,7 @@ void USpatialWorkerConnection::Flush()
 }
 
 template <typename T, typename... ArgsType>
-void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
+void ULegacySpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 {
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
