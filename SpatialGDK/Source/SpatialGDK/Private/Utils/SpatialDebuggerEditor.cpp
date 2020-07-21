@@ -72,17 +72,21 @@ void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 		{
 			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 
-			WorkerRegions.SetNum(LBStrategyRegions.Num());
-			for (int i = 0; i < LBStrategyRegions.Num(); i++)
+			// Only show worker regions if there is more than one
+			if (LBStrategyRegions.Num() > 1)
 			{
-				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				FWorkerRegionInfo WorkerRegionInfo;
-				// Generate our own unique worker name as we only need it to generate a unique colour
-				const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d"), i);
-				WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
-				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+					WorkerRegions.SetNum(LBStrategyRegions.Num());
+					for (int i = 0; i < LBStrategyRegions.Num(); i++)
+					{
+						const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+						FWorkerRegionInfo WorkerRegionInfo;
+						// Generate our own unique worker name as we only need it to generate a unique colour
+						const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d"), i);
+						WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+						WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 
-				WorkerRegions[i] = WorkerRegionInfo;
+						WorkerRegions[i] = WorkerRegionInfo;
+					}
 			}
 		}
 	}
