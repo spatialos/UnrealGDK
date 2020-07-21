@@ -803,7 +803,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf);
-		SetLevelEditorPlaySettingsWorkerType(Conf);
 
 		// Also create default launch config for cloud deployments.
 		{
@@ -821,8 +820,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	else
 	{
 		LaunchConfig = SpatialGDKEditorSettings->GetSpatialOSLaunchConfig();
-
-		SetLevelEditorPlaySettingsWorkerType(SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig);
 	}
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
