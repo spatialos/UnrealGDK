@@ -16,11 +16,6 @@ void ULegacySpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConn
 {
 	WorkerConnection = WorkerConnectionIn;
 
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.callback = MyTraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
-	Trace_EventTracer_Enable(EventTracer);
-
 	CacheWorkerAttributes();
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -43,14 +38,16 @@ void ULegacySpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConn
 	}
 }
 
+void ULegacySpatialWorkerConnection::SetEventTracer(Trace_EventTracer* EventTracerIn)
+{
+	EventTracer = EventTracerIn;
+}
+
 void ULegacySpatialWorkerConnection::FinishDestroy()
 {
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Destroying SpatialWorkerconnection."));
 
 	DestroyConnection();
-
-	Trace_EventTracer_Disable(EventTracer);
-	Trace_EventTracer_Destroy(EventTracer);
 
 	Super::FinishDestroy();
 }

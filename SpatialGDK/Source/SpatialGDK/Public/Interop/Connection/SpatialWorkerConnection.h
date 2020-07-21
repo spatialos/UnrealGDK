@@ -17,6 +17,7 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
+	void SetEventTracer(Trace_EventTracer* EventTracerIn);
 	virtual void FinishDestroy() override
 	{
 		Super::FinishDestroy();

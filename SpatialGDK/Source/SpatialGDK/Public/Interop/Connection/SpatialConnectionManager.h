@@ -11,6 +11,12 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialConnectionManager, Log, All);
 
+namespace worker {
+namespace c {
+	struct Trace_EventTracer;
+}
+}
+
 class USpatialWorkerConnection;
 
 enum class ESpatialConnectionType
@@ -87,4 +93,6 @@ private:
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
+
+	Trace_EventTracer* EventTracer;
 };
