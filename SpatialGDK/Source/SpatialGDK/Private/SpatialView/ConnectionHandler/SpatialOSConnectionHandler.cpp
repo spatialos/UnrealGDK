@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
@@ -194,11 +194,11 @@ const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
 	return WorkerAttributes;
 }
 
-void SpatialOSConnectionHandler::ConnectionDeleter::operator()(Worker_Connection* Connection) const noexcept
+void SpatialOSConnectionHandler::ConnectionDeleter::operator()(Worker_Connection* ConnectionToDelete) const noexcept
 {
-	if (Connection != nullptr)
+	if (ConnectionToDelete != nullptr)
 	{
-		Worker_Connection_Destroy(Connection);
+		Worker_Connection_Destroy(ConnectionToDelete);
 	}
 }
 
