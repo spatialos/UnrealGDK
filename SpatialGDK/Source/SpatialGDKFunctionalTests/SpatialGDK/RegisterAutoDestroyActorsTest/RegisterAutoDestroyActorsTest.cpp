@@ -101,8 +101,6 @@ void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
 		FSpatialFunctionalTestStepDefinition StepDefinition;
 		StepDefinition.bIsNativeDefinition = true;
 		StepDefinition.TimeLimit = 0.0f;
-		StepDefinition.Workers.Add(FWorkerDefinition::AllServers);
-		StepDefinition.Workers.Add(FWorkerDefinition::AllClients);
 		StepDefinition.NativeStartEvent.BindLambda([](ASpatialFunctionalTest* NetTest) {
 			UWorld* World = NetTest->GetWorld();
 			TActorIterator<ACharacter> It(World);
@@ -111,6 +109,6 @@ void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
 			NetTest->FinishStep();
 		});
 
-		AddGenericStep(StepDefinition);
+		AddStepFromDefinition(StepDefinition, FWorkerDefinition::AllWorkers);
 	}
 }
