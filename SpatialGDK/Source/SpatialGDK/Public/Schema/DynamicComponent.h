@@ -3,8 +3,7 @@
 #pragma once
 
 #include "Schema/Component.h"
-
-#include <WorkerSDK/improbable/c_worker.h>
+#include "SpatialView/ComponentData.h"
 
 namespace SpatialGDK
 {
@@ -12,19 +11,12 @@ namespace SpatialGDK
 // Represents any Unreal rep component
 struct DynamicComponent : Component
 {
-	DynamicComponent() = default;
-
-	DynamicComponent(const Worker_ComponentData& InComponentData)
-		: ComponentData(Worker_AcquireComponentData(&InComponentData))
+	explicit DynamicComponent(const Worker_ComponentData& InComponentData)
+		: Data(ComponentData::CreateCopy(InComponentData.schema_type, InComponentData.component_id))
 	{
 	}
 
-	~DynamicComponent()
-	{
-		Worker_ReleaseComponentData(ComponentData);
-	}
-
-	Worker_ComponentData* ComponentData;
+	ComponentData Data;
 };
 
 } // namespace SpatialGDK

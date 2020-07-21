@@ -10,6 +10,7 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
+#include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
@@ -188,6 +189,8 @@ public:
 	// view of whether the SpatialNetDriver is ready to assume normal operations.
 	bool IsReady() const;
 
+	SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
+
 private:
 
 	TUniquePtr<SpatialDispatcher> Dispatcher;
@@ -197,7 +200,7 @@ private:
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
-	TArray<Worker_OpList*> QueuedStartupOpLists;
+	TArray<SpatialGDK::OpList> QueuedStartupOpLists;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
@@ -234,9 +237,9 @@ private:
 
 	void QueryGSMToLoadMap();
 
-	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists);
+	void HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpLists);
+	bool FindAndDispatchStartupOpsServer(const TArray<SpatialGDK::OpList>& InOpLists);
+	bool FindAndDispatchStartupOpsClient(const TArray<SpatialGDK::OpList>& InOpLists);
 	void SelectiveProcessOps(TArray<Worker_Op*> FoundOps);
 
 	UFUNCTION()

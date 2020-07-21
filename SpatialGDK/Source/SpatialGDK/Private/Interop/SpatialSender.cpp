@@ -476,8 +476,8 @@ void USpatialSender::FlushRPCService()
 	{
 		RPCService->PushOverflowedRPCs();
 
-		const TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
-		for (const SpatialRPCService::UpdateToSend& Update : RPCs)
+		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+		for (SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 		}
@@ -635,7 +635,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, true };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::DropEntireQueue };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -643,13 +643,13 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 	if (Channel == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, true };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueProcessResult::DropEntireQueue };
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
@@ -742,13 +742,15 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 	{
-		bool bShouldDrop = true;
+		ERPCQueueProcessResult QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
-			bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, TargetObjectRef.Entity);
+			if (TargetActor->HasAuthority())
+			{
+				QueueProcessResult = ERPCQueueProcessResult::StopProcessing;
+			}
 		}
-
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, bShouldDrop };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, QueueProcessResult };
 	}
 
 	FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
@@ -822,24 +824,6 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 #endif
 }
 #endif
-
-bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity)
-{
-	bool WillHaveAuthorityOverActor = true;
-
-	if (NetDriver->VirtualWorkerTranslator != nullptr)
-	{
-		if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
-		{
-			if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
-			{
-				WillHaveAuthorityOverActor = false;
-			}
-		}
-	}
-
-	return WillHaveAuthorityOverActor;
-}
 
 void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 {

@@ -40,6 +40,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
@@ -59,6 +60,7 @@ using SpatialGDK::AppendAllOpsOfType;
 using SpatialGDK::FindFirstOpOfTypeForComponent;
 using SpatialGDK::InterestFactory;
 using SpatialGDK::RPCPayload;
+using SpatialGDK::OpList;
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -1628,27 +1630,21 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	if (Connection != nullptr)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
-		{
-			Connection->QueueLatestOpList();
-		}
 
-		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
+		TArray<OpList> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
 		if (!bIsReadyToStart)
 		{
-			HandleStartupOpQueueing(OpLists);
+			HandleStartupOpQueueing(MoveTemp(OpLists));
 			return;
 		}
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			for (Worker_OpList* OpList : OpLists)
+			for (const OpList& Ops : OpLists)
 			{
-				Dispatcher->ProcessOps(OpList);
-
-				Worker_OpList_Destroy(OpList);
+				Dispatcher->ProcessOps(Ops);
 			}
 		}
 
@@ -1715,7 +1711,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	{
 		// Look for CPF_OutParm's, we'll need to copy these into the local parameter memory manually
 		// The receiving side will pull these back out when needed
-		for (TFieldIterator<UProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+		for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 		{
 			if (It->HasAnyPropertyFlags(CPF_OutParm))
 			{
@@ -1826,7 +1822,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
-	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread || SpatialGDKSettings->bUseSpatialView)
 	{
 		if (Connection != nullptr)
 		{
@@ -2092,9 +2088,9 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 				const FFieldNetCache * FieldCache = ClassCache->GetFromField(Function);
 
-				TArray< UProperty * > Parms;
+				TArray< GDK_PROPERTY(Property) * > Parms;
 
-				for (TFieldIterator<UProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+				for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 				{
 					Parms.Add(*It);
 				}
@@ -2109,9 +2105,9 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 				for (int32 j = 0; j < Parms.Num(); j++)
 				{
-					if (Cast<UStructProperty>(Parms[j]))
+					if (GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Parms[j]))
 					{
-						ParmString += Cast<UStructProperty>(Parms[j])->Struct->GetName();
+						ParmString += GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Parms[j])->Struct->GetName();
 					}
 					else
 					{
@@ -2368,14 +2364,13 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 	}, Delay, false);
 }
 
-void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists)
+void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpLists)
 {
 	if (InOpLists.Num() == 0)
 	{
 		return;
 	}
 
-	QueuedStartupOpLists.Append(InOpLists);
 	if (IsServer())
 	{
 		bIsReadyToStart = FindAndDispatchStartupOpsServer(InOpLists);
@@ -2400,15 +2395,16 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 		bIsReadyToStart = FindAndDispatchStartupOpsClient(InOpLists);
 	}
 
+	QueuedStartupOpLists.Append(MoveTemp(InOpLists));
+
 	if (!bIsReadyToStart)
 	{
 		return;
 	}
 
-	for (Worker_OpList* OpList : QueuedStartupOpLists)
+	for (const OpList& Ops : QueuedStartupOpLists)
 	{
-		Dispatcher->ProcessOps(OpList);
-		Worker_OpList_Destroy(OpList);
+		Dispatcher->ProcessOps(Ops);
 	}
 
 	// Sanity check that the dispatcher encountered, skipped, and removed
@@ -2418,7 +2414,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	QueuedStartupOpLists.Empty();
 }
 
-bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists)
+bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<OpList>& InOpLists)
 {
 	TArray<Worker_Op*> FoundOps;
 
@@ -2427,14 +2423,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	// To correctly initialize the ServerWorkerEntity on each server during op queueing, we need to catch several ops here.
 	// Note that this will break if any other CreateEntity requests are issued during the startup flow.
 	{
-		Worker_Op* CreateEntityResponseOp = nullptr;
-		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+		Worker_Op* CreateEntityResponseOp = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE);
 
-		Worker_Op* AddComponentOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::SERVER_WORKER_COMPONENT_ID, &AddComponentOp);
+		Worker_Op* AddComponentOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
 
-		Worker_Op* AuthorityChangedOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::SERVER_WORKER_COMPONENT_ID, &AuthorityChangedOp);
+		Worker_Op* AuthorityChangedOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
 
 		if (CreateEntityResponseOp != nullptr)
 		{
@@ -2457,8 +2450,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	// a new query will be sent, and we will process the new response here when it arrives.
 	if (!PackageMap->IsEntityPoolReady())
 	{
-		Worker_Op* EntityIdReservationResponseOp = nullptr;
-		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE, &EntityIdReservationResponseOp);
+		Worker_Op* EntityIdReservationResponseOp = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE);
 
 		if (EntityIdReservationResponseOp != nullptr)
 		{
@@ -2469,14 +2461,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	// Search for StartupActorManager ops we need and process them
 	if (!GlobalStateManager->IsReady())
 	{
-		Worker_Op* AddComponentOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
+		Worker_Op* AddComponentOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
-		Worker_Op* AuthorityChangedOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AuthorityChangedOp);
+		Worker_Op* AuthorityChangedOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
-		Worker_Op* ComponentUpdateOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &ComponentUpdateOp);
+		Worker_Op* ComponentUpdateOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
 		if (AddComponentOp != nullptr)
 		{
@@ -2496,14 +2485,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 	{
-		Worker_Op* AddComponentOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AddComponentOp);
+		Worker_Op* AddComponentOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 
-		Worker_Op* AuthorityChangedOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AuthorityChangedOp);
+		Worker_Op* AuthorityChangedOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 
-		Worker_Op* ComponentUpdateOp = nullptr;
-		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &ComponentUpdateOp);
+		Worker_Op* ComponentUpdateOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 
 		if (AddComponentOp != nullptr)
 		{
@@ -2546,7 +2532,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	return true;
 }
 
-bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
+bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<OpList>& InOpLists)
 {
 	if (bMapLoaded)
 	{
@@ -2555,8 +2541,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpLi
 	else
 	{
 		// Search for the entity query response for the GlobalStateManager
-		Worker_Op* Op = nullptr;
-		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &Op);
+		Worker_Op* Op = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE);
 
 		TArray<Worker_Op*> FoundOps;
 		if (Op != nullptr)
@@ -2576,14 +2561,11 @@ void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
 	// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
 	// The Op remains owned by the original OpList.  Finally, notify the dispatcher to skip
 	// these Ops when they are encountered later when we process the queued ops.
-	for (Worker_Op* Op : FoundOps)
+	for (Worker_Op* FoundOp : FoundOps)
 	{
-		Worker_OpList SingleOpList;
-		SingleOpList.op_count = 1;
-		SingleOpList.ops = Op;
-
-		Dispatcher->ProcessOps(&SingleOpList);
-		Dispatcher->MarkOpToSkip(Op);
+		OpList Op = { FoundOp, 1, nullptr };
+		Dispatcher->ProcessOps(Op);
+		Dispatcher->MarkOpToSkip(FoundOp);
 	}
 }
 

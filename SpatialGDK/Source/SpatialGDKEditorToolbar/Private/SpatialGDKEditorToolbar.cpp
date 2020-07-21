@@ -25,6 +25,7 @@
 #include "Misc/MessageDialog.h"
 #include "Sound/SoundBase.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
@@ -47,6 +48,7 @@
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
@@ -519,11 +521,10 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateBetterEditableTextWidg
 		.FillWidth(1.f)
 		.VAlign(VAlign_Bottom)
 		[
-			SNew(SEditableText)
+			SNew(SEditableTextBox)
 			.OnTextCommitted_Static(OnTextCommitted)
 			.Text(Text)
 			.SelectAllTextWhenFocused(true)
-			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Static(IsEnabled)
 			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
 		];
@@ -981,7 +982,7 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible() const
 void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 {
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	UProperty* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
+	GDK_PROPERTY(Property)* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());

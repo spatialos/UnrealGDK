@@ -21,6 +21,7 @@
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Input/SFilePathPicker.h"
 #include "Widgets/Input/SHyperlink.h"
 #include "Widgets/Input/SSpinBox.h"
