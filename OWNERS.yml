@@ -1,4 +1,7 @@
+---
 filters:
-  "CHANGELOG.md":
+  'CHANGELOG\.md$':
     approvers:
       - sig-tech-writers
+    labels:
+      - docs/changelog
