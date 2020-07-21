@@ -182,6 +182,7 @@ void ASpatialDebugger::CreateWorkerRegions()
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
+	SpawnParams.bHideFromSceneOutliner = true;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{

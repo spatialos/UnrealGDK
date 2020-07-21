@@ -9,7 +9,7 @@
 /**
  * Extends the SpatialDebugger to visualise spatial information in the Editor
  */
-UCLASS()
+UCLASS(Transient)
 class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 {
 	GENERATED_UCLASS_BODY()

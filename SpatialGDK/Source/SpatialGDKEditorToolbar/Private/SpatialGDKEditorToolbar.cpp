@@ -780,7 +780,9 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	// If no spatial debugger editor found then intialise one
 	if (SpatialDebuggerEditors.Num() == 0)
 	{
-		SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>();
+		FActorSpawnParameters spawnParameters;
+		spawnParameters.bHideFromSceneOutliner = true;
+		SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(spawnParameters);
 	}
 
 	SpatialDebuggerEditor->SpatialToggleDebugger();
