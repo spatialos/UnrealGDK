@@ -71,7 +71,7 @@ struct FWorkerDefinition
 	};
 };
 
-USTRUCT(BlueprintType, meta = (HasNativeMake = "SpatialGDKFunctionalTests.USpatialFunctionalTestBlueprintLibrary.MakeStepDefinition"))
+USTRUCT(BlueprintType, meta = (HasNativeMake = "SpatialGDKFunctionalTests.SpatialFunctionalTestLibrary.MakeStepDefinition"))
 struct FSpatialFunctionalTestStepDefinition
 {
 	GENERATED_BODY()
