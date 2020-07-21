@@ -26,14 +26,14 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 
-void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
+void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 {
 	check(Receiver.IsValid());
 	check(StaticComponentView.IsValid());
 
-	for (size_t i = 0; i < OpList->op_count; ++i)
+	for (size_t i = 0; i < Ops.Count; ++i)
 	{
-		Worker_Op* Op = &OpList->ops[i];
+		Worker_Op* Op = &Ops.Ops[i];
 
 		if (OpsToSkip.Num() != 0 &&
 			OpsToSkip.Contains(Op))
