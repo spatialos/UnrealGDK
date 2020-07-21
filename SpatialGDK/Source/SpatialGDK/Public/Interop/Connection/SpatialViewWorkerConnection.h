@@ -18,7 +18,6 @@ class SPATIALGDK_API USpatialViewWorkerConnection : public USpatialWorkerConnect
 
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) override;
-	virtual void SetEventTracer(Trace_EventTracer* EventTracerIn) override;
 	virtual void FinishDestroy() override;
 	virtual void DestroyConnection() override;
 

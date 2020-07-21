@@ -1,12 +1,10 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/LegacySpatialWorkerConnection.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
-
-#include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -36,11 +34,6 @@ void ULegacySpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConn
 			InitializeOpsProcessingThread();
 		}
 	}
-}
-
-void ULegacySpatialWorkerConnection::SetEventTracer(Trace_EventTracer* EventTracerIn)
-{
-	EventTracer = EventTracerIn;
 }
 
 void ULegacySpatialWorkerConnection::FinishDestroy()
@@ -258,8 +251,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		case EOutgoingMessageType::CreateEntityRequest:
 		{
-			Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
-			Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+			SpanId CurrentSpandId = Super::CreateActiveSpan();
 
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
@@ -283,8 +275,6 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
 
-			Trace_EventTracer_UnsetActiveSpanId(EventTracer);
-
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:
@@ -298,8 +288,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		case EOutgoingMessageType::AddComponent:
 		{
-			Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
-			Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+			SpanId CurrentSpandId = Super::CreateActiveSpan();
 
 			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
 
@@ -307,8 +296,6 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 				Message->EntityId,
 				&Message->Data,
 				&DisableLoopback);
-
-			Trace_EventTracer_UnsetActiveSpanId(EventTracer);
 
 			break;
 		}
@@ -335,8 +322,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		case EOutgoingMessageType::CommandRequest:
 		{
-			Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
-			Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+			SpanId CurrentSpandId = Super::CreateActiveSpan();
 
 			FCommandRequest* Message = static_cast<FCommandRequest*>(OutgoingMessage.Get());
 
@@ -346,8 +332,6 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 				&Message->Request,
 				nullptr,
 				&DefaultCommandParams);
-
-			Trace_EventTracer_UnsetActiveSpanId(EventTracer);
 
 			break;
 		}

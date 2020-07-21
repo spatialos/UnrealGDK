@@ -10,6 +10,16 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+struct SpanId
+{
+	SpanId(Trace_EventTracer* InEventTracer);
+	~SpanId();
+
+private:
+	Trace_SpanId CurrentSpanId;
+	Trace_EventTracer* EventTracer;
+};
+
 UCLASS(abstract)
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
 {
@@ -17,7 +27,10 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
-	virtual void SetEventTracer(Trace_EventTracer* EventTracerIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
+
+	void SetEventTracer(Trace_EventTracer* EventTracerIn);
+	SpanId CreateActiveSpan();
+
 	virtual void FinishDestroy() override
 	{
 		Super::FinishDestroy();
@@ -41,6 +54,5 @@ private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;
 
-protected:
 	Trace_EventTracer* EventTracer;
 };

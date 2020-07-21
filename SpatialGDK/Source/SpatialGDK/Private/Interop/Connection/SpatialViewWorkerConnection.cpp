@@ -27,11 +27,6 @@ void USpatialViewWorkerConnection::SetConnection(Worker_Connection* WorkerConnec
 	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(Handler));
 }
 
-void USpatialViewWorkerConnection::SetEventTracer(Trace_EventTracer* EventTracerIn)
-{
-	EventTracer = EventTracerIn;
-}
-
 void USpatialViewWorkerConnection::FinishDestroy()
 {
 	Coordinator.Reset();
