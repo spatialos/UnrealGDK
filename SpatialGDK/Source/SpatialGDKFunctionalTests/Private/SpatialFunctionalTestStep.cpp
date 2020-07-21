@@ -2,12 +2,6 @@
 
 #include "SpatialFunctionalTestStep.h"
 
-#include "Engine/World.h"
-#include "Net/UnrealNetwork.h"
-#include "Engine/Engine.h"
-#include "SpatialFunctionalTestFlowController.h"
-#include "SpatialFunctionalTest.h"
-
 const FWorkerDefinition FWorkerDefinition::AllWorkers = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::All, FWorkerDefinition::ALL_WORKERS_ID };
 const FWorkerDefinition FWorkerDefinition::AllServers = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, FWorkerDefinition::ALL_WORKERS_ID };
 const FWorkerDefinition FWorkerDefinition::AllClients = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client, FWorkerDefinition::ALL_WORKERS_ID };

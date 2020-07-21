@@ -71,19 +71,23 @@ struct FWorkerDefinition
 	};
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (HasNativeMake = ""))
 struct FSpatialFunctionalTestStepDefinition
 {
 	GENERATED_BODY()
 
-	FSpatialFunctionalTestStepDefinition()
-		: bIsNativeDefinition(false)
+	/**
+	 * bIsNative defines that this StepDefinition is meant to be used in C++, so when
+	 * defining native StepDefinitions make sure you pass True.
+	 */
+	FSpatialFunctionalTestStepDefinition(bool bIsNative = false)
+		: bIsNativeDefinition(bIsNative)
 		, TimeLimit(0.0f)
 	{
 	}
 
 	// Description so that in the logs you can clearly identify Test Steps
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FString StepName;
 
 	// Given that we support different delegate types for C++ and BP
@@ -91,11 +95,11 @@ struct FSpatialFunctionalTestStepDefinition
 	bool bIsNativeDefinition;
 
 	// BP Delegates
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FStepIsReadyDelegate IsReadyEvent;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FStepStartDelegate StartEvent;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FStepTickDelegate TickEvent;
 
 	// C++ Delegates
@@ -103,15 +107,14 @@ struct FSpatialFunctionalTestStepDefinition
 	FNativeStepStartDelegate NativeStartEvent;
 	FNativeStepTickDelegate NativeTickEvent;
 
-	// Workers the Test Step should run on
-	UPROPERTY()
+	// Workers the Step should run on
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	TArray<FWorkerDefinition> Workers;
 
 	// Maximum time it can take to finish this Step; if <= 0 it falls back to the time limit of the whole Test
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	float TimeLimit;
 };
-
 
 class SpatialFunctionalTestStep
 {
