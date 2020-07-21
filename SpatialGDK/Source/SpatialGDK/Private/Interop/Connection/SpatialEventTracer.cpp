@@ -18,17 +18,34 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 		const Trace_Event& Event = Item->item.event;
 		unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[0]);
 		unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[8]);
-		UE_LOG(LogTemp, Warning, TEXT("Span: %ul%ul, Type: %s, Message: %s, Timestamp: %ul"),
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %ul%ul, Type: %s, Message: %s, Timestamp: %ul"),
 			span1, span2, *FString(Event.type), *FString(Event.message), Event.unix_timestamp_millis);
+
+		if (Event.data != nullptr)
+		{
+			uint32_t DataFieldCount = Trace_EventData_GetFieldCount(Event.data);
+
+			TArray<const char*> Keys;
+			Keys.SetNumUninitialized(DataFieldCount);
+			TArray<const char*> Values;
+			Values.SetNumUninitialized(DataFieldCount);
+
+			Trace_EventData_GetStringFields(Event.data, Keys.GetData(), Values.GetData());
+			for (uint32_t i = 0; i < DataFieldCount; ++i)
+			{
+				UE_LOG(LogSpatialEventTracer, Warning, TEXT("%s : %s"), ANSI_TO_TCHAR(Keys[i]), ANSI_TO_TCHAR(Values[i]));
+			}
+		}
+
 		break;
 	}
 	//case TRACE_ITEM_TYPE_SPAN:
 	//{
 	//	const Trace_Span& Span = Item->item.span;
-	//	//UE_LOG(LogTemp, Warning, TEXT("Span: %s"), *FString(Span.id.data));
+	//	//UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %s"), *FString(Span.id.data));
 	//	unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Span.id.data[0]);
 	//	unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Span.id.data[8]);
-	//	UE_LOG(LogTemp, Warning, TEXT("Span: %ul%ul"), span1, span2);
+	//	UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %ul%ul"), span1, span2);
 	//	break;
 	//}
 	default:
@@ -73,6 +90,33 @@ SpatialSpanId SpatialEventTracer::CreateActiveSpan()
 const Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer() const
 {
 	return EventTracer;
+}
+
+void SpatialGDK::SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TCHAR_TO_ANSI(*Event.Message), TCHAR_TO_ANSI(*Event.Type), nullptr };
+
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		if (Event.Data.Num() == 0)
+		{
+			Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		}
+		else
+		{
+			Trace_EventData* EventData = Trace_EventData_Create();
+			for (const auto& Elem : Event.Data)
+			{
+				const char* Key = TCHAR_TO_ANSI(*Elem.Key);
+				const char* Value = TCHAR_TO_ANSI(*Elem.Value);
+				Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
+			}
+			TraceEvent.data = EventData;
+			Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+			Trace_EventData_Destroy(EventData);
+		}
+	}
 }
 
 void SpatialGDK::SpatialEventTracer::Enable()

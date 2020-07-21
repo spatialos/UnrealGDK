@@ -14,8 +14,6 @@
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
-#include <WorkerSDK/improbable/c_trace.h>
-
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;

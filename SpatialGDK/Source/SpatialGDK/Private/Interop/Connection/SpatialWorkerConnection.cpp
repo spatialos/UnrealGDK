@@ -4,8 +4,6 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
-#include <WorkerSDK/improbable/c_trace.h>
-
 using namespace SpatialGDK;
 
 void USpatialWorkerConnection::SetEventTracer(SpatialEventTracer* EventTracerIn)
@@ -16,5 +14,10 @@ void USpatialWorkerConnection::SetEventTracer(SpatialEventTracer* EventTracerIn)
 SpatialSpanId USpatialWorkerConnection::CreateActiveSpan()
 {
 	return EventTracer->CreateActiveSpan();
+}
+
+void USpatialWorkerConnection::TraceEvent(const SpatialGDK::SpatialGDKEvent& Event)
+{
+	EventTracer->TraceEvent(Event);
 }
 

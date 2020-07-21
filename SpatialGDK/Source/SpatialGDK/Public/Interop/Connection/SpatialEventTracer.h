@@ -3,16 +3,16 @@
 #pragma once
 
 // TODO Remove maybe?
-#include <WorkerSDK/improbable/c_trace.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
-namespace worker {
-namespace c {
-	struct Trace_EventTracer;
-	struct Trace_SpanId;
-}
-}
+//namespace worker {
+//namespace c {
+//	struct Trace_EventTracer;
+//	struct Trace_SpanId;
+//}
+//}
 
 namespace SpatialGDK
 {
@@ -27,11 +27,20 @@ private:
 	worker::c::Trace_EventTracer* EventTracer;
 };
 
+struct SpatialGDKEvent
+{
+	//SpatialSpanId SpanId;
+	FString Message;
+	FString Type;
+	TMap<FString, FString> Data;
+};
+
 struct SpatialEventTracer
 {
 	SpatialEventTracer();
 	~SpatialEventTracer();
 	SpatialSpanId CreateActiveSpan();
+	void TraceEvent(const SpatialGDKEvent& Event);
 
 	void Enable();
 	void Disable();
