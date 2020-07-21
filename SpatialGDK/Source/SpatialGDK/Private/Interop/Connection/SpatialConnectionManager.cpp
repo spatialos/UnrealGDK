@@ -20,35 +20,6 @@ DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
 
-void MyTraceCallback(void* UserData, const Trace_Item* Item)
-{
-	switch (Item->item_type)
-	{
-	case TRACE_ITEM_TYPE_EVENT:
-	{
-		const Trace_Event& Event = Item->item.event;
-		unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[0]);
-		unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[8]);
-		UE_LOG(LogTemp, Warning, TEXT("Span: %ul%ul, Type: %s, Message: %s, Timestamp: %ul"),
-			span1, span2, *FString(Event.type), *FString(Event.message), Event.unix_timestamp_millis);
-		break;
-	}
-	//case TRACE_ITEM_TYPE_SPAN:
-	//{
-	//	const Trace_Span& Span = Item->item.span;
-	//	//UE_LOG(LogTemp, Warning, TEXT("Span: %s"), *FString(Span.id.data));
-	//	unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Span.id.data[0]);
-	//	unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Span.id.data[8]);
-	//	UE_LOG(LogTemp, Warning, TEXT("Span: %ul%ul"), span1, span2);
-	//	break;
-	//}
-	default:
-	{
-		break;
-	}
-	}
-}
-
 struct ConfigureConnection
 {
 	ConfigureConnection(const FConnectionConfig& InConfig, const bool bConnectAsClient)
@@ -178,11 +149,7 @@ void USpatialConnectionManager::DestroyConnection()
 		WorkerConnection = nullptr;
 	}
 
-	if (EventTracer != nullptr)
-	{
-		Trace_EventTracer_Disable(EventTracer);
-		Trace_EventTracer_Destroy(EventTracer);
-	}
+	EventTracer.Reset();
 
 	bIsConnected = false;
 }
@@ -355,10 +322,8 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.callback = MyTraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
-	ConnectionConfig.Params.event_tracer = EventTracer;
+	EventTracer = MakeUnique<SpatialEventTracer>();
+	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
@@ -379,10 +344,8 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.callback = MyTraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
-	ConnectionConfig.Params.event_tracer = EventTracer;
+	EventTracer = MakeUnique<SpatialEventTracer>();
+	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);
@@ -435,8 +398,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 					SpatialConnectionManager->WorkerConnection = NewObject<ULegacySpatialWorkerConnection>();
 				}
 				
-				Trace_EventTracer_Enable(SpatialConnectionManager->EventTracer);
-				SpatialConnectionManager->WorkerConnection->SetEventTracer(SpatialConnectionManager->EventTracer);
+				SpatialConnectionManager->WorkerConnection->SetEventTracer(SpatialConnectionManager->EventTracer.Get());
 
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionSuccess();

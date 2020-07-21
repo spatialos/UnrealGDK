@@ -4,21 +4,13 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
+// TODO remove
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialCommonTypes.h"
 
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
-
-struct SpanId
-{
-	SpanId(Trace_EventTracer* InEventTracer);
-	~SpanId();
-
-private:
-	Trace_SpanId CurrentSpanId;
-	Trace_EventTracer* EventTracer;
-};
 
 UCLASS(abstract)
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
@@ -28,8 +20,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
 
-	void SetEventTracer(Trace_EventTracer* EventTracerIn);
-	SpanId CreateActiveSpan();
+	void SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn);
+	SpatialGDK::SpatialSpanId CreateActiveSpan();
 
 	virtual void FinishDestroy() override
 	{
@@ -54,5 +46,5 @@ private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;
 
-	Trace_EventTracer* EventTracer;
+	SpatialGDK::SpatialEventTracer* EventTracer;
 };

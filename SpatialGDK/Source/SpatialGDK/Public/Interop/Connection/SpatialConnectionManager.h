@@ -2,20 +2,16 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/ConnectionConfig.h"
+// TODO Can it be removed?
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
 
 #include "SpatialConnectionManager.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialConnectionManager, Log, All);
-
-namespace worker {
-namespace c {
-	struct Trace_EventTracer;
-}
-}
 
 class USpatialWorkerConnection;
 
@@ -94,5 +90,5 @@ private:
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
 
-	Trace_EventTracer* EventTracer;
+	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
 };
