@@ -13,11 +13,11 @@ struct WorkerConnectionOpListData : OpListData
 {
 	struct Deleter
 	{
-		void operator()(Worker_OpList* OpList) const noexcept
+		void operator()(Worker_OpList* OpListToDelete) const noexcept
 		{
-			if (OpList != nullptr)
+			if (OpListToDelete != nullptr)
 			{
-				Worker_OpList_Destroy(OpList);
+				Worker_OpList_Destroy(OpListToDelete);
 			}
 		}
 	};
