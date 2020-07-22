@@ -10,7 +10,7 @@ struct FSpatialNetDriverLoadBalancingContext
 {
 	FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* NetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects);
 
-	 //Adaptor over an array of FNetworkObjectInfo to have a range-for compatible iterator over AActor.
+	// Adaptor over an array of FNetworkObjectInfo to have a range-for compatible iterator over AActor.
 	struct FNetworkObjectsArrayAdaptor
 	{
 		struct Iterator

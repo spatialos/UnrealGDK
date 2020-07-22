@@ -1168,7 +1168,7 @@ struct FCompareActorPriorityAndMigration
 		return false;
 	}
 
-	FSpatialLoadBalancingHandler& MigrationHandler;
+	const FSpatialLoadBalancingHandler& MigrationHandler;
 };
 
 int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialLoadBalancingHandler& MigrationHandler, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
