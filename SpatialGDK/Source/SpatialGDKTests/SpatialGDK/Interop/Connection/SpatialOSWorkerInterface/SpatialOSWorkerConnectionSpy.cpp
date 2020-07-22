@@ -14,9 +14,9 @@ SpatialOSWorkerConnectionSpy::SpatialOSWorkerConnectionSpy()
 	, LastEntityQuery(nullptr)
 {}
 
-TArray<Worker_OpList*> SpatialOSWorkerConnectionSpy::GetOpList()
+TArray<SpatialGDK::OpList> SpatialOSWorkerConnectionSpy::GetOpList()
 {
-	return TArray<Worker_OpList*>();
+	return TArray<SpatialGDK::OpList>();
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
@@ -24,7 +24,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
 {
 	return NextRequestId++;
 }
@@ -40,15 +40,15 @@ void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FW
 void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {}
 
-void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate)
+void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
 {}
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
+void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
 {}
 
 void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
@@ -66,7 +66,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Work
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendMetrics(const SpatialGDK::SpatialMetrics& Metrics)
+void SpatialOSWorkerConnectionSpy::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
 {}
 
 const Worker_EntityQuery* SpatialOSWorkerConnectionSpy::GetLastEntityQuery()
