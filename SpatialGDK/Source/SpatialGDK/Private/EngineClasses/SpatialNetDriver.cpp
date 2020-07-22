@@ -2434,6 +2434,53 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	}
 }
 
+void USpatialNetDriver::RefreshActorVisibility(AActor * Actor, bool bMakeVisible)
+{
+	check(IsServer());
+	check(Actor);
+
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on actor (%s) without entity id"), *Actor->GetName());
+		return;
+	}
+
+
+	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
+	if (bHasAuthority == false)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to  change visibility on (%s) without authority"), *Actor->GetName());
+		return;
+	}
+
+	const bool bVisibilityComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
+
+	// If the Actor is Visible make sure it has the Visible component
+	if (bMakeVisible)
+	{
+		if (!bVisibilityComponentExists)
+		{
+			Worker_AddComponentOp AddComponentOp{};
+			AddComponentOp.entity_id = EntityId;
+			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
+			Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
+			StaticComponentView->OnAddComponent(AddComponentOp);
+		}
+	}
+	else
+	{
+		if (bVisibilityComponentExists)
+		{
+			Worker_RemoveComponentOp RemoveComponentOp{};
+			RemoveComponentOp.entity_id = EntityId;
+			RemoveComponentOp.component_id = SpatialConstants::VISIBLE_COMPONENT_ID;
+			Sender->SendRemoveComponents(EntityId, { SpatialConstants::VISIBLE_COMPONENT_ID });
+			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
+		}
+	}
+}
+
 void USpatialNetDriver::AddPendingDormantChannel(USpatialActorChannel* Channel)
 {
 	PendingDormantChannels.Emplace(Channel);

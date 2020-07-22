@@ -556,6 +556,12 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
+	if (Actor->GetIsHiddenDirty())
+	{
+		NetDriver->RefreshActorVisibility(Actor, Actor->IsHidden());
+		Actor->SetIsHiddenDirty(false);
+	}
+
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 
