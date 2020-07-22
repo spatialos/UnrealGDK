@@ -9,6 +9,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
+#include "SpatialView/OpList/OpList.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -26,7 +27,7 @@ public:
 	using FCallbackId = uint32;
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags);
-	void ProcessOps(Worker_OpList* OpList);
+	void ProcessOps(const SpatialGDK::OpList& Ops);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
 	// from the SpatialNetDriver, and should be temporary since an alternative solution will be available via the Worker SDK soon.

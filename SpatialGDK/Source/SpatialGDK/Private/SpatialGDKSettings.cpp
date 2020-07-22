@@ -74,6 +74,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
+	, QueuedIncomingRPCRetryTime(1.0f)
 	, QueuedOutgoingRPCRetryTime(1.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
@@ -126,11 +127,6 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"), TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
-
-#if WITH_EDITOR
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->DefaultWorkerType = SpatialConstants::DefaultServerWorkerType;
-#endif
 }
 
 #if WITH_EDITOR

@@ -38,8 +38,7 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 
 	ASpatialFunctionalTestFlowController* ServerFlowController = World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, FTransform());
 	ServerFlowController->OwningTest = OwningTest;
-	ServerFlowController->ControllerType = ESpatialFunctionalTestFlowControllerType::Server;
-	ServerFlowController->ControllerInstanceId = OwningServerIntanceId(World);
+	ServerFlowController->WorkerDefinition = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, OwningServerIntanceId(World) };
 
 	ServerFlowController->FinishSpawning(FTransform(), true);
 	// TODO: Replace locking with custom LB strategy - UNR-3393
@@ -54,8 +53,7 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 
 	ASpatialFunctionalTestFlowController* FlowController = World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, OwningTest->GetActorTransform(), OwningClient);
 	FlowController->OwningTest = OwningTest;
-	FlowController->ControllerType = ESpatialFunctionalTestFlowControllerType::Client;
-	FlowController->ControllerInstanceId = INVALID_FLOW_CONTROLLER_ID; // by default have invalid id, Test Authority will set it to ensure uniqueness
+	FlowController->WorkerDefinition = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client , INVALID_FLOW_CONTROLLER_ID}; // by default have invalid id, Test Authority will set it to ensure uniqueness
 	
 	FlowController->FinishSpawning(OwningTest->GetActorTransform(), true);
 	// TODO: Replace locking with custom LB strategy - UNR-3393
@@ -66,9 +64,9 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 
 void SpatialFunctionalTestFlowControllerSpawner::AssignClientFlowControllerId(ASpatialFunctionalTestFlowController* ClientFlowController)
 {
-	check(OwningTest->HasAuthority() && ClientFlowController != nullptr && ClientFlowController->ControllerType == ESpatialFunctionalTestFlowControllerType::Client && ClientFlowController->ControllerInstanceId == INVALID_FLOW_CONTROLLER_ID);
+	check(OwningTest->HasAuthority() && ClientFlowController != nullptr && ClientFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client && ClientFlowController->WorkerDefinition.Id == INVALID_FLOW_CONTROLLER_ID);
 
-	ClientFlowController->CrossServerSetControllerInstanceId(NextClientControllerId++);
+	ClientFlowController->CrossServerSetWorkerId(NextClientControllerId++);
 }
 
 uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* World) const
@@ -76,7 +74,7 @@ uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 	if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
 	{
-		//not loadbalanced test, default instance 1
+		//not load balanced test, default instance 1
 		return 1;
 	}
 	else
