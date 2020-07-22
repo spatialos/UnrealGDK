@@ -1119,7 +1119,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		AActor* OwningActor = SpatialConnection->OwningActor;
 
 		//SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
-		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->State == USOCK_Open && (SpatialConnection->Driver->GetElapsedTime() - SpatialConnection->LastReceiveTime < 1.5f))
+		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->State == USOCK_Open && (GetElapsedTime() - SpatialConnection->LastReceiveTime < 1.5f))
 		{
 			check(SpatialConnection->bReliableSpatialConnection || World == OwningActor->GetWorld());
 
