@@ -17,6 +17,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/OpList/EntityComponentOpList.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
@@ -102,6 +103,9 @@ public:
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
 	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
+
+	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -132,8 +136,7 @@ private:
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
 
-	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
-	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
+	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 
@@ -163,19 +166,13 @@ private:
 
 	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
 
-	struct QueuedOpForAsyncLoad
-	{
-		Worker_Op Op;
-		Worker_ComponentData* AcquiredData;
-		Worker_ComponentUpdate* AcquiredUpdate;
-	};
 	void QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op);
 	void QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op);
 	void QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op);
 	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
 
 	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
-	TArray<QueuedOpForAsyncLoad> ExtractAuthorityOps(Worker_EntityId Entity);
+	SpatialGDK::EntityComponentOpListBuilder ExtractAuthorityOps(Worker_EntityId Entity);
 
 	struct CriticalSectionSaveState
 	{
@@ -190,7 +187,7 @@ private:
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
 
-	void HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op);
+	void HandleQueuedOpForAsyncLoad(const Worker_Op& Op);
 	// END TODO
 
 public:
@@ -198,6 +195,8 @@ public:
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
+
+	FRPCContainer& GetRPCContainer() { return IncomingRPCs; }
 
 private:
 	UPROPERTY()
@@ -259,7 +258,7 @@ private:
 	{
 		FString ClassPath;
 		TArray<PendingAddComponentWrapper> InitialPendingAddComponents;
-		TArray<QueuedOpForAsyncLoad> PendingOps;
+		SpatialGDK::EntityComponentOpListBuilder PendingOps;
 	};
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;

@@ -54,15 +54,15 @@ private:
 	virtual FString GetMobileClientCommandLineArgs() const override;
 	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
-	virtual bool ShouldStartLocalServer() const override;
+	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
 private:
 	void RegisterSettings();
 	void UnregisterSettings();
 	bool HandleEditorSettingsSaved();
 	bool HandleRuntimeSettingsSaved();
-	bool HandleCloudLauncherSettingsSaved();
 	bool CanStartSession(FText& OutErrorMessage) const;
+	bool ShouldStartLocalServer() const;
 
 private:
 	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
