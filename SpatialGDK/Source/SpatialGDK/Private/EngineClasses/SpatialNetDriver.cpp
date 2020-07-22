@@ -1119,7 +1119,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		AActor* OwningActor = SpatialConnection->OwningActor;
 
 		//SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
-		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->State == USOCK_Open && (SpatialConnection->Driver->Time - SpatialConnection->LastReceiveTime < 1.5f))
+		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->State == USOCK_Open && (SpatialConnection->Driver->GetElapsedTime() - SpatialConnection->LastReceiveTime < 1.5f))
 		{
 			check(SpatialConnection->bReliableSpatialConnection || World == OwningActor->GetWorld());
 
@@ -1191,7 +1191,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			}
 
 			// See of actor wants to try and go dormant
-			if (ShouldActorGoDormant(Actor, ConnectionViewers, Channel, Time, bLowNetBandwidth))
+			if (ShouldActorGoDormant(Actor, ConnectionViewers, Channel, GetElapsedTime(), bLowNetBandwidth))
 			{
 				// Channel is marked to go dormant now once all properties have been replicated (but is not dormant yet)
 				Channel->StartBecomingDormant();
@@ -1317,7 +1317,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
 			// bTearOff actors should never be checked
-			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
+			if (!Actor->GetTearOff() && (!Channel || GetElapsedTime() - Channel->RelevantTime > 1.f))
 			{
 				if (DebugRelevantActors)
 				{
@@ -1344,7 +1344,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 			}
 
 			// If the actor is now relevant or was recently relevant.
-			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && Time - Channel->RelevantTime < RelevantTimeout);
+			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && GetElapsedTime() - Channel->RelevantTime < RelevantTimeout);
 
 			if (bIsRecentlyRelevant)
 			{
@@ -1374,7 +1374,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				if (Channel && bIsRelevant)
 				{
 					// If it is relevant then mark the channel as relevant for a short amount of time.
-					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+					Channel->RelevantTime = GetElapsedTime() + 0.5f * FMath::SRand();
 
 					// If the channel isn't saturated.
 					if (Channel->IsNetReady(0))
@@ -1628,7 +1628,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
-			SpatialMetrics->TickMetrics(Time);
+			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
 
 		if (LoadBalanceEnforcer.IsValid())
@@ -1776,9 +1776,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
-			if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
+			if ((GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
 			{
-				TimeWhenPositionLastUpdated = Time;
+				TimeWhenPositionLastUpdated = GetElapsedTime();
 
 				Sender->ProcessPositionUpdates();
 			}
