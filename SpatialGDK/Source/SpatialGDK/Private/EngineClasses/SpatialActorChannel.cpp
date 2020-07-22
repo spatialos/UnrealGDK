@@ -387,10 +387,27 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 }
 
+float USpatialActorChannel::GetSpatialPositionUpdateFrequency(AActor* CheckedActor)
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	float PositionUpdateFrequency = SpatialGDKSettings->PositionUpdateFrequency;
+	TMap<TSoftClassPtr<AActor>, float> CustomFrequencyClasses = SpatialGDKSettings->CustomPositionUpdateFrequencyClasses;
+
+	float* CustomUpdateFrequency = CustomFrequencyClasses.Find(CheckedActor->GetClass());
+
+	if(CustomUpdateFrequency != nullptr)
+	{
+		PositionUpdateFrequency = *CustomUpdateFrequency;
+	}
+
+	return PositionUpdateFrequency;
+}
+
 void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
 {
 	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	if ((NetDriver->Time - TimeWhenPositionLastUpdated) >= (1.0f / GetSpatialPositionUpdateFrequency(Actor)))
 	{
 		UpdateSpatialPosition();
 	}

@@ -160,6 +160,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
 	float PositionUpdateFrequency;
 
+	/** Map containing classes that have a custom PositionUpdateFrequency. NOTE: The custom frequencies will be ignored if bBatchSpatialPositionUpdates is set to true! */
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (DisplayName = "Custom Position Update Frequency Classes"))
+	TMap<TSoftClassPtr<AActor>,float> CustomPositionUpdateFrequencyClasses;
+
 	/** Threshold an Actor needs to move, in centimeters, before its SpatialOS Position is updated.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
 	float PositionDistanceThreshold;
