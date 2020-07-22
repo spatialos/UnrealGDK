@@ -21,7 +21,7 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 	void OnPieEndEvent(bool bIsSimulating);
 
 	void ShowWorkerRegions(bool bEnabled);
-	void RefreshWorkerRegions(bool bEnabled);
+	void RefreshWorkerRegions();
 
 protected:
 

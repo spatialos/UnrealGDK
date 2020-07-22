@@ -778,7 +778,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	if (SpatialDebuggerEditor != nullptr)
 	{
 		bSpatialDebuggerEditorEnabled = !bSpatialDebuggerEditorEnabled;
-		SpatialDebuggerEditor->RefreshWorkerRegions(bSpatialDebuggerEditorEnabled);
+		SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
 	}
 	else
 	{

@@ -70,26 +70,22 @@ void ASpatialDebuggerEditor::ShowWorkerRegions(bool bEnabled)
 {
 	bShowWorkerRegions = bEnabled;
 
+	RefreshWorkerRegions();
+}
+
+
+void ASpatialDebuggerEditor::RefreshWorkerRegions()
+{
+	DestroyWorkerRegions();
+
 	if (bShowWorkerRegions)
 	{
 		InitialiseWorkerRegions();
 		CreateWorkerRegions();
 	}
-}
 
-void ASpatialDebuggerEditor::RefreshWorkerRegions(bool bEnabled)
-{
-	if (bEnabled != bShowWorkerRegions)
+	if (GEditor != nullptr && GEditor->GetActiveViewport() != nullptr)
 	{
-		bShowWorkerRegions = bEnabled;
-		DestroyWorkerRegions();
-
-		if (bShowWorkerRegions)
-		{
-			InitialiseWorkerRegions();
-			CreateWorkerRegions();
-		}
-
 		// Redraw editor window to show changes
 		GEditor->GetActiveViewport()->Invalidate();
 	}

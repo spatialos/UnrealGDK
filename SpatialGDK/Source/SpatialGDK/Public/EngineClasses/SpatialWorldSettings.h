@@ -8,6 +8,9 @@
 #include "GameFramework/WorldSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/LayerInfo.h"
+#include "Utils/SpatialDebuggerEditor.h"
+#include "EngineUtils.h"
+
 
 #include "SpatialWorldSettings.generated.h"
 
@@ -52,8 +55,30 @@ public:
 		bEnableMultiWorker = IsEnabled;
 	}
 
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override
+	{
+		if (PropertyChangedEvent.Property != nullptr)
+		{
+			const FName PropertyName(PropertyChangedEvent.Property->GetFName());
+			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, DefaultLayerLoadBalanceStrategy))
+			{
+				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
+				UWorld* World = GetWorld();
+				for (TActorIterator<ASpatialDebuggerEditor> It(World); It; ++It)
+				{
+					ASpatialDebuggerEditor* FoundActor = *It;
+					FoundActor->RefreshWorkerRegions();
+				}
+
+ 			}
+		}
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
+
 private:
 	/** Enable running different server worker types to split the simulation. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;
 };
+
+
