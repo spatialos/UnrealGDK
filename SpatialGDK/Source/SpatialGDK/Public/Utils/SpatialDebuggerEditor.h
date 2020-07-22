@@ -23,6 +23,7 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 	void ShowWorkerRegions(bool bEnabled);
 	void RefreshWorkerRegions();
 
+	bool IsMultiWorkerEnabled() const;
 protected:
 
 	FDelegateHandle OnBeginPieHandle;

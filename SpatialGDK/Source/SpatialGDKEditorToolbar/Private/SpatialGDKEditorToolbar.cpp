@@ -317,7 +317,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	);
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor)
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled)
 	);
 }
 
@@ -1478,6 +1480,16 @@ void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
 bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
 {
 	return GetDefault<USpatialGDKEditorSettings>()->IsBuildClientWorkerEnabled();
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
+{
+	return IsMultiWorkerEnabled() && bSpatialDebuggerEditorEnabled;
+}
+
+bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled() const
+{
+	return SpatialDebuggerEditor != nullptr && SpatialDebuggerEditor->IsMultiWorkerEnabled();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()

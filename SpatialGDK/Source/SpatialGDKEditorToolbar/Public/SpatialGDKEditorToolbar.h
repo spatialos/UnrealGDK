@@ -81,6 +81,8 @@ private:
 	void StopSpatialServiceButtonClicked();
 
 	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
+	bool IsSpatialDebuggerEditorEnabled() const;
+	bool IsMultiWorkerEnabled() const;
 	void ToggleSpatialDebuggerEditor();
 
 	bool StartNativeIsVisible() const;
@@ -198,9 +200,5 @@ private:
 
 	// Used to show worker boundaries in the editor
 	ASpatialDebuggerEditor* SpatialDebuggerEditor;
-
-	// TODO: move this to the editor settings and load and save
 	bool bSpatialDebuggerEditorEnabled;
-
-
 };

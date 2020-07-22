@@ -9,6 +9,9 @@
 #include "Editor.h"
 #include "LevelEditor.h"
 #include "Modules/ModuleManager.h"
+#include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 
 using namespace SpatialGDK;
 
@@ -89,6 +92,18 @@ void ASpatialDebuggerEditor::RefreshWorkerRegions()
 		// Redraw editor window to show changes
 		GEditor->GetActiveViewport()->Invalidate();
 	}
+}
+
+bool ASpatialDebuggerEditor::IsMultiWorkerEnabled() const
+{
+	UWorld* World = GetWorld();
+		
+	const ASpatialWorldSettings* WorldSettings = World ? Cast<ASpatialWorldSettings>(World->GetWorldSettings()) : nullptr;
+
+	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
+
+	return bIsMultiWorkerEnabled;
+	
 }
 
 void ASpatialDebuggerEditor::InitialiseWorkerRegions()
