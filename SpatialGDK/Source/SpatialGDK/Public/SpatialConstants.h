@@ -109,6 +109,7 @@ const Worker_ComponentId TOMBSTONE_COMPONENT_ID = 9982;
 const Worker_ComponentId DORMANT_COMPONENT_ID = 9981;
 const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
 const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
+const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
 
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
@@ -315,7 +316,7 @@ const FString DEV_LOGIN_TAG = TEXT("dev_login");
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
 	// Actor components
-	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
+	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID, VISIBLE_COMPONENT_ID,
 
 	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
@@ -330,7 +331,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
-	TArray<Worker_ComponentId>{ // RPCs from the server
+	TArray<Worker_ComponentId>{ // Actor components
+								VISIBLE_COMPONENT_ID,
+		
+								// RPCs from the server
 								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 	};
 
