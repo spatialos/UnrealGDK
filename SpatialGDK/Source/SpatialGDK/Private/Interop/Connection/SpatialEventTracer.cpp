@@ -2,6 +2,9 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
+#include "UObject/Class.h"
+#include "GameFramework/Actor.h"
+
 #include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
@@ -17,7 +20,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	{
 		const Trace_Event& Event = Item->item.event;
 
-		// TODO: remove temproray filtering?
+		// TODO: remove temporary filtering?
 		if (Event.type == FString("network.receive_raw_message") ||
 			Event.type == FString("network.receive_udp_datagram") ||
 			Event.type == FString("network.send_raw_message") ||
@@ -104,7 +107,7 @@ const Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer() const
 	return EventTracer;
 }
 
-void SpatialGDK::SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
+void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 {
 	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TCHAR_TO_ANSI(*Event.Message), TCHAR_TO_ANSI(*Event.Type), nullptr };
@@ -124,13 +127,23 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 	}
 }
 
-void SpatialGDK::SpatialEventTracer::Enable()
+void SpatialEventTracer::Enable()
 {
 	Trace_EventTracer_Enable(EventTracer);
 }
 
-void SpatialGDK::SpatialEventTracer::Disable()
+void SpatialEventTracer::Disable()
 {
 	Trace_EventTracer_Disable(EventTracer);
 }
 
+SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(AActor * Actor, UFunction * Function)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "Some RPC";
+	Event.Type = "RPC";
+	Event.Data.Add("Actor", Actor->GetName());
+	Event.Data.Add("Function", Function->GetName());
+	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	return Event;
+}
