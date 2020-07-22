@@ -20,6 +20,10 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
+#if NO_LOGGING
+#error test
+#endif
+
 #define LOCTEXT_NAMESPACE "SpatialGDKSettings"
 
 namespace
