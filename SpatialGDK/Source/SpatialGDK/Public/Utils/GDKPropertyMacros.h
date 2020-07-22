@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "Launch/Resources/Version.h"
 #include "UObject/UnrealType.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #if ENGINE_MINOR_VERSION <= 24
 	#define GDK_PROPERTY(Type) U##Type
