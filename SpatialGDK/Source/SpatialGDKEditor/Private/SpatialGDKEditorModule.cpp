@@ -117,38 +117,6 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 	return true;
 }
 
-uint32 GetPIEServerWorkers()
-{
-	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (EditorSettings->bGenerateDefaultLaunchConfig && EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
-	{
-		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-		check(EditorWorld);
-		return GetWorkerCountFromWorldSettings(*EditorWorld);
-	}
-	else
-	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
-	}
-}
-
-bool FSpatialGDKEditorModule::ForEveryWorker(TFunction<void(const FName&, int32)> Function) const
-{
-	if (ShouldStartLocalServer())
-	{
-		int32 AdditionalServerIndex = 0;
-		for (uint32 i = 0; i < GetPIEServerWorkers(); ++i)
-		{
-			Function(SpatialConstants::DefaultServerWorkerType, AdditionalServerIndex);
-			AdditionalServerIndex++;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
 bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 {
 	return SpatialGDKEditorInstance->GetPackageAssemblyRef()->CanBuild();
