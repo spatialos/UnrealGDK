@@ -81,7 +81,7 @@ public:
 	// Get all the FlowControllers registered in this Test.
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
 
-	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1", ToolTip = "Returns the FlowController specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1", ToolTip = "Returns the FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
 	// Get the FlowController that is Local to this instance
