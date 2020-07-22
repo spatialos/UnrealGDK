@@ -158,15 +158,24 @@ void SpatialRPCService::PushOverflowedRPCs()
 			case EPushRPCResult::Success:
 				NumProcessed++;
 				break;
+			case EPushRPCResult::QueueOverflowed:
+				UE_LOG(LogSpatialRPCService, Log,
+					TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still overflowed: %d, Entity: %lld, RPC type: %s"),
+					NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+				break;
 			case EPushRPCResult::DropOverflowed:
 				checkf(false, TEXT("Shouldn't be able to drop on overflow for RPC type that was previously queued."));
 				break;
 			case EPushRPCResult::HasAckAuthority:
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+				UE_LOG(LogSpatialRPCService, Warning,
+					TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. Entity: %lld, RPC type: %s"),
+					EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			case EPushRPCResult::NoRingBufferAuthority:
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+				UE_LOG(LogSpatialRPCService, Warning,
+					TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"),
+					EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			default:
