@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed the SpatialGDK Setting bEnableMultiWorker to private, to enforce usage of IsMultiWorkerEnabled which respects the `-OverrideMultiWorker` flag.
 - No longer assert when SpatialStatics::GetActorEntityId() is passed a nullptr, return SpatialConstants::INVALID_ENTITY_ID instead.
 - Removed the `EditorWorkerController`, because it is not required anymore for running consecutive PIE sessions.
+- Fixed a crash that occured when overflowed RPCs remained overflowed after trying to flush them.
 
 ## [`0.10.0`] - 2020-07-08
 
