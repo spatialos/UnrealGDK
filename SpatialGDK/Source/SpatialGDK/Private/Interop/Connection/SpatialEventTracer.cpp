@@ -16,6 +16,18 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	case TRACE_ITEM_TYPE_EVENT:
 	{
 		const Trace_Event& Event = Item->item.event;
+
+		// TODO: remove temproray filtering?
+		if (Event.type == FString("network.receive_raw_message") ||
+			Event.type == FString("network.receive_udp_datagram") ||
+			Event.type == FString("network.send_raw_message") ||
+			Event.type == FString("network.send_udp_datagram") ||
+			Event.type == FString("worker.dequeue_op") ||
+			Event.type == FString("worker.enqueue_op"))
+		{
+			return;
+		}
+
 		unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[0]);
 		unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[8]);
 		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %ul%ul, Type: %s, Message: %s, Timestamp: %ul"),
@@ -99,23 +111,16 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
-		if (Event.Data.Num() == 0)
+		Trace_EventData* EventData = Trace_EventData_Create();
+		for (const auto& Elem : Event.Data)
 		{
-			Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+			const char* Key = TCHAR_TO_ANSI(*Elem.Key);
+			const char* Value = TCHAR_TO_ANSI(*Elem.Value);
+			Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 		}
-		else
-		{
-			Trace_EventData* EventData = Trace_EventData_Create();
-			for (const auto& Elem : Event.Data)
-			{
-				const char* Key = TCHAR_TO_ANSI(*Elem.Key);
-				const char* Value = TCHAR_TO_ANSI(*Elem.Value);
-				Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
-			}
-			TraceEvent.data = EventData;
-			Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
-			Trace_EventData_Destroy(EventData);
-		}
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
 	}
 }
 
