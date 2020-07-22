@@ -349,9 +349,22 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition)
+void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition, const FWorkerDefinition& Worker)
 {
-	StepDefinitions.Add(StepDefinition);
+	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
+
+	StepDefinitionCopy.Workers.Add(Worker);
+
+	StepDefinitions.Add(StepDefinitionCopy);
+}
+
+void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers)
+{
+	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
+
+	StepDefinitionCopy.Workers.Append(Workers);
+
+	StepDefinitions.Add(StepDefinitionCopy);
 }
 
 void ASpatialFunctionalTest::StartStep(const int StepIndex)

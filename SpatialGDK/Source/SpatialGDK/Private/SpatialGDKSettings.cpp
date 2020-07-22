@@ -74,6 +74,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
+	, QueuedIncomingRPCRetryTime(1.0f)
 	, QueuedOutgoingRPCRetryTime(1.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
