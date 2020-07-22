@@ -7,6 +7,8 @@
 #include "Utils/InspectionColors.h"
 #include "Debug/DebugDrawService.h"
 #include "Editor.h"
+#include "LevelEditor.h"
+#include "Modules/ModuleManager.h"
 
 using namespace SpatialGDK;
 
@@ -23,34 +25,74 @@ ASpatialDebuggerEditor::ASpatialDebuggerEditor(const FObjectInitializer& ObjectI
 
 	NetUpdateFrequency = 1.f;
 
-	bShowWorkerRegions = true;
+	bShowWorkerRegions = false;
+
+	OnBeginPieHandle = FEditorDelegates::BeginPIE.AddUObject(this, &ASpatialDebuggerEditor::OnPieBeginEvent);
+	OnEndPieHandle = FEditorDelegates::EndPIE.AddUObject(this, &ASpatialDebuggerEditor::OnPieEndEvent);
 }
 
 void ASpatialDebuggerEditor::BeginPlay()
 {
-	// Destroy editor worker regions before game runs 
-	DestroyWorkerRegions();
-	Destroy();
+	// Override parent to do nothing
 }
 
 void ASpatialDebuggerEditor::Destroyed()
 {
+	FEditorDelegates::BeginPIE.RemoveAll(this);
+	FEditorDelegates::EndPIE.RemoveAll(this);
 	DestroyWorkerRegions();
 }
 
-void ASpatialDebuggerEditor::SpatialToggleDebugger()
+void ASpatialDebuggerEditor::OnPieBeginEvent(bool bIsSimulating)
 {
-	DestroyWorkerRegions();
+	if (bShowWorkerRegions)
+	{
+		DestroyWorkerRegions();
+
+		// Redraw editor window to show changes
+		GEditor->GetActiveViewport()->Invalidate();
+	}
+}
+
+void ASpatialDebuggerEditor::OnPieEndEvent(bool bIsSimulating)
+{
+	if (bShowWorkerRegions)
+	{
+		InitialiseWorkerRegions();
+		CreateWorkerRegions();
+
+		// Redraw editor window to show changes
+		GEditor->GetActiveViewport()->Invalidate();
+	}
+}
+
+void ASpatialDebuggerEditor::ShowWorkerRegions(bool bEnabled)
+{
+	bShowWorkerRegions = bEnabled;
 
 	if (bShowWorkerRegions)
 	{
 		InitialiseWorkerRegions();
 		CreateWorkerRegions();
 	}
-	bShowWorkerRegions = !bShowWorkerRegions;
+}
 
-	// Redraw editor window to show changes
-	GEditor->GetActiveViewport()->Invalidate();
+void ASpatialDebuggerEditor::RefreshWorkerRegions(bool bEnabled)
+{
+	if (bEnabled != bShowWorkerRegions)
+	{
+		bShowWorkerRegions = bEnabled;
+		DestroyWorkerRegions();
+
+		if (bShowWorkerRegions)
+		{
+			InitialiseWorkerRegions();
+			CreateWorkerRegions();
+		}
+
+		// Redraw editor window to show changes
+		GEditor->GetActiveViewport()->Invalidate();
+	}
 }
 
 void ASpatialDebuggerEditor::InitialiseWorkerRegions()

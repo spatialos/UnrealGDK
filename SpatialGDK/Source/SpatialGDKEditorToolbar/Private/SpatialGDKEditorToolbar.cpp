@@ -126,6 +126,13 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
+
+	// TODO: read from settings
+	bSpatialDebuggerEditorEnabled = true;
+
+	// Get notified of map changed events to update worker boundaries in the editor
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	FDelegateHandle OnMapChangedHandle = LevelEditorModule.OnMapChanged().AddRaw(this, &FSpatialGDKEditorToolbarModule::MapChanged);
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -157,6 +164,12 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 			ExecutionFailSound->RemoveFromRoot();
 		}
 		ExecutionFailSound = nullptr;
+	}
+
+	FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
+	if (LevelEditor)
+	{
+		LevelEditor->OnMapChanged().RemoveAll(this);
 	}
 
 	FSpatialGDKEditorToolbarStyle::Shutdown();
@@ -762,30 +775,43 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 		return;
 	}
 
-	// Check if there is already a SpatialDebuggerEditor for this map
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-	check(EditorWorld);
-
-	TArray<ASpatialDebuggerEditor*> SpatialDebuggerEditors;
-	
-	for (TActorIterator<ASpatialDebuggerEditor> It(EditorWorld); It; ++It)
+	if (SpatialDebuggerEditor != nullptr)
 	{
-		ASpatialDebuggerEditor* Actor = *It;
-		SpatialDebuggerEditors.Add(Actor);
+		bSpatialDebuggerEditorEnabled = !bSpatialDebuggerEditorEnabled;
+		SpatialDebuggerEditor->RefreshWorkerRegions(bSpatialDebuggerEditorEnabled);
 	}
-	
-	// There should be a maximum of one spatial debugger editor for each world
-	check(SpatialDebuggerEditors.Num() <= 1);
-
-	// If no spatial debugger editor found then intialise one
-	if (SpatialDebuggerEditors.Num() == 0)
+	else
 	{
-		FActorSpawnParameters spawnParameters;
-		spawnParameters.bHideFromSceneOutliner = true;
-		SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(spawnParameters);
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("There was no SpatialDebuggerEditor setup when the map was loaded."));
 	}
+}
 
-	SpatialDebuggerEditor->SpatialToggleDebugger();
+
+void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType MapChangeType)
+{
+	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
+	{
+		// If spatial networking is enabled then create the spatial debugger for this map
+		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			// Create the spatial debugger for this map
+			UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+			check(EditorWorld);
+
+			FActorSpawnParameters spawnParameters;
+			spawnParameters.bHideFromSceneOutliner = true;
+			SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(spawnParameters);
+			SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
+		}
+	}
+	else if (MapChangeType == EMapChangeType::TearDownWorld)
+	{
+		// Destroy spatial debugger when changing map as it will be invalid
+		if (SpatialDebuggerEditor != nullptr)
+		{
+			SpatialDebuggerEditor->Destroy();
+		}
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
@@ -800,11 +826,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 	check(EditorWorld);
 
-	// Remove editor worker boundary display, if present
-	for (TActorIterator<ASpatialDebuggerEditor> It(EditorWorld); It; ++It)
-	{
-		It->Destroy();
-	}
+	//// Remove editor worker boundary display, if present
+	//for (TActorIterator<ASpatialDebuggerEditor> It(EditorWorld); It; ++It)
+	//{
+	//	It->Destroy();
+	//}
 
 	if (!IsSnapshotGenerated())
 	{

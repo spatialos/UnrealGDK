@@ -17,10 +17,16 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-	virtual void SpatialToggleDebugger() override;
+	void OnPieBeginEvent(bool bIsSimulating);
+	void OnPieEndEvent(bool bIsSimulating);
+
+	void ShowWorkerRegions(bool bEnabled);
+	void RefreshWorkerRegions(bool bEnabled);
 
 protected:
 
-	void InitialiseWorkerRegions();
+	FDelegateHandle OnBeginPieHandle;
+	FDelegateHandle OnEndPieHandle;
 
+	void InitialiseWorkerRegions();
 };
