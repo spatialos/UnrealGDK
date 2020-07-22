@@ -81,8 +81,8 @@ public:
 	// Get all the FlowControllers registered in this Test.
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
 
-	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType ControllerType, int InstanceId);
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1", ToolTip = "Returns the FlowController specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
 	// Get the FlowController that is Local to this instance
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -145,7 +145,7 @@ public:
 	FWorkerDefinition GetAllClients() { return FWorkerDefinition::AllClients; }
 
 	// # Actor Delegation APIs
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip="Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip="Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface.", ServerWorkerId = "1"))
 	void AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished = false);
 
 	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
