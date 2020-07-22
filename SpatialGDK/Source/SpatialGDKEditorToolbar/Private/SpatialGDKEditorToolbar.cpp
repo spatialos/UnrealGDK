@@ -25,6 +25,7 @@
 #include "Misc/MessageDialog.h"
 #include "Sound/SoundBase.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
@@ -47,6 +48,7 @@
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKCloudDeploymentConfiguration.h"
 #include "SpatialRuntimeLoadBalancingStrategies.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
@@ -89,9 +91,12 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
 	GetMutableDefault<USpatialGDKSettings>()->SetServicesRegion(bUseChinaServicesRegion ? EServicesRegion::CN : EServicesRegion::Default);
 
+	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
+
+	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 
 	OnAutoStartLocalDeploymentChanged();
 
@@ -115,6 +120,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
+
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 }
 
@@ -155,6 +162,8 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 
 void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
+	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
+
 	if (bStopSpatialOnExit)
 	{
 		LocalDeploymentManager->TryStopLocalDeployment();
@@ -512,11 +521,10 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateBetterEditableTextWidg
 		.FillWidth(1.f)
 		.VAlign(VAlign_Bottom)
 		[
-			SNew(SEditableText)
+			SNew(SEditableTextBox)
 			.OnTextCommitted_Static(OnTextCommitted)
 			.Text(Text)
 			.SelectAllTextWhenFocused(true)
-			.ColorAndOpacity(FLinearColor::White * 0.8f)
 			.IsEnabled_Static(IsEnabled)
 			.Font(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
 		];
@@ -795,7 +803,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf);
-		SetLevelEditorPlaySettingsWorkerType(Conf);
 
 		// Also create default launch config for cloud deployments.
 		{
@@ -813,8 +820,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	else
 	{
 		LaunchConfig = SpatialGDKEditorSettings->GetSpatialOSLaunchConfig();
-
-		SetLevelEditorPlaySettingsWorkerType(SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig);
 	}
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
@@ -974,7 +979,7 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible() const
 void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 {
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	UProperty* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
+	GDK_PROPERTY(Property)* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());
@@ -1018,6 +1023,8 @@ void FSpatialGDKEditorToolbarModule::LocalDeploymentClicked()
 	SpatialGDKEditorSettings->SetSpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment);
 
 	OnAutoStartLocalDeploymentChanged();
+
+	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 }
 
 void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
@@ -1056,7 +1063,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				? PropertyChangedEvent.Property->GetFName()
 				: NAME_None;
 		FString PropertyNameStr = PropertyName.ToString();
-		if (PropertyNameStr == TEXT("bStopSpatialOnExit"))
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStopSpatialOnExit))
 		{
 			/*
 			* This updates our own local copy of bStopSpatialOnExit as Settings change.
@@ -1066,13 +1073,17 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			*/
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
-		else if (PropertyNameStr == TEXT("bStopLocalDeploymentOnEndPIE"))
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStopLocalDeploymentOnEndPIE))
 		{
 			bStopLocalDeploymentOnEndPIE = Settings->bStopLocalDeploymentOnEndPIE;
 		}
-		else if (PropertyNameStr == TEXT("bAutoStartLocalDeployment"))
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bAutoStartLocalDeployment))
 		{
 			OnAutoStartLocalDeploymentChanged();
+		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bConnectServerToCloud))
+		{
+			LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 		}
 	}
 }
@@ -1226,7 +1237,6 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		}
 	}
 }
-
 
 void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 {

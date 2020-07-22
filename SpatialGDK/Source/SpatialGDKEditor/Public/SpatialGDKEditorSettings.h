@@ -427,6 +427,17 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentAuthenticationToken;
 
+	/** Whether to start local server worker when connecting to cloud deployment. If selected, make sure that the cloud deployment you want to connect to is not automatically launching Server-workers. (That your workers have "manual_connection_only" enabled) */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (DisplayName = "Connect local server worker to the cloud deployment"))
+	bool bConnectServerToCloud;
+
+	/** Port on which the receptionist proxy will be available. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
+	int32 LocalReceptionistPort;
+
+	/** Network address to bind the receptionist proxy to. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Listening Address"))
+	FString ListeningAddress;
 private:
 	UPROPERTY(config)
 	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
@@ -669,6 +680,12 @@ public:
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
 		return SimulatedPlayerDeploymentName;
+	}
+
+	void SetConnectServerToCloud(bool bIsEnabled);
+	FORCEINLINE bool IsConnectServerToCloudEnabled() const
+	{
+		return bConnectServerToCloud;
 	}
 
 	void SetSimulatedPlayerCluster(const FString& NewCluster);

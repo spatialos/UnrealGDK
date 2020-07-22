@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
@@ -151,6 +152,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
+	/** Seconds to wait before attempting to reprocess queued incoming RPCs */
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Attempting To Reprocess Queued Incoming RPCs"))
+	float QueuedIncomingRPCRetryTime;
+
 	/** Seconds to wait before retying all queued outgoing RPCs. If 0 there will not be retried on a timer. */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
 	float QueuedOutgoingRPCRetryTime;
@@ -223,7 +228,7 @@ public:
 
 private:
 #if WITH_EDITOR
-	bool CanEditChange(const UProperty* InProperty) const override;
+	bool CanEditChange(const GDK_PROPERTY(Property)* InProperty) const override;
 
 	void UpdateServicesRegionFile();
 #endif
@@ -242,6 +247,8 @@ public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
+
+	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
 
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
@@ -324,4 +331,7 @@ public:
 	  */
 	UPROPERTY(Config)
 	bool bEnableMultiWorkerDebuggingWarnings;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
+	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 };

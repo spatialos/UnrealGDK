@@ -70,7 +70,8 @@
       "Type": "Editor",
       "LoadingPhase": "PreLoadingScreen",
       "WhitelistPlatforms": [
-        "Win64"
+        "Win64",
+        "Mac"
       ]
     },
     {

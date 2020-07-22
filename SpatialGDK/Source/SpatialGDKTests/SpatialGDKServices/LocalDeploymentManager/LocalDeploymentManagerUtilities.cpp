@@ -83,7 +83,6 @@ bool FStartDeployment::Update()
 			{
 				return;
 			}
-			SetLevelEditorPlaySettingsWorkerType(Conf);
 
 			if (LocalDeploymentManager->IsLocalDeploymentRunning())
 			{

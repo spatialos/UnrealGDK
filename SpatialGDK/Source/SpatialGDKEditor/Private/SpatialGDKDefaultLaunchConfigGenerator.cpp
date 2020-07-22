@@ -95,16 +95,6 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 } // anonymous namespace
 
-void SetLevelEditorPlaySettingsWorkerType(const FWorkerTypeLaunchSection& InWorker)
-{
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-
-	PlayInSettings->WorkerTypesToLaunch.Empty(1);
-
-	// TODO: Engine PR to remove PlayInSettings WorkerType map.
-	PlayInSettings->WorkerTypesToLaunch.Add(SpatialConstants::DefaultServerWorkerType, InWorker.NumEditorInstances);
-}
-
 uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
@@ -115,7 +105,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	if (WorldSettings->bEnableMultiWorker == false)
+	if (WorldSettings->IsMultiWorkerEnabled() == false)
 	{
 		return 1;
 	}
@@ -149,7 +139,12 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 
 		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = nullptr;
 		FIntPoint Dimension;
-		if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
+		if (LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing Load balancing strategy on layer %s"), *LayerKey.ToString());
+			NumWorkers += 1;
+		}
+		else if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(LayerInfo.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), LoadBalancingStrat, Dimension))
 		{
 			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Could not get the SpatialOS Load balancing strategy for layer %s"), *LayerKey.ToString());
 			NumWorkers += 1;
@@ -167,7 +162,7 @@ bool TryGetLoadBalancingStrategyFromWorldSettings(const UWorld& World, UAbstract
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 
-	if (WorldSettings == nullptr || !WorldSettings->bEnableMultiWorker)
+	if (WorldSettings == nullptr || !WorldSettings->IsMultiWorkerEnabled())
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("No SpatialWorldSettings on map %s"), *World.GetMapName());
 		return false;

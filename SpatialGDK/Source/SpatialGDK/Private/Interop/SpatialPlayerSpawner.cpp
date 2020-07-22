@@ -191,7 +191,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 	Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
 	FindPlayerStartAndProcessPlayerSpawn(RequestPayload, ClientWorkerId);
 
-	const Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
+	Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
 	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
 }
 
@@ -324,20 +324,19 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 	const FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
 	if (PlayerStartRef != FUnrealObjectRef::NULL_OBJECT_REF)
 	{
-		bool bUnresolvedRef;
+		bool bUnresolvedRef = false;
 		AActor* PlayerStart = Cast<AActor>(FUnrealObjectRef::ToObjectPtr(PlayerStartRef, NetDriver->PackageMap, bUnresolvedRef));
 		bRequestHandledSuccessfully = !bUnresolvedRef;
 
 		if (bRequestHandledSuccessfully)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %s. PlayerStart: %s"), *ClientWorkerId, *PlayerStart->GetName());
+			PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 		}
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s"), *ClientWorkerId);
 		}
-
-		PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 	}
 	else
 	{
@@ -390,8 +389,8 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 		return;
 	}
 
-	Schema_CommandRequest* OldRequest = OutgoingForwardPlayerSpawnRequests.FindAndRemoveChecked(RequestId).Get();
-	Schema_Object* OldRequestPayload = Schema_GetCommandRequestObject(OldRequest);
+	const auto OldRequest = OutgoingForwardPlayerSpawnRequests.FindAndRemoveChecked(RequestId);
+	Schema_Object* OldRequestPayload = Schema_GetCommandRequestObject(OldRequest.Get());
 
 	// If the chosen PlayerStart is deleted or being deleted, we will pick another.
 	const FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
@@ -406,9 +405,9 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 	}
 
 	// Resend the ForwardSpawnPlayer request.
-	Worker_CommandRequest ForwardSpawnPlayerRequest = ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(OldRequest));
+	Worker_CommandRequest ForwardSpawnPlayerRequest = ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(OldRequest.Get()));
 	const Worker_RequestId NewRequestId = NetDriver->Connection->SendCommandRequest(EntityId, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
 
 	// Move the request data from the old request ID map entry across to the new ID entry.
-	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(OldRequest));
+	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(OldRequest.Get()));
 }

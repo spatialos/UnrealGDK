@@ -5,39 +5,56 @@
 
 namespace SpatialGDK
 {
-void FindFirstOpOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType InOpType, Worker_Op** OutOp)
+
+Worker_Op* FindFirstOpOfType(const TArray<OpList>& InOpLists, const Worker_OpType OpType)
 {
-	for (const Worker_OpList* OpList : InOpLists)
+	for (const OpList& Ops : InOpLists)
 	{
-		for (size_t i = 0; i < OpList->op_count; ++i)
+		for (size_t i = 0; i < Ops.Count; ++i)
 		{
-			Worker_Op* Op = &OpList->ops[i];
+			Worker_Op* Op = &Ops.Ops[i];
+
+			if (Op->op_type == OpType)
+			{
+				return Op;
+			}
+		}
+	}
+	return nullptr;
+}
+
+void AppendAllOpsOfType(const TArray<OpList>& InOpLists, const Worker_OpType InOpType, TArray<Worker_Op*>& FoundOps)
+{
+	for (const OpList& Ops : InOpLists)
+	{
+		for (size_t i = 0; i < Ops.Count; ++i)
+		{
+			Worker_Op* Op = &Ops.Ops[i];
 
 			if (Op->op_type == InOpType)
 			{
-				*OutOp = Op;
-				return;
+				FoundOps.Add(Op);
 			}
 		}
 	}
 }
 
-void FindFirstOpOfTypeForComponent(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType InOpType, const Worker_ComponentId InComponentId, Worker_Op** OutOp)
+Worker_Op* FindFirstOpOfTypeForComponent(const TArray<SpatialGDK::OpList>& InOpLists, const Worker_OpType OpType, const Worker_ComponentId ComponentId)
 {
-	for (const Worker_OpList* OpList : InOpLists)
+	for (const OpList& Ops : InOpLists)
 	{
-		for (size_t i = 0; i < OpList->op_count; ++i)
+		for (size_t i = 0; i < Ops.Count; ++i)
 		{
-			Worker_Op* Op = &OpList->ops[i];
+			Worker_Op* Op = &Ops.Ops[i];
 
-			if ((Op->op_type == InOpType) &&
-				GetComponentId(Op) == InComponentId)
+			if ((Op->op_type == OpType) &&
+				GetComponentId(Op) == ComponentId)
 			{
-				*OutOp = Op;
-				return;
+				return Op;
 			}
 		}
 	}
+	return nullptr;
 }
 
 Worker_ComponentId GetComponentId(const Worker_Op* Op)
@@ -60,4 +77,5 @@ Worker_ComponentId GetComponentId(const Worker_Op* Op)
 		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 }
+
 } // namespace SpatialGDK

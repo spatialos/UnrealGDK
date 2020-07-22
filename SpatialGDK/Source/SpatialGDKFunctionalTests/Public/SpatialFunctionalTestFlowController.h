@@ -9,7 +9,7 @@
 
 namespace
 {
-	constexpr uint8 INVALID_FLOW_CONTROLLER_ID = 0;
+	constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
 }
 
 class ASpatialFunctionalTest;
@@ -47,11 +47,10 @@ public:
 	UPROPERTY(Replicated)
 	ASpatialFunctionalTest* OwningTest;
 
+	// Holds WorkerType and WorkerId. Type should be only Server or Client, and Id >= 1 (after registered)
+	// The Client WorkerId will be given out in the order they connect; the Server one matches its VirtualWorkerId
 	UPROPERTY(Replicated)
-	ESpatialFunctionalTestFlowControllerType ControllerType;
-
-	UPROPERTY(Replicated)
-	uint8 ControllerInstanceId; //client defined by login order; server maps to virtual worker
+	FWorkerDefinition WorkerDefinition;
 
 	// Prettier way to display type+id combo since it can be quite useful
 	const FString GetDisplayName();
@@ -60,12 +59,15 @@ public:
 	void OnTestFinished();
 
 	// Returns if the data regarding the FlowControllers has been replicated to their owners
-	bool IsReadyToRunTest() { return ControllerInstanceId != INVALID_FLOW_CONTROLLER_ID && bIsReadyToRunTest; }
+	bool IsReadyToRunTest() { return WorkerDefinition.Id != INVALID_FLOW_CONTROLLER_ID && bIsReadyToRunTest; }
 
 	// Each server worker will assign local client ids, this function will be used by
 	// the Test owner server worker to guarantee they are all unique
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetControllerInstanceId(uint8 NewControllerInstanceId);
+	void CrossServerSetWorkerId(int NewWorkerId);
+
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
 
 private:
 	// Current Step being executed
