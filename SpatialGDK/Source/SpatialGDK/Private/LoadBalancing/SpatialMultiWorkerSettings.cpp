@@ -59,7 +59,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNonEmptyWorkerLayers()
 {
 	if (WorkerLayers.Num() == 0 )
 	{
-		WorkerLayers.Emplace(SpatialGDK::DefaultLayerInfo);
+		WorkerLayers.Emplace(UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo());
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::Format(LOCTEXT("EmptyWorkerLayer_Prompt", "You need at least one layer in your settings. "
 			"Adding back the default layer. File: {0}"), FText::FromString(GetNameSafe(this))));

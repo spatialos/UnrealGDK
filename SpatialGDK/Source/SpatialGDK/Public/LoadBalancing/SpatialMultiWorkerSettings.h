@@ -17,7 +17,6 @@ class UAbstractLockingPolicy;
 
 namespace SpatialGDK
 {
-const FLayerInfo DefaultLayerInfo = { SpatialConstants::DefaultLayer, {AActor::StaticClass()}, USingleWorkerStrategy::StaticClass()};
 }
 
 UCLASS(NotBlueprintable)
@@ -39,6 +38,11 @@ public:
 #endif
 
 	uint32 GetMinimumRequiredWorkerCount() const;
+
+	static FLayerInfo GetDefaultLayerInfo()
+	{
+		return { SpatialConstants::DefaultLayer, { AActor::StaticClass() }, USingleWorkerStrategy::StaticClass() };
+	};
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TArray<FLayerInfo> WorkerLayers;
@@ -65,6 +69,6 @@ class SPATIALGDK_API USpatialMultiWorkerSettings : public UAbstractSpatialMultiW
 
 public:
 	USpatialMultiWorkerSettings()
-		: Super({SpatialGDK::DefaultLayerInfo}, UOwnershipLockingPolicy::StaticClass())
+		: Super({ UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo()}, UOwnershipLockingPolicy::StaticClass())
 	{}
 };
