@@ -573,6 +573,8 @@ bool FDropRPCQueueTest::Update()
 	return true;
 }
 
+#if (WITH_DEV_AUTOMATION_TESTS || WITH_PERF_AUTOMATION_TESTS) // Automation* functions only available with these flags
+
 RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_over_WHEN_we_process_the_rpc_THEN_return_DropEntireQueue_queue_command)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
@@ -586,3 +588,5 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_ov
 
 	return true;
 }
+
+#endif // (WITH_DEV_AUTOMATION_TESTS || WITH_PERF_AUTOMATION_TESTS)
