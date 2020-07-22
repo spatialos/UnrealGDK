@@ -278,8 +278,6 @@ private:
 
 	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
 
-	float GetSpatialPositionUpdateFrequency(AActor* CheckedActor);
-
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
@@ -320,7 +318,7 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastPositionSinceUpdate;
-	float TimeWhenPositionLastUpdated;
+	double TimeWhenPositionLastUpdated;
 
 	uint8 FramesTillDormancyAllowed = 0;
 

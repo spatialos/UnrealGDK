@@ -152,6 +152,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
+	/** Seconds to wait before attempting to reprocess queued incoming RPCs */
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Attempting To Reprocess Queued Incoming RPCs"))
+	float QueuedIncomingRPCRetryTime;
+
 	/** Seconds to wait before retying all queued outgoing RPCs. If 0 there will not be retried on a timer. */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
 	float QueuedOutgoingRPCRetryTime;
@@ -159,10 +163,6 @@ public:
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
 	float PositionUpdateFrequency;
-
-	/** Map containing classes that have a custom PositionUpdateFrequency. NOTE: The custom frequencies will be ignored if bBatchSpatialPositionUpdates is set to true! */
-	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (DisplayName = "Custom Position Update Frequency Classes"))
-	TMap<TSoftClassPtr<AActor>,float> CustomPositionUpdateFrequencyClasses;
 
 	/** Threshold an Actor needs to move, in centimeters, before its SpatialOS Position is updated.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
