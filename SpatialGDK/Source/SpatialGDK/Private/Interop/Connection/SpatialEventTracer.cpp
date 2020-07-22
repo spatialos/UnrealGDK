@@ -137,13 +137,46 @@ void SpatialEventTracer::Disable()
 	Trace_EventTracer_Disable(EventTracer);
 }
 
-SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(AActor * Actor, UFunction * Function)
+SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, const UFunction* Function)
 {
 	SpatialGDKEvent Event;
-	Event.Message = "Some RPC";
+	Event.Message = "";
 	Event.Type = "RPC";
 	Event.Data.Add("Actor", Actor->GetName());
-	Event.Data.Add("Function", Function->GetName());
 	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	Event.Data.Add("Function", Function->GetName());
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "RetireEntity";
+	Event.Data.Add("Actor", Actor->GetName());
+	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	//Event.Data.Add("CreateEntityRequestId", ToString(RequestID));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "AuthorityIntentUpdate";
+	Event.Data.Add("Actor", Actor->GetName());
+	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	//Event.Data.Add("NewAuthoritativeWorkerId", ToString(NewAuthoritativeWorkerId));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, Worker_RequestId CreateEntityRequestId)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "CreateEntity";
+	Event.Data.Add("Actor", Actor->GetName());
+	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	//Event.Data.Add("CreateEntityRequestId", ToString(CreateEntityRequestId));
 	return Event;
 }

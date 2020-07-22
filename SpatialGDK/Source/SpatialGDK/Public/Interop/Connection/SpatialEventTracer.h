@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "SpatialCommonTypes.h"
+
 // TODO Remove maybe?
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -39,7 +41,11 @@ struct SpatialGDKEvent
 };
 
 // TODO: discuss overhead from constructing SpatialGDKEvents
-SpatialGDKEvent ConstructEventFromRPC(AActor* Actor, UFunction* Function);
+SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, const UFunction* Function);
+SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
+SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
+SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
+
 
 struct SpatialEventTracer
 {
