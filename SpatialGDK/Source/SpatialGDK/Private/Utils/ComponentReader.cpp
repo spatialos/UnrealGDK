@@ -405,17 +405,17 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	{
 		ByteProperty->SetPropertyValue(Data, (uint8)Schema_IndexUint32(Object, FieldId, Index));
 	}
-	else if (GDK_PROPERTY(UInt16Property)* UInt16Property = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
+	else if (GDK_PROPERTY(UInt16Property)* UInt16PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
 	{
-		UInt16Property->SetPropertyValue(Data, (uint16)Schema_IndexUint32(Object, FieldId, Index));
+		UInt16PropertyPtr->SetPropertyValue(Data, (uint16)Schema_IndexUint32(Object, FieldId, Index));
 	}
-	else if (GDK_PROPERTY(UInt32Property)* UInt32Property = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
+	else if (GDK_PROPERTY(UInt32Property)* UInt32PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
 	{
-		UInt32Property->SetPropertyValue(Data, Schema_IndexUint32(Object, FieldId, Index));
+		UInt32PropertyPtr->SetPropertyValue(Data, Schema_IndexUint32(Object, FieldId, Index));
 	}
-	else if (GDK_PROPERTY(UInt64Property)* UInt64Property = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
+	else if (GDK_PROPERTY(UInt64Property)* UInt64PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
 	{
-		UInt64Property->SetPropertyValue(Data, Schema_IndexUint64(Object, FieldId, Index));
+		UInt64PropertyPtr->SetPropertyValue(Data, Schema_IndexUint64(Object, FieldId, Index));
 	}
 	else if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property))
 	{
@@ -575,15 +575,15 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 	{
 		return Schema_GetUint32Count(Object, FieldId);
 	}
-	else if (GDK_PROPERTY(UInt16Property)* UInt16Property = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
+	else if (GDK_PROPERTY(UInt16Property)* UInt16PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
 	{
 		return Schema_GetUint32Count(Object, FieldId);
 	}
-	else if (GDK_PROPERTY(UInt32Property)* UInt32Property = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
+	else if (GDK_PROPERTY(UInt32Property)* UInt32PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
 	{
 		return Schema_GetUint32Count(Object, FieldId);
 	}
-	else if (GDK_PROPERTY(UInt64Property)* UInt64Property = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
+	else if (GDK_PROPERTY(UInt64Property)* UInt64PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
 	{
 		return Schema_GetUint64Count(Object, FieldId);
 	}
