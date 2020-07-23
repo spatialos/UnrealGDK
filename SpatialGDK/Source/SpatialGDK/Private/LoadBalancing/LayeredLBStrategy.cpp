@@ -2,6 +2,8 @@
 
 #include "LoadBalancing/LayeredLBStrategy.h"
 
+
+#include "ILauncherProfile.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
@@ -51,10 +53,7 @@ void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualW
 	}
 
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
-	for (const auto& Elem : LayerNameToLBStrategy)
-	{
-		Elem.Value->SetLocalVirtualWorkerId(InLocalVirtualWorkerId);
-	}
+c
 }
 
 TSet<VirtualWorkerId> ULayeredLBStrategy::GetVirtualWorkerIds() const
@@ -164,6 +163,16 @@ uint32 ULayeredLBStrategy::GetMinimumRequiredWorkers() const
 
 	UE_LOG(LogLayeredLBStrategy, Verbose, TEXT("LayeredLBStrategy needs %d workers to support all layer strategies."), MinimumRequiredWorkers);
 	return MinimumRequiredWorkers;
+}
+
+TMap<FName, uint32> ULayeredLBStrategy::GetLayerVirtualWorkerRequirements() const
+{
+	TMap<FName, uint32> LayerVirtualWorkerRequirements;
+	for (const auto& Layer : LayerNameToLBStrategy)
+	{
+		LayerVirtualWorkerRequirements.Add(Layer.Key, Layer.Value->GetMinimumRequiredWorkers());
+	}
+	return LayerVirtualWorkerRequirements;
 }
 
 void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)

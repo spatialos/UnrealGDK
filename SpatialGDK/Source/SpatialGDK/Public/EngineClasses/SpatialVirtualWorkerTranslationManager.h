@@ -38,7 +38,7 @@ public:
 		SpatialOSWorkerInterface* InConnection,
 		SpatialVirtualWorkerTranslator* InTranslator);
 
-	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
+	void SetLayerVirtualWorkerMapping(const TMap<FName, uint32>& LayerToVirtualWorker);
 
 	// The translation manager only cares about changes to the authority of the translation mapping.
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
@@ -51,7 +51,7 @@ private:
 
 	TMap<VirtualWorkerId, TPair<PhysicalWorkerName, Worker_EntityId>> VirtualToPhysicalWorkerMapping;
 	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
-	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
+	TArray<TPair<FName, VirtualWorkerId>> UnassignedLayerVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
 
@@ -65,6 +65,6 @@ private:
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate() const;
 
-	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId);
+	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId, const VirtualWorkerId& VirtualWorkerId);
 };
 

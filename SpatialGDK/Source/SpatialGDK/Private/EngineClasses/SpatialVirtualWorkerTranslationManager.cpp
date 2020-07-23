@@ -5,6 +5,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
+#include "Programs/UnrealHeaderTool/Private/Specifiers/FunctionSpecifiers.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
@@ -19,16 +20,20 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	, bWorkerEntityQueryInFlight(false)
 {}
 
-void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
+void SpatialVirtualWorkerTranslationManager::SetLayerVirtualWorkerMapping(const TMap<FName, uint32>& LayerToVirtualWorker)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"), NumVirtualWorkers);
-
 	// Currently, this should only be called once on startup. In the future we may allow for more
 	// flexibility.
-	for (uint32 i = 1; i <= NumVirtualWorkers; i++)
+	VirtualWorkerId NextVirtualWorker = 1;
+	for (const auto& Layer: LayerToVirtualWorker)
 	{
-		UnassignedVirtualWorkers.Enqueue(i);
+		for (uint32 i = 0; i < Layer.Value; i++)
+		{
+			UnassignedLayerVirtualWorkers.Add(TPair<FName, VirtualWorkerId>{Layer.Key, NextVirtualWorker++});
+		}
 	}
+
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"), NextVirtualWorker - 1);
 }
 
 void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
@@ -69,6 +74,16 @@ void SpatialVirtualWorkerTranslationManager::WriteMappingToSchema(Schema_Object*
 // system entity query, assign the VirtualWorkerIds to the workers represented by the system entities.
 void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
+	struct ServerInfo
+	{
+		FString WorkerName;
+		Worker_EntityId ServerWorkerEntityId;
+		FName LayerHint;
+	};
+
+	TArray<ServerInfo> PendingServersToAssign;
+	PendingServersToAssign.Reserve(Op.result_count);
+
 	// The query response is an array of entities. Each of these represents a worker.
 	for (uint32_t i = 0; i < Op.result_count; ++i)
 	{
@@ -91,13 +106,30 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 					continue;
 				}
 
-				// If we didn't find all our server worker entities the first time, future query responses should
-				// ignore workers that we have already assigned a virtual worker ID.
-				if (!UnassignedVirtualWorkers.IsEmpty())
+				PendingServersToAssign.Add(ServerInfo
+					{
+						SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID),
+						Entity.entity_id,
+						*SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID)
+					});
+			}
+		}
+	}
+
+	TArray<uint32> AssignedIndices;
+	AssignedIndices.Reserve(UnassignedLayerVirtualWorkers.Num());
+	for (const ServerInfo& PendingServer : PendingServersToAssign)
+	{
+		if (!PendingServer.LayerHint.IsNone())
+		{
+			VirtualWorkerId HintVirtualWorker = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+			for (uint32 i = 0; i < UnassignedLayerVirtualWorkers.Num(); i++)
+			{
+				TPair<FName, VirtualWorkerId> CurrentVirtualWorker = UnassignedLayerVirtualWorkers[i];
+				if (PendingServer.LayerHint.IsEqual(CurrentVirtualWorker.Key))
 				{
-					// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
-					// workers, this will need to process UnassignWorker before processing AssignWorker.
-					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID), Entity.entity_id);
+					// We found a worker which wants to be part of a specific layer.
+					Assign()
 				}
 			}
 		}
@@ -189,7 +221,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 }
 
-void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name, const Worker_EntityId& ServerWorkerEntityId)
+void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name, const Worker_EntityId& ServerWorkerEntityId, const VirtualWorkerId& VirtualWorkerId)
 {
 	if (PhysicalToVirtualWorkerMapping.Contains(Name))
 	{

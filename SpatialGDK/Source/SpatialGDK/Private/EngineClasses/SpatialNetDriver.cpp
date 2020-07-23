@@ -2675,5 +2675,5 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
-	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
+	VirtualWorkerTranslationManager->SetLayerVirtualWorkerMapping(Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->GetLayerVirtualWorkerRequirements());
 }
