@@ -155,44 +155,62 @@ namespace Improbable
                     mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath,
                     mainDeploymentRegion, mainDeploymentCluster, mainDeploymentTags, useChinaPlatform);
 
-                if (launchSimPlayerDeployment && DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
+                if (!launchSimPlayerDeployment)
+                {
+                    // Don't launch a simulated player deployment. Wait for main deployment to be created and then return.
+                    Console.WriteLine("Waiting for deployment to be ready...");
+                    var result = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                    if (result == null)
+                    {
+                        Console.WriteLine("Failed to create the main deployment");
+                        return 1;
+                    }
+
+                    Console.WriteLine("Successfully created the main deployment");
+                    return 0;
+                }
+
+                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
                 {
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                // TODO: UNR-3550 - Re-add dynamic worker flags when supported with new runtime.
-                // We need to wait for the main deployment to be finished starting before we can launch the sim player deployment.
-                Console.WriteLine("Waiting for deployment to be ready...");
-                var result = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
-                if (result == null)
+                // we are using the main deployment snapshot also for the sim player deployment, because we only need to specify a snapshot
+                // to be able to start the deployment. The sim players don't care about the actual snapshot.
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
+                    projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
+                    simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
+                    simNumPlayers, useChinaPlatform);
+
+                // Wait for both deployments to be created.
+                Console.WriteLine("Waiting for deployments to be ready...");
+                var mainDeploymentResult = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                if (mainDeploymentResult == null)
                 {
                     Console.WriteLine("Failed to create the main deployment");
                     return 1;
                 }
 
                 Console.WriteLine("Successfully created the main deployment");
-
-                if (launchSimPlayerDeployment)
+                var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                if (simPlayerDeployment == null)
                 {
-                    // we are using the main deployment snapshot also for the sim player deployment, because we only need to specify a snapshot
-                    // to be able to start the deployment. The sim players don't care about the actual snapshot.
-                    var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
-                        projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
-                        simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
-                        simNumPlayers, useChinaPlatform);
-
-                    // Wait for both deployments to be created.
-                    Console.WriteLine("Waiting for simulated player deployment to be ready...");
-
-                    var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
-                    if (simPlayerDeployment == null)
-                    {
-                        Console.WriteLine("Failed to create the simulated player deployment");
-                        return 1;
-                    }
-
-                    Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+                    Console.WriteLine("Failed to create the simulated player deployment");
+                    return 1;
                 }
+
+                Console.WriteLine("Successfully created the simulated player deployment");
+
+                // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
+                simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
+                {
+                    Key = "target_deployment_ready",
+                    Value = "true",
+                    WorkerType = CoordinatorWorkerName
+                });
+                deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
+
+                Console.WriteLine("Done! Simulated players will start to connect to your deployment");
             }
             catch (Grpc.Core.RpcException e)
             {
@@ -235,6 +253,13 @@ namespace Improbable
                 return 1;
             }
 
+            var autoConnect = false;
+            if (!Boolean.TryParse(args[10], out autoConnect))
+            {
+                Console.WriteLine("Cannot parse the auto-connect flag.");
+                return 1;
+            }
+
             try
             {
                 var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform));
@@ -256,6 +281,17 @@ namespace Improbable
                     Console.WriteLine("Failed to create the simulated player deployment");
                     return 1;
                 }
+
+                Console.WriteLine("Successfully created the simulated player deployment");
+
+                // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
+                simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
+                {
+                    Key = "target_deployment_ready",
+                    Value = autoConnect.ToString(),
+                    WorkerType = CoordinatorWorkerName
+                });
+                deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
 
                 Console.WriteLine("Done! Simulated players will start to connect to your deployment");
             }

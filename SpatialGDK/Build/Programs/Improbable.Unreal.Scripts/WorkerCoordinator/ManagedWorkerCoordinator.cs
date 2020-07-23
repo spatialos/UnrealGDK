@@ -23,6 +23,7 @@ namespace Improbable.WorkerCoordinator
         private const string DevAuthTokenWorkerFlag = "simulated_players_dev_auth_token";
         private const string TargetDeploymentWorkerFlag = "simulated_players_target_deployment";
         private const string DeploymentTotalNumSimulatedPlayersWorkerFlag = "total_num_simulated_players";
+        private const string TargetDeploymentReadyWorkerFlag = "target_deployment_ready";
 
         private const int AverageDelayMillisBetweenConnections = 1500;
         private const int PollTargetDeploymentReadyIntervalMillis = 5000;
@@ -121,7 +122,10 @@ namespace Improbable.WorkerCoordinator
             Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
 
-            Logger.WriteLog($"Starting {NumSimulatedPlayersToStart} simulated players.");
+            Logger.WriteLog("Waiting for target deployment to become ready.");
+            WaitForTargetDeploymentReady(connection);
+
+            Logger.WriteLog($"Target deployment is ready. Starting {NumSimulatedPlayersToStart} simulated players.");
             Thread.Sleep(InitialStartDelayMillis);
 
             var maxDelayMillis = deploymentTotalNumSimulatedPlayers * AverageDelayMillisBetweenConnections;
@@ -196,6 +200,21 @@ namespace Improbable.WorkerCoordinator
             }
 
             return defaultValue;
+        }
+
+        private void WaitForTargetDeploymentReady(Connection connection)
+        {
+            while (true)
+            {
+                var readyFlagOpt = connection.GetWorkerFlag(TargetDeploymentReadyWorkerFlag);
+                if (readyFlagOpt == "true")
+                {
+                    // Ready.
+                    break;
+                }
+
+                Thread.Sleep(PollTargetDeploymentReadyIntervalMillis);
+            }
         }
     }
 }
