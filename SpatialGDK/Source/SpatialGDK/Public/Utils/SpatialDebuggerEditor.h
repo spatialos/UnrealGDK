@@ -14,11 +14,7 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 {
 	GENERATED_UCLASS_BODY()
 
-	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
-
-	void OnPieBeginEvent(bool bIsSimulating);
-	void OnPieEndEvent(bool bIsSimulating);
 
 	void ShowWorkerRegions(bool bEnabled);
 	void RefreshWorkerRegions();
@@ -26,10 +22,5 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 	bool AllowWorkerBoundaries() const;
 protected:
 
-	FDelegateHandle OnBeginPieHandle;
-	FDelegateHandle OnEndPieHandle;
-
 	void InitialiseWorkerRegions();
-
-	bool bIsGameInProgress;
 };

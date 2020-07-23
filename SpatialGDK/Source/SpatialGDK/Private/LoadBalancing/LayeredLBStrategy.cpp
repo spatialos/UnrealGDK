@@ -28,8 +28,6 @@ void ULayeredLBStrategy::Init()
 void ULayeredLBStrategy::Init(UWorld* World)
 {
 	Super::Init(World);
-
-	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 	
 	const ASpatialWorldSettings* WorldSettings = World ? Cast<ASpatialWorldSettings>(World->GetWorldSettings()) : nullptr;
 	
@@ -268,7 +266,6 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
-//	check(IsReady());
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 

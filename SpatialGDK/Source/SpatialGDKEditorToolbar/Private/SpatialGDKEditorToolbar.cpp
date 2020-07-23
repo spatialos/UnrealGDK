@@ -813,7 +813,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	else if (MapChangeType == EMapChangeType::TearDownWorld)
 	{
 		// Destroy spatial debugger when changing map as it will be invalid
-		if (SpatialDebuggerEditor != nullptr)
+		if (IsValid(SpatialDebuggerEditor))
 		{
 			SpatialDebuggerEditor->Destroy();
 		}

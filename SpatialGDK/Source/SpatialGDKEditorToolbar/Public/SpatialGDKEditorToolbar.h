@@ -82,7 +82,7 @@ private:
 
 	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
 	bool IsSpatialDebuggerEditorEnabled() const;
-	bool IsMultiWorkerEnabled() const;
+	bool AllowWorkerBoundaries() const;
 	void ToggleSpatialDebuggerEditor();
 
 	bool StartNativeIsVisible() const;
