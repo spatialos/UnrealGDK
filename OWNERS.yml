@@ -1,0 +1,7 @@
+---
+filters:
+  'CHANGELOG\.md$':
+    approvers:
+      - sig-tech-writers
+    labels:
+      - docs/changelog

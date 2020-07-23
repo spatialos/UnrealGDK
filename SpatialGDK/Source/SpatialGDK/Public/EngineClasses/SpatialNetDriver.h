@@ -189,6 +189,10 @@ public:
 
 	SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
 
+#if ENGINE_MINOR_VERSION <= 24
+	float GetElapsedTime() { return Time; }
+#endif
+
 private:
 
 	TUniquePtr<SpatialDispatcher> Dispatcher;
