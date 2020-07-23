@@ -558,7 +558,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (Actor->GetIsHiddenDirty())
 	{
-		NetDriver->RefreshActorVisibility(Actor, Actor->IsHidden());
+		NetDriver->RefreshActorVisibility(Actor, !Actor->IsHidden());
 		Actor->SetIsHiddenDirty(false);
 	}
 
