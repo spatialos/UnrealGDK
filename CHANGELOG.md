@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
 - Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
 - Decoupled QueuedIncomingRPCWaitTime from reprocessing flush time with new parameter QueuedIncomingRPCRetryTime (default value 1.0s).  This enables independent control over how long to wait for queued RPCs to resolve parameters, as well as how frequently to check if the parameters are resolved.
+- Command-line arguments are now only available in non-shipping builds, if you wish to use command-line arguments for shipping builds the target rule `bEnableSpatialCmdlineInShipping` will let you do so.
 
 ### Bug fixes:
 - The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
