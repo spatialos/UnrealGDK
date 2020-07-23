@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
 - Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
 - Decoupled QueuedIncomingRPCWaitTime from reprocessing flush time with new parameter QueuedIncomingRPCRetryTime (default value 1.0s).  This enables independent control over how long to wait for queued RPCs to resolve parameters, as well as how frequently to check if the parameters are resolved.
+- Dynamic Worker Flags are once again supported with the Standard Runtime Variant. 
+- Simulated Player deployments started with the DeploymentLauncher now startup faster thanks to Dynamic Worker Flags. DeploymentLauncher `createsim` usage has been updated to include the new boolean argument `<auto-connect>` which will automatically connect your sim players to your deployment when it is ready.  
 
 ### Bug fixes:
 - The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.

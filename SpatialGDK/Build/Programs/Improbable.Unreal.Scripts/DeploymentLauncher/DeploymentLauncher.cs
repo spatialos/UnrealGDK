@@ -254,7 +254,7 @@ namespace Improbable
             }
 
             var autoConnect = false;
-            if (!Boolean.TryParse(args[10], out autoConnect))
+            if (!Boolean.TryParse(args[11], out autoConnect))
             {
                 Console.WriteLine("Cannot parse the auto-connect flag.");
                 return 1;
@@ -293,7 +293,10 @@ namespace Improbable
                 });
                 deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
 
-                Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+                if (autoConnect)
+                {
+                    Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+                }
             }
             catch (Grpc.Core.RpcException e)
             {
@@ -669,7 +672,7 @@ namespace Improbable
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <num-sim-players>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <num-sim-players>");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <num-sim-players> <auto-connect>");
             Console.WriteLine($"  Starts a simulated player deployment. Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
@@ -691,7 +694,7 @@ namespace Improbable
 
             if (args.Length == 0 ||
                 (args[0] == "create" && (args.Length != 15 && args.Length != 10)) ||
-                (args[0] == "createsim" && args.Length != 11) ||
+                (args[0] == "createsim" && args.Length != 12) ||
                 (args[0] == "stop" && (args.Length != 2 && args.Length != 3)) ||
                 (args[0] == "list" && args.Length != 2))
             {
