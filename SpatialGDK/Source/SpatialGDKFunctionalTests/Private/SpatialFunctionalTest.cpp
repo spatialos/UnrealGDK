@@ -252,6 +252,37 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	{
 		UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(), *UEnum::GetValueAsString(TestResult), *Message);
 
+		if (TestResult == TimesUpResult)
+		{
+			int NumRegisteredClients = 0;
+			int NumRegisteredServers = 0;
+
+			for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
+			{
+				if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
+				{
+					if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+					{
+						++NumRegisteredServers;
+					}
+					else
+					{
+						++NumRegisteredClients;
+					}
+				}
+			}
+
+			if (NumRegisteredClients < NumRequiredClients)
+			{
+				UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, Required clients: %d!"), *GetName(), NumRegisteredClients, NumRequiredClients);
+			}
+
+			if (NumRegisteredServers < NumExpectedServers)
+			{
+				UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("In %s, the number of connected servers is less than the number of required servers: Connected servers: %d, Required servers: %d!"), *GetName(), NumRegisteredServers, NumExpectedServers);
+			}
+		}
+
 		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
 
@@ -318,9 +349,22 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 	StepDefinitions.Add(StepDefinition);
 }
 
-void ASpatialFunctionalTest::AddGenericStep(const FSpatialFunctionalTestStepDefinition& StepDefinition)
+void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition, const FWorkerDefinition& Worker)
 {
-	StepDefinitions.Add(StepDefinition);
+	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
+
+	StepDefinitionCopy.Workers.Add(Worker);
+
+	StepDefinitions.Add(StepDefinitionCopy);
+}
+
+void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers)
+{
+	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
+
+	StepDefinitionCopy.Workers.Append(Workers);
+
+	StepDefinitions.Add(StepDefinitionCopy);
 }
 
 void ASpatialFunctionalTest::StartStep(const int StepIndex)
@@ -408,11 +452,12 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 }
 
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType ControllerType, int InstanceId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId)
 {
+	ensureMsgf(WorkerType != ESpatialFunctionalTestWorkerType::All, TEXT("Trying to call GetFlowController with All WorkerType"));
 	for (auto* FlowController : FlowControllers)
 	{
-		if (FlowController->WorkerDefinition.Type == ControllerType && FlowController->WorkerDefinition.Id == InstanceId)
+		if (FlowController->WorkerDefinition.Type == WorkerType && FlowController->WorkerDefinition.Id == WorkerId)
 		{
 			return FlowController;
 		}

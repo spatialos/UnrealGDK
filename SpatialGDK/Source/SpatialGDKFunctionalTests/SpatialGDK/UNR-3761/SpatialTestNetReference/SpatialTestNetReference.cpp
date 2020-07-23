@@ -121,7 +121,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 				ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+				APawn* PlayerCharacter = PlayerController->GetPawn();
 
 				// Move the character to the correct location
 				PlayerCharacter->SetActorLocation(TestLocations[CurrentMoveIndex].Key);
@@ -136,8 +136,8 @@ void ASpatialTestNetReference::BeginPlay()
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				APawn* PlayerCharacter = PlayerController->GetPawn();
 
-				return IsValid(PlayerController) && IsValid(PlayerCharacter);
-				//return true;
+				//return IsValid(PlayerController) && IsValid(PlayerCharacter);
+				return true;
 			}, nullptr,
 			[this, CurrentMoveIndex, i](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{
@@ -146,7 +146,7 @@ void ASpatialTestNetReference::BeginPlay()
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				APawn* PlayerCharacter = PlayerController->GetPawn();
 
-				if (PlayerCharacter == nullptr)
+			if (PlayerCharacter == nullptr)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Move number: %d"), i);
 				}
