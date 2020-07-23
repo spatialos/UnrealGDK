@@ -29,6 +29,7 @@ ASpatialDebuggerEditor::ASpatialDebuggerEditor(const FObjectInitializer& ObjectI
 	NetUpdateFrequency = 1.f;
 
 	bShowWorkerRegions = false;
+	bIsGameInProgress = false;
 
 	OnBeginPieHandle = FEditorDelegates::BeginPIE.AddUObject(this, &ASpatialDebuggerEditor::OnPieBeginEvent);
 	OnEndPieHandle = FEditorDelegates::EndPIE.AddUObject(this, &ASpatialDebuggerEditor::OnPieEndEvent);
@@ -48,18 +49,19 @@ void ASpatialDebuggerEditor::Destroyed()
 
 void ASpatialDebuggerEditor::OnPieBeginEvent(bool bIsSimulating)
 {
-	if (bShowWorkerRegions)
-	{
-		DestroyWorkerRegions();
+	bIsGameInProgress = true;
 
-		// Redraw editor window to show changes
-		GEditor->GetActiveViewport()->Invalidate();
-	}
+	DestroyWorkerRegions();
+
+	// Redraw editor window to show changes
+	GEditor->GetActiveViewport()->Invalidate();
 }
 
 void ASpatialDebuggerEditor::OnPieEndEvent(bool bIsSimulating)
 {
-	if (bShowWorkerRegions)
+	bIsGameInProgress = false;
+
+	if (bShowWorkerRegions && AllowWorkerBoundaries())
 	{
 		InitialiseWorkerRegions();
 		CreateWorkerRegions();
@@ -81,7 +83,7 @@ void ASpatialDebuggerEditor::RefreshWorkerRegions()
 {
 	DestroyWorkerRegions();
 
-	if (bShowWorkerRegions)
+	if (bShowWorkerRegions && AllowWorkerBoundaries())
 	{
 		InitialiseWorkerRegions();
 		CreateWorkerRegions();
@@ -94,15 +96,21 @@ void ASpatialDebuggerEditor::RefreshWorkerRegions()
 	}
 }
 
-bool ASpatialDebuggerEditor::IsMultiWorkerEnabled() const
+bool ASpatialDebuggerEditor::AllowWorkerBoundaries() const
 {
+	// Check if multi worker is enabled and we are not in play mode.
 	UWorld* World = GetWorld();
+
+	if (World == nullptr)
+	{
+		return false;
+	}
 		
-	const ASpatialWorldSettings* WorldSettings = World ? Cast<ASpatialWorldSettings>(World->GetWorldSettings()) : nullptr;
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 
 	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 
-	return bIsMultiWorkerEnabled;
+	return bIsMultiWorkerEnabled && !bIsGameInProgress;
 	
 }
 
@@ -140,6 +148,10 @@ void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 
 						WorkerRegions[i] = WorkerRegionInfo;
 					}
+			}
+			else
+			{
+				WorkerRegions.Empty();
 			}
 		}
 	}

@@ -60,7 +60,8 @@ public:
 		if (PropertyChangedEvent.Property != nullptr)
 		{
 			const FName PropertyName(PropertyChangedEvent.Property->GetFName());
-			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, DefaultLayerLoadBalanceStrategy))
+			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, DefaultLayerLoadBalanceStrategy) ||
+				PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
 			{
 				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
 				UWorld* World = GetWorld();

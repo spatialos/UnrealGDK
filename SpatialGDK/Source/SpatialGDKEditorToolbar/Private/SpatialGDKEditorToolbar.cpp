@@ -317,7 +317,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
 		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled)
 	);
 }
@@ -789,6 +789,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("There was no SpatialDebuggerEditor setup when the map was loaded."));
 	}
+
 }
 
 
@@ -1489,12 +1490,12 @@ bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
 
 bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 {
-	return IsMultiWorkerEnabled() && bSpatialDebuggerEditorEnabled;
+	return AllowWorkerBoundaries() && bSpatialDebuggerEditorEnabled;
 }
 
-bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled() const
+bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const
 {
-	return SpatialDebuggerEditor != nullptr && SpatialDebuggerEditor->IsMultiWorkerEnabled();
+	return SpatialDebuggerEditor != nullptr && SpatialDebuggerEditor->AllowWorkerBoundaries();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
