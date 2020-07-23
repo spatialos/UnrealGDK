@@ -322,5 +322,8 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"),
 		Partition.VirtualWorker, Partition.PartitionEntityId, *WorkerName);
 
-	Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
+	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	{
+		Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
+	}
 }
