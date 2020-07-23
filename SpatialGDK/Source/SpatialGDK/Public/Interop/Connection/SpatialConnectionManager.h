@@ -60,6 +60,7 @@ public:
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
+	SpatialGDK::SpatialEventTracer* GetEventTracer() { return EventTracer.Get(); }
 
 	void RequestDeploymentLoginTokens();
 

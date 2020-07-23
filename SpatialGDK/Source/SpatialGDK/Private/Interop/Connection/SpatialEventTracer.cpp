@@ -33,7 +33,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 
 		unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[0]);
 		unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[8]);
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %ul%ul, Type: %s, Message: %s, Timestamp: %ul"),
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %lu%lu, Type: %s, Message: %s, Timestamp: %lu"),
 			span1, span2, *FString(Event.type), *FString(Event.message), Event.unix_timestamp_millis);
 
 		if (Event.data != nullptr)
@@ -137,46 +137,186 @@ void SpatialEventTracer::Disable()
 	Trace_EventTracer_Disable(EventTracer);
 }
 
-SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, const UFunction* Function)
+SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UFunction* Function)
 {
 	SpatialGDKEvent Event;
 	Event.Message = "";
 	Event.Type = "RPC";
-	Event.Data.Add("Actor", Actor->GetName());
-	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
 	Event.Data.Add("Function", Function->GetName());
 	return Event;
 }
 
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID)
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(Worker_RequestId RequestID, bool bSuccess)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "CommandResponse";
+	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
+	Event.Data.Add("Success", bSuccess ? TEXT("true") : TEXT("false"));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, Worker_CommandResponseOp ResponseOp)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "ComponentUpdate";
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	if (TargetObject != nullptr)
+	{
+		Event.Data.Add("TargetObject", TargetObject->GetName());
+	}
+	Event.Data.Add("Function", Function->GetName());
+	//Event.Data.Add("ResponseOp", ResponseOp);
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Message, Worker_CreateEntityResponseOp ResponseOp)
+{
+	SpatialGDKEvent Event;
+	Event.Message = Message;
+	Event.Type = "CreateEntityOp";
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	//Event.Data.Add("ResponseOp", FString::Printf(TEXT("%lu"), ResponseOp));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = Type;
+	//Event.Data.Add("ResponseOp", ResponseOp);
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, TraceKey TraceId, Worker_RequestId RequestID)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "ComponentUpdate";
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	if (TargetObject != nullptr)
+	{
+		Event.Data.Add("TargetObject", TargetObject->GetName());
+	}
+	Event.Data.Add("Function", Function->GetName());
+	Event.Data.Add("TraceId", FString::Printf(TEXT("%i"), TraceId));
+	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = Type;
+	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "ComponentUpdate";
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	if (TargetObject != nullptr)
+	{
+		Event.Data.Add("TargetObject", TargetObject->GetName());
+	}
+	Event.Data.Add("ComponentId", FString::Printf(TEXT("%u"), ComponentId));
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, ENetRole Role)
+{
+	SpatialGDKEvent Event;
+	Event.Message = "";
+	Event.Type = "AuthorityChange";
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	switch (Role)
+	{
+	case ROLE_SimulatedProxy:
+		Event.Data.Add("NewRole", "ROLE_None");
+		break;
+	case ROLE_AutonomousProxy:
+		Event.Data.Add("NewRole", "ROLE_AutonomousProxy");
+		break;
+	case ROLE_Authority:
+		Event.Data.Add("NewRole", "ROLE_Authority");
+		break;
+	default:
+		Event.Data.Add("NewRole", "Invalid Role");
+		break;
+	}
+
+	return Event;
+}
+
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID)
 {
 	SpatialGDKEvent Event;
 	Event.Message = "";
 	Event.Type = "RetireEntity";
-	Event.Data.Add("Actor", Actor->GetName());
-	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	//Event.Data.Add("CreateEntityRequestId", ToString(RequestID));
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	Event.Data.Add("CreateEntityRequestId", FString::Printf(TEXT("%lu"), RequestID));
 	return Event;
 }
 
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId)
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId)
 {
 	SpatialGDKEvent Event;
 	Event.Message = "";
 	Event.Type = "AuthorityIntentUpdate";
-	Event.Data.Add("Actor", Actor->GetName());
-	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	//Event.Data.Add("NewAuthoritativeWorkerId", ToString(NewAuthoritativeWorkerId));
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	Event.Data.Add("NewAuthoritativeWorkerId", FString::Printf(TEXT("%u"), NewAuthoritativeWorkerId));
 	return Event;
 }
 
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEventFromRPC(const AActor* Actor, Worker_RequestId CreateEntityRequestId)
+SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId)
 {
 	SpatialGDKEvent Event;
 	Event.Message = "";
 	Event.Type = "CreateEntity";
-	Event.Data.Add("Actor", Actor->GetName());
-	Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	//Event.Data.Add("CreateEntityRequestId", ToString(CreateEntityRequestId));
+	if (Actor != nullptr)
+	{
+		Event.Data.Add("Actor", Actor->GetName());
+		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+	}
+	Event.Data.Add("CreateEntityRequestId", FString::Printf(TEXT("%li"), CreateEntityRequestId));
 	return Event;
 }

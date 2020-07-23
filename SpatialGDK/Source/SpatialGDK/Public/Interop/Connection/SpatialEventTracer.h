@@ -41,11 +41,19 @@ struct SpatialGDKEvent
 };
 
 // TODO: discuss overhead from constructing SpatialGDKEvents
-SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, const UFunction* Function);
-SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
-SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
-SpatialGDKEvent ConstructEventFromRPC(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
-
+// TODO: Rename
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const UFunction* Function);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, ENetRole Role);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, TraceKey TraceId, Worker_RequestId RequestID);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Message, Worker_CreateEntityResponseOp ResponseOp);
+SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, Worker_CommandResponseOp ResponseOp);
+SpatialGDKEvent ConstructEvent(Worker_RequestId RequestID, bool bSuccess);
 
 struct SpatialEventTracer
 {

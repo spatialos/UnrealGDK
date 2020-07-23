@@ -29,6 +29,11 @@ class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
+namespace SpatialGDK
+{
+struct SpatialEventTracer;
+}
+
 struct FReliableRPCForRetry
 {
 	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex);
@@ -67,7 +72,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
@@ -189,4 +194,6 @@ private:
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+	SpatialGDK::SpatialEventTracer* EventTracer;
 };

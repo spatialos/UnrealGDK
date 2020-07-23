@@ -11,6 +11,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -58,7 +59,7 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, SpatialGDK::SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -68,6 +69,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
+	EventTracer = InEventTracer;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 
@@ -90,6 +92,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
+
+	EventTracer->TraceEvent(ConstructEvent(Channel->Actor, CreateEntityRequestId));
 
 	return CreateEntityRequestId;
 }
@@ -581,6 +585,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
+	EventTracer->TraceEvent(ConstructEvent(&Actor, NewAuthoritativeVirtualWorkerId));
+
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
@@ -809,6 +815,8 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 #if !UE_BUILD_SHIPPING
 void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
+	EventTracer->TraceEvent(ConstructEvent(Actor, Function));
+
 	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
@@ -999,6 +1007,7 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
 	Connection->SendCommandResponse(RequestId, &Response);
+	EventTracer->TraceEvent(ConstructEvent(RequestId, true));
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1009,11 +1018,13 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse();
 
 	Connection->SendCommandResponse(RequestId, &Response);
+	EventTracer->TraceEvent(ConstructEvent(RequestId, true));
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
+	EventTracer->TraceEvent(ConstructEvent(RequestId, false));
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
@@ -1071,7 +1082,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
-		Connection->SendDeleteEntityRequest(EntityId);
+		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId);
+		EventTracer->TraceEvent(ConstructEvent(Actor, EntityId, RequestID));
 	}
 }
 

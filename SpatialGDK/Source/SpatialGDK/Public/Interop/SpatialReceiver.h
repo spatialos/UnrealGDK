@@ -33,6 +33,11 @@ class USpatialSender;
 class UGlobalStateManager;
 class SpatialLoadBalanceEnforcer;
 
+namespace SpatialGDK
+{
+struct SpatialEventTracer;
+}
+
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
@@ -57,7 +62,7 @@ class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;
@@ -275,4 +280,6 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
+
+	SpatialGDK::SpatialEventTracer* EventTracer;
 };
