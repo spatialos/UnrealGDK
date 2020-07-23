@@ -81,7 +81,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_failed_query_response_THEN_query_ag
 	ResponseOp.result_count = 0;
 	ResponseOp.message = "Failed call";
 
-	Manager->SetLayerVirtualWorkerMapping(1);
+	Manager->SetLayerVirtualWorkerMapping({{SpatialConstants::DefaultLayer, 1}});
 
 	Delegate->ExecuteIfBound(ResponseOp);
 	TestTrue("After a failed query response, the TranslationManager queried again for server worker entities.", Connection->GetLastEntityQuery() != nullptr);
@@ -104,7 +104,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_without_enough_wor
 	ResponseOp.message = "Successfully returned 0 entities";
 
 	// Make sure the TranslationManager is expecting more workers than are returned.
-	Manager->SetLayerVirtualWorkerMapping(1);
+	Manager->SetLayerVirtualWorkerMapping({{SpatialConstants::DefaultLayer, 1}});
 
 	Delegate->ExecuteIfBound(ResponseOp);
 	TestTrue("When not enough workers available, the TranslationManager queried again for server worker entities.", Connection->GetLastEntityQuery() != nullptr);
@@ -133,7 +133,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_with_invalid_worke
 	ResponseOp.results = &worker;
 
 	// Make sure the TranslationManager is only expecting a single worker.
-	Manager->SetLayerVirtualWorkerMapping(1);
+	Manager->SetLayerVirtualWorkerMapping({{SpatialConstants::DefaultLayer, 1}});
 
 	Delegate->ExecuteIfBound(ResponseOp);
 	TestTrue("When enough workers available but they are invalid, the TranslationManager queried again for server worker entities.", Connection->GetLastEntityQuery() != nullptr);

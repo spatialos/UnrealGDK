@@ -44,6 +44,13 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
 private:
+	struct ServerInfo
+	{
+		FString WorkerName;
+		Worker_EntityId ServerWorkerEntityId;
+		FName LayerHint;
+	};
+
 	SpatialOSDispatcherInterface* Receiver;
 	SpatialOSWorkerInterface* Connection;
 
@@ -62,9 +69,10 @@ private:
 	// based on the response.
 	void QueryForServerWorkerEntities();
 	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
-	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	static TArray<ServerInfo> GetPendingServersToAssignFromQuery(const Worker_EntityQueryResponseOp& Op);
+	void AssignServersWithLayerHints(const TArray<ServerInfo>& PendingServersToAssign);
 	void SendVirtualWorkerMappingUpdate() const;
 
-	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId, const VirtualWorkerId& VirtualWorkerId);
-};
 
+	void AssignWorker(const ServerInfo& ServerInfo, const VirtualWorkerId& VirtualWorkerId);
+};

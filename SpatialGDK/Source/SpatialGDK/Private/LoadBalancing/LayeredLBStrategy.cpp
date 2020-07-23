@@ -2,8 +2,6 @@
 
 #include "LoadBalancing/LayeredLBStrategy.h"
 
-
-#include "ILauncherProfile.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
