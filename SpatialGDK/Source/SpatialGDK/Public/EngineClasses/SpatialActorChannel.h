@@ -321,7 +321,7 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastPositionSinceUpdate;
-	float TimeWhenPositionLastUpdated;
+	double TimeWhenPositionLastUpdated;
 
 	uint8 FramesTillDormancyAllowed = 0;
 

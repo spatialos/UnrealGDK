@@ -193,7 +193,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
-	, TimeWhenPositionLastUpdated(0.0f)
+	, TimeWhenPositionLastUpdated(0.0)
 {
 }
 
@@ -210,7 +210,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bIsAuthClient = false;
 	bIsAuthServer = false;
 	LastPositionSinceUpdate = FVector::ZeroVector;
-	TimeWhenPositionLastUpdated = 0.0f;
+	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 
 	PendingDynamicSubobjects.Empty();
@@ -373,7 +373,7 @@ void USpatialActorChannel::UpdateShadowData()
 void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
 {
 	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	if ((NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		UpdateSpatialPosition();
 	}
@@ -713,7 +713,7 @@ int64 USpatialActorChannel::ReplicateActor()
 #endif
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
-	LastUpdateTime = Connection->Driver->Time;
+	LastUpdateTime = NetDriver->GetElapsedTime();
 
 	MemMark.Pop();
 
@@ -1173,7 +1173,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	LastPositionSinceUpdate = ActorSpatialPosition;
-	TimeWhenPositionLastUpdated = NetDriver->Time;
+	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
 
 	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
 
