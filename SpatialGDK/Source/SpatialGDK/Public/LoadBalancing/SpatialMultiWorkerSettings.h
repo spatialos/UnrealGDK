@@ -15,10 +15,6 @@
 
 class UAbstractLockingPolicy;
 
-namespace SpatialGDK
-{
-}
-
 UCLASS(NotBlueprintable)
 class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UDataAsset
 {
