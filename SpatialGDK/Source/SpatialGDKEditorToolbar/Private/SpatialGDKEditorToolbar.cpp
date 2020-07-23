@@ -127,8 +127,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 
-	// TODO: read from settings
-	bSpatialDebuggerEditorEnabled = true;
+	bSpatialDebuggerEditorEnabled = SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled;
 
 	// Get notified of map changed events to update worker boundaries in the editor
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
@@ -780,6 +779,10 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	if (SpatialDebuggerEditor != nullptr)
 	{
 		bSpatialDebuggerEditorEnabled = !bSpatialDebuggerEditorEnabled;
+
+		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(bSpatialDebuggerEditorEnabled);
+
 		SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
 	}
 	else
@@ -1167,6 +1170,14 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bConnectServerToCloud))
 		{
 			LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
+		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bSpatialDebuggerEditorEnabled))
+		{
+			bSpatialDebuggerEditorEnabled = Settings->bSpatialDebuggerEditorEnabled;
+			if (SpatialDebuggerEditor != nullptr)
+			{
+				SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
+			}
 		}
 	}
 }

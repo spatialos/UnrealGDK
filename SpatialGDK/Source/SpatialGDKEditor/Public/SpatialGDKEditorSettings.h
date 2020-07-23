@@ -339,6 +339,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-start local deployment"))
 	bool bAutoStartLocalDeployment;
 
+	/** Show worker boundaries in the editor. */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable spatial debugger in editor"))
+	bool bSpatialDebuggerEditorEnabled;
+
 private:
 	/** Name of your SpatialOS snapshot file that will be generated. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to save"))
@@ -634,6 +638,12 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetSpatialDebuggerEditorEnabled(bool IsEnabled);
+	FORCEINLINE bool IsSpatialDebuggerEditorEnabled() const
+	{
+		return bSpatialDebuggerEditorEnabled;
 	}
 
 	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);
