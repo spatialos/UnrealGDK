@@ -25,7 +25,7 @@ class SPATIALGDK_API ULockingStatics : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
-	static FLockingToken AcquireLock(AActor* Actor);
+	static FLockingToken AcquireLock(AActor* Actor, const FString& DebugString = TEXT(""));
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
 	static void ReleaseLock(const AActor* Actor, FLockingToken LockToken);

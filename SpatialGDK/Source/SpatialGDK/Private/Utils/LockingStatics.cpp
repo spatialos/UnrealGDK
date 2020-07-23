@@ -44,7 +44,7 @@ bool CanProcessActor(const AActor* Actor)
 }
 } // anonymous namespace
 
-FLockingToken ULockingStatics::AcquireLock(AActor* Actor)
+FLockingToken ULockingStatics::AcquireLock(AActor* Actor, const FString& DebugString)
 {
 	if (!CanProcessActor(Actor))
 	{
@@ -53,13 +53,10 @@ FLockingToken ULockingStatics::AcquireLock(AActor* Actor)
 
 	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
 
-	const uint32 NewLockCount = LockingPolicy->GetActorLockCount(Actor) + 1;
-
-	const ActorLockToken LockToken = LockingPolicy->AcquireLock(Actor,
-		FString::Printf(TEXT("Actor %s locked. Now locked %d times."), *Actor->GetName(), NewLockCount));
+	const ActorLockToken LockToken = LockingPolicy->AcquireLock(Actor, DebugString);
 
 	UE_LOG(LogLocking, Verbose, TEXT("LockingComponent called AcquireLock. Actor: %s. Token: %lld. New lock count: %d"),
-		*Actor->GetName(), LockToken, NewLockCount);
+		*Actor->GetName(), LockToken, LockingPolicy->GetActorLockCount(Actor));
 
 	return FLockingToken{ LockToken };
 }
