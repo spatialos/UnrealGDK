@@ -113,39 +113,42 @@ namespace ReleaseTool
                     // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
                     gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
-                    // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                    switch (options.GitRepoName)
+                    if (!gitClient.LocalBranchExists($"origin/{options.CandidateBranch}"))
                     {
-                        case "UnrealGDK":
-                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
-                            UpdatePluginFile(pluginFileName, gitClient);
+                        // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+                        switch (options.GitRepoName)
+                        {
+                            case "UnrealGDK":
+                                UpdateChangeLog(ChangeLogFilename, options, gitClient);
+                                UpdatePluginFile(pluginFileName, gitClient);
 
-                            var engineCandidateBranches = options.EngineVersions.Split(" ")
-                                .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{options.Version}-rc")
-                                .ToList();
-                            UpdateUnrealEngineVersionFile(engineCandidateBranches, gitClient);
-                            break;
-                        case "UnrealEngine":
-                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
-                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKExampleProjectVersionFile);
-                            break;
-                        case "UnrealGDKExampleProject":
-                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
-                            break;
-                        case "UnrealGDKTestGyms":
-                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
-                            break;
-                        case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
-                            break;
-                        case "TestGymBuildKite":
-                            UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
-                            break;
+                                var engineCandidateBranches = options.EngineVersions.Split(" ")
+                                    .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{options.Version}-rc")
+                                    .ToList();
+                                UpdateUnrealEngineVersionFile(engineCandidateBranches, gitClient);
+                                break;
+                            case "UnrealEngine":
+                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKExampleProjectVersionFile);
+                                break;
+                            case "UnrealGDKExampleProject":
+                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+                                break;
+                            case "UnrealGDKTestGyms":
+                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+                                break;
+                            case "UnrealGDKEngineNetTest":
+                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+                                break;
+                            case "TestGymBuildKite":
+                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+                                break;
+                        }
+
+                        // 4. Commit changes and push them to a remote candidate branch.
+                        gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+                        gitClient.ForcePush(options.CandidateBranch);
                     }
-
-                    // 4. Commit changes and push them to a remote candidate branch.
-                    gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
-                    gitClient.ForcePush(options.CandidateBranch);
 
                     // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
                     if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))

@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 
 #include "SchemaGenerator/TypeStructure.h"
+#include "Utils/GDKPropertyMacros.h"
 
 extern TMap<FString, FString> ClassPathToSchemaName;
 
 // Return the string representation of the underlying data type of an enum property
-FString GetEnumDataType(const UEnumProperty* EnumProperty);
+FString GetEnumDataType(const GDK_PROPERTY(EnumProperty)* EnumProperty);
 
 // Given a class or function name, generates the name used for naming schema components and types. Removes all non-alphanumeric characters.
 FString UnrealNameToSchemaName(const FString& UnrealName, bool bWarnAboutRename = false);

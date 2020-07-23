@@ -8,6 +8,7 @@
 #include "Containers/Map.h"
 #include "Containers/StaticArray.h"
 #include "SpatialLatencyPayload.h"
+#include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
 #include "WorkerSDK/improbable/trace.h"
@@ -127,7 +128,7 @@ public:
 
 	bool IsValidKey(TraceKey Key);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
+	TraceKey RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property)* Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
@@ -145,7 +146,7 @@ public:
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
-	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
+	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;
 	using ActorTagKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::trace::Span;
 
