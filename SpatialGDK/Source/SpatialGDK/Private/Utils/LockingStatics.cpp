@@ -35,13 +35,18 @@ bool CanProcessActor(const AActor* Actor)
 		return false;
 	}
 
+	if (!USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	{
+		return false;
+	}
+
 	return true;
 }
 } // anonymous namespace
 
 FLockingToken ULockingStatics::AcquireLock(AActor* Actor)
 {
-	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	if (!CanProcessActor(Actor))
 	{
 		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
 	}
@@ -66,18 +71,12 @@ bool ULockingStatics::IsLocked(const AActor* Actor)
 		return false;
 	}
 
-	// If multi worker is disabled, we want the server to behave as if it always has authority, and so we say the Actor is locked.
-	if (!USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
-	{
-		return true;
-	}
-
 	return Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy->IsLocked(Actor);
 }
 
 void ULockingStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 {
-	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	if (!CanProcessActor(Actor))
 	{
 		return;
 	}

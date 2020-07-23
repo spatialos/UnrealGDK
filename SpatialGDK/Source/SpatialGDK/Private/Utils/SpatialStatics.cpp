@@ -69,11 +69,7 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 
 bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UWorld* World)
 {
-	if (World == nullptr)
-	{
-		UE_LOG(LogSpatial, Error, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
-		return false;
-	}
+	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
 
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	return WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();

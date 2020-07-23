@@ -117,12 +117,14 @@ bool UOwnershipLockingPolicy::IsLocked(const AActor* Actor) const
 
 int32 UOwnershipLockingPolicy::GetActorLockCount(const AActor* Actor) const
 {
-	if (!ActorToLockingState.Contains(Actor))
+	const MigrationLockElement* LockData = ActorToLockingState.Find(Actor);
+
+	if (LockData == nullptr)
 	{
 		return 0;
 	}
 
-	return ActorToLockingState.FindChecked(Actor).LockCount;
+	return LockData->LockCount;
 }
 
 bool UOwnershipLockingPolicy::IsExplicitlyLocked(const AActor* Actor) const
@@ -157,8 +159,8 @@ bool UOwnershipLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, co
 		return false;
 	}
 	const ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
-	const bool bReleaseSucceeded = ReleaseLock(LockToken);
-	return bReleaseSucceeded;
+
+	return ReleaseLock(LockToken);
 }
 
 void UOwnershipLockingPolicy::OnOwnerUpdated(const AActor* Actor, const AActor* OldOwner)
