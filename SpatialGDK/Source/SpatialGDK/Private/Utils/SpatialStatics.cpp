@@ -67,8 +67,10 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
-bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UWorld* World)
+bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject)
 {
+	const UWorld* World = WorldContextObject->GetWorld();
+
 	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
 
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
