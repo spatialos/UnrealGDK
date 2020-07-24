@@ -122,22 +122,39 @@ namespace Improbable
             var mainDeploymentCluster = args[8];
             var mainDeploymentTags = args[9];
 
-            var simDeploymentName = string.Empty;
+            var simDeploymentBaseName = string.Empty;
             var simDeploymentJson = string.Empty;
             var simDeploymentRegion = string.Empty;
             var simDeploymentCluster = string.Empty;
-            var simNumPlayers = 0;
+            var numSimPlayers = 0;
+            var numSimDeployments = 1;
 
             if (launchSimPlayerDeployment)
             {
-                simDeploymentName = args[10];
+                simDeploymentBaseName = args[10];
                 simDeploymentJson = args[11];
                 simDeploymentRegion = args[12];
                 simDeploymentCluster = args[13];
 
-                if (!Int32.TryParse(args[14], out simNumPlayers))
+                if (!Int32.TryParse(args[14], out numSimPlayers))
                 {
                     Console.WriteLine("Cannot parse the number of simulated players to connect.");
+                    return 1;
+                }
+                else if (numSimPlayers <= 0)
+                {
+                    Console.WriteLine("The number of players must be positive.");
+                    return 1;
+                }
+
+                if (!Int32.TryParse(args[15], out numSimDeployments))
+                {
+                    Console.WriteLine("Cannot parse the target number of simulated players deployments.");
+                    return 1;
+                }
+                else if (numSimDeployments <= 0)
+                {
+                    Console.WriteLine("The number of deployments must be positive.");
                     return 1;
                 }
             }
@@ -171,17 +188,17 @@ namespace Improbable
                     return 0;
                 }
 
-                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
+                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentBaseName))
                 {
-                    StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
+                    StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentBaseName);
                 }
 
-                // we are using the main deployment snapshot also for the sim player deployment, because we only need to specify a snapshot
+                // we are using the main deployment snapshot also for the sim player deployment(s), because we only need to specify a snapshot
                 // to be able to start the deployment. The sim players don't care about the actual snapshot.
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
-                    projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
+                var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
+                    projectName, assemblyName, runtimeVersion, simDeploymentBaseName, simDeploymentBaseName,
                     simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
-                    simNumPlayers, useChinaPlatform);
+                    numSimPlayers, numSimDeployments, useChinaPlatform);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for deployments to be ready...");
@@ -193,25 +210,27 @@ namespace Improbable
                 }
 
                 Console.WriteLine("Successfully created the main deployment");
-                var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
-                if (simPlayerDeployment == null)
+
+                var numSuccessfullyStartedDeployments = 0;
+                for (var simDeploymentIndex = 0; simDeploymentIndex < simDeploymentCreationOps.Count; simDeploymentIndex++)
                 {
-                    Console.WriteLine("Failed to create the simulated player deployment");
-                    return 1;
+                    Console.WriteLine($"Waiting for the simulated player deployment to be ready... " +
+                        $"(deployment {simDeploymentIndex + 1}/{simDeploymentCreationOps.Count})");
+
+                    var simPlayerDeployment = simDeploymentCreationOps[simDeploymentIndex].PollUntilCompleted().GetResultOrNull();
+                    if (simPlayerDeployment == null)
+                    {
+                        Console.WriteLine($"Failed to create the simulated player deployment");
+                        continue;
+                    }
+
+                    Console.WriteLine($"Deployment startup complete! Setting its flags...");
+                    UpdateSimDeploymentFlags(simPlayerDeployment, true, deploymentServiceClient);
+
+                    numSuccessfullyStartedDeployments++;
                 }
 
-                Console.WriteLine("Successfully created the simulated player deployment");
-
-                // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
-                simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
-                {
-                    Key = TARGET_DEPLOYMENT_READY_TAG,
-                    Value = "true",
-                    WorkerType = CoordinatorWorkerName
-                });
-                deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
-
-                Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+                Console.WriteLine($"Successfully started {numSuccessfullyStartedDeployments} out of {numSimDeployments} simulated player deployments.");
             }
             catch (Grpc.Core.RpcException e)
             {
@@ -241,78 +260,100 @@ namespace Improbable
             var assemblyName = args[2];
             var runtimeVersion = args[3];
             var targetDeploymentName = args[4];
-            var simDeploymentName = args[5];
+            var simDeploymentBaseName = args[5];
             var simDeploymentJson = args[6];
             var simDeploymentRegion = args[7];
             var simDeploymentCluster = args[8];
             var simDeploymentSnapshotPath = args[9];
-
-            var simNumPlayers = 0;
-            if (!Int32.TryParse(args[10], out simNumPlayers))
+            
+            var numSimplayers = 0;
+            if (!Int32.TryParse(args[10], out numSimplayers))
             {
                 Console.WriteLine("Cannot parse the number of simulated players to connect.");
                 return 1;
             }
+            else if (numSimplayers <= 0)
+            {
+                Console.WriteLine("The number of players must be positive.");
+                return 1;
+            }
+
+            var numSimDeployments = 1;
+            if (!Int32.TryParse(args[11], out numSimDeployments))
+            {
+                Console.WriteLine("Cannot parse the target number of simulated players deployments.");
+                return 1;
+            }
+            else if (numSimDeployments <= 0)
+            {
+                Console.WriteLine("The number of deployments must be positive.");
+                return 1;
+            }
 
             var autoConnect = false;
-            if (!Boolean.TryParse(args[11], out autoConnect))
+            if (!Boolean.TryParse(args[12], out autoConnect))
             {
                 Console.WriteLine("Cannot parse the auto-connect flag.");
                 return 1;
             }
 
-            try
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform));
+
+            var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
+                projectName, assemblyName, runtimeVersion, simDeploymentBaseName, simDeploymentBaseName,
+                simDeploymentJson, simDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
+                numSimplayers, numSimDeployments, useChinaPlatform);
+
+            var numSuccessfullyStartedDeployments = 0;
+            for (var simDeploymentIndex = 0; simDeploymentIndex < simDeploymentCreationOps.Count; simDeploymentIndex++)
             {
-                var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform));
+                Console.WriteLine($"Waiting for the simulated player deployment to be ready... " +
+                    $"(deployment {simDeploymentIndex + 1}/{simDeploymentCreationOps.Count})");
 
-                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
-                {
-                    StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
-                }
-
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
-                    projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentName,
-                    simDeploymentJson, simDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster, simNumPlayers, useChinaPlatform);
-
-                // Wait for both deployments to be created.
-                Console.WriteLine("Waiting for the simulated player deployment to be ready...");
-                var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                var simPlayerDeployment = simDeploymentCreationOps[simDeploymentIndex].PollUntilCompleted().GetResultOrNull();
                 if (simPlayerDeployment == null)
                 {
-                    Console.WriteLine("Failed to create the simulated player deployment");
-                    return 1;
+                    Console.WriteLine($"Failed to create the simulated player deployment");
+                    continue;
                 }
 
-                Console.WriteLine("Successfully created the simulated player deployment");
+                Console.WriteLine($"Deployment startup complete! Setting its flags...");
+                UpdateSimDeploymentFlags(simPlayerDeployment, autoConnect, deploymentServiceClient);
 
-                // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
-                simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
-                {
-                    Key = TARGET_DEPLOYMENT_READY_TAG,
-                    Value = autoConnect.ToString(),
-                    WorkerType = CoordinatorWorkerName
-                });
-                deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
-
-                if (autoConnect)
-                {
-                    Console.WriteLine("Done! Simulated players will start to connect to your deployment");
-                }
+                numSuccessfullyStartedDeployments++;
             }
-            catch (Grpc.Core.RpcException e)
-            {
-                if (e.Status.StatusCode == Grpc.Core.StatusCode.NotFound)
-                {
-                    Console.WriteLine(
-                        $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
-                }
-                else
-                {
-                    throw;
-                }
-            }
+
+            Console.WriteLine($"Successfully started {numSuccessfullyStartedDeployments} out of {numSimDeployments} simulated player deployments.");
 
             return 0;
+        }
+
+        private static void UpdateSimDeploymentFlags(Deployment deployment, bool autoConnect, DeploymentServiceClient deploymentServiceClient)
+        {
+            // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
+            deployment.WorkerFlags.Add(new WorkerFlag
+            {
+                Key = TARGET_DEPLOYMENT_READY_TAG,
+                Value = autoConnect.ToString(),
+                WorkerType = CoordinatorWorkerName
+            });
+            deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = deployment });
+
+            if (autoConnect)
+            {
+                Console.WriteLine($"Simulated players from this deployment '{deployment.Name}' will start to connect to the target deployment");
+            }
+        }
+
+        // Determines the name for a simulated player deployment. The first index is assumed to be 1.
+        private static string GetSimDeploymentName(string baseName, int index)
+        {
+            if (index == 1)
+            {
+                return baseName;
+            }
+
+            return baseName + ("_" + index);
         }
 
         private static bool DeploymentExists(DeploymentServiceClient deploymentServiceClient, string projectName,
@@ -322,7 +363,6 @@ namespace Improbable
 
             return activeDeployments.FirstOrDefault(d => d.Name == deploymentName) != null;
         }
-
 
         private static void StopDeploymentByName(DeploymentServiceClient deploymentServiceClient, string projectName,
             string deploymentName)
@@ -414,7 +454,7 @@ namespace Improbable
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentName,
-            string simDeploymentJsonPath, string simDeploymentSnapshotPath, string regionCode, string clusterCode, int simNumPlayers, bool useChinaPlatform)
+            string simDeploymentJsonPath, string simDeploymentSnapshotPath, string regionCode, string clusterCode, int numSimPlayers, bool useChinaPlatform)
         {
             var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(useChinaPlatform), GetPlatformRefreshTokenCredential(useChinaPlatform));
 
@@ -439,10 +479,6 @@ namespace Improbable
                 });
 
             // Add worker flags to sim deployment JSON.
-            var regionFlag = new JObject();
-            regionFlag.Add("name", "simulated_players_region");
-            regionFlag.Add("value", regionCode);
-
             var devAuthTokenFlag = new JObject();
             devAuthTokenFlag.Add("name", "simulated_players_dev_auth_token");
             devAuthTokenFlag.Add("value", dat.TokenSecret);
@@ -453,29 +489,29 @@ namespace Improbable
 
             var numSimulatedPlayersFlag = new JObject();
             numSimulatedPlayersFlag.Add("name", "total_num_simulated_players");
-            numSimulatedPlayersFlag.Add("value", $"{simNumPlayers}");
+            numSimulatedPlayersFlag.Add("value", $"{numSimPlayers}");
 
-            var simWorkerConfigJson = File.ReadAllText(simDeploymentJsonPath);
-            dynamic simWorkerConfig = JObject.Parse(simWorkerConfigJson);
+            var simDeploymentConfigJson = File.ReadAllText(simDeploymentJsonPath);
+            dynamic simDeploymentConfig = JObject.Parse(simDeploymentConfigJson);
 
             if (simDeploymentJsonPath.EndsWith(".pb.json"))
             {
-                for (var i = 0; i < simWorkerConfig.worker_flagz.Count; ++i)
+                for (var i = 0; i < simDeploymentConfig.worker_flagz.Count; ++i)
                 {
-                    if (simWorkerConfig.worker_flagz[i].worker_type == CoordinatorWorkerName)
+                    if (simDeploymentConfig.worker_flagz[i].worker_type == CoordinatorWorkerName)
                     {
-                        simWorkerConfig.worker_flagz[i].flagz.Add(devAuthTokenFlag);
-                        simWorkerConfig.worker_flagz[i].flagz.Add(targetDeploymentFlag);
-                        simWorkerConfig.worker_flagz[i].flagz.Add(numSimulatedPlayersFlag);
+                        simDeploymentConfig.worker_flagz[i].flagz.Add(devAuthTokenFlag);
+                        simDeploymentConfig.worker_flagz[i].flagz.Add(targetDeploymentFlag);
+                        simDeploymentConfig.worker_flagz[i].flagz.Add(numSimulatedPlayersFlag);
                         break;
                     }
                 }
 
-                for (var i = 0; i < simWorkerConfig.flagz.Count; ++i)
+                for (var i = 0; i < simDeploymentConfig.flagz.Count; ++i)
                 {
-                    if (simWorkerConfig.flagz[i].name == "loadbalancer_v2_config_json")
+                    if (simDeploymentConfig.flagz[i].name == "loadbalancer_v2_config_json")
                     {
-                        string layerConfigJson = simWorkerConfig.flagz[i].value;
+                        string layerConfigJson = simDeploymentConfig.flagz[i].value;
                         dynamic loadBalanceConfig = JObject.Parse(layerConfigJson);
                         var lbLayerConfigurations = loadBalanceConfig.layerConfigurations;
                         for (var j = 0; j < lbLayerConfigurations.Count; ++j)
@@ -483,25 +519,25 @@ namespace Improbable
                             if (lbLayerConfigurations[j].layer == CoordinatorWorkerName)
                             {
                                 var rectangleGrid = lbLayerConfigurations[j].rectangleGrid;
-                                rectangleGrid.cols = simNumPlayers;
+                                rectangleGrid.cols = numSimPlayers;
                                 rectangleGrid.rows = 1;
                                 break;
                             }
                         }
-                        simWorkerConfig.flagz[i].value = Newtonsoft.Json.JsonConvert.SerializeObject(loadBalanceConfig);
+                        simDeploymentConfig.flagz[i].value = Newtonsoft.Json.JsonConvert.SerializeObject(loadBalanceConfig);
                         break;
                     }
                 }
             }
             else // regular non pb.json
             {
-                for (var i = 0; i < simWorkerConfig.workers.Count; ++i)
+                for (var i = 0; i < simDeploymentConfig.workers.Count; ++i)
                 {
-                    if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
+                    if (simDeploymentConfig.workers[i].worker_type == CoordinatorWorkerName)
                     {
-                        simWorkerConfig.workers[i].flags.Add(devAuthTokenFlag);
-                        simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
-                        simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
+                        simDeploymentConfig.workers[i].flags.Add(devAuthTokenFlag);
+                        simDeploymentConfig.workers[i].flags.Add(targetDeploymentFlag);
+                        simDeploymentConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
                     }
                 }
 
@@ -511,27 +547,25 @@ namespace Improbable
                 // to create.
                 // This assumes the launch config contains a rectangular load balancing
                 // layer configuration already for the coordinator worker.
-                var lbLayerConfigurations = simWorkerConfig.load_balancing.layer_configurations;
+                var lbLayerConfigurations = simDeploymentConfig.load_balancing.layer_configurations;
                 for (var i = 0; i < lbLayerConfigurations.Count; ++i)
                 {
                     if (lbLayerConfigurations[i].layer == CoordinatorWorkerName)
                     {
                         var rectangleGrid = lbLayerConfigurations[i].rectangle_grid;
-                        rectangleGrid.cols = simNumPlayers;
+                        rectangleGrid.cols = numSimPlayers;
                         rectangleGrid.rows = 1;
                     }
                 }
             }
 
-            simWorkerConfigJson = simWorkerConfig.ToString();
-
             // Create simulated player deployment.
-            var simDeploymentConfig = new Deployment
+            var simDeployment = new Deployment
             {
                 AssemblyId = assemblyName,
                 LaunchConfig = new LaunchConfig
                 {
-                    ConfigJson = simWorkerConfigJson
+                    ConfigJson = simDeploymentConfig.ToString()
                 },
                 Name = simDeploymentName,
                 ProjectName = projectName,
@@ -541,27 +575,92 @@ namespace Improbable
 
             if (!String.IsNullOrEmpty(clusterCode))
             {
-                simDeploymentConfig.ClusterCode = clusterCode;
+                simDeployment.ClusterCode = clusterCode;
             }
             else
             {
-                simDeploymentConfig.RegionCode = regionCode;
+                simDeployment.RegionCode = regionCode;
             }
 
-            simDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
-            simDeploymentConfig.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
+            simDeployment.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
+            simDeployment.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
 
             Console.WriteLine(
-                $"Creating the simulated player deployment {simDeploymentName} in project {projectName} with {simNumPlayers} simulated players. Link: https://console.improbable.io/projects/{projectName}/deployments/{simDeploymentName}/overview");
+                $"Creating the simulated player deployment {simDeploymentName} in project {projectName} with {numSimPlayers} simulated players. Link: https://console.improbable.io/projects/{projectName}/deployments/{simDeploymentName}/overview");
 
             var simDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
             {
-                Deployment = simDeploymentConfig
+                Deployment = simDeployment
             });
 
             return simDeploymentCreateOp;
         }
 
+        private static List<Operation<Deployment, CreateDeploymentMetadata>> CreateSimPlayerDeploymentsAsync(DeploymentServiceClient deploymentServiceClient,
+            string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentBaseName,
+            string simDeploymentJsonPath, string simDeploymentSnapshotPath, string regionCode, string clusterCode, int numSimPlayers, int numSimDeployments, bool useChinaPlatform)
+        {
+            var operations = new List<Operation<Deployment, CreateDeploymentMetadata>>();
+
+            var longestName = GetSimDeploymentName(simDeploymentBaseName, numSimDeployments);
+            if (longestName.Length > 32)
+            {
+                Console.WriteLine($"The deployment name may not exceed 32 characters. '{longestName}' would have {longestName.Length}.");
+                return operations;
+            }
+
+            for (var simPlayerDeploymentId = 1; simPlayerDeploymentId <= numSimDeployments; ++simPlayerDeploymentId)
+            {
+                var simDeploymentName = simDeploymentBaseName;
+                if (simPlayerDeploymentId != 1)
+                {
+                    simDeploymentName += ("_" + simPlayerDeploymentId);
+                }
+
+                try
+                {
+                    if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
+                    {
+                        StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
+                    }
+
+                    // Determine the amount of simulated players in this deployment
+                    var numDeploymentSimplayers = numSimPlayers / numSimDeployments;
+                    // Spread leftover simulated players over deployments if the total isn't a multiple of the deployment count
+                    if (simPlayerDeploymentId <= numSimPlayers % numSimDeployments)
+                    {
+                        ++numDeploymentSimplayers;
+                    }
+
+                    Console.WriteLine($"Kicking off startup of deployment {simPlayerDeploymentId} out of the target {numSimDeployments}");
+                    var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
+                        projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
+                        simDeploymentJsonPath, simDeploymentSnapshotPath, regionCode, clusterCode, numDeploymentSimplayers, useChinaPlatform);
+
+                    operations.Add(createSimDeploymentOp);
+                }
+                catch (Grpc.Core.RpcException e)
+                {
+                    if (e.Status.StatusCode == Grpc.Core.StatusCode.NotFound)
+                    {
+                        Console.WriteLine($"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
+                        Console.WriteLine($"Detail: '{e.Status.Detail}'");
+                    }
+                    else if (e.Status.StatusCode == Grpc.Core.StatusCode.ResourceExhausted)
+                    {
+                        Console.WriteLine($"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unable to launch the deployment(s). Detail: '{e.Status.Detail}'");
+                    }
+
+                    return operations;
+                }
+            }
+
+            return operations;
+        }
 
         private static int StopDeployments(string[] args, bool useChinaPlatform)
         {
@@ -671,10 +770,10 @@ namespace Improbable
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <num-sim-players>]");
+            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> <num-sim-deployments>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <num-sim-players> <auto-connect>");
-            Console.WriteLine($"  Starts a simulated player deployment. Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <num-sim-deployments> <auto-connect>");
+            Console.WriteLine($"  Starts simulated player deployment(s). Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
             Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
@@ -694,8 +793,8 @@ namespace Improbable
             bool useChinaPlatform = flags.Contains("--china");
 
             if (args.Length == 0 ||
-                (args[0] == "create" && (args.Length != 15 && args.Length != 10)) ||
-                (args[0] == "createsim" && args.Length != 12) ||
+                (args[0] == "create" && (args.Length != 16 && args.Length != 10)) ||
+                (args[0] == "createsim" && args.Length != 13) ||
                 (args[0] == "stop" && (args.Length != 2 && args.Length != 3)) ||
                 (args[0] == "list" && args.Length != 2))
             {
