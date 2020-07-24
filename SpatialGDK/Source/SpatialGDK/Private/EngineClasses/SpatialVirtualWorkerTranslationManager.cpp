@@ -218,7 +218,7 @@ void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(const T
 		if (!PendingServer.LayerHint.IsNone())
 		{
 			uint32 AssignedLayerVirtualWorkerIndex = INDEX_NONE;
-			for (uint32 i = 0; i < UnassignedLayerVirtualWorkers.Num(); i++)
+			for (auto i = 0; i < UnassignedLayerVirtualWorkers.Num(); i++)
 			{
 				// If the server's preferred layer exists (and has unassigned virtual workers), assign that server.
 				TPair<FName, VirtualWorkerId> CurrentLayerVirtualWorker = UnassignedLayerVirtualWorkers[i];
