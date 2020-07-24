@@ -46,8 +46,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
-#if WITH_EDITOR
 private:
+#if WITH_EDITOR
 	void ValidateFirstLayerIsDefaultLayer();
 	void ValidateNonEmptyWorkerLayers();
 	void ValidateSomeLayerHasActorClass();
