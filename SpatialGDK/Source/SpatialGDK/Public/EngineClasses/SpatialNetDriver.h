@@ -10,11 +10,9 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/InterestFactory.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
-#include "LoadBalancing/DynamicLBSInfo.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
@@ -27,9 +25,7 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
-class SpatialActorGroupManager;
 class UAbstractLBStrategy;
-class ADynamicLBSInfo;
 class UEntityPool;
 class UGlobalStateManager;
 class USpatialActorChannel;
@@ -155,13 +151,10 @@ public:
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 	UPROPERTY()
-	ADynamicLBSInfo* DynamicLBSInfo;
-	UPROPERTY()
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	SpatialActorGroupManager* ActorGroupManager;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -180,7 +173,7 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+	void DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor);
 
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
@@ -188,6 +181,10 @@ public:
 
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
+
+	// IsReady evaluates the GSM, Load Balancing system, and others to get a holistic
+	// view of whether the SpatialNetDriver is ready to assume normal operations.
+	bool IsReady() const;
 
 private:
 

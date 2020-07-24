@@ -42,6 +42,11 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
         --context "unreal-gdk-test-artifact-location"  `
         --style info
 }
+else {
+    $error_msg = "The Unreal Editor crashed while running tests, see the test-gdk annotation for logs (or the tests.log buildkite artifact)."
+    Write-Error $error_msg
+    Throw $error_msg
+}
 
 # Upload artifacts to Buildkite, capture output to extract artifact ID in the Slack message generation
 # Command format is the results of Powershell weirdness, likely related to the following:

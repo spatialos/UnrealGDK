@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
-
 #include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
+#include "Utils/EntityPool.h"
+
+#include "CoreMinimal.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -52,12 +53,15 @@ public:
 	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object);
 	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
-	AActor* GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef);
+	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
+	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
+	Worker_EntityId AllocateEntityId();
 	bool IsEntityPoolReady() const;
+	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 

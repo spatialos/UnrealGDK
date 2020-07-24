@@ -23,7 +23,7 @@ call :MarkStartOfBlock "Setup the git hooks"
     echo check_run() {>>.git\hooks\post-merge
     echo echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2>>.git\hooks\post-merge
     echo }>>.git\hooks\post-merge
-    echo check_run RequireSetup "cmd.exe /c Setup.bat">>.git\hooks\post-merge
+    echo check_run RequireSetup "cmd.exe /c Setup.bat %*">>.git\hooks\post-merge
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"
@@ -67,6 +67,20 @@ call :MarkStartOfBlock "Setup variables"
     )
 call :MarkEndOfBlock "Setup variables"
 
+call :MarkStartOfBlock "Setup services region"
+    set USE_CHINA_SERVICES_REGION=
+    for %%A in (%*) do (
+        if "%%A"=="--china" set USE_CHINA_SERVICES_REGION=True
+    )
+
+    rem Create or remove an empty file in the plugin directory indicating whether to use China services region.
+    if defined USE_CHINA_SERVICES_REGION (
+        echo. 2> UseChinaServicesRegion
+    ) else (
+        if exist UseChinaServicesRegion del UseChinaServicesRegion
+    )
+call :MarkEndOfBlock "Setup services region"
+
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
@@ -103,13 +117,16 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
 if defined DOWNLOAD_MOBILE (
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
-    spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk16b-android    %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_ndk16b-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-armv7a-clang_ndk16b-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_ndk16b-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk16b-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_ndk16b-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk21-android    %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-armv7a-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
 )
     spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
     spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
+
+REM There is a race condition between retrieve and unzip, add version call to stall briefly
+call spatial version 
 
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
@@ -122,9 +139,9 @@ call :MarkStartOfBlock "Unpack dependencies"
 
     if defined DOWNLOAD_MOBILE (
         powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"         -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
-                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_ndk16b-android.zip\"    -DestinationPath \"%BINARIES_DIR%\Android\arm64-v8a\" -Force; "^
-                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_ndk16b-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\armeabi-v7a\" -Force; "^
-                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_ndk16b-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\x86_64\" -Force; "^
+                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip\"    -DestinationPath \"%BINARIES_DIR%\Android\arm64-v8a\" -Force; "^
+                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\armeabi-v7a\" -Force; "^
+                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\x86_64\" -Force; "^
     )
     xcopy /s /i /q "%BINARIES_DIR%\Headers\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"

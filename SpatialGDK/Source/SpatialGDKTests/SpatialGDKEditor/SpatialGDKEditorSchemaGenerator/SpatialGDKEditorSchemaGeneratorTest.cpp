@@ -241,12 +241,7 @@ const TSet<UClass*>& AllTestClassesSet()
 	return TestClassesSet;
 };
 
-#if ENGINE_MINOR_VERSION <= 23
 FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
-#else
-// Remove this once we fix 4.22 and 4.23: UNR-2988
-FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_4.24");
-#endif
 TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
 	{ "NonSpatialTypeActor", "NonSpatialTypeActor.schema" },
@@ -564,7 +559,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_t
 	UClass* CurrentClass = USpatialTypeActorComponent::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
-	
+
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
@@ -770,7 +765,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
-	
+
 	// GIVEN
 	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
@@ -852,7 +847,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"rpc_components.schema",
 		"rpc_payload.schema",
 		"server_worker.schema",
-		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",
 		"spatial_debugging.schema",
@@ -912,7 +906,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered)
 {
 	SchemaTestFixture Fixture;
-	
+
 	// GIVEN
 	const TArray<UObject*>& Classes = AllTestClassesArray();
 
@@ -958,7 +952,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
 {
 	SchemaTestFixture Fixture;
-	
+
 	// GIVEN
 	TMultiMap<FName, FName> LevelNamesToPaths;
 	LevelNamesToPaths.Add(TEXT("TestLevel0"), TEXT("/Game/Maps/FirstTestLevel0"));

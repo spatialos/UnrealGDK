@@ -6,6 +6,8 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/WorkerRegion.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/SpatialDebugging.h"
@@ -143,7 +145,14 @@ void ASpatialDebugger::OnAuthorityGained()
 {
 	if (NetDriver->LoadBalanceStrategy)
 	{
-		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
+		const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+		if (LayeredLBStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get LayeredLBStrategy."));
+			return;
+		}
+
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
 		{
 			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 			WorkerRegions.SetNum(LBStrategyRegions.Num());
@@ -229,7 +238,7 @@ void ASpatialDebugger::LoadIcons()
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	UTexture2D* DefaultTexture = DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
+	UTexture2D* DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
 
 	const float IconWidth = 16.0f;
 	const float IconHeight = 16.0f;
@@ -273,35 +282,30 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 
 void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
 {
-	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
+	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 
-	if (bAuthoritative && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{
-		if (NetDriver->VirtualWorkerTranslator == nullptr)
-		{
-			// Currently, there's nothing to display in the debugger other than load balancing information.
-			return;
-		}
-
-		VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-		FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
-
-		SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
-		if (DebuggingInfo == nullptr)
-		{
-			// Some entities won't have debug info, so create it now.
-			SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
-			NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
-			return;
-		}
-		else
-		{
-			DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
-			DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
-			FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-			NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
-		}
+		// Currently, there's nothing to display in the debugger other than load balancing information.
+		return;
 	}
+
+	VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+	FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+
+	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
+	if (DebuggingInfo == nullptr)
+	{
+		// Some entities won't have debug info, so create it now.
+		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
+		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
+		return;
+	}
+		 
+	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
+	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
+	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
 }
 
 void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
@@ -334,6 +338,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	const SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 
 	static const float BaseHorizontalOffset(16.0f);
+
+	if (!FApp::CanEverRender()) // DrawIcon can attempt to use the underlying texture resource even when using nullrhi
+	{
+		return;
+	}
 
 	if (bShowLock)
 	{

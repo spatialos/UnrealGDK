@@ -20,11 +20,14 @@ SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
 DOWNLOAD_MOBILE=
+USE_CHINA_SERVICES_REGION=
 
 while test $# -gt 0
 do
     case "$1" in
-        --china) DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
+        --china)
+            DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
+            USE_CHINA_SERVICES_REGION=true
             ;;
         --mobile) DOWNLOAD_MOBILE=true
             ;;
@@ -46,6 +49,13 @@ if [[ -e .git/hooks ]]; then
 
     # Add git hook to run Setup.sh when RequireSetup file has been updated.
     cp "$(pwd)/SpatialGDK/Extras/git/post-merge" "$(pwd)/.git/hooks"
+fi
+
+# Create or remove an empty file in the plugin directory indicating whether to use China services region.
+if [[ -n "${USE_CHINA_SERVICES_REGION}" ]]; then
+    touch UseChinaServicesRegion
+else
+    rm -f UseChinaServicesRegion
 fi
 
 echo "Clean folders"
@@ -80,9 +90,9 @@ spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios      "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-    spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk16b-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk16b-android.zip
-    spatial package retrieve worker_sdk  c-dynamic-armv7a-clang_ndk16b-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk16b-android.zip
-    spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk16b-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk16b-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk21-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-armv7a-clang_ndk21-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk21-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21-android.zip
 fi
 
 spatial package retrieve worker_sdk  csharp                                  "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
@@ -98,9 +108,9 @@ unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip         
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip      -d "${BINARIES_DIR}"/IOS/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk16b-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk16b-android.zip   -d "${BINARIES_DIR}"/Android/armeabi-v7a/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk16b-android.zip   -d "${BINARIES_DIR}"/Android/x86_64/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21-android.zip   -d "${BINARIES_DIR}"/Android/armeabi-v7a/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21-android.zip   -d "${BINARIES_DIR}"/Android/x86_64/
 fi
 
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/csharp.zip                                  -d "${BINARIES_DIR}"/Programs/worker_sdk/csharp/

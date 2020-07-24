@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
@@ -15,8 +14,9 @@ class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-DECLARE_EVENT(USpatialGameInstance, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialGameInstance, FOnConnectionFailedEvent, const FString&);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSpawnFailedEvent, const FString&, Reason);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -24,11 +24,11 @@ class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	USpatialGameInstance();
+
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
-	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
-	void TryConnectToSpatial();
 
 	virtual void StartGameInstance() override;
 
@@ -53,16 +53,26 @@ public:
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
+	void HandleOnPlayerSpawnFailed(const FString& Reason);
+
+	void CleanupCachedLevelsAfterConnection();
 
 	// Invoked when this worker has successfully connected to SpatialOS
-	FOnConnectedEvent OnConnected;
+	UPROPERTY(BlueprintAssignable)
+	FOnConnectedEvent OnSpatialConnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
-	FOnConnectionFailedEvent OnConnectionFailed;
+	UPROPERTY(BlueprintAssignable)
+	FOnConnectionFailedEvent OnSpatialConnectionFailed;
+	// Invoked when the player could not be spawned
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 
-	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
-	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
+	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	void TryInjectSpatialLocatorIntoCommandLine();
+
+	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -74,7 +84,8 @@ private:
 	UPROPERTY()
 	USpatialConnectionManager* SpatialConnectionManager;
 
-	bool bFirstConnectionToSpatialOSAttempted = false;
+	bool bShouldConnectUsingCommandLineArgs = true;
+	bool bHasPreviouslyConnectedToSpatial = false;
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
@@ -87,6 +98,19 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	// A set of the levels which were loaded before the SpatialOS connection.
+	UPROPERTY()
+	TSet<ULevel*> CachedLevelsForNetworkIntialize;
+
+	// Initializes the Spatial connection manager if Spatial networking is enabled, otherwise does nothing.
+	void StartSpatialConnection();
+
+	void SetHasPreviouslyConnectedToSpatial() { bHasPreviouslyConnectedToSpatial = true; }
+	bool HasPreviouslyConnectedToSpatial() const { return bHasPreviouslyConnectedToSpatial; }
+
 	UFUNCTION()
-	void OnLevelInitializedNetworkActors(ULevel* Level, UWorld* OwningWorld);
+	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
+
+	// Boolean for whether or not the Spatial connection is ready for normal operations.
+	bool bIsSpatialNetDriverReady;
 };

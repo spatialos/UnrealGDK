@@ -57,7 +57,7 @@ steps:
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
     label: "post-merge-example-project-build"
-    branches: "master preview release"
+    if: build.env("ENGINE_NET_TEST") != "true" && (build.branch == "master" || build.branch == "preview" || build.branch == "release")
     async: true
     build:
       env:
@@ -78,6 +78,6 @@ steps:
     <<: *script_runner
   
   - label: "slack-notify"
-    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false"
+    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
     <<: *windows
