@@ -452,11 +452,12 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 }
 
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType ControllerType, int InstanceId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId)
 {
+	ensureMsgf(WorkerType != ESpatialFunctionalTestWorkerType::All, TEXT("Trying to call GetFlowController with All WorkerType"));
 	for (auto* FlowController : FlowControllers)
 	{
-		if (FlowController->WorkerDefinition.Type == ControllerType && FlowController->WorkerDefinition.Id == InstanceId)
+		if (FlowController->WorkerDefinition.Type == WorkerType && FlowController->WorkerDefinition.Id == WorkerId)
 		{
 			return FlowController;
 		}
