@@ -10,7 +10,6 @@
 #include "Utils/InspectionColors.h"
 
 #include "Debug/DebugDrawService.h"
-#include "Editor.h"
 #include "Engine/World.h"
 #include "GameFramework/WorldSettings.h"
 #include "LevelEditor.h"
