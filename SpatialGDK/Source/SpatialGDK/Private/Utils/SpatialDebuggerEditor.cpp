@@ -12,7 +12,6 @@
 #include "Debug/DebugDrawService.h"
 #include "Engine/World.h"
 #include "GameFramework/WorldSettings.h"
-#include "LevelEditor.h"
 #include "Modules/ModuleManager.h"
 
 using namespace SpatialGDK;
