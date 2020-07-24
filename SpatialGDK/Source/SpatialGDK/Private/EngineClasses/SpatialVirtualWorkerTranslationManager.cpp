@@ -5,7 +5,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
-#include "Programs/UnrealHeaderTool/Private/Specifiers/FunctionSpecifiers.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
@@ -141,7 +140,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 		return;
 	}
 
-	const TArray<ServerInfo> PendingServersToAssign = GetPendingServersToAssignFromQuery(Op);
+	TArray<ServerInfo> PendingServersToAssign = GetPendingServersToAssignFromQuery(Op);
 	if (PendingServersToAssign.Num() != UnassignedLayerVirtualWorkers.Num())
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Waiting for all virtual workers to be assigned "
@@ -150,7 +149,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 		return;
 	}
 
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("ServerWorker Entity query successfully found %d"
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("ServerWorker Entity query successfully found %d "
 		"workers."), PendingServersToAssign.Num());
 
 	AssignServersWithLayerHints(PendingServersToAssign);
@@ -208,10 +207,10 @@ TArray<SpatialVirtualWorkerTranslationManager::ServerInfo> SpatialVirtualWorkerT
 	return PendingServersToAssign;
 }
 
-void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(const TArray<ServerInfo>& PendingServersToAssign)
+void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(TArray<ServerInfo>& PendingServersToAssign)
 {
-	TArray<uint32> AssignedIndices;
-	AssignedIndices.Reserve(UnassignedLayerVirtualWorkers.Num());
+	TArray<FString> AssignedServers;
+	AssignedServers.Reserve(UnassignedLayerVirtualWorkers.Num());
 	for (const ServerInfo& PendingServer : PendingServersToAssign)
 	{
 		// Does one of our connected servers express a preference for which layer it is in?
@@ -225,6 +224,7 @@ void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(const T
 				if (PendingServer.LayerHint.IsEqual(CurrentLayerVirtualWorker.Key))
 				{
 					AssignWorker(PendingServer, CurrentLayerVirtualWorker.Value);
+					AssignedServers.Add(PendingServer.WorkerName);
 					AssignedLayerVirtualWorkerIndex = i;
 				}
 			}
@@ -243,6 +243,11 @@ void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(const T
 			UnassignedLayerVirtualWorkers.RemoveAt(AssignedLayerVirtualWorkerIndex);
 		}
 	}
+
+	PendingServersToAssign.RemoveAll([&](ServerInfo& Server)
+	{
+		return AssignedServers.Contains(Server.WorkerName);
+	});
 }
 
 void SpatialVirtualWorkerTranslationManager::AssignWorker(const ServerInfo& ServerInfo, const VirtualWorkerId& VirtualWorkerId)

@@ -51,6 +51,11 @@ void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualW
 	}
 
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
+
+	for (const auto& Elem : LayerNameToLBStrategy)
+	{
+		Elem.Value->SetLocalVirtualWorkerId(InLocalVirtualWorkerId);
+	}
 }
 
 TSet<VirtualWorkerId> ULayeredLBStrategy::GetVirtualWorkerIds() const

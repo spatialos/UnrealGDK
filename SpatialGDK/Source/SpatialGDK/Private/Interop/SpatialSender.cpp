@@ -259,7 +259,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
 
 	FString LayerHint = TEXT("");
-	FParse::Value(FCommandLine::Get(), TEXT("LayerHint="), LayerHint);
+	FParse::Value(FCommandLine::Get(), TEXT("-LayerHint"), LayerHint);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());

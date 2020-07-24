@@ -70,7 +70,7 @@ private:
 	void QueryForServerWorkerEntities();
 	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
 	static TArray<ServerInfo> GetPendingServersToAssignFromQuery(const Worker_EntityQueryResponseOp& Op);
-	void AssignServersWithLayerHints(const TArray<ServerInfo>& PendingServersToAssign);
+	void AssignServersWithLayerHints(TArray<ServerInfo>& PendingServersToAssign);
 	void SendVirtualWorkerMappingUpdate() const;
 
 
