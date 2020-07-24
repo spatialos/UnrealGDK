@@ -55,8 +55,11 @@ public:
 		bEnableMultiWorker = IsEnabled;
 	}
 
+#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override
 	{
+		Super::PostEditChangeProperty(PropertyChangedEvent);
+
 		if (PropertyChangedEvent.Property != nullptr)
 		{
 			const FName PropertyName(PropertyChangedEvent.Property->GetFName());
@@ -72,8 +75,8 @@ public:
 				}
  			}
 		}
-		Super::PostEditChangeProperty(PropertyChangedEvent);
 	}
+#endif
 
 private:
 	/** Enable running different server worker types to split the simulation. */
