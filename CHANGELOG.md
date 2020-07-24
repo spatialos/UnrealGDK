@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
-- Unreal Engine version `4.23` is no longer supported. We recommend upgrading to the newest version (`4.25.1`) to continue receiving updates.
+- Unreal Engine version `4.23` is no longer supported. We recommend upgrading to the newest version (`4.25.2`) to continue receiving updates.
 - When upgrading to Unreal Engine 4.25 you must:
   1. In the engine folder, run `git fetch && git checkout 4.25-SpatialOSUnrealGDK-0.11.0`
   1. Download and install the -v16 clang-9.0.1-based toolchain from [this Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
 - Decoupled QueuedIncomingRPCWaitTime from reprocessing flush time with new parameter QueuedIncomingRPCRetryTime (default value 1.0s).  This enables independent control over how long to wait for queued RPCs to resolve parameters, as well as how frequently to check if the parameters are resolved.
 - Command-line arguments are now only available in non-shipping builds, if you wish to use command-line arguments for shipping builds the target rule `bEnableSpatialCmdlineInShipping` will let you do so.
-- Unreal Engine version `4.25.1` is now supported.
+- Unreal Engine version `4.25.2` is now supported.
 
 ### Bug fixes:
 - The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
