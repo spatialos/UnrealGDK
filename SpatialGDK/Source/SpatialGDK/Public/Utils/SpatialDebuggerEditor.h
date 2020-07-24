@@ -8,7 +8,6 @@
 
 #include "SpatialDebuggerEditor.generated.h"
 
-
 /**
  * Extends the SpatialDebugger to visualise spatial information in the Editor
  */
