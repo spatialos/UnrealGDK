@@ -20,6 +20,7 @@ namespace Improbable
     {
         private const string SIM_PLAYER_DEPLOYMENT_TAG = "simulated_players";
         private const string DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG = "unreal_deployment_launcher";
+        private const string TARGET_DEPLOYMENT_READY_TAG = "target_deployment_ready";
 
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
 
@@ -204,7 +205,7 @@ namespace Improbable
                 // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
                 simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
                 {
-                    Key = "target_deployment_ready",
+                    Key = TARGET_DEPLOYMENT_READY_TAG,
                     Value = "true",
                     WorkerType = CoordinatorWorkerName
                 });
@@ -287,7 +288,7 @@ namespace Improbable
                 // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
                 simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
                 {
-                    Key = "target_deployment_ready",
+                    Key = TARGET_DEPLOYMENT_READY_TAG,
                     Value = autoConnect.ToString(),
                     WorkerType = CoordinatorWorkerName
                 });
