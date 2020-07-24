@@ -25,17 +25,22 @@ ASpatialDebuggerEditor::ASpatialDebuggerEditor(const FObjectInitializer& ObjectI
 
 void ASpatialDebuggerEditor::Destroyed()
 {
+#if WITH_EDITOR
 	DestroyWorkerRegions();
+#endif
 }
 
 void ASpatialDebuggerEditor::ToggleWorkerRegionVisibility(bool bEnabled)
 {
+#if WITH_EDITOR
 	bShowWorkerRegions = bEnabled;
 	RefreshWorkerRegions();
+#endif
 }
 
 void ASpatialDebuggerEditor::RefreshWorkerRegions()
 {
+#if WITH_EDITOR
 	DestroyWorkerRegions();
 
 	if (bShowWorkerRegions && AllowWorkerBoundaries())
@@ -49,10 +54,12 @@ void ASpatialDebuggerEditor::RefreshWorkerRegions()
 		// Redraw editor window to show changes
 		GEditor->GetActiveViewport()->Invalidate();
 	}
+#endif
 }
 
 bool ASpatialDebuggerEditor::AllowWorkerBoundaries() const
 {
+#if WITH_EDITOR
 	// Check if multi worker is enabled.
 	UWorld* World = GetWorld();
 
@@ -65,10 +72,14 @@ bool ASpatialDebuggerEditor::AllowWorkerBoundaries() const
 	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
+#else
+	return false;
+#endif
 }
 
 void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 {
+#if WITH_EDITOR
 	WorkerRegions.Empty();
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
@@ -97,4 +108,5 @@ void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 				}
 		}
 	}
+#endif
 }
