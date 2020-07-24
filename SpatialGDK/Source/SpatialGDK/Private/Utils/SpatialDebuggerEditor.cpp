@@ -22,7 +22,6 @@ ASpatialDebuggerEditor::ASpatialDebuggerEditor(const FObjectInitializer& ObjectI
 	: Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = false;
-
 	bReplicates = false;
 }
 
@@ -34,7 +33,6 @@ void ASpatialDebuggerEditor::Destroyed()
 void ASpatialDebuggerEditor::ToggleWorkerRegionVisibility(bool bEnabled)
 {
 	bShowWorkerRegions = bEnabled;
-
 	RefreshWorkerRegions();
 }
 
@@ -66,11 +64,8 @@ bool ASpatialDebuggerEditor::AllowWorkerBoundaries() const
 	}
 		
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-
 	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
-
 	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-
 	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
 }
 
@@ -80,13 +75,11 @@ void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 	LoadBalanceStrategy->Init();
-
 	const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(LoadBalanceStrategy);
 
 	if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
 	{
 		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
-
 		const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 
 		// Only show worker regions if there is more than one

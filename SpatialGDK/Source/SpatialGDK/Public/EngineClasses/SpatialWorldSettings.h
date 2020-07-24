@@ -70,7 +70,6 @@ public:
 					ASpatialDebuggerEditor* FoundActor = *It;
 					FoundActor->RefreshWorkerRegions();
 				}
-
  			}
 		}
 		Super::PostEditChangeProperty(PropertyChangedEvent);

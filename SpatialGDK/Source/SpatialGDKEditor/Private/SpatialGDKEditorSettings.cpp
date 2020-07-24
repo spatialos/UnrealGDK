@@ -251,7 +251,6 @@ void USpatialGDKEditorSettings::SetSpatialDebuggerEditorEnabled(bool IsEnabled)
 	SaveConfig();
 }
 
-
 void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
 {
 	bIsAutoGenerateCloudConfigEnabled = IsEnabled;

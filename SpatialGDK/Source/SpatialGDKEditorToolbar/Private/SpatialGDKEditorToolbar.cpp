@@ -55,7 +55,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
-
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
@@ -530,7 +529,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 	
-
 	return MenuBuilder.MakeWidget();
 }
 
@@ -782,9 +780,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("There was no SpatialDebuggerEditor setup when the map was loaded."));
 	}
-
 }
-
 
 void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType MapChangeType)
 {
