@@ -797,7 +797,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 {
 	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
 	{
-		// If spatial networking is enabled then create the spatial debugger for this map
+		// If Spatial networking is enabled then spawn the SpatialDebuggerEditor.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			// Create the spatial debugger for this map
