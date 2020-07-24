@@ -194,8 +194,6 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 
 	AddAlwaysRelevantAndInterestedQuery(OutInterest, InActor, InInfo, LevelConstraint);
 
-	AddActorVisibilityQuery(OutInterest, LevelConstraint);
-
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
 	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
@@ -326,34 +324,6 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 	}
 }
 
-
-void InterestFactory::AddActorVisibilityQuery(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
-{
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-	QueryConstraint ActorVisibilityConstraint = CreateActorVisibilityConstraint();
-
-	QueryConstraint VisibilityAndLevelConstraint;
-
-	if (ActorVisibilityConstraint.IsValid())
-	{
-		VisibilityAndLevelConstraint.AndConstraint.Add(ActorVisibilityConstraint);
-	}
-
-	// Add the level constraint here as all client queries need to make sure they don't check out anything outside their loaded levels.
-	if (LevelConstraint.IsValid())
-	{
-		VisibilityAndLevelConstraint.AndConstraint.Add(LevelConstraint);
-	}
-
-	Query ClientSystemQuery;
-	ClientSystemQuery.Constraint = VisibilityAndLevelConstraint;
-	ClientSystemQuery.ResultComponentIds = ClientAuthInterestResultType;
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), ClientSystemQuery);
-
-}
-
 void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
@@ -386,6 +356,11 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 		// All constraints have to be limited to the checked out levels, so create an AND constraint with the level.
 		UserQuery.Constraint.AndConstraint.Add(UserConstraint);
 		UserQuery.Constraint.AndConstraint.Add(LevelConstraint);
+
+		// Make sure that the Entity is not marked as bHidden
+		QueryConstraint VisibilityConstraint;
+		VisibilityConstraint = CreateActorVisibilityConstraint();
+		UserQuery.Constraint.AndConstraint.Add(VisibilityConstraint);
 
 		// We enforce result type even for user defined queries. Here we are assuming what a user wants from their defined
 		// queries are for their players to check out more actors than they normally would, so use the client non auth result type,
@@ -487,6 +462,11 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 		{
 			NewQuery.Constraint.AndConstraint.Add(LevelConstraint);
 		}
+
+		// Make sure that the Entity is not marked as bHidden
+		QueryConstraint VisibilityConstraint;
+		VisibilityConstraint = CreateActorVisibilityConstraint();
+		NewQuery.Constraint.AndConstraint.Add(VisibilityConstraint);
 
 		NewQuery.Frequency = CheckoutRadiusConstraintFrequencyPair.Frequency;
 		NewQuery.ResultComponentIds = ClientNonAuthInterestResultType;
