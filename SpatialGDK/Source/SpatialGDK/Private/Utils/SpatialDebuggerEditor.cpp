@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Utils/SpatialDebuggerEditor.h"
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
