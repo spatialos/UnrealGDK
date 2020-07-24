@@ -804,9 +804,9 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 			UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 			check(EditorWorld);
 
-			FActorSpawnParameters spawnParameters;
-			spawnParameters.bHideFromSceneOutliner = true;
-			SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(spawnParameters);
+			FActorSpawnParameters SpawnParameters;
+			SpawnParameters.bHideFromSceneOutliner = true;
+			SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(SpawnParameters);
 			SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
 		}
 	}
