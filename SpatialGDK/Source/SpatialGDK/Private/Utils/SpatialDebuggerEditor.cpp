@@ -1,17 +1,20 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Utils/SpatialDebuggerEditor.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/InspectionColors.h"
+
 #include "Debug/DebugDrawService.h"
 #include "Editor.h"
-#include "LevelEditor.h"
-#include "Modules/ModuleManager.h"
 #include "Engine/World.h"
 #include "GameFramework/WorldSettings.h"
-#include "EngineClasses/SpatialWorldSettings.h"
+#include "LevelEditor.h"
+#include "Modules/ModuleManager.h"
 
 using namespace SpatialGDK;
 
@@ -34,7 +37,6 @@ void ASpatialDebuggerEditor::ShowWorkerRegions(bool bEnabled)
 
 	RefreshWorkerRegions();
 }
-
 
 void ASpatialDebuggerEditor::RefreshWorkerRegions()
 {

@@ -81,5 +81,3 @@ private:
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;
 };
-
-

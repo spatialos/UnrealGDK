@@ -166,7 +166,7 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 	}
 
 	FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
-	if (LevelEditor)
+	if (LevelEditor != nullptr)
 	{
 		LevelEditor->OnMapChanged().RemoveAll(this);
 	}
@@ -769,7 +769,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 {
-	// Don't try and start spatial editor debugger spatial networking is disabled.
+	// Don't try and show SpatialDebuggerEditor if Spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to toggle spatial debugger in editor but spatial networking is disabled."));
@@ -797,16 +797,16 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 {
 	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
 	{
-		// If spatial networking is enabled then create the spatial debugger for this map
+		// If Spatial networking is enabled then spawn the SpatialDebuggerEditor.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			// Create the spatial debugger for this map
 			UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 			check(EditorWorld);
 
-			FActorSpawnParameters spawnParameters;
-			spawnParameters.bHideFromSceneOutliner = true;
-			SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(spawnParameters);
+			FActorSpawnParameters SpawnParameters;
+			SpawnParameters.bHideFromSceneOutliner = true;
+			SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(SpawnParameters);
 			SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
 		}
 	}
