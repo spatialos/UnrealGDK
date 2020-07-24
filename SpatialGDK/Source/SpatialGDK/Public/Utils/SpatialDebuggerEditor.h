@@ -1,7 +1,8 @@
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Utils/SpatialDebugger.h"
+
+#include "CoreMinimal.h"
 
 #include "SpatialDebuggerEditor.generated.h"
 
