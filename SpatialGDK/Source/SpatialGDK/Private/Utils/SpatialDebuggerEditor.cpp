@@ -38,7 +38,6 @@ void ASpatialDebuggerEditor::ShowWorkerRegions(bool bEnabled)
 	RefreshWorkerRegions();
 }
 
-
 void ASpatialDebuggerEditor::RefreshWorkerRegions()
 {
 	DestroyWorkerRegions();
