@@ -769,7 +769,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 {
-	// Don't try and start spatial editor debugger spatial networking is disabled.
+	// Don't try and show SpatialDebuggerEditor if Spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to toggle spatial debugger in editor but spatial networking is disabled."));
