@@ -2,14 +2,18 @@
 
 #pragma once
 
+#include "SpatialView/OpList/OpList.h"
+
 #include "CoreMinimal.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
-void FindFirstOpOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType OpType, Worker_Op** OutOp);
-void AppendAllOpsOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType OpType, TArray<Worker_Op*>& FoundOps);
-void FindFirstOpOfTypeForComponent(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType OpType, const Worker_ComponentId ComponentId, Worker_Op** OutOp);
+
+Worker_Op* FindFirstOpOfType(const TArray<OpList>& InOpLists, const Worker_OpType OpType);
+void AppendAllOpsOfType(const TArray<OpList>& InOpLists, const Worker_OpType OpType, TArray<Worker_Op*>& FoundOps);
+Worker_Op* FindFirstOpOfTypeForComponent(const TArray<SpatialGDK::OpList>& InOpLists, const Worker_OpType OpType, const Worker_ComponentId ComponentId);
 Worker_ComponentId GetComponentId(const Worker_Op* Op);
+
 } // namespace SpatialGDK

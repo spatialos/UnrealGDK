@@ -235,13 +235,15 @@ struct SpatialMetrics
 	TArray<GaugeMetric> GaugeMetrics;
 	/** Array of histogram metrics. */
 	TArray<HistogramMetric> HistogramMetrics;
+
+	void SendToConnection(Worker_Connection* Connection);
 };
 
 struct FMetrics : FOutgoingMessage
 {
-	FMetrics(const SpatialMetrics& InMetrics)
+	FMetrics(SpatialMetrics InMetrics)
 		: FOutgoingMessage(EOutgoingMessageType::Metrics)
-		, Metrics(InMetrics)
+		, Metrics(MoveTemp(InMetrics))
 	{}
 
 	SpatialMetrics Metrics;
