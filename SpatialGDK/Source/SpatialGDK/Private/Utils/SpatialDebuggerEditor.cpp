@@ -72,14 +72,17 @@ bool ASpatialDebuggerEditor::AllowWorkerBoundaries() const
 
 void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 {
+	WorkerRegions.Empty();
+
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();
 	LoadBalanceStrategy->Init(GetWorld());
-	LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
 	const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(LoadBalanceStrategy);
 
 	if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
 	{
+		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+
 		const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 
 		// Only show worker regions if there is more than one
@@ -97,10 +100,6 @@ void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 
 					WorkerRegions[i] = WorkerRegionInfo;
 				}
-		}
-		else
-		{
-			WorkerRegions.Empty();
 		}
 	}
 }
