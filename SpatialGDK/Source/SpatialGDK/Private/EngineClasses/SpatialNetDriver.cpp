@@ -2434,7 +2434,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	}
 }
 
-void USpatialNetDriver::RefreshActorVisibility(AActor * Actor, bool bMakeVisible)
+void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 {
 	check(IsServer());
 	check(Actor);
@@ -2442,7 +2442,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor * Actor, bool bMakeVisible
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on actor (%s) without entity id"), *Actor->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on an actor without entity id. Actor's Name: %s"), *Actor->GetName());
 		return;
 	}
 
@@ -2450,7 +2450,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor * Actor, bool bMakeVisible
 	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 	if (bHasAuthority == false)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to  change visibility on (%s) without authority"), *Actor->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to  change visibility on an actor without authority. Actor's Name: %s "), *Actor->GetName());
 		return;
 	}
 
