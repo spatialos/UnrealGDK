@@ -51,8 +51,6 @@ public:
 	/* UAbstractLBStrategy Interface */
 	virtual void Init() override;
 
-	virtual void Init(UWorld* World)  override;
-
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;

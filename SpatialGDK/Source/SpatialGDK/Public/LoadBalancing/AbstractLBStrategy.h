@@ -34,8 +34,6 @@ public:
 
 	virtual void Init() {}
 
-	virtual void Init(UWorld* World) {}
-
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
 	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; };

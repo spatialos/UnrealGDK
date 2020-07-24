@@ -20,16 +20,8 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 void ULayeredLBStrategy::Init()
 {
 	Super::Init();
-
-	UWorld* World = GetWorld();
-	Init(World);
-}
-
-void ULayeredLBStrategy::Init(UWorld* World)
-{
-	Super::Init(World);
 	
-	const ASpatialWorldSettings* WorldSettings = World ? Cast<ASpatialWorldSettings>(World->GetWorldSettings()) : nullptr;
+	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 	
 	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 

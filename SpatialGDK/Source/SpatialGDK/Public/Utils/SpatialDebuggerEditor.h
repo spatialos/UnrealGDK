@@ -18,7 +18,7 @@ class SPATIALGDK_API ASpatialDebuggerEditor : public ASpatialDebugger
 
 	virtual void Destroyed() override;
 
-	void ShowWorkerRegions(bool bEnabled);
+	void ToggleWorkerRegionVisibility(bool bEnabled);
 	void RefreshWorkerRegions();
 
 	bool AllowWorkerBoundaries() const;

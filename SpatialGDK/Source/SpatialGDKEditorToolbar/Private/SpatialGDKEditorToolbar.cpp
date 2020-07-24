@@ -769,21 +769,14 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 {
-	// Don't try and show SpatialDebuggerEditor if Spatial networking is disabled.
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to toggle spatial debugger in editor but spatial networking is disabled."));
-		return;
-	}
-
-	if (SpatialDebuggerEditor != nullptr)
+	if (IsValid(SpatialDebuggerEditor))
 	{
 		bSpatialDebuggerEditorEnabled = !bSpatialDebuggerEditorEnabled;
 
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(bSpatialDebuggerEditorEnabled);
 
-		SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
+		SpatialDebuggerEditor->ToggleWorkerRegionVisibility(bSpatialDebuggerEditorEnabled);
 	}
 	else
 	{
@@ -800,14 +793,14 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 		// If Spatial networking is enabled then spawn the SpatialDebuggerEditor.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
-			// Create the spatial debugger for this map
+			// Create the SpatialDebuggerEditor for this map
 			UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 			check(EditorWorld);
 
 			FActorSpawnParameters SpawnParameters;
 			SpawnParameters.bHideFromSceneOutliner = true;
 			SpatialDebuggerEditor = EditorWorld->SpawnActor<ASpatialDebuggerEditor>(SpawnParameters);
-			SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
+			SpatialDebuggerEditor->ToggleWorkerRegionVisibility(bSpatialDebuggerEditorEnabled);
 		}
 	}
 	else if (MapChangeType == EMapChangeType::TearDownWorld)
@@ -1064,6 +1057,11 @@ void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());
+
+	if (IsValid(SpatialDebuggerEditor))
+	{
+		SpatialDebuggerEditor->ToggleWorkerRegionVisibility(bSpatialDebuggerEditorEnabled);
+	}
 }
 
 bool FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled() const
@@ -1169,9 +1167,9 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bSpatialDebuggerEditorEnabled))
 		{
 			bSpatialDebuggerEditorEnabled = Settings->bSpatialDebuggerEditorEnabled;
-			if (SpatialDebuggerEditor != nullptr)
+			if (IsValid(SpatialDebuggerEditor))
 			{
-				SpatialDebuggerEditor->ShowWorkerRegions(bSpatialDebuggerEditorEnabled);
+				SpatialDebuggerEditor->ToggleWorkerRegionVisibility(bSpatialDebuggerEditorEnabled);
 			}
 		}
 	}
@@ -1495,7 +1493,7 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const
 {
-	return SpatialDebuggerEditor != nullptr && SpatialDebuggerEditor->AllowWorkerBoundaries();
+	return IsValid(SpatialDebuggerEditor) && SpatialDebuggerEditor->AllowWorkerBoundaries();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()

@@ -199,6 +199,7 @@ private:
 	void GenerateConfigFromCurrentMap();
 
 	// Used to show worker boundaries in the editor
+	UPROPERTY()
 	ASpatialDebuggerEditor* SpatialDebuggerEditor;
 	bool bSpatialDebuggerEditorEnabled;
 };
