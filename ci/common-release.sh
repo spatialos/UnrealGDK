@@ -29,3 +29,12 @@ function setupReleaseTool() {
         --file ./ci/docker/release-tool.Dockerfile \
         .
 }
+
+function getDryrunBranchPrefix() {
+    DRY_RUN_METADATA="$(buildkite-agent meta-data get dryrun)"
+    if [[ "${DRY_RUN_METADATA}" == "true" ]]; then
+        echo ""
+    else
+        echo "dry-run/"
+    fi
+}
