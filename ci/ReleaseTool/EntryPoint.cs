@@ -13,6 +13,7 @@ namespace ReleaseTool
                 .MapResult(
                     (PrepCommand.Options options) => new PrepCommand(options).Run(),
                     (ReleaseCommand.Options options) => new ReleaseCommand(options).Run(),
+                    (PrepFullReleaseCommand.Options options) => new PrepFullReleaseCommand(options).Run(),
                     errors => 1);
         }
 

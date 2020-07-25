@@ -35,10 +35,6 @@ namespace ReleaseTool
         private const string CandidateCommitMessageTemplate = "{0}.";
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
-        // Names of the version files that live in the UnrealEngine repository.
-        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
-        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
-
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
         public class Options : GitHubClient.IGitHubOptions
         {
@@ -87,7 +83,7 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
-            var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
+            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
             var gitHubClient = new GitHubClient(options);
             var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
@@ -163,12 +159,8 @@ namespace ReleaseTool
                     // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                     switch (repoName)
                     {
-                        case "UnrealEngine":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
-                            break;
                         case "UnrealGDK":
-                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
+                            Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
 
                             var releaseHashes = options.EngineVersions.Split(" ")
                                 .Select(version => $"{version.Trim()}-release")
@@ -178,17 +170,14 @@ namespace ReleaseTool
 
                             UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
                             break;
+
+                        // Do not do anything for the below, since we take care of it in PrepFullReleaseCommand.
+                        // Leaving the stub here, in case of future additions.
+                        case "UnrealEngine":
                         case "UnrealGDKExampleProject":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
                         case "UnrealGDKTestGyms":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
                         case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
                         case "TestGymBuildKite":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
                             break;
                     }
 
@@ -224,7 +213,7 @@ namespace ReleaseTool
                     {
                         mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge);
                     }
-                    catch (Octokit.PullRequestNotMergeableException e) {} // Will be covered by log below
+                    catch (Octokit.PullRequestNotMergeableException) {} // Will be covered by log below
                     if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
                     {
                         throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
@@ -321,38 +310,6 @@ namespace ReleaseTool
             }
 
             return 0;
-        }
-        internal static void UpdateChangeLog(string ChangeLogFilePath, Options options, GitClient gitClient)
-        {
-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-            {
-                if (File.Exists(ChangeLogFilePath))
-                {
-                    Logger.Info("Updating {0}...", ChangeLogFilePath);
-                    var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
-                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
-                        DateTime.Now);
-                    var releaseIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - "));
-                    // If we already have a changelog entry for this release, replace it.
-                    if (releaseIndex != -1)
-                    {
-                        changelog[releaseIndex] = releaseHeading;
-                    }
-                    else
-                    {
-                        // Add the new release heading under the "## Unreleased" one.
-                        // Assuming that this is the first heading.
-                        var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
-                        changelog.InsertRange(unreleasedIndex + 1, new[]
-                        {
-                            string.Empty,
-                            releaseHeading
-                        });
-                    }
-                    File.WriteAllLines(ChangeLogFilePath, changelog);
-                    gitClient.StageFile(ChangeLogFilePath);
-                }
-            }
         }
 
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
@@ -510,59 +467,6 @@ GDK team";
             }
 
             return gitHubClient.CreateDraftRelease(gitHubRepo, options.Version, releaseBody, name, headCommit);
-        }
-
-        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string relativeFilePath)
-        {
-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-            {
-                Logger.Info("Updating contents of version file '{0}' to '{1}'...", relativeFilePath, fileContents);
-
-                if (!File.Exists(relativeFilePath))
-                {
-                    throw new InvalidOperationException("Could not update the version file as the file " +
-                        $"'{relativeFilePath}' does not exist.");
-                }
-
-                File.WriteAllText(relativeFilePath, $"{fileContents}");
-
-                gitClient.StageFile(relativeFilePath);
-            }
-        }
-
-        private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
-        {
-            var heading = $"{new string('#', level)} {startTitle ?? string.Empty}";
-
-            return markdownLine.StartsWith(heading);
-        }
-
-        private static (string, int) ExtractPullRequestInfo(string pullRequestUrl)
-        {
-            const string regexString = "github\\.com\\/.*\\/(.*)\\/pull\\/([0-9]*)";
-
-            var match = Regex.Match(pullRequestUrl, regexString);
-
-            if (!match.Success)
-            {
-                throw new ArgumentException($"Malformed pull request url: {pullRequestUrl}");
-            }
-
-            if (match.Groups.Count < 3)
-            {
-                throw new ArgumentException($"Malformed pull request url: {pullRequestUrl}");
-            }
-
-            var repoName = match.Groups[1].Value;
-            var pullRequestIdStr = match.Groups[2].Value;
-
-            if (!int.TryParse(pullRequestIdStr, out int pullRequestId))
-            {
-                throw new Exception(
-                    $"Parsing pull request URL failed. Expected number for pull request id, received: {pullRequestIdStr}");
-            }
-
-            return (repoName, pullRequestId);
         }
 
         private static string GetReleaseNotesFromChangeLog()
