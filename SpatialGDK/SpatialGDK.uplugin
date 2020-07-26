@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
-  "Version": 7,
-  "VersionName": "0.10.0",
+  "Version": 8,
+  "VersionName": "0.132.0",
   "FriendlyName": "SpatialOS GDK for Unreal",
   "Description": "The SpatialOS Game Development Kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
   "Category": "SpatialOS",
@@ -78,7 +78,7 @@
       "Name": "SpatialGDKFunctionalTests",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ 
+      "WhitelistPlatforms": [
         "Win64",
         "Mac"
       ]
