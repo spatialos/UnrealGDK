@@ -38,7 +38,7 @@ steps:
         default: "4.25-SpatialOSUnrealGDK\n4.24-SpatialOSUnrealGDK"
 
       - select: "Actual release or dry-run?"
-        key: "dryrun"
+        key: "dry-run"
         required: true
         default: "true"
         options:
@@ -117,9 +117,9 @@ steps:
   - trigger: platform-copybara
     label: "Run platform-copybara"
     depends_on: Release
-      build:
-        message: "Triggered from UnrealGDK Release"
-        commit: "HEAD"
-        branch: "master"
+    build:
+      message: "Triggered from UnrealGDK Release"
+      commit: "HEAD"
+      branch: "master"
     concurrency: 1
     concurrency_group: "unrealgdk-release"

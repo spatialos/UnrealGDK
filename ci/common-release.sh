@@ -31,7 +31,7 @@ function setupReleaseTool() {
 }
 
 function getDryrunBranchPrefix() {
-    DRY_RUN_METADATA="$(buildkite-agent meta-data get dryrun)"
+    DRY_RUN_METADATA="$(buildkite-agent meta-data get dry-run)"
     if [[ "${DRY_RUN_METADATA}" == "true" ]]; then
         echo ""
     else
