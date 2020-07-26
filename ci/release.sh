@@ -106,19 +106,18 @@ USER_ID=$(id -u)
 # 5. PR_URL
 # 6. GITHUB_ORG
 
-# Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
-for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
-do
-   : 
-   # Once per ENGINE_VERSION do:
-   release "UnrealEngine" \
+# Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version.
+# We go over the array in reverse order here, just to release the least relevant engine version first, so the most relevant one will
+# end up on top of the releases page.
+for (( idx=${#ENGINE_VERSIONS[@]}-1 ; idx>=0 ; idx-- )) ; do
+    ENGINE_VERSION=ENGINE_VERSIONS[idx]
+    release "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
     "${DRY_RUN_PREFIX}${ENGINE_VERSION}-release" \
     "$(buildkite-agent meta-data get UnrealEngine-${ENGINE_VERSION}-pr-url)" \
     "improbableio"
 done
-
 
 release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"
 release "UnrealGDKExampleProject" "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)" "spatialos"
