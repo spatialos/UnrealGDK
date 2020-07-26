@@ -121,5 +121,3 @@ steps:
       message: "Triggered from UnrealGDK Release"
       commit: "HEAD"
       branch: "master"
-    concurrency: 1
-    concurrency_group: "unrealgdk-release"
