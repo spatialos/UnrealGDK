@@ -27,6 +27,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -45,6 +46,7 @@
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
@@ -1142,7 +1144,34 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 	return bFoundReadyConnection ? NumClientsToTick : 0;
 }
 
-int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
+struct FCompareActorPriorityAndMigration
+{
+	FCompareActorPriorityAndMigration(FSpatialLoadBalancingHandler& InMigrationHandler)
+		: MigrationHandler(InMigrationHandler)
+	{
+	}
+
+	bool operator()(const FActorPriority& A, const FActorPriority& B) const
+	{
+		const bool AMigrates = MigrationHandler.GetActorsToMigrate().Contains(A.ActorInfo->Actor);
+		const bool BMigrates = MigrationHandler.GetActorsToMigrate().Contains(B.ActorInfo->Actor);
+		if(AMigrates == BMigrates)
+		{
+			return B.Priority < A.Priority;
+		}
+
+		if (AMigrates)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	const FSpatialLoadBalancingHandler& MigrationHandler;
+};
+
+int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialLoadBalancingHandler& MigrationHandler, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
 {
 	// Since this function signature is copied from NetworkDriver.cpp, I don't want to change the signature. But we expect
 	// that the input connection will be the SpatialOS server connection to the runtime (the first client connection),
@@ -1236,8 +1265,16 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			DeletedCount++;
 		}
 
-		// Sort by priority
-		Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
+		if (MigrationHandler.GetActorsToMigrate().Num() > 0)
+		{
+			// Process actors migrating first, in order to not have them separated if they need to migrate together and replication rate limiting happens.
+			Sort(OutPriorityActors, FinalSortedCount, FCompareActorPriorityAndMigration(MigrationHandler));
+		}
+		else
+		{
+			// Sort by priority 
+			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
+		}
 	}
 
 	UE_LOG(LogNetTraffic, Log, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i ConsiderList %03i FinalSortedCount %03i"), MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
@@ -1245,7 +1282,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	return FinalSortedCount;
 }
 
-void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
+void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FSpatialLoadBalancingHandler& MigrationHandler, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialProcessPrioritizedActors);
 
@@ -1264,6 +1301,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	int32 ActorUpdatesThisConnection = 0;
 	int32 ActorUpdatesThisConnectionSent = 0;
 
+	const int32 NumActorsMigrating = MigrationHandler.GetActorsToMigrate().Num();
+
 	// SpatialGDK - Entity creation rate limiting based on config value.
 	uint32 EntityCreationRateLimit = GetDefault<USpatialGDKSettings>()->EntityCreationRateLimit;
 	int32 MaxEntitiesToCreate = (EntityCreationRateLimit > 0) ? EntityCreationRateLimit : INT32_MAX;
@@ -1272,6 +1311,11 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// SpatialGDK - Actor replication rate limiting based on config value.
 	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
 	int32 MaxActorsToReplicate = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
+	if (MaxActorsToReplicate < NumActorsMigrating)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("ActorReplicationRateLimit of %i ignored because %i actors need to migrate"), MaxActorsToReplicate, NumActorsMigrating);
+		MaxActorsToReplicate = NumActorsMigrating;
+	}
 	int32 FinalReplicatedCount = 0;
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
@@ -1528,6 +1572,19 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
+	
+	const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(WorldSettings);
+	const bool bIsMultiWorkerEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiWorkerEnabled();
+
+	FSpatialLoadBalancingHandler MigrationHandler(this);
+	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
+
+	if (bIsMultiWorkerEnabled)
+	{
+		MigrationHandler.EvaluateActorsToMigrate(LoadBalancingContext);
+		LoadBalancingContext.UpdateWithAdditionalActors();
+	}
+
 	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
 
 	FMemMark Mark(FMemStack::Get());
@@ -1567,10 +1624,16 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	FActorPriority** PriorityActors = NULL;
 
 	// Get a sorted list of actors for this connection
-	const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
+	const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, MigrationHandler, ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
 
 	// Process the sorted list of actors for this connection
-	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, PriorityActors, FinalSortedCount, Updated);
+	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, MigrationHandler, PriorityActors, FinalSortedCount, Updated);
+
+	if (bIsMultiWorkerEnabled)
+	{
+		// Once an up to date version of the actors have been sent, do the actual migration.
+		MigrationHandler.ProcessMigrations();
+	}
 
 	// SpatialGDK - Here Unreal would mark relevant actors that weren't processed this frame as bPendingNetUpdate. This is not used in the SpatialGDK and so has been removed.
 
