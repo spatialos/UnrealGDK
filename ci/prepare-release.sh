@@ -92,6 +92,10 @@ GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 # This assigns the (potential) dry-run prefix to this variable if we are doing a dry-run
 DRY_RUN_PREFIX=$(getDryrunBranchPrefix)
 
+echo "$(buildkite-agent meta-data get dry-run)"
+echo "${DRY_RUN_PREFIX}"
+exit 1
+
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
 
