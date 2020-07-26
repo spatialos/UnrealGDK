@@ -9,7 +9,7 @@ namespace ReleaseTool
         {
             ConfigureLogger();
 
-            return Parser.Default.ParseArguments<PrepCommand.Options, ReleaseCommand.Options>(args)
+            return Parser.Default.ParseArguments<PrepCommand.Options, ReleaseCommand.Options, PrepFullReleaseCommand.Options>(args)
                 .MapResult(
                     (PrepCommand.Options options) => new PrepCommand(options).Run(),
                     (ReleaseCommand.Options options) => new ReleaseCommand(options).Run(),

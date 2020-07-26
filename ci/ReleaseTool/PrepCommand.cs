@@ -182,8 +182,8 @@ namespace ReleaseTool
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", prAnnotation, true);
 
                     Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                    Logger.Info("Successfully created release!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                    Logger.Info("Successfully created pull request for the release!");
+                    Logger.Info("PR head hash: {0}", gitClient.GetHeadCommit().Sha);
                 }
             }
             catch (Exception e)
