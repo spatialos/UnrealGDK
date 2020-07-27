@@ -224,7 +224,7 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 
 const FName& ULayeredLBStrategy::GetLocalLayerName() const
 {
-	checkf(IsReady(), TEXT("Tried to get worker layer name but it was assigned."));
+	checkf(IsReady(), TEXT("Tried to get worker layer name but it was not assigned."));
 
 	const FName* LocalLayerName = VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId);
 	checkf(LocalLayerName != nullptr, TEXT("Load balancing strategy didn't contain mapping between virtual worker ID to layer name."), LocalVirtualWorkerId);
