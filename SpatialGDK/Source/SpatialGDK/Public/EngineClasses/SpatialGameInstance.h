@@ -55,8 +55,6 @@ public:
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
-	void CleanupCachedLevelsAfterConnection();
-
 	// Invoked when this worker has successfully connected to SpatialOS
 	UPROPERTY(BlueprintAssignable)
 	FOnConnectedEvent OnSpatialConnected;
@@ -71,8 +69,6 @@ public:
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
 	void TryInjectSpatialLocatorIntoCommandLine();
-
-	void CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel);
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -109,7 +105,7 @@ private:
 	bool HasPreviouslyConnectedToSpatial() const { return bHasPreviouslyConnectedToSpatial; }
 
 	UFUNCTION()
-	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld);
+	void OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld) const;
 
 	// Boolean for whether or not the Spatial connection is ready for normal operations.
 	bool bIsSpatialNetDriverReady;

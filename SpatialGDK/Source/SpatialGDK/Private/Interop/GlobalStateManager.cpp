@@ -365,21 +365,24 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
+void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 {
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated())
-			{
-				const bool bAuthoritative =  NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
-				Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
-				Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
-			}
-		}
+		return;
 	}
+
+	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) &&
+		!USpatialStatics::IsActorGroupOwnerForActor(Actor) &&
+		!Actor->bNetLoadOnNonAuthServer)
+	{
+		Actor->Destroy(true);
+		return;
+	}
+
+	const bool bAuthoritative = !Actor->GetIsReplicated() || NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
+	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -396,7 +399,10 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
-		SetAllActorRolesBasedOnLBStrategy();
+		for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
+		{
+			HandleActorBasedOnLoadBalancer(*ActorIterator);
+		}
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
