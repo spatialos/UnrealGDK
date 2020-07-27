@@ -12,7 +12,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKDefaultLaunchConfigGenerator, Log, All)
 class UAbstractRuntimeLoadBalancingStrategy;
 struct FSpatialLaunchConfigDescription;
 
-uint32 SPATIALGDKEDITOR_API GetWorkerCountFromWorldSettings(const UWorld& World);
+TMap<FName, int32>  SPATIALGDKEDITOR_API GetLayerWorkerCountMappingFromWorldSettings(const UWorld& World);
 
 bool SPATIALGDKEDITOR_API FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, FIntPoint& OutWorldDimensions);
 

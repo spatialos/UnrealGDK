@@ -231,8 +231,8 @@ void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(TArray<
 
 			if (AssignedLayerVirtualWorkerIndex == INDEX_NONE)
 			{
-				UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Server worker %s had layer hint %s, "
-                    "but there were no workers for this layer in the load balancing strategy."),
+				UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Server worker %s had unused layer hint: %s. "
+                    "There were no unassigned virtual worker IDs remaining for this layer."),
                     *PendingServer.WorkerName, *PendingServer.LayerHint.ToString());
 				continue;
 			}

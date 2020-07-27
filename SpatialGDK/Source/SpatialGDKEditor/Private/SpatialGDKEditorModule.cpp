@@ -198,18 +198,18 @@ bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 	return GetDefault<USpatialGDKEditorSettings>()->bPackageMobileCommandLineArgs;
 }
 
-uint32 GetPIEServerWorkers()
+TMap<FName, int32> GetPIELayerWorkerCounts()
 {
 	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	if (EditorSettings->bGenerateDefaultLaunchConfig && EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
 	{
 		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 		check(EditorWorld);
-		return GetWorkerCountFromWorldSettings(*EditorWorld);
+		return GetLayerWorkerCountMappingFromWorldSettings(*EditorWorld);
 	}
 	else
 	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
+		return {{SpatialConstants::DefaultLayer, EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances + 0}};
 	}
 }
 
@@ -218,10 +218,13 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	if (ShouldStartLocalServer())
 	{
 		int32 AdditionalServerIndex = 0;
-		for (uint32 i = 0; i < GetPIEServerWorkers(); ++i)
+		for (const auto& LayerWorkerCount : GetPIELayerWorkerCounts())
 		{
-			Function(SpatialConstants::DefaultServerWorkerType, AdditionalServerIndex);
-			AdditionalServerIndex++;
+			for (int32 i = 0; i < LayerWorkerCount.Value; i++)
+			{
+				Function(LayerWorkerCount.Key, AdditionalServerIndex);
+				AdditionalServerIndex++;
+			}
 		}
 
 		return true;

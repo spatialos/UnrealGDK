@@ -790,7 +790,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		Conf.bManualWorkerConnectionOnly = true;
 		if (Conf.bAutoNumEditorInstances)
 		{
-			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+			Conf.NumEditorInstances = 0;
+			for (const auto& LayerWorkerCount : GetLayerWorkerCountMappingFromWorldSettings(*EditorWorld))
+			{
+				Conf.NumEditorInstances += LayerWorkerCount.Value;
+			}
 		}
 
 		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
