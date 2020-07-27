@@ -21,8 +21,8 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 
 	if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, WorkerLayers))
 	{
-		ValidateFirstLayerIsDefaultLayer();
 		ValidateNonEmptyWorkerLayers();
+		ValidateFirstLayerIsDefaultLayer();
 		ValidateSomeLayerHasActorClass();
 		ValidateNoActorClassesDuplicatedAmongLayers();
 		ValidateAllLayersHaveUniqueNonemptyNames();
