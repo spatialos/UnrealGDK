@@ -11,20 +11,20 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 
-#include "SpatialMultiWorkerSettings.generated.h"
+#include "SpatialMultiserverSettings.generated.h"
 
 class UAbstractLockingPolicy;
 
 UCLASS(NotBlueprintable)
-class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UDataAsset
+class SPATIALGDK_API UAbstractSpatialMultiserverSettings : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
-	UAbstractSpatialMultiWorkerSettings() {}
+	UAbstractSpatialMultiserverSettings() {}
 
 protected:
-	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy)
+	UAbstractSpatialMultiserverSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy)
 		: WorkerLayers(InWorkerLayers)
 		, LockingPolicy(InLockingPolicy) {}
 
@@ -40,10 +40,10 @@ public:
 		return { SpatialConstants::DefaultLayer, { AActor::StaticClass() }, USingleWorkerStrategy::StaticClass() };
 	};
 
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	UPROPERTY(EditAnywhere, Category = "Multiserver")
 	TArray<FLayerInfo> WorkerLayers;
 
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	UPROPERTY(EditAnywhere, Category = "Multiserver")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
 private:
@@ -59,12 +59,12 @@ private:
 };
 
 UCLASS(Blueprintable, HideDropdown)
-class SPATIALGDK_API USpatialMultiWorkerSettings : public UAbstractSpatialMultiWorkerSettings
+class SPATIALGDK_API USpatialMultiserverSettings : public UAbstractSpatialMultiserverSettings
 {
 	GENERATED_BODY()
 
 public:
-	USpatialMultiWorkerSettings()
-		: Super({ UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo()}, UOwnershipLockingPolicy::StaticClass())
+	USpatialMultiserverSettings()
+		: Super({ GetDefaultLayerInfo() }, UOwnershipLockingPolicy::StaticClass())
 	{}
 };

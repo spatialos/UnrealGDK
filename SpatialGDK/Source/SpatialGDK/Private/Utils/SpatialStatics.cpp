@@ -6,7 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "LoadBalancing/SpatialMultiWorkerSettings.h"
+#include "LoadBalancing/SpatialMultiserverSettings.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -73,13 +73,13 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			if (!IsSpatialNetworkingEnabled() || !WorldSettings->IsMultiWorkerEnabled())
+			if (!IsSpatialNetworkingEnabled() || !WorldSettings->IsMultiserverEnabled())
 			{
 				return false;
 			}
 
-			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
-			return MultiWorkerSettings->WorkerLayers.Num() > 1;
+			const UAbstractSpatialMultiserverSettings* MultiserverSettings = WorldSettings->MultiserverSettingsClass->GetDefaultObject<UAbstractSpatialMultiserverSettings>();
+			return MultiserverSettings->WorkerLayers.Num() > 1;
 		}
 	}
 

@@ -102,18 +102,18 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	if (!WorldSettings->IsMultiWorkerEnabled())
+	if (!WorldSettings->IsMultiserverEnabled())
 	{
 		return 1;
 	}
 
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->IsMultiWorkerEnabled() ?
-        *WorldSettings->MultiWorkerSettingsClass :
-        USpatialMultiWorkerSettings::StaticClass();
+	const TSubclassOf<UAbstractSpatialMultiserverSettings> MultiserverSettingsClass = WorldSettings->IsMultiserverEnabled() ?
+        *WorldSettings->MultiserverSettingsClass :
+        USpatialMultiserverSettings::StaticClass();
 
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
 
-	const uint32 NumWorkers = MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()->GetMinimumRequiredWorkerCount();
+	const uint32 NumWorkers = MultiserverSettingsClass->GetDefaultObject<UAbstractSpatialMultiserverSettings>()->GetMinimumRequiredWorkerCount();
 
 	return NumWorkers;
 }

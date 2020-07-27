@@ -437,27 +437,27 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
 	check(WorldSettings != nullptr);
 
-	const bool bMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
+	const bool bMultiserverEnabled = WorldSettings->IsMultiserverEnabled();
 
-	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = bMultiWorkerEnabled ?
-        *WorldSettings->MultiWorkerSettingsClass :
-        USpatialMultiWorkerSettings::StaticClass();
+	// If multi worker is disabled, the USpatialMultiserverSettings CDO will give us single worker behaviour.
+	const TSubclassOf<UAbstractSpatialMultiserverSettings> MultiserverSettingsClass = bMultiserverEnabled ?
+        *WorldSettings->MultiserverSettingsClass :
+        USpatialMultiserverSettings::StaticClass();
 
-	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
+	const UAbstractSpatialMultiserverSettings* MultiserverSettings = NewObject<UAbstractSpatialMultiserverSettings>(this, *MultiserverSettingsClass);
 
-	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
+	if (bMultiserverEnabled && MultiserverSettings->LockingPolicy == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
 	}
 
-	const TSubclassOf<UAbstractLockingPolicy> LockingPolicyClass = bMultiWorkerEnabled && *MultiWorkerSettings->LockingPolicy != nullptr ?
-        *MultiWorkerSettings->LockingPolicy :
+	const TSubclassOf<UAbstractLockingPolicy> LockingPolicyClass = bMultiserverEnabled && *MultiserverSettings->LockingPolicy != nullptr ?
+        *MultiserverSettings->LockingPolicy :
         UOwnershipLockingPolicy::StaticClass();
 
 	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 	LoadBalanceStrategy->Init();
-	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
+	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiserverSettings->WorkerLayers);
 	LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
@@ -1282,7 +1282,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		}
 		else
 		{
-			// Sort by priority 
+			// Sort by priority
 			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
 		}
 	}
@@ -1582,14 +1582,14 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
-	
+
 	const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(WorldSettings);
-	const bool bIsMultiWorkerEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiWorkerEnabled();
+	const bool bIsMultiserverEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiserverEnabled();
 
 	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
 
-	if (bIsMultiWorkerEnabled)
+	if (bIsMultiserverEnabled)
 	{
 		MigrationHandler.EvaluateActorsToMigrate(LoadBalancingContext);
 		LoadBalancingContext.UpdateWithAdditionalActors();
@@ -1639,7 +1639,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Process the sorted list of actors for this connection
 	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, MigrationHandler, PriorityActors, FinalSortedCount, Updated);
 
-	if (bIsMultiWorkerEnabled)
+	if (bIsMultiserverEnabled)
 	{
 		// Once an up to date version of the actors have been sent, do the actual migration.
 		MigrationHandler.ProcessMigrations();

@@ -14,7 +14,7 @@
 
 class SpatialVirtualWorkerTranslator;
 class UAbstractLockingPolicy;
-class UAbstractSpatialMultiWorkerSettings;
+class UAbstractSpatialMultiserverSettings;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLayeredLBStrategy, Log, All)
 

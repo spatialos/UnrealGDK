@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "LoadBalancing/SpatialMultiWorkerSettings.h"
+#include "LoadBalancing/SpatialMultiserverSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/LayerInfo.h"
 
@@ -17,20 +17,20 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
-	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
+	UPROPERTY(EditAnywhere, Category = "Multiserver")
+	TSubclassOf<USpatialMultiserverSettings> MultiserverSettingsClass;
 
-	bool IsMultiWorkerEnabled() const
+	bool IsMultiserverEnabled() const
 	{
-		if (*MultiWorkerSettingsClass == nullptr)
+		if (*MultiserverSettingsClass == nullptr)
 		{
 			return false;
 		}
 
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
+		if (SpatialGDKSettings->bOverrideMultiserver.IsSet())
 		{
-			return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
+			return SpatialGDKSettings->bOverrideMultiserver.GetValue();
 		}
 
 		return true;

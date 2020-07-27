@@ -324,7 +324,7 @@ public:
 	  * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	  * the map's config with a 1x1 grid.
 	  */
-	TOptional<bool> bOverrideMultiWorker;
+	TOptional<bool> bOverrideMultiserver;
 
 	/**
 	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
