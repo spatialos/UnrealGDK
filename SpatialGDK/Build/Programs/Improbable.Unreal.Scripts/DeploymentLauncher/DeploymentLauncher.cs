@@ -110,7 +110,7 @@ namespace Improbable
 
         private static int CreateDeployment(string[] args, bool useChinaPlatform)
         {
-            bool launchSimPlayerDeployment = args.Length == 15;
+            bool launchSimPlayerDeployment = args.Length == 16;
 
             var projectName = args[1];
             var assemblyName = args[2];
@@ -191,7 +191,7 @@ namespace Improbable
                 // we are using the main deployment snapshot also for the sim player deployment(s), because we only need to specify a snapshot
                 // to be able to start the deployment. The sim players don't care about the actual snapshot.
                 var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
-                    projectName, assemblyName, runtimeVersion, simDeploymentBaseName, simDeploymentBaseName,
+                    projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentBaseName,
                     simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
                     numSimPlayers, numSimDeployments, useChinaPlatform);
 
@@ -301,7 +301,7 @@ namespace Improbable
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform));
 
             var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
-                projectName, assemblyName, runtimeVersion, simDeploymentBaseName, simDeploymentBaseName,
+                projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentBaseName,
                 simDeploymentJson, simDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
                 numSimplayers, numSimDeployments, useChinaPlatform);
 
