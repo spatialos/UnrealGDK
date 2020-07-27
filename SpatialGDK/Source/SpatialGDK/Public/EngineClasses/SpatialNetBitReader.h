@@ -11,22 +11,22 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetBitReader, All, All);
 
 class USpatialPackageMapClient;
 
-class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader
+namespace FSpatialNetBitReader
 {
-public:
-	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs);
+	// Object to put on the stack which will collect mapped/unresolved references.
+	// This will set a tls pointer to be able to access it from the package map client.
+	// Native unreal has arrays on the package map client to do the same job.
+	// Unlike native unreal, we have a scoped flow for this operation.
+	struct SPATIALGDK_API ReadScope
+	{
+		ReadScope();
+		~ReadScope();
 
-	using FArchive::operator<<; // For visibility of the overloads we don't override
+		TSet<FUnrealObjectRef> DynamicRefs;
+		TSet<FUnrealObjectRef> UnresolvedRefs;
+	};
 
-	virtual FArchive& operator<<(UObject*& Value) override;
+	static ReadScope* GetReadScope();
 
-	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
-
-	UObject* ReadObject(bool& bUnresolved);
-
-protected:
-	void DeserializeObjectRef(FUnrealObjectRef& ObjectRef);
-
-	TSet<FUnrealObjectRef>& DynamicRefs;
-	TSet<FUnrealObjectRef>& UnresolvedRefs;
-};
+	SPATIALGDK_API UObject* ReadObject(bool& bUnresolved, USpatialPackageMapClient* PackageMap, FArchive& Archive);
+}

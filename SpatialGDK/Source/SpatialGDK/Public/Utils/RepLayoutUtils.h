@@ -130,7 +130,7 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 	}
 }
 
-inline void ReadStructProperty(FSpatialNetBitReader& Reader, GDK_PROPERTY(StructProperty)* Property, USpatialNetDriver* NetDriver, uint8* Data, bool& bOutHasUnmapped)
+inline void ReadStructProperty(FNetBitReader& Reader, GDK_PROPERTY(StructProperty)* Property, USpatialNetDriver* NetDriver, uint8* Data, bool& bOutHasUnmapped)
 {
 	UScriptStruct* Struct = Property->Struct;
 

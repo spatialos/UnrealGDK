@@ -228,9 +228,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 						TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
 						int64 CountBits = ValueData.Num() * 8;
-						TSet<FUnrealObjectRef> NewMappedRefs;
-						TSet<FUnrealObjectRef> NewUnresolvedRefs;
-						FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewMappedRefs, NewUnresolvedRefs);
+						FSpatialNetBitReader::ReadScope ReadScope;
+						FNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits);
 
 						if (ValueData.Num() > 0)
 						{
@@ -238,13 +237,13 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 						}
 
 						FObjectReferences* CurEntry = RootObjectReferencesMap.Find(SwappedCmd.Offset);
-						const bool bHasReferences = NewUnresolvedRefs.Num() > 0 || NewMappedRefs.Num() > 0;
+						const bool bHasReferences = ReadScope.UnresolvedRefs.Num() > 0 || ReadScope.DynamicRefs.Num() > 0;
 
-						if (ReferencesChanged(RootObjectReferencesMap, SwappedCmd.Offset, bHasReferences, NewMappedRefs, NewUnresolvedRefs))
+						if (ReferencesChanged(RootObjectReferencesMap, SwappedCmd.Offset, bHasReferences, ReadScope.DynamicRefs, ReadScope.UnresolvedRefs))
 						{
 							if (bHasReferences)
 							{
-								RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs), ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+								RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, MoveTemp(ReadScope.DynamicRefs), MoveTemp(ReadScope.UnresolvedRefs), ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 							}
 							else
 							{
@@ -351,19 +350,18 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		TArray<uint8> ValueData = IndexBytesFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
-		TSet<FUnrealObjectRef> NewDynamicRefs;
-		TSet<FUnrealObjectRef> NewUnresolvedRefs;
-		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewDynamicRefs, NewUnresolvedRefs);
+		FSpatialNetBitReader::ReadScope ReadScope;
+		FNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits);
 		bool bHasUnmapped = false;
 
 		ReadStructProperty(ValueDataReader, StructProperty, NetDriver, Data, bHasUnmapped);
-		const bool bHasReferences = NewDynamicRefs.Num() > 0 || NewUnresolvedRefs.Num() > 0;
+		const bool bHasReferences = ReadScope.DynamicRefs.Num() > 0 || ReadScope.UnresolvedRefs.Num() > 0;
 
-		if (ReferencesChanged(InObjectReferencesMap, Offset, bHasReferences, NewDynamicRefs, NewUnresolvedRefs))
+		if (ReferencesChanged(InObjectReferencesMap, Offset, bHasReferences, ReadScope.DynamicRefs, ReadScope.UnresolvedRefs))
 		{
 			if (bHasReferences)
 			{
-				InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, MoveTemp(NewDynamicRefs), MoveTemp(NewUnresolvedRefs), ShadowOffset, ParentIndex, Property));
+				InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, MoveTemp(ReadScope.DynamicRefs), MoveTemp(ReadScope.UnresolvedRefs), ShadowOffset, ParentIndex, Property));
 			}
 			else
 			{

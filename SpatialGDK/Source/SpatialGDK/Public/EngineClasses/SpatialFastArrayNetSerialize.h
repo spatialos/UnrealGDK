@@ -7,7 +7,7 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
-class FSpatialNetBitReader;
+class FNetBitReader;
 class FSpatialNetBitWriter;
 class USpatialNetDriver;
 
@@ -41,7 +41,7 @@ struct FSpatialNetDeltaSerializeInfo : FNetDeltaSerializeInfo
 		bIsSpatialType = true;
 	}
 
-	static bool DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct);
+	static bool DeltaSerializeRead(USpatialNetDriver* NetDriver, FNetBitReader& Reader, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct);
 	static bool DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct);
 };
 

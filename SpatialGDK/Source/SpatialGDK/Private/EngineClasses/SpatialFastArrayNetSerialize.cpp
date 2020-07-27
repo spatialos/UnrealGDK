@@ -9,7 +9,7 @@
 namespace SpatialGDK
 {
 
-bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct)
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FNetBitReader& Reader, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 

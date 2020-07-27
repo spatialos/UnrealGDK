@@ -1934,10 +1934,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
-	TSet<FUnrealObjectRef> UnresolvedRefs;
-	TSet<FUnrealObjectRef> MappedRefs;
+	FSpatialNetBitReader::ReadScope ReadScope;
 	RPCPayload PayloadCopy = PendingRPCParams.Payload;
-	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs, UnresolvedRefs);
+	FNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits());
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
@@ -1945,7 +1944,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
-	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
+	const int32 UnresolvedRefCount = ReadScope.UnresolvedRefs.Num();
 
 	if (UnresolvedRefCount == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
 	{
@@ -1953,7 +1952,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			!SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type) &&
 			(Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
 		{
-			const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref)
+			const FString UnresolvedEntityIds = FString::JoinBy(ReadScope.UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref)
 			{
 				return Ref.ToString();
 			});
@@ -2425,28 +2424,26 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			}
 			else if (ObjectReferences.bFastArrayProp)
 			{
-				TSet<FUnrealObjectRef> NewMappedRefs;
-				TSet<FUnrealObjectRef> NewUnresolvedRefs;
-				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewMappedRefs, NewUnresolvedRefs);
+				FSpatialNetBitReader::ReadScope ReadScope;
+				FNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits);
 
 				check(Property->IsA<GDK_PROPERTY(ArrayProperty)>());
 				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property));
 
 				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent->ArrayIndex, Parent->Property, NetDeltaStruct);
 
-				ObjectReferences.MappedRefs.Append(NewMappedRefs);
+				ObjectReferences.MappedRefs.Append(ReadScope.DynamicRefs);
 			}
 			else
 			{
-				TSet<FUnrealObjectRef> NewMappedRefs;
-				TSet<FUnrealObjectRef> NewUnresolvedRefs;
-				FSpatialNetBitReader BitReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewMappedRefs, NewUnresolvedRefs);
+				FSpatialNetBitReader::ReadScope ReadScope;
+				FNetBitReader BitReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits);
 				check(Property->IsA<GDK_PROPERTY(StructProperty)>());
 
 				bool bHasUnresolved = false;
 				ReadStructProperty(BitReader, GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property), NetDriver, Data + AbsOffset, bHasUnresolved);
 
-				ObjectReferences.MappedRefs.Append(NewMappedRefs);
+				ObjectReferences.MappedRefs.Append(ReadScope.DynamicRefs);
 			}
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))

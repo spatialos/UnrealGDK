@@ -9,75 +9,76 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetBitReader);
 
-FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs)
-	: FNetBitReader(InPackageMap, Source, CountBits)
-	, DynamicRefs(InDynamicRefs)
-	, UnresolvedRefs(InUnresolvedRefs) {}
+static thread_local FSpatialNetBitReader::ReadScope* s_ReadScope = nullptr;
 
-void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
+FSpatialNetBitReader::ReadScope::ReadScope()
 {
-	int64 EntityId;
-	*this << EntityId;
-	ObjectRef.Entity = EntityId;
-	*this << ObjectRef.Offset;
-
-	uint8 HasPath;
-	SerializeBits(&HasPath, 1);
-	if (HasPath)
-	{
-		FString Path;
-		*this << Path;
-
-		ObjectRef.Path = Path;
-	}
-
-	uint8 HasOuter;
-	SerializeBits(&HasOuter, 1);
-	if (HasOuter)
-	{
-		ObjectRef.Outer = FUnrealObjectRef();
-		DeserializeObjectRef(*ObjectRef.Outer);
-	}
-
-	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
-	SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
+	check(s_ReadScope == nullptr);
+	s_ReadScope = this;
 }
 
-UObject* FSpatialNetBitReader::ReadObject(bool& bUnresolved)
+FSpatialNetBitReader::ReadScope::~ReadScope()
+{
+	s_ReadScope = nullptr;
+}
+
+FSpatialNetBitReader::ReadScope* FSpatialNetBitReader::GetReadScope()
+{
+	return s_ReadScope;
+}
+
+namespace
+{
+	void DeserializeObjectRef(FUnrealObjectRef& ObjectRef, FArchive& Archive)
+	{
+		int64 EntityId;
+		Archive << EntityId;
+		ObjectRef.Entity = EntityId;
+		Archive << ObjectRef.Offset;
+
+		uint8 HasPath;
+		Archive.SerializeBits(&HasPath, 1);
+		if (HasPath)
+		{
+			FString Path;
+			Archive << Path;
+
+			ObjectRef.Path = Path;
+		}
+
+		uint8 HasOuter;
+		Archive.SerializeBits(&HasOuter, 1);
+		if (HasOuter)
+		{
+			ObjectRef.Outer = FUnrealObjectRef();
+			DeserializeObjectRef(*ObjectRef.Outer, Archive);
+		}
+
+		Archive.SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
+		Archive.SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
+	}
+}
+
+UObject* FSpatialNetBitReader::ReadObject(bool& bUnresolved, USpatialPackageMapClient* PackageMap, FArchive& Archive)
 {
 	FUnrealObjectRef ObjectRef;
 
-	DeserializeObjectRef(ObjectRef);
+	DeserializeObjectRef(ObjectRef, Archive);
 	check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-	UObject* Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, Cast<USpatialPackageMapClient>(PackageMap), bUnresolved);
+	UObject* Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
 
-	if (bUnresolved)
+	if (FSpatialNetBitReader::ReadScope* Scope = FSpatialNetBitReader::GetReadScope())
 	{
-		UnresolvedRefs.Add(ObjectRef);
-	}
-	else if (Value && !Value->IsFullNameStableForNetworking())
-	{
-		DynamicRefs.Add(ObjectRef);
+		if (bUnresolved)
+		{
+			Scope->UnresolvedRefs.Add(ObjectRef);
+		}
+		else if (Value && !Value->IsFullNameStableForNetworking())
+		{
+			Scope->DynamicRefs.Add(ObjectRef);
+		}
 	}
 
 	return Value;
-}
-
-FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
-{
-	bool bUnresolved = false;
-	Value = ReadObject(bUnresolved);
-
-	return *this;
-}
-
-FArchive& FSpatialNetBitReader::operator<<(FWeakObjectPtr& Value)
-{
-	UObject* Object;
-	*this << Object;
-
-	Value = Object;
-
-	return *this;
 }
