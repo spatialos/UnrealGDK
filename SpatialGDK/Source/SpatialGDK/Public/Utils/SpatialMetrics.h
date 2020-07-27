@@ -41,6 +41,14 @@ public:
 	void OnStopRPCMetricsCommand();
 
 	UFUNCTION(Exec)
+	void SpatialStartRegularRPCMetrics(float IntervalSeconds = 10.0f);
+	UFUNCTION(Exec)
+	void SpatialStopRegularRPCMetrics();
+
+	bool IsRegularRPCMetricsEnabled();
+	void TickRPCMetrics();
+
+	UFUNCTION(Exec)
 	void SpatialModifySetting(const FString& Name, float Value);
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
 
@@ -93,5 +101,8 @@ private:
 	TMap<FString, RPCStat> RecentRPCs;
 	bool bRPCTrackingEnabled;
 	float RPCTrackingStartTime;
+
+	bool bRegularRPCMetricsEnabled = false;
+	float RegularRPCMetricsInterval = 0.0f;
 };
 

@@ -231,6 +231,51 @@ void USpatialMetrics::OnStopRPCMetricsCommand()
 	SpatialStopRPCMetrics();
 }
 
+void USpatialMetrics::SpatialStartRegularRPCMetrics(float IntervalSeconds /*= 10.0f*/)
+{
+	if (bRegularRPCMetricsEnabled)
+	{
+		return;
+	}
+
+	bRegularRPCMetricsEnabled = true;
+	RegularRPCMetricsInterval = IntervalSeconds;
+
+	SpatialStartRPCMetrics();
+}
+
+void USpatialMetrics::SpatialStopRegularRPCMetrics()
+{
+	if (!bRegularRPCMetricsEnabled)
+	{
+		return;
+	}
+
+	bRegularRPCMetricsEnabled = false;
+
+	SpatialStopRPCMetrics();
+}
+
+bool USpatialMetrics::IsRegularRPCMetricsEnabled()
+{
+	return bRegularRPCMetricsEnabled;
+}
+
+void USpatialMetrics::TickRPCMetrics()
+{
+	if (!bRegularRPCMetricsEnabled)
+	{
+		return;
+	}
+
+	double Now = FPlatformTime::Seconds();
+	if (Now - RPCTrackingStartTime >= RegularRPCMetricsInterval)
+	{
+		SpatialStopRPCMetrics();
+		SpatialStartRPCMetrics();
+	}
+}
+
 void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 {
 	if (!bIsServer && ControllerRefProvider.IsBound())

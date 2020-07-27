@@ -1635,6 +1635,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SpatialMetrics->TickMetrics(Time);
 		}
 
+		if (SpatialMetrics != nullptr && SpatialMetrics->IsRegularRPCMetricsEnabled())
+		{
+			SpatialMetrics->TickRPCMetrics();
+		}
+
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
