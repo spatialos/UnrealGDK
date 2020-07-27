@@ -110,7 +110,7 @@ namespace Improbable
 
         private static int CreateDeployment(string[] args, bool useChinaPlatform)
         {
-            bool launchSimPlayerDeployment = args.Length == 16;
+            bool launchSimPlayerDeployment = args.Length == 16 || args.Length == 15;
 
             var projectName = args[1];
             var assemblyName = args[2];
@@ -147,15 +147,18 @@ namespace Improbable
                     return 1;
                 }
 
-                if (!Int32.TryParse(args[15], out numSimDeployments))
+                if (args.Length >= 16)
                 {
-                    Console.WriteLine("Cannot parse the target number of simulated players deployments.");
-                    return 1;
-                }
-                else if (numSimDeployments <= 0)
-                {
-                    Console.WriteLine("The number of deployments must be positive.");
-                    return 1;
+                    if (!Int32.TryParse(args[15], out numSimDeployments))
+                    {
+                        Console.WriteLine("Cannot parse the target number of simulated players deployments.");
+                        return 1;
+                    }
+                    else if (numSimDeployments <= 0)
+                    {
+                        Console.WriteLine("The number of deployments must be positive.");
+                        return 1;
+                    }
                 }
             }
 
@@ -279,23 +282,26 @@ namespace Improbable
                 return 1;
             }
 
-            var numSimDeployments = 1;
-            if (!Int32.TryParse(args[11], out numSimDeployments))
-            {
-                Console.WriteLine("Cannot parse the target number of simulated players deployments.");
-                return 1;
-            }
-            else if (numSimDeployments <= 0)
-            {
-                Console.WriteLine("The number of deployments must be positive.");
-                return 1;
-            }
-
             var autoConnect = false;
             if (!Boolean.TryParse(args[12], out autoConnect))
             {
                 Console.WriteLine("Cannot parse the auto-connect flag.");
                 return 1;
+            }
+
+            var numSimDeployments = 1;
+            if (args.Length >= 12)
+            {
+                if (!Int32.TryParse(args[11], out numSimDeployments))
+                {
+                    Console.WriteLine("Cannot parse the target number of simulated players deployments.");
+                    return 1;
+                }
+                else if (numSimDeployments <= 0)
+                {
+                    Console.WriteLine("The number of deployments must be positive.");
+                    return 1;
+                }
             }
 
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform));
@@ -777,10 +783,10 @@ namespace Improbable
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> <num-sim-deployments>]");
-            Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <num-sim-deployments> <auto-connect>");
-            Console.WriteLine($"  Starts simulated player deployment(s). Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
+            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> [<num-sim-deployments>]]");
+            Console.WriteLine($"  Starts a cloud deployment, with optionally simulated player deployments. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN'). By default, a single simulated player deployment is started if simulated player deployment parameters are provided.");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <auto-connect> [<num-sim-deployments>]");
+            Console.WriteLine($"  Starts simulated player deployment(s). Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN'). A single deployment is started by default.");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
             Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
@@ -815,8 +821,8 @@ namespace Improbable
             }
 
             if (args.Length == 0 ||
-                (args[0] == "create" && (args.Length != 16 && args.Length != 10)) ||
-                (args[0] == "createsim" && args.Length != 13) ||
+                (args[0] == "create" && (args.Length != 16 && args.Length != 15 && args.Length != 10)) ||
+                (args[0] == "createsim" && (args.Length != 13 && args.Length != 12)) ||
                 (args[0] == "stop" && (args.Length != 2 && args.Length != 3)) ||
                 (args[0] == "list" && args.Length != 2))
             {
