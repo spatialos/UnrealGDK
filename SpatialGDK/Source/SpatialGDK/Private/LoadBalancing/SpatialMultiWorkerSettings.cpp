@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "LoadBalancing/SpatialMultiserverSettings.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
@@ -10,16 +10,16 @@
 
 #include "Misc/MessageDialog.h"
 
-#define LOCTEXT_NAMESPACE "SpatialMultiserverSettings"
+#define LOCTEXT_NAMESPACE "SpatialMultiWorkerSettings"
 
 #if WITH_EDITOR
-void UAbstractSpatialMultiserverSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiserverSettings, WorkerLayers))
+	if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, WorkerLayers))
 	{
 		ValidateNonEmptyWorkerLayers();
 		ValidateFirstLayerIsDefaultLayer();
@@ -28,14 +28,14 @@ void UAbstractSpatialMultiserverSettings::PostEditChangeProperty(struct FPropert
 		ValidateAllLayersHaveUniqueNonemptyNames();
 		ValidateAllLayersHaveLoadBalancingStrategy();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiserverSettings, LockingPolicy))
+	else if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, LockingPolicy))
 	{
 		ValidateLockingPolicyIsSet();
 	}
 };
 #endif
 
-uint32 UAbstractSpatialMultiserverSettings::GetMinimumRequiredWorkerCount() const
+uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() const
 {
 	uint32 WorkerCount = 0;
 
@@ -49,24 +49,24 @@ uint32 UAbstractSpatialMultiserverSettings::GetMinimumRequiredWorkerCount() cons
 }
 
 #if WITH_EDITOR
-void UAbstractSpatialMultiserverSettings::ValidateFirstLayerIsDefaultLayer()
+void UAbstractSpatialMultiWorkerSettings::ValidateFirstLayerIsDefaultLayer()
 {
 	// We currently rely on this for rendering debug information.
 	WorkerLayers[0].Name = SpatialConstants::DefaultLayer;
 }
 
-void UAbstractSpatialMultiserverSettings::ValidateNonEmptyWorkerLayers()
+void UAbstractSpatialMultiWorkerSettings::ValidateNonEmptyWorkerLayers()
 {
 	if (WorkerLayers.Num() == 0 )
 	{
-		WorkerLayers.Emplace(UAbstractSpatialMultiserverSettings::GetDefaultLayerInfo());
+		WorkerLayers.Emplace(UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo());
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::Format(LOCTEXT("EmptyWorkerLayer_Prompt", "You need at least one layer in your settings. "
 			"Adding back the default layer. File: {0}"), FText::FromString(GetNameSafe(this))));
 	}
 }
 
-void UAbstractSpatialMultiserverSettings::ValidateSomeLayerHasActorClass()
+void UAbstractSpatialMultiWorkerSettings::ValidateSomeLayerHasActorClass()
 {
 	bool bHasTopLevelActorClass = false;
 	for (const FLayerInfo& Layer : WorkerLayers)
@@ -83,7 +83,7 @@ void UAbstractSpatialMultiserverSettings::ValidateSomeLayerHasActorClass()
 	}
 }
 
-void UAbstractSpatialMultiserverSettings::ValidateNoActorClassesDuplicatedAmongLayers()
+void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongLayers()
 {
 	TSet<TSoftClassPtr<AActor>> FoundActorClasses{};
 	TSet<TSoftClassPtr<AActor>> DuplicatedActorClasses{};
@@ -118,7 +118,7 @@ void UAbstractSpatialMultiserverSettings::ValidateNoActorClassesDuplicatedAmongL
 	}
 }
 
-void UAbstractSpatialMultiserverSettings::ValidateAllLayersHaveUniqueNonemptyNames()
+void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveUniqueNonemptyNames()
 {
 	TSet<FName> FoundLayerNames{};
 	bool bSomeLayerNameWasChanged = false;
@@ -151,7 +151,7 @@ void UAbstractSpatialMultiserverSettings::ValidateAllLayersHaveUniqueNonemptyNam
 	}
 }
 
-void UAbstractSpatialMultiserverSettings::ValidateAllLayersHaveLoadBalancingStrategy()
+void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveLoadBalancingStrategy()
 {
 	bool bSomeLayerWasMissingStrategy = false;
 
@@ -172,7 +172,7 @@ void UAbstractSpatialMultiserverSettings::ValidateAllLayersHaveLoadBalancingStra
 	}
 }
 
-void UAbstractSpatialMultiserverSettings::ValidateLockingPolicyIsSet()
+void UAbstractSpatialMultiWorkerSettings::ValidateLockingPolicyIsSet()
 {
 	if (*LockingPolicy == nullptr)
 	{

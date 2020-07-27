@@ -11,7 +11,7 @@
 #include "GridBasedLBStrategy.generated.h"
 
 class SpatialVirtualWorkerTranslator;
-class UAbstractSpatialMultiserverSettings;
+class UAbstractSpatialMultiWorkerSettings;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGridBasedLBStrategy, Log, All)
 

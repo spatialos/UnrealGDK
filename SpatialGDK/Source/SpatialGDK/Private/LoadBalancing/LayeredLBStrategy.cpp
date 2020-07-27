@@ -217,7 +217,7 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 	check(IsReady());
 	checkf(LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
 		TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
-			"Default layer presence should be enforced by MultiserverSettings edit validation. Class: %s"), *GetNameSafe(this));
+			"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"), *GetNameSafe(this));
 
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
