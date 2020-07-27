@@ -36,7 +36,6 @@ void ASpatialDebuggerEditor::ToggleWorkerRegionVisibility(bool bEnabled)
 
 void ASpatialDebuggerEditor::RefreshWorkerRegions()
 {
-
 	DestroyWorkerRegions();
 
 	if (bShowWorkerRegions && AllowWorkerBoundaries())
@@ -55,18 +54,19 @@ void ASpatialDebuggerEditor::RefreshWorkerRegions()
 
 bool ASpatialDebuggerEditor::AllowWorkerBoundaries() const
 {
+#if WITH_EDITOR
 	// Check if multi worker is enabled.
 	UWorld* World = GetWorld();
 
-	if (World == nullptr)
-	{
-		return false;
-	}
+	check(World != nullptr);
 		
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
 	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
+#else
+	return false;
+#endif 
 }
 
 void ASpatialDebuggerEditor::InitialiseWorkerRegions()
@@ -84,18 +84,18 @@ void ASpatialDebuggerEditor::InitialiseWorkerRegions()
 		// Only show worker regions if there is more than one
 		if (LBStrategyRegions.Num() > 1)
 		{
-				WorkerRegions.SetNum(LBStrategyRegions.Num());
-				for (int i = 0; i < LBStrategyRegions.Num(); i++)
-				{
-					const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-					FWorkerRegionInfo WorkerRegionInfo;
-					// Generate our own unique worker name as we only need it to generate a unique colour
-					const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d"), i);
-					WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
-					WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+			WorkerRegions.SetNum(LBStrategyRegions.Num());
+			for (int i = 0; i < LBStrategyRegions.Num(); i++)
+			{
+				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				FWorkerRegionInfo WorkerRegionInfo;
+				// Generate our own unique worker name as we only need it to generate a unique colour
+				const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d"), i);
+				WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 
-					WorkerRegions[i] = WorkerRegionInfo;
-				}
+				WorkerRegions[i] = WorkerRegionInfo;
+			}
 		}
 	}
 }
