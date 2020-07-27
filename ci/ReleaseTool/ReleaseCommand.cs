@@ -95,54 +95,8 @@ namespace ReleaseTool
             {
                 Logger.Info("Candidate branch has already merged into release branch. No merge operation will be attempted.");
 
-                // Check if a PR has already been opened from release branch into source branch.
-                // If it has, log the PR URL and move on.
-                // This ensures the idempotence of the pipeline.
-                var githubOrg = options.GithubOrgName;
-                var branchFrom = $"{options.CandidateBranch}-cleanup";
-                var branchTo = options.SourceBranch;
-
-                if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
-                {
-                    try
-                    {
-                        using (var gitClient = GitClient.FromRemote(repoUrl))
-                        {
-                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                            gitClient.ForcePush(branchFrom);
-                        }
-                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                        branchFrom,
-                        branchTo,
-                        string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
-                        string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
-                    }
-                    catch (Octokit.ApiValidationException e)
-                    {
-                            // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
-                            if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
-                            {
-                                Logger.Info(e.ApiError.Errors[0].Message);
-                                Logger.Info("No PR will be created.");
-                                return 0;
-                            }
-
-                            throw;
-                    }
-                }
-
-                else
-                {
-                    Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
-                }
-
-                var prAnnotation = string.Format(prAnnotationTemplate,
-                    pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
-                BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
-
-                Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                Logger.Info("Successfully created PR from release branch into source branch.");
-                Logger.Info("Merge hash: {0}", pullRequest.MergeCommitSha);
+                // null for GitClient will let it create one if necessary
+                CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, repoName, null);
 
                 return 0;
             }
@@ -226,7 +180,7 @@ namespace ReleaseTool
                 // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
                 BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
 
-                //TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
+                // TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
                 // Delete candidate branch.
                 //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
 
@@ -243,55 +197,9 @@ namespace ReleaseTool
                     Logger.Info("Release Successful!");
                     Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
                     Logger.Info("Draft release: {0}", release.HtmlUrl);
+
+                    CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, repoName, gitClient);
                 }
-
-                // Check if a PR has already been opened from release branch into source branch.
-                // If it has, log the PR URL and move on.
-                // This ensures the idempotence of the pipeline.
-                var githubOrg = options.GithubOrgName;
-                var branchFrom = $"{options.CandidateBranch}-cleanup";
-                var branchTo = options.SourceBranch;
-
-                if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
-                {
-                    try
-                    {
-                        using (var gitClient = GitClient.FromRemote(repoUrl))
-                        {
-                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                            gitClient.ForcePush(branchFrom);
-                        }
-                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                        branchFrom,
-                        branchTo,
-                        string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
-                        string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
-                    }
-                    catch (Octokit.ApiValidationException e)
-                    {
-                        // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
-                        if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
-                        {
-                            Logger.Info(e.ApiError.Errors[0].Message);
-                            Logger.Info("No PR will be created.");
-                            return 0;
-                        }
-
-                        throw;
-                    }
-                }
-
-                else
-                {
-                    Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
-                }
-
-                var prAnnotation = string.Format(prAnnotationTemplate,
-                    pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
-                BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
-
-                Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
             }
             catch (Exception e)
             {
@@ -459,6 +367,60 @@ GDK team";
             }
 
             return gitHubClient.CreateDraftRelease(gitHubRepo, tag, releaseBody, name, headCommit);
+        }
+
+        private void CreatePRFromReleaseToSource(GitHubClient gitHubClient, Repository gitHubRepo, string repoUrl, string repoName, GitClient gitClient)
+        {
+            // Check if a PR has already been opened from release branch into source branch.
+            // If it has, log the PR URL and move on.
+            // This ensures the idempotence of the pipeline.
+            var githubOrg = options.GithubOrgName;
+            var branchFrom = $"{options.CandidateBranch}-cleanup";
+            var branchTo = options.SourceBranch;
+
+            if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
+            {
+                try
+                {
+                    if (gitClient == null)
+                    {
+                        using (gitClient = GitClient.FromRemote(repoUrl))
+                        {
+                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                            gitClient.ForcePush(branchFrom);
+                        }
+                    }
+                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                    branchFrom,
+                    branchTo,
+                    string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
+                    string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
+                }
+                catch (Octokit.ApiValidationException e)
+                {
+                    // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
+                    if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
+                    {
+                        Logger.Info(e.ApiError.Errors[0].Message);
+                        Logger.Info("No PR will be created.");
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+
+            else
+            {
+                Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
+            }
+
+            var prAnnotation = string.Format(prAnnotationTemplate,
+                pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
+            BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
+
+            Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+            Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
         }
 
         private static string GetReleaseNotesFromChangeLog()
