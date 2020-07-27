@@ -327,10 +327,10 @@ public:
 	TOptional<bool> bOverrideMultiWorker;
 
 	/**
-	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
+	  * This will allow Actors to be spawned on a layer different to the intended authoritative layer.
 	  */
 	UPROPERTY(Config)
-	bool bEnableMultiWorkerDebuggingWarnings;
+	bool bEnableCrossLayerActorSpawning;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;

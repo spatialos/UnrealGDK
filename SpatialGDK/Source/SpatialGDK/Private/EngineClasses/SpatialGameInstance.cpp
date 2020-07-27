@@ -254,8 +254,8 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 
 	if (OwningWorld != GetWorld()
 		|| !OwningWorld->IsServer()
-		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
 		|| OwningWorld->GetNetDriver() == nullptr
+		|| !Cast<USpatialNetDriver>(OwningWorld->GetNetDriver())->IsReady()
 		|| (OwningWorld->WorldType != EWorldType::PIE
 			&& OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
