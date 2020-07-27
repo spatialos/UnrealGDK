@@ -323,9 +323,8 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 		return true;
 	}
 
-	FSpatialNetBitReader& Reader = static_cast<FSpatialNetBitReader&>(Ar);
 	bool bUnresolved = false;
-	Obj = Reader.ReadObject(bUnresolved);
+	Obj = FSpatialNetBitReader::ReadObject(Ar, this, bUnresolved);
 
 	return !bUnresolved;
 }

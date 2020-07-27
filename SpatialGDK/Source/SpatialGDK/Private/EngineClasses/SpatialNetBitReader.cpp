@@ -9,75 +9,71 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetBitReader);
 
+static thread_local FSpatialNetBitReader* s_CurrentReader = nullptr;
+
 FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: FNetBitReader(InPackageMap, Source, CountBits)
 	, DynamicRefs(InDynamicRefs)
-	, UnresolvedRefs(InUnresolvedRefs) {}
+	, UnresolvedRefs(InUnresolvedRefs)
+{
+	check(s_CurrentReader == nullptr);
+	s_CurrentReader = this;
+}
 
-void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
+FSpatialNetBitReader::~FSpatialNetBitReader()
+{
+	s_CurrentReader = nullptr;
+}
+
+void FSpatialNetBitReader::DeserializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef)
 {
 	int64 EntityId;
-	*this << EntityId;
+	Archive << EntityId;
 	ObjectRef.Entity = EntityId;
-	*this << ObjectRef.Offset;
+	Archive << ObjectRef.Offset;
 
 	uint8 HasPath;
-	SerializeBits(&HasPath, 1);
+	Archive.SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
 		FString Path;
-		*this << Path;
+		Archive << Path;
 
 		ObjectRef.Path = Path;
 	}
 
 	uint8 HasOuter;
-	SerializeBits(&HasOuter, 1);
+	Archive.SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
 		ObjectRef.Outer = FUnrealObjectRef();
-		DeserializeObjectRef(*ObjectRef.Outer);
+		DeserializeObjectRef(Archive, *ObjectRef.Outer);
 	}
 
-	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
-	SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
+	Archive.SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
+	Archive.SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
 }
 
-UObject* FSpatialNetBitReader::ReadObject(bool& bUnresolved)
+UObject* FSpatialNetBitReader::ReadObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, bool& bUnresolved)
 {
 	FUnrealObjectRef ObjectRef;
 
-	DeserializeObjectRef(ObjectRef);
+	DeserializeObjectRef(Archive, ObjectRef);
 	check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-	UObject* Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, Cast<USpatialPackageMapClient>(PackageMap), bUnresolved);
+	UObject* Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
 
-	if (bUnresolved)
+	if(s_CurrentReader != nullptr)
 	{
-		UnresolvedRefs.Add(ObjectRef);
-	}
-	else if (Value && !Value->IsFullNameStableForNetworking())
-	{
-		DynamicRefs.Add(ObjectRef);
+		if (bUnresolved)
+		{
+			s_CurrentReader->UnresolvedRefs.Add(ObjectRef);
+		}
+		else if (Value && !Value->IsFullNameStableForNetworking())
+		{
+			s_CurrentReader->DynamicRefs.Add(ObjectRef);
+		}
 	}
 
 	return Value;
-}
-
-FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
-{
-	bool bUnresolved = false;
-	Value = ReadObject(bUnresolved);
-
-	return *this;
-}
-
-FArchive& FSpatialNetBitReader::operator<<(FWeakObjectPtr& Value)
-{
-	UObject* Object;
-	*this << Object;
-
-	Value = Object;
-
-	return *this;
 }
