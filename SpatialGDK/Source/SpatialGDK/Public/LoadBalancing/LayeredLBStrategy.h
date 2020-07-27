@@ -40,7 +40,7 @@ struct FLBLayerInfo
  * to each Layer/Strategy and keep track of which Actors belong in which layer and should be load balanced
  * by the corresponding Strategy.
  */
-UCLASS()
+UCLASS(HideDropdown, NotBlueprintable)
 class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 {
 	GENERATED_BODY()
