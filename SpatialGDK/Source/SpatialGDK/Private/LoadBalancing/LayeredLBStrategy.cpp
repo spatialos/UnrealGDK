@@ -255,7 +255,6 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
-	// The default strategy is guaranteed to exist as long as the strategy is ready.
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 
