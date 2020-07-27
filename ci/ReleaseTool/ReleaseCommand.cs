@@ -32,7 +32,7 @@ namespace ReleaseTool
 
         // Changelog file configuration
         private const string ChangeLogFilename = "CHANGELOG.md";
-        private const string CandidateCommitMessageTemplate = "{0}.";
+        private const string CandidateCommitMessageTemplate = "Update branch for GDK for Unreal {0}.";
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
@@ -153,37 +153,27 @@ namespace ReleaseTool
                 // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
-                    gitClient.CheckoutRemoteBranch(options.CandidateBranch);
-
-                    // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                    switch (repoName)
+                    // Only do something for the UnrealGDK, since the other repos should have been prepped by the PrepFullReleaseCommand
+                    if (repoName == "UnrealGDK")
                     {
-                        case "UnrealGDK":
-                            Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
+                        // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
 
-                            var releaseHashes = options.EngineVersions.Split(" ")
-                                .Select(version => $"{version.Trim()}-release")
-                                .Select(BuildkiteAgent.GetMetadata)
-                                .Select(hash => $"UnrealEngine-{hash}")
-                                .ToList();
+                        // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+                        Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
 
-                            UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
-                            break;
+                        var releaseHashes = options.EngineVersions.Split(" ")
+                            .Select(version => $"{version.Trim()}-release")
+                            .Select(BuildkiteAgent.GetMetadata)
+                            .Select(hash => $"UnrealEngine-{hash}")
+                            .ToList();
 
-                        // Do not do anything for the below, since we take care of it in PrepFullReleaseCommand.
-                        // Leaving the stub here, in case of future additions.
-                        case "UnrealEngine":
-                        case "UnrealGDKExampleProject":
-                        case "UnrealGDKTestGyms":
-                        case "UnrealGDKEngineNetTest":
-                        case "TestGymBuildKite":
-                            break;
+                        UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
+
+                        // 4. Commit changes and push them to a remote candidate branch.
+                        gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+                        gitClient.ForcePush(options.CandidateBranch);
                     }
-
-                    // 4. Commit changes and push them to a remote candidate branch.
-                    gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
-                    gitClient.ForcePush(options.CandidateBranch);
                 }
 
                 // Since we've pushed changes, we need to wait for all checks to pass before attempting to merge it.
@@ -468,7 +458,7 @@ GDK team";
                     throw new ArgumentException("Unsupported repository.", nameof(repoName));
             }
 
-            return gitHubClient.CreateDraftRelease(gitHubRepo, options.Version, releaseBody, name, headCommit);
+            return gitHubClient.CreateDraftRelease(gitHubRepo, tag, releaseBody, name, headCommit);
         }
 
         private static string GetReleaseNotesFromChangeLog()

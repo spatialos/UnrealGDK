@@ -110,11 +110,11 @@ namespace ReleaseTool
                     // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
-
                     if (!gitClient.LocalBranchExists($"origin/{options.CandidateBranch}"))
                     {
+                        // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
+                        gitClient.CheckoutRemoteBranch(options.SourceBranch);
+
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                         switch (options.GitRepoName)
                         {
