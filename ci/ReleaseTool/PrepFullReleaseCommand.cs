@@ -23,7 +23,7 @@ namespace ReleaseTool
 
         // Changelog file configuration
         private const string ChangeLogFilename = "CHANGELOG.md";
-        private const string CandidateCommitMessageTemplate = "{0}.";
+        private const string CandidateCommitMessageTemplate = "Prepare GDK for Unreal release {0}.";
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
         // Names of the version files that live in the UnrealEngine repository.
@@ -110,6 +110,11 @@ namespace ReleaseTool
                         // 4. Commit changes and push them to a remote candidate branch.
                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.CandidateBranch);
+                        Logger.Info($"Updated branch '${options.CandidateBranch}' in preparation for the full release.");
+                    }
+                    else
+                    {
+                        Logger.Info($"Tried to update branch '${options.CandidateBranch}' in preparation for the full release, but it was already up-to-date.");
                     }
                 }
             }

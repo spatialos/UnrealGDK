@@ -110,7 +110,7 @@ USER_ID=$(id -u)
 # We go over the array in reverse order here, just to release the least relevant engine version first, so the most relevant one will
 # end up on top of the releases page.
 for (( idx=${#ENGINE_VERSIONS[@]}-1 ; idx>=0 ; idx-- )) ; do
-    ENGINE_VERSION=ENGINE_VERSIONS[idx]
+    ENGINE_VERSION=${ENGINE_VERSIONS[idx]}
     release "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
