@@ -35,18 +35,13 @@ bool CanProcessActor(const AActor* Actor)
 		return false;
 	}
 
-	if (!USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
-	{
-		return false;
-	}
-
 	return true;
 }
 } // anonymous namespace
 
 FLockingToken ULockingStatics::AcquireLock(AActor* Actor, const FString& DebugString)
 {
-	if (!CanProcessActor(Actor))
+	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
 	{
 		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
 	}
@@ -63,7 +58,7 @@ FLockingToken ULockingStatics::AcquireLock(AActor* Actor, const FString& DebugSt
 
 bool ULockingStatics::IsLocked(const AActor* Actor)
 {
-	if (!CanProcessActor(Actor))
+	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
 	{
 		return false;
 	}
@@ -73,7 +68,7 @@ bool ULockingStatics::IsLocked(const AActor* Actor)
 
 void ULockingStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 {
-	if (!CanProcessActor(Actor))
+	if (!CanProcessActor(Actor) || !USpatialStatics::IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
 	{
 		return;
 	}
