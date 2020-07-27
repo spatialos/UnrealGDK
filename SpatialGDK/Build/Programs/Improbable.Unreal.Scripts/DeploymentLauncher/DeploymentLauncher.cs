@@ -27,11 +27,11 @@ namespace Improbable
         private const string CHINA_ENDPOINT_URL = "platform.api.spatialoschina.com";
         private const int CHINA_ENDPOINT_PORT = 443;
 
-        private static readonly string ChinaRefreshToken = File.ReadAllText(Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production"));
+        private static readonly string ChinaProductionTokenPath = Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production");
 
-        private static readonly PlatformRefreshTokenCredential ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
-            "https://auth.spatialoschina.com/auth/v1/authcode",
-            "https://auth.spatialoschina.com/auth/v1/token");
+        // Populated in the Main method if the Chinese platform is to be used
+        private static string ChinaRefreshToken = "";
+        private static PlatformRefreshTokenCredential ChinaCredentials;
 
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName, bool useChinaPlatform)
@@ -176,7 +176,7 @@ namespace Improbable
                 if (!launchSimPlayerDeployment)
                 {
                     // Don't launch a simulated player deployment. Wait for main deployment to be created and then return.
-                    Console.WriteLine("Waiting for deployment to be ready...");
+                    Console.WriteLine("Waiting for the main deployment to be ready...");
                     var result = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
                     if (result == null)
                     {
@@ -188,11 +188,6 @@ namespace Improbable
                     return 0;
                 }
 
-                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentBaseName))
-                {
-                    StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentBaseName);
-                }
-
                 // we are using the main deployment snapshot also for the sim player deployment(s), because we only need to specify a snapshot
                 // to be able to start the deployment. The sim players don't care about the actual snapshot.
                 var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
@@ -200,18 +195,24 @@ namespace Improbable
                     simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
                     numSimPlayers, numSimDeployments, useChinaPlatform);
 
-                // Wait for both deployments to be created.
-                Console.WriteLine("Waiting for deployments to be ready...");
+                if (simDeploymentCreationOps == null || simDeploymentCreationOps.Count == 0)
+                {
+                    Console.WriteLine("Failed to start any simulated player deployments.");
+                    return 1;
+                }
+
+                // Wait for the main deployment to be ready
+                Console.WriteLine("Waiting for the main deployment to be ready...");
                 var mainDeploymentResult = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
                 if (mainDeploymentResult == null)
                 {
                     Console.WriteLine("Failed to create the main deployment");
                     return 1;
                 }
-
                 Console.WriteLine("Successfully created the main deployment");
 
-                var numSuccessfullyStartedDeployments = 0;
+                // Waiting for the simulated player deployment(s) to be ready
+                var numSuccessfullyStartedSimDeployments = 0;
                 for (var simDeploymentIndex = 0; simDeploymentIndex < simDeploymentCreationOps.Count; simDeploymentIndex++)
                 {
                     Console.WriteLine($"Waiting for the simulated player deployment to be ready... " +
@@ -227,10 +228,10 @@ namespace Improbable
                     Console.WriteLine($"Deployment startup complete! Setting its flags...");
                     UpdateSimDeploymentFlags(simPlayerDeployment, true, deploymentServiceClient);
 
-                    numSuccessfullyStartedDeployments++;
+                    numSuccessfullyStartedSimDeployments++;
                 }
 
-                Console.WriteLine($"Successfully started {numSuccessfullyStartedDeployments} out of {numSimDeployments} simulated player deployments.");
+                Console.WriteLine($"Successfully started {numSuccessfullyStartedSimDeployments} out of {numSimDeployments} simulated player deployments.");
             }
             catch (Grpc.Core.RpcException e)
             {
@@ -303,6 +304,12 @@ namespace Improbable
                 projectName, assemblyName, runtimeVersion, simDeploymentBaseName, simDeploymentBaseName,
                 simDeploymentJson, simDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
                 numSimplayers, numSimDeployments, useChinaPlatform);
+
+            if (simDeploymentCreationOps == null || simDeploymentCreationOps.Count == 0)
+            {
+                Console.WriteLine("Failed to start any simulated player deployments.");
+                return 1;
+            }
 
             var numSuccessfullyStartedDeployments = 0;
             for (var simDeploymentIndex = 0; simDeploymentIndex < simDeploymentCreationOps.Count; simDeploymentIndex++)
@@ -770,9 +777,9 @@ namespace Improbable
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> <num-sim-deployments>]");
+            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> <num-sim-deployments>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <num-sim-deployments> <auto-connect>");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <num-sim-deployments> <auto-connect>");
             Console.WriteLine($"  Starts simulated player deployment(s). Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
@@ -791,6 +798,21 @@ namespace Improbable
             args = args.Where(arg => !arg.StartsWith("--")).ToArray();
 
             bool useChinaPlatform = flags.Contains("--china");
+
+            if (useChinaPlatform)
+            {
+                if (!File.Exists(ChinaProductionTokenPath))
+                {
+                    Console.WriteLine("The 'china' flag was passed, but you are not authenticated for the 'cn-production' environment.");
+
+                    return 1;
+                }
+
+                ChinaRefreshToken = File.ReadAllText(ChinaProductionTokenPath);
+                ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
+                    "https://auth.spatialoschina.com/auth/v1/authcode",
+                    "https://auth.spatialoschina.com/auth/v1/token");
+            }
 
             if (args.Length == 0 ||
                 (args[0] == "create" && (args.Length != 16 && args.Length != 10)) ||
