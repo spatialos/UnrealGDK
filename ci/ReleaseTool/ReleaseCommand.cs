@@ -150,11 +150,11 @@ namespace ReleaseTool
             var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             try
             {
-                // 1. Clones the source repo.
-                using (var gitClient = GitClient.FromRemote(remoteUrl))
+                // Only do something for the UnrealGDK, since the other repos should have been prepped by the PrepFullReleaseCommand.
+                if (repoName == "UnrealGDK")
                 {
-                    // Only do something for the UnrealGDK, since the other repos should have been prepped by the PrepFullReleaseCommand
-                    if (repoName == "UnrealGDK")
+                    // 1. Clones the source repo.
+                    using (var gitClient = GitClient.FromRemote(remoteUrl))
                     {
                         // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
                         gitClient.CheckoutRemoteBranch(options.CandidateBranch);
@@ -176,7 +176,7 @@ namespace ReleaseTool
                     }
                 }
 
-                // Since we've pushed changes, we need to wait for all checks to pass before attempting to merge it.
+                // Since we've (maybe) pushed changes, we need to wait for all checks to pass before attempting to merge it.
                 var startTime = DateTime.Now;
                 while (true)
                 {
