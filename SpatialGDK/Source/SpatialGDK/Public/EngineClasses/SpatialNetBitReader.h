@@ -22,6 +22,8 @@ public:
 
 	static UObject* ReadObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, bool& bUnresolved);
 
+	FArchive& operator<<(FWeakObjectPtr& Value);
+
 protected:
 	static void DeserializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef);
 

@@ -63,7 +63,7 @@ UObject* FSpatialNetBitReader::ReadObject(FArchive& Archive, USpatialPackageMapC
 
 	UObject* Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
 
-	if(s_CurrentReader != nullptr)
+	if (s_CurrentReader != nullptr)
 	{
 		if (bUnresolved)
 		{
@@ -76,4 +76,14 @@ UObject* FSpatialNetBitReader::ReadObject(FArchive& Archive, USpatialPackageMapC
 	}
 
 	return Value;
+}
+
+FArchive& FSpatialNetBitReader::operator<<(FWeakObjectPtr& Value)
+{
+	UObject* Object;
+	*this << Object;
+
+	Value = Object;
+
+	return *this;
 }

@@ -21,6 +21,5 @@ public:
 
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
-protected:
-	void SerializeObjectRef(FUnrealObjectRef& ObjectRef);
+	static void SerializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef);
 };
