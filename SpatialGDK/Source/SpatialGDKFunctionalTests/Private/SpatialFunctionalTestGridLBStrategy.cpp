@@ -33,3 +33,25 @@ VirtualWorkerId USpatialFunctionalTestGridLBStrategy::WhoShouldHaveAuthority(con
 	}
 	return Super::WhoShouldHaveAuthority(Actor);
 }
+
+SpatialGDK::QueryConstraint USpatialFunctionalTestGridLBStrategy::GetWorkerInterestQueryConstraint() const
+{
+	SpatialGDK::QueryConstraint BaseQueryConstraint = Super::GetWorkerInterestQueryConstraint();
+
+	if (Entities.Num() == 0)
+	{
+		return BaseQueryConstraint;
+	}
+	SpatialGDK::QueryConstraint NewQueryConstraint;
+
+	NewQueryConstraint.OrConstraint.Add(BaseQueryConstraint);
+
+	for (int i = 0; i != Entities.Num(); ++i)
+	{
+		SpatialGDK::QueryConstraint EntityConstraint;
+		EntityConstraint.EntityIdConstraint = Entities[i];
+		NewQueryConstraint.OrConstraint.Add(EntityConstraint);
+	}
+
+	return NewQueryConstraint;
+}

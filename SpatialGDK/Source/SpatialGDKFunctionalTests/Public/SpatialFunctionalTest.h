@@ -145,7 +145,7 @@ public:
 	FWorkerDefinition GetAllClients() { return FWorkerDefinition::AllClients; }
 
 	// # Actor Delegation APIs
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip="Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface.", ServerWorkerId = "1"))
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface.", ServerWorkerId = "1"))
 	void AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished = false);
 
 	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
@@ -153,6 +153,13 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Check is the Actor has it's authority delegated to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
 	bool HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent);
+
+	// # Actor Interest APIs
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside it's interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	void AddActorInterest(int32 ServerWorkerId, AActor* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Counterpart to AddInterestOverActor().\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	void RemoveActorInterest(int32 ServerWorkerId, AActor* Actor);
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }

@@ -69,7 +69,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
 
+	// # Interest APIs
+
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	void AddEntityInterest(const int64 ActorEntityId);
+
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	void RemoveEntityInterest(const int64 ActorEntityId);
+
 private:
+
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
 

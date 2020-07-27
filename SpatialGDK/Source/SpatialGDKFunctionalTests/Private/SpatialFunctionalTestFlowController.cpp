@@ -4,8 +4,13 @@
 
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
-#include "SpatialFunctionalTest.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
+#include "SpatialFunctionalTest.h"
+#include "SpatialFunctionalTestGridLBStrategy.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -52,6 +57,59 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(int NewWorkerId)
 {
 	WorkerDefinition.Id = NewWorkerId;
+}
+
+void ASpatialFunctionalTestFlowController::AddEntityInterest_Implementation(const int64 ActorEntityId)
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (SpatialNetDriver == nullptr || ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		ensureMsgf(ActorEntityId != SpatialConstants::INVALID_ENTITY_ID, TEXT("Trying to add interest over an invalid entity id"));
+		return;
+	}
+	
+	ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+	USpatialFunctionalTestGridLBStrategy* TestGridLB = Cast<USpatialFunctionalTestGridLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering());
+	if (TestGridLB != nullptr)
+	{
+		int NumEntities = TestGridLB->Entities.Num();
+		TestGridLB->Entities.AddUnique(ActorEntityId);
+		if( NumEntities != TestGridLB->Entities.Num())
+		{
+			SpatialNetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Trying to add interest without USpatialFunctionalTestGridLBStrategy"));
+	}
+}
+
+void ASpatialFunctionalTestFlowController::RemoveEntityInterest_Implementation(const int64 ActorEntityId)
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (SpatialNetDriver == nullptr || ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		ensureMsgf(ActorEntityId != SpatialConstants::INVALID_ENTITY_ID, TEXT("Trying to remove interest over an invalid entity id"));
+		return;
+	}
+
+	ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+	USpatialFunctionalTestGridLBStrategy* TestGridLB = Cast<USpatialFunctionalTestGridLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering());
+
+	if (TestGridLB != nullptr)
+	{
+		int NumEntities = TestGridLB->Entities.Num();
+		TestGridLB->Entities.Remove(ActorEntityId);
+		if (NumEntities != TestGridLB->Entities.Num())
+		{
+			SpatialNetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Trying to add interest without USpatialFunctionalTestGridLBStrategy"));
+	}
 }
 
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
