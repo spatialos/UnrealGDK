@@ -235,47 +235,15 @@ bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor, int& WorkerId, bo
 
 void ASpatialFunctionalTest::AddActorInterest(int32 ServerWorkerId, AActor* Actor)
 {
-	ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
-
-	if (AuxLocalFlowController == nullptr || AuxLocalFlowController->WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Server)
-	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Interest changes are only allowed from Server Workers, trying to do it from %s"), *AuxLocalFlowController->GetDisplayName());
-		return;
-	}
-
-	ensureMsgf(ServerWorkerId >= FWorkerDefinition::ALL_WORKERS_ID, TEXT("Invalid ServerWorkerId"));
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	if (ServerWorkerId < FWorkerDefinition::ALL_WORKERS_ID || SpatialNetDriver == nullptr || Actor == nullptr)
-	{
-		return;
-	}
-	if (ServerWorkerId > NumExpectedServers)
-	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Trying to add interest on Server Worker %d and there's only %d; falling back to Server Worker 1"), ServerWorkerId, NumExpectedServers);
-		ServerWorkerId = 1;
-	}
-
-	Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
-
-	if(ServerWorkerId == FWorkerDefinition::ALL_WORKERS_ID)
-	{
-		for (int i = 0; i != FlowControllers.Num(); ++i)
-		{
-			ASpatialFunctionalTestFlowController* FlowController = FlowControllers[i];
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				FlowController->AddEntityInterest(ActorEntityId);
-			}
-		}
-	}
-	else
-	{
-		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Server, ServerWorkerId);
-		FlowController->AddEntityInterest(ActorEntityId);
-	}
+	ChangeActorInterest(ServerWorkerId, Actor, true);
 }
 
 void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* Actor)
+{
+	ChangeActorInterest(ServerWorkerId, Actor, false);
+}
+
+void ASpatialFunctionalTest::ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest)
 {
 	ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
 
@@ -293,7 +261,7 @@ void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* A
 	}
 	if (ServerWorkerId > NumExpectedServers)
 	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Trying to add interest on Server Worker %d and there's only %d; falling back to Server Worker 1"), ServerWorkerId, NumExpectedServers);
+		UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Trying to change interest on Server Worker %d and there's only %d; falling back to Server Worker 1"), ServerWorkerId, NumExpectedServers);
 		ServerWorkerId = 1;
 	}
 
@@ -301,19 +269,32 @@ void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* A
 
 	if (ServerWorkerId == FWorkerDefinition::ALL_WORKERS_ID)
 	{
-		for (int i = 0; i != FlowControllers.Num(); ++i)
+		for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 		{
-			ASpatialFunctionalTestFlowController* FlowController = FlowControllers[i];
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
-				FlowController->RemoveEntityInterest(ActorEntityId);
+				if(bAddInterest)
+				{
+					FlowController->AddEntityInterest(ActorEntityId);
+				}
+				else
+				{
+					FlowController->RemoveEntityInterest(ActorEntityId);
+				}
 			}
 		}
 	}
 	else
 	{
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Server, ServerWorkerId);
-		FlowController->RemoveEntityInterest(ActorEntityId);
+		if (bAddInterest)
+		{
+			FlowController->AddEntityInterest(ActorEntityId);
+		}
+		else
+		{
+			FlowController->RemoveEntityInterest(ActorEntityId);
+		}
 	}
 }
 

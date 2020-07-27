@@ -200,4 +200,6 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
+
+	void ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest);
 };
