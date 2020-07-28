@@ -144,7 +144,7 @@ bool FAcquireLock::Update()
 {
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Called AcquireLock when CanAcquireLock returned false."), EAutomationExpectedErrorFlags::Contains, 1);
+		Test->AddExpectedError(TEXT("Called AcquireLock but CanAcquireLock returned false."), EAutomationExpectedErrorFlags::Contains, 1);
 	}
 
 	AActor* Actor = Data->TestActors[ActorHandle];
@@ -157,7 +157,7 @@ bool FAcquireLock::Update()
 		for (const TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
 		{
 			const TArray<LockingTokenAndDebugString>& LockingTokensAndDebugStrings = ActorLockingTokenAndDebugStrings.Value;
-			bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& InnerData)
+			const bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& InnerData)
 			{
 				return Token == InnerData.Key;
 			});
@@ -195,7 +195,7 @@ bool FReleaseLock::Update()
 		return true;
 	}
 
-	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& InnerData)
+	const int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& InnerData)
 	{
 		return InnerData.Value == LockDebugString;
 	});
@@ -235,8 +235,8 @@ bool FReleaseAllLocks::Update()
 		{
 			const ActorLockToken Token = TokenAndDebugString.Key;
 			const bool bReleaseLockSucceeded = Data->LockingPolicy->ReleaseLock(Token);
-			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %d"), Token), !bExpectedSuccess && bReleaseLockSucceeded);
-			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %d"), Token), bExpectedSuccess && !bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %lld"), Token), !bExpectedSuccess && bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %lld"), Token), bExpectedSuccess && !bReleaseLockSucceeded);
 		}
 	}
 
@@ -291,7 +291,7 @@ bool FTestIsLocked::Update()
 
 void SpawnABCDHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 {
-	//        A 
+	//        A
 	//       / \
 	//	    B   D
 	//     /
@@ -652,7 +652,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 
 	//    C (explicitly locked)         A
 	//				                    |
-	//	                                D           
+	//	                                D
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
@@ -676,7 +676,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 
 	//             B                   D
 	//			   |
-	//	   C (explicitly locked)     
+	//	   C (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
@@ -700,7 +700,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 
 	//    B (explicitly locked)         D
 	//		       |
-	//	           C        
+	//	           C
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
@@ -724,7 +724,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_
 
 	//             B                   D
 	//			   |
-	//	           C    
+	//	           C
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
@@ -773,7 +773,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "A", "E"));
 
 	//              E
-	//             / 
+	//             /
 	//            A
 	//	    	 / \
 	//          B    D
@@ -806,7 +806,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	//        |                 |
 	//        D        B (explicitly locked)
 	//                          |
-	//                          C 
+	//                          C
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
@@ -885,7 +885,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "A", "E"));
 
 	//                         E
-	//                         | 
+	//                         |
 	//                         A
 	//	    	              / \
 	//   B (explicitly locked)   D
