@@ -426,36 +426,46 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
-	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
-	if (IsServer())
+	if (!IsServer())
 	{
-		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
-		LoadBalanceStrategy->Init();
-		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+		return;
 	}
+
+	const UWorld* CurrentWorld = GetWorld();
+	check(CurrentWorld != nullptr);
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
+	check(WorldSettings != nullptr);
+
+	const bool bMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
+
+	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = bMultiWorkerEnabled ?
+        *WorldSettings->MultiWorkerSettingsClass :
+        USpatialMultiWorkerSettings::StaticClass();
+
+	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
+
+	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
+	}
+
+	const TSubclassOf<UAbstractLockingPolicy> LockingPolicyClass = bMultiWorkerEnabled && *MultiWorkerSettings->LockingPolicy != nullptr ?
+        *MultiWorkerSettings->LockingPolicy :
+        UOwnershipLockingPolicy::StaticClass();
+
+	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
+	LoadBalanceStrategy->Init();
+	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
+	LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	if (IsServer())
-	{
-		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+	LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabled();
-		if (!bIsMultiWorkerEnabled)
-		{
-			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
-		}
-		else if (WorldSettings->DefaultLayerLockingPolicy == nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
-			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
-		}
-		else
-		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->DefaultLayerLockingPolicy);
-		}
-		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
-	}
+	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
+	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()

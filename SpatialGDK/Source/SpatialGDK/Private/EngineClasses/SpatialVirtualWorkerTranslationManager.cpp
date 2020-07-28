@@ -106,7 +106,7 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 
 // This will be called on the worker authoritative for the translation mapping to push the new version of the map
 // to the SpatialOS storage.
-void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
+void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() const
 {
 	// Construct the mapping update based on the local virtual worker to physical worker mapping.
 	FWorkerComponentUpdate Update = {};
