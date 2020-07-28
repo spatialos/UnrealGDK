@@ -18,6 +18,34 @@
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
+namespace
+{
+bool CanProcessActor(const AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on nullptr Actor is invalid."));
+		return false;
+	}
+
+	const UNetDriver* NetDriver = Actor->GetWorld()->GetNetDriver();
+	if (!NetDriver->IsServer())
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on a client is invalid. Actor: %s"), *GetNameSafe(Actor));
+		return false;
+	}
+
+	if (!Actor->HasAuthority())
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on a non-auth Actor is invalid. Actor: %s."),
+            *GetNameSafe(Actor));
+		return false;
+	}
+
+	return true;
+}
+} // anonymous namespace
+
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
     return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
@@ -67,13 +95,30 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
+bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject)
+{
+	checkf(WorldContextObject != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr WorldContextObject*"));
+
+	const UWorld* World = WorldContextObject->GetWorld();
+	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
+	{
+		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
+	}
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	return WorldSettings != nullptr && *WorldSettings->MultiWorkerSettingsClass != nullptr;
+}
+
 bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
 	if (World != nullptr)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			if (!IsSpatialNetworkingEnabled() || !WorldSettings->IsMultiWorkerEnabled())
+			if (!IsSpatialMultiWorkerEnabled(World))
 			{
 				return false;
 			}
@@ -175,4 +220,45 @@ FString USpatialStatics::EntityIdToString(int64 EntityId)
 FString USpatialStatics::GetActorEntityIdAsString(const AActor* Actor)
 {
 	return EntityIdToString(GetActorEntityId(Actor));
+}
+
+FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugString)
+{
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	{
+		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
+	}
+
+	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
+
+	const ActorLockToken LockToken = LockingPolicy->AcquireLock(Actor, DebugString);
+
+	UE_LOG(LogSpatial, Verbose, TEXT("LockingComponent called AcquireLock. Actor: %s. Token: %lld. New lock count: %d"),
+        *Actor->GetName(), LockToken, LockingPolicy->GetActorLockCount(Actor));
+
+	return FLockingToken{ LockToken };
+}
+
+bool USpatialStatics::IsLocked(const AActor* Actor)
+{
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	{
+		return false;
+	}
+
+	return Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy->IsLocked(Actor);
+}
+
+void USpatialStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
+{
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	{
+		return;
+	}
+
+	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
+	LockingPolicy->ReleaseLock(LockToken.Token);
+
+	UE_LOG(LogSpatial, Verbose, TEXT("LockingComponent called ReleaseLock. Actor: %s. Token: %lld. Resulting lock count: %d"),
+        *Actor->GetName(), LockToken.Token, LockingPolicy->GetActorLockCount(Actor));
 }
