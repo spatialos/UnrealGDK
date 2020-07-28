@@ -110,6 +110,7 @@ namespace Improbable
 
         private static int CreateDeployment(string[] args, bool useChinaPlatform)
         {
+            // Argument count can vary because of optional arguments
             bool launchSimPlayerDeployment = args.Length == 16 || args.Length == 15;
 
             var projectName = args[1];
@@ -638,17 +639,17 @@ namespace Improbable
                     }
 
                     // Determine the amount of simulated players in this deployment
-                    var numDeploymentSimplayers = numSimPlayers / numSimDeployments;
+                    var numSimPlayersPerDeployment = numSimPlayers / numSimDeployments;
                     // Spread leftover simulated players over deployments if the total isn't a multiple of the deployment count
                     if (simPlayerDeploymentId <= numSimPlayers % numSimDeployments)
                     {
-                        ++numDeploymentSimplayers;
+                        ++numSimPlayersPerDeployment;
                     }
 
                     Console.WriteLine($"Kicking off startup of deployment {simPlayerDeploymentId} out of the target {numSimDeployments}");
                     var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient,
                         projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName,
-                        simDeploymentJsonPath, simDeploymentSnapshotPath, regionCode, clusterCode, numDeploymentSimplayers, useChinaPlatform);
+                        simDeploymentJsonPath, simDeploymentSnapshotPath, regionCode, clusterCode, numSimPlayersPerDeployment, useChinaPlatform);
 
                     operations.Add(createSimDeploymentOp);
                 }
@@ -820,6 +821,7 @@ namespace Improbable
                     "https://auth.spatialoschina.com/auth/v1/token");
             }
 
+            // Argument count for the same command can vary because of optional arguments
             if (args.Length == 0 ||
                 (args[0] == "create" && (args.Length != 16 && args.Length != 15 && args.Length != 10)) ||
                 (args[0] == "createsim" && (args.Length != 13 && args.Length != 12)) ||
