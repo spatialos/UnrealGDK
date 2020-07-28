@@ -46,10 +46,10 @@ SpatialGDK::QueryConstraint USpatialFunctionalTestGridLBStrategy::GetWorkerInter
 
 	NewQueryConstraint.OrConstraint.Add(BaseQueryConstraint);
 
-	for (int i = 0; i != Entities.Num(); ++i)
+	for(Worker_EntityId Entity : Entities)
 	{
 		SpatialGDK::QueryConstraint EntityConstraint;
-		EntityConstraint.EntityIdConstraint = Entities[i];
+		EntityConstraint.EntityIdConstraint = Entity;
 		NewQueryConstraint.OrConstraint.Add(EntityConstraint);
 	}
 

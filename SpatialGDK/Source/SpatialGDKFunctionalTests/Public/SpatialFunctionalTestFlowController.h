@@ -104,7 +104,6 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyStepFinished();
 
-
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerNotifyStepFinished();
 
@@ -112,4 +111,6 @@ private:
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 	
 	void ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message);
+
+	void ChangeEntityInterest(int64 ActorEntityId, bool bAddInterest);
 };
