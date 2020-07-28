@@ -390,6 +390,11 @@ GDK team";
                             gitClient.ForcePush(branchFrom);
                         }
                     }
+                    else
+                    {
+                        gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                        gitClient.ForcePush(branchFrom);
+                    }
                     pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
                     branchFrom,
                     branchTo,
@@ -409,7 +414,6 @@ GDK team";
                     throw;
                 }
             }
-
             else
             {
                 Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
