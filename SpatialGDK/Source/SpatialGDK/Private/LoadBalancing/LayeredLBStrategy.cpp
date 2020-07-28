@@ -222,7 +222,7 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
 }
 
-const FName& ULayeredLBStrategy::GetLocalLayerName() const
+FName ULayeredLBStrategy::GetLocalLayerName() const
 {
 	if (!IsReady())
 	{
