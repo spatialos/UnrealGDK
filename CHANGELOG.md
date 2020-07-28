@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+### Breaking Changes:
+- Multi-worker settings configured previously as `SpatialWorldSettings` properties are now encapsulated within the `USpatialMultiWorkerSettings` class. To update your project, you should create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration then, in your levels' World Settings, select that class as the `Multi-worker settings class` property.
+
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
