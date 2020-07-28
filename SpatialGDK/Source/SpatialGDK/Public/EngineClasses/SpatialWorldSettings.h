@@ -20,20 +20,4 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
-
-	bool IsMultiWorkerEnabled() const
-	{
-		if (!USpatialStatics::IsSpatialNetworkingEnabled())
-		{
-			return false;
-		}
-
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
-		{
-			return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
-		}
-
-		return true;
-	}
 };

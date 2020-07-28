@@ -17,6 +17,15 @@ class AActor;
 // This log category will always log to the spatial runtime and thus also be printed in the SpatialOutput.
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatial, Log, All);
 
+USTRUCT(BlueprintType)
+struct FLockingToken
+{
+	GENERATED_USTRUCT_BODY()
+
+    UPROPERTY(BlueprintReadOnly)
+	int64 Token;
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 {
@@ -112,8 +121,28 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
 	static FString GetActorEntityIdAsString(const AActor* Actor);
 
+	/**
+	 * AcquireLock should only be called for an authoritative Actor from a server.
+	 * If Spatial networking or multi-worker is disabled, this will return an invalid locking token.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
+    static FLockingToken AcquireLock(AActor* Actor, const FString& DebugString = TEXT(""));
+
+	/**
+	* ReleaseLock should only be called for an authoritative Actor from a server where the LockToken argument
+	* was previously returned from a call to AcquireLock.
+	* If Spatial networking or multi-worker is disabled, this will early.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
+    static void ReleaseLock(const AActor* Actor, FLockingToken LockToken);
+
+	/**
+	* IsLocked should only be called for an authoritative Actor from a server.
+	* If Spatial networking or multi-worker is disabled, this will early.
+	*/
+	UFUNCTION(BlueprintPure, Category = "SpatialGDK|Locking")
+    static bool IsLocked(const AActor* Actor);
 
 private:
-
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };
