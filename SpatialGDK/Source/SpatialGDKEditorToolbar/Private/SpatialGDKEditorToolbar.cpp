@@ -701,7 +701,6 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 		OnShowTaskStartNotification(TEXT("Starting spatial service..."));
 
 		// If the runtime IP is to be exposed, pass it to the spatial service on startup
-		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 		const bool bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(GetOptionalExposedRuntimeIP());
 		if (!bSpatialServiceStarted)
 		{
@@ -1210,7 +1209,10 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 			UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 			{
-				VerifyAndStartDeployment();
+				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+				{
+					VerifyAndStartDeployment();
+				}
 			});
 		}
 	}
