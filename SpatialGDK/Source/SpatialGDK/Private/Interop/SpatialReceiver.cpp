@@ -689,11 +689,15 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						UpdateShadowData(Op.entity_id);
 					}
 
-					if (bActorHadAuthority) // This is Actor's spawning worker.
+					// When receiving AuthorityGained from SpatialOS, the Actor role will be ROLE_Authority iff this
+					// worker is receiving entity data for the 1st time after spawning the entity. In all other cases,
+					// the Actor role will have been explicitly set to ROLE_SimulatedProxy previously during the
+					// entity creation flow.
+					if (bActorHadAuthority)
 					{
 						Actor->OnActorReady();
 					}
-					else // This Actor migrated to this worker or was loaded from a snapshot.
+					else // The Actor migrated to this worker or was loaded from a snapshot.
 					{
 						Actor->OnAuthorityGained();
 					}
@@ -993,6 +997,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 	}
 
+	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
+	EntityActor->SetActorReady(true);
+
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 	{
@@ -1246,9 +1253,6 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	// Don't have authority over Actor until SpatialOS delegates authority
 	NewActor->Role = ROLE_SimulatedProxy;
 	NewActor->RemoteRole = ROLE_Authority;
-
-	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
-	NewActor->SetActorReady(true);
 
 	return NewActor;
 }
