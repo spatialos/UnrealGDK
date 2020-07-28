@@ -50,24 +50,38 @@ void ASpatialTestCharacterMovement::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Universal setup step to create the TriggerBox and to set the helper variable
-	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this](ASpatialFunctionalTest* NetTest)
+	//// Universal setup step to create the TriggerBox and to set the helper variable
+	//AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this](ASpatialFunctionalTest* NetTest)
+	//	{
+	//		bCharacterReachedDestination = false;
+
+	//		ATriggerBox* TriggerBox = GetWorld()->SpawnActor<ATriggerBox>(FVector(232.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+
+	//		UBoxComponent* BoxComponent = Cast<UBoxComponent>(TriggerBox->GetCollisionComponent());
+	//		if (BoxComponent)
+	//		{
+	//			BoxComponent->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
+	//		}
+
+	//		TriggerBox->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMovement::OnOverlapBegin);
+	//		RegisterAutoDestroyActor(TriggerBox);
+
+	//		FinishStep();
+	//	});
+
+
+	AddStep(TEXT("SpatialTestCharacterMovementServerSetupSte2p"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
-			bCharacterReachedDestination = false;
-
-			ATriggerBox* TriggerBox = GetWorld()->SpawnActor<ATriggerBox>(FVector(232.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-
-			UBoxComponent* BoxComponent = Cast<UBoxComponent>(TriggerBox->GetCollisionComponent());
-			if (BoxComponent)
-			{
-				BoxComponent->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
-			}
-
-			TriggerBox->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMovement::OnOverlapBegin);
-			RegisterAutoDestroyActor(TriggerBox);
+			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(FVector(20.0f, 20.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+			PlayerController->Possess(TestCharacter);
+			RegisterAutoDestroyActor(TestCharacter);
 
 			FinishStep();
 		});
+
+
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
 	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
@@ -79,21 +93,19 @@ void ASpatialTestCharacterMovement::BeginPlay()
 					continue;
 				}
 
-				AController* PlayerController = Cast<AController>(FlowController->GetOwner());
-				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+			
 
-				checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
+				//checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
 
 				int FlowControllerId = FlowController->WorkerDefinition.Id;
 
 				if (FlowControllerId == 1)
 				{
+					AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+					ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 					PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
 				}
-				else
-				{
-					PlayerCharacter->SetActorLocation(FVector(100.0f + 100*FlowControllerId, 300.0f, 50.0f));
-				}
+				
 			}
 
 			FinishStep();

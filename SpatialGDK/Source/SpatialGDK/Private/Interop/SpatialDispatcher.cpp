@@ -35,6 +35,12 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 	{
 		Worker_Op* Op = &Ops.Ops[i];
 
+		if (Op->op.component_update.entity_id == 20)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SPATIAL DISPATCHER: I received an op for the character."));
+		}
+
+
 		if (OpsToSkip.Num() != 0 &&
 			OpsToSkip.Contains(Op))
 		{
@@ -74,6 +80,10 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 			Receiver->OnRemoveComponent(Op->op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
+			if (Op->op.component_update.entity_id == 20)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("SPATIAL DISPATCHER: I received a componenet update for the character."));
+			}
 			StaticComponentView->OnComponentUpdate(Op->op.component_update);
 			Receiver->OnComponentUpdate(Op->op.component_update);
 			break;

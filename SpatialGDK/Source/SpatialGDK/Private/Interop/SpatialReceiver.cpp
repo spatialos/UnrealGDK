@@ -757,6 +757,25 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 		{
+			/*if (Actor->IsA<APawn>() && Actor->GetName().Len() > 13)
+			{
+				if (Actor->Role == ROLE_SimulatedProxy)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("THIS IS A BUG OR THE TEST FINISHED CORRECTLY!"));
+				}
+				if (Actor->Role == ROLE_AutonomousProxy)
+				{
+					if (Op.authority == 1)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("THIS IS NORMAL, and my op is: Worker_authority_authoritive"));
+
+					}
+					if (Op.authority == 2)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("THIS IS NORMAL, and my op is: Losing authority soon"));
+					}
+				}
+			}*/
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 	}
@@ -1503,12 +1522,23 @@ void USpatialReceiver::ApplyComponentData(USpatialActorChannel& Channel, UObject
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
+
+	if (Op.entity_id == 20)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: I have received an op for the character"));
+	}
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverComponentUpdate);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
 		QueueComponentUpdateOpForAsyncLoad(Op);
 		return;
 	}
+
+	if (Op.entity_id == 20)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: I am not waiting for Async Load"));
+	}
+
 
 	switch (Op.update.component_id)
 	{
@@ -1564,8 +1594,18 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		if (Op.entity_id == 20)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: The op is calling HandleRPC"));
+		}
 		HandleRPC(Op);
 		return;
+	}
+
+
+	if (Op.entity_id == 20)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: The op is not going into any switch cases"));
 	}
 
 	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
@@ -1708,6 +1748,8 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
+
+
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverHandleRPC);
 	if (!GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() || RPCService == nullptr)
 	{
@@ -1736,12 +1778,10 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 			return;
 		}
 	}
-
 	if (Op.entity_id == 20)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SUNT PUTIN MAI SUS BO$$"));
+		UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: The op is calling ExtractRPCsForEntity"));
 	}
-
 	RPCService->ExtractRPCsForEntity(Op.entity_id, Op.update.component_id);
 }
 
@@ -1983,7 +2023,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			TargetObject->ProcessEvent(Function, Parms);
 			if (Function->GetName() == FString("ClientVeryShortAdjustPosition"))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("APLIC FUNCTIA, AR TREBUI SA TREC BO$$"));
+				UE_LOG(LogTemp, Warning, TEXT("The function is getting called, the test should pass!"));
 			}
 			if (RPCType != ERPCType::CrossServer &&
 				RPCType != ERPCType::NetMulticast)
@@ -2227,7 +2267,7 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	ERPCType Type = RPCInfo.Type;
 	if (Function->GetName() == FString("ClientVeryShortAdjustPosition"))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("APLIC FUNCTIA, AR TREBUI SA TREC BO$$"));
+		UE_LOG(LogTemp, Warning, TEXT("The function is being called, the test should pass!"));
 	}
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }

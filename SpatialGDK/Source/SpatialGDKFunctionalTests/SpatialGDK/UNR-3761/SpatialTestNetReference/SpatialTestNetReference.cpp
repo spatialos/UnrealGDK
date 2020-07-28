@@ -123,6 +123,8 @@ void ASpatialTestNetReference::BeginPlay()
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 				APawn* PlayerCharacter = PlayerController->GetPawn();
 
+				checkf(PlayerController != nullptr, TEXT("No Player Controller"));
+				checkf(PlayerCharacter  != nullptr, TEXT("No Player Character"));
 				// Move the character to the correct location
 				PlayerCharacter->SetActorLocation(TestLocations[CurrentMoveIndex].Key);
 
@@ -136,8 +138,9 @@ void ASpatialTestNetReference::BeginPlay()
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				APawn* PlayerCharacter = PlayerController->GetPawn();
 
+				return PlayerController != nullptr && PlayerCharacter != nullptr;
 				//return IsValid(PlayerController) && IsValid(PlayerCharacter);
-				return true;
+				//return true;
 			}, nullptr,
 			[this, CurrentMoveIndex, i](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{

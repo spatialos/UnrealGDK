@@ -90,7 +90,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
-
+	if (Channel->Actor->GetName() == TEXT("TestMovementCharacter_0"))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("YUHU BOY!"));
+	}
 	return CreateEntityRequestId;
 }
 
@@ -426,6 +429,12 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
+	if(Object->GetName() == TEXT("CharMoveComp"))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Placeholder"));
+	}
+
+
 	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
@@ -440,7 +449,10 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			UpdatesQueuedUntilAuthority.Add(Update);
 			continue;
 		}
-
+		if (Object->GetName() == TEXT("CharMoveComp"))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Placeholder"));
+		}
 		Connection->SendComponentUpdate(EntityId, &Update);
 	}
 }
