@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -41,7 +42,7 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 	{
 		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
+			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags)
 			{
 				return SpatialWorkerFlags->GetWorkerFlag(InFlagName, OutFlagValue);
 			}
@@ -72,7 +73,13 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0 && WorldSettings->IsMultiWorkerEnabled();
+			if (!IsSpatialNetworkingEnabled() || !WorldSettings->IsMultiWorkerEnabled())
+			{
+				return false;
+			}
+
+			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+			return MultiWorkerSettings->WorkerLayers.Num() > 1;
 		}
 	}
 
