@@ -155,7 +155,7 @@ public:
 	bool HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent);
 
 	// # Actor Interest APIs
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside it's interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside its interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
 	void AddActorInterest(int32 ServerWorkerId, AActor* Actor);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Counterpart to AddInterestOverActor().\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
