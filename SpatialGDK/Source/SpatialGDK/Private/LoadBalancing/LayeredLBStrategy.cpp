@@ -224,10 +224,19 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 
 const FName& ULayeredLBStrategy::GetLocalLayerName() const
 {
-	checkf(IsReady(), TEXT("Tried to get worker layer name but it was not assigned."));
+	if (!IsReady())
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("Tried to get worker layer name before the load balancing strategy was ready."));
+		return NAME_None;
+	}
 
 	const FName* LocalLayerName = VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId);
-	checkf(LocalLayerName != nullptr, TEXT("Load balancing strategy didn't contain mapping between virtual worker ID to layer name."), LocalVirtualWorkerId);
+	if (LocalLayerName == nullptr)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("Load balancing strategy didn't contain mapping between virtual worker ID to layer name."), LocalVirtualWorkerId);
+		return NAME_None;
+	}
+
 	return *LocalLayerName;
 }
 
@@ -245,7 +254,7 @@ FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) 
 	{
 		if (const FName* Layer = ClassPathToLayer.Find(ClassPtr))
 		{
-			FName LayerHolder = *Layer;
+			const FName LayerHolder = *Layer;
 			if (FoundClass != Class)
 			{
 				ClassPathToLayer.Add(TSoftClassPtr<AActor>(Class), LayerHolder);

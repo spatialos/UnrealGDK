@@ -277,13 +277,13 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 		return SpatialConstants::DefaultClientWorkerType;
 	}
 
-	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	if (SpatialNetDriver == nullptr)
+	if (!IsSpatialNetworkingEnabled())
 	{
 		return SpatialConstants::DefaultLayer;
 	}
 
-	if (!SpatialNetDriver->IsReady())
+	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (SpatialNetDriver == nullptr || !SpatialNetDriver->IsReady())
 	{
 		UE_LOG(LogSpatial, Error, TEXT("Called GetLayerName before NotifyBeginPlay has been called is invalid. Worker doesn't know its layer yet"));
 		return NAME_None;
