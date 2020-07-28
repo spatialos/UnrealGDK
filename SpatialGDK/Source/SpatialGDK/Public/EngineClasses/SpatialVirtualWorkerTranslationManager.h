@@ -63,7 +63,7 @@ private:
 	void QueryForServerWorkerEntities();
 	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
-	void SendVirtualWorkerMappingUpdate();
+	void SendVirtualWorkerMappingUpdate() const;
 
 	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId);
 };

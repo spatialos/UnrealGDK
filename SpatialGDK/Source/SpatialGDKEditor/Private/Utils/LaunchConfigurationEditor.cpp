@@ -2,6 +2,10 @@
 
 #include "Utils/LaunchConfigurationEditor.h"
 
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKSettings.h"
+
+#include "Editor.h"
 #include "DesktopPlatformModule.h"
 #include "Framework/Application/SlateApplication.h"
 #include "IDesktopPlatform.h"
@@ -10,21 +14,24 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 
-#include "SpatialGDKDefaultLaunchConfigGenerator.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialRuntimeLoadBalancingStrategies.h"
-#include "Utils/GDKPropertyMacros.h"
-
 #define LOCTEXT_NAMESPACE "SpatialLaunchConfigurationEditor"
 
 void ULaunchConfigurationEditor::PostInitProperties()
 {
 	Super::PostInitProperties();
 
+	if (GEditor == nullptr || GEditor->GetWorldContexts().Num() == 0)
+	{
+		return;
+	}
+
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+	LaunchConfiguration.ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 }
 
 void ULaunchConfigurationEditor::SaveConfiguration()
