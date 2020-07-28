@@ -21,5 +21,9 @@ public:
 
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
+	static void WriteObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, UObject* Object);
+
+protected:
+
 	static void SerializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef);
 };

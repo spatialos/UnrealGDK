@@ -319,9 +319,7 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	// Super::SerializeObject is not called here on purpose
 	if (Ar.IsSaving())
 	{
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Obj, this);
-		FSpatialNetBitWriter::SerializeObjectRef(Ar, ObjectRef);
-
+		FSpatialNetBitWriter::WriteObject(Ar, this, Obj);
 		return true;
 	}
 	else

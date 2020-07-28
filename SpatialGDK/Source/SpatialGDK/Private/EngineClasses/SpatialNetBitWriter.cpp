@@ -40,11 +40,15 @@ void FSpatialNetBitWriter::SerializeObjectRef(FArchive& Archive, FUnrealObjectRe
 	Archive.SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
 }
 
+void FSpatialNetBitWriter::WriteObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, UObject* Object)
+{
+	FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Object, PackageMap);
+	SerializeObjectRef(Archive, ObjectRef);
+}
+
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
-	FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Value, Cast<USpatialPackageMapClient>(PackageMap));
-	SerializeObjectRef(*this, ObjectRef);
-
+	WriteObject(*this, Cast<USpatialPackageMapClient>(PackageMap), Value);
 	return *this;
 }
 
