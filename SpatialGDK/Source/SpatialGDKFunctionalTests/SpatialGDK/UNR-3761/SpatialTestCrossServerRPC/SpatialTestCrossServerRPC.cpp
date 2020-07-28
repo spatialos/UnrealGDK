@@ -62,21 +62,15 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
-			for (AActor* CubeWithAuthority : TestCubes)
+			for (AActor* Cube : TestCubes)
 			{
-				if (CubeWithAuthority->HasAuthority())
+				if (Cube->HasAuthority())
 				{
-					for (AActor* OtherActor : TestCubes)
-					{
-						if (CubeWithAuthority != OtherActor)
-						{
-							ACrossServerRPCCube* OtherCube = Cast<ACrossServerRPCCube>(OtherActor);
-							OtherCube->CrossServerTestRPC(GetLocalFlowController()->GetWorkerDefinition().Id);
-						}
-					}
-
-					break;
+					continue;
 				}
+
+				ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
+				CrossServerRPCCube->CrossServerTestRPC(GetLocalFlowController()->GetWorkerDefinition().Id);
 			}
 
 			FinishStep();
@@ -88,18 +82,16 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
-			int TotalNumberOfCubes = TestCubes.Num();
 			int CorrectCubes = 0;
 
-			for (int i = 0; i < TotalNumberOfCubes; ++i)
+			for (AActor* Cube : TestCubes)
 			{
-				ACrossServerRPCCube* CurrentCube = Cast<ACrossServerRPCCube>(TestCubes[i]);
+				ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
 
-				int ReceivedRPCS = CurrentCube->ReceivedCrossServerRPCS.Num();
+				int ReceivedRPCS = CrossServerRPCCube->ReceivedCrossServerRPCS.Num();
 
-				if (ReceivedRPCS == TotalNumberOfCubes - 1)
+				if (ReceivedRPCS == TestCubes.Num() - 1)
 				{
-					AssertEqual_Int(ReceivedRPCS, TotalNumberOfCubes - 1, FString::Printf(TEXT("The cube with index %d has received all the expected RPCs!"), i));
 					CorrectCubes++;
 				}
 			}
@@ -111,4 +103,3 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 
 		}, 5.0f);
 }
-
