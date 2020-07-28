@@ -224,7 +224,7 @@ FString USpatialStatics::GetActorEntityIdAsString(const AActor* Actor)
 
 FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugString)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
 	{
 		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
 	}
@@ -241,7 +241,7 @@ FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugSt
 
 bool USpatialStatics::IsLocked(const AActor* Actor)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
 	{
 		return false;
 	}
@@ -251,7 +251,7 @@ bool USpatialStatics::IsLocked(const AActor* Actor)
 
 void USpatialStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor->GetWorld()))
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
 	{
 		return;
 	}
