@@ -20,9 +20,11 @@ public:
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 
-	static UObject* ReadObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, bool& bUnresolved);
+	virtual FArchive& operator<<(UObject*& Value) override;
 
-	FArchive& operator<<(FWeakObjectPtr& Value);
+	virtual FArchive& operator<<(FWeakObjectPtr& Value) override;
+
+	static UObject* ReadObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, bool& bUnresolved);
 
 protected:
 	static void DeserializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef);

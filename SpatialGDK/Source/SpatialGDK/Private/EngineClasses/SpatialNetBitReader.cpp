@@ -80,6 +80,14 @@ UObject* FSpatialNetBitReader::ReadObject(FArchive& Archive, USpatialPackageMapC
 	return Value;
 }
 
+FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
+{
+	bool bUnresolved = false;
+	Value = ReadObject(*this, Cast<USpatialPackageMapClient>(PackageMap), bUnresolved);
+
+	return *this;
+}
+
 FArchive& FSpatialNetBitReader::operator<<(FWeakObjectPtr& Value)
 {
 	UObject* Object;
