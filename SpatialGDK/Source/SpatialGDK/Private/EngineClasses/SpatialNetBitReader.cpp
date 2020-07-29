@@ -16,6 +16,8 @@ FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMa
 	, DynamicRefs(InDynamicRefs)
 	, UnresolvedRefs(InUnresolvedRefs)
 {
+	// Limitation of using a global TLS pointer, you can have at most a single instance of this object per thread.
+	// There should be no need to have more than one at a given time, but should that be the case we could move to a set per thread instead of a pointer.
 	check(GCurrentReader == nullptr);
 	GCurrentReader = this;
 }
