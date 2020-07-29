@@ -264,8 +264,8 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
-    for (AActor* Actor : LoadedLevel->Actors)
-    {
-    	GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
-    }
+	for (AActor* Actor : LoadedLevel->Actors)
+	{
+		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
+	}
 }
