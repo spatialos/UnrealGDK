@@ -12,6 +12,58 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
+namespace
+{
+	static const char ActorKey[] = "Actor";
+	const char* ActorKeyPtr = ActorKey;
+
+	static const char ActorPositionKey[] = "Position";
+	const char* ActorPositionKeyPtr = ActorPositionKey;
+
+	static const char FunctionKey[] = "Function";
+	const char* FunctionKeyPtr = FunctionKey;
+
+	static const char NewRoleKey[] = "NewRole";
+	const char* NewRoleKeyPtr = NewRoleKey;
+
+	const char RoleNone[] = "ROLE_None";
+	const char RoleAutonomousProxy[] = "ROLE_AutonomousProxy";
+	const char RoleAuthority[] = "ROLE_Authority";
+	const char RoleInvalid[] = "Invalid Role";
+
+	static char SentStr[] = "Sent";
+	static char ReceivedStr[] = "Received";
+	const char* TypeToString(EventType Type)
+	{
+		switch (Type)
+		{
+		case SpatialGDK::EventType::Sent:
+			return SentStr;
+		case SpatialGDK::EventType::Received:
+			return ReceivedStr;
+		default:
+			return nullptr;
+		}
+
+	}
+
+	static char RPCStr[] = "RPC";
+	static char AuthorityChangeStr[] = "AuthorityChange";
+	const char* NameToString(EventName Name)
+	{
+		switch (Name)
+		{
+		case SpatialGDK::EventName::RPC:
+			return RPCStr;
+		case SpatialGDK::EventName::AuthorityChange:
+			return AuthorityChangeStr;
+		default:
+			return nullptr;
+		}
+
+	}
+}
+
 void MyTraceCallback(void* UserData, const Trace_Item* Item)
 {
 	switch (Item->item_type)
@@ -19,6 +71,11 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	case TRACE_ITEM_TYPE_EVENT:
 	{
 		const Trace_Event& Event = Item->item.event;
+
+		if (Event.type == nullptr)
+		{
+			return;
+		}
 
 		// TODO: remove temporary filtering?
 		if (Event.type == FString("network.receive_raw_message") ||
@@ -127,6 +184,89 @@ void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 	}
 }
 
+void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+
+		if (Actor != nullptr)
+		{
+
+			auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
+			const char* ActorNameStr = ActorName.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
+
+			auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
+			const char* ActorPositionStr = ActorPosition.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
+
+		}
+
+		if (Function != nullptr)
+		{
+			auto FunctionName = StringCast<ANSICHAR>(*Function->GetName());
+			const char* FunctionNameStr = FunctionName.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &FunctionKeyPtr, &FunctionNameStr);
+		}
+
+
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
+	}
+}
+
+void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+
+		if (Actor != nullptr)
+		{
+			auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
+			const char* ActorNameStr = ActorName.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
+
+			auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
+			const char* ActorPositionStr = ActorPosition.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
+		}
+
+		// Adding Role info
+		{
+			const char* NewRoleValue = nullptr;
+
+			switch (Role)
+			{
+			case ROLE_SimulatedProxy:
+				NewRoleValue = RoleNone;
+				break;
+			case ROLE_AutonomousProxy:
+				NewRoleValue = RoleAutonomousProxy;
+				break;
+			case ROLE_Authority:
+				NewRoleValue = RoleAuthority;
+				break;
+			default:
+				NewRoleValue = RoleInvalid;
+				break;
+			}
+
+			Trace_EventData_AddStringFields(EventData, 1, &NewRoleKeyPtr, &NewRoleValue);
+		}
+
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
+	}
+}
+
 void SpatialEventTracer::Enable()
 {
 	Trace_EventTracer_Enable(EventTracer);
@@ -135,20 +275,6 @@ void SpatialEventTracer::Enable()
 void SpatialEventTracer::Disable()
 {
 	Trace_EventTracer_Disable(EventTracer);
-}
-
-SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UFunction* Function)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "RPC";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	Event.Data.Add("Function", Function->GetName());
-	return Event;
 }
 
 SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(Worker_RequestId RequestID, bool bSuccess)
@@ -247,35 +373,6 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, cons
 		Event.Data.Add("TargetObject", TargetObject->GetName());
 	}
 	Event.Data.Add("ComponentId", FString::Printf(TEXT("%u"), ComponentId));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, ENetRole Role)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "AuthorityChange";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	switch (Role)
-	{
-	case ROLE_SimulatedProxy:
-		Event.Data.Add("NewRole", "ROLE_None");
-		break;
-	case ROLE_AutonomousProxy:
-		Event.Data.Add("NewRole", "ROLE_AutonomousProxy");
-		break;
-	case ROLE_Authority:
-		Event.Data.Add("NewRole", "ROLE_Authority");
-		break;
-	default:
-		Event.Data.Add("NewRole", "Invalid Role");
-		break;
-	}
-
 	return Event;
 }
 

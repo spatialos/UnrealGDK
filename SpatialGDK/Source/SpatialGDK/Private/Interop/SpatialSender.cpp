@@ -815,7 +815,7 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 #if !UE_BUILD_SHIPPING
 void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
-	EventTracer->TraceEvent(ConstructEvent(Actor, Function));
+	EventTracer->TraceEvent(EventName::RPC, EventType::Sent, Actor, Function);
 
 	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());

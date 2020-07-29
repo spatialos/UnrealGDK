@@ -742,7 +742,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 			if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
-				EventTracer->TraceEvent(ConstructEvent(Actor, Actor->Role));
+				EventTracer->TraceEvent(EventName::AuthorityChange, EventType::Received, Actor, Actor->Role);
 			}
 		}
 
