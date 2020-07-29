@@ -12,6 +12,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
+#include "Utils/SpatialActorUtils.h"
 
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
@@ -91,14 +92,14 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const
 {
-	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestData();
+	return CreateInterest(InActor, InInfo, InEntityId, bOutOwnerReady).CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const
 {
-	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
+	return CreateInterest(InActor, InInfo, InEntityId, bOutOwnerReady).CreateInterestUpdate();
 }
 
 Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
@@ -155,7 +156,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -173,6 +174,8 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest, InEntityId);
+
+	bOutOwnerReady = AddServerOwnerInterest(ResultInterest, InActor);
 
 	return ResultInterest;
 }
@@ -217,6 +220,29 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
 	LoadBalanceQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
+}
+
+bool InterestFactory::AddServerOwnerInterest(Interest& OutInterest, const AActor* InActor) const
+{
+	AActor* NetOwner = SpatialGDK::GetHierarchyRoot(InActor);
+	if (NetOwner == nullptr || !NetOwner->GetIsReplicated())
+	{
+		return true;
+	}
+
+	Worker_EntityId OwnerId = PackageMap->GetEntityIdFromObject(NetOwner);
+	if (OwnerId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return false;
+	}
+
+	Query OwnerQuery;
+	OwnerQuery.Constraint.EntityIdConstraint = OwnerId;
+	OwnerQuery.FullSnapshotResult = true;
+
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerQuery);
+
+	return true;
 }
 
 void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const

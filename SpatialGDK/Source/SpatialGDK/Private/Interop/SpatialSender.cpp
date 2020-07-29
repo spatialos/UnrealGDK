@@ -1033,7 +1033,7 @@ void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityI
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::UpdateInterestComponent(AActor* Actor)
+void USpatialSender::UpdateInterestComponent(AActor* Actor, bool& bOwnerReady)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderUpdateInterestComponent);
 
@@ -1044,7 +1044,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 		return;
 	}
 
-	FWorkerComponentUpdate Update = NetDriver->InterestFactory->CreateInterestUpdate(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
+	FWorkerComponentUpdate Update = NetDriver->InterestFactory->CreateInterestUpdate(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId, bOwnerReady);
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 }

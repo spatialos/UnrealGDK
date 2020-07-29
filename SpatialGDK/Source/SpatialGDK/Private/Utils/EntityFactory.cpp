@@ -263,7 +263,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
+	bool bOwnerReady;
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId, bOwnerReady));
+
+	Channel->SetNeedOwnerInterestUpdate(!bOwnerReady);
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 

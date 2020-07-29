@@ -58,7 +58,7 @@ public:
 	void ProcessMigrations();
 
 protected:
-	
+
 	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
 
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
@@ -87,9 +87,10 @@ protected:
 				{
 					AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
 					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-						TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s is not ready."),
+						TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) is not ready."),
 						*HierarchyRoot->GetName(),
-						*Actor->GetName());
+						*Actor->GetName(),
+						NetDriver->PackageMap->GetEntityIdFromObject(Actor));
 
 					return false;
 				}

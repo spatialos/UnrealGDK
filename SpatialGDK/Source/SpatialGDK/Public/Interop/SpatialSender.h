@@ -109,7 +109,7 @@ public:
 	void ProcessPositionUpdates();
 
 	void UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
-	void UpdateInterestComponent(AActor* Actor);
+	void UpdateInterestComponent(AActor* Actor, bool& bOwnerReady);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
