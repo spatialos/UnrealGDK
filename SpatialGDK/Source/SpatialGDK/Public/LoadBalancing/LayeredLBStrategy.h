@@ -62,6 +62,8 @@ public:
 	// Currently, this is just the default strategy.
 	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
 
+	FName GetLocalLayerName() const;
+
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 

@@ -129,19 +129,26 @@ public:
     static FLockingToken AcquireLock(AActor* Actor, const FString& DebugString = TEXT(""));
 
 	/**
-	* ReleaseLock should only be called for an authoritative Actor from a server where the LockToken argument
-	* was previously returned from a call to AcquireLock.
-	* If Spatial networking or multi-worker is disabled, this will early.
-	*/
+	 * ReleaseLock should only be called for an authoritative Actor from a server where the LockToken argument
+	 * was previously returned from a call to AcquireLock.
+	 * If Spatial networking or multi-worker is disabled, this will early.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
     static void ReleaseLock(const AActor* Actor, FLockingToken LockToken);
 
 	/**
-	* IsLocked should only be called for an authoritative Actor from a server.
-	* If Spatial networking or multi-worker is disabled, this will early.
-	*/
+	 * IsLocked should only be called for an authoritative Actor from a server.
+	 * If Spatial networking or multi-worker is disabled, this will early.
+	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialGDK|Locking")
     static bool IsLocked(const AActor* Actor);
+
+	/**
+	 * Returns the local layer name for this worker. Returns client worker type for all clients,
+	 * and default layer for native servers.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+    static FName GetLayerName(const UObject* WorldContextObject);
 
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
