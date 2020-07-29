@@ -31,10 +31,17 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 			return;
 		}
 
-		unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[0]);
-		unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Event.span_id.data[8]);
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %lu%lu, Type: %s, Message: %s, Timestamp: %lu"),
-			span1, span2, *FString(Event.type), *FString(Event.message), Event.unix_timestamp_millis);
+#if 0
+		FString HexStr;
+		for (int i = 0; i < 16; i++)
+		{
+			char b[32];
+			unsigned int x = (unsigned char)Event.span_id.data[i];
+			sprintf(b, "%0x", x);
+			HexStr += ANSI_TO_TCHAR(b);
+		}
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Span: %s, Type: %s, Message: %s, Timestamp: %lu"), *HexStr, *FString(Event.type), *FString(Event.message), Event.unix_timestamp_millis);
+#endif
 
 		if (Event.data != nullptr)
 		{
@@ -48,7 +55,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 			Trace_EventData_GetStringFields(Event.data, Keys.GetData(), Values.GetData());
 			for (uint32_t i = 0; i < DataFieldCount; ++i)
 			{
-				UE_LOG(LogSpatialEventTracer, Warning, TEXT("%s : %s"), ANSI_TO_TCHAR(Keys[i]), ANSI_TO_TCHAR(Values[i]));
+				//UE_LOG(LogSpatialEventTracer, Warning, TEXT("%s : %s"), ANSI_TO_TCHAR(Keys[i]), ANSI_TO_TCHAR(Values[i]));
 			}
 		}
 
