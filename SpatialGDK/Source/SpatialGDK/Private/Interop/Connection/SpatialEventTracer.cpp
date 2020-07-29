@@ -137,11 +137,13 @@ void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 void SpatialEventTracer::Enable()
 {
 	Trace_EventTracer_Enable(EventTracer);
+	bEnalbed = true;
 }
 
 void SpatialEventTracer::Disable()
 {
 	Trace_EventTracer_Disable(EventTracer);
+	bEnalbed = false;
 }
 
 SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UFunction* Function)
