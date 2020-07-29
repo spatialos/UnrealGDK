@@ -4,6 +4,9 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKServicesConstants.h"
+
 #include "Utils/LayerInfo.h"
 
 #include "GameFramework/WorldSettings.h"
@@ -18,11 +21,29 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
-	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
+	TSubclassOf<USpatialMultiWorkerSettings> CloudMultiWorkerSettingsClass;
 
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> LocalMultiWorkerSettingsClass;
+
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass() const
+	{
+		// If a local deployment is starting up or running return the local multi worker settings, otherwise return the cloud worker settings
+		if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+		{
+			FLocalDeploymentManager* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
+			//if (LocalDeploymentManager->IsDeploymentStarting() || LocalDeploymentManager->IsLocalDeploymentRunning())
+			if (LocalDeploymentManager->UseLocalLaunchConfig())
+			{
+				return LocalMultiWorkerSettingsClass;
+			}
+		}
+		return CloudMultiWorkerSettingsClass;
+	}
+	
 	bool IsMultiWorkerEnabled() const
 	{
-		if (*MultiWorkerSettingsClass == nullptr)
+		if (*GetMultiWorkerSettingsClass() == nullptr)
 		{
 			return false;
 		}

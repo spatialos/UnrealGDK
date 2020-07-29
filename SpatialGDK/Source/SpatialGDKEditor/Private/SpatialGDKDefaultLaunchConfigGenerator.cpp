@@ -108,7 +108,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 	}
 
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->IsMultiWorkerEnabled() ?
-        *WorldSettings->MultiWorkerSettingsClass :
+        *WorldSettings->GetMultiWorkerSettingsClass() :
         USpatialMultiWorkerSettings::StaticClass();
 
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");

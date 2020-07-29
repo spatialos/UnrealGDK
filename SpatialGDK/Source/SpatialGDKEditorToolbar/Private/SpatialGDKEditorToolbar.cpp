@@ -756,6 +756,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 	}
 
+	LocalDeploymentManager->SetLocalLaunchConfig(true);
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -796,10 +798,33 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 		// Also create default launch config for cloud deployments.
 		{
+			LocalDeploymentManager->SetLocalLaunchConfig(false);
+
 			// Revert to the setting's flag value for manual connection.
 			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+
+			/* start of duplicate code from above - TODO refactor to new method - first check what actually needs to be done twice - if uses the new get local config*/
+			//FSpatialLaunchConfigDescription CloudLaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+
+			//FWorkerTypeLaunchSection CloudConf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
+			// Force manual connection to true as this is the config for PIE.
+			//Conf.bManualWorkerConnectionOnly = true;
+
+			if (Conf.bAutoNumEditorInstances)
+			{
+				Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld); 
+			}
+
+			/*if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
+			{
+				return;
+			}*/
+
+
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
+
+			LocalDeploymentManager->SetLocalLaunchConfig(true);
 		}
 	}
 	else
@@ -1113,6 +1138,8 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 
 void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()
 {
+	LocalDeploymentManager->SetLocalLaunchConfig(false);
+
 	if (CanStartCloudDeployment())
 	{
 		OnStartCloudDeployment();

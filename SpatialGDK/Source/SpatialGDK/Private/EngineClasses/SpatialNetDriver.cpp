@@ -441,7 +441,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = bMultiWorkerEnabled ?
-        *WorldSettings->MultiWorkerSettingsClass :
+        *WorldSettings->GetMultiWorkerSettingsClass() :
         USpatialMultiWorkerSettings::StaticClass();
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);

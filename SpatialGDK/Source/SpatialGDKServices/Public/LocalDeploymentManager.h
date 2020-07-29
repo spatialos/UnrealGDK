@@ -30,6 +30,8 @@ public:
 
     using LocalDeploymentCallback = TFunction<void(bool)>;
 
+	void SPATIALGDKSERVICES_API SetLocalLaunchConfig(bool bUseLocal);
+
 	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
@@ -39,6 +41,7 @@ public:
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
 	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory();
 
+	bool SPATIALGDKSERVICES_API UseLocalLaunchConfig() const;
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
 	bool SPATIALGDKSERVICES_API IsSpatialServiceRunning() const;
 
@@ -81,6 +84,7 @@ private:
 
 	bool bLocalDeploymentManagerEnabled = true;
 
+	bool bLocalLaunchConfig;
 	bool bLocalDeploymentRunning;
 	bool bSpatialServiceRunning;
 	bool bSpatialServiceInProjectDirectory;
