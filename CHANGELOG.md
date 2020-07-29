@@ -9,12 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+### Breaking changes:
+- Multi-worker settings configured previously as `SpatialWorldSettings` properties are now encapsulated within the `USpatialMultiWorkerSettings` class. To update your project, you should create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration then, in your levels' World Settings, select that class as the `Multi-worker settings class` property.
+- Unreal Engine version `4.23` is no longer supported. We recommend upgrading to the newest version (`4.25.2`) to continue receiving updates.
+- When upgrading to Unreal Engine 4.25 you must:
+  1. In the engine folder, run `git fetch && git checkout 4.25-SpatialOSUnrealGDK-0.11.0`
+  1. Download and install the -v16 clang-9.0.1-based toolchain from [this Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
+  1. Run `Setup.bat`, which is located in the root directory of the UnrealEngine repository.
+  1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
+  1. Navigate to the root of GDK repo and run `git fetch && git checkout 0.11`.
+  1. In the same GDK directory, run `Setup.bat`.
+
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
 - Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
 - Decoupled QueuedIncomingRPCWaitTime from reprocessing flush time with new parameter QueuedIncomingRPCRetryTime (default value 1.0s).  This enables independent control over how long to wait for queued RPCs to resolve parameters, as well as how frequently to check if the parameters are resolved.
 - Command-line arguments are now only available in non-shipping builds, if you wish to use command-line arguments for shipping builds the target rule `bEnableSpatialCmdlineInShipping` will let you do so.
+- Dynamic Worker Flags are once again supported with the Standard Runtime Variant.
+- Simulated Player deployments started with the DeploymentLauncher now startup faster thanks to Dynamic Worker Flags. DeploymentLauncher `createsim` usage has been updated to include the new boolean argument `<auto-connect>` which will automatically connect your sim players to your deployment when it is ready.
+- Unreal Engine version `4.25.2` is now supported.
 
 ### Bug fixes:
 - The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
