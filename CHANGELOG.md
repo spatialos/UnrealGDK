@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.11.0`] - 2020-07-29
+
 ### Breaking changes:
 - Multi-worker settings configured previously as `SpatialWorldSettings` properties are now encapsulated within the `USpatialMultiWorkerSettings` class. To update your project, you should create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration then, in your levels' World Settings, select that class as the `Multi-worker settings class` property.
 - Unreal Engine version `4.23` is no longer supported. We recommend upgrading to the newest version (`4.25.2`) to continue receiving updates.
