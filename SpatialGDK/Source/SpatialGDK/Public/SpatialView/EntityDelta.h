@@ -103,8 +103,13 @@ struct EntityDelta
 	Worker_EntityId EntityId;
 	bool bAdded;
 	bool bRemoved;
-	ComponentSpan<ComponentChange> ComponentChanges;
-	ComponentSpan<AuthorityChange> AuthorityChanges;
+	ComponentSpan<ComponentChange> ComponentsAdded;
+	ComponentSpan<ComponentChange> ComponentsRemoved;
+	ComponentSpan<ComponentChange> ComponentUpdates;
+	ComponentSpan<ComponentChange> ComponentsRefreshed;
+	ComponentSpan<AuthorityChange> AuthorityGained;
+	ComponentSpan<AuthorityChange> AuthorityLost;
+	ComponentSpan<AuthorityChange> AuthorityLostTemporarily;
 };
 
 } // namespace SpatialGDK

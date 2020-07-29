@@ -144,8 +144,13 @@ private:
 	TArray<EntityDelta> EntityDeltas;
 	TArray<Worker_Op> WorkerMessages;
 
-	TArray<AuthorityChange> AuthorityChangesForDelta;
-	TArray<ComponentChange> ComponentChangesForDelta;
+	TArray<AuthorityChange> AuthorityGainedForDelta;
+	TArray<AuthorityChange> AuthorityLostForDelta;
+	TArray<AuthorityChange> AuthorityLostTempForDelta;
+	TArray<ComponentChange> ComponentsAddedForDelta;
+	TArray<ComponentChange> ComponentsRemovedForDelta;
+	TArray<ComponentChange> ComponentUpdatesForDelta;
+	TArray<ComponentChange> ComponentsRefreshedForDelta;
 	TArray<OpList> OpListStorage;
 };
 

@@ -62,73 +62,81 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 			Ops.Push(Op);
 		}
 
-		for (const ComponentChange& Change : Entity.ComponentChanges)
+		for (const ComponentChange& Change : Entity.ComponentsAdded)
 		{
-			if (Change.Type == ComponentChange::ADD)
-			{
-				Worker_Op Op = {};
-				Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
-				Op.op.add_component.entity_id = Entity.EntityId;
-				Op.op.add_component.data = Worker_ComponentData{ nullptr, Change.ComponentId, Change.Data, nullptr };
-				Ops.Push(Op);
-			}
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
+			Op.op.add_component.entity_id = Entity.EntityId;
+			Op.op.add_component.data = Worker_ComponentData{ nullptr, Change.ComponentId, Change.Data, nullptr };
+			Ops.Push(Op);
 		}
 
-		for (const AuthorityChange& Change : Entity.AuthorityChanges)
+		for (const AuthorityChange& Change : Entity.AuthorityLost)
 		{
-			if (Change.Type == AuthorityChange::AUTHORITY_LOST || Change.Type == AuthorityChange::AUTHORITY_LOST_TEMPORARILY)
-			{
-				Worker_Op Op = {};
-				Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-				Op.op.authority_change.entity_id = Entity.EntityId;
-				Op.op.authority_change.component_id = Change.ComponentId;
-				Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
-				Ops.Push(Op);
-			}
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+			Op.op.authority_change.entity_id = Entity.EntityId;
+			Op.op.authority_change.component_id = Change.ComponentId;
+			Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+			Ops.Push(Op);
 		}
 
-		for (const ComponentChange& Change : Entity.ComponentChanges)
+		for (const AuthorityChange& Change : Entity.AuthorityLostTemporarily)
 		{
-			if (Change.Type == ComponentChange::COMPLETE_UPDATE)
-			{
-				// We deliberately ignore the events update here to avoid breaking code that expects each update to contain data.
-				Worker_Op AddOp = {};
-				AddOp.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
-				AddOp.op.add_component.entity_id = Entity.EntityId;
-				AddOp.op.add_component.data = Worker_ComponentData{ nullptr, Change.ComponentId, Change.CompleteUpdate.Data, nullptr };
-				Ops.Push(AddOp);
-			}
-
-			if (Change.Type == ComponentChange::UPDATE)
-			{
-				Worker_Op Op = {};
-				Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
-				Op.op.component_update.entity_id = Entity.EntityId;
-				Op.op.component_update.update = Worker_ComponentUpdate{ nullptr, Change.ComponentId, Change.Update, nullptr };
-				Ops.Push(Op);
-			}
-
-			if (Change.Type == ComponentChange::REMOVE)
-			{
-				Worker_Op Op = {};
-				Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
-				Op.op.remove_component.entity_id = Entity.EntityId;
-				Op.op.remove_component.component_id = Change.ComponentId;
-				Ops.Push(Op);
-			}
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+			Op.op.authority_change.entity_id = Entity.EntityId;
+			Op.op.authority_change.component_id = Change.ComponentId;
+			Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+			Ops.Push(Op);
 		}
 
-		for (const AuthorityChange& Change : Entity.AuthorityChanges)
+		for (const ComponentChange& Change : Entity.ComponentsRefreshed)
 		{
-			if (Change.Type == AuthorityChange::AUTHORITY_GAINED || Change.Type == AuthorityChange::AUTHORITY_LOST_TEMPORARILY)
-			{
-				Worker_Op Op = {};
-				Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-				Op.op.authority_change.entity_id = Entity.EntityId;
-				Op.op.authority_change.component_id = Change.ComponentId;
-				Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
-				Ops.Push(Op);
-			}
+			// We deliberately ignore the events update here to avoid breaking code that expects each update to contain data.
+			Worker_Op AddOp = {};
+			AddOp.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
+			AddOp.op.add_component.entity_id = Entity.EntityId;
+			AddOp.op.add_component.data = Worker_ComponentData{ nullptr, Change.ComponentId, Change.CompleteUpdate.Data, nullptr };
+			Ops.Push(AddOp);
+		}
+
+		for (const ComponentChange& Change : Entity.ComponentUpdates)
+		{
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
+			Op.op.component_update.entity_id = Entity.EntityId;
+			Op.op.component_update.update = Worker_ComponentUpdate{ nullptr, Change.ComponentId, Change.Update, nullptr };
+			Ops.Push(Op);
+		}
+
+		for (const ComponentChange& Change : Entity.ComponentsRemoved)
+		{
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
+			Op.op.remove_component.entity_id = Entity.EntityId;
+			Op.op.remove_component.component_id = Change.ComponentId;
+			Ops.Push(Op);
+		}
+
+		for (const AuthorityChange& Change : Entity.AuthorityLostTemporarily)
+		{
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+			Op.op.authority_change.entity_id = Entity.EntityId;
+			Op.op.authority_change.component_id = Change.ComponentId;
+			Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+			Ops.Push(Op);
+		}
+
+		for (const AuthorityChange& Change : Entity.AuthorityGained)
+		{
+			Worker_Op Op = {};
+			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+			Op.op.authority_change.entity_id = Entity.EntityId;
+			Op.op.authority_change.component_id = Change.ComponentId;
+			Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+			Ops.Push(Op);
 		}
 
 		if (Entity.bRemoved)

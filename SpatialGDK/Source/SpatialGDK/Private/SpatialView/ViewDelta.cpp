@@ -37,8 +37,13 @@ void ViewDelta::Clear()
 
   EntityDeltas.Empty();
   WorkerMessages.Empty();
-  AuthorityChangesForDelta.Empty();
-  ComponentChangesForDelta.Empty();
+  AuthorityGainedForDelta.Empty();
+  AuthorityLostForDelta.Empty();
+  AuthorityLostTempForDelta.Empty();
+  ComponentsAddedForDelta.Empty();
+  ComponentsRemovedForDelta.Empty();
+  ComponentUpdatesForDelta.Empty();
+  ComponentsRefreshedForDelta.Empty();
   OpListStorage.Empty();
 }
 
@@ -290,8 +295,13 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 {
 	// Make sure there is enough space in the view delta storage.
 	// This allows us to rely on stable pointers as we add new elements.
-	ComponentChangesForDelta.Reserve(ComponentChanges.Num());
-	AuthorityChangesForDelta.Reserve(AuthorityChanges.Num());
+	ComponentsAddedForDelta.Reserve(ComponentChanges.Num());
+	ComponentsRemovedForDelta.Reserve(ComponentChanges.Num());
+	ComponentUpdatesForDelta.Reserve(ComponentChanges.Num());
+	ComponentsRefreshedForDelta.Reserve(ComponentChanges.Num());
+	AuthorityGainedForDelta.Reserve(AuthorityChanges.Num());
+	AuthorityLostForDelta.Reserve(AuthorityChanges.Num());
+	AuthorityLostTempForDelta.Reserve(AuthorityChanges.Num());
 
 	Algo::StableSort(ComponentChanges, EntityComponentComparison{});
 	Algo::StableSort(AuthorityChanges, EntityComponentComparison{});
@@ -372,7 +382,11 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(ReceivedComponentChange* It,
 	ReceivedComponentChange* End, TArray<ComponentData>& Components, EntityDelta& Delta)
 {
-	int32 Count = 0;
+	int32 AddCount = 0;
+	int32 UpdateCount = 0;
+	int32 RemoveCount = 0;
+	int32 RefreshCount = 0;
+
 	const Worker_EntityId EntityId = It->EntityId;
 	// At the end of each loop it should point to the first element for an entity-component.
 	// Stop and return when the component is for a different entity.
@@ -389,39 +403,62 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 		{
 		case ReceivedComponentChange::ADD:
 			if (bComponentExists) {
-				ComponentChangesForDelta.Emplace(CalculateCompleteUpdate(It, NextComponentIt, nullptr, nullptr, *Component));
+				ComponentsRefreshedForDelta.Emplace(CalculateCompleteUpdate(It, NextComponentIt, nullptr, nullptr, *Component));
+				++RefreshCount;
 			}
 			else
 			{
-				ComponentChangesForDelta.Emplace(CalculateAdd(It, NextComponentIt, Components));
+				ComponentsAddedForDelta.Emplace(CalculateAdd(It, NextComponentIt, Components));
+				++AddCount;
 			}
-			++Count;
 			break;
 		case ReceivedComponentChange::UPDATE:
 			if (bComponentExists)
 			{
-				ComponentChangesForDelta.Emplace(CalculateUpdate(It, NextComponentIt, *Component));
+				ComponentChange Update = CalculateUpdate(It, NextComponentIt, *Component);
+				if (Update.Type == ComponentChange::COMPLETE_UPDATE)
+				{
+					ComponentsRefreshedForDelta.Emplace(Update);
+					++RefreshCount;
+				}
+				else
+				{
+					ComponentUpdatesForDelta.Emplace(Update);
+					++UpdateCount;
+				}
 			}
 			else
 			{
-				ComponentChangesForDelta.Emplace(CalculateAdd(It, NextComponentIt, Components));
+				ComponentsAddedForDelta.Emplace(CalculateAdd(It, NextComponentIt, Components));
+				++AddCount;
 			}
-			++Count;
 			break;
 		case ReceivedComponentChange::REMOVE:
 			if (bComponentExists)
 			{
-				ComponentChangesForDelta.Emplace(It->ComponentId);
+				ComponentsRemovedForDelta.Emplace(It->ComponentId);
 				Components.RemoveAtSwap(Component - Components.GetData());
-				++Count;
+				++RemoveCount;
 			}
 			break;
 		}
 
 		if (NextComponentIt->EntityId != EntityId) {
-			Delta.ComponentChanges = {
-				ComponentChangesForDelta.GetData() + ComponentChangesForDelta.Num() - Count,
-				Count
+			Delta.ComponentsAdded = {
+				ComponentsAddedForDelta.GetData() + ComponentsAddedForDelta.Num() - AddCount,
+				AddCount
+			};
+			Delta.ComponentsRemoved = {
+				ComponentsRemovedForDelta.GetData() + ComponentsRemovedForDelta.Num() - RemoveCount,
+				RemoveCount
+			};
+			Delta.ComponentUpdates = {
+				ComponentUpdatesForDelta.GetData() + ComponentUpdatesForDelta.Num() - UpdateCount,
+				UpdateCount
+			};
+			Delta.ComponentsRefreshed = {
+				ComponentsRefreshedForDelta.GetData() + ComponentsRefreshedForDelta.Num() - RefreshCount,
+				RefreshCount
 			};
 			return NextComponentIt;
 		}
@@ -433,7 +470,10 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It,
 	Worker_AuthorityChangeOp* End, TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta)
 {
-	int32 Count = 0;
+	int32 GainCount = 0;
+	int32 LossCount = 0;
+	int32 LossTempCount = 0;
+
 	const Worker_EntityId EntityId = It->entity_id;
 	// After each loop the iterator points to the first op relating to the next entity-component.
 	// Stop and return when that component is for a different entity.
@@ -450,20 +490,21 @@ Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_Author
 		{
 			if (bHasAuthority)
 			{
-				AuthorityChangesForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY);
+				AuthorityLostTempForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY);
+				++LossTempCount;
 			}
 			else
 			{
 				EntityAuthority.Push(ComponentId);
-				AuthorityChangesForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_GAINED);
+				AuthorityGainedForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_GAINED);
+				++GainCount;
 			}
-			++Count;
 		}
 		else if (bHasAuthority)
 		{
-			AuthorityChangesForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST);
+			AuthorityLostForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST);
 			EntityAuthority.RemoveAtSwap(AuthorityIndex);
-			++Count;
+			++LossCount;
 		}
 
 		// Move to the next entity-component.
@@ -471,9 +512,17 @@ Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_Author
 
 		if (It->entity_id != EntityId)
 		{
-			Delta.AuthorityChanges = {
-				AuthorityChangesForDelta.GetData() + AuthorityChangesForDelta.Num() - Count,
-				Count
+			Delta.AuthorityGained = {
+				AuthorityGainedForDelta.GetData() + AuthorityGainedForDelta.Num() - GainCount,
+				GainCount
+			};
+			Delta.AuthorityLost = {
+				AuthorityLostForDelta.GetData() + AuthorityLostForDelta.Num() - LossCount,
+				LossCount
+			};
+			Delta.AuthorityLostTemporarily = {
+				AuthorityLostTempForDelta.GetData() + AuthorityLostTempForDelta.Num() - LossTempCount,
+				LossTempCount
 			};
 			return It;
 		}
@@ -509,10 +558,10 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 		const auto& Components = (*ViewElement)->Components;
 		for (const auto& Component : Components)
 		{
-			ComponentChangesForDelta.Emplace(Component.GetComponentId());
+			ComponentsRemovedForDelta.Emplace(Component.GetComponentId());
 		}
-		Delta.ComponentChanges = {
-			ComponentChangesForDelta.GetData() + ComponentChangesForDelta.Num() - Components.Num(),
+		Delta.ComponentsRemoved = {
+			ComponentsRemovedForDelta.GetData() + ComponentsRemovedForDelta.Num() - Components.Num(),
 			Components.Num()
 		};
 
@@ -520,10 +569,10 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 		const auto& Authority = (*ViewElement)->Authority;
 		for (const auto& Id : Authority)
 		{
-			AuthorityChangesForDelta.Emplace(Id, AuthorityChange::AUTHORITY_LOST);
+			AuthorityLostForDelta.Emplace(Id, AuthorityChange::AUTHORITY_LOST);
 		}
-		Delta.AuthorityChanges = {
-			AuthorityChangesForDelta.GetData() + AuthorityChangesForDelta.Num() - Authority.Num(),
+		Delta.AuthorityLost = {
+			AuthorityLostForDelta.GetData() + AuthorityLostForDelta.Num() - Authority.Num(),
 			Authority.Num()
 		};
 
