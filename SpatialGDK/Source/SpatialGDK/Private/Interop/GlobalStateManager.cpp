@@ -380,7 +380,13 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	const bool bAuthoritative = !Actor->GetIsReplicated() || NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+	// Non-replicated Actors should always be authoritative.
+	bool bAuthoritative = !Actor->GetIsReplicated();
+	// Replicated level Actors should only be initially authority if:
+	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
+	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
+	bAuthoritative |= bCanSpawnWithAuthority && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+
 	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
@@ -397,12 +403,9 @@ void UGlobalStateManager::TriggerBeginPlay()
 	SetAcceptingPlayers(true);
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
-	if (bCanSpawnWithAuthority)
+	for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
 	{
-		for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
-		{
-			HandleActorBasedOnLoadBalancer(*ActorIterator);
-		}
+		HandleActorBasedOnLoadBalancer(*ActorIterator);
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
