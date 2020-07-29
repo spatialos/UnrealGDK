@@ -307,12 +307,16 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	Algo::StableSort(AuthorityChanges, EntityComponentComparison{});
 	Algo::StableSort(EntityChanges, EntityComparison{});
 
-	// todo is this actually better than just adding more conditions?
-	// Add sentinel elements to the ends of the arrays with entity_id -1.
+	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
+	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
+	// will be greater than all valid IDs.
+	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+
+	// Add sentinel elements to the ends of the arrays.
 	// Prevents the need for bounds checks on the iterators.
-	ComponentChanges.Emplace(Worker_RemoveComponentOp{-1, 0});
-	AuthorityChanges.Emplace(Worker_AuthorityChangeOp{-1, 0, 0});
-	EntityChanges.Emplace(ReceivedEntityChange{-1, false});
+	ComponentChanges.Emplace(Worker_RemoveComponentOp{SENTINEL_ENTITY_ID, 0});
+	AuthorityChanges.Emplace(Worker_AuthorityChangeOp{SENTINEL_ENTITY_ID, 0, 0});
+	EntityChanges.Emplace(ReceivedEntityChange{SENTINEL_ENTITY_ID, false});
 
 	auto ComponentIt = ComponentChanges.GetData();
 	auto AuthorityIt = AuthorityChanges.GetData();
@@ -329,13 +333,13 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	for (;;)
 	{
 		// Get the next entity Id. We want to pick the smallest entity referenced by the iterators.
-		// If the unsigned final value is greater than INT64_MAX (entity_id < 0) then stop.
-		uint64 MinEntityId = static_cast<std::uint64_t>(ComponentIt->EntityId);
-		MinEntityId = FMath::Min(MinEntityId, static_cast<std::uint64_t>(AuthorityIt->entity_id));
-		MinEntityId = FMath::Min(MinEntityId, static_cast<std::uint64_t>(EntityIt->EntityId));
+		// Convert to uint64 to ensure the sentinel value is larger than all valid IDs.
+		uint64 MinEntityId = static_cast<uint64>(ComponentIt->EntityId);
+		MinEntityId = FMath::Min(MinEntityId, static_cast<uint64>(AuthorityIt->entity_id));
+		MinEntityId = FMath::Min(MinEntityId, static_cast<uint64>(EntityIt->EntityId));
 
 		// If no list has elements left to read then stop.
-		if (MinEntityId > static_cast<uint64>(std::numeric_limits<Worker_EntityId>::max()))
+		if (static_cast<Worker_EntityId>(MinEntityId) == SENTINEL_ENTITY_ID)
 		{
 			break;
 		}
