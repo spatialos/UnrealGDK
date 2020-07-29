@@ -22,14 +22,14 @@ struct FLockingToken
 {
 	GENERATED_USTRUCT_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "SpatialGDK|Locking")
 	int64 Token;
 };
 
 UCLASS()
 class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
 

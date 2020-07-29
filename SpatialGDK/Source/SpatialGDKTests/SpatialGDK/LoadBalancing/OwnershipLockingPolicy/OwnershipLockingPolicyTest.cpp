@@ -95,7 +95,6 @@ bool FSpawnActor::Update()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.Name = Handle;
 
 	AActor* Actor = Data->TestWorld->SpawnActor<ADefaultPawn>(SpawnParams);
 	Data->TestActors.Add(Handle, Actor);
