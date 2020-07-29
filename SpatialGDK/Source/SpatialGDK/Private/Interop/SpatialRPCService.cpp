@@ -69,7 +69,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent));
+		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId.IsSet() ? &Payload.SpanId.GetValue() : nullptr));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -221,7 +221,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		SpatialRPCService::UpdateToSend& UpdateToSend = UpdatesToSend.AddZeroed_GetRef();
 		UpdateToSend.EntityId = It.Key.EntityId;
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
-		UpdateToSend.Update.schema_type = It.Value;
+		UpdateToSend.Update.schema_type = It.Value.Update;
+		UpdateToSend.Update.SpanId = It.Value.SpanId;
 #if TRACE_LIB_ACTIVE
 		TraceKey Trace = InvalidTraceKey;
 		PendingTraces.RemoveAndCopyValue(It.Key, Trace);
@@ -365,7 +366,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 			LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component->InitiallyPresentMulticastRPCsCount);
 
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
-			Schema_Object* SchemaObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
+			Schema_Object* SchemaObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
 			Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component->InitiallyPresentMulticastRPCsCount);
 		}
 		else
@@ -505,7 +506,7 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 	++(*LastAckedRPCId);
 
 	const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
-	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair, nullptr));
 
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
@@ -558,14 +559,20 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
-Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair)
+Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, worker::c::Trace_SpanId* SpanId)
 {
-	Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
+	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
-		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Schema_CreateComponentUpdate());
+		PendingUpdate Update;
+		Update.Update = Schema_CreateComponentUpdate();
+		if (SpanId != nullptr)
+		{
+			Update.SpanId = *SpanId;
+		}
+		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Update);
 	}
-	return *ComponentUpdatePtr;
+	return ComponentUpdatePtr->Update;
 }
 
 Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponentId EntityComponentIdPair)

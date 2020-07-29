@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 #include "SpatialView/EntityComponentId.h"
@@ -118,6 +119,11 @@ public:
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
+
+#if 1 // GDK_SPATIAL_EVENT_TRACING_ENABLED
+	bool bHasEventTrace;
+	worker::c::Trace_SpanId EventSpan;
+#endif
 
 private:
 	void DeleteSchemaObjects()

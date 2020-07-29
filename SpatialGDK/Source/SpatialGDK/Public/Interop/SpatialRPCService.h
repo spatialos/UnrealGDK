@@ -97,7 +97,7 @@ private:
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 
-	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair);
+	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, worker::c::Trace_SpanId* SpanId);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 private:
@@ -115,7 +115,12 @@ private:
 
 	TMap<EntityComponentId, Schema_ComponentData*> PendingRPCsOnEntityCreation;
 
-	TMap<EntityComponentId, Schema_ComponentUpdate*> PendingComponentUpdatesToSend;
+	struct PendingUpdate
+	{
+		Schema_ComponentUpdate* Update;
+		TOptional<worker::c::Trace_SpanId> SpanId;
+	};
+	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
 
 #if TRACE_LIB_ACTIVE

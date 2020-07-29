@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "improbable/c_trace.h"
 #include "Interop/Connection/LegacySpatialWorkerConnection.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
 
@@ -253,7 +254,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
-#if TRACE_LIB_ACTIVE
+#if TRACE_LIB_ACTIVE || 1 //GDK_SPATIAL_EVENT_TRACING_ENABLED
 			// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
 			TArray<Worker_ComponentData> UnpackedComponentData;
 			UnpackedComponentData.SetNum(Message->Components.Num());
@@ -306,12 +307,18 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::ComponentUpdate:
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-
+			if (Message->Update.SpanId.IsSet())
+			{
+				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->Update.SpanId.GetValue());
+			}
 			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
-
+			if (Message->Update.SpanId.IsSet())
+			{
+				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
+			}
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:

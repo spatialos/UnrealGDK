@@ -16,6 +16,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 //}
 //}
 
+// TODO: Hook up to build system
+#define GDK_SPATIAL_EVENT_TRACING_ENABLED 1
+
 class UFunction;
 class AActor;
 
@@ -60,13 +63,15 @@ struct SpatialEventTracer
 	SpatialEventTracer();
 	~SpatialEventTracer();
 	SpatialSpanId CreateActiveSpan();
-	void TraceEvent(const SpatialGDKEvent& Event);
+	TOptional<Trace_SpanId> TraceEvent(const SpatialGDKEvent& Event);
 
 	void Enable();
 	void Disable();
-	const worker::c::Trace_EventTracer* GetWorkerEventTracer() const;
+	bool IsEnabled() { return bEnalbed; }
+	worker::c::Trace_EventTracer* GetWorkerEventTracer() { return EventTracer; }
 
 private:
+	bool bEnalbed;
 	worker::c::Trace_EventTracer* EventTracer;
 };
 

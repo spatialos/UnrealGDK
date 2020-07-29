@@ -23,7 +23,7 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 void USpatialViewWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
-	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler = MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn);
+	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler = MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, EventTracer);
 	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(Handler));
 }
 

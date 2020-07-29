@@ -109,12 +109,7 @@ SpatialSpanId SpatialEventTracer::CreateActiveSpan()
 	return SpatialSpanId(EventTracer);
 }
 
-const Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer() const
-{
-	return EventTracer;
-}
-
-void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 {
 	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TCHAR_TO_ANSI(*Event.Message), TCHAR_TO_ANSI(*Event.Type), nullptr };
@@ -131,7 +126,9 @@ void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 		TraceEvent.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
 		Trace_EventData_Destroy(EventData);
+		return CurrentSpanId;
 	}
+	return {};
 }
 
 void SpatialEventTracer::Enable()

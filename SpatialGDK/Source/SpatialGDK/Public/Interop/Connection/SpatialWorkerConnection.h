@@ -43,9 +43,9 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
 
+protected:
+	SpatialGDK::SpatialEventTracer* EventTracer;
 private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;
-
-	SpatialGDK::SpatialEventTracer* EventTracer;
 };

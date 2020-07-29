@@ -1,13 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "improbable/c_trace.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
 namespace SpatialGDK
 {
 
-SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection)
+	SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer)
 	: Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId (Connection)))
+	, EventTracer(EventTracer)
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
 	for (uint32 i = 0; i < Attributes->attribute_count; ++i)
@@ -87,7 +89,19 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 				nullptr, Message.ComponentId,
 				MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr
 			};
+#if 1 // GDK_SPATIAL_EVENT_TRACING_ENABLED
+			if (Message.bHasEventTrace)
+			{
+				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message.EventSpan);
+			}
+#endif
 			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
+#if 1 // GDK_SPATIAL_EVENT_TRACING_ENABLED
+			if (Message.bHasEventTrace)
+			{
+				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
+			}
+#endif
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:
