@@ -286,8 +286,7 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		ComponentChanges.Emplace(Op.op.component_update);
 		break;
 	default:
-		// Ignore other ops.
-		break;
+		checkNoEntry();
 	}
 }
 
@@ -328,8 +327,8 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 
 	// At the beginning of each loop each iterator should point to the first element for an entity.
 	// Each loop we want to work with a single entity ID.
-	// We check the entities each iterator, that can be dereferenced, is pointing to and pick
-	// the smallest one. Stop when all lists have been read.
+	// We check the entities each iterator is pointing to and pick the smallest one.
+	// If that is the sentinel ID then stop.
 	for (;;)
 	{
 		// Get the next entity Id. We want to pick the smallest entity referenced by the iterators.
@@ -360,7 +359,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 				ComponentIt = std::find_if(ComponentIt, ComponentChangesEnd, DifferentEntity{CurrentEntityId});
 				AuthorityIt = std::find_if(AuthorityIt, AuthorityChangesEnd, DifferentEntity{CurrentEntityId});
 
-				// Only add the entity delta if previously existed in the view.
+				// Only add the entity delta if the entity previously existed in the view.
 				if (Delta.bRemoved)
 				{
 					EntityDeltas.Push(Delta);
@@ -392,7 +391,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	int32 RefreshCount = 0;
 
 	const Worker_EntityId EntityId = It->EntityId;
-	// At the end of each loop it should point to the first element for an entity-component.
+	// At the end of each loop `It` should point to the first element for an entity-component.
 	// Stop and return when the component is for a different entity.
 	// There will always be at least one iteration of the loop.
 	for (;;)

@@ -94,7 +94,7 @@ private:
 
 	// Calculate and return the net component added in [`start`, `end`).
 	// Also add the resulting component to `components`.
-	// The accumulated component change in this range must component add.
+	// The accumulated component change in this range must be a component add.
 	static ComponentChange CalculateAdd(ReceivedComponentChange* Start,
 										ReceivedComponentChange* End,
 										TArray<ComponentData>& Components);
