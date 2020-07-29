@@ -437,7 +437,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
 	check(WorldSettings != nullptr);
 
-	const bool bMultiWorkerEnabled = WorldSettings->IsMultiWorkerEnabled();
+	const bool bMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(CurrentWorld);
 
 	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = bMultiWorkerEnabled ?
@@ -1282,7 +1282,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		}
 		else
 		{
-			// Sort by priority 
+			// Sort by priority
 			Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
 		}
 	}
@@ -1582,9 +1582,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
-	
-	const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(WorldSettings);
-	const bool bIsMultiWorkerEnabled = SpatialWorldSettings != nullptr && SpatialWorldSettings->IsMultiWorkerEnabled();
+	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld());
 
 	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);

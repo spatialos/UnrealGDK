@@ -8,6 +8,7 @@
 #include "SpatialGDKServicesConstants.h"
 
 #include "Utils/LayerInfo.h"
+#include "Utils/SpatialStatics.h"
 
 #include "GameFramework/WorldSettings.h"
 #include "Templates/SubclassOf.h"
@@ -21,6 +22,9 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
+
+	
 	TSubclassOf<USpatialMultiWorkerSettings> CloudMultiWorkerSettingsClass;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
@@ -56,4 +60,5 @@ public:
 
 		return true;
 	}
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 };

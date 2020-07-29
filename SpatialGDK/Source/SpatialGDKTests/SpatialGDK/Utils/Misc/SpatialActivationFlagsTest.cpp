@@ -4,7 +4,7 @@
 
 #include "Tests/TestDefinitions.h"
 #include "Tests/AutomationCommon.h"
-#include "Runtime/EngineSettings/Public/EngineSettings.h"
+#include "Runtime/EngineSettings/Classes/GeneralProjectSettings.h"
 
 #include "Utils/GDKPropertyMacros.h"
 
