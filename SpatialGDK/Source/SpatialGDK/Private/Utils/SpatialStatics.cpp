@@ -109,7 +109,9 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 	}
 
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-	return WorldSettings != nullptr && *WorldSettings->MultiWorkerSettingsClass != nullptr;
+	return WorldSettings != nullptr
+		&& WorldSettings->bEnableMultiWorker
+		&& *WorldSettings->MultiWorkerSettingsClass != nullptr;
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
