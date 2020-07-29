@@ -17,6 +17,11 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 {
 	GENERATED_BODY()
 
+private:
+	/** Enable running different server worker types to split the simulation. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
+	bool bEnableMultiWorker;
+
 public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
@@ -27,9 +32,4 @@ public:
 	{
 		return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr;
 	}
-
-private:
-	/** Enable running different server worker types to split the simulation. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
 };
