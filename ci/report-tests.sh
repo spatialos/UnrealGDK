@@ -76,12 +76,12 @@ pushd "$(dirname "$0")"
         TESTS_SUMMARY_FILE="test_summary_${BUILDKITE_STEP_ID}.json"
 
         TESTS_PASSED="danger"
-        if [[ $(cat ${RESULTS_PATH} | jq '.failed') == 0 ]]; then
+        if [[ $(cat ${JSON_RESULTS_FILE} | jq '.failed') == 0 ]]; then
             TESTS_PASSED="good"
         fi
 
-        TOTAL_TESTS_SUCCEEDED=$(($(cat ${RESULTS_PATH} | jq '.succeeded') + $(cat ${RESULTS_PATH} | jq '.succeededWithWarnings')))
-        TOTAL_TESTS_RUN=$(($(cat ${RESULTS_PATH} | jq '.failed') + ${TOTAL_TESTS_SUCCEEDED=}))
+        TOTAL_TESTS_SUCCEEDED=$(($(cat ${JSON_RESULTS_FILE} | jq '.succeeded') + $(cat ${JSON_RESULTS_FILE} | jq '.succeededWithWarnings')))
+        TOTAL_TESTS_RUN=$(($(cat ${JSON_RESULTS_FILE} | jq '.failed') + ${TOTAL_TESTS_SUCCEEDED=}))
         jq -n \
             --arg value0 "Find the test results at ${TEST_RESULTS_URL}" \
             --arg value1 "${TESTS_PASSED}" \
@@ -114,15 +114,15 @@ pushd "$(dirname "$0")"
         buildkite-agent artifact upload "${SLACK_ATTACHMENT_FILE}"
 
         # Count the number of SpatialGDK & functional tests in order to report this
-        NUM_GDK_TESTS=$(cat "${RESULTS_PATH}"| jq '.tests |  map(select(.fullTestPath | contains("SpatialGDK."))) | map(select(.errors!=0)) | length')
-        NUM_PROJECT_TESTS=$(cat "${RESULTS_PATH}" | jq '.tests |  map(select(.fullTestPath | contains("Project."))) | map(select(.errors!=0)) | length')
+        NUM_GDK_TESTS=$(cat "${JSON_RESULTS_FILE}"| jq '.tests |  map(select(.fullTestPath | contains("SpatialGDK."))) | map(select(.errors!=0)) | length')
+        NUM_PROJECT_TESTS=$(cat "${JSON_RESULTS_FILE}" | jq '.tests |  map(select(.fullTestPath | contains("Project."))) | map(select(.errors!=0)) | length')
         jq -n \
             --arg value0 "$(date +%s)" \
             --arg value1 "${BUILDKITE_BUILD_URL}" \
             --arg value2 "${TARGET_PLATFORM}" \
             --arg value3 "${ENGINE_COMMIT_HASH}" \
             --arg value4 "${TESTS_PASSED}" \
-            --arg value5 "$(cat ${RESULTS_PATH} | jq '.totalDuration')" \
+            --arg value5 "$(cat ${JSON_RESULTS_FILE} | jq '.totalDuration')" \
             --arg value6 "${TOTAL_TESTS_RUN}" \
             --arg value7 "${NUM_GDK_TESTS}" \
             --arg value8 "${NUM_PROJECT_TESTS}" \
