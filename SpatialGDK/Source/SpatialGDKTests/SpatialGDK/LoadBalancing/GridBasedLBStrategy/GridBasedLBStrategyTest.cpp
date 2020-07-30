@@ -2,7 +2,6 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/StandardLibrary.h"
-#include "SpatialConstants.h"
 #include "TestGridBasedLBStrategy.h"
 
 #include "CoreMinimal.h"
@@ -216,7 +215,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	TestEqual("Edge length in x is as expected", Box.EdgeLength.X, TestEdgeLength);
 	TestEqual("Edge length in z is as expected", Box.EdgeLength.Z, TestEdgeLength);
 
-	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here. 
+	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here.
 	TestTrue("Edge length in y is greater than 0", Box.EdgeLength.Y > 0);
 
 	return true;
