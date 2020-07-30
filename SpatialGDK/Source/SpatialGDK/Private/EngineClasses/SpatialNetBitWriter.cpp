@@ -16,35 +16,39 @@ FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMa
 	: FNetBitWriter(InPackageMap, 0)
 {}
 
-void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
+void FSpatialNetBitWriter::SerializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef)
 {
 	int64 EntityId = ObjectRef.Entity;
-	*this << EntityId;
-	*this << ObjectRef.Offset;
+	Archive << EntityId;
+	Archive << ObjectRef.Offset;
 
 	uint8 HasPath = ObjectRef.Path.IsSet();
-	SerializeBits(&HasPath, 1);
+	Archive.SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
-		*this << ObjectRef.Path.GetValue();
+		Archive << ObjectRef.Path.GetValue();
 	}
 
 	uint8 HasOuter = ObjectRef.Outer.IsSet();
-	SerializeBits(&HasOuter, 1);
+	Archive.SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
-		SerializeObjectRef(*ObjectRef.Outer);
+		SerializeObjectRef(Archive, *ObjectRef.Outer);
 	}
 
-	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
-	SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
+	Archive.SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
+	Archive.SerializeBits(&ObjectRef.bUseClassPathToLoadObject, 1);
+}
+
+void FSpatialNetBitWriter::WriteObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, UObject* Object)
+{
+	FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Object, PackageMap);
+	SerializeObjectRef(Archive, ObjectRef);
 }
 
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
-	FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Value, Cast<USpatialPackageMapClient>(PackageMap));
-	SerializeObjectRef(ObjectRef);
-
+	WriteObject(*this, Cast<USpatialPackageMapClient>(PackageMap), Value);
 	return *this;
 }
 

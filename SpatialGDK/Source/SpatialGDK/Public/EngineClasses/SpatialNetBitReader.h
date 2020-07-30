@@ -16,16 +16,18 @@ class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader
 public:
 	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs);
 
+	~FSpatialNetBitReader();
+
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 
 	virtual FArchive& operator<<(UObject*& Value) override;
 
-	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
+	virtual FArchive& operator<<(FWeakObjectPtr& Value) override;
 
-	UObject* ReadObject(bool& bUnresolved);
+	static UObject* ReadObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, bool& bUnresolved);
 
 protected:
-	void DeserializeObjectRef(FUnrealObjectRef& ObjectRef);
+	static void DeserializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef);
 
 	TSet<FUnrealObjectRef>& DynamicRefs;
 	TSet<FUnrealObjectRef>& UnresolvedRefs;
