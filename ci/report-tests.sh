@@ -22,21 +22,22 @@ pushd "$(dirname "$0")"
             # The Unreal Engine produces a mostly undocumented index.html/index.json as the result of running a test suite, for now seems mostly
             # for internal use - but it's an okay visualisation for test results, so we fix it up here to display as a build artifact in CI
             # (replacing local dependencies in the html by CDNs or correcting paths)
-            sed -i -e 's?/bower_components/font-awesome/css/font-awesome.min.css?https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css?g' \
-            -e 's?/bower_components/twentytwenty/css/twentytwenty.css?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css?g' \
-            -e 's?/bower_components/featherlight/release/featherlight.min.css?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.css?g' \
-            -e 's?/bower_components/bootstrap/dist/css/bootstrap.min.css?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css?g' \
-            -e 's?/bower_components/jquery/dist/jquery.min.js?https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js?g' \
-            -e 's?/bower_components/jquery.event.move/js/jquery.event.move.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.event.move.min.js?g'\
-            -e 's?/bower_components/jquery_lazyload/jquery.lazyload.js?https://cdnjs.cloudflare.com/ajax/libs/jquery_lazyload/1.9.7/jquery.lazyload.min.js?g' \
-            -e 's?/bower_components/twentytwenty/js/jquery.twentytwenty.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.twentytwenty.min.js?g' \
-            -e 's?/bower_components/clipboard/dist/clipboard.min.js?https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.16/clipboard.min.js?g' \
-            -e 's?/bower_components/anchor-js/anchor.min.js?https://cdnjs.cloudflare.com/ajax/libs/anchor-js/3.2.2/anchor.min.js?g' \
-            -e 's?/bower_components/featherlight/release/featherlight.min.js?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.js?g' \
-            -e 's?/bower_components/bootstrap/dist/js/bootstrap.min.js?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js?g' \
-            -e 's?/bower_components/dustjs-linkedin/dist/dust-full.min.js?https://cdnjs.cloudflare.com/ajax/libs/dustjs-linkedin/2.7.5/dust-full.min.js?g' \
-            -e 's?/bower_components/numeral/min/numeral.min.js?https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js?g' \
-            "${HTML_RESULTS_FILE}"
+            sed -i -e '
+                s?/bower_components/font-awesome/css/font-awesome.min.css?https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css?g
+                s?/bower_components/twentytwenty/css/twentytwenty.css?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css?g
+                s?/bower_components/featherlight/release/featherlight.min.css?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.css?g
+                s?/bower_components/bootstrap/dist/css/bootstrap.min.css?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css?g
+                s?/bower_components/jquery/dist/jquery.min.js?https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js?g
+                s?/bower_components/jquery.event.move/js/jquery.event.move.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.event.move.min.js?g
+                s?/bower_components/jquery_lazyload/jquery.lazyload.js?https://cdnjs.cloudflare.com/ajax/libs/jquery_lazyload/1.9.7/jquery.lazyload.min.js?g
+                s?/bower_components/twentytwenty/js/jquery.twentytwenty.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.twentytwenty.min.js?g
+                s?/bower_components/clipboard/dist/clipboard.min.js?https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.16/clipboard.min.js?g
+                s?/bower_components/anchor-js/anchor.min.js?https://cdnjs.cloudflare.com/ajax/libs/anchor-js/3.2.2/anchor.min.js?g
+                s?/bower_components/featherlight/release/featherlight.min.js?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.js?g
+                s?/bower_components/bootstrap/dist/js/bootstrap.min.js?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js?g
+                s?/bower_components/dustjs-linkedin/dist/dust-full.min.js?https://cdnjs.cloudflare.com/ajax/libs/dustjs-linkedin/2.7.5/dust-full.min.js?g
+                s?/bower_components/numeral/min/numeral.min.js?https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js?g
+            ' "${HTML_RESULTS_FILE}"
 
         else
             echo "The Unreal Editor crashed while running tests, see the test-gdk annotation for logs (or the tests.log buildkite artifact)."
