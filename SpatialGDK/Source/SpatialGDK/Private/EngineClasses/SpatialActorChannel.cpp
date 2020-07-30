@@ -1245,7 +1245,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	// We only want to iterate through child Actors if the connection-owning worker ID or interest bucket component ID
 	// for this Actor changes. This bool is used to keep track of whether it has changed, and used to exit early below.
 	bool bUpdatedThisActor = false;
-
+	if (Actor->GetName() == TEXT("NetOwnershipCube_0") && !Actor->GetOwner())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Should do the trick"));
+		return;
+	}
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
 	FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
 	if (SavedConnectionOwningWorkerId != NewClientConnectionWorkerId)
