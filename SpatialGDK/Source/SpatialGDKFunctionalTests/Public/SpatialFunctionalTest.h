@@ -158,7 +158,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside its interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
 	void AddActorInterest(int32 ServerWorkerId, AActor* Actor);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Counterpart to AddActorInterest().\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Counterpart to AddActorInterest(), so it can only remove interest added by the other function. There's no way to force remove interest if the underlying configuration in GDK is giving it.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
 	void RemoveActorInterest(int32 ServerWorkerId, AActor* Actor);
 
 protected:
