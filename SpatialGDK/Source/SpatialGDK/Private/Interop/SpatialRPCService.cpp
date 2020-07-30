@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialRPCService.h"
 
+#include "WorkerSDK/improbable/c_trace.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
@@ -13,10 +14,11 @@ DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 namespace SpatialGDK
 {
 
-SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer)
+SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
+	, EventTracer(EventTracer)
 {
 }
 
@@ -222,7 +224,14 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.EntityId = It.Key.EntityId;
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
 		UpdateToSend.Update.schema_type = It.Value.Update;
-		UpdateToSend.Update.SpanId = It.Value.SpanId;
+		if (It.Value.SpanIds.Num() > 1)
+		{
+			UpdateToSend.Update.SpanId = Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
+		}
+		else
+		{
+			UpdateToSend.Update.SpanId = It.Value.SpanIds[0];
+		}
 #if TRACE_LIB_ACTIVE
 		TraceKey Trace = InvalidTraceKey;
 		PendingTraces.RemoveAndCopyValue(It.Key, Trace);
@@ -566,11 +575,11 @@ Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComp
 	{
 		PendingUpdate Update;
 		Update.Update = Schema_CreateComponentUpdate();
-		if (SpanId != nullptr)
-		{
-			Update.SpanId = *SpanId;
-		}
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Update);
+	}
+	if (SpanId != nullptr)
+	{
+		ComponentUpdatePtr->SpanIds.Add(*SpanId);
 	}
 	return ComponentUpdatePtr->Update;
 }

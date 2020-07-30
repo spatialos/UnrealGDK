@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
@@ -57,7 +58,7 @@ enum class EPushRPCResult : uint8
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
@@ -104,6 +105,7 @@ private:
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
 	USpatialLatencyTracer* SpatialLatencyTracer;
+	SpatialEventTracer* EventTracer;
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;
@@ -118,7 +120,7 @@ private:
 	struct PendingUpdate
 	{
 		Schema_ComponentUpdate* Update;
-		TOptional<worker::c::Trace_SpanId> SpanId;
+		TArray<worker::c::Trace_SpanId> SpanIds;
 	};
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
