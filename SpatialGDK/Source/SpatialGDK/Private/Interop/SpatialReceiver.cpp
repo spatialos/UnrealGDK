@@ -2136,8 +2136,10 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(Op);
-		EventTracer->TraceEvent(ConstructEvent(Channel->Actor, TEXT(""), Op));
-
+		if (EventTracer->IsEnabled())
+		{
+			EventTracer->TraceEvent2(FEventCreateEntitySuccess{ Op.entity_id, Channel->Actor, Channel->Actor->GetTransform().GetTranslation() });
+		}
 	}
 	else if (Channel.IsStale())
 	{

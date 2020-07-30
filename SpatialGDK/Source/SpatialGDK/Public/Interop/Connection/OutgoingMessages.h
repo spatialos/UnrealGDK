@@ -55,14 +55,20 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId, const worker::c::Trace_SpanId* SpanIdIn)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
-	{}
+	{
+		if (SpanIdIn != nullptr)
+		{
+			SpanId = *SpanIdIn;
+		}
+	}
 
 	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FDeleteEntityRequest : FOutgoingMessage

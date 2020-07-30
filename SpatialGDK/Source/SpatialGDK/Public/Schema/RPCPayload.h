@@ -17,7 +17,7 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, worker::c::Trace_SpanId* SpanIdIn = nullptr, TraceKey InTraceKey = InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, const worker::c::Trace_SpanId* SpanIdIn = nullptr, TraceKey InTraceKey = InvalidTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))

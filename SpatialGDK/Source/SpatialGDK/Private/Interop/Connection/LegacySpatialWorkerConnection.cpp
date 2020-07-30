@@ -1,10 +1,10 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "improbable/c_trace.h"
 #include "Interop/Connection/LegacySpatialWorkerConnection.h"
-#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 #include "Async/Async.h"
+#include "improbable/c_trace.h"
+#include "SpatialView/OpList/WorkerConnectionOpList.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
@@ -96,9 +96,9 @@ Worker_RequestId ULegacySpatialWorkerConnection::SendReserveEntityIdsRequest(uin
 	return NextRequestId++;
 }
 
-Worker_RequestId ULegacySpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const worker::c::Trace_SpanId* SpanId)
 {
-	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
+	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId, SpanId);
 	return NextRequestId++;
 }
 
@@ -268,11 +268,19 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_ComponentData* ComponentData = Message->Components.GetData();
 			uint32 ComponentCount = Message->Components.Num();
 #endif
+			if (Message->SpanId.IsSet())
+			{
+				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->SpanId.GetValue());
+			}
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
 				ComponentCount,
 				ComponentData,
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
+			if (Message->SpanId.IsSet())
+			{
+				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
+			}
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:

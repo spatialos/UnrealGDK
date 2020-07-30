@@ -90,10 +90,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 
 	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
+	TOptional<worker::c::Trace_SpanId> SpanId;
+	if (EventTracer->IsEnabled())
+	{
+		SpanId = EventTracer->TraceEvent2(FEventCreateEntity{ Channel->GetEntityId(), Channel->Actor, Channel->Actor->GetTransform().GetTranslation() });
+	}
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
-
-	EventTracer->TraceEvent(ConstructEvent(Channel->Actor, CreateEntityRequestId));
+	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId.IsSet() ? &SpanId.GetValue() : nullptr);
 
 	return CreateEntityRequestId;
 }

@@ -2,10 +2,16 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "UObject/ObjectMacros.h"
+#include "UObject/Class.h"
+//#include "ObjectMacros.h"
 #include "SpatialCommonTypes.h"
 
 // TODO Remove maybe?
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "SpatialEventTracer.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
@@ -18,6 +24,28 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 // TODO: Hook up to build system
 #define GDK_SPATIAL_EVENT_TRACING_ENABLED 1
+
+static_assert(sizeof(Worker_EntityId) == sizeof(int64), "EntityId assumed 64-bit here");
+
+USTRUCT()
+struct FEventCreateEntity
+{
+	GENERATED_BODY()
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() AActor* Actor;
+	UPROPERTY() FVector Translation;
+	const char* Type = "CreateEntity";
+};
+
+USTRUCT()
+struct FEventCreateEntitySuccess
+{
+	GENERATED_BODY()
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() AActor* Actor;
+	UPROPERTY() FVector Translation;
+	const char* Type = "CreateEntity";
+};
 
 class UFunction;
 class AActor;
@@ -70,8 +98,85 @@ struct SpatialEventTracer
 	bool IsEnabled() { return bEnalbed; }
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() { return EventTracer; }
 
+	/*TOptional<Trace_SpanId> CreateEntity(AActor* Actor, Worker_EntityId EntityId)
+	{
+		SpatialGDKEvent Event;
+		Event.Message = "";
+		Event.Type = "CreateEntity";
+		if (Actor != nullptr)
+		{
+			Event.Data.Add("Actor", Actor->GetName());
+			Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+		}
+		else
+		{
+			Event.Data.Add("Actor", "Null");
+		}
+		//Event.Data.Add("ResponseOp", FString::Printf(TEXT("%lu"), ResponseOp));
+		return TraceEvent(Event);
+	}
+	TOptional<Trace_SpanId> CreateEntitySuccess(AActor* Actor, Worker_EntityId EntityId)
+	{
+		SpatialGDKEvent Event;
+		Event.Message = "";
+		Event.Type = "CreateEntitySuccess";
+		if (Actor != nullptr)
+		{
+			Event.Data.Add("Actor", Actor->GetName());
+			Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
+		}
+		else
+		{
+			Event.Data.Add("Actor", "Null");
+		}
+		//Event.Data.Add("ResponseOp", FString::Printf(TEXT("%lu"), ResponseOp));
+		return TraceEvent(Event);
+	}*/
+
+	template<typename T>
+	TOptional<Trace_SpanId> TraceEvent2(const T& Message)
+	{
+		if (!IsEnabled())
+		{
+			return {};
+		}
+		
+		SpatialGDKEvent Event;
+		Event.Type = Message.Type; // This is expected
+
+		for (TFieldIterator<UProperty> It(T::StaticStruct()); It; ++It)
+		{
+			UProperty* Property = *It;
+
+			FString VariableName = Property->GetName();
+			const void* Value = Property->ContainerPtrToValuePtr<uint8>(&Message);
+
+			check(Property->ArrayDim == 1); // Arrays not handled yet
+			
+			// convert the property to a FJsonValue
+			if (UStrProperty *StringProperty = Cast<UStrProperty>(Property))
+			{
+				Event.Data.Add(VariableName, StringProperty->GetPropertyValue(Value));
+			}
+			else // Default
+			{
+				FString StringValue;
+				Property->ExportTextItem(StringValue, Value, NULL, NULL, PPF_None);
+				Event.Data.Add(VariableName, StringValue);
+			}
+			// else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+			// else if (UNumericProperty *NumericProperty = Cast<UNumericProperty>(Property))
+			// else if (UBoolProperty *BoolProperty = Cast<UBoolProperty>(Property))
+			// else if (UTextProperty *TextProperty = Cast<UTextProperty>(Property))
+			// else if (UArrayProperty *ArrayProperty = Cast<UArrayProperty>(Property))
+			// else if (USetProperty* SetProperty = Cast<USetProperty>(Property))
+			// else if (UMapProperty* MapProperty = Cast<UMapProperty>(Property))
+			// else if (UStructProperty *StructProperty = Cast<UStructProperty>(Property))
+		}
+		return TraceEvent(Event);
+	}
 private:
-	bool bEnalbed;
+	bool bEnalbed{ true }; // TODO: Disable by default
 	worker::c::Trace_EventTracer* EventTracer;
 };
 

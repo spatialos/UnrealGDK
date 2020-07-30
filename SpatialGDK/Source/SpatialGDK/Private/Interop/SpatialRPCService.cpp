@@ -228,7 +228,7 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		{
 			UpdateToSend.Update.SpanId = Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
 		}
-		else
+		else if(It.Value.SpanIds.Num() == 1)
 		{
 			UpdateToSend.Update.SpanId = It.Value.SpanIds[0];
 		}
@@ -568,7 +568,7 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
-Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, worker::c::Trace_SpanId* SpanId)
+Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const worker::c::Trace_SpanId* SpanId)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)

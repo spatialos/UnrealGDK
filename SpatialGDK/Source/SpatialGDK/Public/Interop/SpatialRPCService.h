@@ -98,7 +98,7 @@ private:
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 
-	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, worker::c::Trace_SpanId* SpanId);
+	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const worker::c::Trace_SpanId* SpanId);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 private:

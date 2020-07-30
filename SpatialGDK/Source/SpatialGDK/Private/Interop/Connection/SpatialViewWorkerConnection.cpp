@@ -52,7 +52,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendReserveEntityIdsRequest(uint3
 	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
 }
 
-Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const worker::c::Trace_SpanId* /*SpanId*/) // TODO: Figure out SpanId usage in SpatialView
 {
 	check(Coordinator.IsValid());
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId  : TOptional<Worker_EntityId>();
