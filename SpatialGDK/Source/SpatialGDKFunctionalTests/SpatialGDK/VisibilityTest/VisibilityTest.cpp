@@ -41,7 +41,7 @@ void AVisibilityTest::BeginPlay()
 	Super::BeginPlay();
 	PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
 
-	CharacterrRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
+	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
 	Character1StartingLocation = FVector(0.0f, 120.0f, 50.0f);
 	Character2StartingLocation = FVector(0.0f, 240.0f, 50.0f);
 
@@ -60,7 +60,7 @@ void AVisibilityTest::BeginPlay()
 			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
 
 			PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
+			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 1.0f;
 			
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
@@ -116,8 +116,8 @@ void AVisibilityTest::BeginPlay()
 
 			if (PlayerCharacter->GetActorLocation().Equals(Character1StartingLocation, 50.0f))
 			{
-				PlayerCharacter->SetActorLocation(CharacterrRemoteLocation);
-				if (PlayerCharacter->GetActorLocation().Equals(CharacterrRemoteLocation, 50.0f))
+				PlayerCharacter->SetActorLocation(CharacterRemoteLocation);
+				if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
 				{
 					NetTest->FinishStep();
 				}
@@ -136,7 +136,7 @@ void AVisibilityTest::BeginPlay()
 			if (PlayerCharacter != nullptr)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("X : %f"), PlayerCharacter->GetActorLocation().X)
-				if ((PlayerCharacter->GetActorLocation().X == CharacterrRemoteLocation.X) && (PlayerCharacter->GetActorLocation().Y == CharacterrRemoteLocation.Y))
+				if ((PlayerCharacter->GetActorLocation().X == CharacterRemoteLocation.X) && (PlayerCharacter->GetActorLocation().Y == CharacterRemoteLocation.Y))
 				{
 					FinishStep();
 				}
@@ -155,7 +155,7 @@ void AVisibilityTest::BeginPlay()
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 2 world"), NetTest);
+				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 1 world"), NetTest);
 				NetTest->FinishStep();
 			}
 		}, 100.0f);
@@ -240,7 +240,7 @@ void AVisibilityTest::BeginPlay()
 			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				NetTest->AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client(1) world"), NetTest);
+				NetTest->AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
@@ -250,7 +250,39 @@ void AVisibilityTest::BeginPlay()
 		},5.0f);
 	}
 
-	{	// Step 11 - Server Cleanup
+	{	// Step 11 - Server Set Actor Hidden False.
+		AddStep(TEXT("ServerSetActorNotHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+			int Counter = 0;
+			int ExpectedReplicatedActors = 1;
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			{
+				Counter++;
+				Iter->SetHidden(false);
+				NetTest->AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
+			}
+			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
+			NetTest->FinishStep();
+		});
+	}
+
+	{	// Step 12 - Observe if the test actor has been replicated to the clients.
+		AddStep(TEXT("ClientCheckFinalReplicatedNonHiddenActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			int Counter = 0;
+			int ExpectedReplicatedActors = 1;
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			{
+				Counter++;
+				NetTest->AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
+			}
+			if (Counter == ExpectedReplicatedActors)
+			{
+				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
+				NetTest->FinishStep();
+			}
+		});
+	}
+
+	{	// Step 13 - Server Cleanup
 		AddStep(TEXT("ServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
 			// Possess the original pawn, so that the spawned character can get destroyed correctly
 			AVisibilityTest* Test = Cast<AVisibilityTest>(NetTest);

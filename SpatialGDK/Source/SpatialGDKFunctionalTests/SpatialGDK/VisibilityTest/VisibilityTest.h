@@ -19,7 +19,7 @@ public:
 	TArray<TPair<AController*, APawn*>> OriginalPawns;
 
 	float PreviousPositionUpdateFrequency;
-	FVector CharacterrRemoteLocation ;
+	FVector CharacterRemoteLocation;
 	FVector Character1StartingLocation;
 	FVector Character2StartingLocation;
 };
