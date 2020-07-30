@@ -15,26 +15,28 @@ pushd "$(dirname "$0")"
 
     UPLOAD_ARTIFACT_PATH="https://buildkite.com/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds/${BUILDKITE_BUILD_ID}/jobs/${BUILDKITE_JOB_ID}/artifacts"
     pushd "${TEST_RESULTS_DIRECTORY}"
-        TEST_RESULTS_FILE=index.html
+        HTML_RESULTS_FILE=index.html
+        JSON_RESULTS_FILE="index.json"
 
-        if [[ -f "${TEST_RESULTS_FILE}" ]]; then
+        if [[ -f "${HTML_RESULTS_FILE}" ]]; then
             # The Unreal Engine produces a mostly undocumented index.html/index.json as the result of running a test suite, for now seems mostly
             # for internal use - but it's an okay visualisation for test results, so we fix it up here to display as a build artifact in CI
             # (replacing local dependencies in the html by CDNs or correcting paths)
-            sed -i -e 's?/bower_components/font-awesome/css/font-awesome.min.css?https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css?g'                "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/twentytwenty/css/twentytwenty.css?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css?g'             "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/featherlight/release/featherlight.min.css?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.css?g'               "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/bootstrap/dist/css/bootstrap.min.css?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css?g'               "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/jquery/dist/jquery.min.js?https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js?g'                                             "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/jquery.event.move/js/jquery.event.move.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.event.move.min.js?g'  "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/jquery_lazyload/jquery.lazyload.js?https://cdnjs.cloudflare.com/ajax/libs/jquery_lazyload/1.9.7/jquery.lazyload.min.js?g'                  "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/twentytwenty/js/jquery.twentytwenty.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.twentytwenty.min.js?g'   "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/clipboard/dist/clipboard.min.js?https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.16/clipboard.min.js?g'                             "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/anchor-js/anchor.min.js?https://cdnjs.cloudflare.com/ajax/libs/anchor-js/3.2.2/anchor.min.js?g'                                            "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/featherlight/release/featherlight.min.js?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.js?g'                 "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/bootstrap/dist/js/bootstrap.min.js?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js?g'                   "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/dustjs-linkedin/dist/dust-full.min.js?https://cdnjs.cloudflare.com/ajax/libs/dustjs-linkedin/2.7.5/dust-full.min.js?g'                     "${TEST_RESULTS_FILE}"
-            sed -i -e 's?/bower_components/numeral/min/numeral.min.js?https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js?g'                                       "${TEST_RESULTS_FILE}"
+            sed -i -e 's?/bower_components/font-awesome/css/font-awesome.min.css?https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css?g' \
+            -e 's?/bower_components/twentytwenty/css/twentytwenty.css?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css?g' \
+            -e 's?/bower_components/featherlight/release/featherlight.min.css?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.css?g' \
+            -e 's?/bower_components/bootstrap/dist/css/bootstrap.min.css?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css?g' \
+            -e 's?/bower_components/jquery/dist/jquery.min.js?https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js?g' \
+            -e 's?/bower_components/jquery.event.move/js/jquery.event.move.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.event.move.min.js?g'\
+            -e 's?/bower_components/jquery_lazyload/jquery.lazyload.js?https://cdnjs.cloudflare.com/ajax/libs/jquery_lazyload/1.9.7/jquery.lazyload.min.js?g' \
+            -e 's?/bower_components/twentytwenty/js/jquery.twentytwenty.js?https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/js/jquery.twentytwenty.min.js?g' \
+            -e 's?/bower_components/clipboard/dist/clipboard.min.js?https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.16/clipboard.min.js?g' \
+            -e 's?/bower_components/anchor-js/anchor.min.js?https://cdnjs.cloudflare.com/ajax/libs/anchor-js/3.2.2/anchor.min.js?g' \
+            -e 's?/bower_components/featherlight/release/featherlight.min.js?https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.js?g' \
+            -e 's?/bower_components/bootstrap/dist/js/bootstrap.min.js?https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js?g' \
+            -e 's?/bower_components/dustjs-linkedin/dist/dust-full.min.js?https://cdnjs.cloudflare.com/ajax/libs/dustjs-linkedin/2.7.5/dust-full.min.js?g' \
+            -e 's?/bower_components/numeral/min/numeral.min.js?https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js?g' \
+            "${HTML_RESULTS_FILE}"
 
         else
             echo "The Unreal Editor crashed while running tests, see the test-gdk annotation for logs (or the tests.log buildkite artifact)."
@@ -42,21 +44,20 @@ pushd "$(dirname "$0")"
         fi
 
         # Upload artifacts to Buildkite, capture output to extract artifact ID in the Slack message generation.
-
-        buildkite-agent artifact upload "index.json"
+        buildkite-agent artifact upload "${JSON_RESULTS_FILE}"
         if [[ $? -ne 0 ]]; then
-            echo "Failed to upload artifact index.json."
+            echo "Failed to upload artifact ${JSON_RESULTS_FILE}."
             exit 1
         fi
-        UPLOAD_OUTPUT=$(buildkite-agent artifact upload "index.html" 2>&1 > /dev/null)
+        UPLOAD_OUTPUT=$(buildkite-agent artifact upload "${HTML_RESULTS_FILE}" 2>&1 > /dev/null)
         if [[ $? -ne 0 ]]; then
-            echo "Failed to upload artifact index.html."
+            echo "Failed to upload artifact ${HTML_RESULTS_FILE}."
             exit 1
         fi
 
         # Artifacts are assigned an ID upon upload, so grab IDs from upload process output to build the artifact URLs
         # The output log is: "Uploading artifact <artifact id> <upload path>". We are interested in the artifact id
-        REGEX='Uploading artifact ([a-z0-9-]*) .*index\.html'
+        REGEX='Uploading artifact ([a-z0-9-]*) .*${HTML_RESULTS_FILE}'
         if [[ ${UPLOAD_OUTPUT} =~ ${REGEX} ]]; then
             TEST_RESULTS_URL="${UPLOAD_ARTIFACT_PATH}/${BASH_REMATCH[1]}"
         else
@@ -69,7 +70,7 @@ pushd "$(dirname "$0")"
             --style info
 
         # Read the test results
-        RESULTS_PATH="index.json"
+
         SLACK_ATTACHMENT_FILE="slack_attachment_${BUILDKITE_STEP_ID}.json"
         TESTS_SUMMARY_FILE="test_summary_${BUILDKITE_STEP_ID}.json"
 
@@ -117,14 +118,14 @@ pushd "$(dirname "$0")"
         jq -n \
             --arg value0 "$(date +%s)" \
             --arg value1 "${BUILDKITE_BUILD_URL}" \
-            --arg value2  "${TARGET_PLATFORM}" \
-            --arg value3  "${ENGINE_COMMIT_HASH}" \
-            --arg value4  "${TESTS_PASSED}" \
-            --arg value5  "$(cat ${RESULTS_PATH} | jq '.totalDuration')" \
-            --arg value6  "${TOTAL_TESTS_RUN}" \
-            --arg value7  "${NUM_GDK_TESTS}" \
-            --arg value8  "${NUM_PROJECT_TESTS}" \
-            --arg value9  "$(basename ${TEST_RESULTS_DIRECTORY})" \
+            --arg value2 "${TARGET_PLATFORM}" \
+            --arg value3 "${ENGINE_COMMIT_HASH}" \
+            --arg value4 "${TESTS_PASSED}" \
+            --arg value5 "$(cat ${RESULTS_PATH} | jq '.totalDuration')" \
+            --arg value6 "${TOTAL_TESTS_RUN}" \
+            --arg value7 "${NUM_GDK_TESTS}" \
+            --arg value8 "${NUM_PROJECT_TESTS}" \
+            --arg value9 "$(basename ${TEST_RESULTS_DIRECTORY})" \
            '{
                time: $value0,
                build_url: $value1,
