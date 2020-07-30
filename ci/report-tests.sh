@@ -58,7 +58,7 @@ pushd "$(dirname "$0")"
 
         # Artifacts are assigned an ID upon upload, so grab IDs from upload process output to build the artifact URLs
         # The output log is: "Uploading artifact <artifact id> <upload path>". We are interested in the artifact id
-        REGEX='Uploading artifact ([a-z0-9-]*) .*${HTML_RESULTS_FILE}'
+        REGEX='Uploading artifact ([a-z0-9-]*) .*index\.html'
         if [[ ${UPLOAD_OUTPUT} =~ ${REGEX} ]]; then
             TEST_RESULTS_URL="${UPLOAD_ARTIFACT_PATH}/${BASH_REMATCH[1]}"
         else
