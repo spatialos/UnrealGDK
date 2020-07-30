@@ -44,7 +44,10 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 	{
 		AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
-		if ((!bNetOwnerHasAuth || !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)) && !NetDriver->LockingPolicy->IsLocked(Actor))
+
+		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
+		if ((!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner) || !bNetOwnerHasAuth)
+			&& !NetDriver->LockingPolicy->IsLocked(Actor))
 		{
 			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
 
@@ -64,6 +67,9 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				}
 				else
 				{
+					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
+					// so the load balancing strategy could give us a worker different from where it should be.
+					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 					if (SpatialGDK::AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(OwnerId))
 					{
@@ -74,6 +80,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) cannot join its owner %s (%llu)"), *Actor->GetName(), EntityId, *NetOwner->GetName(), OwnerId);
 					}
 				}
+
 				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
 					UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());

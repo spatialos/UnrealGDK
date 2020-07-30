@@ -435,12 +435,12 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		ComponentUpdates.Add(NetDriver->InterestFactory->CreateInterestUpdate((AActor*)Object, Info, EntityId, bOwnerReady));
 
 		// We should be able to ignore the flag here.
-		checkSlow([this, bOwnerReady]()
+		checkSlow(([this, bOwnerReady, Object]()
 		{
 			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Cast<AActor>(Object));
 
 			return Channel && Channel->NeedOwnerInterestUpdate() == !bOwnerReady;
-		});
+		}()));
 	}
 
 	return ComponentUpdates;

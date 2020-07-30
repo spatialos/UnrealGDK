@@ -3,6 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/SpatialActorUtils.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
@@ -91,7 +92,7 @@ protected:
 						*HierarchyRoot->GetName(),
 						*Actor->GetName(),
 						NetDriver->PackageMap->GetEntityIdFromObject(Actor));
-
+				
 					return false;
 				}
 			}

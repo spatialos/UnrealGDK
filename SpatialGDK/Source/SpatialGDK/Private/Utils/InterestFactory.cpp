@@ -225,7 +225,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 bool InterestFactory::AddServerOwnerInterest(Interest& OutInterest, const AActor* InActor) const
 {
 	AActor* NetOwner = SpatialGDK::GetHierarchyRoot(InActor);
-	if (NetOwner == nullptr || !NetOwner->GetIsReplicated())
+	if (NetOwner == nullptr || NetOwner == InActor || !NetOwner->GetIsReplicated())
 	{
 		return true;
 	}
