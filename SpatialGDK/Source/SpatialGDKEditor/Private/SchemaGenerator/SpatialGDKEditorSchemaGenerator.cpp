@@ -861,7 +861,7 @@ bool RunSchemaCompiler()
 		}
 	}
 
-	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *AdditionalSchemaCompilerArgs);
+	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *AdditionalSchemaCompilerArgs.TrimQuotes());
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SpatialGDKServicesConstants::SchemaCompilerExe, *SchemaCompilerArgs);
 
