@@ -4,9 +4,9 @@
 
 #include "SpatialCommonTypes.h"
 
-//TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in .cpp file, when the LatencyTracer is enabled?)
+// TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in .cpp file, when the LatencyTracer is enabled?)
 
-//TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off
+// TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off
 
 // TODO(EventTracer): it is only required here because Trace_SpanId is used.
 // Consider if it's possible to remove it.
@@ -17,12 +17,12 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 class UFunction;
 class AActor;
 
-// Note: SpatialEventTracer wraps Trace_EventTracer related functionality
+// Note(EventTracer): SpatialEventTracer wraps Trace_EventTracer related functionality
 // It is constructed and owned by SpatialConnectionManager.
 // SpatialNetDriver inits SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialConnectionManager.
-// TODO(EventTacer): if null pointers are passed there - UE4 will crash (so better to fix that)
+// Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure there are necessary nullptr checks if that changes.
 // 
-// Note: EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
+// Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
 // (see SpatialConnectionManager diff)
 
 namespace SpatialGDK
