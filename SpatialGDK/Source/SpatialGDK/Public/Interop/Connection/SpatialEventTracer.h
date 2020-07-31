@@ -106,7 +106,7 @@ TODO
 [+] Sending authority intent update
 [+] Sending delete entity request
 [+] Sending RPC
-Sending RPC retry
+[+] Sending RPC retry - requires testing
 Sending command response
 Receiving add entity
 Receiving remove entity
