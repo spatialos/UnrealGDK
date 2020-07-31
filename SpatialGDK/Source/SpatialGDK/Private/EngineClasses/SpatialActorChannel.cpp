@@ -599,18 +599,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ReplicationBytesWritten = 0;
 
-	if (!bCreatingNewEntity && NeedOwnerInterestUpdate())
+	if (!bCreatingNewEntity
+		&& NeedOwnerInterestUpdate()
+		&& NetDriver->InterestFactory->CheckOwnersHaveEntityId(Actor))
 	{
-		AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
-		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(HierarchyRoot);
-
-		if (HierarchyRoot == nullptr || OwnerId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			bool bOwnerReady;
-			Sender->UpdateInterestComponent(Actor, bOwnerReady);
-
-			SetNeedOwnerInterestUpdate(!bOwnerReady);
-		}
+		Sender->UpdateInterestComponent(Actor);
+		SetNeedOwnerInterestUpdate(false);
 	}
 
 	// If any properties have changed, send a component update.
@@ -1284,10 +1278,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 
 	// Owner changed, update the actor's interest over it.
-	bool bOwnerReady;
-	Sender->UpdateInterestComponent(Actor, bOwnerReady);
-
-	SetNeedOwnerInterestUpdate(!bOwnerReady);
+	Sender->UpdateInterestComponent(Actor);
+	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->CheckOwnersHaveEntityId(Actor));
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
 	Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);

@@ -92,14 +92,14 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const
+Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
-	return CreateInterest(InActor, InInfo, InEntityId, bOutOwnerReady).CreateInterestData();
+	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
-	return CreateInterest(InActor, InInfo, InEntityId, bOutOwnerReady).CreateInterestUpdate();
+	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
 Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
@@ -156,7 +156,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const
+Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -175,7 +175,7 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest, InEntityId);
 
-	bOutOwnerReady = AddServerOwnerInterest(ResultInterest, InActor);
+	AddOwnerInterestOnServer(ResultInterest, InActor);
 
 	return ResultInterest;
 }
@@ -222,27 +222,49 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
-bool InterestFactory::AddServerOwnerInterest(Interest& OutInterest, const AActor* InActor) const
+bool InterestFactory::CheckOwnersHaveEntityId(const AActor* Actor) const
 {
-	AActor* NetOwner = SpatialGDK::GetHierarchyRoot(InActor);
-	if (NetOwner == nullptr || NetOwner == InActor || !NetOwner->GetIsReplicated())
+	AActor* Owner = Actor->GetOwner();
+	if (Owner == nullptr || Owner->IsPendingKillPending())
 	{
 		return true;
 	}
 
-	Worker_EntityId OwnerId = PackageMap->GetEntityIdFromObject(NetOwner);
-	if (OwnerId == SpatialConstants::INVALID_ENTITY_ID)
+	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
 	{
-		return false;
+		if (PackageMap->GetEntityIdFromObject(Owner) == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return false;
+		}
+		Owner = Owner->GetOwner();
 	}
 
-	Query OwnerQuery;
-	OwnerQuery.Constraint.EntityIdConstraint = OwnerId;
-	OwnerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerQuery);
-
 	return true;
+}
+
+void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor) const
+{
+	AActor* Owner = InActor->GetOwner();
+	Query OwnerChainQuery;
+	
+	while (Owner != nullptr && !Owner->IsPendingKillPending())
+	{
+		QueryConstraint OwnerQuery;
+		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
+		if (OwnerQuery.EntityIdConstraint == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return ;
+		}
+		OwnerChainQuery.Constraint.OrConstraint.Add(OwnerQuery);
+		Owner = Owner->GetOwner();
+	}
+
+	OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType;
+	OwnerChainQuery.ResultComponentIds.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
+	{
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerChainQuery);
+	}
 }
 
 void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const

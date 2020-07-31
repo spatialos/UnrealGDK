@@ -431,15 +431,14 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		bool bOwnerReady;
-		ComponentUpdates.Add(NetDriver->InterestFactory->CreateInterestUpdate((AActor*)Object, Info, EntityId, bOwnerReady));
+		ComponentUpdates.Add(NetDriver->InterestFactory->CreateInterestUpdate((AActor*)Object, Info, EntityId));
 
 		// We should be able to ignore the flag here.
-		checkSlow(([this, bOwnerReady, Object]()
+		checkSlow(([this, Object]()
 		{
 			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Cast<AActor>(Object));
 
-			return Channel && Channel->NeedOwnerInterestUpdate() == !bOwnerReady;
+			return Channel && Channel->NeedOwnerInterestUpdate() == !NetDriver->InterestFactory->CheckOwnersHaveEntityId(Cast<AActor>(Object));
 		}()));
 	}
 

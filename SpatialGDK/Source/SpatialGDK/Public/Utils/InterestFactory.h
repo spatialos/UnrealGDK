@@ -44,11 +44,12 @@ class SPATIALGDK_API InterestFactory
 public:
 	InterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
-	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const;
-	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const;
+	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
 
+	bool CheckOwnersHaveEntityId(const AActor* Actor) const;
 private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
@@ -60,7 +61,7 @@ private:
 	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
 
-	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, bool& bOutOwnerReady) const;
+	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
@@ -70,7 +71,7 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
 	// Add interest to the actor's owner. Return false if we could not get the owner's entityId.
-	bool AddServerOwnerInterest(Interest& OutInterest, const AActor* InActor) const;
+	void AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor) const;
 
 	// Add the always relevant and the always interested query.
 	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;

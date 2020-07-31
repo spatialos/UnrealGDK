@@ -104,8 +104,7 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 
 	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
 
-	bool bOwnerReady;
-	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController), bOwnerReady);
+	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
