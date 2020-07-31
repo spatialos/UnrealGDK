@@ -6,12 +6,13 @@
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "SpatialFunctionalTestFlowController.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
-#include "SpatialFunctionalTestAutoDestroyComponent.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
+#include "SpatialFunctionalTestFlowController.h"
+#include "SpatialFunctionalTestAutoDestroyComponent.h"
 
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
@@ -230,6 +231,71 @@ bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor, int& WorkerId, bo
 	}
 
 	return bHasDelegation;
+}
+
+void ASpatialFunctionalTest::AddActorInterest(int32 ServerWorkerId, AActor* Actor)
+{
+	ChangeActorInterest(ServerWorkerId, Actor, true);
+}
+
+void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* Actor)
+{
+	ChangeActorInterest(ServerWorkerId, Actor, false);
+}
+
+void ASpatialFunctionalTest::ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest)
+{
+	ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
+
+	if (AuxLocalFlowController == nullptr || AuxLocalFlowController->WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Server)
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Interest changes are only allowed from Server Workers, trying to do it from %s"), *AuxLocalFlowController->GetDisplayName());
+		return;
+	}
+
+	ensureMsgf(ServerWorkerId >= FWorkerDefinition::ALL_WORKERS_ID, TEXT("Invalid ServerWorkerId"));
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (ServerWorkerId < FWorkerDefinition::ALL_WORKERS_ID || SpatialNetDriver == nullptr || Actor == nullptr)
+	{
+		return;
+	}
+	if (ServerWorkerId > NumExpectedServers)
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Trying to change interest on Server Worker %d and there's only %d; falling back to Server Worker 1"), ServerWorkerId, NumExpectedServers);
+		ServerWorkerId = 1;
+	}
+
+	Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+
+	if (ServerWorkerId == FWorkerDefinition::ALL_WORKERS_ID)
+	{
+		for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
+		{
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+			{
+				if(bAddInterest)
+				{
+					FlowController->AddEntityInterest(ActorEntityId);
+				}
+				else
+				{
+					FlowController->RemoveEntityInterest(ActorEntityId);
+				}
+			}
+		}
+	}
+	else
+	{
+		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Server, ServerWorkerId);
+		if (bAddInterest)
+		{
+			FlowController->AddEntityInterest(ActorEntityId);
+		}
+		else
+		{
+			FlowController->RemoveEntityInterest(ActorEntityId);
+		}
+	}
 }
 
 ISpatialFunctionalTestLBDelegationInterface* ASpatialFunctionalTest::GetDelegationInterface() const
