@@ -128,7 +128,7 @@ namespace Improbable
             var simDeploymentRegion = string.Empty;
             var simDeploymentCluster = string.Empty;
             var numSimPlayers = 0;
-            var numSimDeployments = 1;
+            var maxPlayersPerDeployment = -1; // Will be initialized to numSimPlayers
 
             if (launchSimPlayerDeployment)
             {
@@ -148,16 +148,18 @@ namespace Improbable
                     return 1;
                 }
 
+                // Start a single deployment by default
+                maxPlayersPerDeployment = numSimPlayers;
                 if (args.Length >= 16)
                 {
-                    if (!Int32.TryParse(args[15], out numSimDeployments))
+                    if (!Int32.TryParse(args[15], out maxPlayersPerDeployment))
                     {
-                        Console.WriteLine("Cannot parse the target number of simulated players deployments.");
+                        Console.WriteLine("Cannot parse the maximum number of simulated players per deployment.");
                         return 1;
                     }
-                    else if (numSimDeployments <= 0)
+                    else if (maxPlayersPerDeployment <= 0)
                     {
-                        Console.WriteLine("The number of deployments must be positive.");
+                        Console.WriteLine("The number of simulated players per deployment must be positive.");
                         return 1;
                     }
                 }
@@ -197,7 +199,7 @@ namespace Improbable
                 var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
                     projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentBaseName,
                     simDeploymentJson, mainDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
-                    numSimPlayers, numSimDeployments, useChinaPlatform);
+                    numSimPlayers, maxPlayersPerDeployment, useChinaPlatform);
 
                 if (simDeploymentCreationOps == null || simDeploymentCreationOps.Count == 0)
                 {
@@ -235,7 +237,7 @@ namespace Improbable
                     numSuccessfullyStartedSimDeployments++;
                 }
 
-                Console.WriteLine($"Successfully started {numSuccessfullyStartedSimDeployments} out of {numSimDeployments} simulated player deployments.");
+                Console.WriteLine($"Successfully started {numSuccessfullyStartedSimDeployments} out of {simDeploymentCreationOps.Count} simulated player deployments.");
             }
             catch (Grpc.Core.RpcException e)
             {
@@ -290,15 +292,15 @@ namespace Improbable
                 return 1;
             }
 
-            var numSimDeployments = 1;
+            var maxPlayersPerDeployment = numSimplayers;
             if (args.Length >= 12)
             {
-                if (!Int32.TryParse(args[11], out numSimDeployments))
+                if (!Int32.TryParse(args[11], out maxPlayersPerDeployment))
                 {
                     Console.WriteLine("Cannot parse the target number of simulated players deployments.");
                     return 1;
                 }
-                else if (numSimDeployments <= 0)
+                else if (maxPlayersPerDeployment <= 0)
                 {
                     Console.WriteLine("The number of deployments must be positive.");
                     return 1;
@@ -310,7 +312,7 @@ namespace Improbable
             var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
                 projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentBaseName,
                 simDeploymentJson, simDeploymentSnapshotPath, simDeploymentRegion, simDeploymentCluster,
-                numSimplayers, numSimDeployments, useChinaPlatform);
+                numSimplayers, maxPlayersPerDeployment, useChinaPlatform);
 
             if (simDeploymentCreationOps == null || simDeploymentCreationOps.Count == 0)
             {
@@ -337,7 +339,7 @@ namespace Improbable
                 numSuccessfullyStartedDeployments++;
             }
 
-            Console.WriteLine($"Successfully started {numSuccessfullyStartedDeployments} out of {numSimDeployments} simulated player deployments.");
+            Console.WriteLine($"Successfully started {numSuccessfullyStartedDeployments} out of {simDeploymentCreationOps.Count} simulated player deployments.");
 
             return 0;
         }
@@ -612,9 +614,11 @@ namespace Improbable
 
         private static List<Operation<Deployment, CreateDeploymentMetadata>> CreateSimPlayerDeploymentsAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentBaseName,
-            string simDeploymentJsonPath, string simDeploymentSnapshotPath, string regionCode, string clusterCode, int numSimPlayers, int numSimDeployments, bool useChinaPlatform)
+            string simDeploymentJsonPath, string simDeploymentSnapshotPath, string regionCode, string clusterCode, int numSimPlayers, int maxPlayersPerDeployment, bool useChinaPlatform)
         {
             var operations = new List<Operation<Deployment, CreateDeploymentMetadata>>();
+
+            var numSimDeployments = (int)Math.Ceiling(numSimPlayers / (double)maxPlayersPerDeployment);
 
             var longestName = GetSimDeploymentName(simDeploymentBaseName, numSimDeployments);
             if (longestName.Length > 32)
@@ -668,6 +672,8 @@ namespace Improbable
                     {
                         Console.WriteLine($"Unable to launch the deployment(s). Detail: '{e.Status.Detail}'");
                     }
+
+                    Console.WriteLine($"No further deployments will be started. Initiated startup for {simPlayerDeploymentId} out of the target {numSimDeployments} deployments.");
 
                     return operations;
                 }
@@ -784,10 +790,10 @@ namespace Improbable
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> [<num-sim-deployments>]]");
-            Console.WriteLine($"  Starts a cloud deployment, with optionally simulated player deployments. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN'). By default, a single simulated player deployment is started if simulated player deployment parameters are provided.");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <auto-connect> [<num-sim-deployments>]");
-            Console.WriteLine($"  Starts simulated player deployment(s). Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN'). A single deployment is started by default.");
+            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> <main-deployment-cluster> <main-deployment-tags> [<sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <total-num-sim-players> [<max-sim-players-per-deployment>]]");
+            Console.WriteLine($"  Starts a cloud deployment, with optionally simulated player deployments. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN'). By default, A single deployment for all simulated players is started if simulated player deployment parameters are provided.");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-base-name> <sim-deployment-json> <sim-deployment-region> <sim-deployment-cluster> <sim-deployment-snapshot-path> <total-num-sim-players> <auto-connect> [<max-sim-players-per-deployment>]");
+            Console.WriteLine($"  Starts simulated player deployment(s). Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN'). A single deployment for all simulated players is started by default.");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
             Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
