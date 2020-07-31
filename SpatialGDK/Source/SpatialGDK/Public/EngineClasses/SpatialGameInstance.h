@@ -17,6 +17,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSpawnFailedEvent, const FString&, Reason);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnControlledShutdownTriggeredEvent);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -55,6 +56,9 @@ public:
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
+	UFUNCTION()
+	void HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue);
+
 	void CleanupCachedLevelsAfterConnection();
 
 	// Invoked when this worker has successfully connected to SpatialOS
@@ -66,6 +70,9 @@ public:
 	// Invoked when the player could not be spawned
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
+	// TODO
+	UPROPERTY(BlueprintAssignable)
+	FOnControlledShutdownTriggeredEvent OnControlledShutdownTriggered;
 
 	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }

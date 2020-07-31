@@ -17,6 +17,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Interop/SpatialWorkerFlags.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -230,6 +231,26 @@ void USpatialGameInstance::HandleOnConnected()
 #endif
 
 	OnSpatialConnected.Broadcast();
+
+	// TODO placement
+	const UWorld* World = GetWorld();
+	const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (NetDriver != nullptr)
+	{
+		FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
+		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
+
+		NetDriver->SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+	}
+}
+
+void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
+{
+	if(FlagName == TEXT("ControlledShutdown"))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Controlled shutdown / Triggered via worker flag"));
+		OnControlledShutdownTriggered.Broadcast();
+	}
 }
 
 void USpatialGameInstance::CleanupCachedLevelsAfterConnection()
