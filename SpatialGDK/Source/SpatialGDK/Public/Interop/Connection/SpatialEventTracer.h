@@ -118,6 +118,8 @@ struct SpatialEventTracer
 	// Consider making sure it's not accepting rvalue (since SpatialSpanIdActivator must live long enough for the worker sent op to be registered with this SpanId)
 	// e.g. void TraceEvent(... SpatialSpanIdActivator&& SpanIdActivator) = delete;
 	// TODO(EventTracer): Communicate to others, that SpatialSpanIdActivator must be creating prior to calling worker send functions
+	// TODO(EventTracer): Make sure that in SpatialSender/SpatialReceiver these functions are called properly and at proper moments
+	// (So far they have been added to the same places as in Jose's event tracing branch)
 	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, CommandType Command);
 	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, bool bSuccess);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);

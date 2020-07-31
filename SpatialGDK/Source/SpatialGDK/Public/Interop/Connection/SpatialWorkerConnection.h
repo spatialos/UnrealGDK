@@ -4,8 +4,6 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
-// TODO remove
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialCommonTypes.h"
 
 #include "SpatialWorkerConnection.generated.h"
@@ -19,11 +17,6 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
-
-	inline void SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn)
-	{
-		EventTracer = EventTracerIn;
-	}
 
 	virtual void FinishDestroy() override
 	{
@@ -47,6 +40,4 @@ public:
 private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;
-
-	SpatialGDK::SpatialEventTracer* EventTracer;
 };
