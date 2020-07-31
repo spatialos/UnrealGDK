@@ -96,15 +96,15 @@ Worker_RequestId ULegacySpatialWorkerConnection::SendReserveEntityIdsRequest(uin
 	return NextRequestId++;
 }
 
-Worker_RequestId ULegacySpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const worker::c::Trace_SpanId* SpanId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId, SpanId);
 	return NextRequestId++;
 }
 
-Worker_RequestId ULegacySpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId);
+	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId, SpanId);
 	return NextRequestId++;
 }
 
@@ -118,7 +118,7 @@ void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityI
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const worker::c::Trace_SpanId* SpanId)
+void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, SpanId);
 }
@@ -287,9 +287,17 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
 
+			if (Message->SpanId.IsSet())
+			{
+				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->SpanId.GetValue());
+			}
 			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
 				Message->EntityId,
 				nullptr);
+			if (Message->SpanId.IsSet())
+			{
+				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
+			}
 			break;
 		}
 		case EOutgoingMessageType::AddComponent:

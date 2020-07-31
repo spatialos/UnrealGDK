@@ -18,11 +18,11 @@ public:
 	// Worker Connection Interface
 	virtual TArray<SpatialGDK::OpList> GetOpList() PURE_VIRTUAL(AbstractSpatialWorkerConnection::GetOpList, return TArray<SpatialGDK::OpList>(););
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendReserveEntityIdsRequest, return 0;);
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const worker::c::Trace_SpanId* SpanId = nullptr) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendCreateEntityRequest, return 0;);
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendDeleteEntityRequest, return 0;);
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendCreateEntityRequest, return 0;);
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendDeleteEntityRequest, return 0;);
 	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendAddComponent, return;);
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendRemoveComponent, return;);
-	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const worker::c::Trace_SpanId* SpanId = nullptr) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendComponentUpdate, return;);
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendComponentUpdate, return;);
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendCommandRequest, return 0;);
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendCommandResponse, return;);
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendCommandFailure, return;);

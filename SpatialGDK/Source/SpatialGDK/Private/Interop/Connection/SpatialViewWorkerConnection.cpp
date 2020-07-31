@@ -52,7 +52,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendReserveEntityIdsRequest(uint3
 	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
 }
 
-Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const worker::c::Trace_SpanId* /*SpanId*/) // TODO: Figure out SpanId usage in SpatialView
+Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId) // TODO: Figure out SpanId usage in SpatialView
 {
 	check(Coordinator.IsValid());
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId  : TOptional<Worker_EntityId>();
@@ -65,7 +65,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FW
 	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id);
 }
 
-Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendDeleteEntityRequest(EntityId);
@@ -83,7 +83,7 @@ void USpatialViewWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId,
 	return Coordinator->SendRemoveComponent(EntityId, ComponentId);
 }
 
-void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const worker::c::Trace_SpanId* /* SpanId */) // TODO: Figure this out
+void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId) // TODO: Figure this out
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate));

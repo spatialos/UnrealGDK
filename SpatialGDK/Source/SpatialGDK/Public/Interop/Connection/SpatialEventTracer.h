@@ -55,6 +55,43 @@ struct FEventAuthorityIntentUpdate
 	const char* Type = "AuthorityIntentUpdate";
 };
 
+USTRUCT()
+struct FEventRetireEntityRequest
+{
+	GENERATED_BODY()
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() const AActor* Actor;
+	const char* Type = "EntityRetire";
+};
+
+USTRUCT()
+struct FEventDeleteEntityRequest
+{
+	GENERATED_BODY()
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() const AActor* Actor;
+	const char* Type = "EntityDelete";
+};
+
+/*
+TODO
+[+] Sending create entity request
+[+] Sending authority intent update
+[+] Sending delete entity request
+[+] Sending RPC
+Sending RPC retry
+Sending command response
+Receiving add entity
+Receiving remove entity
+Receiving authority change
+Receiving component update
+Receiving command request
+Receiving command response
+Receiving create entity response
+Individual RPC Calls (distinguishing between GDK and USER)
+Custom events can be added
+*/
+
 class UFunction;
 class AActor;
 

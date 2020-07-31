@@ -55,16 +55,12 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId, const worker::c::Trace_SpanId* SpanIdIn)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
-	{
-		if (SpanIdIn != nullptr)
-		{
-			SpanId = *SpanIdIn;
-		}
-	}
+		, SpanId(SpanId)
+	{}
 
 	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
@@ -73,12 +69,14 @@ struct FCreateEntityRequest : FOutgoingMessage
 
 struct FDeleteEntityRequest : FOutgoingMessage
 {
-	FDeleteEntityRequest(Worker_EntityId InEntityId)
+	FDeleteEntityRequest(Worker_EntityId InEntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
+		, SpanId(SpanId)
 	{}
 
 	Worker_EntityId EntityId;
+	const TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FAddComponent : FOutgoingMessage
@@ -107,16 +105,12 @@ struct FRemoveComponent : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const worker::c::Trace_SpanId* SpanIdIn)
+	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
-	{
-		if (SpanIdIn)
-		{
-			SpanId = *SpanIdIn;
-		}
-	}
+		, SpanId(SpanId)
+	{}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentUpdate Update;

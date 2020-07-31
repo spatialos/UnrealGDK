@@ -90,13 +90,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 
 	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
-	TOptional<worker::c::Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		SpanId = EventTracer->TraceEvent2(FEventCreateEntity{ Channel->GetEntityId(), Channel->Actor });
-	}
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId.IsSet() ? &SpanId.GetValue() : nullptr);
+	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, EventTracer->TraceEvent2(FEventCreateEntity{ Channel->GetEntityId(), Channel->Actor }));
 
 	return CreateEntityRequestId;
 }
@@ -592,14 +587,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 
-	TOptional<worker::c::Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		SpanId = EventTracer->TraceEvent2(FEventAuthorityIntentUpdate{ NewAuthoritativeVirtualWorkerId, &Actor });
-	}
-
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update, SpanId.IsSet() ? &SpanId.GetValue() : nullptr);
+	Connection->SendComponentUpdate(EntityId, &Update, EventTracer->TraceEvent2(FEventAuthorityIntentUpdate{ NewAuthoritativeVirtualWorkerId, &Actor }));
 
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
@@ -1094,8 +1083,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
-		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId);
-		EventTracer->TraceEvent(ConstructEvent(Actor, EntityId, RequestID));
+		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId, EventTracer->TraceEvent2(FEventRetireEntityRequest{ EntityId, Actor }));
 	}
 }
 
