@@ -26,14 +26,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 #define GDK_SPATIAL_EVENT_TRACING_ENABLED 1
 
 static_assert(sizeof(Worker_EntityId) == sizeof(int64), "EntityId assumed 64-bit here");
+static_assert(sizeof(VirtualWorkerId) == sizeof(uint32), "VirtualWorkerId assumed 32-bit here");
 
 USTRUCT()
 struct FEventCreateEntity
 {
 	GENERATED_BODY()
 	UPROPERTY() int64 EntityId;
-	UPROPERTY() AActor* Actor;
-	UPROPERTY() FVector Translation;
+	UPROPERTY() const AActor* Actor;
 	const char* Type = "CreateEntity";
 };
 
@@ -42,9 +42,17 @@ struct FEventCreateEntitySuccess
 {
 	GENERATED_BODY()
 	UPROPERTY() int64 EntityId;
-	UPROPERTY() AActor* Actor;
-	UPROPERTY() FVector Translation;
+	UPROPERTY() const AActor* Actor;
 	const char* Type = "CreateEntity";
+};
+
+USTRUCT()
+struct FEventAuthorityIntentUpdate
+{
+	GENERATED_BODY()
+	UPROPERTY() uint32 NewWorkerId;
+	UPROPERTY() const AActor* Actor;
+	const char* Type = "AuthorityIntentUpdate";
 };
 
 class UFunction;
@@ -77,7 +85,6 @@ SpatialGDKEvent ConstructEvent(const AActor* Actor, const UFunction* Function);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, ENetRole Role);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp);
@@ -157,6 +164,22 @@ struct SpatialEventTracer
 			if (UStrProperty *StringProperty = Cast<UStrProperty>(Property))
 			{
 				Event.Data.Add(VariableName, StringProperty->GetPropertyValue(Value));
+			}
+			else if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property))
+			{
+				UObject* Object = ObjectProperty->GetPropertyValue(Value);
+				if(Object)
+				{
+					Event.Data.Add(VariableName, Object->GetName());
+					if (AActor* Actor = Cast<AActor>(Object))
+					{
+						Event.Data.Add(VariableName + TEXT("Position"), Actor->GetTransform().GetTranslation().ToString());
+					}
+				}
+				else
+				{
+					Event.Data.Add(VariableName, "Null");
+				}
 			}
 			else // Default
 			{

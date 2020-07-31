@@ -93,7 +93,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	TOptional<worker::c::Trace_SpanId> SpanId;
 	if (EventTracer->IsEnabled())
 	{
-		SpanId = EventTracer->TraceEvent2(FEventCreateEntity{ Channel->GetEntityId(), Channel->Actor, Channel->Actor->GetTransform().GetTranslation() });
+		SpanId = EventTracer->TraceEvent2(FEventCreateEntity{ Channel->GetEntityId(), Channel->Actor });
 	}
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId.IsSet() ? &SpanId.GetValue() : nullptr);
@@ -592,10 +592,14 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 
-	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
+	TOptional<worker::c::Trace_SpanId> SpanId;
+	if (EventTracer->IsEnabled())
+	{
+		SpanId = EventTracer->TraceEvent2(FEventAuthorityIntentUpdate{ NewAuthoritativeVirtualWorkerId, &Actor });
+	}
 
-	EventTracer->TraceEvent(ConstructEvent(&Actor, NewAuthoritativeVirtualWorkerId));
+	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update, SpanId.IsSet() ? &SpanId.GetValue() : nullptr);
 
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);

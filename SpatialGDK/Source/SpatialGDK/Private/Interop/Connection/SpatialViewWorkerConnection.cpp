@@ -83,7 +83,7 @@ void USpatialViewWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId,
 	return Coordinator->SendRemoveComponent(EntityId, ComponentId);
 }
 
-void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
+void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const worker::c::Trace_SpanId* /* SpanId */) // TODO: Figure this out
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate));

@@ -107,14 +107,20 @@ struct FRemoveComponent : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate)
+	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const worker::c::Trace_SpanId* SpanIdIn)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
-	{}
+	{
+		if (SpanIdIn)
+		{
+			SpanId = *SpanIdIn;
+		}
+	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentUpdate Update;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FCommandRequest : FOutgoingMessage

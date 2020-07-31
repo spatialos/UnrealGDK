@@ -118,9 +118,9 @@ void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityI
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
+void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const worker::c::Trace_SpanId* SpanId)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, SpanId);
 }
 
 Worker_RequestId ULegacySpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId)

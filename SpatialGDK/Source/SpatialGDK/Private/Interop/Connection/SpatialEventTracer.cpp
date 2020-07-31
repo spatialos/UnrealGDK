@@ -299,20 +299,6 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Work
 	return Event;
 }
 
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "AuthorityIntentUpdate";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	Event.Data.Add("NewAuthoritativeWorkerId", FString::Printf(TEXT("%u"), NewAuthoritativeWorkerId));
-	return Event;
-}
-
 SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId)
 {
 	SpatialGDKEvent Event;

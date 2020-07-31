@@ -36,7 +36,7 @@ public:
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
 	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData) override;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) override;
-	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate) override;
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const worker::c::Trace_SpanId* SpanId = nullptr) override;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response) override;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message) override;
