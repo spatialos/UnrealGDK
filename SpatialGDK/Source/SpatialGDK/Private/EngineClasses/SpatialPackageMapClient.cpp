@@ -319,15 +319,16 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	// Super::SerializeObject is not called here on purpose
 	if (Ar.IsSaving())
 	{
-		Ar << Obj;
+		FSpatialNetBitWriter::WriteObject(Ar, this, Obj);
 		return true;
 	}
+	else
+	{
+		bool bUnresolved = false;
+		Obj = FSpatialNetBitReader::ReadObject(Ar, this, bUnresolved);
 
-	FSpatialNetBitReader& Reader = static_cast<FSpatialNetBitReader&>(Ar);
-	bool bUnresolved = false;
-	Obj = Reader.ReadObject(bUnresolved);
-
-	return !bUnresolved;
+		return !bUnresolved;
+	}
 }
 
 const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
