@@ -85,8 +85,8 @@ struct SpatialEventTracer
 {
 	SpatialEventTracer();
 	~SpatialEventTracer();
-	Trace_SpanId CreateNewSpan();
-	Trace_SpanId CreateNewSpan(const TArray<Trace_SpanId>& Causes);
+	Trace_SpanId CreateNewSpanId();
+	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
 	
 	void TraceEvent(const SpatialGDKEvent& Event);
 
