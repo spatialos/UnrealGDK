@@ -85,9 +85,9 @@ pushd "$(dirname "$0")"
         jq -n \
             --arg value0 "Find the test results at ${TEST_RESULTS_URL}" \
             --arg value1 "${TESTS_PASSED}" \
-            --arg value2  "*${ENGINE_COMMIT_HASH}* $(basename ${TEST_RESULTS_DIRECTORY})" \
-            --arg value3  "Passed ${TOTAL_TESTS_SUCCEEDED} / ${TOTAL_TESTS_RUN} tests." \
-            --arg value4  "${TEST_RESULTS_URL}" \
+            --arg value2 "*${ENGINE_COMMIT_HASH}* $(basename ${TEST_RESULTS_DIRECTORY})" \
+            --arg value3 "Passed ${TOTAL_TESTS_SUCCEEDED} / ${TOTAL_TESTS_RUN} tests." \
+            --arg value4 "${TEST_RESULTS_URL}" \
            '{
                fallback: $value0,
                color: $value1,
