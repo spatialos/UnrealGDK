@@ -1783,27 +1783,27 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(Op);
-		EventTracer->TraceEvent(ConstructEvent(nullptr, TEXT("SPAWN_PLAYER_COMMAND"), Op.request_id));
+		EventTracer->TraceEvent(EventName::CommandRequest, EventType::Received, Op.request_id, CommandType::SpawnPlayer);
 		return;
 	}
 	else if (Op.request.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(Op);
-		EventTracer->TraceEvent(ConstructEvent(nullptr, TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), Op.request_id));
+		EventTracer->TraceEvent(EventName::CommandRequest, EventType::Received, Op.request_id, CommandType::ServerWorkerForwardSpawnRequest);
 		return;
 	}
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
 		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
-		EventTracer->TraceEvent(ConstructEvent(nullptr, TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), Op.request_id));
+		EventTracer->TraceEvent(EventName::CommandRequest, EventType::Received, Op.request_id, CommandType::ClearRPCsOnEntityCreation);
 		return;
 	}
 #if WITH_EDITOR
 	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
-		EventTracer->TraceEvent(ConstructEvent(nullptr, TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), Op.request_id));
+		EventTracer->TraceEvent(EventName::CommandRequest, EventType::Received, Op.request_id, CommandType::ShutdownMultiProcess);
 		return;
 	}
 #endif // WITH_EDITOR

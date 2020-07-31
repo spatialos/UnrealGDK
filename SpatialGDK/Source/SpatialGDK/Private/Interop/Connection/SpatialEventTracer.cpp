@@ -15,19 +15,25 @@ using namespace worker::c;
 namespace
 {
 	static const char ActorKey[] = "Actor";
-	const char* ActorKeyPtr = ActorKey;
+	static const char* ActorKeyPtr = ActorKey;
 
 	static const char ActorPositionKey[] = "Position";
-	const char* ActorPositionKeyPtr = ActorPositionKey;
+	static const char* ActorPositionKeyPtr = ActorPositionKey;
 
 	static const char FunctionKey[] = "Function";
-	const char* FunctionKeyPtr = FunctionKey;
+	static const char* FunctionKeyPtr = FunctionKey;
 
 	static const char NewRoleKey[] = "NewRole";
-	const char* NewRoleKeyPtr = NewRoleKey;
+	static const char* NewRoleKeyPtr = NewRoleKey;
 
 	static const char RequestIdKey[] = "RequestId";
-	const char* RequestIdKeyPtr = RequestIdKey;
+	static const char* RequestIdKeyPtr = RequestIdKey;
+
+	static const char bSuccessKey[] = "Success";
+	static const char* bSuccessKeyPtr = bSuccessKey;
+
+	static const char CommandTypeKey[] = "CommandType";
+	static const char* CommandTypeKeyPtr = CommandTypeKey;
 
 	static const char SentStr[] = "Sent";
 	static const char ReceivedStr[] = "Received";
@@ -46,6 +52,9 @@ namespace
 	}
 
 	static const char AuthorityChangeStr[] = "AuthorityChange";
+	static const char CommandFailureStr[] = "CommandFailure";
+	static const char CommandRequestStr[] = "CommandRequest";
+	static const char CommandResponseStr[] = "CommandResponse";
 	static const char ComponentUpdateStr[] = "ComponentUpdate";
 	static const char CreateEntityStr[] = "CreateEntity";
 	static const char RPCStr[] = "RPC";
@@ -55,8 +64,12 @@ namespace
 		{
 		case SpatialGDK::EventName::AuthorityChange:
 			return AuthorityChangeStr;
-		case SpatialGDK::EventName::ComponentUpdate:
-			return ComponentUpdateStr;
+		case SpatialGDK::EventName::CommandFailure:
+			return CommandFailureStr;
+		case SpatialGDK::EventName::CommandRequest:
+			return CommandRequestStr;
+		case SpatialGDK::EventName::CommandResponse:
+			return CommandResponseStr;
 		case SpatialGDK::EventName::CreateEntity:
 			return CreateEntityStr;
 		case SpatialGDK::EventName::RPC:
@@ -65,6 +78,27 @@ namespace
 			return nullptr;
 		}
 
+	}
+
+	static const char ClearRPCsOnEntityCreationStr[] = "CLEAR_RPCS_ON_ENTITY_CREATION";
+	static const char ServerWorkerForwardSpawnRequestStr[] = "SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND";
+	static const char ShutdownMultiProcessStr[] = "SHUTDOWN_MULTI_PROCESS_REQUEST";
+	static const char SpawnPlayerStr[] = "SPAWN_PLAYER_COMMAND";
+	const char* CommandTypeToString(CommandType Type)
+	{
+		switch (Type)
+		{
+		case SpatialGDK::CommandType::ClearRPCsOnEntityCreation:
+			return ClearRPCsOnEntityCreationStr;
+		case SpatialGDK::CommandType::ServerWorkerForwardSpawnRequest:
+			return ServerWorkerForwardSpawnRequestStr;
+		case SpatialGDK::CommandType::ShutdownMultiProcess:
+			return ShutdownMultiProcessStr;
+		case SpatialGDK::CommandType::SpawnPlayer:
+			return SpawnPlayerStr;
+		default:
+			return nullptr;
+		}
 	}
 
 	static const char RoleNone[] = "ROLE_None";
@@ -128,6 +162,25 @@ namespace
 		const char* RequestIdStr = RequestId.Get();
 
 		Trace_EventData_AddStringFields(EventData, 1, &RequestIdKeyPtr, &RequestIdStr);
+	}
+
+	static const char TrueStr[] = "True";
+	static const char FalseStr[] = "True";
+	static const char* TrueStrPtr = TrueStr;
+	static const char* FalseStrPtr = FalseStr;
+	void AddBoolSuccessToEventData(bool bSuccess, Trace_EventData* EventData)
+	{
+		check(EventData != nullptr);
+
+		Trace_EventData_AddStringFields(EventData, 1, &bSuccessKeyPtr, bSuccess ? &TrueStrPtr : &FalseStrPtr);
+	}
+
+	void AddCommandTypeToEventData(CommandType Type, Trace_EventData* EventData)
+	{
+		check(EventData != nullptr);
+
+		const char* CommandTypePtr = CommandTypeToString(Type);
+		Trace_EventData_AddStringFields(EventData, 1, &CommandTypeKeyPtr, &CommandTypePtr);
 	}
 }
 
@@ -279,6 +332,23 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 	}
 }
 
+void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, CommandType Command)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+
+		AddRequestIdToEventData(CommandResponseId, EventData);
+		AddCommandTypeToEventData(Command, EventData);
+
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
+	}
+}
+
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, Worker_RequestId CreateEntityRequestId)
 {
 	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
@@ -293,6 +363,23 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 		}
 
 		AddRequestIdToEventData(CreateEntityRequestId, EventData);
+
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
+	}
+}
+
+void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, bool bSuccess)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+
+		AddRequestIdToEventData(CommandResponseId, EventData);
+		AddBoolSuccessToEventData(bSuccess, EventData);
 
 		TraceEvent.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
@@ -351,16 +438,6 @@ void SpatialEventTracer::Enable()
 void SpatialEventTracer::Disable()
 {
 	Trace_EventTracer_Disable(EventTracer);
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(Worker_RequestId RequestID, bool bSuccess)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "CommandResponse";
-	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
-	Event.Data.Add("Success", bSuccess ? TEXT("true") : TEXT("false"));
-	return Event;
 }
 
 SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, Worker_CommandResponseOp ResponseOp)
@@ -424,16 +501,6 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, cons
 	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
 	return Event;
 }
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = Type;
-	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
-	return Event;
-}
-
 
 SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID)
 {

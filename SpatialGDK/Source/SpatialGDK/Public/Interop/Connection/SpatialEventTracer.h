@@ -47,18 +47,13 @@ struct SpatialGDKEvent
 	TMap<FString, FString> Data;
 };
 
-// TODO: discuss overhead from constructing SpatialGDKEvents
-// TODO: Rename
-//SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
-//SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
+// TODO: Remove
 SpatialGDKEvent ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, TraceKey TraceId, Worker_RequestId RequestID);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Message, Worker_CreateEntityResponseOp ResponseOp);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, Worker_CommandResponseOp ResponseOp);
-SpatialGDKEvent ConstructEvent(Worker_RequestId RequestID, bool bSuccess);
 
 enum class EventType
 {
@@ -69,9 +64,21 @@ enum class EventType
 enum class EventName
 {
 	AuthorityChange,
+	CommandFailure,
+	CommandRequest,
+	CommandResponse,
 	ComponentUpdate,
 	CreateEntity,
 	RPC,
+};
+
+// TODO: is it really necessary?
+enum class CommandType
+{
+	ClearRPCsOnEntityCreation,
+	ServerWorkerForwardSpawnRequest,
+	ShutdownMultiProcess,
+	SpawnPlayer,
 };
 
 struct SpatialEventTracer
@@ -80,10 +87,12 @@ struct SpatialEventTracer
 	~SpatialEventTracer();
 	Trace_SpanId CreateNewSpan();
 	void TraceEvent(const SpatialGDKEvent& Event);
-	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function);
+	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, CommandType Command);
+	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, bool bSuccess);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);
-	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, Worker_RequestId CreateEntityRequestId);
+	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function);
+	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
 	void Enable();
 	void Disable();
 	const worker::c::Trace_EventTracer* GetWorkerEventTracer() const;

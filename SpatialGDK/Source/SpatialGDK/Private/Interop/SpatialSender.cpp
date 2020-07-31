@@ -1007,7 +1007,7 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
 	Connection->SendCommandResponse(RequestId, &Response);
-	EventTracer->TraceEvent(ConstructEvent(RequestId, true));
+	EventTracer->TraceEvent(EventName::CommandResponse, EventType::Sent, RequestId, true);
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1018,13 +1018,13 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse();
 
 	Connection->SendCommandResponse(RequestId, &Response);
-	EventTracer->TraceEvent(ConstructEvent(RequestId, true));
+	EventTracer->TraceEvent(EventName::CommandResponse, EventType::Sent, RequestId, true);
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-	EventTracer->TraceEvent(ConstructEvent(RequestId, false));
+	EventTracer->TraceEvent(EventName::CommandResponse, EventType::Sent, RequestId, false);
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
