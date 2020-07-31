@@ -73,6 +73,33 @@ struct FEventDeleteEntityRequest
 	const char* Type = "EntityDelete";
 };
 
+USTRUCT()
+struct FEventSendRPC
+{
+	GENERATED_BODY()
+	UPROPERTY() const UObject* TargetObject;
+	UPROPERTY() const UFunction* Function;
+	const char* Type = "SendRPC";
+};
+
+USTRUCT()
+struct FEventRPCQueued
+{
+	GENERATED_BODY()
+	UPROPERTY() const UObject* TargetObject;
+	UPROPERTY() const UFunction* Function;
+	const char* Type = "RPCQueued";
+};
+
+USTRUCT()
+struct FEventRPCRetried
+{
+	GENERATED_BODY()
+	UPROPERTY() const UObject* TargetObject;
+	UPROPERTY() const UFunction* Function;
+	const char* Type = "RPCRetried";
+};
+
 /*
 TODO
 [+] Sending create entity request
@@ -94,10 +121,10 @@ Custom events can be added
 
 class UFunction;
 class AActor;
+class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-
 struct SpatialSpanId
 {
 	SpatialSpanId(worker::c::Trace_EventTracer* InEventTracer);
@@ -118,7 +145,6 @@ struct SpatialGDKEvent
 
 // TODO: discuss overhead from constructing SpatialGDKEvents
 // TODO: Rename
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const UFunction* Function);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, ENetRole Role);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
@@ -132,16 +158,16 @@ SpatialGDKEvent ConstructEvent(Worker_RequestId RequestID, bool bSuccess);
 
 struct SpatialEventTracer
 {
-	SpatialEventTracer();
+	SpatialEventTracer(UWorld* World);
 	~SpatialEventTracer();
 	SpatialSpanId CreateActiveSpan();
-	TOptional<Trace_SpanId> TraceEvent(const SpatialGDKEvent& Event);
+	TOptional<Trace_SpanId> TraceEvent(const SpatialGDKEvent& Event, const worker::c::Trace_SpanId* Cause = nullptr);
 
 	void Enable();
 	void Disable();
 	bool IsEnabled() { return bEnalbed; }
-	worker::c::Trace_EventTracer* GetWorkerEventTracer() { return EventTracer; }
-
+	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
+	USpatialNetDriver* GetNetDriver() const { return NetDriver; }
 	/*TOptional<Trace_SpanId> CreateEntity(AActor* Actor, Worker_EntityId EntityId)
 	{
 		SpatialGDKEvent Event;
@@ -178,7 +204,7 @@ struct SpatialEventTracer
 	}*/
 
 	template<typename T>
-	TOptional<Trace_SpanId> TraceEvent2(const T& Message)
+	TOptional<Trace_SpanId> TraceEvent2(const T& Message, const worker::c::Trace_SpanId* Cause = nullptr)
 	{
 		if (!IsEnabled())
 		{
@@ -233,11 +259,12 @@ struct SpatialEventTracer
 			// else if (UMapProperty* MapProperty = Cast<UMapProperty>(Property))
 			// else if (UStructProperty *StructProperty = Cast<UStructProperty>(Property))
 		}
-		return TraceEvent(Event);
+		return TraceEvent(Event, Cause);
 	}
 private:
 	bool bEnalbed{ true }; // TODO: Disable by default
 	worker::c::Trace_EventTracer* EventTracer;
+	USpatialNetDriver* NetDriver;
 };
 
 }

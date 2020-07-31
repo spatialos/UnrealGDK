@@ -493,17 +493,10 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
-	TOptional<worker::c::Trace_SpanId> Span;
-	if (EventTracer->IsEnabled())
-	{
-		Span = EventTracer->TraceEvent(ConstructEvent((AActor*)/*TODO*/TargetObject, Function));
-	}
-
-	worker::c::Trace_SpanId* SpanPtr = Span.IsSet() ? &Span.GetValue() : nullptr;
 #if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), SpanPtr, USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), EventTracer->TraceEvent2(FEventSendRPC{ TargetObject, Function }), USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
 #else
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), SpanPtr);
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), EventTracer->TraceEvent2(FEventSendRPC{ TargetObject, Function }));
 #endif
 }
 

@@ -2,9 +2,10 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "UObject/Class.h"
+#include "EngineMinimal.h"
 #include "GameFramework/Actor.h"
-
 #include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
@@ -90,7 +91,8 @@ SpatialSpanId::~SpatialSpanId()
 	Trace_EventTracer_UnsetActiveSpanId(EventTracer);
 }
 
-SpatialEventTracer::SpatialEventTracer()
+SpatialEventTracer::SpatialEventTracer(UWorld* World)
+	: NetDriver(Cast<USpatialNetDriver>(World->GetNetDriver()))
 {
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.callback = MyTraceCallback;
@@ -109,9 +111,18 @@ SpatialSpanId SpatialEventTracer::CreateActiveSpan()
 	return SpatialSpanId(EventTracer);
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event, const worker::c::Trace_SpanId* Cause)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId;
+	if (Cause)
+	{
+		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Cause, 1); // This only works for count=1
+	}
+	else
+	{
+		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	}
+
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TCHAR_TO_ANSI(*Event.Message), TCHAR_TO_ANSI(*Event.Type), nullptr };
 
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
@@ -141,20 +152,6 @@ void SpatialEventTracer::Disable()
 {
 	Trace_EventTracer_Disable(EventTracer);
 	bEnalbed = false;
-}
-
-SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UFunction* Function)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "RPC";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	Event.Data.Add("Function", Function->GetName());
-	return Event;
 }
 
 SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(Worker_RequestId RequestID, bool bSuccess)

@@ -17,17 +17,13 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, const worker::c::Trace_SpanId* SpanIdIn = nullptr, TraceKey InTraceKey = InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, const TOptional<worker::c::Trace_SpanId> SpanIdIn = {}, TraceKey InTraceKey = InvalidTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
 		, Trace(InTraceKey)
-	{
-		if (SpanIdIn != nullptr)
-		{
-			SpanId = *SpanIdIn;
-		}
-	}
+		, SpanId(SpanId)
+	{ }
 
 	RPCPayload(Schema_Object* RPCObject)
 	{

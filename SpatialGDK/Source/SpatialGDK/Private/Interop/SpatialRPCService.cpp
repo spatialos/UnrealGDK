@@ -8,6 +8,8 @@
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
 #include "Utils/SpatialLatencyTracer.h"
+#include "EngineClasses/SpatialNetDriver.h" // For EventTracing
+#include "EngineClasses/SpatialPackageMapClient.h" // For EventTracing
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
@@ -31,6 +33,17 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
+		if (EventTracer->IsEnabled() && Payload.SpanId.IsSet())
+		{
+			// TODO: Can this be simplified? EventTracer needing the NetDriver is a bit rubbish
+			USpatialNetDriver* NetDriver = EventTracer->GetNetDriver();
+			TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+			
+			UObject* TargetObject = TargetObjectWeakPtr.Get();
+			const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
+			UFunction* Function = ClassInfo.RPCs[Payload.Index];
+			Payload.SpanId = EventTracer->TraceEvent2(FEventRPCQueued{ TargetObject, Function }, &Payload.SpanId.GetValue());
+		}
 		AddOverflowedRPC(EntityType, MoveTemp(Payload));
 		Result = EPushRPCResult::QueueOverflowed;
 	}
@@ -153,6 +166,17 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (RPCPayload& Payload : OverflowedRPCArray)
 		{
+			if (EventTracer->IsEnabled())
+			{
+				// TODO: Can this be simplified? EventTracer needing the NetDriver is a bit rubbish
+				USpatialNetDriver* NetDriver = EventTracer->GetNetDriver();
+				TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+
+				UObject* TargetObject = TargetObjectWeakPtr.Get();
+				const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
+				UFunction* Function = ClassInfo.RPCs[Payload.Index];
+				Payload.SpanId = EventTracer->TraceEvent2(FEventRPCRetried{ TargetObject, Function }, &Payload.SpanId.GetValue());
+			}
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
 
 			switch (Result)
