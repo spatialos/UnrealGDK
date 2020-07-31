@@ -62,6 +62,55 @@ namespace
 		}
 
 	}
+
+	void AddActorInfoToEventData(const AActor* Actor, Trace_EventData* EventData)
+	{
+		check(Actor != nullptr);
+		check(EventData != nullptr);
+
+		auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
+		const char* ActorNameStr = ActorName.Get();
+		Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
+
+		auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
+		const char* ActorPositionStr = ActorPosition.Get();
+		Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
+	}
+
+	void AddFunctionInfoToEventData(const UFunction* Function, Trace_EventData* EventData)
+	{
+		check(Function != nullptr);
+		check(EventData != nullptr);
+
+		auto FunctionName = StringCast<ANSICHAR>(*Function->GetName());
+		const char* FunctionNameStr = FunctionName.Get();
+		Trace_EventData_AddStringFields(EventData, 1, &FunctionKeyPtr, &FunctionNameStr);
+	}
+
+	void AddRoleInfoToEventData(ENetRole Role, Trace_EventData* EventData)
+	{
+		check(EventData != nullptr);
+
+		const char* NewRoleValue = nullptr;
+
+		switch (Role)
+		{
+		case ROLE_SimulatedProxy:
+			NewRoleValue = RoleNone;
+			break;
+		case ROLE_AutonomousProxy:
+			NewRoleValue = RoleAutonomousProxy;
+			break;
+		case ROLE_Authority:
+			NewRoleValue = RoleAuthority;
+			break;
+		default:
+			NewRoleValue = RoleInvalid;
+			break;
+		}
+
+		Trace_EventData_AddStringFields(EventData, 1, &NewRoleKeyPtr, &NewRoleValue);
+	}
 }
 
 void MyTraceCallback(void* UserData, const Trace_Item* Item)
@@ -194,24 +243,13 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 		if (Actor != nullptr)
 		{
-
-			auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
-			const char* ActorNameStr = ActorName.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
-
-			auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
-			const char* ActorPositionStr = ActorPosition.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
-
+			AddActorInfoToEventData(Actor, EventData);
 		}
 
 		if (Function != nullptr)
 		{
-			auto FunctionName = StringCast<ANSICHAR>(*Function->GetName());
-			const char* FunctionNameStr = FunctionName.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &FunctionKeyPtr, &FunctionNameStr);
+			AddFunctionInfoToEventData(Function, EventData);
 		}
-
 
 		TraceEvent.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
@@ -229,15 +267,7 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 		if (Actor != nullptr)
 		{
-
-			auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
-			const char* ActorNameStr = ActorName.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
-
-			auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
-			const char* ActorPositionStr = ActorPosition.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
-
+			AddActorInfoToEventData(Actor, EventData);
 		}
 
 		// TODO: TargetObject
@@ -259,37 +289,10 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 		if (Actor != nullptr)
 		{
-			auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
-			const char* ActorNameStr = ActorName.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
-
-			auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
-			const char* ActorPositionStr = ActorPosition.Get();
-			Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
+			AddActorInfoToEventData(Actor, EventData);
 		}
 
-		// Adding Role info
-		{
-			const char* NewRoleValue = nullptr;
-
-			switch (Role)
-			{
-			case ROLE_SimulatedProxy:
-				NewRoleValue = RoleNone;
-				break;
-			case ROLE_AutonomousProxy:
-				NewRoleValue = RoleAutonomousProxy;
-				break;
-			case ROLE_Authority:
-				NewRoleValue = RoleAuthority;
-				break;
-			default:
-				NewRoleValue = RoleInvalid;
-				break;
-			}
-
-			Trace_EventData_AddStringFields(EventData, 1, &NewRoleKeyPtr, &NewRoleValue);
-		}
+		AddRoleInfoToEventData(Role, EventData);
 
 		TraceEvent.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
