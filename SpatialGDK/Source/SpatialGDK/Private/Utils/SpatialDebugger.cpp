@@ -26,7 +26,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Modules/ModuleManager.h"
-#include "Editor.h"
 
 using namespace SpatialGDK;
 
