@@ -273,9 +273,14 @@ SpatialEventTracer::~SpatialEventTracer()
 	Trace_EventTracer_Destroy(EventTracer);
 }
 
-Trace_SpanId SpatialEventTracer::CreateNewSpan()
+Trace_SpanId SpatialGDK::SpatialEventTracer::CreateNewSpan()
 {
 	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+}
+
+Trace_SpanId SpatialEventTracer::CreateNewSpan(const TArray<Trace_SpanId>& Causes)
+{
+	return Trace_EventTracer_AddSpan(EventTracer, Causes.GetData(), Causes.Num());
 }
 
 const Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer() const
@@ -290,7 +295,7 @@ Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer()
 
 void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TCHAR_TO_ANSI(*Event.Message), TCHAR_TO_ANSI(*Event.Type), nullptr };
 
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
@@ -310,7 +315,7 @@ void SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event)
 
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
@@ -334,7 +339,7 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, CommandType Command)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
@@ -351,7 +356,7 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, Worker_RequestId CreateEntityRequestId)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
@@ -372,7 +377,7 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, bool bSuccess)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
@@ -389,7 +394,7 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
@@ -411,7 +416,7 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role)
 {
-	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_SpanId CurrentSpanId = CreateNewSpan();
 	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
 	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{

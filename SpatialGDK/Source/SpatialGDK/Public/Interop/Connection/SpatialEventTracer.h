@@ -86,13 +86,17 @@ struct SpatialEventTracer
 	SpatialEventTracer();
 	~SpatialEventTracer();
 	Trace_SpanId CreateNewSpan();
+	Trace_SpanId CreateNewSpan(const TArray<Trace_SpanId>& Causes);
+	
 	void TraceEvent(const SpatialGDKEvent& Event);
+
 	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, CommandType Command);
 	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, bool bSuccess);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, Worker_RequestId CreateEntityRequestId);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
+
 	void Enable();
 	void Disable();
 	const worker::c::Trace_EventTracer* GetWorkerEventTracer() const;
