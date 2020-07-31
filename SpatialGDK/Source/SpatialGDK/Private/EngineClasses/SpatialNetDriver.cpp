@@ -1022,12 +1022,6 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 {
-
-	if (Actor->GetName() == TEXT("NetOwnershipCube_0") && OldOwner && OldOwner->IsA<APlayerController>())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("AHA!"));
-		return;
-	}
 	if (!IsServer())
 	{
 		return;
