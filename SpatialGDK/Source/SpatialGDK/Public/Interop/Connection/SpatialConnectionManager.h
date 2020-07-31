@@ -92,4 +92,6 @@ private:
 	LoginTokenResponseCallback LoginTokenResCallback;
 
 	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
+
+	void CreateEventTracer();
 };

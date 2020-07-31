@@ -522,3 +522,9 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
+
+void USpatialConnectionManager::CreateEventTracer()
+{
+	EventTracer = MakeUnique<SpatialEventTracer>();
+	EventTracer->Start();
+}

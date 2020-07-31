@@ -9,6 +9,7 @@
 #include "SpatialCommonTypes.h"
 
 // TODO Remove maybe?
+#include "Containers/Queue.h"
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialEventTracer.generated.h"
@@ -122,6 +123,14 @@ Custom events can be added
 class UFunction;
 class AActor;
 class USpatialNetDriver;
+
+namespace worker
+{
+namespace c
+{
+	struct Io_Stream;
+}
+}
 
 namespace SpatialGDK
 {
@@ -261,8 +270,15 @@ struct SpatialEventTracer
 		}
 		return TraceEvent(Event, Cause);
 	}
+
+	using EventTracingData = TMap<FString, FString>;
+
+	void Start();
+	void WriteEventDataToJson(const EventTracingData& EventData);
+
 private:
 	bool bEnalbed{ true }; // TODO: Disable by default
+	worker::c::Io_Stream* Stream;
 	worker::c::Trace_EventTracer* EventTracer;
 	USpatialNetDriver* NetDriver;
 };
