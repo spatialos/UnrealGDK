@@ -13,6 +13,7 @@ class UGlobalStateManager;
 class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogControlledShutdown, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
@@ -70,7 +71,7 @@ public:
 	// Invoked when the player could not be spawned
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
-	// TODO
+	// Invoked when the deployment will be shut down soon, and the world should be brought to a consistent state for snapshotting.
 	UPROPERTY(BlueprintAssignable)
 	FOnControlledShutdownTriggeredEvent OnControlledShutdownTriggered;
 

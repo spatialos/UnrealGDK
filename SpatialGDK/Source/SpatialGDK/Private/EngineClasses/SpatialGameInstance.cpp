@@ -25,6 +25,7 @@
 #include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
+DEFINE_LOG_CATEGORY(LogControlledShutdown);
 
 USpatialGameInstance::USpatialGameInstance()
 	: Super()
@@ -232,15 +233,17 @@ void USpatialGameInstance::HandleOnConnected()
 
 	OnSpatialConnected.Broadcast();
 
-	// TODO placement
 	const UWorld* World = GetWorld();
-	const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	if (NetDriver != nullptr)
+	if (World != nullptr)
 	{
-		FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
-		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
+		const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+		if (NetDriver != nullptr)
+		{
+			FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
+			WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
 
-		NetDriver->SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+			NetDriver->SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+		}
 	}
 }
 
@@ -248,7 +251,7 @@ void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, c
 {
 	if(FlagName == TEXT("ControlledShutdown"))
 	{
-		UE_LOG(LogTemp, Log, TEXT("Controlled shutdown / Triggered via worker flag"));
+		UE_LOG(LogControlledShutdown, Log, TEXT("Controlled shutdown triggered."));
 		OnControlledShutdownTriggered.Broadcast();
 	}
 }
