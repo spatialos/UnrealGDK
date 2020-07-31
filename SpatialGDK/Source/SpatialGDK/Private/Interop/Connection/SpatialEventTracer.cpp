@@ -2,10 +2,12 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include "UObject/Class.h"
 #include "GameFramework/Actor.h"
+#include "Runtime/JsonUtilities/Public/JsonUtilities.h"
+#include "UObject/Class.h"
 
 #include <WorkerSDK/improbable/c_trace.h>
+#include <WorkerSDK/improbable/c_io.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
@@ -52,11 +54,16 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 			TArray<const char*> Values;
 			Values.SetNumUninitialized(DataFieldCount);
 
+			SpatialEventTracer::EventTracingData EventTracingData;
+
 			Trace_EventData_GetStringFields(Event.data, Keys.GetData(), Values.GetData());
 			for (uint32_t i = 0; i < DataFieldCount; ++i)
 			{
-				//UE_LOG(LogSpatialEventTracer, Warning, TEXT("%s : %s"), ANSI_TO_TCHAR(Keys[i]), ANSI_TO_TCHAR(Values[i]));
+				EventTracingData.Add(Keys[i], Values[i]);
 			}
+
+			SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
+			EventTracer->Queue(EventTracingData);
 		}
 
 		break;
@@ -93,6 +100,7 @@ SpatialSpanId::~SpatialSpanId()
 SpatialEventTracer::SpatialEventTracer()
 {
 	Trace_EventTracer_Parameters parameters = {};
+	parameters.user_data = this;
 	parameters.callback = MyTraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
@@ -102,6 +110,68 @@ SpatialEventTracer::~SpatialEventTracer()
 {
 	Trace_EventTracer_Disable(EventTracer);
 	Trace_EventTracer_Destroy(EventTracer);
+
+	Flush();
+
+	if (Stream != nullptr)
+	{
+		Io_Stream_Destroy(Stream);
+	}
+}
+
+void SpatialEventTracer::Start()
+{
+	FString FolderPath = FPaths::ProjectSavedDir() + TEXT("EventTracing\\");
+
+	FDateTime CurrentDateTime = FDateTime::Now();
+	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s.json"), *CurrentDateTime.ToString());
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (PlatformFile.CreateDirectoryTree(*FolderPath))
+	{
+		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_DEFAULT);
+	}
+}
+
+void SpatialEventTracer::Queue(const EventTracingData& EventData)
+{
+	EventTracingDataQueue.Enqueue(EventData);
+}
+
+void SpatialEventTracer::Flush()
+{
+	EventTracingData EventData;
+	while (EventTracingDataQueue.Dequeue(EventData))
+	{
+		WriteEventDataToJson(EventData);
+	}
+}
+
+void SpatialEventTracer::WriteEventDataToJson(const EventTracingData& EventData)
+{
+	if (EventData.Num() == 0)
+	{
+		return;
+	}
+
+	TSharedRef<FJsonObject> TopJsonObject = MakeShared<FJsonObject>();
+	for (const auto& Pair : EventData)
+	{
+		TopJsonObject->SetStringField(Pair.Key, Pair.Value);
+	}
+
+	FString JsonString;
+	TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>> > JsonWriter = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&JsonString, 0);
+	bool bSuccess = FJsonSerializer::Serialize(TopJsonObject, JsonWriter);
+	JsonWriter->Close();
+
+	if (Stream == nullptr)
+	{
+		return;
+	}
+
+	JsonString.Append("\n");
+	Io_Stream_Write(Stream, (const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
 }
 
 SpatialSpanId SpatialEventTracer::CreateActiveSpan()

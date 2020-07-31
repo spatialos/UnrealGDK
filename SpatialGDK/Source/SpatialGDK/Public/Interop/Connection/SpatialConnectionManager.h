@@ -64,6 +64,8 @@ public:
 
 	void RequestDeploymentLoginTokens();
 
+	void TickEventTracer();
+
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
@@ -92,4 +94,6 @@ private:
 	LoginTokenResponseCallback LoginTokenResCallback;
 
 	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
+
+	void CreateEventTracer();
 };
