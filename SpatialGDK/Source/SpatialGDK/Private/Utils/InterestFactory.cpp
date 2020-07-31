@@ -225,12 +225,8 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 bool InterestFactory::CheckOwnersHaveEntityId(const AActor* Actor) const
 {
 	AActor* Owner = Actor->GetOwner();
-	if (Owner == nullptr || Owner->IsPendingKillPending())
-	{
-		return true;
-	}
 
-	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
+	while (Owner != nullptr && !Owner->IsPendingKillPending())
 	{
 		if (PackageMap->GetEntityIdFromObject(Owner) == SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -259,10 +255,10 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 		Owner = Owner->GetOwner();
 	}
 
-	OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-	OwnerChainQuery.ResultComponentIds.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
 	{
+		OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType;
+		OwnerChainQuery.ResultComponentIds.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerChainQuery);
 	}
 }
