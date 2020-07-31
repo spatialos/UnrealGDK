@@ -1830,11 +1830,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	PollPendingLoads();
 
-	if (ConnectionManager != nullptr)
-	{
-		ConnectionManager->TickEventTracer();
-	}
-
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && bIsReadyToStart)
 	{
 		// Update all clients.

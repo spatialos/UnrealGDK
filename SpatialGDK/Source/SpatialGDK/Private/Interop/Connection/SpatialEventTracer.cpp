@@ -55,6 +55,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 			Values.SetNumUninitialized(DataFieldCount);
 
 			SpatialEventTracer::EventTracingData EventTracingData;
+			EventTracingData.Add(TEXT("EventType"), Event.type);
 
 			Trace_EventData_GetStringFields(Event.data, Keys.GetData(), Values.GetData());
 			for (uint32_t i = 0; i < DataFieldCount; ++i)
@@ -63,7 +64,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 			}
 
 			SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
-			EventTracer->Queue(EventTracingData);
+			EventTracer->WriteEventDataToJson(EventTracingData);
 		}
 
 		break;
@@ -111,8 +112,6 @@ SpatialEventTracer::~SpatialEventTracer()
 	Trace_EventTracer_Disable(EventTracer);
 	Trace_EventTracer_Destroy(EventTracer);
 
-	Flush();
-
 	if (Stream != nullptr)
 	{
 		Io_Stream_Destroy(Stream);
@@ -130,20 +129,6 @@ void SpatialEventTracer::Start()
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_DEFAULT);
-	}
-}
-
-void SpatialEventTracer::Queue(const EventTracingData& EventData)
-{
-	EventTracingDataQueue.Enqueue(EventData);
-}
-
-void SpatialEventTracer::Flush()
-{
-	EventTracingData EventData;
-	while (EventTracingDataQueue.Dequeue(EventData))
-	{
-		WriteEventDataToJson(EventData);
 	}
 }
 

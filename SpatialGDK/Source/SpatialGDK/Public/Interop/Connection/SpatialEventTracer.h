@@ -248,15 +248,12 @@ struct SpatialEventTracer
 	using EventTracingData = TMap<FString, FString>;
 
 	void Start();
-	void Flush();
-	void Queue(const EventTracingData& EventData);
 	void WriteEventDataToJson(const EventTracingData& EventData);
 
 private:
 	bool bEnalbed{ true }; // TODO: Disable by default
 	worker::c::Io_Stream* Stream;
 	worker::c::Trace_EventTracer* EventTracer;
-	TQueue<EventTracingData> EventTracingDataQueue;
 };
 
 }

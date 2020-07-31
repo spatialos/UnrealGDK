@@ -528,11 +528,3 @@ void USpatialConnectionManager::CreateEventTracer()
 	EventTracer = MakeUnique<SpatialEventTracer>();
 	EventTracer->Start();
 }
-
-void USpatialConnectionManager::TickEventTracer()
-{
-	if (EventTracer != nullptr)
-	{
-		EventTracer->Flush();
-	}
-}
