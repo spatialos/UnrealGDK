@@ -17,7 +17,7 @@
  *  - Server 1 spawns a NetOwnershipCube.
  *  - All workers set the reference to the spawned NetOwnershipCube.
  *  - The server that is authoritative over the NetOwnershipCube sets its owner to the PlayerController of Client 1.
- *  - The NetOwnershipCube is moved by the server that has authority over it to 2 different test locations, such that it changes the authoritative server once.
+ *  - The NetOwnershipCube, toghether with Client1's possesed Pawn, is moved by the server that has authority over it to 2 different test locations, such that it changes the authoritative server once.
  *  - Client 1 sends an RPC from the NetOwnershipCube at each test location.
  * - Phase 1 test:
  *  - All workers test that all sent RPCs have been received by the NetOwnershipCube.
@@ -94,18 +94,26 @@ void ASpatialTestNetOwnership::BeginPlay()
 		});
 
 	// The locations where the NetOwnershipCube will be when Client 1 will send an RPC. These are specifically set to make the NetOwnershipCube's authoritative server change according to the BP_QuadrantZoningSettings.
-	TArray<FVector> CubeTestLocations;
-	CubeTestLocations.Add(FVector(250.0f, -250.0f, 0.0f));
-	CubeTestLocations.Add(FVector(-250.0f, -250.0f, 0.0f));
+	TArray<FVector> TestLocations;
+	TestLocations.Add(FVector(250.0f, -250.0f, 0.0f));
+	TestLocations.Add(FVector(-250.0f, -250.0f, 0.0f));
 
-	for (int i = 1; i <= CubeTestLocations.Num(); ++i)
+	for (int i = 1; i <= TestLocations.Num(); ++i)
 	{
-		// The authoritative server moves the cube to the corresponding test location
-		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr, [this, i, CubeTestLocations](ASpatialFunctionalTest* NetTest)
-			{
+		// The authoritative server moves the cube and Client1's Pawn to the corresponding test location
+		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr, [this, i, TestLocations](ASpatialFunctionalTest* NetTest)
+			{	
+				APlayerController* PlayerController = Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+				APawn* PlayerPawn = PlayerController->GetPawn();
+
+				if (PlayerPawn->HasAuthority())
+				{
+					PlayerPawn->SetActorLocation(TestLocations[i - 1]);
+				}
+
 				if (NetOwnershipCube->HasAuthority())
 				{
-					NetOwnershipCube->SetActorLocation(CubeTestLocations[i - 1]);
+					NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
 				}
 
 				FinishStep();
@@ -141,9 +149,9 @@ void ASpatialTestNetOwnership::BeginPlay()
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
 
 	//  All workers check that the number of RPCs received by the authoritative server is correct.
-	AddStep(TEXT("SpatialTestNetOwnershipAllWorkersTestCount2"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this, CubeTestLocations](ASpatialFunctionalTest* NetTest, float DeltaTime)
+	AddStep(TEXT("SpatialTestNetOwnershipAllWorkersTestCount2"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this, TestLocations](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
-			if (NetOwnershipCube->ReceivedRPCs == CubeTestLocations.Num())
+			if (NetOwnershipCube->ReceivedRPCs == TestLocations.Num())
 			{
 				FinishStep();
 			}
