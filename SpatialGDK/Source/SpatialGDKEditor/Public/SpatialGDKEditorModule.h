@@ -5,7 +5,6 @@
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
 
-class FLBStrategyEditorExtensionManager;
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
 class FLocalReceptionistProxyServerManager;
@@ -17,8 +16,6 @@ class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 public:
 
 	FSpatialGDKEditorModule();
-
-	SPATIALGDKEDITOR_API FLBStrategyEditorExtensionManager& GetLBStrategyExtensionManager() { return *ExtensionManager; }
 
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -64,7 +61,6 @@ private:
 	bool ShouldStartLocalServer() const;
 
 private:
-	TUniquePtr<FLBStrategyEditorExtensionManager> ExtensionManager;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 
