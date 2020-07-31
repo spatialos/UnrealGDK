@@ -219,6 +219,36 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 	}
 }
 
+void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+
+		if (Actor != nullptr)
+		{
+
+			auto ActorName = StringCast<ANSICHAR>(*Actor->GetName());
+			const char* ActorNameStr = ActorName.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &ActorKeyPtr, &ActorNameStr);
+
+			auto ActorPosition = StringCast<ANSICHAR>(*Actor->GetActorTransform().GetTranslation().ToString());
+			const char* ActorPositionStr = ActorPosition.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &ActorPositionKeyPtr, &ActorPositionStr);
+
+		}
+
+		// TODO: TargetObject
+		// TODO: ComponentId
+
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
+	}
+}
+
 void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role)
 {
 	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
@@ -358,23 +388,6 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, cons
 	return Event;
 }
 
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "ComponentUpdate";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	if (TargetObject != nullptr)
-	{
-		Event.Data.Add("TargetObject", TargetObject->GetName());
-	}
-	Event.Data.Add("ComponentId", FString::Printf(TEXT("%u"), ComponentId));
-	return Event;
-}
 
 SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID)
 {

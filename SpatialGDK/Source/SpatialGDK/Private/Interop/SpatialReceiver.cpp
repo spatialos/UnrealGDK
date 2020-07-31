@@ -1689,7 +1689,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"), Op.entity_id, Op.update.component_id);
 	}
 
-	EventTracer->TraceEvent(ConstructEvent(Channel->Actor, TargetObject != Channel->Actor ? TargetObject : nullptr, Op.update.component_id));
+	EventTracer->TraceEvent(EventName::ComponentUpdate, EventType::Received, Channel->Actor, TargetObject != Channel->Actor ? TargetObject : nullptr, Op.update.component_id);
 }
 
 void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)

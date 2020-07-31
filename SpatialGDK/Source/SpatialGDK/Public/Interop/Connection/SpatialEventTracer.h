@@ -42,7 +42,7 @@ struct SpatialGDKEvent
 
 // TODO: discuss overhead from constructing SpatialGDKEvents
 // TODO: Rename
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
+//SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
@@ -55,14 +55,15 @@ SpatialGDKEvent ConstructEvent(Worker_RequestId RequestID, bool bSuccess);
 
 enum class EventType
 {
+	Received,
 	Sent,
-	Received
 };
 
 enum class EventName
 {
+	AuthorityChange,
+	ComponentUpdate,
 	RPC,
-	AuthorityChange
 };
 
 struct SpatialEventTracer
@@ -73,7 +74,7 @@ struct SpatialEventTracer
 	void TraceEvent(const SpatialGDKEvent& Event);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);
-
+	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
 	void Enable();
 	void Disable();
 	const worker::c::Trace_EventTracer* GetWorkerEventTracer() const;
