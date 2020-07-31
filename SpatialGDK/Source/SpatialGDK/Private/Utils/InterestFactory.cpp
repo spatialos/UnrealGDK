@@ -238,7 +238,7 @@ bool InterestFactory::AddServerOwnerInterest(Interest& OutInterest, const AActor
 
 	Query OwnerQuery;
 	OwnerQuery.Constraint.EntityIdConstraint = OwnerId;
-	OwnerQuery.FullSnapshotResult = true;
+	OwnerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerQuery);
 
