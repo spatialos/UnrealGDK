@@ -184,7 +184,8 @@ namespace
 	}
 }
 
-// TODO: Use c_io.h functions instead, to write data to a file
+// TODO(EventTracer): Use c_io.h functions instead, to write data to a file
+// Below is a hacky function written for testing purposes, which must be removed
 void MyTraceCallback(void* UserData, const Trace_Item* Item)
 {
 	switch (Item->item_type)
@@ -198,7 +199,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 			return;
 		}
 
-		// TODO: remove temporary filtering?
+		// temporary filtering for nicer UE_LOGs
 		if (Event.type == FString("network.receive_raw_message") ||
 			Event.type == FString("network.receive_udp_datagram") ||
 			Event.type == FString("network.send_raw_message") ||
@@ -405,8 +406,8 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 			AddActorInfoToEventData(Actor, EventData);
 		}
 
-		// TODO: TargetObject
-		// TODO: ComponentId
+		// TODO(EventTracer): implement and call AddTargetObjectInfoToEventData
+		// TODO(EventTracer): implement and call AddComponentIdInfoToEventData
 
 		TraceEvent.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
@@ -460,6 +461,7 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, cons
 		Event.Data.Add("TargetObject", TargetObject->GetName());
 	}
 	Event.Data.Add("Function", Function->GetName());
+	// TODO(EventTracer): write it to EventData as needed
 	//Event.Data.Add("ResponseOp", ResponseOp);
 	return Event;
 }
@@ -483,6 +485,7 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, cons
 	SpatialGDKEvent Event;
 	Event.Message = "";
 	Event.Type = Type;
+	// TODO(EventTracer): write it to EventData as needed
 	//Event.Data.Add("ResponseOp", ResponseOp);
 	return Event;
 }

@@ -4,17 +4,11 @@
 
 #include "SpatialCommonTypes.h"
 
-// TODO Remove maybe?
+// TODO(EventTracer): it is only required here because Trace_SpanId is used.
+// Consider if it's possible to remove it.
 #include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
-
-//namespace worker {
-//namespace c {
-//	struct Trace_EventTracer;
-//	struct Trace_SpanId;
-//}
-//}
 
 class UFunction;
 class AActor;
@@ -23,6 +17,9 @@ namespace SpatialGDK
 {
 
 struct SpatialEventTracer;
+
+// TODO(EventTracer): consider whether it's necessary to create a SpatialSpanId wrapper that holds Trace_SpanId,
+// so that Trace_SpanId is not used directly in UnrealGDK
 
 struct SpatialSpanIdActivator
 {
@@ -39,15 +36,15 @@ private:
 	worker::c::Trace_EventTracer* EventTracer;
 };
 
+// TODO(EventTracer): Remove SpatialGDKEvent
 struct SpatialGDKEvent
 {
-	//SpatialSpanId SpanId;
 	FString Message;
 	FString Type;
 	TMap<FString, FString> Data;
 };
 
-// TODO: Remove
+// TODO(EventTracer): Remove ConstructEvent functions, write data with TraceEvent directly instead
 SpatialGDKEvent ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp);
@@ -72,7 +69,7 @@ enum class EventName
 	RPC,
 };
 
-// TODO: is it really necessary?
+// TODO(EventTracer): decide whether that enum is useful
 enum class CommandType
 {
 	ClearRPCsOnEntityCreation,
@@ -90,6 +87,37 @@ struct SpatialEventTracer
 	
 	void TraceEvent(const SpatialGDKEvent& Event);
 
+	// TODO(EventTracer): consider using this to reduce code duplication.
+	// Maybe it's worth moving it to a separate utility h/cpp along with related functionality
+	/*
+	template<typename ... TArgs>
+	void AddDataToEventData(Trace_EventData* EventData, TArgs&& ... Args)
+	{
+		// call AddRoleInfoToEventData, AddActorInfoToEventData etc.
+	}
+
+	template<typename ... TArgs>
+	void TraceEvent(EventName Name, EventType Type, TArgs&& ... Args)
+	{
+		Trace_SpanId CurrentSpanId = CreateNewSpanId();
+		//Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+		Trace_Event TraceEvent{ CurrentSpanId, 0, "SomeType", "SomeName", nullptr };
+		if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+		{
+			Trace_EventData* EventData = Trace_EventData_Create();
+			AddDataToEventData(EventData, Forward<TArgs>(Args)...);
+			TraceEvent.data = EventData;
+			Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+			Trace_EventData_Destroy(EventData);
+		}
+	}
+	*/
+
+	// TODO(EventTracer): add more TraceEvent here
+	// TODO(EventTracer): add the option to SpatialSpanIdActivator for Sent TraceEvents.
+	// Consider making sure it's not accepting rvalue (since SpatialSpanIdActivator must live long enough for the worker sent op to be registered with this SpanId)
+	// e.g. void TraceEvent(... SpatialSpanIdActivator&& SpanIdActivator) = delete;
+	// TODO(EventTracer): Communicate to others, that SpatialSpanIdActivator must be creating prior to calling worker send functions
 	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, CommandType Command);
 	void TraceEvent(EventName Name, EventType Type, Worker_RequestId CommandResponseId, bool bSuccess);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);
@@ -108,8 +136,7 @@ private:
 
 }
 
-// TODO
-
+// TODO(EventTracer): (a list of requirements by Chris from Jira ticket)
 /*
 Sending create entity request
 
@@ -142,6 +169,7 @@ Individual RPC Calls (distinguishing between GDK and USER)
 Custom events can be added
 */
 
+// TODO(EventTracer): a short list of requirements by Alex
 /*
 Actor name, Position,
 Add/Remove Entity (can we also distinguish Remove Entity when moving to another worker vs Delete entity),
