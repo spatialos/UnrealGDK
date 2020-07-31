@@ -395,7 +395,6 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 				{
 					SpatialConnectionManager->WorkerConnection = NewObject<ULegacySpatialWorkerConnection>();
 				}
-				
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
