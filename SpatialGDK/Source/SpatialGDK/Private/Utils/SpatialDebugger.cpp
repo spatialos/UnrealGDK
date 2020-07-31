@@ -58,8 +58,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
-
-	bEditorDebugger = false;
 }
 
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -112,11 +110,6 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 void ASpatialDebugger::BeginPlay()
 {
-	if (bEditorDebugger)
-	{
-		return;
-	}
-
 	Super::BeginPlay();
 
 	check(NetDriver != nullptr);
@@ -154,11 +147,6 @@ void ASpatialDebugger::BeginPlay()
 
 void ASpatialDebugger::OnAuthorityGained()
 {
-	if (bEditorDebugger)
-	{
-		return;
-	}
-
 	if (NetDriver->LoadBalanceStrategy)
 	{
 		const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
@@ -546,8 +534,6 @@ void ASpatialDebugger::SpatialToggleDebugger()
 
 void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
 {
-	check(bEditorDebugger);
-	
 	bShowWorkerRegions = bEnabled;
 	EditorRefreshWorkerRegions();
 	
@@ -555,8 +541,6 @@ void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
 
 void ASpatialDebugger::EditorRefreshWorkerRegions()
 {
-	check(bEditorDebugger);
-	
 	DestroyWorkerRegions();
 
 	if (bShowWorkerRegions && EditorAllowWorkerBoundaries())
@@ -575,16 +559,15 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 
 bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 {
-	check(bEditorDebugger);
-
 #if WITH_EDITOR
 	// Check if multi worker is enabled.
 	UWorld* World = GetWorld();
 	check(World != nullptr);
 
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabledInWorldSettings();
+	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(World);
 	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
 	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
 #else
 	return false;
@@ -592,18 +575,8 @@ bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 	
 }
 
-void ASpatialDebugger::EditorInitialise()
-{
-	bEditorDebugger = true;
-	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = false;
-	NetDriver = nullptr;
-}
-
 void ASpatialDebugger::EditorInitialiseWorkerRegions()
 {
-	check(bEditorDebugger);
-	
 	WorkerRegions.Empty();
 
 	const UWorld* World = GetWorld();

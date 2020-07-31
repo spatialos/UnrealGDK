@@ -801,7 +801,6 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 				FActorSpawnParameters SpawnParameters;
 				SpawnParameters.bHideFromSceneOutliner = true;
 				SpatialDebugger = World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger, SpawnParameters);
-				SpatialDebugger->EditorInitialise();
 				SpatialDebugger->EditorSpatialToggleDebugger(bSpatialDebuggerEditorEnabled);
 			}
 		}

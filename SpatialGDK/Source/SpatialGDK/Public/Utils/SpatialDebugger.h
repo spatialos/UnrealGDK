@@ -189,6 +189,4 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
-
-	bool bEditorDebugger;
 };
