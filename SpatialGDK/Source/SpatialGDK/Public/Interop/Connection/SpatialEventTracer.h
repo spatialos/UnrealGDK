@@ -22,13 +22,12 @@ class AActor;
 namespace SpatialGDK
 {
 
-struct SpatialSpanId
+struct SpatialSpanIdActivator
 {
-	SpatialSpanId(worker::c::Trace_EventTracer* InEventTracer);
-	~SpatialSpanId();
+	SpatialSpanIdActivator(worker::c::Trace_EventTracer* InEventTracer, Trace_SpanId CurrentSpanId);
+	~SpatialSpanIdActivator();
 
 private:
-	Trace_SpanId CurrentSpanId;
 	worker::c::Trace_EventTracer* EventTracer;
 };
 
@@ -70,7 +69,7 @@ struct SpatialEventTracer
 {
 	SpatialEventTracer();
 	~SpatialEventTracer();
-	SpatialSpanId CreateActiveSpan();
+	Trace_SpanId CreateNewSpan();
 	void TraceEvent(const SpatialGDKEvent& Event);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);

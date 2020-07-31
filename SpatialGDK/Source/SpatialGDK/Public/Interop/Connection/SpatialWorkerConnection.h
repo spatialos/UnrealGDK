@@ -20,9 +20,10 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
 
-	void SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn);
-	SpatialGDK::SpatialSpanId CreateActiveSpan();
-	void TraceEvent(const SpatialGDK::SpatialGDKEvent& Event);
+	inline void SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn)
+	{
+		EventTracer = EventTracerIn;
+	}
 
 	virtual void FinishDestroy() override
 	{

@@ -113,6 +113,7 @@ namespace
 	}
 }
 
+// TODO: Use c_io.h functions instead, to write data to a file
 void MyTraceCallback(void* UserData, const Trace_Item* Item)
 {
 	switch (Item->item_type)
@@ -176,15 +177,13 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialSpanId::SpatialSpanId(Trace_EventTracer* InEventTracer)
-	: CurrentSpanId{}
-	, EventTracer(InEventTracer)
+SpatialSpanIdActivator::SpatialSpanIdActivator(Trace_EventTracer* InEventTracer, Trace_SpanId SpanId)
+	: EventTracer(InEventTracer)
 {
-	CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
-	Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+	Trace_EventTracer_SetActiveSpanId(EventTracer, SpanId);
 }
 
-SpatialSpanId::~SpatialSpanId()
+SpatialSpanIdActivator::~SpatialSpanIdActivator()
 {
 	Trace_EventTracer_UnsetActiveSpanId(EventTracer);
 }
@@ -203,9 +202,9 @@ SpatialEventTracer::~SpatialEventTracer()
 	Trace_EventTracer_Destroy(EventTracer);
 }
 
-SpatialSpanId SpatialEventTracer::CreateActiveSpan()
+Trace_SpanId SpatialEventTracer::CreateNewSpan()
 {
-	return SpatialSpanId(EventTracer);
+	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 }
 
 const Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer() const
