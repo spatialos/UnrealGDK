@@ -12,7 +12,6 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
-#include "Utils/SpatialActorUtils.h"
 
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"

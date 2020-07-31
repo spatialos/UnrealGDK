@@ -103,7 +103,6 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 	// So we send an Interest update immediately.
 
 	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-
 	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
