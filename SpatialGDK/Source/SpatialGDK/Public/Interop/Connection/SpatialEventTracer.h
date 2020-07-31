@@ -22,9 +22,17 @@ class AActor;
 namespace SpatialGDK
 {
 
+struct SpatialEventTracer;
+
 struct SpatialSpanIdActivator
 {
-	SpatialSpanIdActivator(worker::c::Trace_EventTracer* InEventTracer, Trace_SpanId CurrentSpanId);
+	SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, Trace_SpanId CurrentSpanId);
+
+	SpatialSpanIdActivator(const SpatialSpanIdActivator&) = delete;
+	SpatialSpanIdActivator(SpatialSpanIdActivator&&) = delete;
+	SpatialSpanIdActivator& operator=(const SpatialSpanIdActivator&) = delete;
+	SpatialSpanIdActivator& operator=(SpatialSpanIdActivator&&) = delete;
+
 	~SpatialSpanIdActivator();
 
 private:
@@ -42,7 +50,7 @@ struct SpatialGDKEvent
 // TODO: discuss overhead from constructing SpatialGDKEvents
 // TODO: Rename
 //SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
+//SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, VirtualWorkerId NewAuthoritativeWorkerId);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
 SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID);
@@ -62,6 +70,7 @@ enum class EventName
 {
 	AuthorityChange,
 	ComponentUpdate,
+	CreateEntity,
 	RPC,
 };
 
@@ -74,9 +83,11 @@ struct SpatialEventTracer
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UFunction* Function);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, ENetRole Role);
 	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
+	void TraceEvent(EventName Name, EventType Type, const AActor* Actor, Worker_RequestId CreateEntityRequestId);
 	void Enable();
 	void Disable();
 	const worker::c::Trace_EventTracer* GetWorkerEventTracer() const;
+	worker::c::Trace_EventTracer* GetWorkerEventTracer();
 
 private:
 	worker::c::Trace_EventTracer* EventTracer;

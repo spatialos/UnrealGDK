@@ -26,13 +26,11 @@ namespace
 	static const char NewRoleKey[] = "NewRole";
 	const char* NewRoleKeyPtr = NewRoleKey;
 
-	const char RoleNone[] = "ROLE_None";
-	const char RoleAutonomousProxy[] = "ROLE_AutonomousProxy";
-	const char RoleAuthority[] = "ROLE_Authority";
-	const char RoleInvalid[] = "Invalid Role";
+	static const char RequestIdKey[] = "RequestId";
+	const char* RequestIdKeyPtr = RequestIdKey;
 
-	static char SentStr[] = "Sent";
-	static char ReceivedStr[] = "Received";
+	static const char SentStr[] = "Sent";
+	static const char ReceivedStr[] = "Received";
 	const char* TypeToString(EventType Type)
 	{
 		switch (Type)
@@ -47,20 +45,55 @@ namespace
 
 	}
 
-	static char RPCStr[] = "RPC";
-	static char AuthorityChangeStr[] = "AuthorityChange";
+	static const char AuthorityChangeStr[] = "AuthorityChange";
+	static const char ComponentUpdateStr[] = "ComponentUpdate";
+	static const char CreateEntityStr[] = "CreateEntity";
+	static const char RPCStr[] = "RPC";
 	const char* NameToString(EventName Name)
 	{
 		switch (Name)
 		{
-		case SpatialGDK::EventName::RPC:
-			return RPCStr;
 		case SpatialGDK::EventName::AuthorityChange:
 			return AuthorityChangeStr;
+		case SpatialGDK::EventName::ComponentUpdate:
+			return ComponentUpdateStr;
+		case SpatialGDK::EventName::CreateEntity:
+			return CreateEntityStr;
+		case SpatialGDK::EventName::RPC:
+			return RPCStr;
 		default:
 			return nullptr;
 		}
 
+	}
+
+	static const char RoleNone[] = "ROLE_None";
+	static const char RoleAutonomousProxy[] = "ROLE_AutonomousProxy";
+	static const char RoleAuthority[] = "ROLE_Authority";
+	static const char RoleInvalid[] = "Invalid Role";
+	void AddRoleInfoToEventData(ENetRole Role, Trace_EventData* EventData)
+	{
+		check(EventData != nullptr);
+
+		const char* NewRoleValue = nullptr;
+
+		switch (Role)
+		{
+		case ROLE_SimulatedProxy:
+			NewRoleValue = RoleNone;
+			break;
+		case ROLE_AutonomousProxy:
+			NewRoleValue = RoleAutonomousProxy;
+			break;
+		case ROLE_Authority:
+			NewRoleValue = RoleAuthority;
+			break;
+		default:
+			NewRoleValue = RoleInvalid;
+			break;
+		}
+
+		Trace_EventData_AddStringFields(EventData, 1, &NewRoleKeyPtr, &NewRoleValue);
 	}
 
 	void AddActorInfoToEventData(const AActor* Actor, Trace_EventData* EventData)
@@ -87,29 +120,14 @@ namespace
 		Trace_EventData_AddStringFields(EventData, 1, &FunctionKeyPtr, &FunctionNameStr);
 	}
 
-	void AddRoleInfoToEventData(ENetRole Role, Trace_EventData* EventData)
+	void AddRequestIdToEventData(Worker_RequestId RequestID, Trace_EventData* EventData)
 	{
 		check(EventData != nullptr);
 
-		const char* NewRoleValue = nullptr;
+		auto RequestId = StringCast<ANSICHAR>(*FString::Printf(TEXT("%lu"), RequestID));
+		const char* RequestIdStr = RequestId.Get();
 
-		switch (Role)
-		{
-		case ROLE_SimulatedProxy:
-			NewRoleValue = RoleNone;
-			break;
-		case ROLE_AutonomousProxy:
-			NewRoleValue = RoleAutonomousProxy;
-			break;
-		case ROLE_Authority:
-			NewRoleValue = RoleAuthority;
-			break;
-		default:
-			NewRoleValue = RoleInvalid;
-			break;
-		}
-
-		Trace_EventData_AddStringFields(EventData, 1, &NewRoleKeyPtr, &NewRoleValue);
+		Trace_EventData_AddStringFields(EventData, 1, &RequestIdKeyPtr, &RequestIdStr);
 	}
 }
 
@@ -177,8 +195,8 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialSpanIdActivator::SpatialSpanIdActivator(Trace_EventTracer* InEventTracer, Trace_SpanId SpanId)
-	: EventTracer(InEventTracer)
+SpatialSpanIdActivator::SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, Trace_SpanId SpanId)
+	: EventTracer(InEventTracer->GetWorkerEventTracer())
 {
 	Trace_EventTracer_SetActiveSpanId(EventTracer, SpanId);
 }
@@ -208,6 +226,11 @@ Trace_SpanId SpatialEventTracer::CreateNewSpan()
 }
 
 const Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer() const
+{
+	return EventTracer;
+}
+
+Trace_EventTracer* SpatialEventTracer::GetWorkerEventTracer()
 {
 	return EventTracer;
 }
@@ -249,6 +272,27 @@ void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, 
 		{
 			AddFunctionInfoToEventData(Function, EventData);
 		}
+
+		TraceEvent.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+		Trace_EventData_Destroy(EventData);
+	}
+}
+
+void SpatialGDK::SpatialEventTracer::TraceEvent(EventName Name, EventType Type, const AActor* Actor, Worker_RequestId CreateEntityRequestId)
+{
+	Trace_SpanId CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+	Trace_Event TraceEvent{ CurrentSpanId, 0, TypeToString(Type), NameToString(Name), nullptr };
+	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+
+		if (Actor != nullptr)
+		{
+			AddActorInfoToEventData(Actor, EventData);
+		}
+
+		AddRequestIdToEventData(CreateEntityRequestId, EventData);
 
 		TraceEvent.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
@@ -416,19 +460,5 @@ SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Virt
 		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
 	}
 	Event.Data.Add("NewAuthoritativeWorkerId", FString::Printf(TEXT("%u"), NewAuthoritativeWorkerId));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "CreateEntity";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	Event.Data.Add("CreateEntityRequestId", FString::Printf(TEXT("%li"), CreateEntityRequestId));
 	return Event;
 }

@@ -93,7 +93,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
 
-	EventTracer->TraceEvent(ConstructEvent(Channel->Actor, CreateEntityRequestId));
+	EventTracer->TraceEvent(EventName::CreateEntity, EventType::Sent, Channel->Actor, CreateEntityRequestId);
 
 	return CreateEntityRequestId;
 }
