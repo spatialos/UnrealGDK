@@ -135,7 +135,6 @@ void AVisibilityTest::BeginPlay()
 
 			if (PlayerCharacter != nullptr)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("X : %f"), PlayerCharacter->GetActorLocation().X)
 				if ((PlayerCharacter->GetActorLocation().X == CharacterRemoteLocation.X) && (PlayerCharacter->GetActorLocation().Y == CharacterRemoteLocation.Y))
 				{
 					FinishStep();
@@ -223,7 +222,6 @@ void AVisibilityTest::BeginPlay()
 
 			if (PlayerCharacter != nullptr)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("X : %f, Y : %f"), PlayerCharacter->GetActorLocation().X, PlayerCharacter->GetActorLocation().Y)
 				if ((PlayerCharacter->GetActorLocation().X == Character1StartingLocation.X) && (PlayerCharacter->GetActorLocation().Y == Character1StartingLocation.Y))
 				{
 					FinishStep();
