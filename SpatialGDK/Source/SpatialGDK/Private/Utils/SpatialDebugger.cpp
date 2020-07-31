@@ -3,9 +3,11 @@
 #include "Utils/SpatialDebugger.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/WorkerRegion.h"
@@ -19,9 +21,12 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "GameFramework/WorldSettings.h"
 #include "GenericPlatform/GenericPlatformMath.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Modules/ModuleManager.h"
+#include "Editor.h"
 
 using namespace SpatialGDK;
 
@@ -54,6 +59,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
+
+	bEditorDebugger = false;
 }
 
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -106,6 +113,11 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 void ASpatialDebugger::BeginPlay()
 {
+	if (bEditorDebugger)
+	{
+		return;
+	}
+
 	Super::BeginPlay();
 
 	check(NetDriver != nullptr);
@@ -143,6 +155,11 @@ void ASpatialDebugger::BeginPlay()
 
 void ASpatialDebugger::OnAuthorityGained()
 {
+	if (bEditorDebugger)
+	{
+		return;
+	}
+
 	if (NetDriver->LoadBalanceStrategy)
 	{
 		const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
@@ -231,8 +248,9 @@ void ASpatialDebugger::Destroyed()
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
-		DestroyWorkerRegions();
 	}
+
+	DestroyWorkerRegions();
 
 	Super::Destroyed();
 }
@@ -523,6 +541,106 @@ void ASpatialDebugger::SpatialToggleDebugger()
 		if (bShowWorkerRegions)
 		{
 			CreateWorkerRegions();
+		}
+	}
+}
+
+void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
+{
+	check(bEditorDebugger);
+	
+	bShowWorkerRegions = bEnabled;
+	EditorRefreshWorkerRegions();
+	
+}
+
+void ASpatialDebugger::EditorRefreshWorkerRegions()
+{
+	check(bEditorDebugger);
+	
+	DestroyWorkerRegions();
+
+	if (bShowWorkerRegions && EditorAllowWorkerBoundaries())
+	{
+		EditorInitialiseWorkerRegions();
+		CreateWorkerRegions();
+	}
+#if WITH_EDITOR
+	if (GEditor != nullptr && GEditor->GetActiveViewport() != nullptr)
+	{
+		// Redraw editor window to show changes
+		GEditor->GetActiveViewport()->Invalidate();
+	}
+#endif
+}
+
+bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
+{
+	check(bEditorDebugger);
+
+#if WITH_EDITOR
+	// Check if multi worker is enabled.
+	UWorld* World = GetWorld();
+	check(World != nullptr);
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	const bool bIsMultiWorkerEnabled = WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabledInWorldSettings();
+	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
+#else
+	return false;
+#endif
+	
+}
+
+void ASpatialDebugger::EditorInitialise()
+{
+	bEditorDebugger = true;
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = false;
+	NetDriver = nullptr;
+}
+
+void ASpatialDebugger::EditorInitialiseWorkerRegions()
+{
+	check(bEditorDebugger);
+	
+	WorkerRegions.Empty();
+
+	const UWorld* World = GetWorld();
+	check(World != nullptr);
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	check(WorldSettings != nullptr);
+
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = *WorldSettings->MultiWorkerSettingsClass;
+
+	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
+
+	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
+	LoadBalanceStrategy->Init();
+	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
+
+	if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
+	{
+		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+		const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
+
+		// Only show worker regions if there is more than one
+		if (LBStrategyRegions.Num() > 1)
+		{
+			WorkerRegions.SetNum(LBStrategyRegions.Num());
+			for (int i = 0; i < LBStrategyRegions.Num(); i++)
+			{
+				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				FWorkerRegionInfo WorkerRegionInfo;
+				// Generate our own unique worker name as we only need it to generate a unique colour
+				const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d"), i);
+				WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+
+				WorkerRegions[i] = WorkerRegionInfo;
+			}
 		}
 	}
 }

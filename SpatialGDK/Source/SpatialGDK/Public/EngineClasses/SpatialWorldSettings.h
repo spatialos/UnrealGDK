@@ -6,7 +6,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialStatics.h"
-#include "Utils/SpatialDebuggerEditor.h"
+#include "Utils/SpatialDebugger.h"
 #include "EngineUtils.h"
 
 #include "GameFramework/WorldSettings.h"
@@ -47,11 +47,11 @@ public:
 				PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
 			{
 				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
-				UWorld* World = GetWorld();
-				for (TActorIterator<ASpatialDebuggerEditor> It(World); It; ++It)
+				UWorld* World = GetWorld(); 
+				for (TActorIterator<ASpatialDebugger> It(World); It; ++It)
 				{
-					ASpatialDebuggerEditor* FoundActor = *It;
-					FoundActor->RefreshWorkerRegions();
+					ASpatialDebugger* FoundActor = *It;
+					FoundActor->EditorRefreshWorkerRegions();
 				}
 			}
 		}

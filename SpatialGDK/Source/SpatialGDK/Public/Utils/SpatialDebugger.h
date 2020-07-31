@@ -48,7 +48,10 @@ struct FWorkerRegionInfo
 	FBox2D Extents;
 };
 
-UCLASS(SpatialType=(NotPersistent), Blueprintable, NotPlaceable)
+/**
+ *Visualise spatial information at runtime and in the editor
+ */
+UCLASS(SpatialType=(NotPersistent), Blueprintable, NotPlaceable, Transient)
 class SPATIALGDK_API ASpatialDebugger :
 	public AInfo
 {
@@ -130,11 +133,15 @@ public:
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
-protected:
-	void CreateWorkerRegions();
-	void DestroyWorkerRegions();
+	void EditorInitialise();
+	void EditorRefreshWorkerRegions();
+	bool EditorAllowWorkerBoundaries() const;
+	void EditorSpatialToggleDebugger(bool bEnabled);
 
 private:
+
+	void CreateWorkerRegions();
+	void DestroyWorkerRegions();
 	void LoadIcons();
 
 	// FOnEntityAdded/FOnEntityRemoved Delegates
@@ -147,9 +154,10 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
+
+	void EditorInitialiseWorkerRegions();
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
@@ -181,4 +189,6 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
+
+	bool bEditorDebugger;
 };

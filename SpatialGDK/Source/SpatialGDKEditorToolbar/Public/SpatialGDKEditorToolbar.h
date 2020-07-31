@@ -26,7 +26,7 @@ class USoundBase;
 
 struct FWorkerTypeLaunchSection;
 class UAbstractRuntimeLoadBalancingStrategy;
-class ASpatialDebuggerEditor;
+class ASpatialDebugger;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -200,6 +200,6 @@ private:
 
 	// Used to show worker boundaries in the editor
 	UPROPERTY()
-	ASpatialDebuggerEditor* SpatialDebuggerEditor;
+	ASpatialDebugger* SpatialDebugger;
 	bool bSpatialDebuggerEditorEnabled;
 };
