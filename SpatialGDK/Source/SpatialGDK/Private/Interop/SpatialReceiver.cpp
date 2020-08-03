@@ -2025,7 +2025,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			{
 				UE_LOG(LogTemp, Warning, TEXT("The function is getting called, the test should pass!"));
 			}
-			if (RPCType != ERPCType::CrossServer &&
+
+			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() &&
+				RPCService != nullptr &&
+				RPCType != ERPCType::CrossServer &&
 				RPCType != ERPCType::NetMulticast)
 			{
 				RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);

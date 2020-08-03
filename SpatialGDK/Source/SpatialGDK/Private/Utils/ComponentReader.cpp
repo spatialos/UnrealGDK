@@ -193,8 +193,32 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 			if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 			{
+
+				// This is mostly copied from ReceivePropertyHelper in RepLayout.cpp
+				auto GetSwappedCmd = [&Cmd, &Cmds, &Parents, bIsAuthServer, &Replicator, &Channel, &Parent]() -> const FRepLayoutCmd&
+				{
+#if ENGINE_MINOR_VERSION >= 25
+					// Only swap Role/RemoteRole for actors
+					if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor) && !Channel.GetSkipRoleSwap())
+					{
+						// Swap Role to RemoteRole, and vice-versa. Leave everything else the same.
+						if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
+						{
+							return Cmds[Parents[(int32)AActor::ENetFields_Private::Role].CmdStart];
+						}
+						else if (UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex))
+						{
+							return Cmds[Parents[(int32)AActor::ENetFields_Private::RemoteRole].CmdStart];
+						}
+					}
+
+					return Cmd;
+#else
+					return (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+#endif
+				};
 				// This swaps Role/RemoteRole as we write it
-				const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+				const FRepLayoutCmd& SwappedCmd = GetSwappedCmd();
 
 				uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
 
