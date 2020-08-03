@@ -40,6 +40,8 @@ void InterestFactory::CreateAndCacheInterestState()
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
+	ServerNonAuthOwnerInterestResultType = ServerNonAuthInterestResultType;
+	ServerNonAuthOwnerInterestResultType.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 }
 
 SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
@@ -174,7 +176,7 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest, InEntityId);
 
-	AddOwnerInterestOnServer(ResultInterest, InActor);
+	AddOwnerInterestOnServer(ResultInterest, InActor, InEntityId);
 
 	return ResultInterest;
 }
@@ -221,7 +223,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
-bool InterestFactory::CheckOwnersHaveEntityId(const AActor* Actor) const
+bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
 {
 	AActor* Owner = Actor->GetOwner();
 
@@ -237,7 +239,7 @@ bool InterestFactory::CheckOwnersHaveEntityId(const AActor* Actor) const
 	return true;
 }
 
-void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor) const
+void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
 {
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;
@@ -248,7 +250,9 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
 		if (OwnerQuery.EntityIdConstraint == SpatialConstants::INVALID_ENTITY_ID)
 		{
-			return ;
+			UE_LOG(LogInterestFactory, Warning, TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
+			"USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it"), *InActor->GetName(), EntityId, *Owner->GetName());
+			return;
 		}
 		OwnerChainQuery.Constraint.OrConstraint.Add(OwnerQuery);
 		Owner = Owner->GetOwner();
@@ -256,8 +260,7 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 
 	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
 	{
-		OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-		OwnerChainQuery.ResultComponentIds.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+		OwnerChainQuery.ResultComponentIds = ServerNonAuthOwnerInterestResultType;
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerChainQuery);
 	}
 }

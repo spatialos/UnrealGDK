@@ -601,7 +601,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (!bCreatingNewEntity
 		&& NeedOwnerInterestUpdate()
-		&& NetDriver->InterestFactory->CheckOwnersHaveEntityId(Actor))
+		&& NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
 	{
 		Sender->UpdateInterestComponent(Actor);
 		SetNeedOwnerInterestUpdate(false);
@@ -1279,7 +1279,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	// Owner changed, update the actor's interest over it.
 	Sender->UpdateInterestComponent(Actor);
-	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->CheckOwnersHaveEntityId(Actor));
+	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
 	Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
