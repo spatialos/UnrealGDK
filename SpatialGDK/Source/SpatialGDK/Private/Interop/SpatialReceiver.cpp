@@ -598,6 +598,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
 	const bool bActorHadAuthority = Actor->HasAuthority();
 
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
@@ -689,6 +690,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						UpdateShadowData(Op.entity_id);
 					}
 
+					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
 					// When receiving AuthorityGained from SpatialOS, the Actor role will be ROLE_Authority iff this
 					// worker is receiving entity data for the 1st time after spawning the entity. In all other cases,
 					// the Actor role will have been explicitly set to ROLE_SimulatedProxy previously during the
