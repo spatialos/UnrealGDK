@@ -2033,7 +2033,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			TargetObject->ProcessEvent(Function, Parms);
 
-			if (RPCType != ERPCType::CrossServer &&
+			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() &&
+				RPCService != nullptr &&
+				RPCType != ERPCType::CrossServer &&
 				RPCType != ERPCType::NetMulticast)
 			{
 				RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
