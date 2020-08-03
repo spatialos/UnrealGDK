@@ -55,7 +55,7 @@ void USpatialMetrics::TickMetrics(float NetDriverTime)
 
 	SpatialGDK::SpatialMetrics Metrics;
 	Metrics.Load = WorkerLoad;
-	
+
 	// User supplied metrics
 	TArray<FString> UnboundMetrics;
 	for (const TPair<FString, UserSuppliedMetric>& Gauge : UserSuppliedMetrics)
@@ -269,7 +269,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
 			Request.command_index = SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID;
 			Request.schema_type = Schema_CreateCommandRequest();
-			
+
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
 			Schema_AddFloat(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID, Value);

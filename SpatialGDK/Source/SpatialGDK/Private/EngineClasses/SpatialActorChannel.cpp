@@ -212,6 +212,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
+	bNeedOwnerInterestUpdate = false;
 
 	PendingDynamicSubobjects.Empty();
 	SavedConnectionOwningWorkerId.Empty();
@@ -597,6 +598,14 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	ReplicationBytesWritten = 0;
+
+	if (!bCreatingNewEntity
+		&& NeedOwnerInterestUpdate()
+		&& NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	{
+		Sender->UpdateInterestComponent(Actor);
+		SetNeedOwnerInterestUpdate(false);
+	}
 
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
@@ -1235,7 +1244,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 {
 	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
-		if (!IsReadyForReplication())
+		if (!IsReadyForReplication()
+		|| !IsAuthoritativeServer())
 		{
 			return;
 		}
@@ -1266,6 +1276,10 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 		bUpdatedThisActor = true;
 	}
+
+	// Owner changed, update the actor's interest over it.
+	Sender->UpdateInterestComponent(Actor);
+	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
 	Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
