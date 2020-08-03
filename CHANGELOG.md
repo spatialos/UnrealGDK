@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
   1. Navigate to the root of GDK repo and run `git fetch && git checkout 0.11`.
   1. In the same GDK directory, run `Setup.bat`.
+- `-nocompile` flag that was previously used with `BuildWorker.bat` to skip building the game binaries and automation scripts, is now split into `-nobuild` to skip building the game binaries and `-nocompile` to skip compiling the automation scripts.
 
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
