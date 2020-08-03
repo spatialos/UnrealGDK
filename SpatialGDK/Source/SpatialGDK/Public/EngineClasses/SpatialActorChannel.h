@@ -250,7 +250,6 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property)*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 
 	void UpdateShadowData();
-	void UpdateSpatialPositionWithFrequencyCheck();
 	void UpdateSpatialPosition();
 
 	void ServerProcessOwnershipChange();

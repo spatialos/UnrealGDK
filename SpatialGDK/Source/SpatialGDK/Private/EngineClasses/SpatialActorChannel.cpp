@@ -370,15 +370,6 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 }
 
-void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
-{
-	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
-	{
-		UpdateSpatialPosition();
-	}
-}
-
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -554,7 +545,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else
 		{
-			UpdateSpatialPositionWithFrequencyCheck();
+			UpdateSpatialPosition();
 		}
 	}
 
@@ -1164,10 +1155,24 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		}
 	}
 
-	// Check that the Actor has moved sufficiently far to be updated
+	// Check that the Actor has moved sufficiently far to be updated OR that there has been a sufficient amount of time since the last update
+	bool bHasMovedSufficientlyFar = false;
+	bool bHasSufficientTimeElapsed = false;
+
 	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
+
+	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) >= SpatialPositionThresholdSquared)
+	{
+		bHasMovedSufficientlyFar = true;
+	}
+
+	if ((NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	{
+		bHasSufficientTimeElapsed = true;
+	}
+
+	if (!(bHasMovedSufficientlyFar || bHasSufficientTimeElapsed))
 	{
 		return;
 	}
