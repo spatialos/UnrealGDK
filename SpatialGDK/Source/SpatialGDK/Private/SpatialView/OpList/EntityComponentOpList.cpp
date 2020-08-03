@@ -5,6 +5,11 @@
 namespace SpatialGDK
 {
 
+EntityComponentOpListBuilder::EntityComponentOpListBuilder()
+	: OpListData(MakeUnique<EntityComponentOpListData>())
+{
+}
+
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_EntityId EntityId, ComponentData Data)
 {
 	Worker_Op Op = {};

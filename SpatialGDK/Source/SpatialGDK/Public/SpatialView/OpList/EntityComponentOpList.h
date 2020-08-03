@@ -22,6 +22,8 @@ struct EntityComponentOpListData : OpListData
 class EntityComponentOpListBuilder
 {
 public:
+	EntityComponentOpListBuilder();
+
 	EntityComponentOpListBuilder& AddComponent(Worker_EntityId EntityId, ComponentData Data);
 	EntityComponentOpListBuilder& UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update);
 	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
