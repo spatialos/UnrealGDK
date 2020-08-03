@@ -13,7 +13,7 @@ ANetOwnershipCube::ANetOwnershipCube()
 
 void ANetOwnershipCube::ServerIncreaseRPCCount_Implementation()
 {
-	ReceivedRPCs++ ;
+	ReceivedRPCs++;
 }
 
 void ANetOwnershipCube::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
