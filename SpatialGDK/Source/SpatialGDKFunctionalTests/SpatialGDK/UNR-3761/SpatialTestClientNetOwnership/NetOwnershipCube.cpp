@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "NetOwnershipCube.h"
+
 #include "Net/UnrealNetwork.h"
 
 ANetOwnershipCube::ANetOwnershipCube()

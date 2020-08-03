@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+
+#include "CoreMinimal.h"
+
 #include "SpatialTestNetOwnership.generated.h"
 
 class ANetOwnershipCube;

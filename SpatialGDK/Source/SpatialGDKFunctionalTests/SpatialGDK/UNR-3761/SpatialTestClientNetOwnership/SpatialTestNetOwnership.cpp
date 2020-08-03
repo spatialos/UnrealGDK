@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialTestNetOwnership.h"
 #include "NetOwnershipCube.h"
-#include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
+
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
 /**

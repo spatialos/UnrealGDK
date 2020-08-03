@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
+
+#include "CoreMinimal.h"
+
 #include "NetOwnershipCube.generated.h"
 
 UCLASS()
