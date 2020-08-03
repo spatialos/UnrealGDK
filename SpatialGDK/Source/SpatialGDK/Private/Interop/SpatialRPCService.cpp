@@ -42,7 +42,12 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 			UObject* TargetObject = TargetObjectWeakPtr.Get();
 			const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-			Payload.SpanId = EventTracer->TraceEvent2(FEventRPCQueued{ TargetObject, Function }, &Payload.SpanId.GetValue());
+
+			FEventRPCQueued EventRPCQueued;
+			EventRPCQueued.TargetObject = TargetObject;
+			EventRPCQueued.Function = Function;
+
+			Payload.SpanId = EventTracer->TraceEvent(EventRPCQueued, &Payload.SpanId.GetValue());
 		}
 		AddOverflowedRPC(EntityType, MoveTemp(Payload));
 		Result = EPushRPCResult::QueueOverflowed;
@@ -175,7 +180,12 @@ void SpatialRPCService::PushOverflowedRPCs()
 				UObject* TargetObject = TargetObjectWeakPtr.Get();
 				const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 				UFunction* Function = ClassInfo.RPCs[Payload.Index];
-				Payload.SpanId = EventTracer->TraceEvent2(FEventRPCRetried{ TargetObject, Function }, &Payload.SpanId.GetValue());
+
+				FEventRPCRetried EventRPCRetried;
+				EventRPCRetried.TargetObject = TargetObject;
+				EventRPCRetried.Function = Function;
+
+				Payload.SpanId = EventTracer->TraceEvent(EventRPCRetried, &Payload.SpanId.GetValue());
 			}
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
 

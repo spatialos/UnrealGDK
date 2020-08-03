@@ -91,7 +91,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, EventTracer->TraceEvent2(FEventCreateEntity{ Channel->GetEntityId(), Channel->Actor }));
+
+	FEventCreateEntity EventCreateEntity;
+	EventCreateEntity.EntityId = Channel->GetEntityId();
+	EventCreateEntity.Actor = Channel->Actor;
+
+	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, EventTracer->TraceEvent(EventCreateEntity));
 
 	return CreateEntityRequestId;
 }
@@ -493,10 +498,14 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
+	FEventSendRPC EventSendRPC;
+	EventSendRPC.TargetObject = TargetObject;
+	EventSendRPC.Function = Function;
+
 #if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), EventTracer->TraceEvent2(FEventSendRPC{ TargetObject, Function }), USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), EventTracer->TraceEvent(EventSendRPC), USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
 #else
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), EventTracer->TraceEvent2(FEventSendRPC{ TargetObject, Function }));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), EventTracer->TraceEvent(EventSendRPC));
 #endif
 }
 
@@ -581,7 +590,12 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	}
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update, EventTracer->TraceEvent2(FEventAuthorityIntentUpdate{ NewAuthoritativeVirtualWorkerId, &Actor }));
+
+	FEventAuthorityIntentUpdate EventAuthorityIntentUpdate;
+	EventAuthorityIntentUpdate.NewWorkerId = NewAuthoritativeVirtualWorkerId;
+	EventAuthorityIntentUpdate.Actor = &Actor;
+
+	Connection->SendComponentUpdate(EntityId, &Update, EventTracer->TraceEvent(EventAuthorityIntentUpdate));
 
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
@@ -1001,7 +1015,12 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
 	Connection->SendCommandResponse(RequestId, &Response);
-	EventTracer->TraceEvent(ConstructEvent(RequestId, true));
+
+	FEventCommandResponse EventCommandResponse;
+	EventCommandResponse.RequestID = RequestId;
+	EventCommandResponse.bSuccess = true;
+
+	EventTracer->TraceEvent(EventCommandResponse);
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1012,13 +1031,23 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse();
 
 	Connection->SendCommandResponse(RequestId, &Response);
-	EventTracer->TraceEvent(ConstructEvent(RequestId, true));
+
+	FEventCommandResponse EventCommandResponse;
+	EventCommandResponse.RequestID = RequestId;
+	EventCommandResponse.bSuccess = true;
+
+	EventTracer->TraceEvent(EventCommandResponse);
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-	EventTracer->TraceEvent(ConstructEvent(RequestId, false));
+
+	FEventCommandResponse EventCommandResponse;
+	EventCommandResponse.RequestID = RequestId;
+	EventCommandResponse.bSuccess = false;
+
+	EventTracer->TraceEvent(EventCommandResponse);
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
@@ -1076,7 +1105,12 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
-		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId, EventTracer->TraceEvent2(FEventRetireEntityRequest{ EntityId, Actor }));
+
+		FEventRetireEntityRequest EventRetireEntityRequest;
+		EventRetireEntityRequest.EntityId = EntityId;
+		EventRetireEntityRequest.Actor = Actor;
+
+		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId, EventTracer->TraceEvent(EventRetireEntityRequest));
 	}
 }
 

@@ -21,8 +21,6 @@ public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
 
 	void SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn);
-	SpatialGDK::SpatialSpanId CreateActiveSpan();
-	void TraceEvent(const SpatialGDK::SpatialGDKEvent& Event);
 
 	virtual void FinishDestroy() override
 	{

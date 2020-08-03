@@ -8,7 +8,12 @@
 //#include "ObjectMacros.h"
 #include "SpatialCommonTypes.h"
 
-// TODO Remove maybe?
+// TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in .cpp file, when the LatencyTracer is enabled?)
+
+// TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off
+// TODO(EventTracer): it is only required here because Trace_SpanId is used.
+// Consider if it's possible to remove it.
+
 #include "Containers/Queue.h"
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -30,75 +35,182 @@ static_assert(sizeof(Worker_EntityId) == sizeof(int64), "EntityId assumed 64-bit
 static_assert(sizeof(VirtualWorkerId) == sizeof(uint32), "VirtualWorkerId assumed 32-bit here");
 
 USTRUCT()
-struct FEventCreateEntity
+struct FEventMessage
 {
 	GENERATED_BODY()
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
-	const char* Type = "CreateEntity";
+
+	FEventMessage() = default;
+	FEventMessage(const char* InType)
+		: Type(InType)
+	{}
+
+	const char* GetType() const { return Type; }
+
+private:
+
+	const char* Type = "Null";
 };
 
 USTRUCT()
-struct FEventCreateEntitySuccess
+struct FEventGenericMessage : public FEventMessage
 {
 	GENERATED_BODY()
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
-	const char* Type = "CreateEntity";
+
+	FEventGenericMessage() : FEventMessage("GenericMessage") {}
+
+	UPROPERTY() FString Message;
 };
 
 USTRUCT()
-struct FEventAuthorityIntentUpdate
+struct FEventCreateEntity : public FEventMessage
 {
 	GENERATED_BODY()
+
+	FEventCreateEntity() : FEventMessage("CreateEntity") {}
+
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() const AActor* Actor;
+};
+
+USTRUCT()
+struct FEventRemoveEntity : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventRemoveEntity() : FEventMessage("RemoveEntity") {}
+
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() const AActor* Actor;
+};
+
+USTRUCT()
+struct FEventCreateEntitySuccess : public FEventMessage
+{
+	GENERATED_BODY()
+
+		FEventCreateEntitySuccess() : FEventMessage("CreateEntitySuccess") {}
+
+	UPROPERTY() int64 EntityId;
+	UPROPERTY() const AActor* Actor;
+};
+
+USTRUCT()
+struct FEventAuthorityIntentUpdate : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventAuthorityIntentUpdate() : FEventMessage("AuthorityIntentUpdate") {}
+
 	UPROPERTY() uint32 NewWorkerId;
 	UPROPERTY() const AActor* Actor;
-	const char* Type = "AuthorityIntentUpdate";
 };
 
 USTRUCT()
-struct FEventRetireEntityRequest
+struct FEventAuthorityLossImminent: public FEventMessage
 {
 	GENERATED_BODY()
+
+	FEventAuthorityLossImminent() : FEventMessage("AuthorityLossImminent") {}
+
+	UPROPERTY() TEnumAsByte<ENetRole> Role;
+	UPROPERTY() const AActor* Actor;
+};
+
+USTRUCT()
+struct FEventRetireEntityRequest : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventRetireEntityRequest() : FEventMessage("EntityRetire") {}
+
 	UPROPERTY() int64 EntityId;
 	UPROPERTY() const AActor* Actor;
-	const char* Type = "EntityRetire";
 };
 
 USTRUCT()
-struct FEventDeleteEntityRequest
+struct FEventDeleteEntityRequest : public FEventMessage
 {
 	GENERATED_BODY()
+
+	FEventDeleteEntityRequest() : FEventMessage("EntityDelete") {}
+
 	UPROPERTY() int64 EntityId;
 	UPROPERTY() const AActor* Actor;
-	const char* Type = "EntityDelete";
 };
 
 USTRUCT()
-struct FEventSendRPC
+struct FEventSendRPC : public FEventMessage
 {
 	GENERATED_BODY()
+
+	FEventSendRPC() : FEventMessage("SendRPC") {}
+
 	UPROPERTY() const UObject* TargetObject;
 	UPROPERTY() const UFunction* Function;
-	const char* Type = "SendRPC";
 };
 
 USTRUCT()
-struct FEventRPCQueued
+struct FEventRPCQueued : public FEventMessage
 {
 	GENERATED_BODY()
+
+	FEventRPCQueued() : FEventMessage("RPCQueued") {}
+
 	UPROPERTY() const UObject* TargetObject;
 	UPROPERTY() const UFunction* Function;
-	const char* Type = "RPCQueued";
 };
 
 USTRUCT()
-struct FEventRPCRetried
+struct FEventRPCRetried : public FEventMessage
 {
 	GENERATED_BODY()
+
+	FEventRPCRetried() : FEventMessage("RPCRetried") {}
+
 	UPROPERTY() const UObject* TargetObject;
 	UPROPERTY() const UFunction* Function;
-	const char* Type = "RPCRetried";
+};
+
+USTRUCT()
+struct FEventComponentUpdate : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventComponentUpdate() : FEventMessage("ComponentUpdate") {}
+
+	UPROPERTY() const AActor* Actor;
+	UPROPERTY() const UObject* TargetObject;
+	UPROPERTY() uint32 ComponentId;
+};
+
+USTRUCT()
+struct FEventCommandResponse : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventCommandResponse() : FEventMessage("CommandResponse") {}
+
+	UPROPERTY() FString Command;
+	UPROPERTY() const AActor* Actor;
+	UPROPERTY() const UObject* TargetObject;
+	UPROPERTY() const UFunction* Function;
+	UPROPERTY() int64 RequestID;
+	UPROPERTY() bool bSuccess;
+};
+
+USTRUCT()
+struct FEventCommandRequest : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventCommandRequest() : FEventMessage("CommandRequest") {}
+
+	UPROPERTY() FString Command;
+	UPROPERTY() const AActor* Actor;
+	UPROPERTY() const UObject* TargetObject;
+	UPROPERTY() const UFunction* Function;
+	UPROPERTY() int32 TraceId;
+	UPROPERTY() int64 RequestID;
 };
 
 /*
@@ -120,9 +232,15 @@ Individual RPC Calls (distinguishing between GDK and USER)
 Custom events can be added
 */
 
-class UFunction;
 class AActor;
+class UFunction;
 class USpatialNetDriver;
+
+// Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
+// (see SpatialConnectionManager diff)
+
+// TODO(EventTracer): consider whether it's necessary to create a SpatialSpanId wrapper that holds Trace_SpanId,
+// so that Trace_SpanId is not used directly in UnrealGDK
 
 namespace worker
 {
@@ -134,142 +252,40 @@ namespace c
 
 namespace SpatialGDK
 {
-struct SpatialSpanId
-{
-	SpatialSpanId(worker::c::Trace_EventTracer* InEventTracer);
-	~SpatialSpanId();
 
-private:
-	Trace_SpanId CurrentSpanId;
-	worker::c::Trace_EventTracer* EventTracer;
-};
-
-struct SpatialGDKEvent
-{
-	//SpatialSpanId SpanId;
-	FString Message;
-	FString Type;
-	TMap<FString, FString> Data;
-};
-
-// TODO: discuss overhead from constructing SpatialGDKEvents
-// TODO: Rename
-SpatialGDKEvent ConstructEvent(const AActor* Actor, ENetRole Role);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, TraceKey TraceId, Worker_RequestId RequestID);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const FString& Message, Worker_CreateEntityResponseOp ResponseOp);
-SpatialGDKEvent ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, Worker_CommandResponseOp ResponseOp);
-SpatialGDKEvent ConstructEvent(Worker_RequestId RequestID, bool bSuccess);
+// Note: SpatialEventTracer wraps Trace_EventTracer related functionality
+// It is constructed and owned by SpatialConnectionManager.
+// SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialConnectionManager.
+// Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure there are necessary nullptr checks if that changes.
 
 struct SpatialEventTracer
 {
 	SpatialEventTracer(UWorld* World);
 	~SpatialEventTracer();
-	SpatialSpanId CreateActiveSpan();
-	TOptional<Trace_SpanId> TraceEvent(const SpatialGDKEvent& Event, const worker::c::Trace_SpanId* Cause = nullptr);
+	Trace_SpanId CreateNewSpanId();
+	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
 
 	void Enable();
 	void Disable();
 	bool IsEnabled() { return bEnalbed; }
+
+	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
+
 	USpatialNetDriver* GetNetDriver() const { return NetDriver; }
-	/*TOptional<Trace_SpanId> CreateEntity(AActor* Actor, Worker_EntityId EntityId)
+
+	// TODO(EventTracer): add the option to SpatialSpanIdActivator for Sent TraceEvents.
+	// Consider making sure it's not accepting rvalue (since SpatialSpanIdActivator must live long enough for the worker sent op to be registered with this SpanId)
+	// e.g. void TraceEvent(... SpatialSpanIdActivator&& SpanIdActivator) = delete;
+	// TODO(EventTracer): Communicate to others, that SpatialSpanIdActivator must be creating prior to calling worker send functions
+
+	template<class T>
+	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const worker::c::Trace_SpanId* Cause = nullptr)
 	{
-		SpatialGDKEvent Event;
-		Event.Message = "";
-		Event.Type = "CreateEntity";
-		if (Actor != nullptr)
-		{
-			Event.Data.Add("Actor", Actor->GetName());
-			Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-		}
-		else
-		{
-			Event.Data.Add("Actor", "Null");
-		}
-		//Event.Data.Add("ResponseOp", FString::Printf(TEXT("%lu"), ResponseOp));
-		return TraceEvent(Event);
+		return TraceEvent(EventMessage, T::StaticStruct(), Cause);
 	}
-	TOptional<Trace_SpanId> CreateEntitySuccess(AActor* Actor, Worker_EntityId EntityId)
-	{
-		SpatialGDKEvent Event;
-		Event.Message = "";
-		Event.Type = "CreateEntitySuccess";
-		if (Actor != nullptr)
-		{
-			Event.Data.Add("Actor", Actor->GetName());
-			Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-		}
-		else
-		{
-			Event.Data.Add("Actor", "Null");
-		}
-		//Event.Data.Add("ResponseOp", FString::Printf(TEXT("%lu"), ResponseOp));
-		return TraceEvent(Event);
-	}*/
 
-	template<typename T>
-	TOptional<Trace_SpanId> TraceEvent2(const T& Message, const worker::c::Trace_SpanId* Cause = nullptr)
-	{
-		if (!IsEnabled())
-		{
-			return {};
-		}
-		
-		SpatialGDKEvent Event;
-		Event.Type = Message.Type; // This is expected
-
-		for (TFieldIterator<UProperty> It(T::StaticStruct()); It; ++It)
-		{
-			UProperty* Property = *It;
-
-			FString VariableName = Property->GetName();
-			const void* Value = Property->ContainerPtrToValuePtr<uint8>(&Message);
-
-			check(Property->ArrayDim == 1); // Arrays not handled yet
-			
-			// convert the property to a FJsonValue
-			if (UStrProperty *StringProperty = Cast<UStrProperty>(Property))
-			{
-				Event.Data.Add(VariableName, StringProperty->GetPropertyValue(Value));
-			}
-			else if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property))
-			{
-				UObject* Object = ObjectProperty->GetPropertyValue(Value);
-				if(Object)
-				{
-					Event.Data.Add(VariableName, Object->GetName());
-					if (AActor* Actor = Cast<AActor>(Object))
-					{
-						Event.Data.Add(VariableName + TEXT("Position"), Actor->GetTransform().GetTranslation().ToString());
-					}
-				}
-				else
-				{
-					Event.Data.Add(VariableName, "Null");
-				}
-			}
-			else // Default
-			{
-				FString StringValue;
-				Property->ExportTextItem(StringValue, Value, NULL, NULL, PPF_None);
-				Event.Data.Add(VariableName, StringValue);
-			}
-			// else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
-			// else if (UNumericProperty *NumericProperty = Cast<UNumericProperty>(Property))
-			// else if (UBoolProperty *BoolProperty = Cast<UBoolProperty>(Property))
-			// else if (UTextProperty *TextProperty = Cast<UTextProperty>(Property))
-			// else if (UArrayProperty *ArrayProperty = Cast<UArrayProperty>(Property))
-			// else if (USetProperty* SetProperty = Cast<USetProperty>(Property))
-			// else if (UMapProperty* MapProperty = Cast<UMapProperty>(Property))
-			// else if (UStructProperty *StructProperty = Cast<UStructProperty>(Property))
-		}
-		return TraceEvent(Event, Cause);
-	}
+	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, UStruct* Struct, const worker::c::Trace_SpanId* Cause);
 
 	using EventTracingData = TMap<FString, FString>;
 
@@ -283,9 +299,24 @@ private:
 	USpatialNetDriver* NetDriver;
 };
 
+struct SpatialSpanIdActivator
+{
+	SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, Trace_SpanId InCurrentSpanId);
+	~SpatialSpanIdActivator();
+
+	SpatialSpanIdActivator(const SpatialSpanIdActivator&) = delete;
+	SpatialSpanIdActivator(SpatialSpanIdActivator&&) = delete;
+	SpatialSpanIdActivator& operator=(const SpatialSpanIdActivator&) = delete;
+	SpatialSpanIdActivator& operator=(SpatialSpanIdActivator&&) = delete;
+
+private:
+	Trace_SpanId CurrentSpanId;
+	worker::c::Trace_EventTracer* EventTracer;
+};
+
 }
 
-// TODO
+// TODO(EventTracer): (a list of requirements by Chris from Jira ticket)
 
 /*
 Sending create entity request
@@ -319,6 +350,7 @@ Individual RPC Calls (distinguishing between GDK and USER)
 Custom events can be added
 */
 
+// TODO(EventTracer): a short list of requirements by Alex
 /*
 Actor name, Position,
 Add/Remove Entity (can we also distinguish Remove Entity when moving to another worker vs Delete entity),

@@ -6,18 +6,7 @@
 
 using namespace SpatialGDK;
 
-void USpatialWorkerConnection::SetEventTracer(SpatialEventTracer* EventTracerIn)
+void USpatialWorkerConnection::SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn)
 {
 	EventTracer = EventTracerIn;
 }
-
-SpatialSpanId USpatialWorkerConnection::CreateActiveSpan()
-{
-	return EventTracer->CreateActiveSpan();
-}
-
-void USpatialWorkerConnection::TraceEvent(const SpatialGDK::SpatialGDKEvent& Event)
-{
-	EventTracer->TraceEvent(Event);
-}
-

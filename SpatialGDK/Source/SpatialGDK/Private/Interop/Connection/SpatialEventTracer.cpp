@@ -15,6 +15,9 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
+// TODO(EventTracer): Use c_io.h functions instead, to write data to a file
+// Below is a hacky function written for testing purposes, which must be removed
+
 void MyTraceCallback(void* UserData, const Trace_Item* Item)
 {
 	switch (Item->item_type)
@@ -23,7 +26,7 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	{
 		const Trace_Event& Event = Item->item.event;
 
-		// TODO: remove temporary filtering?
+		// temporary filtering for nicer UE_LOGs
 		if (Event.type == FString("network.receive_raw_message") ||
 			Event.type == FString("network.receive_udp_datagram") ||
 			Event.type == FString("network.send_raw_message") ||
@@ -86,15 +89,14 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialSpanId::SpatialSpanId(Trace_EventTracer* InEventTracer)
-	: CurrentSpanId{}
-	, EventTracer(InEventTracer)
+SpatialSpanIdActivator::SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, Trace_SpanId InCurrentSpanId)
+	: CurrentSpanId(InCurrentSpanId)
+	, EventTracer(InEventTracer->GetWorkerEventTracer())
 {
-	CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
 }
 
-SpatialSpanId::~SpatialSpanId()
+SpatialSpanIdActivator::~SpatialSpanIdActivator()
 {
 	Trace_EventTracer_UnsetActiveSpanId(EventTracer);
 }
@@ -161,40 +163,108 @@ void SpatialEventTracer::WriteEventDataToJson(const EventTracingData& EventData)
 	Io_Stream_Write(Stream, (const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
 }
 
-SpatialSpanId SpatialEventTracer::CreateActiveSpan()
+Trace_SpanId SpatialEventTracer::CreateNewSpanId()
 {
-	return SpatialSpanId(EventTracer);
+	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const SpatialGDKEvent& Event, const worker::c::Trace_SpanId* Cause)
+Trace_SpanId SpatialEventTracer::CreateNewSpanId(const TArray<Trace_SpanId>& Causes)
 {
+	return Trace_EventTracer_AddSpan(EventTracer, Causes.GetData(), Causes.Num());
+}
+
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, UStruct* Struct, const worker::c::Trace_SpanId* Cause)
+{
+	if (!IsEnabled())
+	{
+		return {};
+	}
+
 	Trace_SpanId CurrentSpanId;
 	if (Cause)
 	{
-		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Cause, 1); // This only works for count=1
+		CurrentSpanId = CreateNewSpanId({ *Cause });
 	}
 	else
 	{
-		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
+		CurrentSpanId = CreateNewSpanId();
 	}
 
-	Trace_Event TraceEvent{ CurrentSpanId, 0, TCHAR_TO_ANSI(*Event.Message), TCHAR_TO_ANSI(*Event.Type), nullptr };
-
-	if (Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
+	Trace_Event TraceEvent{ CurrentSpanId, 0, "", EventMessage.GetType(), nullptr };
+	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
-		Trace_EventData* EventData = Trace_EventData_Create();
-		for (const auto& Elem : Event.Data)
-		{
-			const char* Key = TCHAR_TO_ANSI(*Elem.Key);
-			const char* Value = TCHAR_TO_ANSI(*Elem.Value);
-			Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
-		}
-		TraceEvent.data = EventData;
-		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
-		Trace_EventData_Destroy(EventData);
-		return CurrentSpanId;
+		return {};
 	}
-	return {};
+
+	Trace_EventData* EventData = Trace_EventData_Create();
+
+	auto AddTraceEventStringField = [EventData](const FString& KeyString, const FString& ValueString)
+	{
+		auto KeySrc = StringCast<ANSICHAR>(*KeyString);
+		const ANSICHAR* Key = KeySrc.Get();
+		auto ValueSrc = StringCast<ANSICHAR>(*ValueString);
+		const ANSICHAR* Value = ValueSrc.Get();
+		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
+	};
+
+	for (TFieldIterator<UProperty> It(Struct); It; ++It)
+	{
+		UProperty* Property = *It;
+
+		FString VariableName = Property->GetName();
+		const void* Value = Property->ContainerPtrToValuePtr<uint8>(&EventMessage);
+
+		check(Property->ArrayDim == 1); // Arrays not handled yet
+
+		// convert the property to a FJsonValue
+		if (UStrProperty *StringProperty = Cast<UStrProperty>(Property))
+		{
+			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
+		}
+		else if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property))
+		{
+			UObject* Object = ObjectProperty->GetPropertyValue(Value);
+			if (Object)
+			{
+				AddTraceEventStringField(VariableName, Object->GetName());
+				if (AActor* Actor = Cast<AActor>(Object))
+				{
+					FString KeyString = VariableName + TEXT("Position");
+					FString ValueString = Actor->GetTransform().GetTranslation().ToString();
+					AddTraceEventStringField(KeyString, KeyString);
+				}
+			}
+			else
+			{
+				AddTraceEventStringField(VariableName, "Null");
+			}
+		}
+		else // Default
+		{
+			FString StringValue;
+			Property->ExportTextItem(StringValue, Value, NULL, NULL, PPF_None);
+			AddTraceEventStringField(VariableName, StringValue);
+		}
+
+		// else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+		// else if (UNumericProperty *NumericProperty = Cast<UNumericProperty>(Property))
+		// else if (UBoolProperty *BoolProperty = Cast<UBoolProperty>(Property))
+		// else if (UTextProperty *TextProperty = Cast<UTextProperty>(Property))
+		// else if (UArrayProperty *ArrayProperty = Cast<UArrayProperty>(Property))
+		// else if (USetProperty* SetProperty = Cast<USetProperty>(Property))
+		// else if (UMapProperty* MapProperty = Cast<UMapProperty>(Property))
+		// else if (UStructProperty *StructProperty = Cast<UStructProperty>(Property))
+
+	}
+
+	// TODO(EventTracer): implement and call AddTargetObjectInfoToEventData
+	// TODO(EventTracer): implement and call AddComponentIdInfoToEventData
+
+	TraceEvent.data = EventData;
+	Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
+	Trace_EventData_Destroy(EventData);
+
+	return CurrentSpanId;
 }
 
 void SpatialEventTracer::Enable()
@@ -207,160 +277,4 @@ void SpatialEventTracer::Disable()
 {
 	Trace_EventTracer_Disable(EventTracer);
 	bEnalbed = false;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(Worker_RequestId RequestID, bool bSuccess)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "CommandResponse";
-	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
-	Event.Data.Add("Success", bSuccess ? TEXT("true") : TEXT("false"));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, Worker_CommandResponseOp ResponseOp)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "ComponentUpdate";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	if (TargetObject != nullptr)
-	{
-		Event.Data.Add("TargetObject", TargetObject->GetName());
-	}
-	Event.Data.Add("Function", Function->GetName());
-	//Event.Data.Add("ResponseOp", ResponseOp);
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Message, Worker_CreateEntityResponseOp ResponseOp)
-{
-	SpatialGDKEvent Event;
-	Event.Message = Message;
-	Event.Type = "CreateEntityOp";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	//Event.Data.Add("ResponseOp", FString::Printf(TEXT("%lu"), ResponseOp));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Type, Worker_CommandResponseOp ResponseOp)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = Type;
-	//Event.Data.Add("ResponseOp", ResponseOp);
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, const UFunction* Function, TraceKey TraceId, Worker_RequestId RequestID)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "ComponentUpdate";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	if (TargetObject != nullptr)
-	{
-		Event.Data.Add("TargetObject", TargetObject->GetName());
-	}
-	Event.Data.Add("Function", Function->GetName());
-	Event.Data.Add("TraceId", FString::Printf(TEXT("%i"), TraceId));
-	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const FString& Type, Worker_RequestId RequestID)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = Type;
-	Event.Data.Add("RequestID", FString::Printf(TEXT("%li"), RequestID));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, const UObject* TargetObject, Worker_ComponentId ComponentId)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "ComponentUpdate";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	if (TargetObject != nullptr)
-	{
-		Event.Data.Add("TargetObject", TargetObject->GetName());
-	}
-	Event.Data.Add("ComponentId", FString::Printf(TEXT("%u"), ComponentId));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, ENetRole Role)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "AuthorityChange";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	switch (Role)
-	{
-	case ROLE_SimulatedProxy:
-		Event.Data.Add("NewRole", "ROLE_None");
-		break;
-	case ROLE_AutonomousProxy:
-		Event.Data.Add("NewRole", "ROLE_AutonomousProxy");
-		break;
-	case ROLE_Authority:
-		Event.Data.Add("NewRole", "ROLE_Authority");
-		break;
-	default:
-		Event.Data.Add("NewRole", "Invalid Role");
-		break;
-	}
-
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_EntityId EntityId, Worker_RequestId RequestID)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "RetireEntity";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	Event.Data.Add("CreateEntityRequestId", FString::Printf(TEXT("%lu"), RequestID));
-	return Event;
-}
-
-SpatialGDK::SpatialGDKEvent SpatialGDK::ConstructEvent(const AActor* Actor, Worker_RequestId CreateEntityRequestId)
-{
-	SpatialGDKEvent Event;
-	Event.Message = "";
-	Event.Type = "CreateEntity";
-	if (Actor != nullptr)
-	{
-		Event.Data.Add("Actor", Actor->GetName());
-		Event.Data.Add("Position", Actor->GetActorTransform().GetTranslation().ToString());
-	}
-	Event.Data.Add("CreateEntityRequestId", FString::Printf(TEXT("%li"), CreateEntityRequestId));
-	return Event;
 }
