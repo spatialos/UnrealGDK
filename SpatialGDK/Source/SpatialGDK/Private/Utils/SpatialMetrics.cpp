@@ -292,13 +292,21 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		{
 			GetMutableDefault<USpatialGDKSettings>()->EntityCreationRateLimit = static_cast<uint32>(Value);
 		}
-		else if (Name == TEXT("PositionUpdateFrequency"))
+		else if (Name == TEXT("MinimumTimeThreshold"))
 		{
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = Value;
+			GetMutableDefault<USpatialGDKSettings>()->MinimumTimeThreshold = Value;
 		}
-		else if (Name == TEXT("PositionDistanceThreshold"))
+		else if (Name == TEXT("MinimumDistanceThreshold"))
 		{
-			GetMutableDefault<USpatialGDKSettings>()->PositionDistanceThreshold = Value;
+			GetMutableDefault<USpatialGDKSettings>()->MinimumDistanceThreshold = Value;
+		}
+		else if (Name == TEXT("MaximumTimeThreshold"))
+		{
+			GetMutableDefault<USpatialGDKSettings>()->MaximumTimeThreshold = Value;
+		}
+		else if (Name == TEXT("MaximumDistanceThreshold"))
+		{
+			GetMutableDefault<USpatialGDKSettings>()->MaximumDistanceThreshold = Value;
 		}
 		else
 		{

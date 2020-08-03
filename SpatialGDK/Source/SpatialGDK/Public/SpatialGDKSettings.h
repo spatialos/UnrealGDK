@@ -160,13 +160,21 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
 	float QueuedOutgoingRPCRetryTime;
 
-	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
+	/** Minimum distance, in centimeters, required for an Actor to move before its SpatialOS Position is updated, if more than MinimumTimeThreshold seconds have also passed since its last update.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
-	float PositionUpdateFrequency;
+	float MinimumDistanceThreshold;
 
-	/** Threshold an Actor needs to move, in centimeters, before its SpatialOS Position is updated.*/
+	/** Minimum time, in seconds, required to pass before an Actor will update its SpatialOS Position, if it has also traveled more than the MinimumDistanceThreshold since its last update.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
-	float PositionDistanceThreshold;
+	float MinimumTimeThreshold;
+
+	/** Maximum time, in seconds, that can pass before an Actor will update its SpatialOS Position, if it has also traveled any non-null amount of centimeters since its last update.*/
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
+	float MaximumTimeThreshold;
+
+	/** Maximum distance, in centimeters, an Actor can move before its SpatialOS Position is updated.*/
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
+	float MaximumDistanceThreshold;
 
 	/** Metrics about client and server performance can be reported to SpatialOS to monitor a deployments health.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics")

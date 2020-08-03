@@ -1847,12 +1847,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
-			if ((GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
-			{
-				TimeWhenPositionLastUpdated = GetElapsedTime();
+			TimeWhenPositionLastUpdated = GetElapsedTime();
 
-				Sender->ProcessPositionUpdates();
-			}
+			Sender->ProcessPositionUpdates();
 		}
 
 		if (Connection != nullptr)

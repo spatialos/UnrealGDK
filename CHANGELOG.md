@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+- Spatial Position Updates are now sent based on a different logic: previously, a position update was sent to spatial if enough time has passed since the Actor's last update AND if the Actor has moved more than the Position Distance Threshold, now updates are sent based on an OR between the two conditions. 
 
 ### Breaking changes:
 - Multi-worker settings configured previously as `SpatialWorldSettings` properties are now encapsulated within the `USpatialMultiWorkerSettings` class. To update your project, you should create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration then, in your levels' World Settings, select that class as the `Multi-worker settings class` property.

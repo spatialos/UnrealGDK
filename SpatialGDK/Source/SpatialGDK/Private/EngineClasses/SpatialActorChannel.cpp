@@ -1155,24 +1155,35 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		}
 	}
 
-	// Check that the Actor has moved sufficiently far to be updated OR that there has been a sufficient amount of time since the last update
-	bool bHasMovedSufficientlyFar = false;
-	bool bHasSufficientTimeElapsed = false;
+	// Check that the Actor has satisfied both Minimum thresholds OR either of the Maximum thresholds
+	bool bSatisfiesMininumThresholds = false;
+	bool bSatisfiesMaximumThreshold = false;
 
-	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
+	if (Actor->GetName().Contains(TEXT("Character")))
+	{		UE_LOG(LogTemp, Warning, TEXT("HELO WORLD!"));
+	}
+
+	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
+	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) >= SpatialPositionThresholdSquared)
+	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->MinimumDistanceThreshold);
+
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->MinimumTimeThreshold && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
 	{
-		bHasMovedSufficientlyFar = true;
+		bSatisfiesMininumThresholds = true;
 	}
 
-	if ((NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->MaximumDistanceThreshold);
+
+	if ((TimeSinceLastPositionUpdate >= SpatialGDKSettings->MaximumTimeThreshold  && DistanceTravelledSinceLastUpdateSquared > 0.0f ) ||
+		DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
 	{
-		bHasSufficientTimeElapsed = true;
+		bSatisfiesMaximumThreshold = true;
 	}
 
-	if (!(bHasMovedSufficientlyFar || bHasSufficientTimeElapsed))
+	if (!(bSatisfiesMininumThresholds || bSatisfiesMaximumThreshold))
 	{
 		return;
 	}

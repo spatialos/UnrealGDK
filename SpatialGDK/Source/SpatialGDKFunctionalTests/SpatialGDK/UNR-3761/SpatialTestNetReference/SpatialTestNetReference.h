@@ -29,5 +29,5 @@ public:
 
 	TPair<AController*, APawn*> OriginalPawn;
 
-	float PreviousPositionUpdateFrequency;
+	float PreviousMaximumDistanceThreshold;
 };
