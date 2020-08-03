@@ -198,9 +198,10 @@ public:
 
 	FRPCContainer& GetRPCContainer() { return IncomingRPCs; }
 
-private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+private:
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;

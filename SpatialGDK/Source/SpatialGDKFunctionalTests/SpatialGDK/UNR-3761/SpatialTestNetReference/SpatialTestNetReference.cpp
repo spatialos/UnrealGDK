@@ -161,6 +161,11 @@ void ASpatialTestNetReference::BeginPlay()
 
 			}, 1500.0f);
 
+		AddStep(TEXT("SpatialTestNetReferenceClientCheckMovement22"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+			{
+				
+			}, 1500.0f);
+
 		//AddStep(TEXT("SpatialTestNetReferenceClientCheckNumberOfReferences"), FWorkerDefinition::Client(1), nullptr, nullptr, [this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		//	{
 		//		TArray<AActor*> CubesWithReferences;

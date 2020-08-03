@@ -429,11 +429,6 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
-	if(Object->GetName() == TEXT("CharMoveComp"))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Placeholder"));
-	}
-
 
 	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{
@@ -451,7 +446,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		}
 		if (Object->GetName() == TEXT("CharMoveComp"))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Placeholder"));
+			UE_LOG(LogTemp, Error, TEXT("SPATIAL SENDER: I Have sent a component update"));
 		}
 		Connection->SendComponentUpdate(EntityId, &Update);
 	}
@@ -644,7 +639,10 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::DropEntireQueue };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
-
+	if (TargetObject->GetName().Contains(TEXT("TestMovementCharacter")))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SPATIAL SENDER: Miron's log"));
+	}
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)

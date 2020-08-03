@@ -34,10 +34,10 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 	for (size_t i = 0; i < Ops.Count; ++i)
 	{
 		Worker_Op* Op = &Ops.Ops[i];
-
+		// should first check if its a component update, and then the entity id
 		if (Op->op.component_update.entity_id == 20)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("SPATIAL DISPATCHER: I received an op for the character."));
+			//UE_LOG(LogTemp, Warning, TEXT("SPATIAL DISPATCHER: I received an op for the character."));
 		}
 
 
@@ -80,10 +80,11 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 			Receiver->OnRemoveComponent(Op->op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			if (Op->op.component_update.entity_id == 20)
+			if (Receiver->NetDriver->GetActorChannelByEntityId(Op->op.component_update.entity_id)->GetActor()->GetName().Contains(TEXT("TestMovementCharacter")))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("SPATIAL DISPATCHER: I received a componenet update for the character."));
 			}
+
 			StaticComponentView->OnComponentUpdate(Op->op.component_update);
 			Receiver->OnComponentUpdate(Op->op.component_update);
 			break;

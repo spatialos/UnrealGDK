@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
+//#include "hardwarebp.h"
 #include "Components/CapsuleComponent.h"
 
 ATestMovementCharacter::ATestMovementCharacter()
@@ -17,6 +18,9 @@ ATestMovementCharacter::ATestMovementCharacter()
 	SetReplicatingMovement(true);
 #endif
 
+	/*DWORD x = GetLocalRole();
+	HardwareBreakpoint bp;
+	bp.Set(&x, sizeof(x), HardwareBreakpoint::Write);*/
 	GetCapsuleComponent()->InitCapsuleSize(38.0f, 38.0f);
 
 	SphereComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereComponent"));

@@ -1523,10 +1523,10 @@ void USpatialReceiver::ApplyComponentData(USpatialActorChannel& Channel, UObject
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
 
-	if (Op.entity_id == 20)
+	/*if (Op.entity_id == 20)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: I have received an op for the character"));
-	}
+	}*/
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverComponentUpdate);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
@@ -1594,7 +1594,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		if (Op.entity_id == 20)
+		if(NetDriver->GetActorChannelByEntityId(Op.entity_id)->GetActor()->GetName().Contains(TEXT("TestMovementCharacter")))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("SPATIAL RECEIVER: The op is calling HandleRPC"));
 		}
