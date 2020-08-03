@@ -30,6 +30,7 @@ public class SpatialGDKEditor : ModuleRules
 				"Slate",
 				"SlateCore",
 				"SpatialGDK",
+				"SpatialGDKFunctionalTests",
 				"SpatialGDKServices",
  				"UATHelper",
 				"UnrealEd",

@@ -118,7 +118,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// TODO: Reuse local deployment between test maps: UNR-2488
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if ((GIsAutomationTesting || bStopLocalDeploymentOnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if ((GIsAutomationTesting || bStopLocalDeploymentOnEndPIE) && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -1213,12 +1213,8 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-			UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-			{
-				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-				{
-					VerifyAndStartDeployment();
-				}
+			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](){
+				VerifyAndStartDeployment();
 			});
 		}
 	}

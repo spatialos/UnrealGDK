@@ -52,6 +52,8 @@ private:
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
+	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const;
+
 private:
 	void RegisterSettings();
 	void UnregisterSettings();

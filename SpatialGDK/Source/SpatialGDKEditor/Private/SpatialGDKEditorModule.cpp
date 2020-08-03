@@ -21,9 +21,13 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
+#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "SpatialRuntimeVersionCustomization.h"
 #include "WorkerTypeCustomization.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
@@ -228,6 +232,45 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	}
 
 	return false;
+}
+
+FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
+{
+	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);
+	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	{
+		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
+		if(TestingMode != EMapTestingMode::UseCurrentSettings)
+		{
+			TActorIterator<ASpatialFunctionalTest> It(World);
+			if (TestingMode == EMapTestingMode::Detect)
+			{
+				TestingMode = It ? EMapTestingMode::ForceSpatial : EMapTestingMode::ForceNative;
+			}
+
+			int NumberOfClients = 1;
+
+			switch (TestingMode)
+			{
+			case EMapTestingMode::ForceNative:
+				PIESettingsOverride.bUseSpatial = false;
+				break;
+			case EMapTestingMode::ForceSpatial:
+				PIESettingsOverride.bUseSpatial = true;
+				for (; It; ++It)
+				{
+					NumberOfClients = FMath::Max(It->GetNumRequiredClients(), NumberOfClients);
+				}
+				break;
+			default:
+				checkf(false, TEXT("Unsupported Testing Mode"));
+				break;
+			}
+
+			PIESettingsOverride.NumberOfClients = NumberOfClients;
+		}
+	}
+	return PIESettingsOverride;
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
