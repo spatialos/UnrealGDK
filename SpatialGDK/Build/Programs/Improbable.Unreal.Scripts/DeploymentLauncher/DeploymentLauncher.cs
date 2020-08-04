@@ -30,7 +30,7 @@ namespace Improbable
         private static readonly string ChinaProductionTokenPath = Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production");
 
         // Populated in the Main method if the Chinese platform is to be used
-        private static string ChinaRefreshToken = "";
+        private static string ChinaRefreshToken = String.Empty;
         private static PlatformRefreshTokenCredential ChinaCredentials;
 
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
