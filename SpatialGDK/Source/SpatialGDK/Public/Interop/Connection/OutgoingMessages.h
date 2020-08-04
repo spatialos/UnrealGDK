@@ -133,14 +133,16 @@ struct FCommandRequest : FOutgoingMessage
 
 struct FCommandResponse : FOutgoingMessage
 {
-	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse)
+	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandResponse)
 		, RequestId(InRequestId)
 		, Response(InResponse)
+		, SpanId(SpanId)
 	{}
 
 	Worker_RequestId RequestId;
 	Worker_CommandResponse Response;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FCommandFailure : FOutgoingMessage

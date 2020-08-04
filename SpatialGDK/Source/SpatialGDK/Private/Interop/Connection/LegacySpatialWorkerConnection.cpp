@@ -129,9 +129,9 @@ Worker_RequestId ULegacySpatialWorkerConnection::SendCommandRequest(Worker_Entit
 	return NextRequestId++;
 }
 
-void ULegacySpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
+void ULegacySpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response);
+	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response, SpanId);
 }
 
 void ULegacySpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)

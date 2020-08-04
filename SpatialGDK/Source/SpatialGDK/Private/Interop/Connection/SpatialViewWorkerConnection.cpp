@@ -97,7 +97,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendCommandRequest(Worker_EntityI
 		SpatialGDK::OwningCommandRequestPtr(Request->schema_type) , Request->component_id, Request->command_index));
 }
 
-void USpatialViewWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
+void USpatialViewWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId) // TODO: Figure this out
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendEntityCommandResponse(RequestId, SpatialGDK::CommandResponse(

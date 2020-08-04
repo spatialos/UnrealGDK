@@ -48,7 +48,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityI
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
+void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {}
 
 void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)

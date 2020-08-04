@@ -1014,13 +1014,13 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
-	Connection->SendCommandResponse(RequestId, &Response);
-
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
 
-	EventTracer->TraceEvent(EventCommandResponse);
+	TOptional<worker::c::Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+
+	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1030,13 +1030,13 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.command_index = CommandIndex;
 	Response.schema_type = Schema_CreateCommandResponse();
 
-	Connection->SendCommandResponse(RequestId, &Response);
-
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
 
-	EventTracer->TraceEvent(EventCommandResponse);
+	TOptional<worker::c::Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+
+	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
