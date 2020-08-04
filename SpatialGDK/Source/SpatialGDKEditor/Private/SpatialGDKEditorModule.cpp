@@ -21,9 +21,10 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
-#include "Utils/LaunchConfigurationEditor.h"
 #include "SpatialRuntimeVersionCustomization.h"
+#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
+
+#include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Engine/World.h"
