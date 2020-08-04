@@ -1018,9 +1018,7 @@ void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_Comm
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
 
-	TOptional<worker::c::Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
-
-	Connection->SendCommandResponse(RequestId, &Response, SpanId);
+	Connection->SendCommandResponse(RequestId, &Response, EventTracer->TraceEvent(EventCommandResponse));
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1034,20 +1032,16 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
 
-	TOptional<worker::c::Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
-
-	Connection->SendCommandResponse(RequestId, &Response, SpanId);
+	Connection->SendCommandResponse(RequestId, &Response, EventTracer->TraceEvent(EventCommandResponse));
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
-	Connection->SendCommandFailure(RequestId, Message);
-
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = false;
 
-	EventTracer->TraceEvent(EventCommandResponse);
+	Connection->SendCommandFailure(RequestId, Message, EventTracer->TraceEvent(EventCommandResponse));
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.

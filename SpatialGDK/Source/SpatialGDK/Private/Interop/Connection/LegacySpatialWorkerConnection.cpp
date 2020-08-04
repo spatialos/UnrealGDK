@@ -134,9 +134,9 @@ void ULegacySpatialWorkerConnection::SendCommandResponse(Worker_RequestId Reques
 	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response, SpanId);
 }
 
-void ULegacySpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+void ULegacySpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
+	QueueOutgoingMessage<FCommandFailure>(RequestId, Message, SpanId);
 }
 
 void ULegacySpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
@@ -347,6 +347,8 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::CommandFailure:
 		{
 			FCommandFailure* Message = static_cast<FCommandFailure*>(OutgoingMessage.Get());
+
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
 
 			Worker_Connection_SendCommandFailure(WorkerConnection,
 				Message->RequestId,

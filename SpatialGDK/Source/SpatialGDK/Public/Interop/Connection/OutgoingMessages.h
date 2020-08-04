@@ -147,14 +147,16 @@ struct FCommandResponse : FOutgoingMessage
 
 struct FCommandFailure : FOutgoingMessage
 {
-	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage)
+	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandFailure)
 		, RequestId(InRequestId)
 		, Message(InMessage)
+		, SpanId(SpanId)
 	{}
 
 	Worker_RequestId RequestId;
 	FString Message;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FLogMessage : FOutgoingMessage

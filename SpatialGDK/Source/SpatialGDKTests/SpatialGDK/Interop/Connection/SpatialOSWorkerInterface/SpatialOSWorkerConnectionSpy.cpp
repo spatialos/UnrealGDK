@@ -51,7 +51,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityI
 void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {}
 
-void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {}
 
 void SpatialOSWorkerConnectionSpy::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message)

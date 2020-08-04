@@ -39,7 +39,7 @@ public:
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
-	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message) override;
+	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
 	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
