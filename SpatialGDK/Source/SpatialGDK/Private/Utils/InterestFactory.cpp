@@ -40,8 +40,6 @@ void InterestFactory::CreateAndCacheInterestState()
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
-	ServerNonAuthOwnerInterestResultType = ServerNonAuthInterestResultType;
-	ServerNonAuthOwnerInterestResultType.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 }
 
 SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
@@ -260,7 +258,7 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 
 	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
 	{
-		OwnerChainQuery.ResultComponentIds = ServerNonAuthOwnerInterestResultType;
+		OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerChainQuery);
 	}
 }
