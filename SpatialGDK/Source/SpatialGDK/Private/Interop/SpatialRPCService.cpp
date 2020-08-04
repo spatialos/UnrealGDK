@@ -260,11 +260,14 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.Update.schema_type = It.Value.Update;
 		if (It.Value.SpanIds.Num() > 1)
 		{
-			UpdateToSend.Update.SpanId = Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
+			// Attach causes together, we need to send these span ids with the RPCs to continue on the other side without
+			// joining unrelated RPCs together.
+			UpdateToSend.SpanId = Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
 		}
-		else if(It.Value.SpanIds.Num() == 1)
+		else if(It.Value.SpanIds.Num() == 1) 
 		{
-			UpdateToSend.Update.SpanId = It.Value.SpanIds[0];
+			// No need to chain causes here
+			UpdateToSend.SpanId = It.Value.SpanIds[0];
 		}
 #if TRACE_LIB_ACTIVE
 		TraceKey Trace = InvalidTraceKey;
