@@ -1213,7 +1213,8 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](){
+			UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
+			{
 				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
 					VerifyAndStartDeployment();
