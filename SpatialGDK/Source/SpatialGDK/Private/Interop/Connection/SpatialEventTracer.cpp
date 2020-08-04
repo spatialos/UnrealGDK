@@ -89,17 +89,24 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialSpanIdActivator::SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, Trace_SpanId InCurrentSpanId)
+SpatialSpanIdActivator::SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
 	, EventTracer(InEventTracer->GetWorkerEventTracer())
 {
-	Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId);
+	if (InCurrentSpanId.IsSet())
+	{
+		Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId.GetValue());
+	}
 }
 
 SpatialSpanIdActivator::~SpatialSpanIdActivator()
 {
-	Trace_EventTracer_UnsetActiveSpanId(EventTracer);
+	if (CurrentSpanId.IsSet())
+	{
+		Trace_EventTracer_UnsetActiveSpanId(EventTracer);
+	}
 }
+
 
 SpatialEventTracer::SpatialEventTracer(UWorld* World)
 	: NetDriver(Cast<USpatialNetDriver>(World->GetNetDriver()))

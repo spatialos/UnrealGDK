@@ -28,9 +28,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 //}
 //}
 
-// TODO: Hook up to build system
-#define GDK_SPATIAL_EVENT_TRACING_ENABLED 1
-
 static_assert(sizeof(Worker_EntityId) == sizeof(int64), "EntityId assumed 64-bit here");
 static_assert(sizeof(VirtualWorkerId) == sizeof(uint32), "VirtualWorkerId assumed 32-bit here");
 
@@ -68,8 +65,8 @@ struct FEventCreateEntity : public FEventMessage
 
 	FEventCreateEntity() : FEventMessage("CreateEntity") {}
 
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 USTRUCT()
@@ -79,8 +76,8 @@ struct FEventRemoveEntity : public FEventMessage
 
 	FEventRemoveEntity() : FEventMessage("RemoveEntity") {}
 
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() int64 EntityId { -1 };
+	UPROPERTY() const AActor* Actor { nullptr };
 };
 
 USTRUCT()
@@ -88,10 +85,10 @@ struct FEventCreateEntitySuccess : public FEventMessage
 {
 	GENERATED_BODY()
 
-		FEventCreateEntitySuccess() : FEventMessage("CreateEntitySuccess") {}
+	FEventCreateEntitySuccess() : FEventMessage("CreateEntitySuccess") {}
 
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() int64 EntityId { -1 };
+	UPROPERTY() const AActor* Actor { nullptr };
 };
 
 USTRUCT()
@@ -101,19 +98,19 @@ struct FEventAuthorityIntentUpdate : public FEventMessage
 
 	FEventAuthorityIntentUpdate() : FEventMessage("AuthorityIntentUpdate") {}
 
-	UPROPERTY() uint32 NewWorkerId;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() uint32 NewWorkerId { 0xFFFFFFFF };
+	UPROPERTY() const AActor* Actor { nullptr };
 };
 
 USTRUCT()
-struct FEventAuthorityLossImminent: public FEventMessage
+struct FEventAuthorityLossImminent : public FEventMessage
 {
 	GENERATED_BODY()
 
 	FEventAuthorityLossImminent() : FEventMessage("AuthorityLossImminent") {}
 
-	UPROPERTY() TEnumAsByte<ENetRole> Role;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() TEnumAsByte<ENetRole> Role{ 0 };
+	UPROPERTY() const AActor* Actor { nullptr };
 };
 
 USTRUCT()
@@ -123,8 +120,8 @@ struct FEventRetireEntityRequest : public FEventMessage
 
 	FEventRetireEntityRequest() : FEventMessage("EntityRetire") {}
 
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() int64 EntityId { -1 };
+	UPROPERTY() const AActor* Actor { nullptr };
 };
 
 USTRUCT()
@@ -134,8 +131,8 @@ struct FEventDeleteEntityRequest : public FEventMessage
 
 	FEventDeleteEntityRequest() : FEventMessage("EntityDelete") {}
 
-	UPROPERTY() int64 EntityId;
-	UPROPERTY() const AActor* Actor;
+	UPROPERTY() int64 EntityId { -1 };
+	UPROPERTY() const AActor* Actor { nullptr };
 };
 
 USTRUCT()
@@ -145,8 +142,8 @@ struct FEventSendRPC : public FEventMessage
 
 	FEventSendRPC() : FEventMessage("SendRPC") {}
 
-	UPROPERTY() const UObject* TargetObject;
-	UPROPERTY() const UFunction* Function;
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() const UFunction* Function { nullptr };
 };
 
 USTRUCT()
@@ -156,8 +153,8 @@ struct FEventRPCQueued : public FEventMessage
 
 	FEventRPCQueued() : FEventMessage("RPCQueued") {}
 
-	UPROPERTY() const UObject* TargetObject;
-	UPROPERTY() const UFunction* Function;
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() const UFunction* Function { nullptr };
 };
 
 USTRUCT()
@@ -167,8 +164,8 @@ struct FEventRPCRetried : public FEventMessage
 
 	FEventRPCRetried() : FEventMessage("RPCRetried") {}
 
-	UPROPERTY() const UObject* TargetObject;
-	UPROPERTY() const UFunction* Function;
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() const UFunction* Function { nullptr };
 };
 
 USTRUCT()
@@ -178,9 +175,9 @@ struct FEventComponentUpdate : public FEventMessage
 
 	FEventComponentUpdate() : FEventMessage("ComponentUpdate") {}
 
-	UPROPERTY() const AActor* Actor;
-	UPROPERTY() const UObject* TargetObject;
-	UPROPERTY() uint32 ComponentId;
+	UPROPERTY() const AActor* Actor { nullptr };
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() uint32 ComponentId { 0 };
 };
 
 USTRUCT()
@@ -191,10 +188,10 @@ struct FEventCommandResponse : public FEventMessage
 	FEventCommandResponse() : FEventMessage("CommandResponse") {}
 
 	UPROPERTY() FString Command;
-	UPROPERTY() const AActor* Actor;
-	UPROPERTY() const UObject* TargetObject;
-	UPROPERTY() const UFunction* Function;
-	UPROPERTY() int64 RequestID;
+	UPROPERTY() const AActor* Actor { nullptr };
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() const UFunction* Function { nullptr };
+	UPROPERTY() int64 RequestID { -1 };
 	UPROPERTY() bool bSuccess;
 };
 
@@ -206,11 +203,11 @@ struct FEventCommandRequest : public FEventMessage
 	FEventCommandRequest() : FEventMessage("CommandRequest") {}
 
 	UPROPERTY() FString Command;
-	UPROPERTY() const AActor* Actor;
-	UPROPERTY() const UObject* TargetObject;
-	UPROPERTY() const UFunction* Function;
-	UPROPERTY() int32 TraceId;
-	UPROPERTY() int64 RequestID;
+	UPROPERTY() const AActor* Actor { nullptr };
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() const UFunction* Function { nullptr };
+	UPROPERTY() int32 TraceId { -1 };
+	UPROPERTY() int64 RequestID { -1 };
 };
 
 /*
@@ -301,7 +298,7 @@ private:
 
 struct SpatialSpanIdActivator
 {
-	SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, Trace_SpanId InCurrentSpanId);
+	SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
 	~SpatialSpanIdActivator();
 
 	SpatialSpanIdActivator(const SpatialSpanIdActivator&) = delete;
@@ -310,7 +307,7 @@ struct SpatialSpanIdActivator
 	SpatialSpanIdActivator& operator=(SpatialSpanIdActivator&&) = delete;
 
 private:
-	Trace_SpanId CurrentSpanId;
+	TOptional<Trace_SpanId> CurrentSpanId;
 	worker::c::Trace_EventTracer* EventTracer;
 };
 

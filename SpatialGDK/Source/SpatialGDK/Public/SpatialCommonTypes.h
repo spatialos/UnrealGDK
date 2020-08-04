@@ -42,10 +42,8 @@ struct FTrackableWorkerType : public T
 #if TRACE_LIB_ACTIVE
 	TraceKey Trace{ InvalidTraceKey };
 #endif
-#if 1 //GDK_SPATIAL_EVENT_TRACING_ENABLED
-	TOptional<worker::c::Trace_SpanId> SpanId;
-#endif
 };
 
+// TODO: These can be removed once event tracing is enabled UNR-3981
 using FWorkerComponentUpdate = FTrackableWorkerType<Worker_ComponentUpdate>;
 using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;

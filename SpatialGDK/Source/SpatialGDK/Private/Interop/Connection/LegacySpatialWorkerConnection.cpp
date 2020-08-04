@@ -254,7 +254,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
-#if TRACE_LIB_ACTIVE || 1 //GDK_SPATIAL_EVENT_TRACING_ENABLED
+#if TRACE_LIB_ACTIVE
 			// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
 			TArray<Worker_ComponentData> UnpackedComponentData;
 			UnpackedComponentData.SetNum(Message->Components.Num());
@@ -268,36 +268,25 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_ComponentData* ComponentData = Message->Components.GetData();
 			uint32 ComponentCount = Message->Components.Num();
 #endif
-			if (Message->SpanId.IsSet())
-			{
-				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->SpanId.GetValue());
-			}
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
 				ComponentCount,
 				ComponentData,
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
-			if (Message->SpanId.IsSet())
-			{
-				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
-			}
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:
 		{
 			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
 
-			if (Message->SpanId.IsSet())
-			{
-				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->SpanId.GetValue());
-			}
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);	// TODO: When enough of these are implemented this can move on to
+																										// the base FOutgoingMessage and this scope placed outside the switch
+
 			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
 				Message->EntityId,
 				nullptr);
-			if (Message->SpanId.IsSet())
-			{
-				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
-			}
 			break;
 		}
 		case EOutgoingMessageType::AddComponent:
@@ -323,15 +312,15 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::ComponentUpdate:
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-			if (Message->Update.SpanId.IsSet())
+			if (Message->SpanId.IsSet())
 			{
-				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->Update.SpanId.GetValue());
+				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->SpanId.GetValue());
 			}
 			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
-			if (Message->Update.SpanId.IsSet())
+			if (Message->SpanId.IsSet())
 			{
 				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
 			}
