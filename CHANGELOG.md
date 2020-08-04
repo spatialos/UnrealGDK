@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `-nocompile` flag that was previously used with `BuildWorker.bat` to skip building the game binaries and automation scripts, is now split into `-nobuild` to skip building the game binaries and `-nocompile` to skip compiling the automation scripts.
 
 ### Features:
+- The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
 - Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
