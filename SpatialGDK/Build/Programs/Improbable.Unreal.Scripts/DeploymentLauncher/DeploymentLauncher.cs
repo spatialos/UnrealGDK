@@ -272,7 +272,6 @@ namespace Improbable
             var simDeploymentRegion = args[7];
             var simDeploymentCluster = args[8];
             var simDeploymentSnapshotPath = args[9];
-            
             var numSimplayers = 0;
             if (!Int32.TryParse(args[10], out numSimplayers))
             {
