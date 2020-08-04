@@ -47,7 +47,7 @@ void ASpatialTestNetOwnership::BeginPlay()
 	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;
 	ClientSendRPCStepDefinition.bIsNativeDefinition = true;
 	ClientSendRPCStepDefinition.TimeLimit = 5.0f;
-	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest * NetTest)
+	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest* NetTest)
 		{
 			NetOwnershipCube->ServerIncreaseRPCCount();
 
