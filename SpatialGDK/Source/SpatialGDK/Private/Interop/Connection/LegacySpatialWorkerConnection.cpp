@@ -282,7 +282,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
 
 			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);	// TODO: When enough of these are implemented this can move on to
-																										// the base FOutgoingMessage and this scope placed outside the switch
+																				// the base FOutgoingMessage and this scope placed outside the switch
 
 			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
 				Message->EntityId,
@@ -312,18 +312,13 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::ComponentUpdate:
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-			if (Message->SpanId.IsSet())
-			{
-				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message->SpanId.GetValue());
-			}
+
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+
 			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
-			if (Message->SpanId.IsSet())
-			{
-				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
-			}
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:
@@ -341,6 +336,8 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::CommandResponse:
 		{
 			FCommandResponse* Message = static_cast<FCommandResponse*>(OutgoingMessage.Get());
+
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
 
 			Worker_Connection_SendCommandResponse(WorkerConnection,
 				Message->RequestId,
