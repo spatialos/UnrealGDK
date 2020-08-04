@@ -5,31 +5,24 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/Class.h"
-//#include "ObjectMacros.h"
 #include "SpatialCommonTypes.h"
 
-// TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in .cpp file, when the LatencyTracer is enabled?)
+#include <WorkerSDK/improbable/c_worker.h>
 
+// TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in .cpp file, when the LatencyTracer is enabled?)
 // TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off
-// TODO(EventTracer): it is only required here because Trace_SpanId is used.
-// Consider if it's possible to remove it.
 
 #include "Containers/Queue.h"
-#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialEventTracer.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
-//namespace worker {
-//namespace c {
-//	struct Trace_EventTracer;
-//	struct Trace_SpanId;
-//}
-//}
-
 static_assert(sizeof(Worker_EntityId) == sizeof(int64), "EntityId assumed 64-bit here");
+static_assert(sizeof(Worker_ComponentId) == sizeof(uint32), "ComponentId assumed 32-bit here");
 static_assert(sizeof(VirtualWorkerId) == sizeof(uint32), "VirtualWorkerId assumed 32-bit here");
+static_assert(sizeof(TraceKey) == sizeof(int32), "TraceKey assumed 32-bit here");
+static_assert(sizeof(Worker_RequestId) == sizeof(int64), "RequestId assumed 64-bit here");
 
 USTRUCT()
 struct FEventMessage
@@ -199,42 +192,22 @@ struct FEventCommandRequest : public FEventMessage
 	UPROPERTY() int64 RequestID { -1 };
 };
 
-/*
-TODO
-[+] Sending create entity request
-[+] Sending authority intent update
-[+] Sending delete entity request
-[+] Sending RPC
-[+] Sending RPC retry - requires testing
-Sending command response
-Receiving add entity
-Receiving remove entity
-Receiving authority change
-Receiving component update
-Receiving command request
-Receiving command response
-Receiving create entity response
-Individual RPC Calls (distinguishing between GDK and USER)
-Custom events can be added
-*/
+//TODO - Individual RPC Calls (distinguishing between GDK and USER)
 
 class AActor;
 class UFunction;
 class USpatialNetDriver;
 
-// Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
-// (see SpatialConnectionManager diff)
-
-// TODO(EventTracer): consider whether it's necessary to create a SpatialSpanId wrapper that holds Trace_SpanId,
-// so that Trace_SpanId is not used directly in UnrealGDK
-
 namespace worker
 {
-namespace c
-{
-	struct Io_Stream;
+	namespace c
+	{
+		struct Io_Stream;
+	}
 }
-}
+
+// Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
+// (see SpatialConnectionManager diff)
 
 namespace SpatialGDK
 {
