@@ -159,7 +159,7 @@ namespace Improbable
                     }
                     else if (maxPlayersPerDeployment <= 0)
                     {
-                        Console.WriteLine("The number of simulated players per deployment must be positive.");
+                        Console.WriteLine("The maximum number of simulated players per deployment must be positive.");
                         return 1;
                     }
                 }
@@ -221,13 +221,13 @@ namespace Improbable
                 var numSuccessfullyStartedSimDeployments = 0;
                 for (var simDeploymentIndex = 0; simDeploymentIndex < simDeploymentCreationOps.Count; simDeploymentIndex++)
                 {
-                    Console.WriteLine($"Waiting for the simulated player deployment to be ready... " +
-                        $"(deployment {simDeploymentIndex + 1}/{simDeploymentCreationOps.Count})");
+                    var deploymentDescription = $"(deployment {simDeploymentIndex + 1}/{simDeploymentCreationOps.Count})";
+                    Console.WriteLine($"Waiting for the simulated player deployment to be ready... {deploymentDescription}");
 
                     var simPlayerDeployment = simDeploymentCreationOps[simDeploymentIndex].PollUntilCompleted().GetResultOrNull();
                     if (simPlayerDeployment == null)
                     {
-                        Console.WriteLine($"Failed to create the simulated player deployment");
+                        Console.WriteLine($"Failed to create the simulated player deployment {deploymentDescription}");
                         continue;
                     }
 
@@ -296,12 +296,12 @@ namespace Improbable
             {
                 if (!Int32.TryParse(args[11], out maxPlayersPerDeployment))
                 {
-                    Console.WriteLine("Cannot parse the target number of simulated players deployments.");
+                    Console.WriteLine("Cannot parse the maximum number of simulated players per deployments.");
                     return 1;
                 }
                 else if (maxPlayersPerDeployment <= 0)
                 {
-                    Console.WriteLine("The number of deployments must be positive.");
+                    Console.WriteLine("The maximum number of simulated players per deployment must be positive.");
                     return 1;
                 }
             }
@@ -322,13 +322,13 @@ namespace Improbable
             var numSuccessfullyStartedDeployments = 0;
             for (var simDeploymentIndex = 0; simDeploymentIndex < simDeploymentCreationOps.Count; simDeploymentIndex++)
             {
-                Console.WriteLine($"Waiting for the simulated player deployment to be ready... " +
-                    $"(deployment {simDeploymentIndex + 1}/{simDeploymentCreationOps.Count})");
+                var deploymentDescription = $"(deployment {simDeploymentIndex + 1}/{simDeploymentCreationOps.Count})";
+                Console.WriteLine($"Waiting for the simulated player deployment to be ready... {deploymentDescription}");
 
                 var simPlayerDeployment = simDeploymentCreationOps[simDeploymentIndex].PollUntilCompleted().GetResultOrNull();
                 if (simPlayerDeployment == null)
                 {
-                    Console.WriteLine($"Failed to create the simulated player deployment");
+                    Console.WriteLine($"Failed to create the simulated player deployment {deploymentDescription}");
                     continue;
                 }
 
@@ -628,11 +628,7 @@ namespace Improbable
 
             for (var simPlayerDeploymentId = 1; simPlayerDeploymentId <= numSimDeployments; ++simPlayerDeploymentId)
             {
-                var simDeploymentName = simDeploymentBaseName;
-                if (simPlayerDeploymentId != 1)
-                {
-                    simDeploymentName += ("_" + simPlayerDeploymentId);
-                }
+                var simDeploymentName = GetSimDeploymentName(simDeploymentBaseName, simPlayerDeploymentId);
 
                 try
                 {
