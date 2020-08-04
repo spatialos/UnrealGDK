@@ -816,7 +816,6 @@ namespace Improbable
                 if (!File.Exists(ChinaProductionTokenPath))
                 {
                     Console.WriteLine("The 'china' flag was passed, but you are not authenticated for the 'cn-production' environment.");
-
                     return 1;
                 }
 
