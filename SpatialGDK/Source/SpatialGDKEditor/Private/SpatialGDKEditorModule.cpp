@@ -179,7 +179,7 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 	}
 	else if (ShouldConnectToCloudDeployment())
 	{
-		CommandLine = TEXT("connect.to.spatialos -devAuthToken ") + GetDevAuthToken();
+		CommandLine = TEXT("127.0.0.1 -devAuthToken ") + GetDevAuthToken();
 		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
 		if (!CloudDeploymentName.IsEmpty())
 		{

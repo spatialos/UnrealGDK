@@ -221,7 +221,7 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 	}
 	else if (ConnectionFlow == ESpatialOSNetFlow::CloudDeployment)
 	{
-		TravelUrl = TEXT("connect.to.spatialos");
+		TravelUrl = TEXT("127.0.0.1");
 
 		if (SpatialGDKSettings->DevelopmentAuthenticationToken.IsEmpty())
 		{
