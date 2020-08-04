@@ -194,7 +194,7 @@ namespace Improbable
                     return 0;
                 }
 
-                // we are using the main deployment snapshot also for the sim player deployment(s), because we only need to specify a snapshot
+                // We are using the main deployment snapshot also for the sim player deployment(s), because we only need to specify a snapshot
                 // to be able to start the deployment. The sim players don't care about the actual snapshot.
                 var simDeploymentCreationOps = CreateSimPlayerDeploymentsAsync(deploymentServiceClient,
                     projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentBaseName,
