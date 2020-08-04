@@ -125,17 +125,6 @@ struct FEventRetireEntityRequest : public FEventMessage
 };
 
 USTRUCT()
-struct FEventDeleteEntityRequest : public FEventMessage
-{
-	GENERATED_BODY()
-
-	FEventDeleteEntityRequest() : FEventMessage("EntityDelete") {}
-
-	UPROPERTY() int64 EntityId { -1 };
-	UPROPERTY() const AActor* Actor { nullptr };
-};
-
-USTRUCT()
 struct FEventSendRPC : public FEventMessage
 {
 	GENERATED_BODY()
