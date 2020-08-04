@@ -266,6 +266,16 @@ public:
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
+	void SetNeedOwnerInterestUpdate(bool bInNeedOwnerInterestUpdate)
+	{
+		bNeedOwnerInterestUpdate = bInNeedOwnerInterestUpdate;
+	}
+
+	bool NeedOwnerInterestUpdate() const
+	{
+		return bNeedOwnerInterestUpdate;
+	}
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -346,4 +356,8 @@ private:
 	// before the actor holding the position for all the hierarchy, it can immediately attempt to migrate back.
 	// Using this timestamp, we can back off attempting migrations for a while.
 	uint64 AuthorityReceivedTimestamp;
+
+	// In case the actor's owner did not have an entity ID when trying to set interest to it
+	// We set this flag in order to try to add interest as soon as possible.
+	bool bNeedOwnerInterestUpdate;
 };

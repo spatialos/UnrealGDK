@@ -22,4 +22,8 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+
+	TArray<int64> Entities;
 };

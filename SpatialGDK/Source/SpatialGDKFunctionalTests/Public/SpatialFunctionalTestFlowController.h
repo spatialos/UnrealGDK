@@ -69,7 +69,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
 
+	// # Interest APIs
+
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	void AddEntityInterest(const int64 ActorEntityId);
+
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
+	void RemoveEntityInterest(const int64 ActorEntityId);
+
 private:
+
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
 
@@ -95,7 +104,6 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyStepFinished();
 
-
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerNotifyStepFinished();
 
@@ -103,4 +111,6 @@ private:
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 	
 	void ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message);
+
+	void ChangeEntityInterest(int64 ActorEntityId, bool bAddInterest);
 };

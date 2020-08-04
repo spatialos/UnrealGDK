@@ -432,6 +432,14 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
 		ComponentUpdates.Add(NetDriver->InterestFactory->CreateInterestUpdate((AActor*)Object, Info, EntityId));
+
+		// There should not be a need to update the channel's up to date flag here.
+		checkSlow(([this, Object]()
+		{
+			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Cast<AActor>(Object));
+
+			return Channel && Channel->NeedOwnerInterestUpdate() == !NetDriver->InterestFactory->DoOwnersHaveEntityId(Cast<AActor>(Object));
+		}()));
 	}
 
 	return ComponentUpdates;
