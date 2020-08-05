@@ -702,10 +702,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						Actor->SetActorReady(true);
 						Actor->OnActorReady();
 					}
-					else // The Actor migrated to this worker or was loaded from a snapshot.
-					{
-						Actor->OnAuthorityGained();
-					}
+
+					// We still want to call OnAuthorityGained if the Actor migrated to this worker or was loaded from a snapshot.
+					Actor->OnAuthorityGained();
 				}
 				else
 				{
