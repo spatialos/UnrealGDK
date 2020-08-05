@@ -62,7 +62,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FW
 	{
 		Data.Emplace(SpatialGDK::OwningComponentDataPtr(Component.schema_type), Component.component_id);
 	}
-	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, {}, SpanId);
+	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id);
 }
 
 Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)

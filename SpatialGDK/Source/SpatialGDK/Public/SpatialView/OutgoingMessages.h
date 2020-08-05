@@ -28,7 +28,6 @@ struct CreateEntityRequest
 	TArray<ComponentData> EntityComponents;
 	TOptional<Worker_EntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
-	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct DeleteEntityRequest
