@@ -107,7 +107,6 @@ private:
 	SchemaResultType ClientNonAuthInterestResultType;
 	SchemaResultType ClientAuthInterestResultType;
 	SchemaResultType ServerNonAuthInterestResultType;
-	SchemaResultType ServerNonAuthOwnerInterestResultType;
 	SchemaResultType ServerAuthInterestResultType;
 };
 
