@@ -24,6 +24,7 @@
 #include "Utils/LaunchConfigurationEditor.h"
 #include "SpatialRuntimeVersionCustomization.h"
 #include "WorkerTypeCustomization.h"
+#include "IAutomationControllerModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
@@ -45,6 +46,17 @@ void FSpatialGDKEditorModule::StartupModule()
 	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
+
+	// Allow Spatial Plugin to stop PIE after Automation Manager completes the tests
+	IAutomationControllerModule& AutomationControllerModule = FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
+	AutomationController->OnTestsComplete().AddLambda([]()
+	{
+		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->IsPlayingSessionInEditor())
+		{
+			GEditor->EndPlayMap();
+		}
+	});
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
