@@ -55,7 +55,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
-: bStopSpatialOnExit(false)
+: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
 , bSchemaBuildError(false)
 , bStartingCloudDeployment(false)
 {
@@ -83,8 +83,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
-	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
-	bStopLocalDeploymentOnEndPIE = SpatialGDKEditorSettings->bStopLocalDeploymentOnEndPIE;
+	AutoStopLocalDeployment = SpatialGDKEditorSettings->AutoStopLocalDeployment;
 
 	// Check for UseChinaServicesRegion file in the plugin directory to determine the services region.
 	bool bUseChinaServicesRegion = FPaths::FileExists(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(SpatialGDKServicesConstants::UseChinaServicesRegionFilename));
@@ -118,7 +117,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// TODO: Reuse local deployment between test maps: UNR-2488
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if ((GIsAutomationTesting || bStopLocalDeploymentOnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -169,7 +168,7 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
 	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 
-	if (bStopSpatialOnExit)
+	if (AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnExitEditor)
 	{
 		LocalDeploymentManager->TryStopLocalDeployment();
 	}
@@ -1054,19 +1053,15 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				? PropertyChangedEvent.Property->GetFName()
 				: NAME_None;
 		FString PropertyNameStr = PropertyName.ToString();
-		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStopSpatialOnExit))
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, AutoStopLocalDeployment))
 		{
 			/*
-			* This updates our own local copy of bStopSpatialOnExit as Settings change.
+			* This updates our own local copy of AutoStopLocalDeployment as Settings change.
 			* We keep the copy of the variable as all the USpatialGDKEditorSettings references get
 			* cleaned before all the available callbacks that IModuleInterface exposes. This means that we can't access
 			* this variable through its references after the engine is closed.
 			*/
-			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
-		}
-		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bStopLocalDeploymentOnEndPIE))
-		{
-			bStopLocalDeploymentOnEndPIE = Settings->bStopLocalDeploymentOnEndPIE;
+			AutoStopLocalDeployment = Settings->AutoStopLocalDeployment;
 		}
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bAutoStartLocalDeployment))
 		{
