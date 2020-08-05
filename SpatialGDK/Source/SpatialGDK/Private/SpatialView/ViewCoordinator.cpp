@@ -32,19 +32,19 @@ void ViewCoordinator::FlushMessagesToSend()
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
 }
 
-void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
+void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendAddComponent(EntityId, MoveTemp(Data));
+	View.SendAddComponent(EntityId, MoveTemp(Data), SpanId);
 }
 
-void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendComponentUpdate(EntityId, MoveTemp(Update));
+	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
-void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendRemoveComponent(EntityId, ComponentId);
+	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
 Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis)

@@ -108,14 +108,14 @@ Worker_RequestId ULegacySpatialWorkerConnection::SendDeleteEntityRequest(Worker_
 	return NextRequestId++;
 }
 
-void ULegacySpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
+void ULegacySpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
+	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData, SpanId);
 }
 
-void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
+	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId, SpanId);
 }
 
 void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId)

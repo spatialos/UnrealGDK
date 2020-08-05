@@ -72,6 +72,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	const Worker_CommandParameters CommandParams = {0 /*allow_short_circuit*/};
 	for (auto& Message : Messages->ComponentMessages)
 	{
+		SpatialSpanIdActivator SpanWrapper(EventTracer, Message.SpanId);
 		switch (Message.GetType())
 		{
 		case OutgoingComponentMessage::ADD:
@@ -89,19 +90,8 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 				nullptr, Message.ComponentId,
 				MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr
 			};
-#if 1 // GDK_SPATIAL_EVENT_TRACING_ENABLED
-			if (Message.bHasEventTrace)
-			{
-				Trace_EventTracer_SetActiveSpanId(EventTracer->GetWorkerEventTracer(), Message.EventSpan);
-			}
-#endif
+
 			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
-#if 1 // GDK_SPATIAL_EVENT_TRACING_ENABLED
-			if (Message.bHasEventTrace)
-			{
-				Trace_EventTracer_UnsetActiveSpanId(EventTracer->GetWorkerEventTracer());
-			}
-#endif
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:

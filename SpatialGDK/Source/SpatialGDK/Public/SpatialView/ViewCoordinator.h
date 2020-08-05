@@ -28,9 +28,9 @@ public:
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
 		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis = {});

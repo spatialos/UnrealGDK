@@ -81,26 +81,30 @@ struct FDeleteEntityRequest : FOutgoingMessage
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData)
+	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
+		, SpanId(SpanId)
 	{}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentData Data;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FRemoveComponent : FOutgoingMessage
 {
-	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId)
+	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
+		, SpanId(SpanId)
 	{}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
