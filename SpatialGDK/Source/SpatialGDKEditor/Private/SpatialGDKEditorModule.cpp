@@ -246,18 +246,27 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 			TActorIterator<ASpatialFunctionalTest> It(World);
 			if (TestingMode == EMapTestingMode::Detect)
 			{
-				TestingMode = It ? EMapTestingMode::ForceSpatial : EMapTestingMode::ForceNative;
+				TestingMode = It ? EMapTestingMode::ForceSpatial : EMapTestingMode::ForceNativeOffline;
 			}
 
 			int NumberOfClients = 1;
 
+			PIESettingsOverride.bUseSpatial = false; // turn off by default
+
 			switch (TestingMode)
 			{
-			case EMapTestingMode::ForceNative:
-				PIESettingsOverride.bUseSpatial = false;
+			case EMapTestingMode::ForceNativeOffline:
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Standalone;
+				break;
+			case EMapTestingMode::ForceNativeAsListenServer:
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_ListenServer;
+				break;
+			case EMapTestingMode::ForceNativeAsClient:
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
 				break;
 			case EMapTestingMode::ForceSpatial:
-				PIESettingsOverride.bUseSpatial = true;
+				PIESettingsOverride.bUseSpatial = true; // turn on for Spatial
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
 				for (; It; ++It)
 				{
 					NumberOfClients = FMath::Max(It->GetNumRequiredClients(), NumberOfClients);
