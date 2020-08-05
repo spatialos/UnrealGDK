@@ -113,20 +113,6 @@ SpatialEventTracer::~SpatialEventTracer()
 	}
 }
 
-void SpatialEventTracer::Start()
-{
-	FString FolderPath = FPaths::ProjectSavedDir() + TEXT("EventTracing\\");
-
-	FDateTime CurrentDateTime = FDateTime::Now();
-	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s.json"), *CurrentDateTime.ToString());
-
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.CreateDirectoryTree(*FolderPath))
-	{
-		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_DEFAULT);
-	}
-}
-
 void SpatialEventTracer::WriteEventDataToJson(const EventTracingData& EventData)
 {
 	if (EventData.Num() == 0)
@@ -259,14 +245,29 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	return CurrentSpanId;
 }
 
-void SpatialEventTracer::Enable()
+void SpatialEventTracer::Enable(const char* Filename)
 {
 	Trace_EventTracer_Enable(EventTracer);
 	bEnalbed = true;
+
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+	// Open a local file
+	FString FolderPath = FPaths::ProjectSavedDir() + TEXT("EventTracing\\");
+
+	FDateTime CurrentDateTime = FDateTime::Now();
+	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s_%s.json"), ANSI_TO_TCHAR(Filename), *CurrentDateTime.ToString());
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (PlatformFile.CreateDirectoryTree(*FolderPath))
+	{
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
+		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_DEFAULT);
+	}
 }
 
 void SpatialEventTracer::Disable()
 {
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 	Trace_EventTracer_Disable(EventTracer);
 	bEnalbed = false;
 }

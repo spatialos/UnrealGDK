@@ -346,7 +346,7 @@ struct SpatialEventTracer
 	Trace_SpanId CreateNewSpanId();
 	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
 
-	void Enable();
+	void Enable(const char* Filename);
 	void Disable();
 	bool IsEnabled() { return bEnalbed; }
 
@@ -368,12 +368,11 @@ struct SpatialEventTracer
 
 	using EventTracingData = TMap<FString, FString>;
 
-	void Start();
 	void WriteEventDataToJson(const EventTracingData& EventData);
 
 private:
-	bool bEnalbed{ true }; // TODO: Disable by default
-	worker::c::Io_Stream* Stream;
+	bool bEnalbed{ false }; 
+	worker::c::Io_Stream* Stream{ nullptr };
 	worker::c::Trace_EventTracer* EventTracer;
 };
 
