@@ -52,7 +52,11 @@ void FSpatialGDKEditorModule::StartupModule()
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
 	AutomationController->OnTestsComplete().AddLambda([]()
 	{
+#if ENGINE_MINOR_VERSION < 25
+		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
+#else
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->IsPlayingSessionInEditor())
+#endif
 		{
 			GEditor->EndPlayMap();
 		}
