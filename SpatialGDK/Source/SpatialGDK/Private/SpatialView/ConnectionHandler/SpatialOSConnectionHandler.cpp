@@ -125,6 +125,9 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 				nullptr
 			});
 		}
+
+		SpatialSpanIdActivator SpanWrapper(EventTracer, Request.SpanId);
+
 		Worker_EntityId* EntityId = Request.EntityId.IsSet() ? &Request.EntityId.GetValue() : nullptr;
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		const Worker_RequestId Id = Worker_Connection_SendCreateEntityRequest(Connection.Get(), Components.Num(),
@@ -166,11 +169,13 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 			nullptr, Response.Response.GetComponentId(),
 			Response.Response.GetCommandIndex(), MoveTemp(Response.Response).Release(), nullptr
 		};
+		SpatialSpanIdActivator SpanWrapper(EventTracer, Response.SpanId);
 		Worker_Connection_SendCommandResponse(Connection.Get(), Response.RequestId, &r);
 	}
 
 	for (auto& Failure : Messages->EntityCommandFailures)
 	{
+		SpatialSpanIdActivator SpanWrapper(EventTracer, Failure.SpanId);
 		Worker_Connection_SendCommandFailure(Connection.Get(), Failure.RequestId, TCHAR_TO_UTF8(*Failure.Message));
 	}
 

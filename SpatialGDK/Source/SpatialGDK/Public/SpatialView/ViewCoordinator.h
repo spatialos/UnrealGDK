@@ -33,13 +33,13 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
-		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis = {});
+		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis = {}, const TOptional<worker::c::Trace_SpanId>& SpanId = {});
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
 		TOptional<uint32> TimeoutMillis = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message);
+	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<worker::c::Trace_SpanId>& SpanId);
+	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 

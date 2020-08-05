@@ -54,9 +54,9 @@ Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEnt
 }
 
 Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
-	TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis)
+	TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendCreateEntityRequest({NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis});
+	View.SendCreateEntityRequest({NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis, SpanId});
 	return NextRequestId++;
 }
 
@@ -79,14 +79,14 @@ Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId Entit
 	return NextRequestId++;
 }
 
-void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response)
+void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendEntityCommandResponse({RequestId, MoveTemp(Response)});
+	View.SendEntityCommandResponse({RequestId, MoveTemp(Response), SpanId});
 }
 
-void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message)
+void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendEntityCommandFailure({RequestId, MoveTemp(Message)});
+	View.SendEntityCommandFailure({RequestId, MoveTemp(Message), SpanId});
 }
 
 void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)

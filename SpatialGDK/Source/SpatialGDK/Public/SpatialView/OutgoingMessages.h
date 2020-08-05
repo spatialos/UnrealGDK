@@ -28,6 +28,7 @@ struct CreateEntityRequest
 	TArray<ComponentData> EntityComponents;
 	TOptional<Worker_EntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct DeleteEntityRequest
@@ -56,12 +57,14 @@ struct EntityCommandResponse
 {
 	Worker_RequestId RequestId;
 	CommandResponse Response;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct EntityCommandFailure
 {
 	Worker_RequestId RequestId;
 	FString Message;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct LogMessage

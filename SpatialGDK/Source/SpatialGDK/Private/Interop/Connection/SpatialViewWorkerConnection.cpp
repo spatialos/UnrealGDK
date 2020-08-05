@@ -52,7 +52,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendReserveEntityIdsRequest(uint3
 	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
 }
 
-Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId) // TODO: Figure out SpanId usage in SpatialView
+Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId  : TOptional<Worker_EntityId>();
@@ -62,7 +62,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FW
 	{
 		Data.Emplace(SpatialGDK::OwningComponentDataPtr(Component.schema_type), Component.component_id);
 	}
-	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id);
+	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, {}, SpanId);
 }
 
 Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
@@ -97,17 +97,17 @@ Worker_RequestId USpatialViewWorkerConnection::SendCommandRequest(Worker_EntityI
 		SpatialGDK::OwningCommandRequestPtr(Request->schema_type) , Request->component_id, Request->command_index));
 }
 
-void USpatialViewWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId) // TODO: Figure this out
+void USpatialViewWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendEntityCommandResponse(RequestId, SpatialGDK::CommandResponse(
-		SpatialGDK::OwningCommandResponsePtr(Response->schema_type) , Response->component_id, Response->command_index));
+		SpatialGDK::OwningCommandResponsePtr(Response->schema_type) , Response->component_id, Response->command_index), SpanId);
 }
 
 void USpatialViewWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendEntityCommandFailure(RequestId, Message);
+	Coordinator->SendEntityCommandFailure(RequestId, Message, SpanId);
 }
 
 void USpatialViewWorkerConnection::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message)
