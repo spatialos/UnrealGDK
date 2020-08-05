@@ -33,7 +33,7 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
-		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis = {});
+		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis = {}, const TOptional<worker::c::Trace_SpanId>& SpanId = {});
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
