@@ -134,7 +134,7 @@ void ASpatialTestNetReference::BeginPlay()
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-				if (PlayerCharacter && PlayerCharacter->GetActorLocation().Equals(TestLocations[CurrentMoveIndex].Key, 1.0f))
+				if (PlayerCharacter->GetActorLocation().Equals(TestLocations[CurrentMoveIndex].Key, 1.0f))
 				{
 					FinishStep();
 				}
