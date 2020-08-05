@@ -525,6 +525,6 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 
 void USpatialConnectionManager::CreateEventTracer()
 {
-	EventTracer = MakeUnique<SpatialEventTracer>(GetWorld());
+	EventTracer = MakeUnique<SpatialEventTracer>();
 	EventTracer->Start();
 }

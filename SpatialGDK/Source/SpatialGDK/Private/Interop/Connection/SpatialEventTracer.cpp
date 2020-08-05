@@ -2,7 +2,6 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
@@ -15,7 +14,6 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-// TODO(EventTracer): Use c_io.h functions instead, to write data to a file
 // Below is a hacky function written for testing purposes, which must be removed
 
 void MyTraceCallback(void* UserData, const Trace_Item* Item)
@@ -36,18 +34,6 @@ void MyTraceCallback(void* UserData, const Trace_Item* Item)
 		{
 			return;
 		}
-
-#if 0
-		FString HexStr;
-		for (int i = 0; i < 16; i++)
-		{
-			char b[32];
-			unsigned int x = (unsigned char)Event.span_id.data[i];
-			sprintf(b, "%0x", x);
-			HexStr += ANSI_TO_TCHAR(b);
-		}
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Span: %s, Type: %s, Message: %s, Timestamp: %lu"), *HexStr, *FString(Event.type), *FString(Event.message), Event.unix_timestamp_millis);
-#endif
 
 		if (Event.data != nullptr)
 		{
@@ -107,9 +93,7 @@ SpatialSpanIdActivator::~SpatialSpanIdActivator()
 	}
 }
 
-
-SpatialEventTracer::SpatialEventTracer(UWorld* World)
-	: NetDriver(Cast<USpatialNetDriver>(World->GetNetDriver()))
+SpatialEventTracer::SpatialEventTracer()
 {
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.user_data = this;
@@ -161,12 +145,13 @@ void SpatialEventTracer::WriteEventDataToJson(const EventTracingData& EventData)
 	bool bSuccess = FJsonSerializer::Serialize(TopJsonObject, JsonWriter);
 	JsonWriter->Close();
 
+	JsonString.Append("\n");
+
 	if (Stream == nullptr)
 	{
 		return;
 	}
 
-	JsonString.Append("\n");
 	Io_Stream_Write(Stream, (const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
 }
 
@@ -180,7 +165,7 @@ Trace_SpanId SpatialEventTracer::CreateNewSpanId(const TArray<Trace_SpanId>& Cau
 	return Trace_EventTracer_AddSpan(EventTracer, Causes.GetData(), Causes.Num());
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, UStruct* Struct, const worker::c::Trace_SpanId* Cause)
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const worker::c::Trace_SpanId* Cause)
 {
 	if (!IsEnabled())
 	{

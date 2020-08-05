@@ -131,7 +131,7 @@ SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& En
 		StaticComponentView = CreateStaticComponentView(EntityIdArray, RPCEndpointType);
 	}
 
-	SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(RPCDelegate, StaticComponentView, nullptr, nullptr);
+	SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(RPCDelegate, StaticComponentView, nullptr, nullptr, nullptr);
 
 	for (Worker_EntityId EntityId : EntityIdArray)
 	{

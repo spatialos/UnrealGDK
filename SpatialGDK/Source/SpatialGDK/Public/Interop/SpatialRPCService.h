@@ -15,6 +15,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
 class USpatialLatencyTracer;
+class USpatialNetDriver;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
@@ -58,7 +59,11 @@ enum class EPushRPCResult : uint8
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback,
+		const USpatialStaticComponentView* View,
+		USpatialLatencyTracer* SpatialLatencyTracer,
+		SpatialEventTracer* EventTracer,
+		USpatialNetDriver* SpatialNetDriver);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
 	void PushOverflowedRPCs();
@@ -125,6 +130,9 @@ private:
 	};
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
+
+	UPROPERTY()
+	USpatialNetDriver* SpatialNetDriver;
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);
