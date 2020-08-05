@@ -242,7 +242,7 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;
 	
-	while (Owner != nullptr && !Owner->IsPendingKillPending())
+	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
 	{
 		QueryConstraint OwnerQuery;
 		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
