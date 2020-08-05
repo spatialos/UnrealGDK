@@ -35,7 +35,7 @@ struct FMapTestingSettings
 	GENERATED_BODY();
 
 
-	/*Available Modes to run Tests:
+	/* Available Modes to run Tests:
 	- Detect: It will search for ASpatialFunctionalTest, if there are any it forces Spatial otherwise Native
 	- Force Native: Forces Spatial to be off and use only 1 Client, the default Native behaviour
 	- Force Spatial: Forces Spatial to be on. Calculates the number of players needed based on the ASpatialFunctionalTests present, 1 if none exists
