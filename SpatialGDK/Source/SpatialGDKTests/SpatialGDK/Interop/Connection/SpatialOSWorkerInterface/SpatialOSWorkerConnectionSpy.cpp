@@ -34,10 +34,10 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_En
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
+void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {}
 
-void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {}
 
 void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId)

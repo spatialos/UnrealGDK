@@ -25,9 +25,9 @@ public:
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);

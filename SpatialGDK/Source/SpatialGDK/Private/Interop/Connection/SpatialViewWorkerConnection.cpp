@@ -71,22 +71,22 @@ Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_En
 	return Coordinator->SendDeleteEntityRequest(EntityId);
 }
 
-void USpatialViewWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
+void USpatialViewWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData));
+	return Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData), SpanId);
 }
 
-void USpatialViewWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void USpatialViewWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendRemoveComponent(EntityId, ComponentId);
+	return Coordinator->SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId) // TODO: Figure this out
+void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate));
+	return Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate), SpanId);
 }
 
 Worker_RequestId USpatialViewWorkerConnection::SendCommandRequest(Worker_EntityId EntityId,

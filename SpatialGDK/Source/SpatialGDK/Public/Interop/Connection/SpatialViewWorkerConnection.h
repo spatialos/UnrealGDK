@@ -26,8 +26,8 @@ public:
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
-	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData) override;
-	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) override;
+	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;

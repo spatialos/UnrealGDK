@@ -76,21 +76,21 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
-void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
+void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	AddedComponents.Add(EntityComponentId{ EntityId, Data.GetComponentId() });
-	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data));
+	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data), SpanId);
 }
 
-void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update));
+	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
 }
 
-void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	AddedComponents.Remove(EntityComponentId{ EntityId, ComponentId });
-	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);
+	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId, SpanId);
 }
 
 void WorkerView::SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request)
