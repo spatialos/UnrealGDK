@@ -226,6 +226,7 @@ void SpatialVirtualWorkerTranslationManager::AssignServersWithLayerHints(TArray<
 					AssignWorker(PendingServer, CurrentLayerVirtualWorker.Value);
 					AssignedServers.Add(PendingServer.WorkerName);
 					AssignedLayerVirtualWorkerIndex = i;
+					break;
 				}
 			}
 
