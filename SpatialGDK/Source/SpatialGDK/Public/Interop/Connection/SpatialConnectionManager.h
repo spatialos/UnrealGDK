@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Interop/Connection/ConnectionConfig.h"
-// TODO Can it be removed?
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"

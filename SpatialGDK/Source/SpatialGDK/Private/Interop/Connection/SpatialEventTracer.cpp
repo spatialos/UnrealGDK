@@ -2,8 +2,11 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interop/Connection/SpatialConnectionManager.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
 #include "UObject/Class.h"
 #include <WorkerSDK/improbable/c_trace.h>
@@ -245,7 +248,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	return CurrentSpanId;
 }
 
-void SpatialEventTracer::Enable(const char* Filename)
+void SpatialEventTracer::Enable(const FString& FileName)
 {
 	Trace_EventTracer_Enable(EventTracer);
 	bEnalbed = true;
@@ -255,7 +258,7 @@ void SpatialEventTracer::Enable(const char* Filename)
 	FString FolderPath = FPaths::ProjectSavedDir() + TEXT("EventTracing\\");
 
 	FDateTime CurrentDateTime = FDateTime::Now();
-	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s_%s.json"), ANSI_TO_TCHAR(Filename), *CurrentDateTime.ToString());
+	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s_%s.json"), *FileName, *CurrentDateTime.ToString());
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
@@ -270,4 +273,49 @@ void SpatialEventTracer::Disable()
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 	Trace_EventTracer_Disable(EventTracer);
 	bEnalbed = false;
+	Io_Stream_Destroy(Stream);
+	Stream = nullptr; 
 }
+
+static TAutoConsoleVariable<int32> CVarGDKEventTracing(
+	TEXT("gdk.eventTracing"),
+	0,
+	TEXT("Defines the distortion/refraction quality, adjust for quality or performance.\n")
+	TEXT("<=0: off (disabled)\n")
+	TEXT("  1: enabled\n"),
+	ECVF_Scalability);
+
+static void EventTracingSink()
+{
+	bool bIsEnabled = CVarGDKEventTracing.GetValueOnGameThread() != 0;
+
+	const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
+	for (const FWorldContext& Context : WorldContexts)
+	{
+		UWorld* World = Context.World();
+		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			USpatialConnectionManager* ConnectionManager = SpatialNetDriver->ConnectionManager;
+			if (ConnectionManager != nullptr
+				&& ConnectionManager->GetEventTracer() != nullptr
+				&& ConnectionManager->GetWorkerConnection() != nullptr)
+			{
+				SpatialEventTracer* EventTracer = ConnectionManager->GetEventTracer();
+				bool bIsTracerEnabled = EventTracer->IsEnabled();
+				if (bIsTracerEnabled != bIsEnabled)
+				{
+					if (bIsEnabled)
+					{
+						EventTracer->Enable(ConnectionManager->GetWorkerConnection()->GetWorkerId());
+					}
+					else
+					{
+						EventTracer->Disable();
+					}
+				}
+			}
+		}
+	}
+}
+
+FAutoConsoleVariableSink CVarGDKEventTracingSink(FConsoleCommandDelegate::CreateStatic(&EventTracingSink));

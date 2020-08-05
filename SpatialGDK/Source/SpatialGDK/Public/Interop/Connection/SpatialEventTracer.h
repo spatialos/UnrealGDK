@@ -346,7 +346,7 @@ struct SpatialEventTracer
 	Trace_SpanId CreateNewSpanId();
 	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
 
-	void Enable(const char* Filename);
+	void Enable(const FString& FileName);
 	void Disable();
 	bool IsEnabled() { return bEnalbed; }
 
