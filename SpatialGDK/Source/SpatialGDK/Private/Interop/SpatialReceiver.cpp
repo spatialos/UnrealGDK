@@ -2086,6 +2086,12 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			TargetObject->ProcessEvent(Function, Parms);
 
+			FEventRPCProcessed EventRPCProcessed;
+			EventRPCProcessed.TargetObject = TargetObject;
+			EventRPCProcessed.Function = Function;
+
+			EventTracer->TraceEvent(EventRPCProcessed);
+
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() &&
 				RPCService != nullptr &&
 				RPCType != ERPCType::CrossServer &&
@@ -2125,8 +2131,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	{
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
-
-	//Connection->TraceEvent(ConstructEvent(TargetObject, Function));
 
 	return ApplyRPCInternal(TargetObject, Function, Params);
 }

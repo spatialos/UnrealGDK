@@ -151,6 +151,17 @@ struct FEventRPCRetried : public FEventMessage
 };
 
 USTRUCT()
+struct FEventRPCProcessed : public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventRPCProcessed() : FEventMessage("RPCProcessed") {}
+
+	UPROPERTY() const UObject* TargetObject { nullptr };
+	UPROPERTY() const UFunction* Function { nullptr };
+};
+
+USTRUCT()
 struct FEventComponentUpdate : public FEventMessage
 {
 	GENERATED_BODY()
@@ -275,45 +286,9 @@ private:
 
 }
 
-// TODO(EventTracer): (a list of requirements by Chris from Jira ticket)
-
-/*
-Sending create entity request
-
-Sending authority intent update
-
-Sending delete entity request
-
-Sending RPC
-
-Sending RPC retry
-
-Sending command response
-
-Receiving add entity
-
-Receiving remove entity
-
-Receiving authority change
-
-Receiving component update
-
-Receiving command request
-
-Receiving command response
-
-Receiving create entity response
-
-Individual RPC Calls (distinguishing between GDK and USER)
-
-Custom events can be added
-*/
-
 // TODO(EventTracer): a short list of requirements by Alex
 /*
 Actor name, Position,
 Add/Remove Entity (can we also distinguish Remove Entity when moving to another worker vs Delete entity),
-Authority/Authority intent changes,
 RPC calls (when they were sent/received/processed),
-Component Updates
 */
