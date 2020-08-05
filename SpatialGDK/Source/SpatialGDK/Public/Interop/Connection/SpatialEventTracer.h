@@ -209,14 +209,6 @@ struct FEventRPCRetried : public FEventMessage
 	FEventRPCRetried()
 		: FEventMessage("RPCRetried")
 	{}
-	FEventRPCRetried(const UObject* TargetObject, const UFunction* Function)
-		: FEventMessage("RPCRetried")
-		, TargetObject(TargetObject)
-		, Function(Function)
-	{}
-
-	UPROPERTY() const UObject* TargetObject { nullptr };
-	UPROPERTY() const UFunction* Function { nullptr };
 };
 
 USTRUCT()
@@ -289,7 +281,7 @@ struct FEventCommandResponse : public FEventMessage
 	UPROPERTY() const UObject* TargetObject { nullptr };
 	UPROPERTY() const UFunction* Function { nullptr };
 	UPROPERTY() int64 RequestID { -1 };
-	UPROPERTY() bool bSuccess;
+	UPROPERTY() bool bSuccess{ false };
 };
 
 USTRUCT()
@@ -327,7 +319,6 @@ struct FEventCommandRequest : public FEventMessage
 
 class AActor;
 class UFunction;
-class USpatialNetDriver;
 
 namespace worker
 {

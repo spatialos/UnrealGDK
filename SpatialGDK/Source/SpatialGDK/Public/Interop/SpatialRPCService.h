@@ -62,10 +62,9 @@ public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback,
 		const USpatialStaticComponentView* View,
 		USpatialLatencyTracer* SpatialLatencyTracer,
-		SpatialEventTracer* EventTracer,
-		USpatialNetDriver* SpatialNetDriver);
+		SpatialEventTracer* EventTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr, UFunction* Function = nullptr);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -130,9 +129,6 @@ private:
 	};
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
-
-	UPROPERTY()
-	USpatialNetDriver* SpatialNetDriver;
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);

@@ -17,12 +17,11 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, const TOptional<worker::c::Trace_SpanId> SpanIdIn = {}, TraceKey InTraceKey = InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
 		, Trace(InTraceKey)
-		, SpanId(SpanId)
 	{ }
 
 	RPCPayload(Schema_Object* RPCObject)

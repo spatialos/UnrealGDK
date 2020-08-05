@@ -16,38 +16,31 @@ DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 namespace SpatialGDK
 {
 
-SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback,
-	const USpatialStaticComponentView* View,
-	USpatialLatencyTracer* SpatialLatencyTracer,
-	SpatialEventTracer* EventTracer,
-	USpatialNetDriver* SpatialNetDriver)
+SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
 	, EventTracer(EventTracer)
-	, SpatialNetDriver(SpatialNetDriver)
 {
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target, UFunction* Function)
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	EPushRPCResult Result = EPushRPCResult::Success;
 
+	if (EventTracer->IsEnabled())
+	{
+		Payload.SpanId = EventTracer->TraceEvent(FEventSendRPC(Target, Function));
+	}
+
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
-		if (EventTracer->IsEnabled() && Payload.SpanId.IsSet() && SpatialNetDriver != nullptr)
+		if (EventTracer->IsEnabled() && Payload.SpanId.IsSet())
 		{
-			// TODO: Can this be simplified? EventTracer needing the NetDriver is a bit rubbish
-			TWeakObjectPtr<UObject> TargetObjectWeakPtr = SpatialNetDriver->PackageMap->GetObjectFromEntityId(EntityId);
-			UObject* TargetObject = TargetObjectWeakPtr.Get();
-
-			const FClassInfo& ClassInfo = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
-			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-
-			Payload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(TargetObject, Function), &Payload.SpanId.GetValue());
+			Payload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), &Payload.SpanId.GetValue());
 		}
 		AddOverflowedRPC(EntityType, MoveTemp(Payload));
 		Result = EPushRPCResult::QueueOverflowed;
@@ -171,16 +164,9 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (RPCPayload& Payload : OverflowedRPCArray)
 		{
-			if (EventTracer->IsEnabled() && SpatialNetDriver != nullptr)
+			if (EventTracer->IsEnabled() && Payload.SpanId.IsSet())
 			{
-				// TODO: Can this be simplified? EventTracer needing the NetDriver is a bit rubbish
-				TWeakObjectPtr<UObject> TargetObjectWeakPtr = SpatialNetDriver->PackageMap->GetObjectFromEntityId(EntityId);
-				UObject* TargetObject = TargetObjectWeakPtr.Get();
-
-				const FClassInfo& ClassInfo = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
-				UFunction* Function = ClassInfo.RPCs[Payload.Index];
-
-				Payload.SpanId = EventTracer->TraceEvent(FEventRPCRetried(TargetObject, Function), &Payload.SpanId.GetValue());
+				Payload.SpanId = EventTracer->TraceEvent(FEventRPCRetried{}, &Payload.SpanId.GetValue());
 			}
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
 
