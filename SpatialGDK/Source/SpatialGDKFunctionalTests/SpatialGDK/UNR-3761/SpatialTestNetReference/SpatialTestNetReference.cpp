@@ -88,8 +88,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		// Set the PositionUpdateFrequency to a higher value so that the amount of waiting time before checking the references can be smaller, decreasing the overall duration of the test
 		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->MaximumDistanceThreshold;
-		//GetMutableDefault<USpatialGDKSettings>()->MinimumTimeThreshold = 0.1f;
-		//GetMutableDefault<USpatialGDKSettings>()->MinimumDistanceThreshold = 0.1f;
+		GetMutableDefault<USpatialGDKSettings>()->MaximumDistanceThreshold = 0.1f;
 		
 
 		// Spawn the TestMovementCharacter actor for client 1 to possess.

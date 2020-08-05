@@ -1154,14 +1154,10 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			return;
 		}
 	}
-
-	// Check that the Actor has satisfied both Minimum thresholds OR either of the Maximum thresholds
+	
+	// Check that the Actor has satisfied both minimum thresholds OR either of the maximum thresholds
 	bool bSatisfiesMininumThresholds = false;
 	bool bSatisfiesMaximumThreshold = false;
-
-	if (Actor->GetName().Contains(TEXT("Character")))
-	{		UE_LOG(LogTemp, Warning, TEXT("HELO WORLD!"));
-	}
 
 	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
@@ -1177,8 +1173,8 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->MaximumDistanceThreshold);
 
-	if ((TimeSinceLastPositionUpdate >= SpatialGDKSettings->MaximumTimeThreshold  && DistanceTravelledSinceLastUpdateSquared > 0.0f ) ||
-		DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
+	if ((TimeSinceLastPositionUpdate >= SpatialGDKSettings->MaximumTimeThreshold  && DistanceTravelledSinceLastUpdateSquared > 0.0f )
+	|| DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
 	{
 		bSatisfiesMaximumThreshold = true;
 	}
