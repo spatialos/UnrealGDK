@@ -345,7 +345,7 @@ public:
 
 	/** Allows the local SpatialOS deployment to be automatically stopped. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))
-	EAutoStopLocalDeploymentMode AutoStopLocalDeployment = EAutoStopLocalDeploymentMode::Never;
+	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
 private:
 	/** Name of your SpatialOS snapshot file that will be generated. */
