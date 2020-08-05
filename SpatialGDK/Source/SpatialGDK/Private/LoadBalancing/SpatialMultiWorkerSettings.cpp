@@ -48,6 +48,18 @@ uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() cons
 	return WorkerCount;
 }
 
+TMap<FName, uint32> UAbstractSpatialMultiWorkerSettings::GetLayerWorkerCounts() const
+{
+	TMap<FName, uint32> LayerVirtualWorkerRequirements;
+
+	for (const auto& Layer : WorkerLayers)
+	{
+		LayerVirtualWorkerRequirements.Add(Layer.Name, GetDefault<UAbstractLBStrategy>(Layer.LoadBalanceStrategy)->GetMinimumRequiredWorkers());
+	}
+
+	return LayerVirtualWorkerRequirements;
+}
+
 #if WITH_EDITOR
 void UAbstractSpatialMultiWorkerSettings::ValidateFirstLayerIsDefaultLayer()
 {

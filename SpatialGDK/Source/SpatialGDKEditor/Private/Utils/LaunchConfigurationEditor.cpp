@@ -31,7 +31,7 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	LaunchConfiguration.ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	LaunchConfiguration.ServerWorkerConfig.NumEditorInstances = GetTotalWorkerCountFromWorldSettings(*EditorWorld);
 }
 
 void ULaunchConfigurationEditor::SaveConfiguration()

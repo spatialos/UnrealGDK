@@ -33,12 +33,14 @@ public:
     virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-	uint32 GetMinimumRequiredWorkerCount() const;
-
 	static FLayerInfo GetDefaultLayerInfo()
 	{
 		return { SpatialConstants::DefaultLayer, { AActor::StaticClass() }, USingleWorkerStrategy::StaticClass() };
-	};
+	}
+
+	uint32 GetMinimumRequiredWorkerCount() const;
+
+	TMap<FName, uint32> GetLayerWorkerCounts() const;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TArray<FLayerInfo> WorkerLayers;

@@ -93,7 +93,7 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 } // anonymous namespace
 
-TMap<FName, int32> GetLayerWorkerCountMappingFromWorldSettings(const UWorld& World)
+TMap<FName, uint32> GetLayerWorkerCountMappingFromWorldSettings(const UWorld& World)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 	if (WorldSettings == nullptr)
@@ -106,6 +106,24 @@ TMap<FName, int32> GetLayerWorkerCountMappingFromWorldSettings(const UWorld& Wor
 	if (!bIsMultiWorkerEnabled)
 	{
 		return {{SpatialConstants::DefaultLayer, 1}};
+	}
+
+	return WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()->GetLayerWorkerCounts();
+}
+
+uint32 GetTotalWorkerCountFromWorldSettings(const UWorld& World)
+{
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
+	if (WorldSettings == nullptr)
+	{
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Missing SpatialWorldSettings on map %s"), *World.GetMapName());
+		return 1;
+	}
+
+	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(&World);
+	if (!bIsMultiWorkerEnabled)
+	{
+		return 1;
 	}
 
 	return WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()->GetMinimumRequiredWorkerCount();
@@ -125,13 +143,7 @@ bool FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, 
 	check(EditorWorld != nullptr);
 
 	OutWorker = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
-
-	uint32 TotalWorkerCount = 0;
-	for (const auto& LayerWorkerCount : GetLayerWorkerCountMappingFromWorldSettings(*EditorWorld))
-	{
-		TotalWorkerCount += LayerWorkerCount.Value;
-	}
-	OutWorker.NumEditorInstances = TotalWorkerCount;
+	OutWorker.NumEditorInstances = GetTotalWorkerCountFromWorldSettings(*EditorWorld);
 
 	return true;
 }

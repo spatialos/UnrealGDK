@@ -64,7 +64,7 @@ public:
 
 	FName GetLocalLayerName() const;
 
-	TMap<FName, uint32> GetLayerVirtualWorkerRequirements() const;s
+	TMap<FName, uint32> GetLayerVirtualWorkerRequirements() const;
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;

@@ -790,11 +790,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		Conf.bManualWorkerConnectionOnly = true;
 		if (Conf.bAutoNumEditorInstances)
 		{
-			Conf.NumEditorInstances = 0;
-			for (const auto& LayerWorkerCount : GetLayerWorkerCountMappingFromWorldSettings(*EditorWorld))
-			{
-				Conf.NumEditorInstances += LayerWorkerCount.Value;
-			}
+			Conf.NumEditorInstances = GetTotalWorkerCountFromWorldSettings(*EditorWorld);
 		}
 
 		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
@@ -1247,7 +1243,7 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
 	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	ServerWorkerConfig.NumEditorInstances = GetTotalWorkerCountFromWorldSettings(*EditorWorld);
 
 	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 

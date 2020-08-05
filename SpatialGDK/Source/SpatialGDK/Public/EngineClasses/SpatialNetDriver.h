@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -193,6 +194,8 @@ public:
 #if ENGINE_MINOR_VERSION <= 24
 	float GetElapsedTime() { return Time; }
 #endif
+
+	FName GetLayerHint() const { return GetGameInstance()->GetSpatialLayerHint(); }
 
 private:
 

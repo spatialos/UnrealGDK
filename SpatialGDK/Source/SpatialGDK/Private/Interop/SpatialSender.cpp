@@ -265,7 +265,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(ServerWorker(Connection->GetWorkerId(), false, LayerHint).CreateServerWorkerData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false, NetDriver->GetLayerHint()).CreateServerWorkerData());
 	check(NetDriver != nullptr);
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.

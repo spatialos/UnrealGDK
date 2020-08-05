@@ -50,9 +50,8 @@ private:
 	virtual FString GetMobileClientCommandLineArgs() const override;
 	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
-	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
+	virtual bool ForEachLayerServerWorker(TFunction<void(const FName&, uint32)> Function) const override;
 
-private:
 	void RegisterSettings();
 	void UnregisterSettings();
 	bool HandleEditorSettingsSaved();
@@ -60,7 +59,6 @@ private:
 	bool CanStartSession(FText& OutErrorMessage) const;
 	bool ShouldStartLocalServer() const;
 
-private:
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 

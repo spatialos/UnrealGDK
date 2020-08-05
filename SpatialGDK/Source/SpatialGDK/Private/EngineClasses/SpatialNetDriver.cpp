@@ -248,7 +248,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
-	FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
+	const FString SpatialWorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
 	// Ensures that any connections attempting to using command line arguments have a valid locater host in the command line.
 	GameInstance->TryInjectSpatialLocatorIntoCommandLine();
@@ -278,6 +278,12 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	else
 	{
 		ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
+	}
+
+	const FName SpatialLayerHint = GetGameInstance()->GetSpatialLayerHint();
+	if (IsServer() && SpatialLayerHint.IsValid())
+	{
+		ConnectionManager->ReceptionistConfig.WorkerId = FString::Printf(TEXT("%s-%s"), *SpatialLayerHint.ToString(), *FGuid::NewGuid().ToString());
 	}
 
 #if WITH_EDITOR

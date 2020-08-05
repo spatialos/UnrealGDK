@@ -28,13 +28,6 @@ struct FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
-
-		FString LayerHint = TEXT("");
-		if (FParse::Value(FCommandLine::Get(), TEXT("-LayerHint"), LayerHint))
-		{
-			WorkerId = FString::Printf(TEXT("%s-%s"), *LayerHint, *FGuid::NewGuid().ToString());
-		}
-
 		FParse::Bool(CommandLine, TEXT("enableWorkerSDKProtocolLogging"), EnableWorkerSDKProtocolLogging);
 		FParse::Bool(CommandLine, TEXT("enableWorkerSDKOpLogging"), EnableWorkerSDKOpLogging);
 		FParse::Value(CommandLine, TEXT("workerSDKLogPrefix"), WorkerSDKLogPrefix);

@@ -29,7 +29,7 @@ struct ServerWorker : Component
 		, LayerHint(TEXT(""))
 	{}
 
-	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const FString& InLayerHint)
+	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const FName& InLayerHint)
 	{
 		WorkerName = InWorkerName;
 		bReadyToBeginPlay = bInReadyToBeginPlay;
@@ -42,7 +42,7 @@ struct ServerWorker : Component
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
-		LayerHint = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID);
+		LayerHint = *GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID);
 	}
 
 	Worker_ComponentData CreateServerWorkerData()
@@ -54,7 +54,7 @@ struct ServerWorker : Component
 
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
 		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
-		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID, LayerHint);
+		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID, LayerHint.ToString());
 
 		return Data;
 	}
@@ -68,7 +68,7 @@ struct ServerWorker : Component
 
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
 		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
-		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID, LayerHint);
+		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID, LayerHint.ToString());
 
 		return Update;
 	}
@@ -79,7 +79,7 @@ struct ServerWorker : Component
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
-		LayerHint = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID);
+		LayerHint = *GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_LAYER_HINT_ID);
 	}
 
 	static Worker_CommandRequest CreateForwardPlayerSpawnRequest(Schema_CommandRequest* SchemaCommandRequest)
@@ -118,7 +118,7 @@ struct ServerWorker : Component
 
 	PhysicalWorkerName WorkerName;
 	bool bReadyToBeginPlay;
-	FString LayerHint;
+	FName LayerHint;
 };
 
 } // namespace SpatialGDK

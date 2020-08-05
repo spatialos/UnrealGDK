@@ -112,6 +112,7 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
 	SpatialWorkerType = Params.SpatialWorkerType;
+	SpatialLayerHint = Params.SpatalLayerHint;
 	bIsSimulatedPlayer = Params.bIsSimulatedPlayer;
 
 	StartSpatialConnection();
