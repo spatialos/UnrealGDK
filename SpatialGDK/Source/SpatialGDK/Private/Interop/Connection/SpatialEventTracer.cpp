@@ -238,7 +238,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 				{
 					FString KeyString = VariableName + TEXT("Position");
 					FString ValueString = Actor->GetTransform().GetTranslation().ToString();
-					AddTraceEventStringField(KeyString, KeyString);
+					AddTraceEventStringField(KeyString, ValueString);
 				}
 			}
 			else
