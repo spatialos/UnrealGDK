@@ -58,9 +58,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
+#if WITH_EDITORONLY_DATA
 	/** Defines how Unreal Editor will run the Tests in this map, without changing current Settings. */
 	UPROPERTY(EditAnywhere, Category = "Testing")
 	FMapTestingSettings TestingSettings;
+#endif
 
 	// This function is used to expose the private bool property to SpatialStatics.
 	// You should call USpatialStatics::IsMultiWorkerEnabled to properly check whether multi-worker is enabled.
