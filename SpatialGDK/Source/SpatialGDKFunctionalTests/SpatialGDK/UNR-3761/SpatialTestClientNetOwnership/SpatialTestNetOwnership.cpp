@@ -59,8 +59,8 @@ void ASpatialTestNetOwnership::BeginPlay()
 	// Server 1 spawns the NetOwnershipCube and registers it for auto-destroy.
 	AddStep(TEXT("SpatialTestNetOwnershipServerSpawnCube"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
-			ANetOwnershipCube* NetOwnershipCube = GetWorld()->SpawnActor<ANetOwnershipCube>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
-			RegisterAutoDestroyActor(NetOwnershipCube);
+			ANetOwnershipCube* Cube = GetWorld()->SpawnActor<ANetOwnershipCube>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
+			RegisterAutoDestroyActor(Cube);
 
 			FinishStep();
 		});
