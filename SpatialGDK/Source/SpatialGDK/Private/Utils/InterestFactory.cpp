@@ -225,7 +225,7 @@ bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
 {
 	AActor* Owner = Actor->GetOwner();
 
-	while (Owner != nullptr && !Owner->IsPendingKillPending())
+	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
 	{
 		if (PackageMap->GetEntityIdFromObject(Owner) == SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -242,7 +242,7 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;
 	
-	while (Owner != nullptr && !Owner->IsPendingKillPending())
+	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
 	{
 		QueryConstraint OwnerQuery;
 		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
