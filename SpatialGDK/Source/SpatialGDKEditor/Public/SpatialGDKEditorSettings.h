@@ -273,7 +273,8 @@ private:
 
 /** Different modes to automatically stop of the local SpatialOS deployment. */
 UENUM()
-enum class EAutoStopLocalDeploymentMode : uint8 {
+enum class EAutoStopLocalDeploymentMode : uint8
+{
 	/** Never stop the local SpatialOS deployment automatically. */
 	Never			= 0,
 	/** Automatically stop the local SpatialOS deployment on end of play in editor. */
