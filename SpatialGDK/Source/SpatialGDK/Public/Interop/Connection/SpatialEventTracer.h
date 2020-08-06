@@ -65,7 +65,6 @@ public:
 		return TraceEvent(EventMessage, T::StaticStruct(), Cause);
 	}
 
-	using EventTracingData = TMap<FString, FString>;
 private:
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 	bool bRecordRuntimeAndWorkerEvents{ false };

@@ -41,9 +41,7 @@ public class SpatialGDK : ModuleRules
                 "OnlineSubsystemUtils",
                 "InputCore",
                 "Sockets",
-                "ReplicationGraph",
-                "Json",
-                "JsonUtilities"
+                "ReplicationGraph"
             });
 
         if (Target.bBuildEditor)

@@ -8,7 +8,6 @@
 #include "GenericPlatform/GenericPlatformAtomics.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Runtime/JsonUtilities/Public/JsonUtilities.h"
 #include "UObject/Class.h"
 #include <WorkerSDK/improbable/c_trace.h>
 #include <WorkerSDK/improbable/c_io.h>
@@ -24,7 +23,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	if (FPlatformAtomics::AtomicRead(&EventTracer->bEnabled))
 	{
 		FScopeLock Lock(&EventTracer->StreamLock); // TODO: Remove this and figure out how to use EventTracer->Stream without race conditions
-		if (EventTracer->Stream)
+		if (EventTracer->Stream != nullptr)
 		{
 			int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, Trace_GetSerializedItemSize(Item));
 			if (Code != 0)
@@ -117,9 +116,9 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 	};
 
-	for (TFieldIterator<UProperty> It(Struct); It; ++It)
+	for (TFieldIterator<FProperty> It(Struct); It; ++It)
 	{
-		UProperty* Property = *It;
+		FProperty* Property = *It;
 
 		FString VariableName = Property->GetName();
 		const void* Value = Property->ContainerPtrToValuePtr<uint8>(&EventMessage);
@@ -127,11 +126,11 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		check(Property->ArrayDim == 1); // Arrays not handled yet
 
 		// convert the property to a FJsonValue
-		if (UStrProperty *StringProperty = Cast<UStrProperty>(Property))
+		if (FStrProperty *StringProperty = Cast<FStrProperty>(Property))
 		{
 			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
 		}
-		else if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property))
+		else if (FObjectProperty* ObjectProperty = Cast<FObjectProperty>(Property))
 		{
 			UObject* Object = ObjectProperty->GetPropertyValue(Value);
 			if (Object)
