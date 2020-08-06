@@ -316,6 +316,7 @@ struct FEventCommandRequest : public FEventMessage
 };
 
 //TODO - Individual RPC Calls (distinguishing between GDK and USER)
+//TODO - RPCs on newly created objects go through a different flow and need to be handled
 
 class AActor;
 class UFunction;
