@@ -697,8 +697,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					// entity creation flow.
 					if (bActorHadAuthority)
 					{
-						// We call SetActorReady outside OnActorReady so we don't rely on users calling Super::OnActorReady
-						// at the start of their function to ensure the property remains true.
 						Actor->SetActorReady(true);
 					}
 
