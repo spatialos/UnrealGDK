@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "VisibilityTest.generated.h"
 
+class ATestMovementCharacter;
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AVisibilityTest : public ASpatialFunctionalTest
 {
@@ -14,8 +16,14 @@ public:
 	AVisibilityTest();
 
 	virtual void BeginPlay() override;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	// To save original Pawns and possess them back at the end
+	UPROPERTY(Replicated)
+		TArray<APlayerController*> Controllers;
+	UPROPERTY(Replicated)
+		TArray<ATestMovementCharacter*> TestPawns;
+
+	// To possess original pawns
 	TArray<TPair<AController*, APawn*>> OriginalPawns;
 
 	float PreviousPositionUpdateFrequency;
