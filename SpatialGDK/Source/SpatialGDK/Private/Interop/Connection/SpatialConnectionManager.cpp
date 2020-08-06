@@ -320,7 +320,7 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
-	CreateEventTracer();
+	CreateEventTracer(ReceptionistConfig.WorkerId);
 	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
@@ -342,7 +342,7 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
-	CreateEventTracer();
+	CreateEventTracer(InLocatorConfig->WorkerId);
 	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
@@ -523,7 +523,7 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
-void USpatialConnectionManager::CreateEventTracer()
+void USpatialConnectionManager::CreateEventTracer(const FString& WorkerName)
 {
-	EventTracer = MakeUnique<SpatialEventTracer>(GetWorkerConnection()->GetWorkerId());
+	EventTracer = MakeUnique<SpatialEventTracer>(WorkerName);
 }

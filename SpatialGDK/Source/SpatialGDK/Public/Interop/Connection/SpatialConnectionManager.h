@@ -92,5 +92,5 @@ private:
 
 	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
 
-	void CreateEventTracer();
+	void CreateEventTracer(const FString& WorkerName);
 };

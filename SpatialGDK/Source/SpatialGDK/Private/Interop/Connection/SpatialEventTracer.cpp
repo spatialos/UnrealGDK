@@ -20,18 +20,15 @@ using namespace worker::c;
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
-	if (FPlatformAtomics::AtomicRead(&EventTracer->bEnabled))
+	checkf(EventTracer->bEnabled && EventTracer->Stream, TEXT("Tracer in an invalid state in TraceCallback")); 
+	if (EventTracer->BytesWrittenToStream < EventTracer->MaxFileSize)
 	{
-		FScopeLock Lock(&EventTracer->StreamLock); // TODO: Remove this and figure out how to use EventTracer->Stream without race conditions
-		if (EventTracer->Stream != nullptr && EventTracer->BytesWrittenToStream < EventTracer->MaxFileSize)
+		uint32_t ItemSize = Trace_GetSerializedItemSize(Item); 
+		EventTracer->BytesWrittenToStream += ItemSize;
+		int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, ItemSize);
+		if (Code != 0)
 		{
-			uint32_t ItemSize = Trace_GetSerializedItemSize(Item); 
-			EventTracer->BytesWrittenToStream += ItemSize;
-			int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, ItemSize);
-			if (Code != 0)
-			{
-				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
-			}
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
 		}
 	}
 }
@@ -189,15 +186,13 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 
 void SpatialEventTracer::Enable(const FString& FileName)
 {
-	FScopeLock Lock(&StreamLock);
-
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.user_data = this;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
 
-	FPlatformAtomics::AtomicStore(&bEnabled, 1);
+	bEnabled = true;
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
@@ -217,8 +212,6 @@ void SpatialEventTracer::Enable(const FString& FileName)
 
 void SpatialEventTracer::Disable()
 {
-	FScopeLock Lock(&StreamLock);
-
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 	Trace_EventTracer_Disable(EventTracer);
 	bEnabled = false;

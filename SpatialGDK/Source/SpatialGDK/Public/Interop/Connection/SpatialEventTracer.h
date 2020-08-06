@@ -71,11 +71,10 @@ private:
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 	bool bRecordRuntimeAndWorkerEvents{ false };
 
-	FCriticalSection StreamLock;
-	int32 bEnabled{ 0 }; // int32 for atomics
+	bool bEnabled{ false };
 	worker::c::Io_Stream* Stream;
 
-	worker::c::Trace_EventTracer* EventTracer;
+	worker::c::Trace_EventTracer* EventTracer{ nullptr };
 
 	FString WorkerName;
 	uint64 BytesWrittenToStream{ 0 };
