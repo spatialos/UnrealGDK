@@ -203,7 +203,6 @@ exit /b !ERRORLEVEL!";
                     "-clientconfig=" + configuration,
                     "-serverconfig=" + configuration,
                     "-utf8output",
-                    "-compile",
                     "-cook",
                     "-stage",
                     "-package",
