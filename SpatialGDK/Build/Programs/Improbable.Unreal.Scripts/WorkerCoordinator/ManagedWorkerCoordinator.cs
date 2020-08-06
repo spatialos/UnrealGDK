@@ -212,7 +212,7 @@ namespace Improbable.WorkerCoordinator
             while (true)
             {
                 var readyFlagOpt = connection.GetWorkerFlag(TargetDeploymentReadyWorkerFlag);
-                if (readyFlagOpt == "true")
+                if (readyFlagOpt.HasValue && readyFlagOpt.Value.ToLower() == "true")
                 {
                     // Ready.
                     break;
