@@ -49,6 +49,9 @@ public:
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
 
+	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
+	bool DoOwnersHaveEntityId(const AActor* Actor) const;
+
 private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
@@ -69,6 +72,8 @@ private:
 	void AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
+	// Add interest to the actor's owner.
+	void AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
 	// Add the always relevant and the always interested query.
 	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
