@@ -196,7 +196,8 @@ exit /b !ERRORLEVEL!";
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "BuildCookRun",
-                    "-build",
+                    noBuild ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
                     "-clientconfig=" + configuration,
