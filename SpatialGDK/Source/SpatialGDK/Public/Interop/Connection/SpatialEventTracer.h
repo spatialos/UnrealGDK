@@ -42,14 +42,10 @@ namespace SpatialGDK
 class SpatialEventTracer
 {
 public:
-	SpatialEventTracer();
+	SpatialEventTracer(const FString& WorkerName);
 	~SpatialEventTracer();
 	Trace_SpanId CreateNewSpanId();
 	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
-
-	void Enable(const FString& FileName);
-	void Disable();
-	bool IsEnabled() const { return !!bEnabled; }
 
 	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
@@ -65,7 +61,13 @@ public:
 		return TraceEvent(EventMessage, T::StaticStruct(), Cause);
 	}
 
+	bool IsEnabled() const { return !!bEnabled; }
+
 private:
+
+	void Enable(const FString& FileName);
+	void Disable();
+
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 	bool bRecordRuntimeAndWorkerEvents{ false };
 
@@ -74,6 +76,10 @@ private:
 	worker::c::Io_Stream* Stream;
 
 	worker::c::Trace_EventTracer* EventTracer;
+
+	FString WorkerName;
+	uint64 BytesWrittenToStream{ 0 };
+	uint64 MaxFileSize{ 0 };
 
 	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const worker::c::Trace_SpanId* Cause);
 };

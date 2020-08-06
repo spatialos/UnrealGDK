@@ -23,9 +23,11 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	if (FPlatformAtomics::AtomicRead(&EventTracer->bEnabled))
 	{
 		FScopeLock Lock(&EventTracer->StreamLock); // TODO: Remove this and figure out how to use EventTracer->Stream without race conditions
-		if (EventTracer->Stream != nullptr)
+		if (EventTracer->Stream != nullptr && EventTracer->BytesWrittenToStream < EventTracer->MaxFileSize)
 		{
-			int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, Trace_GetSerializedItemSize(Item));
+			uint32_t ItemSize = Trace_GetSerializedItemSize(Item); 
+			EventTracer->BytesWrittenToStream += ItemSize;
+			int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, ItemSize);
 			if (Code != 0)
 			{
 				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
@@ -48,27 +50,27 @@ SpatialSpanIdActivator::~SpatialSpanIdActivator()
 {
 	if (CurrentSpanId.IsSet())
 	{
-		Trace_EventTracer_UnsetActiveSpanId(EventTracer);
+		Trace_EventTracer_ClearActiveSpanId(EventTracer);
 	}
 }
 
-SpatialEventTracer::SpatialEventTracer()
+SpatialEventTracer::SpatialEventTracer(const FString& WorkerName)
 {
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
-	Trace_EventTracer_Enable(EventTracer);
+	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
+	{
+		if (Settings->bEventTracingEnabled)
+		{
+			MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
+			Enable(WorkerName);
+		}
+	}
 }
 
 SpatialEventTracer::~SpatialEventTracer()
 {
-	Trace_EventTracer_Disable(EventTracer);
-	Trace_EventTracer_Destroy(EventTracer);
-
-	if (Stream != nullptr)
+	if (IsEnabled())
 	{
-		Io_Stream_Destroy(Stream);
+		Disable();
 	}
 }
 
@@ -116,9 +118,18 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 	};
 
-	for (TFieldIterator<FProperty> It(Struct); It; ++It)
+#if ENGINE_MINOR_VERSION >= 25
+	typedef FProperty UnrealProperty;
+	typedef FStrProperty UnrealStrProperty;
+	typedef FObjectProperty UnrealObjectProperty;
+#else
+	typedef UProperty UnrealProperty;
+	typedef UStrProperty UnrealStrProperty;
+	typedef UObjectProperty UnrealObjectProperty;
+#endif
+	for (TFieldIterator<UnrealProperty> It(Struct); It; ++It)
 	{
-		FProperty* Property = *It;
+		UnrealProperty* Property = *It;
 
 		FString VariableName = Property->GetName();
 		const void* Value = Property->ContainerPtrToValuePtr<uint8>(&EventMessage);
@@ -126,11 +137,11 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		check(Property->ArrayDim == 1); // Arrays not handled yet
 
 		// convert the property to a FJsonValue
-		if (FStrProperty *StringProperty = Cast<FStrProperty>(Property))
+		if (UnrealStrProperty *StringProperty = Cast<UnrealStrProperty>(Property))
 		{
 			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
 		}
-		else if (FObjectProperty* ObjectProperty = Cast<FObjectProperty>(Property))
+		else if (UnrealObjectProperty* ObjectProperty = Cast<UnrealObjectProperty>(Property))
 		{
 			UObject* Object = ObjectProperty->GetPropertyValue(Value);
 			if (Object)
@@ -179,7 +190,13 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 void SpatialEventTracer::Enable(const FString& FileName)
 {
 	FScopeLock Lock(&StreamLock);
+
+	Trace_EventTracer_Parameters parameters = {};
+	parameters.user_data = this;
+	parameters.callback = &SpatialEventTracer::TraceCallback;
+	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
+
 	FPlatformAtomics::AtomicStore(&bEnabled, 1);
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
@@ -194,60 +211,25 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
-		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_DEFAULT);
+		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE);
 	}
 }
 
 void SpatialEventTracer::Disable()
 {
 	FScopeLock Lock(&StreamLock);
+
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 	Trace_EventTracer_Disable(EventTracer);
 	bEnabled = false;
 	Io_Stream_Destroy(Stream);
-	Stream = nullptr; 
-}
+	Stream = nullptr;
 
-static TAutoConsoleVariable<int32> CVarGDKEventTracing(
-	TEXT("gdk.eventTracing"),
-	0,
-	TEXT("Defines the distortion/refraction quality, adjust for quality or performance.\n")
-	TEXT("<=0: off (disabled)\n")
-	TEXT("  1: enabled\n"),
-	ECVF_Scalability);
+	Trace_EventTracer_Destroy(EventTracer);
 
-static void EventTracingSink()
-{
-	int Level = CVarGDKEventTracing.GetValueOnGameThread();
-	bool bIsEnabled = Level != 0;
-
-	const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
-	for (const FWorldContext& Context : WorldContexts)
+	if (Stream != nullptr)
 	{
-		UWorld* World = Context.World();
-		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			USpatialConnectionManager* ConnectionManager = SpatialNetDriver->ConnectionManager;
-			if (ConnectionManager != nullptr
-				&& ConnectionManager->GetEventTracer() != nullptr
-				&& ConnectionManager->GetWorkerConnection() != nullptr)
-			{
-				SpatialEventTracer* EventTracer = ConnectionManager->GetEventTracer();
-				bool bIsTracerEnabled = EventTracer->IsEnabled();
-				if (bIsTracerEnabled != bIsEnabled)
-				{
-					if (bIsEnabled)
-					{
-						EventTracer->Enable(ConnectionManager->GetWorkerConnection()->GetWorkerId());
-					}
-					else
-					{
-						EventTracer->Disable();
-					}
-				}
-			}
-		}
+		Io_Stream_Destroy(Stream);
 	}
-}
 
-FAutoConsoleVariableSink CVarGDKEventTracingSink(FConsoleCommandDelegate::CreateStatic(&EventTracingSink));
+}

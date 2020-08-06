@@ -334,4 +334,18 @@ public:
 
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable latency for the Unreal client/worker.
+	 */
+	UPROPERTY(Config)
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum size of the event tracing file, in bytes
+	 */
+	UPROPERTY(Config)
+	uint64 MaxEventTracingFileSizeBytes;
 };
