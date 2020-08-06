@@ -49,6 +49,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bStopLocalDeploymentOnEndPIE(false)
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
+	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
