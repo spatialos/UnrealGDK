@@ -125,11 +125,18 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 		{
 		case ERPCQueueProcessResult::ContinueProcessing:
 			NumProcessedParams++;
+			break;
 		case ERPCQueueProcessResult::StopProcessing:
+			// The actual break out of the for loop is handled below
 			break;
 		case ERPCQueueProcessResult::DropEntireQueue:
 			RPCList.Empty();
 			return;
+		}
+
+		if (QueueProcessResult == ERPCQueueProcessResult::StopProcessing)
+		{
+			break;
 		}
 	}
 
