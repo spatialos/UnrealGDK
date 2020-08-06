@@ -700,7 +700,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						// We call SetActorReady outside OnActorReady so we don't rely on users calling Super::OnActorReady
 						// at the start of their function to ensure the property remains true.
 						Actor->SetActorReady(true);
-						Actor->OnActorReady();
 					}
 
 					// We still want to call OnAuthorityGained if the Actor migrated to this worker or was loaded from a snapshot.
@@ -1002,7 +1001,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
-	EntityActor->SetActorReady(true);
+	EntityActor->SetActorReady(false);
 
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
