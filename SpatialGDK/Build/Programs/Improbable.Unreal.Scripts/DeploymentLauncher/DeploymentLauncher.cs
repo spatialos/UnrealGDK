@@ -349,7 +349,7 @@ namespace Improbable
             deployment.WorkerFlags.Add(new WorkerFlag
             {
                 Key = TARGET_DEPLOYMENT_READY_TAG,
-                Value = autoConnect.ToString(),
+                Value = autoConnect.ToString().ToLower(),
                 WorkerType = CoordinatorWorkerName
             });
             deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = deployment });
@@ -668,7 +668,7 @@ namespace Improbable
                         Console.WriteLine($"Unable to launch the deployment(s). Detail: '{e.Status.Detail}'");
                     }
 
-                    Console.WriteLine($"No further deployments will be started. Initiated startup for {simPlayerDeploymentId} out of the target {numSimDeployments} deployments.");
+                    Console.WriteLine($"No further deployments will be started. Initiated startup for {simPlayerDeploymentId - 1} out of the target {numSimDeployments} deployments.");
 
                     return operations;
                 }
