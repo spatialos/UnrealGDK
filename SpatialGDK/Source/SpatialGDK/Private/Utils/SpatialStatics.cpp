@@ -285,7 +285,22 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 	if (SpatialNetDriver == nullptr || !SpatialNetDriver->IsReady())
 	{
-		UE_LOG(LogSpatial, Error, TEXT("Called GetLayerName before NotifyBeginPlay has been called is invalid. Worker doesn't know its layer yet"));
+		if (USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
+		{
+			const FName& LayerHint = GameInstance->GetSpatialLayerHint();
+			if (LayerHint.IsValid())
+			{
+				UE_LOG(LogSpatial, Warning, TEXT("Returning from GetLayerName before NetDriver is ready, "
+					"will return layer hint from GameInstance. If layer hint doesn't confirm with the load balancing "
+					"strategy, this could mistmatch the actual layer assignement once the NetDriver becomes ready. "
+					"Layer hint: %s"), *LayerHint.ToString());
+				return LayerHint;
+			}
+		}
+
+		UE_LOG(LogSpatial, Error, TEXT("Called GetLayerName with multiserver enabled but both before NotifyBeginPlay "
+			"was called, and where no layer hint was provided. This is invalid as the server doesn't what its layer is, "
+			"or should be, yet."));
 		return NAME_None;
 	}
 
