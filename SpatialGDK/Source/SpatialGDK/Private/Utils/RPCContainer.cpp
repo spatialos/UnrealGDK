@@ -121,16 +121,20 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	for (auto& Params : RPCList)
 	{
 		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);
+		bool bUpperBreak = false;
 		switch (QueueProcessResult)
 		{
 		case ERPCQueueProcessResult::ContinueProcessing:
 			NumProcessedParams++;
 		case ERPCQueueProcessResult::StopProcessing:
+			bUpperBreak = true;
 			break;
 		case ERPCQueueProcessResult::DropEntireQueue:
 			RPCList.Empty();
 			return;
 		}
+
+		if(bUpperBreak) break;
 	}
 
 	RPCList.RemoveAt(0, NumProcessedParams);
