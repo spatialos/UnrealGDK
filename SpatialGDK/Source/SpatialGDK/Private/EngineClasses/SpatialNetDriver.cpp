@@ -1382,12 +1382,15 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 			// SpatialGDK - Creation of new entities should always be handled and therefore is checked prior to actor throttling.
 			// There is an EntityCreationRateLimit to prevent overloading Spatial with creation requests if the developer desires.
 			// Creation of a new entity occurs when the channel is currently nullptr or if the channel does not have bCreatedEntity set to true.
-			if (FinalCreationCount < MaxEntitiesToCreate && !Actor->GetTearOff() && (Channel == nullptr || Channel->bCreatingNewEntity))
+			if (!Actor->GetTearOff() && (Channel == nullptr || Channel->bCreatingNewEntity))
 			{
-				bIsRelevant = true;
-				FinalCreationCount++;
+				if (FinalCreationCount < MaxEntitiesToCreate)
+				{
+					bIsRelevant = true;
+					FinalCreationCount++;
+				}
 			}
-			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit and the final tick of TearOff actors.
+			// SpatialGDK - We will only replicate the highest priority actors up to the rate limit and the final tick of TearOff actors.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
 			// TearOff actors would normally replicate their final tick due to RecentlyRelevant, after which the channel is closed.
 			// With throttling we no longer always replicate when RecentlyRelevant is true, thus we ensure to always replicate a TearOff actor while it still has a channel.
