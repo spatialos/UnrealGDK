@@ -289,7 +289,7 @@ namespace Improbable
                 simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
                 {
                     Key = TARGET_DEPLOYMENT_READY_TAG,
-                    Value = autoConnect.ToString(),
+                    Value = autoConnect.ToString().ToLower(),
                     WorkerType = CoordinatorWorkerName
                 });
                 deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
