@@ -134,7 +134,10 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 			return;
 		}
 
-		if (QueueProcessResult == ERPCQueueProcessResult::StopProcessing) break;
+		if (QueueProcessResult == ERPCQueueProcessResult::StopProcessing)
+		{
+			break;
+		}
 	}
 
 	RPCList.RemoveAt(0, NumProcessedParams);
