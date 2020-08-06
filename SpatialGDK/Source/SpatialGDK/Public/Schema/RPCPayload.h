@@ -22,7 +22,7 @@ struct RPCPayload
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
 		, Trace(InTraceKey)
-	{ }
+	{}
 
 	RPCPayload(Schema_Object* RPCObject)
 	{

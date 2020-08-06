@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GenericPlatform/GenericPlatformAtomics.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
@@ -17,64 +18,20 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-// Below is a hacky function written for testing purposes, which must be removed
-
-void MyTraceCallback(void* UserData, const Trace_Item* Item)
+void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
-	switch (Item->item_type)
+	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
+	if (FPlatformAtomics::AtomicRead(&EventTracer->bEnabled))
 	{
-	case TRACE_ITEM_TYPE_EVENT:
-	{
-		const Trace_Event& Event = Item->item.event;
-
-		// temporary filtering for nicer UE_LOGs
-		if (Event.type == FString("network.receive_raw_message") ||
-			Event.type == FString("network.receive_udp_datagram") ||
-			Event.type == FString("network.send_raw_message") ||
-			Event.type == FString("network.send_udp_datagram") ||
-			Event.type == FString("worker.dequeue_op") ||
-			Event.type == FString("worker.enqueue_op"))
+		FScopeLock Lock(&EventTracer->StreamLock); // TODO: Remove this and figure out how to use EventTracer->Stream without race conditions
+		if (EventTracer->Stream)
 		{
-			return;
-		}
-
-		if (Event.data != nullptr)
-		{
-			uint32_t DataFieldCount = Trace_EventData_GetFieldCount(Event.data);
-
-			TArray<const char*> Keys;
-			Keys.SetNumUninitialized(DataFieldCount);
-			TArray<const char*> Values;
-			Values.SetNumUninitialized(DataFieldCount);
-
-			SpatialEventTracer::EventTracingData EventTracingData;
-			EventTracingData.Add(TEXT("EventType"), Event.type);
-
-			Trace_EventData_GetStringFields(Event.data, Keys.GetData(), Values.GetData());
-			for (uint32_t i = 0; i < DataFieldCount; ++i)
+			int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, Trace_GetSerializedItemSize(Item));
+			if (Code != 0)
 			{
-				EventTracingData.Add(Keys[i], Values[i]);
+				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
 			}
-
-			SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
-			EventTracer->WriteEventDataToJson(EventTracingData);
 		}
-
-		break;
-	}
-	//case TRACE_ITEM_TYPE_SPAN:
-	//{
-	//	const Trace_Span& Span = Item->item.span;
-	//	//UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %s"), *FString(Span.id.data));
-	//	unsigned long int span1 = *reinterpret_cast<const unsigned long int*>(&Span.id.data[0]);
-	//	unsigned long int span2 = *reinterpret_cast<const unsigned long int*>(&Span.id.data[8]);
-	//	UE_LOG(LogSpatialEventTracer, Warning, TEXT("Span: %ul%ul"), span1, span2);
-	//	break;
-	//}
-	default:
-	{
-		break;
-	}
 	}
 }
 
@@ -100,7 +57,7 @@ SpatialEventTracer::SpatialEventTracer()
 {
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.user_data = this;
-	parameters.callback = MyTraceCallback;
+	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
 }
@@ -114,34 +71,6 @@ SpatialEventTracer::~SpatialEventTracer()
 	{
 		Io_Stream_Destroy(Stream);
 	}
-}
-
-void SpatialEventTracer::WriteEventDataToJson(const EventTracingData& EventData)
-{
-	if (EventData.Num() == 0)
-	{
-		return;
-	}
-
-	TSharedRef<FJsonObject> TopJsonObject = MakeShared<FJsonObject>();
-	for (const auto& Pair : EventData)
-	{
-		TopJsonObject->SetStringField(Pair.Key, Pair.Value);
-	}
-
-	FString JsonString;
-	TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>> > JsonWriter = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&JsonString, 0);
-	bool bSuccess = FJsonSerializer::Serialize(TopJsonObject, JsonWriter);
-	JsonWriter->Close();
-
-	JsonString.Append("\n");
-
-	if (Stream == nullptr)
-	{
-		return;
-	}
-
-	Io_Stream_Write(Stream, (const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
 }
 
 Trace_SpanId SpatialEventTracer::CreateNewSpanId()
@@ -250,15 +179,17 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 
 void SpatialEventTracer::Enable(const FString& FileName)
 {
+	FScopeLock Lock(&StreamLock);
 	Trace_EventTracer_Enable(EventTracer);
-	bEnalbed = true;
+	FPlatformAtomics::AtomicStore(&bEnabled, 1);
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+
 	// Open a local file
 	FString FolderPath = FPaths::ProjectSavedDir() + TEXT("EventTracing\\");
 
 	FDateTime CurrentDateTime = FDateTime::Now();
-	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s_%s.json"), *FileName, *CurrentDateTime.ToString());
+	FString FilePath = FolderPath + FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *CurrentDateTime.ToString());
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
@@ -270,9 +201,10 @@ void SpatialEventTracer::Enable(const FString& FileName)
 
 void SpatialEventTracer::Disable()
 {
+	FScopeLock Lock(&StreamLock);
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 	Trace_EventTracer_Disable(EventTracer);
-	bEnalbed = false;
+	bEnabled = false;
 	Io_Stream_Destroy(Stream);
 	Stream = nullptr; 
 }
@@ -287,7 +219,8 @@ static TAutoConsoleVariable<int32> CVarGDKEventTracing(
 
 static void EventTracingSink()
 {
-	bool bIsEnabled = CVarGDKEventTracing.GetValueOnGameThread() != 0;
+	int Level = CVarGDKEventTracing.GetValueOnGameThread();
+	bool bIsEnabled = Level != 0;
 
 	const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
 	for (const FWorldContext& Context : WorldContexts)

@@ -325,6 +325,7 @@ namespace worker
 	namespace c
 	{
 		struct Io_Stream;
+		struct Trace_Item;
 	}
 }
 
@@ -339,8 +340,9 @@ namespace SpatialGDK
 // SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialConnectionManager.
 // Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure there are necessary nullptr checks if that changes.
 
-struct SpatialEventTracer
+class SpatialEventTracer
 {
+public:
 	SpatialEventTracer();
 	~SpatialEventTracer();
 	Trace_SpanId CreateNewSpanId();
@@ -348,7 +350,7 @@ struct SpatialEventTracer
 
 	void Enable(const FString& FileName);
 	void Disable();
-	bool IsEnabled() { return bEnalbed; }
+	bool IsEnabled() const { return !!bEnabled; }
 
 	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
@@ -367,12 +369,14 @@ struct SpatialEventTracer
 	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const worker::c::Trace_SpanId* Cause);
 
 	using EventTracingData = TMap<FString, FString>;
-
-	void WriteEventDataToJson(const EventTracingData& EventData);
-
 private:
-	bool bEnalbed{ false }; 
-	worker::c::Io_Stream* Stream{ nullptr };
+	static void TraceCallback(void* UserData, const Trace_Item* Item);
+	bool bRecordRuntimeAndWorkerEvents{ false };
+
+	FCriticalSection StreamLock;
+	int32 bEnabled{ 0 }; // int32 for atomics
+	worker::c::Io_Stream* Stream;
+
 	worker::c::Trace_EventTracer* EventTracer;
 };
 

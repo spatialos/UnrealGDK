@@ -281,8 +281,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
 
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);	// TODO: When enough of these are implemented this can move on to
-																				// the base FOutgoingMessage and this scope placed outside the switch
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
 
 			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
 				Message->EntityId,

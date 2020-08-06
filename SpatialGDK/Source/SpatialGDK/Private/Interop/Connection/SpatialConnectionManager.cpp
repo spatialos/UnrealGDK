@@ -147,7 +147,7 @@ void USpatialConnectionManager::DestroyConnection()
 		WorkerConnection = nullptr;
 	}
 
-	EventTracer.Reset();
+	EventTracer = nullptr;
 
 	bIsConnected = false;
 }

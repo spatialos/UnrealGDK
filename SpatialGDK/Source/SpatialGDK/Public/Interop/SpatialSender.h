@@ -31,7 +31,7 @@ class USpatialWorkerConnection;
 
 namespace SpatialGDK
 {
-struct SpatialEventTracer;
+class SpatialEventTracer;
 }
 
 struct FReliableRPCForRetry
