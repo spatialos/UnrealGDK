@@ -231,5 +231,4 @@ void SpatialEventTracer::Disable()
 	{
 		Io_Stream_Destroy(Stream);
 	}
-
 }
