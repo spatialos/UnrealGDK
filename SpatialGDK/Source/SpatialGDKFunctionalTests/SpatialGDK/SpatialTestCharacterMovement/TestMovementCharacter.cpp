@@ -1,12 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "TestMovementCharacter.h"
-#include "Engine/Classes/Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/Classes/Camera/CameraComponent.h"
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
-#include "Components/CapsuleComponent.h"
 
 ATestMovementCharacter::ATestMovementCharacter()
 {
@@ -21,7 +20,8 @@ ATestMovementCharacter::ATestMovementCharacter()
 
 	SphereComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereComponent"));
 	SphereComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")));
-	SphereComponent->SetMaterial(0, LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
+	SphereComponent->SetMaterial(
+		0, LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
 	SphereComponent->SetVisibility(true);
 	SphereComponent->SetupAttachment(GetCapsuleComponent());
 

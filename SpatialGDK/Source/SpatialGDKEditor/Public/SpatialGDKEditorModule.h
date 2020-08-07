@@ -14,21 +14,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorModule, Log, All);
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
 public:
-
 	FSpatialGDKEditorModule();
 
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	virtual bool SupportsDynamicReloading() override
-	{
-		return true;
-	}
+	virtual bool SupportsDynamicReloading() override { return true; }
 
-	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const
-	{
-		return SpatialGDKEditorInstance;
-	}
+	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const { return SpatialGDKEditorInstance; }
 
 private:
 	// Local deployment connection flow

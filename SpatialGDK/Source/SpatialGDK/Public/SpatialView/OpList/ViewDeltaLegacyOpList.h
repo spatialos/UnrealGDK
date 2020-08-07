@@ -2,14 +2,13 @@
 
 #pragma once
 
+#include "Containers/Array.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta.h"
-#include "Containers/Array.h"
 
 namespace SpatialGDK
 {
-
-struct ViewDeltaLegacyOpListData: OpListData
+struct ViewDeltaLegacyOpListData : OpListData
 {
 	TArray<Worker_Op> Ops;
 	// Used to store UTF8 disconnect string.
@@ -19,4 +18,4 @@ struct ViewDeltaLegacyOpListData: OpListData
 
 /** Creates an OpList from a ViewDelta. */
 OpList GetOpListFromViewDelta(ViewDelta Delta);
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

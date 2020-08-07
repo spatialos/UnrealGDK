@@ -7,7 +7,7 @@
 #include "CrossServerAndClientOrchestrationTest.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAndClientOrchestrationTest : public ASpatialFunctionalTest

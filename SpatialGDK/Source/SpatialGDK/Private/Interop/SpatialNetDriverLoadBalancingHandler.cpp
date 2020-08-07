@@ -5,11 +5,11 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
+FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver,
+																			 TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
 	: NetDriver(InNetDriver)
 	, NetworkObjects(InOutNetworkObjects)
 {
-
 }
 
 void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
@@ -92,7 +92,7 @@ void FSpatialNetDriverLoadBalancingContext::RemoveAdditionalActor(AActor* Actor)
 
 void FSpatialNetDriverLoadBalancingContext::AddActorToReplicate(AActor* Actor)
 {
-	if(FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
+	if (FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
 	{
 		AdditionalActorsToReplicate.Add(Info);
 	}
@@ -102,4 +102,3 @@ TArray<AActor*>& FSpatialNetDriverLoadBalancingContext::GetDependentActors(AActo
 {
 	return Actor->Children;
 }
-

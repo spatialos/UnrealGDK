@@ -77,7 +77,7 @@ struct FUnrealType
 {
 	UStruct* Type;
 	UObject* Object; // Actual instance of the object. Could be the CDO or a Subobject on the CDO/BlueprintGeneratedClass
-	FName Name; // Name for the object. This is either the name of the object itself, or the name of the property in the blueprint
+	FName Name;		 // Name for the object. This is either the name of the object itself, or the name of the property in the blueprint
 	TMultiMap<GDK_PROPERTY(Property)*, TSharedPtr<FUnrealProperty>> Properties;
 	TWeakPtr<FUnrealProperty> ParentProperty;
 };
@@ -85,14 +85,15 @@ struct FUnrealType
 // A node which represents a single property.
 struct FUnrealProperty
 {
-	GDK_PROPERTY(Property)* Property;
-	TSharedPtr<FUnrealType> Type; // Only set if strong reference to object/struct property.
-	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
+	GDK_PROPERTY(Property) * Property;
+	TSharedPtr<FUnrealType> Type;				  // Only set if strong reference to object/struct property.
+	TSharedPtr<FUnrealRepData> ReplicationData;	  // Only set if property is replicated.
 	TSharedPtr<FUnrealHandoverData> HandoverData; // Only set if property is marked for handover (and not replicated).
 	TWeakPtr<FUnrealType> ContainerType;
 
 	// These variables are used for unique variable checksum generation. We do this to accurately match properties at run-time.
-	// They are used in the function GenerateChecksum which will use all three variables and the UProperty itself to create a checksum for each FUnrealProperty.
+	// They are used in the function GenerateChecksum which will use all three variables and the UProperty itself to create a checksum for
+	// each FUnrealProperty.
 	int32 StaticArrayIndex;
 	uint32 CompatibleChecksum;
 	uint32 ParentChecksum;
@@ -125,20 +126,21 @@ TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups();
 // Convert a replicated property group to a string. Used to generate component names.
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group);
 
-// Given an AST, this applies the function 'Visitor' to all FUnrealType's contained transitively within the properties. bRecurseIntoObjects will control	
-// whether this function will recurse into a UObject's properties, which may not always be desirable. However, it will always recurse into substructs.	
-// If the Visitor function returns false, it will not recurse any further into that part of the tree.
+// Given an AST, this applies the function 'Visitor' to all FUnrealType's contained transitively within the properties. bRecurseIntoObjects
+// will control whether this function will recurse into a UObject's properties, which may not always be desirable. However, it will always
+// recurse into substructs. If the Visitor function returns false, it will not recurse any further into that part of the tree.
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor);
 
-// Given an AST, this applies the function 'Visitor' to all properties contained transitively within the type. This will recurse into substructs.
-// If the Visitor function returns false, it will not recurse any further into that part of the tree.
+// Given an AST, this applies the function 'Visitor' to all properties contained transitively within the type. This will recurse into
+// substructs. If the Visitor function returns false, it will not recurse any further into that part of the tree.
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor);
 
 // Generates a unique checksum for the Property that allows matching to Unreal's RepLayout Cmds.
-uint32 GenerateChecksum(GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, int32 StaticArrayIndex);
+uint32 GenerateChecksum(GDK_PROPERTY(Property) * Property, uint32 ParentChecksum, int32 StaticArrayIndex);
 
 // Creates a new FUnrealProperty for the included UProperty, generates a checksum for it and then adds it to the TypeNode included.
-TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, uint32 StaticArrayIndex);
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, GDK_PROPERTY(Property) * Property, uint32 ParentChecksum,
+												 uint32 StaticArrayIndex);
 
 // Generates an AST from an Unreal UStruct or UClass.
 TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksum, int32 StaticArrayIndex);
