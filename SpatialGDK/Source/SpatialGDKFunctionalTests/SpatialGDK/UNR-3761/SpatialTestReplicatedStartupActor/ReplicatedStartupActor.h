@@ -11,8 +11,8 @@ struct FTestStruct
 {
 	GENERATED_BODY()
 
-		UPROPERTY()
-		int Int;
+	UPROPERTY()
+	int Int;
 };
 
 /**

@@ -41,8 +41,6 @@ ASpatialTestReplicatedStartupActor::ASpatialTestReplicatedStartupActor()
 {
 	Author = "Andrei";
 	Description = TEXT("Test Replicated Startup Actor Reference And Property Replication");
-
-	bIsValidReference = false;
 }
 
 void ASpatialTestReplicatedStartupActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -67,6 +65,19 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 			if (ReplicatedStartupActors.Num() == 1)
 			{
 				ReplicatedStartupActor = Cast<AReplicatedStartupActor>(ReplicatedStartupActors[0]);
+
+				// Reset the variables to allow for relevant consecutive runs of the same test.
+				ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+				{
+					AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(FlowController->GetOwner());
+					PlayerController->ResetBoolean(this);
+				}
+				else
+				{
+					bIsValidReference = false;
+				}
+
 				FinishStep();
 			}
 		}, 5.0f);
@@ -91,12 +102,6 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 		{
 			if (bIsValidReference)
 			{
-				AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
-
-				// Reset the variables to allow for relevant consecutive runs of the same test.
-				PlayerController->ResetBoolean(this);
-				bIsValidReference = false;
-
 				FinishStep();
 			}
 		}, 5.0f);
