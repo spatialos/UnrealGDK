@@ -27,7 +27,5 @@ public:
 	// Helper rotator used to store the relative rotation of the camera so that it can see all cubes from every test location, used for visual debugging
 	FRotator CameraRelativeRotation;
 
-	TPair<AController*, APawn*> OriginalPawn;
-
 	float PreviousPositionUpdateFrequency;
 };

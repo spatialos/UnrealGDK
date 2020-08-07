@@ -97,7 +97,6 @@ void ASpatialTestNetReference::BeginPlay()
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-		OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
 
 		RegisterAutoDestroyActor(TestCharacter);
 		PlayerController->Possess(TestCharacter);
