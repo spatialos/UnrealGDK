@@ -327,6 +327,13 @@ public:
 	TOptional<bool> bOverrideMultiWorker;
 
 	/**
+	  * This is a hack to force no Actor server authority migration. If this is true, we can make the EntityACL component
+	  * authoritative on the simulating server. A side-effect of this is that deployments can NOT be reloaded from
+	  * snapshots.
+	  */
+	TOptional<bool> bDisableActorMigration;
+
+	/**
 	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
 	  */
 	UPROPERTY(Config)

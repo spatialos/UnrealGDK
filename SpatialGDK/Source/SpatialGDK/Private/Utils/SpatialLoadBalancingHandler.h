@@ -21,6 +21,11 @@ public:
 		check(NetDriver->LoadBalanceStrategy != nullptr);
 		check(NetDriver->LockingPolicy != nullptr);
 
+		if (GetDefault<USpatialGDKSettings>()->bDisableActorMigration)
+		{
+			return;
+		}
+
 		for (AActor* Actor : iCtx.GetActorsBeingReplicated())
 		{
 			AActor* NetOwner;
@@ -58,7 +63,7 @@ public:
 	void ProcessMigrations();
 
 protected:
-	
+
 	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
 
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;

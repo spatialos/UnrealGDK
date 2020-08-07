@@ -99,7 +99,16 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AnyServerRequirementSet);
+
+	const TOptional<bool>& DisableActorMigrationOption = GetDefault<USpatialGDKSettings>()->bDisableActorMigration;
+	const bool bActorMigrationDisabled = DisableActorMigrationOption.IsSet() && DisableActorMigrationOption.GetValue();
+	if (bActorMigrationDisabled)
+	{
+		UE_LOG(LogEntityFactory, Warning, TEXT("You have Actor migration disabled, ACL component will be assigned to simulating worker. "
+			"I hope this Scavengers, or that you know what you're doing."));
+	}
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, bActorMigrationDisabled ? AuthoritativeWorkerRequirementSet : AnyServerRequirementSet);
+
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
