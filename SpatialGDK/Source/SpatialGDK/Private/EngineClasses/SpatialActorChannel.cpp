@@ -1165,30 +1165,31 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 	
 	// Check that the Actor has satisfied both minimum thresholds OR either of the maximum thresholds
-	bool bSatisfiesMininumThresholds = false;
-	bool bSatisfiesMaximumThreshold = false;
+	bool bSatisifiedPositionUpdateRequirements = false;
 
 	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
+
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
 	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMinDistance);
+	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMaxDistance);
 
-	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->MinimumDistanceThreshold);
-
-	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->MinimumTimeThreshold && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMinSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
 	{
-		bSatisfiesMininumThresholds = true;
+		bSatisifiedPositionUpdateRequirements = true;
+	}
+	else if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMaxSeconds && DistanceTravelledSinceLastUpdateSquared > 0.0f)
+	{
+		bSatisifiedPositionUpdateRequirements = true;
+	}
+	else if (DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
+	{
+		bSatisifiedPositionUpdateRequirements = true;
 	}
 
-	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->MaximumDistanceThreshold);
-
-	if ((TimeSinceLastPositionUpdate >= SpatialGDKSettings->MaximumTimeThreshold  && DistanceTravelledSinceLastUpdateSquared > 0.0f )
-	|| DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
-	{
-		bSatisfiesMaximumThreshold = true;
-	}
-
-	if (!(bSatisfiesMininumThresholds || bSatisfiesMaximumThreshold))
+	if (!bSatisifiedPositionUpdateRequirements)
 	{
 		return;
 	}
