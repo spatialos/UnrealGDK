@@ -331,7 +331,7 @@ public:
 	  * authoritative on the simulating server. A side-effect of this is that deployments can NOT be reloaded from
 	  * snapshots.
 	  */
-	TOptional<bool> bDisableActorMigration;
+	bool bDisableActorMigration;
 
 	/**
 	  * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.

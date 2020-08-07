@@ -110,6 +110,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
 	, bEnableMultiWorkerDebuggingWarnings(false)
+	, bDisableActorMigration(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -118,11 +119,10 @@ void USpatialGDKSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	// Check any command line overrides for using QBI, Offloading (after reading the config value):
+	// Check any command line overrides for using QBI, Offloading (after reading the config value):1
 	const TCHAR* CommandLine = FCommandLine::Get();
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("OverrideMultiWorker"), TEXT("Multi-Worker"), bOverrideMultiWorker);
-	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("DisableActorMigration"), TEXT("Multi-Worker"), bDisableActorMigration);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableMultiWorkerDebuggingWarnings"), TEXT("Multi-Worker Debugging Warnings"), bEnableMultiWorkerDebuggingWarnings);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
@@ -132,6 +132,14 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"), TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"), TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+
+	// Hack for UNR-4024
+	CheckCmdLineOverrideBool(CommandLine, TEXT("DisableActorMigration"), TEXT("Disabled Actor migration"), bDisableActorMigration);
+	if (bDisableActorMigration)
+	{
+		UE_LOG(LogSpatialGDKSettings, Warning, TEXT("You have Actor migration disabled, ACL component will be assigned to simulating worker. "
+						"I hope this Scavengers, or that you know what you're doing."));
+	}
 }
 
 #if WITH_EDITOR
