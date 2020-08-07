@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `-nocompile` flag that was previously used with `BuildWorker.bat` to skip building the game binaries and automation scripts, is now split into `-nobuild` to skip building the game binaries and `-nocompile` to skip compiling the automation scripts.
 - The simulated player worker configuration has been updated. Instead of using `connect.to.spatialos` to indicate that you want to connect to a cloud deployment, we now use `127.0.0.1` to ensure that address resolution upon initializing the connection passes. The passed IP address won't be used when actually connecting to a cloud deployment.
 
+### New known issues:
+- The "Use RPC Ring Buffers" setting in the SpatialOS GDK for Unreal - Runtime Settings section is required when using multi-worker configurations, but this is not currently enforced.
+
 ### Features:
 - You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
 - Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
