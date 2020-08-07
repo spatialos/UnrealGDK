@@ -17,9 +17,9 @@
  * The test includes a single server and two client workers.
  * The flow is as follows:
  *  - Setup:
- *	  - On cube actor already placed in the level
- *    - Two test pawn actors are spawned, one for each client
- *    - The controllers for each client  possess the spawned test pawn actors
+ *	  - On cube actor already placed in the level Location FVector(0.0f, 0.0f, 50.0f)
+ *    - Two test character pawns are spawned, one for each client
+ *    - The controllers for each client  possess the spawned test character pawns
  *  - Test:
  *    - Server moves one Client to a remote position where Client can not see the HiddenActor(Cube) .
  *	  - Check if the Clients can see the HiddenActor(Cube).
@@ -113,7 +113,7 @@ void AVisibilityTest::BeginPlay()
 		});
 	}
 
-	{	// Step 2 - Check if the Character pawn is properly set in clients
+	{	// Step 2 - Check if the Character pawn is properly set in all clients
 		AddStep(TEXT("ClientCheckPossesionFinished"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
