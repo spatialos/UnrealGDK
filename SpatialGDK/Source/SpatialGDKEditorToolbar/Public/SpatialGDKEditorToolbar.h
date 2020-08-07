@@ -40,15 +40,9 @@ public:
 
 	/** FTickableEditorObject interface */
 	void Tick(float DeltaTime) override;
-	bool IsTickable() const override
-	{
-		return true;
-	}
+	bool IsTickable() const override { return true; }
 
-	TStatId GetStatId() const override
-	{
-		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
-	}
+	TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables); }
 
 	void OnShowSingleFailureNotification(const FString& NotificationText);
 	void OnShowSuccessNotification(const FString& NotificationText);
@@ -143,7 +137,8 @@ private:
 	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
 	using IsEnabledFunc = bool();
-	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted, IsEnabledFunc IsEnabled);
+	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted,
+													   IsEnabledFunc IsEnabled);
 
 	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
@@ -180,7 +175,7 @@ private:
 
 	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKCloudDeploymentConfiguration> CloudDeploymentConfigPtr;
-	
+
 	FLocalDeploymentManager* LocalDeploymentManager;
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 

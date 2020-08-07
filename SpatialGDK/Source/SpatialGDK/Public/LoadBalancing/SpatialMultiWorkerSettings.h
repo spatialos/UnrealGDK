@@ -26,11 +26,13 @@ public:
 protected:
 	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy)
 		: WorkerLayers(InWorkerLayers)
-		, LockingPolicy(InLockingPolicy) {}
+		, LockingPolicy(InLockingPolicy)
+	{
+	}
 
 public:
 #if WITH_EDITOR
-    virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
 	uint32 GetMinimumRequiredWorkerCount() const;
@@ -65,6 +67,7 @@ class SPATIALGDK_API USpatialMultiWorkerSettings : public UAbstractSpatialMultiW
 
 public:
 	USpatialMultiWorkerSettings()
-		: Super({ UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo()}, UOwnershipLockingPolicy::StaticClass())
-	{}
+		: Super({ UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo() }, UOwnershipLockingPolicy::StaticClass())
+	{
+	}
 };

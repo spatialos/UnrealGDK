@@ -2,13 +2,16 @@
 
 #include "SpatialFunctionalTestStep.h"
 
-const FWorkerDefinition FWorkerDefinition::AllWorkers = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::All, FWorkerDefinition::ALL_WORKERS_ID };
-const FWorkerDefinition FWorkerDefinition::AllServers = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, FWorkerDefinition::ALL_WORKERS_ID };
-const FWorkerDefinition FWorkerDefinition::AllClients = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client, FWorkerDefinition::ALL_WORKERS_ID };
+const FWorkerDefinition FWorkerDefinition::AllWorkers =
+	FWorkerDefinition{ ESpatialFunctionalTestWorkerType::All, FWorkerDefinition::ALL_WORKERS_ID };
+const FWorkerDefinition FWorkerDefinition::AllServers =
+	FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, FWorkerDefinition::ALL_WORKERS_ID };
+const FWorkerDefinition FWorkerDefinition::AllClients =
+	FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client, FWorkerDefinition::ALL_WORKERS_ID };
 
 FWorkerDefinition FWorkerDefinition::Server(int ServerId)
 {
-	return FWorkerDefinition{ESpatialFunctionalTestWorkerType::Server, ServerId};
+	return FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, ServerId };
 }
 
 FWorkerDefinition FWorkerDefinition::Client(int ClientId)
@@ -68,7 +71,7 @@ void SpatialFunctionalTestStep::Tick(float DeltaTime)
 			}
 		}
 	}
-	
+
 	if (bIsReady)
 	{
 		if (StepDefinition.bIsNativeDefinition)

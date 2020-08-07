@@ -6,8 +6,8 @@
 #include "Containers/UnrealString.h"
 #include "HAL/Platform.h"
 #include "Misc/Optional.h"
-#include "Templates/UnrealTemplate.h"
 #include "Templates/UniquePtr.h"
+#include "Templates/UnrealTemplate.h"
 #include "UObject/NameTypes.h"
 #include "Utils/SpatialLatencyTracer.h"
 
@@ -17,7 +17,6 @@
 
 namespace SpatialGDK
 {
-
 enum class EOutgoingMessageType : int32
 {
 	ReserveEntityIdsRequest,
@@ -37,7 +36,10 @@ enum class EOutgoingMessageType : int32
 
 struct FOutgoingMessage
 {
-	FOutgoingMessage(const EOutgoingMessageType& InType) : Type(InType) {}
+	FOutgoingMessage(const EOutgoingMessageType& InType)
+		: Type(InType)
+	{
+	}
 	virtual ~FOutgoingMessage() {}
 
 	EOutgoingMessageType Type;
@@ -48,7 +50,8 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 	FReserveEntityIdsRequest(uint32_t InNumOfEntities)
 		: FOutgoingMessage(EOutgoingMessageType::ReserveEntityIdsRequest)
 		, NumOfEntities(InNumOfEntities)
-	{}
+	{
+	}
 
 	uint32_t NumOfEntities;
 };
@@ -59,7 +62,8 @@ struct FCreateEntityRequest : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
-	{}
+	{
+	}
 
 	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
@@ -70,7 +74,8 @@ struct FDeleteEntityRequest : FOutgoingMessage
 	FDeleteEntityRequest(Worker_EntityId InEntityId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 };
@@ -81,7 +86,8 @@ struct FAddComponent : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentData Data;
@@ -93,7 +99,8 @@ struct FRemoveComponent : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
@@ -105,7 +112,8 @@ struct FComponentUpdate : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentUpdate Update;
@@ -118,7 +126,8 @@ struct FCommandRequest : FOutgoingMessage
 		, EntityId(InEntityId)
 		, Request(InRequest)
 		, CommandId(InCommandId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	Worker_CommandRequest Request;
@@ -131,7 +140,8 @@ struct FCommandResponse : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::CommandResponse)
 		, RequestId(InRequestId)
 		, Response(InResponse)
-	{}
+	{
+	}
 
 	Worker_RequestId RequestId;
 	Worker_CommandResponse Response;
@@ -143,7 +153,8 @@ struct FCommandFailure : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::CommandFailure)
 		, RequestId(InRequestId)
 		, Message(InMessage)
-	{}
+	{
+	}
 
 	Worker_RequestId RequestId;
 	FString Message;
@@ -156,7 +167,8 @@ struct FLogMessage : FOutgoingMessage
 		, Level(InLevel)
 		, LoggerName(InLoggerName)
 		, Message(InMessage)
-	{}
+	{
+	}
 
 	uint8_t Level;
 	FName LoggerName;
@@ -169,7 +181,8 @@ struct FComponentInterest : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
 		, Interests(MoveTemp(InInterests))
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	TArray<Worker_InterestOverride> Interests;
@@ -184,7 +197,8 @@ struct FEntityQueryRequest : FOutgoingMessage
 		if (EntityQuery.snapshot_result_type_component_ids != nullptr)
 		{
 			ComponentIdStorage.SetNum(EntityQuery.snapshot_result_type_component_id_count);
-			FMemory::Memcpy(static_cast<void*>(ComponentIdStorage.GetData()), static_cast<const void*>(EntityQuery.snapshot_result_type_component_ids), ComponentIdStorage.Num());
+			FMemory::Memcpy(static_cast<void*>(ComponentIdStorage.GetData()),
+							static_cast<const void*>(EntityQuery.snapshot_result_type_component_ids), ComponentIdStorage.Num());
 		}
 
 		TraverseConstraint(&EntityQuery.constraint);
@@ -244,9 +258,10 @@ struct FMetrics : FOutgoingMessage
 	FMetrics(SpatialMetrics InMetrics)
 		: FOutgoingMessage(EOutgoingMessageType::Metrics)
 		, Metrics(MoveTemp(InMetrics))
-	{}
+	{
+	}
 
 	SpatialMetrics Metrics;
 };
 
-}
+} // namespace SpatialGDK

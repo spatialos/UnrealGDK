@@ -21,9 +21,9 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Default")
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	int WorkerId = 0;
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Default")
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	bool bIsPersistent = false;
 };

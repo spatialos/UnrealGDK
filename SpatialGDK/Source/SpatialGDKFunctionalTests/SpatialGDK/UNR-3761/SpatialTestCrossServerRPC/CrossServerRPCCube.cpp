@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "CrossServerRPCCube.h"
 #include "Net/UnrealNetwork.h"
 
