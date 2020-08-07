@@ -15,9 +15,7 @@ class SPATIALGDK_API USpatialReplicationGraph : public UReplicationGraph
 	GENERATED_BODY()
 
 public:
-
 	//~ Begin UReplicationGraph Interface
 	virtual UActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject) override;
 	//~ End UReplicationGraph Interface
-
 };

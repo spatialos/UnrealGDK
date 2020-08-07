@@ -7,10 +7,10 @@
 
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -47,7 +47,8 @@ DECLARE_CYCLE_STAT(TEXT("Sender UpdateInterestComponent"), STAT_SpatialSenderUpd
 DECLARE_CYCLE_STAT(TEXT("Sender FlushRetryRPCs"), STAT_SpatialSenderFlushRetryRPCs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
-FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
+FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
+										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
@@ -106,8 +107,9 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
-				*ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
+			UE_LOG(LogSpatialSender, Error,
+				   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
+				   *ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
 		}
 	}
 
@@ -117,23 +119,27 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 void USpatialSender::PeriodicallyProcessOutgoingRPCs()
 {
 	FTimerHandle Timer;
-	TimerManager->SetTimer(Timer, [WeakThis = TWeakObjectPtr<USpatialSender>(this)]()
-	{
-		if (USpatialSender* SpatialSender = WeakThis.Get())
-		{
-			SpatialSender->OutgoingRPCs.ProcessRPCs();
-		}
-	}, GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
+	TimerManager->SetTimer(
+		Timer,
+		[WeakThis = TWeakObjectPtr<USpatialSender>(this)]() {
+			if (USpatialSender* SpatialSender = WeakThis.Get())
+			{
+				SpatialSender->OutgoingRPCs.ProcessRPCs();
+			}
+		},
+		GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
 }
 
-void USpatialSender::SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)
+void USpatialSender::SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
+												  uint32& OutBytesWritten)
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
-	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
+	TArray<FWorkerComponentData> SubobjectDatas =
+		DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
 	SendAddComponents(Channel->GetEntityId(), SubobjectDatas);
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
@@ -169,17 +175,15 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
 	TArray<Worker_ComponentId> NewComponentIds;
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			// For each valid ComponentId, we need to wait for its authority delegation before
 			// adding the subobject.
 			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
-			Receiver->PendingEntitySubobjectDelegations.Add(
-				MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId),
-				PendingSubobjectAttachment);
+			Receiver->PendingEntitySubobjectDelegations.Add(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId),
+															PendingSubobjectAttachment);
 
 			NewComponentIds.Add(ComponentId);
 		}
@@ -264,59 +268,60 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 	check(NetDriver != nullptr);
-	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
-	// to set the interest of the server worker according to the strategy.
+	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in
+	// order to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
-	{
-		if (!WeakSender.IsValid())
-		{
-			return;
-		}
-		USpatialSender* Sender = WeakSender.Get();
-
-		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-		{
-			Sender->NetDriver->WorkerEntityId = Op.entity_id;
-			return;
-		}
-
-		// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
-		// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			return;
-		}
-
-		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
-		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""),
-				UTF8_TO_TCHAR(Op.message));
-			return;
-		}
-
-		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
-			return;
-		}
-
-		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
-		FTimerHandle RetryTimer;
-		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, EntityId, AttemptCounter]()
-		{
-			if (USpatialSender* SpatialSender = WeakSender.Get())
+	OnCreateWorkerEntityResponse.BindLambda(
+		[WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op) {
+			if (!WeakSender.IsValid())
 			{
-				SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
+				return;
 			}
-		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
-	});
+			USpatialSender* Sender = WeakSender.Get();
+
+			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+			{
+				Sender->NetDriver->WorkerEntityId = Op.entity_id;
+				return;
+			}
+
+			// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
+			// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				return;
+			}
+
+			if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
+			{
+				UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
+				return;
+			}
+
+			if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+			{
+				UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
+					   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
+				return;
+			}
+
+			UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
+			FTimerHandle RetryTimer;
+			Sender->TimerManager->SetTimer(
+				RetryTimer,
+				[WeakSender, EntityId, AttemptCounter]() {
+					if (USpatialSender* SpatialSender = WeakSender.Get())
+					{
+						SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
+					}
+				},
+				SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
+		});
 
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
@@ -351,12 +356,8 @@ TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArra
 	Copy.Reserve(EntityComponents.Num());
 	for (const FWorkerComponentData& Component : EntityComponents)
 	{
-		Copy.Emplace(Worker_ComponentData{
-			Component.reserved,
-			Component.component_id,
-			Schema_CopyComponentData(Component.schema_type),
-			nullptr
-		});
+		Copy.Emplace(
+			Worker_ComponentData{ Component.reserved, Component.component_id, Schema_CopyComponentData(Component.schema_type), nullptr });
 	}
 
 	return Copy;
@@ -368,23 +369,29 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 
 	CreateEntityDelegate Delegate;
 
-	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName), Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable
-	{
+	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName),
+						 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
 		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
-			UE_LOG(LogSpatialSender, Log, TEXT("Created entity. "
-				"Entity name: %s, entity id: %lld"), *Name, EntityId);
+			UE_LOG(LogSpatialSender, Log,
+				   TEXT("Created entity. "
+						"Entity name: %s, entity id: %lld"),
+				   *Name, EntityId);
 			DeleteEntityComponentData(Components);
 			break;
 		case WORKER_STATUS_CODE_TIMEOUT:
-			UE_LOG(LogSpatialSender, Log, TEXT("Timed out creating entity. Retrying. "
-				"Entity name: %s, entity id: %lld"), *Name, EntityId);
+			UE_LOG(LogSpatialSender, Log,
+				   TEXT("Timed out creating entity. Retrying. "
+						"Entity name: %s, entity id: %lld"),
+				   *Name, EntityId);
 			CreateEntityWithRetries(EntityId, MoveTemp(Name), MoveTemp(Components));
 			break;
 		default:
-			UE_LOG(LogSpatialSender, Log, TEXT("Failed to create entity. It might already be created. Not retrying. "
-				"Entity name: %s, entity id: %lld"), *Name, EntityId);
+			UE_LOG(LogSpatialSender, Log,
+				   TEXT("Failed to create entity. It might already be created. Not retrying. "
+						"Entity name: %s, entity id: %lld"),
+				   *Name, EntityId);
 			DeleteEntityComponentData(Components);
 			break;
 		}
@@ -404,7 +411,8 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 	}
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
-	FWorkerComponentUpdate InterestUpdate = NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
+	FWorkerComponentUpdate InterestUpdate =
+		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
 	if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady())
@@ -414,7 +422,9 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 	}
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten)
+void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel,
+										  const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges,
+										  uint32& OutBytesWritten)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -424,18 +434,23 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
-	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
+	TArray<FWorkerComponentUpdate> ComponentUpdates =
+		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
-	for(int i = 0; i < ComponentUpdates.Num(); i++)
+	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
-			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			UE_LOG(LogSpatialSender, Verbose,
+				   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
+						"Component Id: %d, entity: %lld"),
+				   Update.component_id, EntityId);
 
 			// This is a temporary fix. A task to improve this has been created: UNR-955
-			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
-			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
+			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the
+			// update, to send upon receiving authority. Note: This will break in a multi-worker context, if we try to create an entity that
+			// we don't intend to have authority over. For this reason, this fix is only temporary.
 			TArray<FWorkerComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
 			UpdatesQueuedUntilAuthority.Add(Update);
 			continue;
@@ -485,20 +500,23 @@ void USpatialSender::FlushRPCService()
 	}
 }
 
-RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, void* Params)
+RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
+													  void* Params)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
 #if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
+					  USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
 #else
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 #endif
 }
 
-void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent)
+void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent,
+													   const Worker_ComponentId NewComponent)
 {
 	if (OldComponent != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -543,7 +561,8 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #if !UE_BUILD_SHIPPING
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Verbose,
+			   TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return;
 	}
 #endif
@@ -569,8 +588,9 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	}
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
-	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority intent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
-		*NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("(%s) Sending authority intent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
+		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
 	// If the SpatialDebugger is enabled, also update the authority intent virtual worker ID and color.
 	if (NetDriver->SpatialDebugger != nullptr)
@@ -608,14 +628,15 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet } );
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
 			continue;
 		}
 
 		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"), *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"),
+		   *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
 
 	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
 	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
@@ -676,7 +697,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	return SendLegacyRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
 }
 
-void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+											 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	check(NetDriver->IsServer());
 
@@ -688,7 +710,8 @@ void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* F
 #endif // !UE_BUILD_SHIPPING
 }
 
-void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+										USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
@@ -698,25 +721,28 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+	Worker_RequestId RequestId =
+		Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
-			EntityId, CommandRequest.component_id, *Function->GetName());
-		Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
+			   EntityId, CommandRequest.component_id, *Function->GetName());
+		Receiver->AddPendingReliableRPC(
+			RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
 	}
 	else
 	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
-			EntityId, CommandRequest.component_id, *Function->GetName());
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"), EntityId,
+			   CommandRequest.component_id, *Function->GetName());
 	}
 #if !UE_BUILD_SHIPPING
 	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 }
 
-FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload,
+											USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
@@ -758,7 +784,8 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 }
 
-bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity);
@@ -778,28 +805,35 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 	switch (Result)
 	{
 	case EPushRPCResult::QueueOverflowed:
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, function: %s"),
-			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialSender, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, "
+					"function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::DropOverflowed:
-		UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
+		UE_LOG(
+			LogSpatialSender, Log,
+			TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
 			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::HasAckAuthority:
 		UE_LOG(LogSpatialSender, Warning,
-			TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"),
-			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			   TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be "
+					"sent. Actor: %s, entity: %lld, function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::NoRingBufferAuthority:
 		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
 		UE_LOG(LogSpatialSender, Log,
-			TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"),
-			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			   TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer "
+					"component. Actor: %s, entity: %lld, function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::EntityBeingCreated:
 		UE_LOG(LogSpatialSender, Log,
-			TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be queued. Actor: %s, entity: %lld, function: %s"),
-			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			   TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be "
+					"queued. Actor: %s, entity: %lld, function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return false;
 	default:
 		return true;
@@ -824,7 +858,9 @@ void USpatialSender::FlushRetryRPCs()
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderFlushRetryRPCs);
 
 	// Retried RPCs are sorted by their index.
-	RetryRPCs.Sort([](const TSharedRef<FReliableRPCForRetry>& A, const TSharedRef<FReliableRPCForRetry>& B) { return A->RetryIndex < B->RetryIndex; });
+	RetryRPCs.Sort([](const TSharedRef<FReliableRPCForRetry>& A, const TSharedRef<FReliableRPCForRetry>& B) {
+		return A->RetryIndex < B->RetryIndex;
+	});
 	for (auto& RetryRPC : RetryRPCs)
 	{
 		RetryReliableRPC(RetryRPC);
@@ -844,17 +880,19 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Actor %s got unresolved (?) before RPC %s could be retried. This RPC will not be sent."), *TargetObject->GetName(), *RetryRPC->Function->GetName());
+		UE_LOG(LogSpatialSender, Warning, TEXT("Actor %s got unresolved (?) before RPC %s could be retried. This RPC will not be sent."),
+			   *TargetObject->GetName(), *RetryRPC->Function->GetName());
 		return;
 	}
 
 	Worker_CommandRequest CommandRequest = CreateRetryRPCCommandRequest(*RetryRPC, TargetObjectRef.Offset);
-	Worker_RequestId RequestId = Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+	Worker_RequestId RequestId =
+		Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 	// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 	RetryRPC->Attempts++;
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
-		TargetObjectRef.Entity, RetryRPC->ComponentId, *RetryRPC->Function->GetName(), RetryRPC->Attempts);
+		   TargetObjectRef.Entity, RetryRPC->ComponentId, *RetryRPC->Function->GetName(), RetryRPC->Attempts);
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
 }
 
@@ -878,7 +916,8 @@ void USpatialSender::ProcessPositionUpdates()
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"),
+		   *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
 
 	Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
 
@@ -944,7 +983,9 @@ FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction*
 	return PayloadWriter;
 }
 
-Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId)
+Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload,
+															  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
+															  Worker_EntityId& OutEntityId)
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
@@ -957,7 +998,8 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 
 	OutEntityId = TargetObjectRef.Entity;
 
-	RPCPayload::WriteToSchemaObject(RequestObject, TargetObjectRef.Offset, CommandIndex, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
+	RPCPayload::WriteToSchemaObject(RequestObject, TargetObjectRef.Offset, CommandIndex, Payload.PayloadData.GetData(),
+									Payload.PayloadData.Num());
 
 	return CommandRequest;
 }
@@ -975,7 +1017,8 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
+FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload,
+															Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -1026,7 +1069,8 @@ void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityI
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), OwningClientOnly);
+	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()),
+									 OwningClientOnly);
 	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
@@ -1044,7 +1088,8 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 		return;
 	}
 
-	FWorkerComponentUpdate Update = NetDriver->InterestFactory->CreateInterestUpdate(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
+	FWorkerComponentUpdate Update =
+		NetDriver->InterestFactory->CreateInterestUpdate(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
@@ -1070,7 +1115,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
 		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 
-		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"), *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
+		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
+			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }
@@ -1090,8 +1136,10 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 
-	UE_LOG(LogSpatialSender, Log, TEXT("Creating tombstone entity for actor. "
-		"Actor: %s. Entity ID: %d."), *Actor->GetName(), EntityId);
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("Creating tombstone entity for actor. "
+				"Actor: %s. Entity ID: %d."),
+		   *Actor->GetName(), EntityId);
 
 #if WITH_EDITOR
 	NetDriver->TrackTombstone(EntityId);

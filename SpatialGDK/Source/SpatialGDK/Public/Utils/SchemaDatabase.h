@@ -80,8 +80,10 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 	GENERATED_BODY()
 
 public:
-
-	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
+	USchemaDatabase()
+		: NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+	{
+	}
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FActorSchemaData> ActorClassPathToSchema;
@@ -120,4 +122,3 @@ public:
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaDescriptorHash;
 };
-

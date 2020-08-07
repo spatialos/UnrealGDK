@@ -36,8 +36,13 @@ class SpatialLoadBalanceEnforcer;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
-		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)) {}
+	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId,
+							   TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
+		: EntityId(InEntityId)
+		, ComponentId(InComponentId)
+		, Data(MoveTemp(InData))
+	{
+	}
 
 	// We define equality to cover just entity and component IDs since duplicated AddComponent ops
 	// will be moved into unique pointers and we cannot equate the underlying Worker_ComponentData.
@@ -71,7 +76,8 @@ public:
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
-	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling SpatialRPCService::ExtractRPCsForEntity.
+	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
+	// SpatialRPCService::ExtractRPCsForEntity.
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
 	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
@@ -113,8 +119,10 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
-	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData, SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
-	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData, SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
+	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
+								SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
+	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
+						SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
 
 	USpatialActorChannel* GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
@@ -125,16 +133,20 @@ private:
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
-	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId);
+	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op,
+							  const Worker_ComponentId RPCEndpointComponentId);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel,
+										   const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 
-	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data);
+	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+									  TUniquePtr<SpatialGDK::DynamicComponent> Data);
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel,
+							  bool bIsHandover);
 
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
 
@@ -146,7 +158,9 @@ private:
 
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
-	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property)*>& RepNotifies, bool& bOutSomeObjectsWereMapped);
+	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
+								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
+								 int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies, bool& bOutSomeObjectsWereMapped);
 
 	void ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
