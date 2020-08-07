@@ -119,7 +119,7 @@ void USpatialGDKSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	// Check any command line overrides for using QBI, Offloading (after reading the config value):1
+	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("OverrideMultiWorker"), TEXT("Multi-Worker"), bOverrideMultiWorker);
