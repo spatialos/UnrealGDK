@@ -2,13 +2,12 @@
 
 #include "CoreMinimal.h"
 
-#include "Tests/TestDefinitions.h"
-#include "Tests/AutomationCommon.h"
 #include "Schema/UnrealObjectRef.h"
+#include "Tests/AutomationCommon.h"
+#include "Tests/TestDefinitions.h"
 #include "UObject/SoftObjectPtr.h"
 
-#define UNREALOBJECTREF_TEST(TestName) \
-	GDK_TEST(Core, FUnrealObjectRef, TestName)
+#define UNREALOBJECTREF_TEST(TestName) GDK_TEST(Core, FUnrealObjectRef, TestName)
 
 UNREALOBJECTREF_TEST(GIVEN_a_softpointer_WHEN_making_an_object_ref_from_it_THEN_we_can_recover_it)
 {
@@ -29,4 +28,5 @@ UNREALOBJECTREF_TEST(GIVEN_a_softpointer_WHEN_making_an_object_ref_from_it_THEN_
 	return true;
 }
 
-// TODO : [UNR-2691] Add tests involving the PackageMapClient, with entity Id and actual assets to generate the path to/from (needs a NetDriver right now).
+// TODO : [UNR-2691] Add tests involving the PackageMapClient, with entity Id and actual assets to generate the path to/from (needs a
+// NetDriver right now).

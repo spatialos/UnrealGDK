@@ -4,8 +4,8 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialView/ViewCoordinator.h"
 #include "SpatialView/OpList/OpList.h"
+#include "SpatialView/ViewCoordinator.h"
 
 #include "SpatialViewWorkerConnection.generated.h"
 
@@ -43,6 +43,7 @@ public:
 	virtual void ProcessOutgoingMessages() override;
 	virtual void MaybeFlush() override;
 	virtual void Flush() override;
+
 private:
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
 };

@@ -9,7 +9,6 @@
 
 namespace SpatialGDK
 {
-
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
 {
 public:
@@ -35,4 +34,4 @@ private:
 	SpatialEventTracer* EventTracer; // TODO: Figure out ownership constraints 
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

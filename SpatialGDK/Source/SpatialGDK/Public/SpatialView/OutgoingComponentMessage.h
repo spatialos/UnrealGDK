@@ -9,31 +9,51 @@
 
 namespace SpatialGDK
 {
-
 // Represents one of a component addition, update, or removal.
-// Internally schema data is stored using raw pointers. However the interface exclusively uses explicitly owning objects to denote ownership.
+// Internally schema data is stored using raw pointers. However the interface exclusively uses explicitly owning objects to denote
+// ownership.
 class OutgoingComponentMessage
 {
 public:
-	enum MessageType {NONE, ADD, UPDATE, REMOVE};
+	enum MessageType
+	{
+		NONE,
+		ADD,
+		UPDATE,
+		REMOVE
+	};
 
 	explicit OutgoingComponentMessage()
-		: EntityId(0), ComponentId(0), SpanId(), Type(NONE)
+		: EntityId(0)
+		, ComponentId(0)
+		, SpanId()
+		, Type(NONE)
 	{
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const TOptional<worker::c::Trace_SpanId>& SpanId)
-		: EntityId(EntityId), ComponentId(ComponentAdded.GetComponentId()), SpanId(SpanId), ComponentAdded(MoveTemp(ComponentAdded).Release()), Type(ADD)
+		: EntityId(EntityId)
+		, ComponentId(ComponentAdded.GetComponentId())
+		, SpanId(SpanId)
+		, ComponentAdded(MoveTemp(ComponentAdded).Release())
+		, Type(ADD)
 	{
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated, const TOptional<worker::c::Trace_SpanId>& SpanId)
-		: EntityId(EntityId), ComponentId(ComponentUpdated.GetComponentId()), SpanId(SpanId), ComponentUpdated(MoveTemp(ComponentUpdated).Release()), Type(UPDATE)
+		: EntityId(EntityId)
+		, ComponentId(ComponentUpdated.GetComponentId())
+		, SpanId(SpanId)
+		, ComponentUpdated(MoveTemp(ComponentUpdated).Release())
+		, Type(UPDATE)
 	{
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
-		: EntityId(EntityId), ComponentId(RemovedComponentId), SpanId(SpanId), Type(REMOVE)
+		: EntityId(EntityId)
+		, ComponentId(RemovedComponentId)
+		, SpanId(SpanId)
+		, Type(REMOVE)
 	{
 	}
 
@@ -48,7 +68,10 @@ public:
 	OutgoingComponentMessage& operator=(const OutgoingComponentMessage& Other) = delete;
 
 	OutgoingComponentMessage(OutgoingComponentMessage&& Other) noexcept
-		: EntityId(Other.EntityId), ComponentId(Other.ComponentId), SpanId(Other.SpanId), Type(Other.Type)
+		: EntityId(Other.EntityId)
+		, ComponentId(Other.ComponentId)
+		, SpanId(Other.SpanId)
+		, Type(Other.Type)
 	{
 		switch (Other.Type)
 		{
@@ -68,8 +91,8 @@ public:
 		Other.Type = NONE;
 	}
 
-	OutgoingComponentMessage& operator=(OutgoingComponentMessage&& Other) noexcept {
-
+	OutgoingComponentMessage& operator=(OutgoingComponentMessage&& Other) noexcept
+	{
 		EntityId = Other.EntityId;
 		ComponentId = Other.ComponentId;
 		SpanId = Other.SpanId;
@@ -97,10 +120,7 @@ public:
 		return *this;
 	}
 
-	MessageType GetType() const
-	{
-		return Type;
-	}
+	MessageType GetType() const { return Type; }
 
 	ComponentData ReleaseComponentAdded() &&
 	{
@@ -150,4 +170,4 @@ private:
 	MessageType Type;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

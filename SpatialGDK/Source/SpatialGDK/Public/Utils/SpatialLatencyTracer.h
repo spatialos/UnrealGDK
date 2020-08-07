@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 
-#include "SpatialConstants.h"
 #include "Containers/Map.h"
 #include "Containers/StaticArray.h"
+#include "SpatialConstants.h"
 #include "SpatialLatencyPayload.h"
 #include "Utils/GDKPropertyMacros.h"
 
@@ -24,21 +24,21 @@ class USpatialGameInstance;
 
 namespace SpatialGDK
 {
-	struct FOutgoingMessage;
-}  // namespace SpatialGDK
+struct FOutgoingMessage;
+} // namespace SpatialGDK
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
-**/
+ **/
 UENUM()
 namespace ETraceType
 {
-	enum Type
-	{
-		RPC,
-		Property,
-		Tagged
-	};
+enum Type
+{
+	RPC,
+	Property,
+	Tagged
+};
 }
 
 UCLASS()
@@ -47,7 +47,6 @@ class SPATIALGDK_API USpatialLatencyTracer : public UObject
 	GENERATED_BODY()
 
 public:
-
 	//////////////////////////////////////////////////////////////////////////
 	//
 	// EXPERIMENTAL: We do not support this functionality currently: Do not use it unless you are Improbable staff.
@@ -89,31 +88,38 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
-	// Set metadata string to be included in all span names. Resulting uploaded span names are of the format "USER_SPECIFIED_NAME (METADATA : WORKER_ID)".
+	// Set metadata string to be included in all span names. Resulting uploaded span names are of the format "USER_SPECIFIED_NAME (METADATA
+	// : WORKER_ID)".
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool SetTraceMetadata(UObject* WorldContextObject, const FString& NewTraceMetadata);
 
-	// Start a latency trace. This will start the latency timer and return you a LatencyPayload object. This payload can then be "continued" via a ContinueLatencyTrace call.
+	// Start a latency trace. This will start the latency timer and return you a LatencyPayload object. This payload can then be "continued"
+	// via a ContinueLatencyTrace call.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 
 	// Attach a LatencyPayload to an RPC/Actor pair. The next time that RPC is executed on that Actor, the timings will be measured.
 	// You must also send the OutContinuedLatencyPayload as a parameter in the RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& Function, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	static bool ContinueLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& Function, const FString& TraceDesc,
+										const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
-	// Attach a LatencyPayload to an Property/Actor pair. The next time that Property is executed on that Actor, the timings will be measured.
-	// The property being measured should be a FSpatialLatencyPayload and should be set to OutContinuedLatencyPayload.
+	// Attach a LatencyPayload to an Property/Actor pair. The next time that Property is executed on that Actor, the timings will be
+	// measured. The property being measured should be a FSpatialLatencyPayload and should be set to OutContinuedLatencyPayload.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& Property, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	static bool ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& Property,
+											 const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload,
+											 FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// Store a LatencyPayload to an Tag/Actor pair. This payload will be stored internally until the user is ready to retrieve it.
 	// Use RetrievePayload to retrieve the Payload
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	static bool ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc,
+										   const FSpatialLatencyPayload& LatencyPayload,
+										   FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
-	// End a latency trace. This will terminate the trace, and can be called on multiple workers all operating on the same trace but the worker
-	// that called BeginLatencyTrace must call this at some point to ensure correct e2e latency timings.
+	// End a latency trace. This will terminate the trace, and can be called on multiple workers all operating on the same trace but the
+	// worker that called BeginLatencyTrace must call this at some point to ensure correct e2e latency timings.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool EndLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayLoad);
 
@@ -128,7 +134,7 @@ public:
 
 	bool IsValidKey(TraceKey Key);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property)* Property);
+	TraceKey RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property) * Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
@@ -144,14 +150,14 @@ public:
 	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
 
 private:
-
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;
 	using ActorTagKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
-	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayload);
+	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc,
+									   const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayload);
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
 
 	FSpatialLatencyPayload RetrievePayload_Internal(const UObject* Actor, const FString& Key);
@@ -179,7 +185,6 @@ private:
 	TSet<TraceKey> RootTraces;
 
 public:
-
 #endif // TRACE_LIB_ACTIVE
 
 	// Used for testing trace functionality, will send a debug trace in three parts from this worker

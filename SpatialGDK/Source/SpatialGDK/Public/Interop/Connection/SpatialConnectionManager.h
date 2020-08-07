@@ -30,13 +30,13 @@ class SPATIALGDK_API USpatialConnectionManager : public UObject
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
-	
+
 	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
-    
-    /// Register a callback using this function.
-    /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
-    /// @param Callback - callback function.
-	void RegisterOnLoginTokensCallback(const LoginTokenResponseCallback& Callback) {LoginTokenResCallback = Callback;}
+
+	/// Register a callback using this function.
+	/// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
+	/// @param Callback - callback function.
+	void RegisterOnLoginTokensCallback(const LoginTokenResponseCallback& Callback) { LoginTokenResCallback = Callback; }
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 

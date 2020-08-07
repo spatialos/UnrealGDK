@@ -6,8 +6,8 @@
 #include "Containers/UnrealString.h"
 #include "HAL/Platform.h"
 #include "Misc/Optional.h"
-#include "Templates/UnrealTemplate.h"
 #include "Templates/UniquePtr.h"
+#include "Templates/UnrealTemplate.h"
 #include "UObject/NameTypes.h"
 #include "Utils/SpatialLatencyTracer.h"
 
@@ -17,7 +17,6 @@
 
 namespace SpatialGDK
 {
-
 enum class EOutgoingMessageType : int32
 {
 	ReserveEntityIdsRequest,
@@ -37,7 +36,10 @@ enum class EOutgoingMessageType : int32
 
 struct FOutgoingMessage
 {
-	FOutgoingMessage(const EOutgoingMessageType& InType) : Type(InType) {}
+	FOutgoingMessage(const EOutgoingMessageType& InType)
+		: Type(InType)
+	{
+	}
 	virtual ~FOutgoingMessage() {}
 
 	EOutgoingMessageType Type;
@@ -48,7 +50,8 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 	FReserveEntityIdsRequest(uint32_t InNumOfEntities)
 		: FOutgoingMessage(EOutgoingMessageType::ReserveEntityIdsRequest)
 		, NumOfEntities(InNumOfEntities)
-	{}
+	{
+	}
 
 	uint32_t NumOfEntities;
 };
@@ -60,7 +63,8 @@ struct FCreateEntityRequest : FOutgoingMessage
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
@@ -73,7 +77,8 @@ struct FDeleteEntityRequest : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	const TOptional<worker::c::Trace_SpanId> SpanId;
@@ -86,7 +91,8 @@ struct FAddComponent : FOutgoingMessage
 		, EntityId(InEntityId)
 		, Data(InData)
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentData Data;
@@ -100,7 +106,8 @@ struct FRemoveComponent : FOutgoingMessage
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
@@ -114,7 +121,8 @@ struct FComponentUpdate : FOutgoingMessage
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentUpdate Update;
@@ -128,7 +136,8 @@ struct FCommandRequest : FOutgoingMessage
 		, EntityId(InEntityId)
 		, Request(InRequest)
 		, CommandId(InCommandId)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	Worker_CommandRequest Request;
@@ -142,7 +151,8 @@ struct FCommandResponse : FOutgoingMessage
 		, RequestId(InRequestId)
 		, Response(InResponse)
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	Worker_RequestId RequestId;
 	Worker_CommandResponse Response;
@@ -156,7 +166,8 @@ struct FCommandFailure : FOutgoingMessage
 		, RequestId(InRequestId)
 		, Message(InMessage)
 		, SpanId(SpanId)
-	{}
+	{
+	}
 
 	Worker_RequestId RequestId;
 	FString Message;
@@ -170,7 +181,8 @@ struct FLogMessage : FOutgoingMessage
 		, Level(InLevel)
 		, LoggerName(InLoggerName)
 		, Message(InMessage)
-	{}
+	{
+	}
 
 	uint8_t Level;
 	FName LoggerName;
@@ -183,7 +195,8 @@ struct FComponentInterest : FOutgoingMessage
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
 		, Interests(MoveTemp(InInterests))
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	TArray<Worker_InterestOverride> Interests;
@@ -198,7 +211,8 @@ struct FEntityQueryRequest : FOutgoingMessage
 		if (EntityQuery.snapshot_result_type_component_ids != nullptr)
 		{
 			ComponentIdStorage.SetNum(EntityQuery.snapshot_result_type_component_id_count);
-			FMemory::Memcpy(static_cast<void*>(ComponentIdStorage.GetData()), static_cast<const void*>(EntityQuery.snapshot_result_type_component_ids), ComponentIdStorage.Num());
+			FMemory::Memcpy(static_cast<void*>(ComponentIdStorage.GetData()),
+							static_cast<const void*>(EntityQuery.snapshot_result_type_component_ids), ComponentIdStorage.Num());
 		}
 
 		TraverseConstraint(&EntityQuery.constraint);
@@ -258,9 +272,10 @@ struct FMetrics : FOutgoingMessage
 	FMetrics(SpatialMetrics InMetrics)
 		: FOutgoingMessage(EOutgoingMessageType::Metrics)
 		, Metrics(MoveTemp(InMetrics))
-	{}
+	{
+	}
 
 	SpatialMetrics Metrics;
 };
 
-}
+} // namespace SpatialGDK

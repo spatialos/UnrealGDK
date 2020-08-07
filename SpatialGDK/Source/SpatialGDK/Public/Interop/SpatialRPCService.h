@@ -23,13 +23,13 @@ DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, E
 
 namespace SpatialGDK
 {
-
 struct EntityRPCType
 {
 	EntityRPCType(Worker_EntityId EntityId, ERPCType Type)
 		: EntityId(EntityId)
 		, Type(Type)
-	{}
+	{
+	}
 
 	Worker_EntityId EntityId;
 	ERPCType Type;
@@ -59,10 +59,8 @@ enum class EPushRPCResult : uint8
 class SPATIALGDK_API SpatialRPCService
 {
 public:
-	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback,
-		const USpatialStaticComponentView* View,
-		USpatialLatencyTracer* SpatialLatencyTracer,
-		SpatialEventTracer* EventTracer);
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
+					  USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr, UFunction* Function = nullptr);
 	void PushOverflowedRPCs();

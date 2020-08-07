@@ -44,7 +44,8 @@ struct FConnectionConfig
 
 		if (WorkerType.IsEmpty())
 		{
-			WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
+			WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString()
+										  : SpatialConstants::DefaultServerWorkerType.ToString();
 			UE_LOG(LogTemp, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *WorkerType);
 		}
 
@@ -55,8 +56,10 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS = 10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
-		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
+		UdpUpstreamIntervalMS =
+			10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
+		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS
+													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
 private:
@@ -100,7 +103,8 @@ private:
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."),
+				   *LinkProtocolString);
 		}
 	}
 
@@ -124,10 +128,7 @@ public:
 class FLocatorConfig : public FConnectionConfig
 {
 public:
-	FLocatorConfig()
-	{
-		LoadDefaults();
-	}
+	FLocatorConfig() { LoadDefaults(); }
 
 	void LoadDefaults()
 	{
@@ -161,10 +162,7 @@ public:
 class FDevAuthConfig : public FLocatorConfig
 {
 public:
-	FDevAuthConfig()
-	{
-		LoadDefaults();
-	}
+	FDevAuthConfig() { LoadDefaults(); }
 
 	void LoadDefaults()
 	{
@@ -203,10 +201,7 @@ public:
 class FReceptionistConfig : public FConnectionConfig
 {
 public:
-	FReceptionistConfig()
-	{
-		LoadDefaults();
-	}
+	FReceptionistConfig() { LoadDefaults(); }
 
 	void LoadDefaults()
 	{
@@ -229,7 +224,8 @@ public:
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), Host))
 		{
 			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
-			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
+			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default
+			// IP.
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, false /* UseEscape */);
 			const FURL URL(nullptr /* Base */, *URLAddress, TRAVEL_Absolute);

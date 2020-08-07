@@ -6,9 +6,8 @@
 
 namespace SpatialGDK
 {
-
 WorkerView::WorkerView()
-: LocalChanges(MakeUnique<MessagesToSend>())
+	: LocalChanges(MakeUnique<MessagesToSend>())
 {
 }
 
@@ -25,7 +24,7 @@ ViewDelta WorkerView::GenerateViewDelta()
 
 void WorkerView::EnqueueOpList(OpList Ops)
 {
-	//Ensure that we only process closed critical sections.
+	// Ensure that we only process closed critical sections.
 	// Scan backwards looking for critical sections ops.
 	for (uint32 i = Ops.Count; i > 0; --i)
 	{
@@ -138,4 +137,4 @@ void WorkerView::SendLogMessage(LogMessage Log)
 	LocalChanges->Logs.Add(MoveTemp(Log));
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

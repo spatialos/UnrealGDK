@@ -13,7 +13,8 @@
  * do runtime delegations of Actors to specific Server Workers.
  */
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy, public ISpatialFunctionalTestLBDelegationInterface
+class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy,
+																		   public ISpatialFunctionalTestLBDelegationInterface
 {
 	GENERATED_BODY()
 

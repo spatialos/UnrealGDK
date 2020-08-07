@@ -21,9 +21,10 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
 
 namespace
 {
-	const FString SpatialBuildExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe"));
-	const FString LinuxPlatform = TEXT("Linux");
-	const FString Win64Platform = TEXT("Win64");
+const FString SpatialBuildExe =
+	FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe"));
+const FString LinuxPlatform = TEXT("Linux");
+const FString Win64Platform = TEXT("Win64");
 } // anonymous namespace
 
 void FSpatialGDKPackageAssembly::LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir)
@@ -35,7 +36,8 @@ void FSpatialGDKPackageAssembly::LaunchTask(const FString& Exe, const FString& A
 	PackageAssemblyTask->Launch();
 }
 
-void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs)
+void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration,
+											   const FString& AdditionalArgs)
 {
 	FString WorkingDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	FString Project = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
@@ -78,8 +80,7 @@ void FSpatialGDKPackageAssembly::BuildAndUploadAssembly(const FCloudDeploymentCo
 		}
 		Steps.Enqueue(EPackageAssemblyStep::UPLOAD_ASSEMBLY);
 
-		AsyncTask(ENamedThreads::GameThread, [this]()
-		{
+		AsyncTask(ENamedThreads::GameThread, [this]() {
 			ShowTaskStartedNotification(TEXT("Building Assembly"));
 			NextStep();
 		});
@@ -101,26 +102,25 @@ bool FSpatialGDKPackageAssembly::NextStep()
 		switch (Target)
 		{
 		case EPackageAssemblyStep::BUILD_SERVER:
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
-				BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), LinuxPlatform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildServerExtraArgs);
+			AsyncTask(ENamedThreads::GameThread, [this]() {
+				BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), LinuxPlatform,
+							  CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildServerExtraArgs);
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_CLIENT:
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
-				BuildAssembly(FApp::GetProjectName(), Win64Platform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildClientExtraArgs);
+			AsyncTask(ENamedThreads::GameThread, [this]() {
+				BuildAssembly(FApp::GetProjectName(), Win64Platform, CloudDeploymentConfiguration.BuildConfiguration,
+							  CloudDeploymentConfiguration.BuildClientExtraArgs);
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS:
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
-				BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildSimulatedPlayerExtraArgs);
+			AsyncTask(ENamedThreads::GameThread, [this]() {
+				BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform,
+							  CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildSimulatedPlayerExtraArgs);
 			});
 			break;
 		case EPackageAssemblyStep::UPLOAD_ASSEMBLY:
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
+			AsyncTask(ENamedThreads::GameThread, [this]() {
 				UploadAssembly(CloudDeploymentConfiguration.AssemblyName, CloudDeploymentConfiguration.bForceAssemblyOverwrite);
 			});
 			break;
@@ -137,9 +137,9 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 	{
 		if (!NextStep())
 		{
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
-				FString NotificationMessage = FString::Printf(TEXT("Assembly successfully uploaded to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+			AsyncTask(ENamedThreads::GameThread, [this]() {
+				FString NotificationMessage =
+					FString::Printf(TEXT("Assembly successfully uploaded to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 				ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Success);
 				OnSuccess.ExecuteIfBound();
 			});
@@ -147,17 +147,25 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 	}
 	else
 	{
-		AsyncTask(ENamedThreads::GameThread, [this]()
-		{
-			FString NotificationMessage = FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+		AsyncTask(ENamedThreads::GameThread, [this]() {
+			FString NotificationMessage =
+				FString::Printf(TEXT("Failed assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 			ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 			if (Status == EPackageAssemblyStatus::ASSEMBLY_EXISTS)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("AssemblyExists_Error", "The assembly with the specified name has previously been uploaded. Enable the 'Force Overwrite on Upload' option in the Cloud Deployment dialog to overwrite the existing assembly or specify a different assembly name."));
+				FMessageDialog::Open(
+					EAppMsgType::Ok,
+					LOCTEXT(
+						"AssemblyExists_Error",
+						"The assembly with the specified name has previously been uploaded. Enable the 'Force Overwrite on Upload' option "
+						"in the Cloud Deployment dialog to overwrite the existing assembly or specify a different assembly name."));
 			}
 			else if (Status == EPackageAssemblyStatus::BAD_PROJECT_NAME)
 			{
-				FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("BadProjectName_Error", "The project name appears to be incorrect or you do not have permissions for this project. You can edit the project name from the Cloud Deployment dialog."));
+				FMessageDialog::Open(EAppMsgType::Ok,
+									 LOCTEXT("BadProjectName_Error",
+											 "The project name appears to be incorrect or you do not have permissions for this project. "
+											 "You can edit the project name from the Cloud Deployment dialog."));
 			}
 			else if (Status == EPackageAssemblyStatus::NONE)
 			{
@@ -170,8 +178,8 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 
 void FSpatialGDKPackageAssembly::OnTaskOutput(FString Message)
 {
-	//UNR-3486 parse for assembly name conflict so we can display a message to the user
-	//because the spatial cli doesn't return error codes this is done via string matching
+	// UNR-3486 parse for assembly name conflict so we can display a message to the user
+	// because the spatial cli doesn't return error codes this is done via string matching
 	if (Message.Find(TEXT("Either change the name or use the '--force' flag")) >= 0)
 	{
 		Status = EPackageAssemblyStatus::ASSEMBLY_EXISTS;
@@ -187,9 +195,9 @@ void FSpatialGDKPackageAssembly::OnTaskCanceled()
 {
 	Steps.Empty();
 	Status = EPackageAssemblyStatus::CANCELED;
-	FString NotificationMessage = FString::Printf(TEXT("Cancelled assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-	AsyncTask(ENamedThreads::GameThread, [this, NotificationMessage]()
-	{
+	FString NotificationMessage =
+		FString::Printf(TEXT("Cancelled assembly upload to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationMessage]() {
 		ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 	});
 }
@@ -205,14 +213,9 @@ void FSpatialGDKPackageAssembly::HandleCancelButtonClicked()
 void FSpatialGDKPackageAssembly::ShowTaskStartedNotification(const FString& NotificationText)
 {
 	FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
-	Info.ButtonDetails.Add(
-		FNotificationButtonInfo(
-			LOCTEXT("PackageAssemblyTaskCancel", "Cancel"),
-			LOCTEXT("PackageAssemblyTaskCancel_ToolTip", "Cancels execution of this task."),
-			FSimpleDelegate::CreateRaw(this, &FSpatialGDKPackageAssembly::HandleCancelButtonClicked),
-			SNotificationItem::CS_Pending
-		)
-	);
+	Info.ButtonDetails.Add(FNotificationButtonInfo(
+		LOCTEXT("PackageAssemblyTaskCancel", "Cancel"), LOCTEXT("PackageAssemblyTaskCancel_ToolTip", "Cancels execution of this task."),
+		FSimpleDelegate::CreateRaw(this, &FSpatialGDKPackageAssembly::HandleCancelButtonClicked), SNotificationItem::CS_Pending));
 	Info.ExpireDuration = 5.0f;
 	Info.bFireAndForget = false;
 
@@ -224,7 +227,8 @@ void FSpatialGDKPackageAssembly::ShowTaskStartedNotification(const FString& Noti
 	}
 }
 
-void FSpatialGDKPackageAssembly::ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState)
+void FSpatialGDKPackageAssembly::ShowTaskEndedNotification(const FString& NotificationText,
+														   SNotificationItem::ECompletionState CompletionState)
 {
 	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 	if (Notification.IsValid())

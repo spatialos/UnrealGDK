@@ -84,14 +84,15 @@ void FSpatialGDKEditorCommandLineArgsManager::OnCreateLauncher(ILauncherRef Laun
 
 namespace
 {
-
 FString GetAdbExePath()
 {
 	FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
 	if (AndroidHome.IsEmpty())
 	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("AndroidHomeNotSet_Error", "Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
+		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error,
+			   TEXT("Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("AndroidHomeNotSet_Error",
+													  "Environment variable ANDROID_HOME is not set. Please make sure to configure this."));
 		return TEXT("");
 	}
 
@@ -116,8 +117,11 @@ FReply FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToIOSDevice()
 		return FReply::Unhandled();
 	}
 
-	FString Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())), *OutCommandLineArgsFile);
+	FString Executable =
+		FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
+	FString DeploymentServerArguments = FString::Printf(
+		TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""),
+		*(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())), *OutCommandLineArgsFile);
 
 #if PLATFORM_MAC
 	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *Executable, *DeploymentServerArguments);
@@ -147,7 +151,8 @@ FReply FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToAndroidDevice()
 		return FReply::Unhandled();
 	}
 
-	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *FString(FApp::GetProjectName()));
+	const FString AndroidCommandLineFile =
+		FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *FString(FApp::GetProjectName()));
 	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
 
 	if (!TryPushCommandLineArgsToDevice(AdbExe, AdbArguments, OutCommandLineArgsFile))
@@ -175,11 +180,15 @@ FReply FSpatialGDKEditorCommandLineArgsManager::RemoveCommandLineFromAndroidDevi
 	FPlatformProcess::ExecProcess(*AdbExe, *ExeArguments, &ExitCode, &ExeOutput, &StdErr);
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to remove settings from the mobile client. %s %s"), *ExeOutput, *StdErr);
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("FailedToRemoveMobileSettings_Error", "Failed to remove settings from the mobile client. See the Output log for more information."));
+		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to remove settings from the mobile client. %s %s"),
+			   *ExeOutput, *StdErr);
+		FMessageDialog::Open(EAppMsgType::Ok,
+							 LOCTEXT("FailedToRemoveMobileSettings_Error",
+									 "Failed to remove settings from the mobile client. See the Output log for more information."));
 		return FReply::Unhandled();
 	}
-	UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Remove ue4commandline.txt from the Android device. %s %s"), *ExeOutput, *StdErr);
+	UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Log, TEXT("Remove ue4commandline.txt from the Android device. %s %s"), *ExeOutput,
+		   *StdErr);
 
 	return FReply::Handled();
 }
@@ -189,7 +198,8 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString ProjectName = FApp::GetProjectName();
 
-	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
+	// The project path is based on this:
+	// https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
 	const FString MobileProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
 	FString TravelUrl;
 	FString SpatialOSOptions = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
@@ -210,8 +220,11 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 
 		if (RuntimeIP.IsEmpty())
 		{
-			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("RuntimeIPNotSet_Error", "The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
+			UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error,
+				   TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
+			FMessageDialog::Open(
+				EAppMsgType::Ok,
+				LOCTEXT("RuntimeIPNotSet_Error", "The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
 			return false;
 		}
 
@@ -239,13 +252,18 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 		}
 	}
 
-	const FString SpatialOSCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSOptions, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
+	const FString SpatialOSCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSOptions,
+															 *(SpatialGDKSettings->MobileExtraCommandLineArgs));
 	OutCommandLineArgsFile = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt")));
 
-	if (!FFileHelper::SaveStringToFile(SpatialOSCommandLineArgs, *OutCommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	if (!FFileHelper::SaveStringToFile(SpatialOSCommandLineArgs, *OutCommandLineArgsFile,
+									   FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 	{
-		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to write command line args to file: %s"), *OutCommandLineArgsFile);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("FailedToWriteCommandLine_Error", "Failed to write command line args to file: {0}"), FText::FromString(OutCommandLineArgsFile)));
+		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to write command line args to file: %s"),
+			   *OutCommandLineArgsFile);
+		FMessageDialog::Open(EAppMsgType::Ok,
+							 FText::Format(LOCTEXT("FailedToWriteCommandLine_Error", "Failed to write command line args to file: {0}"),
+										   FText::FromString(OutCommandLineArgsFile)));
 		return false;
 	}
 
@@ -256,7 +274,8 @@ FReply FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken()
 {
 	FString DevAuthToken;
 	FText ErrorMessage;
-	if (!SpatialCommandUtils::GenerateDevAuthToken(GetMutableDefault<USpatialGDKSettings>()->IsRunningInChina(), DevAuthToken, ErrorMessage))
+	if (!SpatialCommandUtils::GenerateDevAuthToken(GetMutableDefault<USpatialGDKSettings>()->IsRunningInChina(), DevAuthToken,
+												   ErrorMessage))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok, ErrorMessage);
 		return FReply::Unhandled();
@@ -267,7 +286,8 @@ FReply FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken()
 	return FReply::Handled();
 }
 
-bool FSpatialGDKEditorCommandLineArgsManager::TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile)
+bool FSpatialGDKEditorCommandLineArgsManager::TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments,
+																			 const FString& CommandLineArgsFile)
 {
 	FString ExeOutput;
 	FString StdErr;
@@ -277,7 +297,8 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryPushCommandLineArgsToDevice(con
 	if (ExitCode != 0)
 	{
 		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to update the mobile client. %s %s"), *ExeOutput, *StdErr);
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("FailedToPushCommandLine_Error", "Failed to update the mobile client. See the Output log for more information."));
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("FailedToPushCommandLine_Error",
+													  "Failed to update the mobile client. See the Output log for more information."));
 		return false;
 	}
 
@@ -286,7 +307,8 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryPushCommandLineArgsToDevice(con
 	if (!PlatformFile.DeleteFile(*CommandLineArgsFile))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandLineArgsManager, Error, TEXT("Failed to delete file %s"), *CommandLineArgsFile);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("FailedToDeleteFile_Error", "Failed to delete file {0}"), FText::FromString(CommandLineArgsFile)));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("FailedToDeleteFile_Error", "Failed to delete file {0}"),
+															FText::FromString(CommandLineArgsFile)));
 		return false;
 	}
 

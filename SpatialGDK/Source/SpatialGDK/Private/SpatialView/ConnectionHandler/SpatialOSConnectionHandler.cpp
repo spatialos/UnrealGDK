@@ -5,10 +5,9 @@
 
 namespace SpatialGDK
 {
-
 	SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer)
 	: Connection(Connection)
-	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId (Connection)))
+	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
 	, EventTracer(EventTracer)
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
@@ -18,9 +17,7 @@ namespace SpatialGDK
 	}
 }
 
-void SpatialOSConnectionHandler::Advance()
-{
-}
+void SpatialOSConnectionHandler::Advance() {}
 
 uint32 SpatialOSConnectionHandler::GetOpListCount()
 {
@@ -68,8 +65,8 @@ OpList SpatialOSConnectionHandler::GetNextOpList()
 
 void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Messages)
 {
-	const Worker_UpdateParameters UpdateParams = {0 /*loopback*/};
-	const Worker_CommandParameters CommandParams = {0 /*allow_short_circuit*/};
+	const Worker_UpdateParameters UpdateParams = { 0 /*loopback*/ };
+	const Worker_CommandParameters CommandParams = { 0 /*allow_short_circuit*/ };
 	for (auto& Message : Messages->ComponentMessages)
 	{
 		SpatialSpanIdActivator SpanWrapper(EventTracer, Message.SpanId);
@@ -77,27 +74,19 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		{
 		case OutgoingComponentMessage::ADD:
 		{
-			Worker_ComponentData Data = {
-				nullptr, Message.ComponentId,
-				MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr
-			};
+			Worker_ComponentData Data = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr };
 			Worker_Connection_SendAddComponent(Connection.Get(), Message.EntityId, &Data, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::UPDATE:
 		{
-			Worker_ComponentUpdate Update = {
-				nullptr, Message.ComponentId,
-				MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr
-			};
-
+			Worker_ComponentUpdate Update = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr };
 			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:
 		{
-			Worker_Connection_SendRemoveComponent(Connection.Get(),
-			                                      Message.EntityId, Message.ComponentId, &UpdateParams);
+			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.ComponentId, &UpdateParams);
 			break;
 		}
 		default:
@@ -109,8 +98,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	for (auto& Request : Messages->ReserveEntityIdsRequests)
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendReserveEntityIdsRequest(Connection.Get(),
-		                                                                          Request.NumberOfEntityIds, Timeout);
+		const Worker_RequestId Id = Worker_Connection_SendReserveEntityIdsRequest(Connection.Get(), Request.NumberOfEntityIds, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -120,26 +108,22 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		Components.Reserve(Request.EntityComponents.Num());
 		for (ComponentData& Component : Request.EntityComponents)
 		{
-			Components.Push(Worker_ComponentData{
-				nullptr, Component.GetComponentId(), MoveTemp(Component).Release(),
-				nullptr
-			});
+			Components.Push(Worker_ComponentData{ nullptr, Component.GetComponentId(), MoveTemp(Component).Release(), nullptr });
 		}
 
 		SpatialSpanIdActivator SpanWrapper(EventTracer, Request.SpanId);
 
 		Worker_EntityId* EntityId = Request.EntityId.IsSet() ? &Request.EntityId.GetValue() : nullptr;
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendCreateEntityRequest(Connection.Get(), Components.Num(),
-		                                                                      Components.GetData(), EntityId, Timeout);
+		const Worker_RequestId Id =
+			Worker_Connection_SendCreateEntityRequest(Connection.Get(), Components.Num(), Components.GetData(), EntityId, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
 	for (auto& Request : Messages->DeleteEntityRequests)
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId,
-		                                                                      Timeout);
+		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -154,22 +138,17 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	for (auto& Request : Messages->EntityCommandRequests)
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		Worker_CommandRequest r = {
-			nullptr, Request.Request.GetComponentId(), Request.Request.GetCommandIndex(),
-			MoveTemp(Request.Request).Release(), nullptr
-		};
-		const Worker_RequestId Id = Worker_Connection_SendCommandRequest(Connection.Get(), Request.EntityId, &r,
-		                                                                 Timeout, &CommandParams);
+		Worker_CommandRequest r = { nullptr, Request.Request.GetComponentId(), Request.Request.GetCommandIndex(),
+									MoveTemp(Request.Request).Release(), nullptr };
+		const Worker_RequestId Id = Worker_Connection_SendCommandRequest(Connection.Get(), Request.EntityId, &r, Timeout, &CommandParams);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
 	for (auto& Response : Messages->EntityCommandResponses)
-	{
-		Worker_CommandResponse r = {
-			nullptr, Response.Response.GetComponentId(),
-			Response.Response.GetCommandIndex(), MoveTemp(Response.Response).Release(), nullptr
-		};
+	{	
 		SpatialSpanIdActivator SpanWrapper(EventTracer, Response.SpanId);
+		Worker_CommandResponse r = { nullptr, Response.Response.GetComponentId(), Response.Response.GetCommandIndex(),
+									 MoveTemp(Response.Response).Release(), nullptr };
 		Worker_Connection_SendCommandResponse(Connection.Get(), Response.RequestId, &r);
 	}
 
@@ -183,7 +162,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	{
 		FTCHARToUTF8 LoggerName(*Log.LoggerName.ToString());
 		FTCHARToUTF8 LogString(*Log.Message);
-		Worker_LogMessage L = {static_cast<uint8>(Log.Level), LoggerName.Get(), LogString.Get()};
+		Worker_LogMessage L = { static_cast<uint8>(Log.Level), LoggerName.Get(), LogString.Get() };
 		Worker_Connection_SendLogMessage(Connection.Get(), &L);
 	}
 
