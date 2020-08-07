@@ -1126,8 +1126,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		checkSlow(SpatialConnection->GetUChildConnection() == NULL);
 
 		// Handle not ready channels.
-		//@note: we cannot add Connection->IsNetReady(0) here to check for saturation, as if that's the case we still want to figure out the list of relevant actors
-		//			to reset their NetUpdateTime so that they will get sent as soon as the connection is no longer saturated
+		// @note: we cannot add Connection->IsNetReady(0) here to check for saturation, as if that's the case we still
+		// want to figure out the list of relevant actors to reset their NetUpdateTime so that they will get sent as
+		// soon as the connection is no longer saturated.
 		AActor* OwningActor = SpatialConnection->OwningActor;
 
 		//SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.

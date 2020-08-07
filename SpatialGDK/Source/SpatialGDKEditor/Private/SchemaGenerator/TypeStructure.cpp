@@ -127,15 +127,16 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 
 		// If this is an object property, then we need to do two things:
-		//	 1) Determine whether this property is a strong or weak reference to the object. Some subobjects (such as the CharacterMovementComponent)
-		//		are in fact owned by the character, and can be stored in the same entity as the character itself. Some subobjects (such as the Controller
-		//		field in AActor) is a weak reference, and should just store a reference to the real object. We inspect the CDO to determine whether
-		//		the owner of the property value is equal to itself. As structs don't have CDOs, we assume that all object properties in structs are
-		//		weak references.
 		//
-		//   2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
-		//      might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored there
-		//		during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
+		// 1) Determine whether this property is a strong or weak reference to the object. Some subobjects (such as the
+		// CharacterMovementComponent) are in fact owned by the character, and can be stored in the same entity as the character itself.
+		// Some subobjects (such as the Controller field in AActor) is a weak reference, and should just store a reference to the real
+		// object. We inspect the CDO to determine whether the owner of the property value is equal to itself. As structs don't have CDOs,
+		// we assume that all object properties in structs are weak references.
+		//
+		// 2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
+		// might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored
+		// there during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
 		GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(Property);
 		check(ObjectProperty);
 
