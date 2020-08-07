@@ -277,9 +277,8 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::DeleteEntityRequest:
 		{
 			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
-
 			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
-?			Worker_Connection_SendDeleteEntityRequest(WorkerConnection, Message->EntityId, nullptr);
+			Worker_Connection_SendDeleteEntityRequest(WorkerConnection, Message->EntityId, nullptr);
 			break;
 		}
 		case EOutgoingMessageType::AddComponent:
@@ -299,8 +298,8 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::ComponentUpdate:
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);??			Worker_Connection_SendComponentUpdate(WorkerConnection, Message->EntityId, &Message->Update, &DisableLoopback);
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			Worker_Connection_SendComponentUpdate(WorkerConnection, Message->EntityId, &Message->Update, &DisableLoopback);
 
 			break;
 		}
@@ -324,8 +323,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::CommandFailure:
 		{
 			FCommandFailure* Message = static_cast<FCommandFailure*>(OutgoingMessage.Get());
-?			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
-
+			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
 			Worker_Connection_SendCommandFailure(WorkerConnection, Message->RequestId, TCHAR_TO_UTF8(*Message->Message));
 			break;
 		}
