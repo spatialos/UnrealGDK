@@ -19,4 +19,5 @@ public:
 
 	UPROPERTY()
 	UStaticMeshComponent* CubeComponent;
+
 };

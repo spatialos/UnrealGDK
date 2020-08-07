@@ -2,7 +2,7 @@
 
 
 #include "SpatialTestCharacterMovement.h"
-#include "TestMovementCharacter.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"

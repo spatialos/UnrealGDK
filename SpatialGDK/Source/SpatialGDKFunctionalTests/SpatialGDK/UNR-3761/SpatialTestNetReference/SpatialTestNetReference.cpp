@@ -3,7 +3,7 @@
 #include "SpatialTestNetReference.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMovement/TestMovementCharacter.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "CubeWithReferences.h"
 #include "SpatialGDKSettings.h"

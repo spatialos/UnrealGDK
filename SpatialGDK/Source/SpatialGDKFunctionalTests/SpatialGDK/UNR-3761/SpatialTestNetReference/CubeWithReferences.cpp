@@ -8,6 +8,7 @@ ACubeWithReferences::ACubeWithReferences()
 {
 	bNetLoadOnClient = false;
 	bNetLoadOnNonAuthServer = true;
+	NetDormancy = ENetDormancy::DORM_Initial;
 }
 
 int ACubeWithReferences::CountValidNeighbours()

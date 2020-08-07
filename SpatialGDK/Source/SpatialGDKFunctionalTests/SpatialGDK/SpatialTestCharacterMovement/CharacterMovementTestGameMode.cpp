@@ -2,7 +2,7 @@
 
 
 #include "CharacterMovementTestGameMode.h"
-#include "TestMovementCharacter.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 
 ACharacterMovementTestGameMode::ACharacterMovementTestGameMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
