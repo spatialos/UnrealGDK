@@ -40,6 +40,8 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 	TestLocations.Add(TPair<FVector, int> (FVector(5000.0f, 1000.0f, 40.0f), 3));
 	TestLocations.Add(TPair<FVector, int> (FVector(100.0f, 100.0f, 40.0f), 4));
 
+	/* Uncomment these lines, together with the line in the SpatialTestNetReferenceServerMove step related to the camera movement to enable visual debugging.
+	   However, note that uncommenting these lines will make the test fail if running with Native Unreal networking
 	// The camera relative locations are set so that the camera is always at the location (8500.0f, 13000.0f, 40.f), in order to have all 4 possible cubes in its view for ease of visual debugging
 	CameraRelativeLocations.Add(FVector(8500.0f, 28000.0f, 0.0f));
 	CameraRelativeLocations.Add(FVector(3500.0f, 18000.0f, 0.0f));
@@ -47,6 +49,7 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 	CameraRelativeLocations.Add(FVector(8400.0f, 12900.0f, 0.0f));
 
 	CameraRelativeRotation = FRotator::MakeFromEuler(FVector(0.0f, 0.0f, 240.0f));
+	*/
 }
 
 void ASpatialTestNetReference::BeginPlay()
@@ -90,19 +93,14 @@ void ASpatialTestNetReference::BeginPlay()
 		PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
 		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
 
-		// Spawn the TestMovementCharacter actor for client 1 to possess.
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client && FlowController->WorkerDefinition.Id == 1)
-			{
-				ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
-				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-				OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
+		// Spawn the TestMovementCharacter actor for Client 1 to possess.
+		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+		ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
+		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+		OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
 
-				RegisterAutoDestroyActor(TestCharacter);
-				PlayerController->Possess(TestCharacter);
-			}
-		}
+		RegisterAutoDestroyActor(TestCharacter);
+		PlayerController->Possess(TestCharacter);
 
 		FinishStep();
 		});
@@ -122,8 +120,12 @@ void ASpatialTestNetReference::BeginPlay()
 				// Move the character to the correct location
 				PlayerCharacter->SetActorLocation(TestLocations[CurrentMoveIndex].Key);
 
+				/* Uncomment this line to allow for visual debugging, together with the lines in the constructor.
+				   However, note that uncommenting these lines will make the test fail if running with Native Unreal networking
+
 				// Update the camera location for visual debugging
 				PlayerCharacter->UpdateCameraLocationAndRotation(CameraRelativeLocations[CurrentMoveIndex], CameraRelativeRotation);
+				*/
 
 				FinishStep();
 			});
@@ -133,7 +135,7 @@ void ASpatialTestNetReference::BeginPlay()
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-				if (PlayerCharacter->GetActorLocation().Equals(TestLocations[CurrentMoveIndex].Key, 1.0f))
+				if (PlayerCharacter != nullptr && PlayerCharacter->GetActorLocation().Equals(TestLocations[CurrentMoveIndex].Key, 1.0f))
 				{
 					FinishStep();
 				}
@@ -149,7 +151,6 @@ void ASpatialTestNetReference::BeginPlay()
 
 				if(bHasCorrectNumberOfCubes)
 				{
-					AssertTrue(bHasCorrectNumberOfCubes, FString::Printf(TEXT("For location with index %d the correct number of cubes are visible"), CurrentMoveIndex));
 					FinishStep();
 				}
 			}, 5.0f);
@@ -158,8 +159,6 @@ void ASpatialTestNetReference::BeginPlay()
 			{
 				TArray<AActor*> CubesWithReferences;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACubeWithReferences::StaticClass(), CubesWithReferences);
-
-				checkf(CubesWithReferences.Num() != 0, TEXT("There should never be 0 visible cubes"))
 
 				bool bHasCorrectReferences = true;
 
@@ -200,10 +199,6 @@ void ASpatialTestNetReference::BeginPlay()
 						// We have previously checked that one neighbour reference is correctly pointing to the neighbour cube, also check that the other reference is null
 						bHasCorrectReferences &= !IsValid(CurrentCube->Neighbour1) || !IsValid(CurrentCube->Neighbour2);
 					}
-
-					checkf(ExpectedValidReferences <= 2, TEXT("There should never be more than 2 valid references for a cube"));
-
-					AssertEqual_Bool(bHasCorrectReferences, true, FString::Printf(TEXT("At location with index %d, for the cube at location %f, %f, %f, the references are correct"), CurrentMoveIndex, CurrentCubeLocation.X, CurrentCubeLocation.Y, CurrentCubeLocation.Z));
 				}
 
 				if(bHasCorrectReferences)
@@ -212,13 +207,6 @@ void ASpatialTestNetReference::BeginPlay()
 				}
 			}, 5.0f);
 	}
-	
-	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
-		// Possess the original pawn, so that the spawned character can get destroyed correctly
-		OriginalPawn.Key->Possess(OriginalPawn.Value);
-
-		FinishStep();
-	});
 }
 
 void ASpatialTestNetReference::FinishTest(EFunctionalTestResult TestResult, const FString& Message)
