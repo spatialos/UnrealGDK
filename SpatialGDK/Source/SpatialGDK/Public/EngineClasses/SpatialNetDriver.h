@@ -36,6 +36,7 @@ class USpatialConnectionManager;
 class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
+class USpatialNetDriverDebugContext;
 class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
@@ -157,6 +158,8 @@ public:
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
+	UPROPERTY()
+	USpatialNetDriverDebugContext* DebugCtx;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;

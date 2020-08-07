@@ -7,7 +7,6 @@
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
-#include "SpatialFunctionalTestLBDelegationInterface.h"
 #include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
@@ -22,6 +21,8 @@ typedef TFunction<void(float DeltaTime)> FTickEventFunc;
 constexpr int SPATIAL_FUNCTIONAL_TEST_NOT_STARTED = -1; // represents test waiting to run
 constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// represents test already ran
 } // namespace
+
+class ULayeredLBStrategy;
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
@@ -168,45 +169,34 @@ public:
 			  Category = "Spatial Functional Test")
 	FWorkerDefinition GetAllClients() { return FWorkerDefinition::AllClients; }
 
-	// # Actor Delegation APIs
-	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ServerWorkerId = "1", ToolTip = "Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
-	// clang-format on
-	void AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished = false);
+	ULayeredLBStrategy* GetLoadBalancingStrategy();
 
-	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
-	// clang-format on
-	void RemoveActorDelegation(AActor* Actor);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void AddDebugTag(AActor* Actor, FName Tag);
 
-	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Check is the Actor has it's authority delegated to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
-	// clang-format on
-	bool HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void RemoveDebugTag(AActor* Actor, FName Tag);
 
-	// # Actor Interest APIs
-	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1",
-		ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside its interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
-	// clang-format on
-	void AddActorInterest(int32 ServerWorkerId, AActor* Actor);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void AddInterestOnTag(FName Tag);
 
-	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1",
-		ToolTip = "Counterpart to AddActorInterest(), so it can only remove interest added by the other function. There's no way to force remove interest if the underlying configuration in GDK is giving it.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
-	// clang-format on
-	void RemoveActorInterest(int32 ServerWorkerId, AActor* Actor);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void RemoveInterestOnTag(FName Tag);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void KeepActorOnCurrentWorker(AActor* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void DelegateTagToWorker(FName Tag, int32 WorkerId);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void ClearTagDelegationAndInterest();
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
-
-	ISpatialFunctionalTestLBDelegationInterface* GetDelegationInterface() const;
 
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
@@ -239,6 +229,4 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
-
-	void ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest);
 };
