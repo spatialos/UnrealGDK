@@ -29,7 +29,8 @@ public:
 	USpatialGameInstance();
 
 #if WITH_EDITOR
-	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
+	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer,
+																 const FGameInstancePIEParameters& Params) override;
 #endif
 
 	virtual void StartGameInstance() override;
@@ -42,7 +43,8 @@ public:
 	virtual void Init() override;
 	//~ End UGameInstance Interface
 
-	// The SpatiaConnectionManager must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
+	// The SpatiaConnectionManager must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from
+	// deleting it during Browse.
 	void CreateNewSpatialConnectionManager();
 
 	// Destroying the SpatialConnectionManager disconnects us from SpatialOS.

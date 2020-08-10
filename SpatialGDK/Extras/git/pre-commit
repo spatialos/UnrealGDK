@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e -u -o pipefail
+[[ -n "${DEBUG:-}" ]] && set -x
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+    clang_command="SpatialGDK/Extras/clang-format/win/clang-format"
+else
+    clang_command="SpatialGDK/Extras/clang-format/mac/clang-format"
+fi
+
+# Hit 'em with that clang-format
+for FILE in $(git diff --cached --name-only); do
+  if [[ ( "${FILE}" == *.h ) || ( "${FILE}" == *.cpp ) ]]; then
+    ${clang_command} --verbose -i "${FILE}"
+  fi
+done

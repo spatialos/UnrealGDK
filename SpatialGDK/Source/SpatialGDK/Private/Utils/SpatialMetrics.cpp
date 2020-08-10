@@ -155,7 +155,9 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not start on the server."));
+			UE_LOG(
+				LogSpatialMetrics, Warning,
+				TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not start on the server."));
 		}
 	}
 }
@@ -184,8 +186,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		RecentRPCs.GenerateValueArray(RecentRPCArray);
 
 		// Show the most frequently called RPCs at the top.
-		RecentRPCArray.Sort([](const RPCStat& A, const RPCStat& B)
-		{
+		RecentRPCArray.Sort([](const RPCStat& A, const RPCStat& B) {
 			if (A.Type != B.Type)
 			{
 				return static_cast<int>(A.Type) < static_cast<int>(B.Type);
@@ -204,9 +205,13 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 
 		UE_LOG(LogSpatialMetrics, Log, TEXT("---------------------------"));
 		UE_LOG(LogSpatialMetrics, Log, TEXT("Recently sent RPCs - %s:"), bIsServer ? TEXT("Server") : TEXT("Client"));
-		UE_LOG(LogSpatialMetrics, Log, TEXT("RPC Type           | %s | # of calls |  Calls/sec | Total payload | Avg. payload | Payload/sec"), *FString(TEXT("RPC Name")).RightPad(MaxRPCNameLen));
+		UE_LOG(LogSpatialMetrics, Log,
+			   TEXT("RPC Type           | %s | # of calls |  Calls/sec | Total payload | Avg. payload | Payload/sec"),
+			   *FString(TEXT("RPC Name")).RightPad(MaxRPCNameLen));
 
-		FString SeparatorLine = FString::Printf(TEXT("-------------------+-%s-+------------+------------+---------------+--------------+------------"), *FString::ChrN(MaxRPCNameLen, '-'));
+		FString SeparatorLine =
+			FString::Printf(TEXT("-------------------+-%s-+------------+------------+---------------+--------------+------------"),
+							*FString::ChrN(MaxRPCNameLen, '-'));
 
 		ERPCType PrevType = ERPCType::Invalid;
 		for (RPCStat& Stat : RecentRPCArray)
@@ -218,12 +223,16 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 				PrevType = Stat.Type;
 				UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
 			}
-			UE_LOG(LogSpatialMetrics, Log, TEXT("%s | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *RPCTypeField.RightPad(18), *Stat.Name.RightPad(MaxRPCNameLen), Stat.Calls, Stat.Calls / TrackRPCInterval, Stat.TotalPayload, (float)Stat.TotalPayload / Stat.Calls, Stat.TotalPayload / TrackRPCInterval);
+			UE_LOG(LogSpatialMetrics, Log, TEXT("%s | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *RPCTypeField.RightPad(18),
+				   *Stat.Name.RightPad(MaxRPCNameLen), Stat.Calls, Stat.Calls / TrackRPCInterval, Stat.TotalPayload,
+				   (float)Stat.TotalPayload / Stat.Calls, Stat.TotalPayload / TrackRPCInterval);
 			TotalCalls += Stat.Calls;
 			TotalPayload += Stat.TotalPayload;
 		}
 		UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Total              | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *FString::ChrN(MaxRPCNameLen, ' '), TotalCalls, TotalCalls / TrackRPCInterval, TotalPayload, (float)TotalPayload / TotalCalls, TotalPayload / TrackRPCInterval);
+		UE_LOG(LogSpatialMetrics, Log, TEXT("Total              | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"),
+			   *FString::ChrN(MaxRPCNameLen, ' '), TotalCalls, TotalCalls / TrackRPCInterval, TotalPayload,
+			   (float)TotalPayload / TotalCalls, TotalPayload / TrackRPCInterval);
 
 		RecentRPCs.Empty();
 	}
@@ -246,7 +255,9 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
+			UE_LOG(
+				LogSpatialMetrics, Warning,
+				TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
 		}
 	}
 }
@@ -278,7 +289,8 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! Setting will not be sent to server."));
+			UE_LOG(LogSpatialMetrics, Warning,
+				   TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! Setting will not be sent to server."));
 		}
 	}
 	else
@@ -375,7 +387,8 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 			HistogramMetrics.Buckets.SetNum(NumBuckets);
 			for (int32 j = 0; j < NumBuckets; j++)
 			{
-				HistogramMetrics.Buckets[j] = TTuple<double, uint32>{ WorkerMetric.buckets[j].upper_bound, WorkerMetric.buckets[j].samples };
+				HistogramMetrics.Buckets[j] =
+					TTuple<double, uint32>{ WorkerMetric.buckets[j].upper_bound, WorkerMetric.buckets[j].samples };
 			}
 		}
 
@@ -388,7 +401,8 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 
 void USpatialMetrics::SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate)
 {
-	UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Adding custom metric %s (%s)"), *Metric, Delegate.GetUObject() ? *GetNameSafe(Delegate.GetUObject()) : TEXT("Not attached to UObject"));
+	UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Adding custom metric %s (%s)"), *Metric,
+		   Delegate.GetUObject() ? *GetNameSafe(Delegate.GetUObject()) : TEXT("Not attached to UObject"));
 	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
 	{
 		*ExistingMetric = Delegate;
@@ -403,7 +417,8 @@ void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
 {
 	if (UserSuppliedMetric* ExistingMetric = UserSuppliedMetrics.Find(Metric))
 	{
-		UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Removing custom metric %s (%s)"), *Metric, ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
+		UE_LOG(LogSpatialMetrics, Log, TEXT("USpatialMetrics: Removing custom metric %s (%s)"), *Metric,
+			   ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
 		UserSuppliedMetrics.Remove(Metric);
 	}
 }

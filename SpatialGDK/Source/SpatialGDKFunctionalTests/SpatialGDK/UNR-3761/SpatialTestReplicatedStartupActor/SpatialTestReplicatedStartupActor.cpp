@@ -1,14 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialTestReplicatedStartupActor.h"
-#include "SpatialFunctionalTestFlowController.h"
 #include "Kismet/GameplayStatics.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
-#include "SpatialFunctionalTestFlowController.h"
 #include "Net/UnrealNetwork.h"
 #include "ReplicatedStartupActorPlayerController.h"
-
+#include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 
 /**
  * This test automates the ReplicatedStartupActor gym. The gym was used for:
@@ -44,36 +41,42 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddStep(TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::AllClients, [this](ASpatialFunctionalTest* NetTest)
-		{
-			// Make sure that the PlayerController has been set before trying to do anything with it, this might prevent Null Pointer exceptions being thrown when UE ticks at a relatively slow rate
-			AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+	AddStep(
+		TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::AllClients,
+		[this](ASpatialFunctionalTest* NetTest) {
+			// Make sure that the PlayerController has been set before trying to do anything with it, this might prevent Null Pointer
+			// exceptions being thrown when UE ticks at a relatively slow rate
+			AReplicatedStartupActorPlayerController* PlayerController =
+				Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
 			return IsValid(PlayerController);
 		},
-		[this](ASpatialFunctionalTest* NetTest)
-		{
+		[this](ASpatialFunctionalTest* NetTest) {
 			TArray<AActor*> ReplicatedActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), ReplicatedActors);
 
 			checkf(ReplicatedActors.Num() == 1, TEXT("There should be exactly 1 replicated actor"));
 
-			AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+			AReplicatedStartupActorPlayerController* PlayerController =
+				Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
 
 			PlayerController->ClientToServerRPC(this, ReplicatedActors[0]);
 
 			FinishStep();
 		});
 
-	AddStep(TEXT("SpatialTestReplicatedStarupActorClientsCheckStep"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-		{
+	AddStep(
+		TEXT("SpatialTestReplicatedStarupActorClientsCheckStep"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 			if (bIsValidReference)
 			{
 				AssertTrue(bIsValidReference, TEXT("The server has a valid reference to this client's replicated actor"));
 
-				AReplicatedStartupActorPlayerController* PlayerController = Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+				AReplicatedStartupActorPlayerController* PlayerController =
+					Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
 				PlayerController->ResetBoolean(this);
 
 				FinishStep();
 			}
-		}, 2.0);
+		},
+		2.0);
 }

@@ -17,7 +17,16 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 {
 	GENERATED_BODY()
 
+private:
+	/** Enable running different server worker types to split the simulation. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
+	bool bEnableMultiWorker;
+
 public:
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
+
+	// This function is used to expose the private bool property to SpatialStatics.
+	// You should call USpatialStatics::IsMultiWorkerEnabled to properly check whether multi-worker is enabled.
+	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr; }
 };

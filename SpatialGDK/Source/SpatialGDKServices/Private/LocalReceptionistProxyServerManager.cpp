@@ -8,8 +8,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
-#include "Sockets.h"
 #include "SocketSubsystem.h"
+#include "Sockets.h"
 #include "UObject/CoreNet.h"
 
 #include "SpatialCommandUtils.h"
@@ -65,7 +65,8 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 			}
 			else
 			{
-				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process that is blocking the port. %s"), *OutLogMessage);
+				UE_LOG(LogLocalReceptionistProxyServerManager, Warning, TEXT("Failed to kill the process that is blocking the port. %s"),
+					   *OutLogMessage);
 			}
 
 			return bProcessKilled;
@@ -76,7 +77,6 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	return false;
 }
 
-
 void FLocalReceptionistProxyServerManager::Init(int32 Port)
 {
 	if (!IsRunningCommandlet())
@@ -84,7 +84,6 @@ void FLocalReceptionistProxyServerManager::Init(int32 Port)
 		LocalReceptionistProxyServerPreRunChecks(Port);
 	}
 }
-
 
 bool FLocalReceptionistProxyServerManager::TryStopReceptionistProxyServer()
 {
@@ -100,7 +99,6 @@ bool FLocalReceptionistProxyServerManager::TryStopReceptionistProxyServer()
 	return false;
 }
 
-
 TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 {
 	FString ProxyInfoFileResult;
@@ -113,7 +111,8 @@ TSharedPtr<FJsonObject> FLocalReceptionistProxyServerManager::ParsePIDFile()
 			return JsonParsedProxyInfoFile;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Json parsing of %s failed. Can't get proxy's PID."),
+			   *SpatialGDKServicesConstants::ProxyInfoFilePath);
 	}
 
 	return nullptr;
@@ -128,12 +127,14 @@ void FLocalReceptionistProxyServerManager::SavePIDInJson(const FString& PID)
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&ProxyInfoFileResult);
 	if (!FJsonSerializer::Serialize(JsonParsedProxyInfoFile.ToSharedRef(), JsonWriter))
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write PID to parsed proxy info file. Unable toS serialize content to json file."));
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error,
+			   TEXT("Failed to write PID to parsed proxy info file. Unable toS serialize content to json file."));
 		return;
 	}
 	if (!FFileHelper::SaveStringToFile(ProxyInfoFileResult, *SpatialGDKServicesConstants::ProxyInfoFilePath))
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::ProxyInfoFilePath);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Failed to write file content to %s"),
+			   *SpatialGDKServicesConstants::ProxyInfoFilePath);
 	}
 }
 
@@ -146,11 +147,14 @@ bool FLocalReceptionistProxyServerManager::GetPreviousReceptionistProxyPID(FStri
 			return true;
 		}
 
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Local Receptionist Proxy is running but 'pid' does not exist in %s. Can't read proxy's PID."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error,
+			   TEXT("Local Receptionist Proxy is running but 'pid' does not exist in %s. Can't read proxy's PID."),
+			   *SpatialGDKServicesConstants::ProxyInfoFilePath);
 		return false;
 	}
 
-	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local Receptionist Proxy is not running or the %s file got deleted."), *SpatialGDKServicesConstants::ProxyInfoFilePath);
+	UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Local Receptionist Proxy is not running or the %s file got deleted."),
+		   *SpatialGDKServicesConstants::ProxyInfoFilePath);
 
 	OutPID.Empty();
 	return false;
@@ -164,7 +168,8 @@ void FLocalReceptionistProxyServerManager::DeletePIDFile()
 	}
 }
 
-bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, const int32 ReceptionistPort)
+bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName,
+																		   const FString& ListeningAddress, const int32 ReceptionistPort)
 {
 	FString StartResult;
 	int32 ExitCode;
@@ -177,7 +182,8 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 	}
 
 	// Do not restart the same proxy if you have already a proxy running for the same cloud deployment
-	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName && RunningProxyListeningAddress == ListeningAddress && RunningProxyReceptionistPort == ReceptionistPort)
+	if (bProxyIsRunning && ProxyServerProcHandle.IsValid() && RunningCloudDeploymentName == CloudDeploymentName
+		&& RunningProxyListeningAddress == ListeningAddress && RunningProxyReceptionistPort == ReceptionistPort)
 	{
 		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("The local receptionist proxy server is already running!"));
 
@@ -196,12 +202,14 @@ bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool 
 		UE_LOG(LogLocalReceptionistProxyServerManager, Log, TEXT("Stopped previous proxy server successfully!"));
 	}
 
-	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress, ReceptionistPort, StartResult, ExitCode);
+	ProxyServerProcHandle = SpatialCommandUtils::StartLocalReceptionistProxyServer(bIsRunningInChina, CloudDeploymentName, ListeningAddress,
+																				   ReceptionistPort, StartResult, ExitCode);
 
 	// Check if process run successfully
 	if (!ProxyServerProcHandle.IsValid())
 	{
-		UE_LOG(LogLocalReceptionistProxyServerManager, Error, TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
+		UE_LOG(LogLocalReceptionistProxyServerManager, Error,
+			   TEXT("Starting the local receptionist proxy server failed. Error Code: %d, Error Message: %s"), ExitCode, *StartResult);
 		ProxyServerProcHandle.Reset();
 		return false;
 	}

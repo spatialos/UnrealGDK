@@ -50,8 +50,9 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 		return 1;
 	}
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Commandlet GenerateSchema has been deprecated in favor of CookAndGenerateSchemaCommandlet."));
-	
+	UE_LOG(LogSpatialGDKEditorCommandlet, Error,
+		   TEXT("Commandlet GenerateSchema has been deprecated in favor of CookAndGenerateSchemaCommandlet."));
+
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Complete"));
 
 	return false;

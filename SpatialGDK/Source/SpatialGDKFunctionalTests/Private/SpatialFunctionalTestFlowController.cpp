@@ -2,14 +2,19 @@
 
 #include "SpatialFunctionalTestFlowController.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
+#include "Interop/SpatialSender.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialFunctionalTestGridLBStrategy.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-{	
+{
 	bReplicates = true;
 	bAlwaysRelevant = true;
 
@@ -25,7 +30,7 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 #endif
 }
 
-void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -54,9 +59,53 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 	WorkerDefinition.Id = NewWorkerId;
 }
 
+void ASpatialFunctionalTestFlowController::AddEntityInterest_Implementation(const int64 ActorEntityId)
+{
+	ChangeEntityInterest(ActorEntityId, true);
+}
+
+void ASpatialFunctionalTestFlowController::RemoveEntityInterest_Implementation(const int64 ActorEntityId)
+{
+	ChangeEntityInterest(ActorEntityId, false);
+}
+
+void ASpatialFunctionalTestFlowController::ChangeEntityInterest(int64 ActorEntityId, bool bAddInterest)
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (SpatialNetDriver == nullptr || ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		ensureMsgf(ActorEntityId != SpatialConstants::INVALID_ENTITY_ID, TEXT("Trying to change interest over an invalid entity id"));
+		return;
+	}
+
+	ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+	USpatialFunctionalTestGridLBStrategy* TestGridLB =
+		Cast<USpatialFunctionalTestGridLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering());
+	if (TestGridLB != nullptr)
+	{
+		int NumEntities = TestGridLB->Entities.Num();
+		if (bAddInterest)
+		{
+			TestGridLB->Entities.AddUnique(ActorEntityId);
+		}
+		else
+		{
+			TestGridLB->Entities.Remove(ActorEntityId);
+		}
+		if (NumEntities != TestGridLB->Entities.Num())
+		{
+			SpatialNetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Trying to change interest without USpatialFunctionalTestGridLBStrategy"));
+	}
+}
+
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 {
-	if(!bReadyToRegisterWithTest || OwningTest == nullptr)
+	if (!bReadyToRegisterWithTest || OwningTest == nullptr)
 	{
 		return;
 	}
@@ -95,7 +144,8 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 
 void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 {
-	ensureMsgf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or it's logic is calling FinishStep multiple times"));
+	ensureMsgf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or "
+											"it's logic is calling FinishStep multiple times"));
 	if (CurrentStep.bIsRunning)
 	{
 		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -111,7 +161,6 @@ void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 	}
 }
 
-
 bool ASpatialFunctionalTestFlowController::IsLocalController() const
 {
 	ENetMode NetMode = GetNetMode();
@@ -123,14 +172,14 @@ bool ASpatialFunctionalTestFlowController::IsLocalController() const
 	{
 		// if no PlayerController owns it it's ours.
 		// @note keep in mind that this only works because each server worker has authority (by locking) their FlowController!
-		return GetOwner() == nullptr; 
+		return GetOwner() == nullptr;
 	}
-	else if(GetNetMode() == ENetMode::NM_Client)
+	else if (GetNetMode() == ENetMode::NM_Client)
 	{
 		// @note Clients only know their own PlayerController
 		return GetOwner() != nullptr;
 	}
-	
+
 	return false;
 }
 
@@ -150,7 +199,9 @@ void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResul
 
 const FString ASpatialFunctionalTestFlowController::GetDisplayName()
 {
-	return FString::Printf(TEXT("[%s:%d]"), (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server ? TEXT("Server") : TEXT("Client")), WorkerDefinition.Id);
+	return FString::Printf(TEXT("[%s:%d]"),
+						   (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server ? TEXT("Server") : TEXT("Client")),
+						   WorkerDefinition.Id);
 }
 
 void ASpatialFunctionalTestFlowController::OnTestFinished()
