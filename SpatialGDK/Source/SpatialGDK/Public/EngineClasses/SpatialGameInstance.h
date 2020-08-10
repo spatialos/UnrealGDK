@@ -14,7 +14,6 @@ class UGlobalStateManager;
 class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
-DECLARE_LOG_CATEGORY_EXTERN(LogControlledShutdown, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
