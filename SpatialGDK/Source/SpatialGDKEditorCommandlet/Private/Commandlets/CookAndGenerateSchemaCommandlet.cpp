@@ -114,6 +114,9 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	ObjectListener.StopListening();
 
+	// Force cleanup to ensure that CookCommandlet is cleaned up, otherwise stale delegates can cause issues when loading additional classes
+	GEditor->ForceGarbageCollection(true);
+
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B) {
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
