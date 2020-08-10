@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 OpList GetOpListFromViewDelta(ViewDelta Delta)
 {
 	// The order of ops should be:
@@ -42,7 +41,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		Op.op.disconnect.reason = OpData->DisconnectReason.Get();
 		OpData->Ops.Push(Op);
 
-		return {OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData)};
+		return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
 	}
 
 	TArray<Worker_Op>& Ops = OpData->Ops;
@@ -157,7 +156,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	Ops.Append(Delta.GetWorkerMessages());
 
 	OpData->Delta = MoveTemp(Delta);
-	return {OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData)};
+	return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
 }
 
 } // namespace SpatialGDK

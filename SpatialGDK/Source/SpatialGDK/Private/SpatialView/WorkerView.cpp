@@ -84,7 +84,7 @@ void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
 void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
-	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{Update.GetComponentId()});
+	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
 	check(Component != nullptr);
 	Component->ApplyUpdate(Update);
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update));
@@ -93,7 +93,7 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
-	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ComponentId});
+	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ ComponentId });
 	check(Component != nullptr);
 	Element.Components.RemoveAtSwap(Component - Element.Components.GetData());
 	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);

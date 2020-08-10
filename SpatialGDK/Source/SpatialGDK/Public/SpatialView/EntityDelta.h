@@ -3,13 +3,13 @@
 #pragma once
 
 #include "Containers/Array.h"
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
-
-struct CompleteUpdateData {
+struct CompleteUpdateData
+{
 	Schema_ComponentData* Data;
 	Schema_Object* Events;
 };
@@ -17,26 +17,40 @@ struct CompleteUpdateData {
 struct ComponentChange
 {
 	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentData* Data)
-		: ComponentId(Id), Type(ADD), Data(Data)
+		: ComponentId(Id)
+		, Type(ADD)
+		, Data(Data)
 	{
 	}
 
 	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentUpdate* Update)
-		: ComponentId(Id), Type(UPDATE), Update(Update)
+		: ComponentId(Id)
+		, Type(UPDATE)
+		, Update(Update)
 	{
 	}
 
 	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentData* Data, Schema_Object* Events)
-		: ComponentId(Id), Type(COMPLETE_UPDATE), CompleteUpdate{Data, Events}
+		: ComponentId(Id)
+		, Type(COMPLETE_UPDATE)
+		, CompleteUpdate{ Data, Events }
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId id) : ComponentId(id), Type(REMOVE)
+	explicit ComponentChange(Worker_ComponentId id)
+		: ComponentId(id)
+		, Type(REMOVE)
 	{
 	}
 
 	Worker_ComponentId ComponentId;
-	enum { ADD, REMOVE, UPDATE, COMPLETE_UPDATE } Type;
+	enum
+	{
+		ADD,
+		REMOVE,
+		UPDATE,
+		COMPLETE_UPDATE
+	} Type;
 	union
 	{
 		Schema_ComponentData* Data;
@@ -48,7 +62,8 @@ struct ComponentChange
 struct AuthorityChange
 {
 	AuthorityChange(Worker_ComponentId Id, int Type)
-		: ComponentId(Id), Type(static_cast<AuthorityType>(Type))
+		: ComponentId(Id)
+		, Type(static_cast<AuthorityType>(Type))
 	{
 	}
 
@@ -63,35 +78,29 @@ struct AuthorityChange
 
 /** Pointer to an array and a size that can be used in a ranged based for.  */
 template <typename T>
-class ComponentSpan {
+class ComponentSpan
+{
 public:
-	ComponentSpan() : Elements(nullptr), Count(0) {}
-	ComponentSpan(const T* Elements, int32 Count) : Elements(Elements), Count(Count) {}
-
-	const T* begin() const
+	ComponentSpan()
+		: Elements(nullptr)
+		, Count(0)
 	{
-		return Elements;
+	}
+	ComponentSpan(const T* Elements, int32 Count)
+		: Elements(Elements)
+		, Count(Count)
+	{
 	}
 
-	const T* end() const
-	{
-		return Elements + Count;
-	}
+	const T* begin() const { return Elements; }
 
-	int32 Num() const
-	{
-		return Count;
-	}
+	const T* end() const { return Elements + Count; }
 
-	const T& operator[](int32 Index) const
-	{
-		return Elements[Index];
-	}
+	int32 Num() const { return Count; }
 
-	const T* GetData() const
-	{
-		return Elements;
-	}
+	const T& operator[](int32 Index) const { return Elements[Index]; }
+
+	const T* GetData() const { return Elements; }
 
 private:
 	const T* Elements;

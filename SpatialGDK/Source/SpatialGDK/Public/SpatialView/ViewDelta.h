@@ -11,7 +11,6 @@
 
 namespace SpatialGDK
 {
-
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.
@@ -51,7 +50,12 @@ private:
 
 		Worker_EntityId EntityId;
 		Worker_ComponentId ComponentId;
-		enum { ADD, UPDATE, REMOVE } Type;
+		enum
+		{
+			ADD,
+			UPDATE,
+			REMOVE
+		} Type;
 		union
 		{
 			Schema_ComponentData* ComponentAdded;
@@ -100,16 +104,14 @@ private:
 	// Calculate and return the net component added in [`Start`, `End`).
 	// Also add the resulting component to `Components`.
 	// The accumulated component change in this range must be a component add.
-	static ComponentChange CalculateAdd(ReceivedComponentChange* Start,
-										ReceivedComponentChange* End,
-										TArray<ComponentData>& Components);
+	static ComponentChange CalculateAdd(ReceivedComponentChange* Start, ReceivedComponentChange* End, TArray<ComponentData>& Components);
 
 	// Calculate and return the net complete update in [`Start`, `End`).
 	// Also set `Component` to match.
 	// The accumulated component change in this range must be a complete-update or
 	// `Data` and `Events` should be non null.
-	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End,
-		Schema_ComponentData* Data, Schema_ComponentUpdate* Events, ComponentData& Component);
+	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, Schema_ComponentData* Data,
+												   Schema_ComponentUpdate* Events, ComponentData& Component);
 
 	// Calculate and return the net update in [`Start`, `End`).
 	// Also apply the update to `Component`.
@@ -123,21 +125,21 @@ private:
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the component changes list.
 	ReceivedComponentChange* ProcessEntityComponentChanges(ReceivedComponentChange* It, ReceivedComponentChange* End,
-		TArray<ComponentData>& Components, EntityDelta& Delta);
+														   TArray<ComponentData>& Components, EntityDelta& Delta);
 
 	// Adds authority changes to `Delta` and updates `EntityAuthority` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the authority changes list.
 	Worker_AuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
-		TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
+															TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
 
 	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
 	// `It` must point to the first element with a given entity ID.
 	// `ViewElement` must point to the same entity in the view or end if it doesn't exist.
 	// Returns a pointer to the next entity in the authority changes list.
 	// After returning `*ViewElement` will point to that entity in the view or nullptr if it doesn't exist.
-	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End,
-		EntityDelta& Delta, EntityViewElement** ViewElement, EntityView& View);
+	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
+													   EntityViewElement** ViewElement, EntityView& View);
 
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;
@@ -159,4 +161,4 @@ private:
 	TArray<OpList> OpListStorage;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

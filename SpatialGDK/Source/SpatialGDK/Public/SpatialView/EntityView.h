@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "SpatialView/ComponentData.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/ComponentData.h"
 
 #include "Containers/Array.h"
 #include "Containers/Map.h"
@@ -11,7 +11,6 @@
 
 namespace SpatialGDK
 {
-
 struct EntityViewElement
 {
 	TArray<ComponentData> Components;
