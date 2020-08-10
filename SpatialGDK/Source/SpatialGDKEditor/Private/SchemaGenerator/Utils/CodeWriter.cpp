@@ -3,7 +3,8 @@
 #include "CodeWriter.h"
 #include "Misc/FileHelper.h"
 
-FCodeWriter::FCodeWriter() : Scope(0)
+FCodeWriter::FCodeWriter()
+	: Scope(0)
 {
 }
 

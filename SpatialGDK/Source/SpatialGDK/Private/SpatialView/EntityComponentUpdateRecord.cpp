@@ -4,11 +4,10 @@
 
 namespace SpatialGDK
 {
-
 void EntityComponentUpdateRecord::AddComponentDataAsUpdate(Worker_EntityId EntityId, ComponentData CompleteUpdate)
 {
-	const EntityComponentId Id = {EntityId, CompleteUpdate.GetComponentId()};
-	EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{Id});
+	const EntityComponentId Id = { EntityId, CompleteUpdate.GetComponentId() };
+	EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{ Id });
 
 	if (FoundUpdate)
 	{
@@ -23,8 +22,8 @@ void EntityComponentUpdateRecord::AddComponentDataAsUpdate(Worker_EntityId Entit
 
 void EntityComponentUpdateRecord::AddComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
 {
-	const EntityComponentId Id = {EntityId, Update.GetComponentId()};
-	EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{Id});
+	const EntityComponentId Id = { EntityId, Update.GetComponentId() };
+	EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{ Id });
 
 	if (FoundCompleteUpdate != nullptr)
 	{
@@ -39,9 +38,9 @@ void EntityComponentUpdateRecord::AddComponentUpdate(Worker_EntityId EntityId, C
 
 void EntityComponentUpdateRecord::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	const EntityComponentId Id = {EntityId, ComponentId};
+	const EntityComponentId Id = { EntityId, ComponentId };
 
-	const EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{Id});
+	const EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{ Id });
 	if (FoundUpdate)
 	{
 		Updates.RemoveAtSwap(FoundUpdate - Updates.GetData());
@@ -49,7 +48,7 @@ void EntityComponentUpdateRecord::RemoveComponent(Worker_EntityId EntityId, Work
 	// If the entity-component is recorded as updated, it can't also be completely-updated so we don't need to search for it.
 	else
 	{
-		const EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{Id});
+		const EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{ Id });
 		if (FoundCompleteUpdate)
 		{
 			CompleteUpdates.RemoveAtSwap(FoundCompleteUpdate - CompleteUpdates.GetData());
@@ -75,8 +74,8 @@ const TArray<EntityComponentCompleteUpdate>& EntityComponentUpdateRecord::GetCom
 
 void EntityComponentUpdateRecord::InsertOrMergeUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
 {
-	const EntityComponentId Id = {EntityId, Update.GetComponentId()};
-	EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{Id});
+	const EntityComponentId Id = { EntityId, Update.GetComponentId() };
+	EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{ Id });
 
 	if (FoundUpdate != nullptr)
 	{
@@ -90,8 +89,8 @@ void EntityComponentUpdateRecord::InsertOrMergeUpdate(Worker_EntityId EntityId, 
 
 void EntityComponentUpdateRecord::InsertOrSetCompleteUpdate(Worker_EntityId EntityId, ComponentData CompleteUpdate)
 {
-	const EntityComponentId Id = {EntityId, CompleteUpdate.GetComponentId()};
-	EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{Id});
+	const EntityComponentId Id = { EntityId, CompleteUpdate.GetComponentId() };
+	EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{ Id });
 
 	if (FoundCompleteUpdate != nullptr)
 	{
