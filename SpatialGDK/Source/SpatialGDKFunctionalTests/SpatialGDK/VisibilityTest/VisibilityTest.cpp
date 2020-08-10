@@ -238,7 +238,7 @@ void AVisibilityTest::BeginPlay()
 			{
 				Counter++;
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
+			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the client world"), NetTest);
 			NetTest->FinishStep();
 		});
 	}
