@@ -62,9 +62,10 @@ private:
 	struct ReceivedEntityChange
 	{
 		Worker_EntityId EntityId;
-		bool Added;
+		bool bAdded;
 	};
 
+	// Comparator that will return true when the entity change in question is not for the same entity ID as stored.
 	struct DifferentEntity
 	{
 		Worker_EntityId EntityId;
@@ -73,64 +74,68 @@ private:
 		bool operator()(const Worker_AuthorityChangeOp& Op) const;
 	};
 
+	// Comparator that will return true when the entity change in question is not for the same entity-component as stored.
 	struct DifferentEntityComponent
 	{
 		Worker_EntityId EntityId;
-		Worker_ComponentId component_id;
+		Worker_ComponentId ComponentId;
 		bool operator()(const ReceivedComponentChange& Op) const;
 		bool operator()(const Worker_AuthorityChangeOp& Op) const;
 	};
 
+	// Comparator that will return true when the entity ID of Lhs is less than that of Rhs.
+	// If the entity IDs are the same it will return true when the component ID of Lhs is less than that of Rhs.
 	struct EntityComponentComparison
 	{
 		bool operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const;
 		bool operator()(const Worker_AuthorityChangeOp& Lhs, const Worker_AuthorityChangeOp& Rhs) const;
 	};
 
+	// Comparator that will return true when the entity ID of Lhs is less than that of Rhs.
 	struct EntityComparison
 	{
 		bool operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const;
 	};
 
-	// Calculate and return the net component added in [`start`, `end`).
-	// Also add the resulting component to `components`.
+	// Calculate and return the net component added in [`Start`, `End`).
+	// Also add the resulting component to `Components`.
 	// The accumulated component change in this range must be a component add.
 	static ComponentChange CalculateAdd(ReceivedComponentChange* Start,
 										ReceivedComponentChange* End,
 										TArray<ComponentData>& Components);
 
-	// Calculate and return the net complete update in [`start`, `end`).
-	// Also set `component` to match.
-	// The accumulated component change in this range must be an update or a complete-update or
-	// `startingData` and `startingEvents` should be non null.
-	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start,ReceivedComponentChange* End,
+	// Calculate and return the net complete update in [`Start`, `End`).
+	// Also set `Component` to match.
+	// The accumulated component change in this range must be a complete-update or
+	// `Data` and `Events` should be non null.
+	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End,
 		Schema_ComponentData* Data, Schema_ComponentUpdate* Events, ComponentData& Component);
 
-	// Calculate and return the net complete update in [`start`, `end`).
-	// Also apply the update to `component`.
+	// Calculate and return the net update in [`Start`, `End`).
+	// Also apply the update to `Component`.
 	// The accumulated component change in this range must be an update or a complete-update.
 	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
 
 	void ProcessOp(Worker_Op& Op);
 	void PopulateEntityDeltas(EntityView& View);
 
-	// Adds component changes to `entity_delta` and updates `components` accordingly.
-	// `it` must point to the first element with a given entity ID.
-	// Returns an iterator to the next entity in the component changes list.
+	// Adds component changes to `Delta` and updates `Components` accordingly.
+	// `It` must point to the first element with a given entity ID.
+	// Returns a pointer to the next entity in the component changes list.
 	ReceivedComponentChange* ProcessEntityComponentChanges(ReceivedComponentChange* It, ReceivedComponentChange* End,
 		TArray<ComponentData>& Components, EntityDelta& Delta);
 
-	// Adds authority changes to `entity_delta` and updates `authority` accordingly.
-	// `it` must point to the first element with a given entity ID.
-	// Returns an iterator to the next entity in the authority changes list.
+	// Adds authority changes to `Delta` and updates `EntityAuthority` accordingly.
+	// `It` must point to the first element with a given entity ID.
+	// Returns a pointer to the next entity in the authority changes list.
 	Worker_AuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
 		TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
 
-	// Sets `added` and `removed` fields in the `entity_delta`.
-	// `it` must point to the first element with a given entity ID.
-	// `view_it` must point to the same entity in the view or end if it doesn't exist.
-	// Returns an iterator to the next entity in the authority changes list.
-	// After returning `view_it` will point to that entity in the view or end if it doesn't exist.
+	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
+	// `It` must point to the first element with a given entity ID.
+	// `ViewElement` must point to the same entity in the view or end if it doesn't exist.
+	// Returns a pointer to the next entity in the authority changes list.
+	// After returning `*ViewElement` will point to that entity in the view or nullptr if it doesn't exist.
 	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End,
 		EntityDelta& Delta, EntityViewElement** ViewElement, EntityView& View);
 

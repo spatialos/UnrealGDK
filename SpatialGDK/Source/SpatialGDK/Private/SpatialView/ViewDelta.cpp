@@ -29,22 +29,22 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 
 void ViewDelta::Clear()
 {
-  EntityChanges.Empty();
-  ComponentChanges.Empty();
-  AuthorityChanges.Empty();
+	EntityChanges.Empty();
+	ComponentChanges.Empty();
+	AuthorityChanges.Empty();
 
-  ConnectionStatusCode = 0;
+	ConnectionStatusCode = 0;
 
-  EntityDeltas.Empty();
-  WorkerMessages.Empty();
-  AuthorityGainedForDelta.Empty();
-  AuthorityLostForDelta.Empty();
-  AuthorityLostTempForDelta.Empty();
-  ComponentsAddedForDelta.Empty();
-  ComponentsRemovedForDelta.Empty();
-  ComponentUpdatesForDelta.Empty();
-  ComponentsRefreshedForDelta.Empty();
-  OpListStorage.Empty();
+	EntityDeltas.Empty();
+	WorkerMessages.Empty();
+	AuthorityGainedForDelta.Empty();
+	AuthorityLostForDelta.Empty();
+	AuthorityLostTempForDelta.Empty();
+	ComponentsAddedForDelta.Empty();
+	ComponentsRemovedForDelta.Empty();
+	ComponentUpdatesForDelta.Empty();
+	ComponentsRefreshedForDelta.Empty();
+	OpListStorage.Empty();
 }
 
 const TArray<EntityDelta>& ViewDelta::GetEntityDeltas() const
@@ -106,12 +106,12 @@ bool ViewDelta::DifferentEntity::operator()(const Worker_AuthorityChangeOp& Op) 
 
 bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChange& Op) const
 {
-	return Op.ComponentId != component_id || Op.EntityId != EntityId;
+	return Op.ComponentId != ComponentId || Op.EntityId != EntityId;
 }
 
 bool ViewDelta::DifferentEntityComponent::operator()(const Worker_AuthorityChangeOp& Op) const
 {
-	return Op.component_id != component_id || Op.entity_id != EntityId;
+	return Op.component_id != ComponentId || Op.entity_id != EntityId;
 }
 
 bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const
@@ -198,9 +198,9 @@ ComponentChange ViewDelta::CalculateCompleteUpdate(ReceivedComponentChange* Star
 	}
 
 	Component = ComponentData::CreateCopy(Data, Start->ComponentId);
-	Schema_Object* events_obj = Events ? Schema_GetComponentUpdateEvents(Events) : nullptr;
+	Schema_Object* EventsObj = Events ? Schema_GetComponentUpdateEvents(Events) : nullptr;
 	// Use the data from the op list as pointers from the view aren't stable.
-	return ComponentChange(Start->ComponentId, Data, events_obj);
+	return ComponentChange(Start->ComponentId, Data, EventsObj);
 }
 
 ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component)
@@ -331,11 +331,12 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	// If that is the sentinel ID then stop.
 	for (;;)
 	{
-		// Get the next entity Id. We want to pick the smallest entity referenced by the iterators.
+		// Get the next entity ID. We want to pick the smallest entity referenced by the iterators.
 		// Convert to uint64 to ensure the sentinel value is larger than all valid IDs.
-		uint64 MinEntityId = static_cast<uint64>(ComponentIt->EntityId);
-		MinEntityId = FMath::Min(MinEntityId, static_cast<uint64>(AuthorityIt->entity_id));
-		MinEntityId = FMath::Min(MinEntityId, static_cast<uint64>(EntityIt->EntityId));
+		const uint64 MinEntityId = FMath::Min3(
+			static_cast<uint64>(ComponentIt->EntityId),
+			static_cast<uint64>(AuthorityIt->entity_id),
+			static_cast<uint64>(EntityIt->EntityId));
 
 		// If no list has elements left to read then stop.
 		if (static_cast<Worker_EntityId>(MinEntityId) == SENTINEL_ENTITY_ID)
@@ -401,7 +402,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 		ComponentData* Component = Components.FindByPredicate(ComponentIdEquality{It->ComponentId});
 		const bool bComponentExists = Component != nullptr;
 
-		// The element one before nextComponentIt must be the last element for this component.
+		// The element one before NextComponentIt must be the last element for this component.
 		switch ((NextComponentIt - 1)->Type)
 		{
 		case ReceivedComponentChange::ADD:
@@ -540,7 +541,7 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	It = std::find_if(It, End, DifferentEntity{EntityId}) - 1;
 
 	const bool bAlreadyInView = *ViewElement != nullptr;
-	const bool bEntityAdded = It->Added;
+	const bool bEntityAdded = It->bAdded;
 
 	// If the entity's presence has not changed then return.
 	if (bEntityAdded == bAlreadyInView)
