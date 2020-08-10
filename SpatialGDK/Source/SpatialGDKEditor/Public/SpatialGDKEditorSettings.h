@@ -287,6 +287,18 @@ private:
 	FString PinnedVersion;
 };
 
+/** Different modes to automatically stop of the local SpatialOS deployment. */
+UENUM()
+enum class EAutoStopLocalDeploymentMode : uint8
+{
+	/** Never stop the local SpatialOS deployment automatically. */
+	Never			= 0,
+	/** Automatically stop the local SpatialOS deployment on end of play in editor. */
+	OnEndPIE		= 1,
+	/** Only stop the local SpatialOS deployment automatically when exiting the editor. */
+	OnExitEditor	= 2
+};
+
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig, HideCategories = LoadBalancing)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -347,16 +359,13 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Exposed local runtime IP address"))
 	FString ExposedRuntimeIP;
 
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on stop play in editor"))
-	bool bStopLocalDeploymentOnEndPIE;
-
-	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on exit"))
-	bool bStopSpatialOnExit;
-
 	/** Start a local SpatialOS deployment when clicking 'Play'. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-start local deployment"))
 	bool bAutoStartLocalDeployment;
+
+	/** Allows the local SpatialOS deployment to be automatically stopped. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))
+	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
 	/** Stop play in editor when Automation Manager finishes running Tests. If false, the native Unreal Engine behaviour maintains of leaving the last map PIE running. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop play in editor on Testing completed"))
