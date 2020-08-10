@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "EngineClasses/SpatialNetDriver.h"
 
 #include "SpatialGameInstance.generated.h"
 
@@ -18,7 +19,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogControlledShutdown, Log, All);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSpawnFailedEvent, const FString&, Reason);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnControlledShutdownTriggeredEvent);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPrepareShutdownEvent);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -53,7 +54,7 @@ public:
 	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
 	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
 
-	void HandleOnConnected();
+	void HandleOnConnected(const USpatialNetDriver& NetDriver);
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
@@ -73,7 +74,7 @@ public:
 	FOnPlayerSpawnFailedEvent OnSpatialPlayerSpawnFailed;
 	// Invoked when the deployment will be shut down soon, and the world should be brought to a consistent state for snapshotting.
 	UPROPERTY(BlueprintAssignable)
-	FOnControlledShutdownTriggeredEvent OnControlledShutdownTriggered;
+	FOnPrepareShutdownEvent OnPrepareShutdown;
 
 	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
@@ -121,4 +122,7 @@ private:
 
 	// Boolean for whether or not the Spatial connection is ready for normal operations.
 	bool bIsSpatialNetDriverReady;
+
+	// Whether shutdown preparation has been triggered.
+	bool bPreparingForShutdown;
 };
