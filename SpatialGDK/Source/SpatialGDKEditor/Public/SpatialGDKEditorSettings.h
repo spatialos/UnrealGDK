@@ -367,6 +367,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))
 	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
+	/** Stop play in editor when Automation Manager finishes running Tests. If false, the native Unreal Engine behaviour maintains of leaving the last map PIE running. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop play in editor on Testing completed"))
+	bool bStopPIEOnTestingCompleted;
+
 private:
 	/** Name of your SpatialOS snapshot file that will be generated. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to save"))
