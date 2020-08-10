@@ -2,14 +2,13 @@
 
 #pragma once
 
+#include "Containers/Array.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialView/OutgoingComponentMessage.h"
 #include "SpatialView/OutgoingMessages.h"
-#include "Containers/Array.h"
 
 namespace SpatialGDK
 {
-
 struct MessagesToSend
 {
 	TArray<OutgoingComponentMessage> ComponentMessages;
@@ -25,4 +24,4 @@ struct MessagesToSend
 	TArray<LogMessage> Logs;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

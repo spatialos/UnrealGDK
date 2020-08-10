@@ -10,7 +10,6 @@ class USchemaGenObjectStub : public UObject
 {
 	GENERATED_BODY()
 public:
-
 	UPROPERTY(Replicated)
 	int IntValue;
 

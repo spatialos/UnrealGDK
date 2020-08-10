@@ -4,7 +4,6 @@
 
 namespace SpatialGDK
 {
-
 ClientEndpoint::ClientEndpoint(const Worker_ComponentData& Data)
 	: ReliableRPCBuffer(ERPCType::ServerReliable)
 	, UnreliableRPCBuffer(ERPCType::ServerUnreliable)

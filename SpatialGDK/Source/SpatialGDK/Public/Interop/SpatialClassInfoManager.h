@@ -43,12 +43,12 @@ struct FHandoverPropertyInfo
 	uint16 Handle;
 	int32 Offset;
 	int32 ArrayIdx;
-	GDK_PROPERTY(Property)* Property;
+	GDK_PROPERTY(Property) * Property;
 };
 
 struct FInterestPropertyInfo
 {
-	GDK_PROPERTY(Property)* Property;
+	GDK_PROPERTY(Property) * Property;
 	int32 Offset;
 };
 
@@ -88,7 +88,6 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 	GENERATED_BODY()
 
 public:
-
 	bool TryInit(USpatialNetDriver* InNetDriver);
 
 	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
@@ -109,7 +108,7 @@ public:
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
-	
+
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
 	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
@@ -128,7 +127,8 @@ public:
 	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
 
 	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
-	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
+	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
+												  USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;

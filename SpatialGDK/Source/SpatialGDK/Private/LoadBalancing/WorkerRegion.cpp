@@ -8,13 +8,13 @@
 
 namespace
 {
-	const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
-	const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
-	const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
-	const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
-	const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
-	const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
-}
+const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
+const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
+const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
+const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
+const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
+const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
+} // namespace
 
 AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -61,7 +61,7 @@ void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float Verti
 	const float ScaleX = (MaxX - MinX) / 100;
 	const float ScaleY = (MaxY - MinY) / 100;
 
-	SetActorLocation(FVector(CenterX, CenterY,  CurrentLocation.Z));
+	SetActorLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
 	SetActorScale3D(FVector(ScaleX, ScaleY, VerticalScale));
 }
 
