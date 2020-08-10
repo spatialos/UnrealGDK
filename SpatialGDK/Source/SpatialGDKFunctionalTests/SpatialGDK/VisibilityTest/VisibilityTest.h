@@ -26,7 +26,6 @@ public:
 	// To possess original pawns
 	TArray<TPair<AController*, APawn*>> OriginalPawns;
 
-	float PreviousPositionUpdateFrequency;
 	FVector CharacterRemoteLocation;
 	FVector Character1StartingLocation;
 	FVector Character2StartingLocation;

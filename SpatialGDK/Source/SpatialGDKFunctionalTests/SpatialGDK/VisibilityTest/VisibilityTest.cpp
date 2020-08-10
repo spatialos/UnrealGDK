@@ -50,7 +50,6 @@ void AVisibilityTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void AVisibilityTest::BeginPlay()
 {
 	Super::BeginPlay();
-	PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
 
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
 	Character1StartingLocation = FVector(0.0f, 120.0f, 50.0f);
@@ -73,10 +72,7 @@ void AVisibilityTest::BeginPlay()
 				CubeLocation = Iter->GetActorLocation();
 			}
 			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
-
-			PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 1.0f;
-			
+s
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
