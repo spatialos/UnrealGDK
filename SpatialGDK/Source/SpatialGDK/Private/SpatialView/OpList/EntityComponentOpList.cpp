@@ -45,7 +45,8 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Work
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+																		 Worker_Authority Authority)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
@@ -59,7 +60,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_
 
 OpList EntityComponentOpListBuilder::CreateOpList() &&
 {
-	return {OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData)};
+	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
 }
 
 } // namespace SpatialGDK

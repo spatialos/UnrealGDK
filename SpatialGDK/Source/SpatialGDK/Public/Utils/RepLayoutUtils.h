@@ -13,10 +13,11 @@
 
 namespace SpatialGDK
 {
+void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd,
+								   void* Data, bool& bHasUnmapped);
 
-void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
-
-inline void RepLayout_SerializeProperties_DynamicArray(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdIndex, uint8* Data, bool& bHasUnmapped)
+inline void RepLayout_SerializeProperties_DynamicArray(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdIndex,
+													   uint8* Data, bool& bHasUnmapped)
 {
 	const FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
 
@@ -44,7 +45,8 @@ inline void RepLayout_SerializeProperties_DynamicArray(FRepLayout& RepLayout, FA
 	}
 }
 
-inline void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped)
+inline void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd,
+										  void* Data, bool& bHasUnmapped)
 {
 	for (int32 CmdIndex = CmdStart; CmdIndex < CmdEnd && !Ar.IsError(); CmdIndex++)
 	{
@@ -55,7 +57,7 @@ inline void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, U
 		if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 		{
 			RepLayout_SerializeProperties_DynamicArray(RepLayout, Ar, Map, CmdIndex, (uint8*)Data + Cmd.Offset, bHasUnmapped);
-			CmdIndex = Cmd.EndCmd - 1;		// The -1 to handle the ++ in the for loop
+			CmdIndex = Cmd.EndCmd - 1; // The -1 to handle the ++ in the for loop
 			continue;
 		}
 
@@ -130,7 +132,8 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 	}
 }
 
-inline void ReadStructProperty(FSpatialNetBitReader& Reader, GDK_PROPERTY(StructProperty)* Property, USpatialNetDriver* NetDriver, uint8* Data, bool& bOutHasUnmapped)
+inline void ReadStructProperty(FSpatialNetBitReader& Reader, GDK_PROPERTY(StructProperty) * Property, USpatialNetDriver* NetDriver,
+							   uint8* Data, bool& bOutHasUnmapped)
 {
 	UScriptStruct* Struct = Property->Struct;
 
@@ -164,13 +167,11 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 	TArray<UFunction*> AllClassFunctions;
 
 	TFieldIterator<UFunction> RemoteFunction(Class, EFieldIteratorFlags::IncludeSuper, EFieldIteratorFlags::IncludeDeprecated,
-		EFieldIteratorFlags::IncludeInterfaces);
+											 EFieldIteratorFlags::IncludeInterfaces);
 	for (; RemoteFunction; ++RemoteFunction)
 	{
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
-			RemoteFunction->FunctionFlags & FUNC_NetServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient || RemoteFunction->FunctionFlags & FUNC_NetServer
+			|| RemoteFunction->FunctionFlags & FUNC_NetCrossServer || RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 		{
 			AllClassFunctions.Add(*RemoteFunction);
 		}
@@ -195,15 +196,14 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 	}
 
 	// When using multiple EventGraphs in blueprints, the functions could be iterated in different order, so just sort them alphabetically.
-	RelevantClassFunctions.Sort([](const UFunction& A, const UFunction& B)
-	{
+	RelevantClassFunctions.Sort([](const UFunction& A, const UFunction& B) {
 		return FNameLexicalLess()(A.GetFName(), B.GetFName());
 	});
 
 	return RelevantClassFunctions;
 }
 
-inline UScriptStruct* GetFastArraySerializerProperty(GDK_PROPERTY(ArrayProperty)* Property)
+inline UScriptStruct* GetFastArraySerializerProperty(GDK_PROPERTY(ArrayProperty) * Property)
 {
 	// Check if this array property conforms to the pattern of what we expect for a FFastArraySerializer. We do
 	// this be ensuring that the owner struct has the NetDeltaSerialize flag, and that the array's internal item

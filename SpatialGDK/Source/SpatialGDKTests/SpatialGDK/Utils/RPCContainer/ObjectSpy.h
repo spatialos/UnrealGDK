@@ -10,8 +10,8 @@
 
 namespace SpyUtils
 {
-	TArray<uint8> RPCTypeToByteArray(ERPCType Type);
-	ERPCType ByteArrayToRPCType(const TArray<uint8>& Array);
+TArray<uint8> RPCTypeToByteArray(ERPCType Type);
+ERPCType ByteArrayToRPCType(const TArray<uint8>& Array);
 } // namespace SpyUtils
 
 UCLASS()

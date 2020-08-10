@@ -9,8 +9,8 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "Schema/StandardLibrary.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -36,11 +36,18 @@ struct FObjectReferences
 		, Array(MoveTemp(Other.Array))
 		, ShadowOffset(Other.ShadowOffset)
 		, ParentIndex(Other.ParentIndex)
-		, Property(Other.Property) {}
+		, Property(Other.Property)
+	{
+	}
 
 	// Single property constructor
-	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty)
-		: bSingleProp(true), bFastArrayProp(false), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty)
+	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex,
+					  GDK_PROPERTY(Property) * InProperty)
+		: bSingleProp(true)
+		, bFastArrayProp(false)
+		, ShadowOffset(InCmdIndex)
+		, ParentIndex(InParentIndex)
+		, Property(InProperty)
 	{
 		if (bUnresolved)
 		{
@@ -53,25 +60,44 @@ struct FObjectReferences
 	}
 
 	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs, TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty, bool InFastArrayProp = false)
-		: MappedRefs(MoveTemp(InDynamicRefs)), UnresolvedRefs(MoveTemp(InUnresolvedRefs)), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs,
+					  TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property) * InProperty,
+					  bool InFastArrayProp = false)
+		: MappedRefs(MoveTemp(InDynamicRefs))
+		, UnresolvedRefs(MoveTemp(InUnresolvedRefs))
+		, bSingleProp(false)
+		, bFastArrayProp(InFastArrayProp)
+		, Buffer(InBuffer)
+		, NumBufferBits(InNumBufferBits)
+		, ShadowOffset(InCmdIndex)
+		, ParentIndex(InParentIndex)
+		, Property(InProperty)
+	{
+	}
 
 	// Array constructor
-	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty)
-		: bSingleProp(false), bFastArrayProp(false), Array(InArray), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
+	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property) * InProperty)
+		: bSingleProp(false)
+		, bFastArrayProp(false)
+		, Array(InArray)
+		, ShadowOffset(InCmdIndex)
+		, ParentIndex(InParentIndex)
+		, Property(InProperty)
+	{
+	}
 
-	TSet<FUnrealObjectRef>				MappedRefs;
-	TSet<FUnrealObjectRef>				UnresolvedRefs;
+	TSet<FUnrealObjectRef> MappedRefs;
+	TSet<FUnrealObjectRef> UnresolvedRefs;
 
-	bool								bSingleProp;
-	bool								bFastArrayProp;
-	TArray<uint8>						Buffer;
-	int32								NumBufferBits;
+	bool bSingleProp;
+	bool bFastArrayProp;
+	TArray<uint8> Buffer;
+	int32 NumBufferBits;
 
-	TUniquePtr<FObjectReferencesMap>	Array;
-	int32								ShadowOffset;
-	int32								ParentIndex;
-	GDK_PROPERTY(Property)*				Property;
+	TUniquePtr<FObjectReferencesMap> Array;
+	int32 ShadowOffset;
+	int32 ParentIndex;
+	GDK_PROPERTY(Property) * Property;
 };
 
 struct FPendingSubobjectAttachment
@@ -87,8 +113,10 @@ struct FPendingSubobjectAttachment
 class FSpatialObjectRepState
 {
 public:
-
-	FSpatialObjectRepState(FChannelObjectPair InThisObj) : ThisObj(InThisObj) {}
+	FSpatialObjectRepState(FChannelObjectPair InThisObj)
+		: ThisObj(InThisObj)
+	{
+	}
 
 	void UpdateRefToRepStateMap(FObjectToRepStateMap& ReplicatorMap);
 	bool MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef);
@@ -97,16 +125,16 @@ public:
 	const FChannelObjectPair& GetChannelObjectPair() const { return ThisObj; }
 
 	FObjectReferencesMap ReferenceMap;
-	TSet< FUnrealObjectRef > ReferencedObj;
-	TSet< FUnrealObjectRef > UnresolvedRefs;
+	TSet<FUnrealObjectRef> ReferencedObj;
+	TSet<FUnrealObjectRef> UnresolvedRefs;
 
 private:
 	bool MoveMappedObjectToUnmapped_r(const FUnrealObjectRef& ObjRef, FObjectReferencesMap& ObjectReferencesMap);
-	void GatherObjectRef(TSet<FUnrealObjectRef>& OutReferenced, TSet<FUnrealObjectRef>& OutUnresolved, const FObjectReferences& References) const;
+	void GatherObjectRef(TSet<FUnrealObjectRef>& OutReferenced, TSet<FUnrealObjectRef>& OutUnresolved,
+						 const FObjectReferences& References) const;
 
 	FChannelObjectPair ThisObj;
 };
-
 
 UCLASS(Transient)
 class SPATIALGDK_API USpatialActorChannel : public UActorChannel
@@ -114,18 +142,12 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 	GENERATED_BODY()
 
 public:
-	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
+	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.
-	FORCEINLINE Worker_EntityId GetEntityId() const
-	{
-		return EntityId;
-	}
+	FORCEINLINE Worker_EntityId GetEntityId() const { return EntityId; }
 
-	FORCEINLINE void SetEntityId(Worker_EntityId InEntityId)
-	{
-		EntityId = InEntityId;
-	}
+	FORCEINLINE void SetEntityId(Worker_EntityId InEntityId) { EntityId = InEntityId; }
 
 	FORCEINLINE bool IsReadyForReplication()
 	{
@@ -159,20 +181,14 @@ public:
 			return false;
 		}
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+		return NetDriver->StaticComponentView->HasAuthority(
+			EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
 	}
 
-	inline void SetClientAuthority(const bool IsAuth)
-	{
-		bIsAuthClient = IsAuth;
-	}
-
+	inline void SetClientAuthority(const bool IsAuth) { bIsAuthClient = IsAuth; }
 
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
-	inline bool IsAuthoritativeClient() const
-	{
-		return bIsAuthClient;
-	}
+	inline bool IsAuthoritativeClient() const { return bIsAuthClient; }
 
 	// Sets the server and client authorities for this SpatialActorChannel based on the StaticComponentView
 	inline void RefreshAuthority()
@@ -183,7 +199,8 @@ public:
 		}
 		else
 		{
-			SetClientAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+			SetClientAuthority(NetDriver->StaticComponentView->HasAuthority(
+				EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
 		}
 	}
 
@@ -196,15 +213,9 @@ public:
 		bIsAuthServer = IsAuth;
 	}
 
-	uint64 GetAuthorityReceivedTimestamp() const
-	{
-		return AuthorityReceivedTimestamp;
-	}
+	uint64 GetAuthorityReceivedTimestamp() const { return AuthorityReceivedTimestamp; }
 
-	inline bool IsAuthoritativeServer() const
-	{
-		return bIsAuthServer;
-	}
+	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
@@ -219,7 +230,7 @@ public:
 	}
 
 	// Begin UChannel interface
-	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
+	virtual void Init(UNetConnection* InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
 	virtual int64 Close(EChannelCloseReason Reason) override;
 	// End UChannel interface
 
@@ -239,15 +250,17 @@ public:
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
 
-	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
+	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an
+	// array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property)*>& RepNotifies);
+	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
-	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property)*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
+	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
+											 const FObjectReferencesMap& RefMap, UObject* Object);
 
 	void UpdateShadowData();
 	void UpdateSpatialPositionWithFrequencyCheck();
@@ -265,6 +278,10 @@ public:
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
+
+	void SetNeedOwnerInterestUpdate(bool bInNeedOwnerInterestUpdate) { bNeedOwnerInterestUpdate = bInNeedOwnerInterestUpdate; }
+
+	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
 protected:
 	// Begin UChannel interface
@@ -346,4 +363,8 @@ private:
 	// before the actor holding the position for all the hierarchy, it can immediately attempt to migrate back.
 	// Using this timestamp, we can back off attempting migrations for a while.
 	uint64 AuthorityReceivedTimestamp;
+
+	// In case the actor's owner did not have an entity ID when trying to set interest to it
+	// We set this flag in order to try to add interest as soon as possible.
+	bool bNeedOwnerInterestUpdate;
 };

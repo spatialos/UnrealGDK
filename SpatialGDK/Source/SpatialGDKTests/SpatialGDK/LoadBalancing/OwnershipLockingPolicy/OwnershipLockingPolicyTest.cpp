@@ -9,19 +9,17 @@
 #include "Containers/UnrealString.h"
 #include "Engine/Engine.h"
 #include "Engine/EngineTypes.h"
-#include "GameFramework/GameStateBase.h"
 #include "GameFramework/DefaultPawn.h"
+#include "GameFramework/GameStateBase.h"
 #include "Improbable/SpatialEngineDelegates.h"
-#include "Tests/AutomationCommon.h"
 #include "Templates/SharedPointer.h"
+#include "Tests/AutomationCommon.h"
 #include "UObject/UObjectGlobals.h"
 
-#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) \
-	GDK_TEST(Core, UOwnershipLockingPolicy, TestName)
+#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) GDK_TEST(Core, UOwnershipLockingPolicy, TestName)
 
 namespace
 {
-
 using LockingTokenAndDebugString = TPair<ActorLockToken, FString>;
 
 struct TestData
@@ -61,8 +59,7 @@ UWorld* GetAnyGameWorld()
 	const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
 	for (const FWorldContext& Context : WorldContexts)
 	{
-		if ((Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game)
-			&& (Context.World() != nullptr))
+		if ((Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game) && (Context.World() != nullptr))
 		{
 			World = Context.World();
 			break;
@@ -128,7 +125,8 @@ bool FDestroyActor::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FSetOwnership, TSharedPtr<TestData>, Data, FName, ActorBeingOwnedHandle, FName, ActorToOwnHandle);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FSetOwnership, TSharedPtr<TestData>, Data, FName, ActorBeingOwnedHandle, FName,
+												 ActorToOwnHandle);
 bool FSetOwnership::Update()
 {
 	AActor* ActorBeingOwned = Data->TestActors[ActorBeingOwnedHandle];
@@ -139,7 +137,8 @@ bool FSetOwnership::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DebugString, bool, bExpectedSuccess);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle,
+												FString, DebugString, bool, bExpectedSuccess);
 bool FAcquireLock::Update()
 {
 	if (!bExpectedSuccess)
@@ -154,16 +153,18 @@ bool FAcquireLock::Update()
 	// If the token returned is valid, it MUST be unique.
 	if (bAcquireLockSucceeded)
 	{
-		for (const TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
+		for (const TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorLockingTokenAndDebugStrings :
+			 Data->TestActorToLockingTokenAndDebugStrings)
 		{
 			const TArray<LockingTokenAndDebugString>& LockingTokensAndDebugStrings = ActorLockingTokenAndDebugStrings.Value;
-			const bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& InnerData)
-			{
-				return Token == InnerData.Key;
-			});
+			const bool TokenAlreadyExists =
+				LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& InnerData) {
+					return Token == InnerData.Key;
+				});
 			if (TokenAlreadyExists)
 			{
-				Test->AddError(FString::Printf(TEXT("AcquireLock returned a valid ActorLockToken that had already been assigned. Token: %d"), Token));
+				Test->AddError(
+					FString::Printf(TEXT("AcquireLock returned a valid ActorLockToken that had already been assigned. Token: %d"), Token));
 			}
 		}
 	}
@@ -177,7 +178,8 @@ bool FAcquireLock::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, LockDebugString, bool, bExpectedSuccess);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle,
+												FString, LockDebugString, bool, bExpectedSuccess);
 bool FReleaseLock::Update()
 {
 	const AActor* Actor = Data->TestActors[ActorHandle];
@@ -195,8 +197,7 @@ bool FReleaseLock::Update()
 		return true;
 	}
 
-	const int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& InnerData)
-	{
+	const int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& InnerData) {
 		return InnerData.Value == LockDebugString;
 	});
 	Test->TestTrue("Found valid lock token", TokenIndex != INDEX_NONE);
@@ -218,25 +219,30 @@ bool FReleaseLock::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FReleaseAllLocks, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, int32, ExpectedFailures);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FReleaseAllLocks, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, int32,
+												 ExpectedFailures);
 bool FReleaseAllLocks::Update()
 {
 	const bool bExpectedSuccess = ExpectedFailures == 0;
 
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Called ReleaseLock for unidentified Actor lock token."), EAutomationExpectedErrorFlags::Contains, ExpectedFailures);
+		Test->AddExpectedError(TEXT("Called ReleaseLock for unidentified Actor lock token."), EAutomationExpectedErrorFlags::Contains,
+							   ExpectedFailures);
 	}
 
 	// Attempt to release every lock token for every Actor.
-	for (TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorAndLockingTokenAndDebugStringsPair : Data->TestActorToLockingTokenAndDebugStrings)
+	for (TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorAndLockingTokenAndDebugStringsPair :
+		 Data->TestActorToLockingTokenAndDebugStrings)
 	{
 		for (LockingTokenAndDebugString& TokenAndDebugString : ActorAndLockingTokenAndDebugStringsPair.Value)
 		{
 			const ActorLockToken Token = TokenAndDebugString.Key;
 			const bool bReleaseLockSucceeded = Data->LockingPolicy->ReleaseLock(Token);
-			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %lld"), Token), !bExpectedSuccess && bReleaseLockSucceeded);
-			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %lld"), Token), bExpectedSuccess && !bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %lld"), Token),
+							!bExpectedSuccess && bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %lld"), Token),
+							bExpectedSuccess && !bReleaseLockSucceeded);
 		}
 	}
 
@@ -246,7 +252,8 @@ bool FReleaseAllLocks::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLockViaDelegate, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier, bool, bExpectedSuccess);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLockViaDelegate, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName,
+												ActorHandle, FString, DelegateLockIdentifier, bool, bExpectedSuccess);
 bool FAcquireLockViaDelegate::Update()
 {
 	AActor* Actor = Data->TestActors[ActorHandle];
@@ -260,7 +267,8 @@ bool FAcquireLockViaDelegate::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FReleaseLockViaDelegate, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier, bool, bExpectedSuccess);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FReleaseLockViaDelegate, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName,
+												ActorHandle, FString, DelegateLockIdentifier, bool, bExpectedSuccess);
 bool FReleaseLockViaDelegate::Update()
 {
 	AActor* Actor = Data->TestActors[ActorHandle];
@@ -269,7 +277,8 @@ bool FReleaseLockViaDelegate::Update()
 
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier."), EAutomationExpectedErrorFlags::Contains, 1);
+		Test->AddExpectedError(TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier."),
+							   EAutomationExpectedErrorFlags::Contains, 1);
 	}
 
 	const bool bReleaseLockSucceeded = Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
@@ -280,12 +289,14 @@ bool FReleaseLockViaDelegate::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FTestIsLocked, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, bool, bIsLockedExpected);
+DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FTestIsLocked, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, bool,
+												bIsLockedExpected);
 bool FTestIsLocked::Update()
 {
 	const AActor* Actor = Data->TestActors[Handle];
 	const bool bIsLocked = Data->LockingPolicy->IsLocked(Actor);
-	Test->TestEqual(FString::Printf(TEXT("%s. Is locked. Actual: %d. Expected: %d"), *Handle.ToString(), bIsLocked, bIsLockedExpected), bIsLocked, bIsLockedExpected);
+	Test->TestEqual(FString::Printf(TEXT("%s. Is locked. Actual: %d. Expected: %d"), *Handle.ToString(), bIsLocked, bIsLockedExpected),
+					bIsLocked, bIsLockedExpected);
 	return true;
 }
 
@@ -326,7 +337,7 @@ void SpawnABCDEHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "E"));
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_called_THEN_returns_false_with_no_lock_tokens)
 {
@@ -495,7 +506,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Ac
 
 // Hierarchy Actors
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_leaf_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_leaf_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -522,7 +534,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_path_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_path_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -549,7 +562,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -576,7 +590,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_multiple_hierarchy_Actors_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_multiple_hierarchy_Actors_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -613,7 +628,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_mult
 
 // Actor Destruction
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_explicitly_locked_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_explicitly_locked_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -637,7 +653,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -661,7 +678,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -685,7 +703,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -709,7 +728,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -733,7 +753,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -759,7 +780,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_
 
 // Owner Changes
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -789,7 +811,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -817,7 +840,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_explicitly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_explicitly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -843,7 +867,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_explictly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_explictly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -871,7 +896,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -901,7 +927,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_leaf_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_leaf_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -927,7 +954,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -957,7 +985,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_h
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -1002,7 +1031,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -1020,7 +1050,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_exec
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -1042,7 +1073,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_exec
 	return true;
 }
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_are_executed_WHEN_ReleaseLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_are_executed_WHEN_ReleaseLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 

@@ -85,7 +85,8 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."),
+			   *AActor::GetDebugName(&Actor));
 		return false;
 	}
 
@@ -102,7 +103,8 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."),
+			   *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
@@ -113,12 +115,14 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], *Actor2DLocation.ToString());
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i,
+				   VirtualWorkerIds[i], *Actor2DLocation.ToString());
 			return VirtualWorkerIds[i];
 		}
 	}
 
-	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"), *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
+	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"),
+		   *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
@@ -131,14 +135,15 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	const FBox2D Interest2D = WorkerCells[LocalCellId].ExpandBy(InterestBorder);
 
 	const FVector2D Center2D = Interest2D.GetCenter();
-	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f};
+	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f };
 
 	const FVector2D EdgeLengths2D = Interest2D.GetSize();
 	check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
-	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX};
+	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
 
 	SpatialGDK::QueryConstraint Constraint;
-	Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+	Constraint.BoxConstraint =
+		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 	return Constraint;
 }
 
@@ -158,7 +163,8 @@ uint32 UGridBasedLBStrategy::GetMinimumRequiredWorkers() const
 void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
 {
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Setting VirtualWorkerIds %d to %d"), FirstVirtualWorkerId, LastVirtualWorkerId);
-	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId; CurrentVirtualWorkerId++)
+	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId;
+		 CurrentVirtualWorkerId++)
 	{
 		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
 	}
@@ -166,8 +172,7 @@ void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtu
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
 {
-	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
-		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
+	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y && Location.X < Box.Max.X && Location.Y < Box.Max.Y;
 }
 
 UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const

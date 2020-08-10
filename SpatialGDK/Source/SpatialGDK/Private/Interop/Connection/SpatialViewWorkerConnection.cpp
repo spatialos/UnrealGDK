@@ -8,7 +8,6 @@
 
 namespace
 {
-
 SpatialGDK::ComponentData ToComponentData(FWorkerComponentData* Data)
 {
 	return SpatialGDK::ComponentData(SpatialGDK::OwningComponentDataPtr(Data->schema_type), Data->component_id);
@@ -19,7 +18,7 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 	return SpatialGDK::ComponentUpdate(SpatialGDK::OwningComponentUpdatePtr(Update->schema_type), Update->component_id);
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 void USpatialViewWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
@@ -52,10 +51,11 @@ Worker_RequestId USpatialViewWorkerConnection::SendReserveEntityIdsRequest(uint3
 	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
 }
 
-Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialViewWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
+																	   const Worker_EntityId* EntityId)
 {
 	check(Coordinator.IsValid());
-	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId  : TOptional<Worker_EntityId>();
+	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
 	TArray<SpatialGDK::ComponentData> Data;
 	Data.Reserve(Components.Num());
 	for (auto& Component : Components)
@@ -89,19 +89,21 @@ void USpatialViewWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId,
 	return Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate));
 }
 
-Worker_RequestId USpatialViewWorkerConnection::SendCommandRequest(Worker_EntityId EntityId,
-	Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId USpatialViewWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+																  uint32_t CommandId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendEntityCommandRequest(EntityId, SpatialGDK::CommandRequest(
-		SpatialGDK::OwningCommandRequestPtr(Request->schema_type) , Request->component_id, Request->command_index));
+	return Coordinator->SendEntityCommandRequest(
+		EntityId, SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type), Request->component_id,
+											 Request->command_index));
 }
 
 void USpatialViewWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendEntityCommandResponse(RequestId, SpatialGDK::CommandResponse(
-		SpatialGDK::OwningCommandResponsePtr(Response->schema_type) , Response->component_id, Response->command_index));
+	Coordinator->SendEntityCommandResponse(
+		RequestId, SpatialGDK::CommandResponse(SpatialGDK::OwningCommandResponsePtr(Response->schema_type), Response->component_id,
+											   Response->command_index));
 }
 
 void USpatialViewWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
@@ -116,8 +118,7 @@ void USpatialViewWorkerConnection::SendLogMessage(uint8_t Level, const FName& Lo
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
 }
 
-void USpatialViewWorkerConnection::SendComponentInterest(Worker_EntityId EntityId,
-	TArray<Worker_InterestOverride>&& ComponentInterest)
+void USpatialViewWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
 	// Deprecated.
 	checkNoEntry();
