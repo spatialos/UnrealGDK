@@ -207,7 +207,9 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 	}
 	else if (ShouldConnectToCloudDeployment())
 	{
-		CommandLine = TEXT("connect.to.spatialos -devAuthToken ") + GetDevAuthToken();
+		// 127.0.0.1 is only used to indicate that we want to connect to a deployment.
+		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection if it fails.
+		CommandLine = TEXT("127.0.0.1 -devAuthToken ") + GetDevAuthToken();
 		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
 		if (!CloudDeploymentName.IsEmpty())
 		{
