@@ -72,7 +72,7 @@ void AVisibilityTest::BeginPlay()
 				CubeLocation = Iter->GetActorLocation();
 			}
 			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
-s
+
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
