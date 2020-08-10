@@ -3,25 +3,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionalTest.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "FunctionalTest.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
-#include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTestLBDelegationInterface.h"
+#include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
-namespace 
+namespace
 {
-	typedef TFunction<bool(ASpatialFunctionalTest* NetTest)> FIsReadyEventFunc;
-	typedef TFunction<void(ASpatialFunctionalTest* NetTest)> FStartEventFunc;
-	typedef TFunction<void(ASpatialFunctionalTest* NetTest, float DeltaTime)> FTickEventFunc;
+typedef TFunction<bool(ASpatialFunctionalTest* NetTest)> FIsReadyEventFunc;
+typedef TFunction<void(ASpatialFunctionalTest* NetTest)> FStartEventFunc;
+typedef TFunction<void(ASpatialFunctionalTest* NetTest, float DeltaTime)> FTickEventFunc;
 
-	// we need 2 values since the way we clean up tests is based on replication of variables,
-	// so if the test fails to start, the cleanup process would never be triggered
-	constexpr int SPATIAL_FUNCTIONAL_TEST_NOT_STARTED = -1; // represents test waiting to run
-	constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// represents test already ran
-}
+// we need 2 values since the way we clean up tests is based on replication of variables,
+// so if the test fails to start, the cleanup process would never be triggered
+constexpr int SPATIAL_FUNCTIONAL_TEST_NOT_STARTED = -1; // represents test waiting to run
+constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// represents test already ran
+} // namespace
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
@@ -38,13 +38,13 @@ protected:
 private:
 	SpatialFunctionalTestFlowControllerSpawner FlowControllerSpawner;
 
-	UPROPERTY(ReplicatedUsing=StartServerFlowControllerSpawn)
+	UPROPERTY(ReplicatedUsing = StartServerFlowControllerSpawn)
 	uint8 bReadyToSpawnServerControllers : 1;
 
 public:
 	ASpatialFunctionalTest();
 
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void BeginPlay() override;
 
@@ -63,44 +63,57 @@ public:
 	virtual bool IsReady_Implementation() override;
 
 	// Called once after IsReady is true
-	virtual void StartTest() override; 
+	virtual void StartTest() override;
 
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
-	
+
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController);
 
 	// # FlowController related APIs
-	
+
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
 	// Get all the FlowControllers registered in this Test.
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
 
-	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1", ToolTip = "Returns the FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	// clang-format off
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1",
+		ToolTip = "Returns the FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
 	// Get the FlowController that is Local to this instance
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
 
-	// # Step APIs 
+	// # Step APIs
 
 	// Add Steps for Blueprints
-	
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (DisplayName = "Add Step", AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent", ToolTip = "Adds a Test Step. Check GetAllWorkers(), GetAllServerWorkers() and GetAllClientWorkers() for convenience.\n\nIf you split the Worker pin you can define if you want to run on Server, Client or All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).\n\nKeep in mind you can split the Worker pin for convenience."))
-	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (DisplayName = "Add Step", AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent",
+		ToolTip = "Adds a Test Step. Check GetAllWorkers(), GetAllServerWorkers() and GetAllClientWorkers() for convenience.\n\nIf you split the Worker pin you can define if you want to run on Server, Client or All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).\n\nKeep in mind you can split the Worker pin for convenience."))
+	// clang-format on
+	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent,
+						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
 	// Add Steps for Blueprints and C++
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience."))
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+		meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience."))
+	// clang-format on
 	void AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition, const FWorkerDefinition& Worker);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience.\nIt is a more extensible version of AddStepFromDefinition(), where you can pass an array with multiple specific Workers."))
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+		meta = (ToolTip = "Adds a Step from a Definition. Allows you to define a Step and add it / re-use it multiple times.\n\nKeep in mind you can split the Worker pin for convenience.\nIt is a more extensible version of AddStepFromDefinition(), where you can pass an array with multiple specific Workers."))
+	// clang-format on
 	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers);
 
 	// Add Steps for C++
@@ -110,7 +123,9 @@ public:
 	 * keep in mind that Worker Ids start from 1. If you pass FWorkerDefinition::ALL_WORKERS_ID (GetAllWorkersId()) it will
 	 * run on all the Servers / Clients. If you pass WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).
 	 */
-	FSpatialFunctionalTestStepDefinition& AddStep(const FString& StepName, const FWorkerDefinition& Worker, FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr, FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+	FSpatialFunctionalTestStepDefinition& AddStep(const FString& StepName, const FWorkerDefinition& Worker,
+												  FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr,
+												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
 	// Start Running a Step
 	void StartStep(const int StepIndex);
@@ -120,7 +135,7 @@ public:
 	void FinishStep();
 
 	const FSpatialFunctionalTestStepDefinition GetStepDefinition(int StepIndex) const;
-	
+
 	int GetCurrentStepIndex() { return CurrentStepIndex; }
 
 	// Convenience function that goes over all FlowControllers and counts how many are Servers
@@ -132,33 +147,55 @@ public:
 	int GetNumberOfClientWorkers();
 
 	// Convenience function that returns the Id used for executing steps on all Servers / Clients
-	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"), Category = "Spatial Functional Test")
+	// clang-format off
+	UFUNCTION(BlueprintPure,
+		meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"),
+		Category = "Spatial Functional Test")
+	// clang-format on
 	int GetAllWorkersId() { return FWorkerDefinition::ALL_WORKERS_ID; }
 
-	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Servers and Clients"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Servers and Clients"),
+			  Category = "Spatial Functional Test")
 	FWorkerDefinition GetAllWorkers() { return FWorkerDefinition::AllWorkers; }
 
-	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Servers"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Servers"),
+			  Category = "Spatial Functional Test")
 	FWorkerDefinition GetAllServers() { return FWorkerDefinition::AllServers; }
 
-	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Clients"), Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintPure, meta = (ToolTip = "Returns a Worker Defnition that represents all of the Clients"),
+			  Category = "Spatial Functional Test")
 	FWorkerDefinition GetAllClients() { return FWorkerDefinition::AllClients; }
 
 	// # Actor Delegation APIs
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	// clang-format off
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test",
+		meta = (ServerWorkerId = "1", ToolTip = "Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	// clang-format on
 	void AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished = false);
 
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	// clang-format off
+	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test",
+		meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	// clang-format on
 	void RemoveActorDelegation(AActor* Actor);
-	
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Check is the Actor has it's authority delegated to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+		meta = (ToolTip = "Check is the Actor has it's authority delegated to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
+	// clang-format on
 	bool HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent);
 
 	// # Actor Interest APIs
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside its interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1",
+		ToolTip = "Allow Server Worker to always have interest in an Actor, even it if moves outside its interest area.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	// clang-format on
 	void AddActorInterest(int32 ServerWorkerId, AActor* Actor);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1", ToolTip = "Counterpart to AddActorInterest(), so it can only remove interest added by the other function. There's no way to force remove interest if the underlying configuration in GDK is giving it.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ServerWorkerId = "1",
+		ToolTip = "Counterpart to AddActorInterest(), so it can only remove interest added by the other function. There's no way to force remove interest if the underlying configuration in GDK is giving it.\n\nNote that this only works if you are using USpatialFunctionalTestGridLBStrategy."))
+	// clang-format on
 	void RemoveActorInterest(int32 ServerWorkerId, AActor* Actor);
 
 protected:
@@ -174,7 +211,7 @@ private:
 	int NumRequiredClients = 2;
 
 	// number of servers that should be running in the world
-	int NumExpectedServers = 0; 
+	int NumExpectedServers = 0;
 
 	// FlowController which is locally owned
 	ASpatialFunctionalTestFlowController* LocalFlowController = nullptr;
@@ -187,7 +224,7 @@ private:
 	float TimeRunningStep = 0.0f;
 
 	// Current Step Index, < 0 if not executing any, check consts at the top
-	UPROPERTY(ReplicatedUsing=OnReplicated_CurrentStepIndex, Transient)
+	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
 
 	UFUNCTION()
@@ -195,7 +232,7 @@ private:
 
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
-		
+
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
 

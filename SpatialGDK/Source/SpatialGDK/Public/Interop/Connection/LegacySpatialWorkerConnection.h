@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/Connection/WorkerConnectionCoordinator.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/OpList/OpList.h"

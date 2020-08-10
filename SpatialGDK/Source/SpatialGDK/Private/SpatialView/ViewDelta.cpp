@@ -4,7 +4,6 @@
 
 namespace SpatialGDK
 {
-
 void ViewDelta::AddOpList(OpList Ops, TSet<EntityComponentId>& ComponentsPresent)
 {
 	for (uint32 i = 0; i < Ops.Count; ++i)
@@ -171,4 +170,4 @@ void ViewDelta::HandleRemoveComponent(const Worker_RemoveComponentOp& Op, TSet<E
 	}
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

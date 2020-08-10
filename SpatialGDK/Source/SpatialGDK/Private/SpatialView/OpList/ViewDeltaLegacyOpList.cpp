@@ -2,13 +2,11 @@
 
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
-
 #include "Algo/StableSort.h"
 #include "Containers/StringConv.h"
 
 namespace
 {
-
 Worker_EntityId GetEntityIdFromOp(const Worker_Op& Op)
 {
 	switch (static_cast<Worker_OpType>(Op.op_type))
@@ -31,11 +29,10 @@ Worker_EntityId GetEntityIdFromOp(const Worker_Op& Op)
 	return 0;
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 namespace SpatialGDK
 {
-
 OpList GetOpListFromViewDelta(ViewDelta Delta)
 {
 	// The order of ops should be:
@@ -71,7 +68,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		Op.op.disconnect.reason = OpData->DisconnectReason.Get();
 		OpData->Ops.Push(Op);
 
-		return {OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData)};
+		return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
 	}
 
 	TArray<Worker_Op> Ops;
@@ -89,10 +86,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		Worker_Op Op = {};
 		Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
 		Op.op.add_component.entity_id = Data.EntityId;
-		Op.op.add_component.data = Worker_ComponentData{
-			nullptr, Data.Data.GetComponentId(),
-			Data.Data.GetUnderlying(), nullptr
-		};
+		Op.op.add_component.data = Worker_ComponentData{ nullptr, Data.Data.GetComponentId(), Data.Data.GetUnderlying(), nullptr };
 		Ops.Push(Op);
 	}
 
@@ -122,10 +116,8 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		Worker_Op AddOp = {};
 		AddOp.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
 		AddOp.op.add_component.entity_id = Update.EntityId;
-		AddOp.op.add_component.data = Worker_ComponentData{
-			nullptr, Update.CompleteUpdate.GetComponentId(),
-			Update.CompleteUpdate.GetUnderlying(), nullptr
-		};
+		AddOp.op.add_component.data =
+			Worker_ComponentData{ nullptr, Update.CompleteUpdate.GetComponentId(), Update.CompleteUpdate.GetUnderlying(), nullptr };
 		Ops.Push(AddOp);
 	}
 
@@ -134,10 +126,8 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		Worker_Op Op = {};
 		Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
 		Op.op.component_update.entity_id = Update.EntityId;
-		Op.op.component_update.update = Worker_ComponentUpdate{
-			nullptr, Update.Update.GetComponentId(),
-			Update.Update.GetUnderlying(), nullptr
-		};
+		Op.op.component_update.update =
+			Worker_ComponentUpdate{ nullptr, Update.Update.GetComponentId(), Update.Update.GetUnderlying(), nullptr };
 		Ops.Push(Op);
 	}
 
@@ -179,8 +169,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	}
 
 	// Sort the entity ops by entity ID and surround each set of entity ops with a critical section.
-	Algo::StableSort(Ops, [](const Worker_Op& Lhs, const Worker_Op& Rhs)
-	{
+	Algo::StableSort(Ops, [](const Worker_Op& Lhs, const Worker_Op& Rhs) {
 		return GetEntityIdFromOp(Lhs) < GetEntityIdFromOp(Rhs);
 	});
 
@@ -223,7 +212,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	OpData->Ops.Append(Delta.GetWorkerMessages());
 
 	OpData->Delta = MoveTemp(Delta);
-	return {OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData)};
+	return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
 }
 
 } // namespace SpatialGDK

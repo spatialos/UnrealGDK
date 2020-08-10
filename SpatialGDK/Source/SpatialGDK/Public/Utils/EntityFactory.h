@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
- 
+
 #pragma once
- 
+
 #include "SpatialCommonTypes.h"
 #include "Utils/SpatialStatics.h"
 
@@ -16,20 +16,22 @@ class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
- 
+
 namespace SpatialGDK
 {
-class SpatialRPCService;	
+class SpatialRPCService;
 
 struct RPCsOnEntityCreation;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
- 
+
 class SPATIALGDK_API EntityFactory
 {
 public:
-	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService);
- 
-	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten);
+	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager,
+				  SpatialRPCService* InRPCService);
+
+	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
+														uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
 
 	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
@@ -40,4 +42,4 @@ private:
 	USpatialClassInfoManager* ClassInfoManager;
 	SpatialRPCService* RPCService;
 };
-}  // namepsace SpatialGDK
+} // namespace SpatialGDK

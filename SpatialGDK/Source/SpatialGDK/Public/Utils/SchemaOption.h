@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 template <typename T>
 class TSchemaOption
 {
@@ -16,16 +15,15 @@ public:
 
 	TSchemaOption(const T& InValue)
 		: Value(MakeUnique<T>(InValue))
-	{}
+	{
+	}
 
 	TSchemaOption(T&& InValue)
 		: Value(MakeUnique<T>(MoveTemp(InValue)))
-	{}
-
-	TSchemaOption(const TSchemaOption& InValue)
 	{
-		*this = InValue;
 	}
+
+	TSchemaOption(const TSchemaOption& InValue) { *this = InValue; }
 
 	TSchemaOption(TSchemaOption&&) = default;
 
@@ -44,15 +42,9 @@ public:
 
 	TSchemaOption& operator=(TSchemaOption&&) = default;
 
-	FORCEINLINE bool IsSet() const
-	{
-		return Value.IsValid();
-	}
+	FORCEINLINE bool IsSet() const { return Value.IsValid(); }
 
-	FORCEINLINE explicit operator bool() const
-	{
-		return IsSet();
-	}
+	FORCEINLINE explicit operator bool() const { return IsSet(); }
 
 	const T& GetValue() const
 	{
@@ -81,25 +73,13 @@ public:
 		return GetValue() == InValue.GetValue();
 	}
 
-	bool operator!=(const TSchemaOption& InValue) const
-	{
-		return !operator==(InValue);
-	}
+	bool operator!=(const TSchemaOption& InValue) const { return !operator==(InValue); }
 
-	T& operator*() const
-	{
-		return *Value;
-	}
+	T& operator*() const { return *Value; }
 
-	const T* operator->() const
-	{
-		return Value.Get();
-	}
+	const T* operator->() const { return Value.Get(); }
 
-	T* operator->()
-	{
-		return Value.Get();
-	}
+	T* operator->() { return Value.Get(); }
 
 private:
 	TUniquePtr<T> Value;

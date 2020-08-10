@@ -11,13 +11,15 @@ DEFINE_LOG_CATEGORY(LogSpatialNetBitReader);
 
 static thread_local FSpatialNetBitReader* GCurrentReader = nullptr;
 
-FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs)
+FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits,
+										   TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: FNetBitReader(InPackageMap, Source, CountBits)
 	, DynamicRefs(InDynamicRefs)
 	, UnresolvedRefs(InUnresolvedRefs)
 {
 	// Limitation of using a global TLS pointer, you can have at most a single instance of this object per thread.
-	// There should be no need to have more than one at a given time, but should that be the case we could move to a set per thread instead of a pointer.
+	// There should be no need to have more than one at a given time, but should that be the case we could move to a set per thread instead
+	// of a pointer.
 	check(GCurrentReader == nullptr);
 	GCurrentReader = this;
 }

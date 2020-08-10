@@ -17,14 +17,12 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 
 public:
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
-	virtual void FinishDestroy() override
-	{
-		Super::FinishDestroy();
-	}
+	virtual void FinishDestroy() override { Super::FinishDestroy(); }
 	virtual void DestroyConnection() PURE_VIRTUAL(USpatialWorkerConnection::DestroyConnection, return;);
 
 	virtual PhysicalWorkerName GetWorkerId() const PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerId, return PhysicalWorkerName(););
-	virtual const TArray<FString>& GetWorkerAttributes() const PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerAttributes, return ReturnValuePlaceholder;);
+	virtual const TArray<FString>& GetWorkerAttributes() const
+		PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerAttributes, return ReturnValuePlaceholder;);
 
 	virtual void ProcessOutgoingMessages() PURE_VIRTUAL(USpatialWorkerConnection::ProcessOutgoingMessages, return;);
 	virtual void MaybeFlush() PURE_VIRTUAL(USpatialWorkerConnection::MaybeFlush, return;);

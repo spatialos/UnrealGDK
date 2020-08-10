@@ -5,19 +5,16 @@
 
 #include "WorkerFlagsTestSpyObject.generated.h"
 
-
 UCLASS()
 class UWorkerFlagsTestSpyObject : public UObject
 {
 	GENERATED_BODY()
 public:
-
 	UFUNCTION()
 	void SetFlagUpdated(const FString& FlagName, const FString& FlagValue);
 
 	int GetTimesFlagUpdated() const;
 
 private:
-
-	int  TimesUpdated = 0;
-}; 
+	int TimesUpdated = 0;
+};
