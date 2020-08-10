@@ -273,10 +273,23 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
 		if(TestingMode != EMapTestingMode::UseCurrentSettings)
 		{
-			TActorIterator<ASpatialFunctionalTest> It(World);
+			TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
 			if (TestingMode == EMapTestingMode::Detect)
 			{
-				TestingMode = It ? EMapTestingMode::ForceSpatial : EMapTestingMode::ForceNativeOffline;
+				if (SpatialTestIt)
+				{
+					TestingMode = EMapTestingMode::ForceSpatial;
+				}
+				else
+				{
+					TActorIterator<AFunctionalTest> NativeTestIt(World);
+					if (!NativeTestIt)
+					{
+						// if there's no AFunctionalTests assume it's a Unit Test, so use current settings
+						return PIESettingsOverride;
+					}
+					TestingMode = EMapTestingMode::ForceNativeOffline;
+				}
 			}
 
 			int NumberOfClients = 1;
@@ -297,9 +310,9 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 			case EMapTestingMode::ForceSpatial:
 				PIESettingsOverride.bUseSpatial = true; // turn on for Spatial
 				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
-				for (; It; ++It)
+				for (; SpatialTestIt; ++SpatialTestIt)
 				{
-					NumberOfClients = FMath::Max(It->GetNumRequiredClients(), NumberOfClients);
+					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
 				}
 				break;
 			default:
