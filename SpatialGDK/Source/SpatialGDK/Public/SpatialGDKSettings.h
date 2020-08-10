@@ -328,7 +328,7 @@ public:
 	bool bEnableClientQueriesOnServer;
 
 	/** Experimental feature to use SpatialView layer when communicating with the Worker */
-	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	UPROPERTY(Config)
 	bool bUseSpatialView;
 
 	/**
