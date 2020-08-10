@@ -54,12 +54,14 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 				}
 
 				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
-				// So we do the same.
+				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and
+				// continues. So we do the same.
 				FString FullPath;
 				SpatialGDK::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-				UE_LOG(LogUnrealObjectRef, Warning, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
-					*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+				UE_LOG(LogUnrealObjectRef, Warning,
+					   TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: "
+							"%s %s"),
+					   *ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 			}
 
 			return Value;
@@ -137,11 +139,13 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					}
 				}
 
-				// Check if the object is a newly referenced dynamic subobject, in which case we can create the object ref if we have the entity id of the parent actor.
+				// Check if the object is a newly referenced dynamic subobject, in which case we can create the object ref if we have the
+				// entity id of the parent actor.
 				if (!ObjectValue->IsA<AActor>())
 				{
 					PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(ObjectValue);
-					ObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectValue); // This should now be valid, as we resolve the object in the line before
+					ObjectRef = PackageMap->GetUnrealObjectRefFromObject(
+						ObjectValue); // This should now be valid, as we resolve the object in the line before
 					if (ObjectRef.IsValid())
 					{
 						return ObjectRef;
@@ -149,7 +153,8 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 				}
 
 				// Unresolved object.
-				UE_LOG(LogUnrealObjectRef, Warning, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"), *ObjectValue->GetName());
+				UE_LOG(LogUnrealObjectRef, Warning, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"),
+					   *ObjectValue->GetName());
 				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 			}
 		}
@@ -212,10 +217,8 @@ bool FUnrealObjectRef::ShouldLoadObjectFromClassPath(UObject* Object)
 
 bool FUnrealObjectRef::IsUniqueActorClass(UClass* Class)
 {
-	return Class->IsChildOf<AGameStateBase>()
-		|| Class->IsChildOf<AGameModeBase>()
-		|| Class->IsChildOf<ASpatialMetricsDisplay>()
-		|| Class->IsChildOf<ASpatialDebugger>();
+	return Class->IsChildOf<AGameStateBase>() || Class->IsChildOf<AGameModeBase>() || Class->IsChildOf<ASpatialMetricsDisplay>()
+		   || Class->IsChildOf<ASpatialDebugger>();
 }
 
 FUnrealObjectRef FUnrealObjectRef::GetRefFromObjectClassPath(UObject* Object, USpatialPackageMapClient* PackageMap)

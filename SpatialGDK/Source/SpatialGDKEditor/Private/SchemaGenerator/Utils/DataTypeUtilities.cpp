@@ -11,7 +11,7 @@
 // Regex pattern matcher to match alphanumeric characters.
 const FRegexPattern AlphanumericPattern(TEXT("[A-Za-z0-9]"));
 
-FString GetEnumDataType(const GDK_PROPERTY(EnumProperty)* EnumProperty)
+FString GetEnumDataType(const GDK_PROPERTY(EnumProperty) * EnumProperty)
 {
 	FString DataType;
 
@@ -36,7 +36,10 @@ FString UnrealNameToSchemaName(const FString& UnrealName, bool bWarnAboutRename 
 		FString Result = TEXT("ZZ") + Sanitized;
 		if (bWarnAboutRename)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s starts with a digit (potentially after removing non-alphanumeric characters), so its schema name was changed to %s instead. To remove this warning, rename your asset."), *UnrealName, *Result);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning,
+				   TEXT("%s starts with a digit (potentially after removing non-alphanumeric characters), so its schema name was changed "
+						"to %s instead. To remove this warning, rename your asset."),
+				   *UnrealName, *Result);
 		}
 		return Result;
 	}
@@ -70,7 +73,8 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class)
 {
-	return FString::Printf(TEXT("%s%s"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("%s%s"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]),
+						   *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaHandoverDataName(UClass* Class)
@@ -82,8 +86,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
-	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-	{
+	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString {
 		FString PropName = Property->Property->GetName().ToLower();
 		if (Property->Property->ArrayDim > 1)
 		{

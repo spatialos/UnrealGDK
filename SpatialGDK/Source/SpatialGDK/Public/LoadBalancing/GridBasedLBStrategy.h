@@ -36,7 +36,7 @@ public:
 
 	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
 
-/* UAbstractLBStrategy Interface */
+	/* UAbstractLBStrategy Interface */
 	virtual void Init() override;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
@@ -53,7 +53,7 @@ public:
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
-/* End UAbstractLBStrategy Interface */
+	/* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
 

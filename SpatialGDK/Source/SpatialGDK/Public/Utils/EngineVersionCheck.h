@@ -12,4 +12,5 @@
 // Check if GDK is compatible with the current version of Unreal Engine
 // SPATIAL_ENGINE_VERSION is incremented in engine when breaking changes
 // are made that make previous versions of the GDK incompatible
-static_assert(SPATIAL_ENGINE_VERSION == SPATIAL_GDK_VERSION, "GDK Version is incompatible with the Engine Version. Check both the GDK and Engine are up to date");
+static_assert(SPATIAL_ENGINE_VERSION == SPATIAL_GDK_VERSION,
+			  "GDK Version is incompatible with the Engine Version. Check both the GDK and Engine are up to date");

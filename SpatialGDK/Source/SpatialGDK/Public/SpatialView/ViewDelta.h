@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include "SpatialView/AuthorityRecord.h"
 #include "SpatialView/EntityComponentRecord.h"
 #include "SpatialView/EntityPresenceRecord.h"
 #include "SpatialView/OpList/OpList.h"
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "Containers/Array.h"
 #include "Containers/Queue.h"
@@ -16,7 +16,6 @@
 
 namespace SpatialGDK
 {
-
 class ViewDelta
 {
 public:
@@ -60,4 +59,4 @@ private:
 	FString DisconnectReason;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

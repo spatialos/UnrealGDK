@@ -50,95 +50,57 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 
 	IDetailCategoryBuilder& CloudConnectionCategory = DetailBuilder.EditCategory("Cloud Connection");
 	CloudConnectionCategory.AddCustomRow(LOCTEXT("ProjectName_Filter", "Project Name"))
-		.NameContent()
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("ProjectName_Label", "Project Name"))
-				.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
-			]
-		]
+		.NameContent()[SNew(SHorizontalBox)
+					   + SHorizontalBox::Slot().FillWidth(
+						   1.0f)[SNew(STextBlock)
+									 .Text(LOCTEXT("ProjectName_Label", "Project Name"))
+									 .ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))]]
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			[
-				SNew(SEditableTextBox)
-				.Text(FText::FromString(ProjectName))
-				.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
-				.OnTextCommitted(this, &FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted)
-				.ErrorReporting(ProjectNameInputErrorReporting)
-			]
-		];
+		.MinDesiredWidth(250)[SNew(SHorizontalBox)
+							  + SHorizontalBox::Slot().FillWidth(
+								  1.0f)[SNew(SEditableTextBox)
+											.Text(FText::FromString(ProjectName))
+											.ToolTipText(LOCTEXT("ProjectName_Tooltip", "The name of the SpatialOS project."))
+											.OnTextCommitted(this, &FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted)
+											.ErrorReporting(ProjectNameInputErrorReporting)]];
 
 	CloudConnectionCategory.AddCustomRow(LOCTEXT("GenerateDevAuthToken_Filter", "Generate Development Authentication Token"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
-		[
-			SNew(SButton)
-			.VAlign(VAlign_Center)
-			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken)
-			.Content()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("GenerateDevAuthToken_Label", "Generate Dev Auth Token"))
-			]
-		];
-		
+		.MinDesiredWidth(250)[SNew(SButton)
+								  .VAlign(VAlign_Center)
+								  .OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::GenerateDevAuthToken)
+								  .Content()[SNew(STextBlock).Text(LOCTEXT("GenerateDevAuthToken_Label", "Generate Dev Auth Token"))]];
+
 	IDetailCategoryBuilder& MobileCategory = DetailBuilder.EditCategory("Mobile");
 	MobileCategory.AddCustomRow(LOCTEXT("PushCommandLineAndroid_Filter", "Push SpatialOS settings to Android device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(550)
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			[
-				SNew(SButton)
-				.VAlign(VAlign_Center)
-				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToAndroidDevice)
-				.Content()
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("PushCommandLineAndroid_Label", "Push SpatialOS settings to Android device"))
-				]
-			]
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			[
-				SNew(SButton)
-				.VAlign(VAlign_Center)
-				.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::RemoveCommandLineFromAndroidDevice)
-				.Content()
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("RemoveCommandLineAndroid_Label", "Remove SpatialOS settings from Android device"))
-				]
-			]
-		];
+		.MinDesiredWidth(
+			550)[SNew(SHorizontalBox)
+				 + SHorizontalBox::Slot().FillWidth(
+					 1.0f)[SNew(SButton)
+							   .VAlign(VAlign_Center)
+							   .OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToAndroidDevice)
+							   .Content()[SNew(STextBlock)
+											  .Text(LOCTEXT("PushCommandLineAndroid_Label", "Push SpatialOS settings to Android device"))]]
+				 + SHorizontalBox::Slot().FillWidth(
+					 1.0f)[SNew(SButton)
+							   .VAlign(VAlign_Center)
+							   .OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::RemoveCommandLineFromAndroidDevice)
+							   .Content()[SNew(STextBlock)
+											  .Text(LOCTEXT("RemoveCommandLineAndroid_Label",
+															"Remove SpatialOS settings from Android device"))]]];
 
 	MobileCategory.AddCustomRow(LOCTEXT("PushCommandLineIOS_Filter", "Push SpatialOS settings to iOS device"))
 		.ValueContent()
 		.VAlign(VAlign_Center)
-		.MinDesiredWidth(275)
-		[
-			SNew(SButton)
-			.VAlign(VAlign_Center)
-			.OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToIOSDevice)
-			.Content()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("PushCommandLineIOS_Label", "Push SpatialOS settings to iOS device"))
-			]
-		];
+		.MinDesiredWidth(
+			275)[SNew(SButton)
+					 .VAlign(VAlign_Center)
+					 .OnClicked_Static(FSpatialGDKEditorCommandLineArgsManager::PushCommandLineToIOSDevice)
+					 .Content()[SNew(STextBlock).Text(LOCTEXT("PushCommandLineIOS_Label", "Push SpatialOS settings to iOS device"))]];
 }
 
 void FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType)
@@ -151,7 +113,8 @@ void FSpatialGDKEditorLayoutDetails::OnProjectNameCommitted(const FText& InText,
 	}
 	ProjectNameInputErrorReporting->SetError(TEXT(""));
 
-	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
+	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance =
+		FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 	SpatialGDKEditorInstance->SetProjectName(NewProjectName);
 }
 

@@ -1,11 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "RPCInInterfaceTest.h"
-#include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
-#include "GameFramework/PlayerState.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 
 /**
@@ -22,11 +21,12 @@ void ARPCInInterfaceTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	{	// Step 1 - Create actor
+	{ // Step 1 - Create actor
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
 			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 
-			ASpatialFunctionalTestFlowController* Client1FlowController = Test->GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			ASpatialFunctionalTestFlowController* Client1FlowController =
+				Test->GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 			Test->TestActor = Test->GetWorld()->SpawnActor<ARPCInInterfaceActor>();
 			Test->AssertIsValid(Test->TestActor, "Actor exists", Test);
@@ -37,32 +37,38 @@ void ARPCInInterfaceTest::BeginPlay()
 			}
 
 			Test->FinishStep();
-			});
+		});
 	}
 	{ // Step 2 - Make sure client has ownership of Actor
-		AddStep(TEXT("ClientCheckOwnership"), FWorkerDefinition::Client(1), nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime) {
-			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
-			if (IsValid(Test->TestActor) && Test->TestActor->GetOwner() == Test->GetLocalFlowController()->GetOwner())
-			{
-				Test->FinishStep();
-			}
-			});
+		AddStep(TEXT("ClientCheckOwnership"), FWorkerDefinition::Client(1), nullptr, nullptr,
+				[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+					ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
+					if (IsValid(Test->TestActor) && Test->TestActor->GetOwner() == Test->GetLocalFlowController()->GetOwner())
+					{
+						Test->FinishStep();
+					}
+				});
 	}
-	{	// Step 3 - Call client RPC on interface
-		AddStep(TEXT("ServerCallRPC"), FWorkerDefinition::Server(1), [](ASpatialFunctionalTest* NetTest) -> bool {
-			ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
+	{ // Step 3 - Call client RPC on interface
+		AddStep(
+			TEXT("ServerCallRPC"), FWorkerDefinition::Server(1),
+			[](ASpatialFunctionalTest* NetTest) -> bool {
+				ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				return IsValid(Test->TestActor);
-			}, [](ASpatialFunctionalTest* NetTest) {
+			},
+			[](ASpatialFunctionalTest* NetTest) {
 				ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				Test->TestActor->RPCInInterface();
 				Test->FinishStep();
 			});
 	}
-	{	// Step 4 - Check RPC was received on client
-		AddStep(TEXT("ClientCheckRPC"), FWorkerDefinition::AllClients, [](ASpatialFunctionalTest* NetTest) -> bool {
+	{ // Step 4 - Check RPC was received on client
+		AddStep(
+			TEXT("ClientCheckRPC"), FWorkerDefinition::AllClients,
+			[](ASpatialFunctionalTest* NetTest) -> bool {
 				ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
 				return IsValid(Test->TestActor);
-			}, 
+			},
 			nullptr,
 			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
 				ARPCInInterfaceTest* Test = Cast<ARPCInInterfaceTest>(NetTest);
