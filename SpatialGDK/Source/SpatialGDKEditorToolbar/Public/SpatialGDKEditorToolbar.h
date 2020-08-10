@@ -15,6 +15,7 @@
 #include "CloudDeploymentConfiguration.h"
 #include "LocalDeploymentManager.h"
 #include "LocalReceptionistProxyServerManager.h"
+#include "SpatialGDKEditorSettings.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -158,8 +159,7 @@ private:
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
-	bool bStopSpatialOnExit;
-	bool bStopLocalDeploymentOnEndPIE;
+	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
 	bool bSchemaBuildError;
 
