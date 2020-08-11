@@ -22,6 +22,12 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
+#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
+
+#include "Engine/World.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "EngineUtils.h"
+#include "IAutomationControllerModule.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 
@@ -44,6 +50,21 @@ void FSpatialGDKEditorModule::StartupModule()
 	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
+
+	// Allow Spatial Plugin to stop PIE after Automation Manager completes the tests
+	IAutomationControllerModule& AutomationControllerModule = FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
+	AutomationController->OnTestsComplete().AddLambda([]()
+	{
+#if ENGINE_MINOR_VERSION < 25
+		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
+#else
+		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->IsPlayingSessionInEditor())
+#endif
+		{
+			GEditor->EndPlayMap();
+		}
+	});
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
@@ -191,7 +212,9 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 	}
 	else if (ShouldConnectToCloudDeployment())
 	{
-		CommandLine = TEXT("connect.to.spatialos -devAuthToken ") + GetDevAuthToken();
+		// 127.0.0.1 is only used to indicate that we want to connect to a deployment.
+		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection if it fails.
+		CommandLine = TEXT("127.0.0.1 -devAuthToken ") + GetDevAuthToken();
 		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
 		if (!CloudDeploymentName.IsEmpty())
 		{
@@ -242,6 +265,67 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	}
 
 	return false;
+}
+
+FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
+{
+	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);
+	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	{
+		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
+		if(TestingMode != EMapTestingMode::UseCurrentSettings)
+		{
+			TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
+			if (TestingMode == EMapTestingMode::Detect)
+			{
+				if (SpatialTestIt)
+				{
+					TestingMode = EMapTestingMode::ForceSpatial;
+				}
+				else
+				{
+					TActorIterator<AFunctionalTest> NativeTestIt(World);
+					if (!NativeTestIt)
+					{
+						// if there's no AFunctionalTests assume it's a Unit Test, so use current settings
+						return PIESettingsOverride;
+					}
+					TestingMode = EMapTestingMode::ForceNativeOffline;
+				}
+			}
+
+			int NumberOfClients = 1;
+
+			PIESettingsOverride.bUseSpatial = false; // turn off by default
+
+			switch (TestingMode)
+			{
+			case EMapTestingMode::ForceNativeOffline:
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Standalone;
+				break;
+			case EMapTestingMode::ForceNativeAsListenServer:
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_ListenServer;
+				break;
+			case EMapTestingMode::ForceNativeAsClient:
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
+				break;
+			case EMapTestingMode::ForceSpatial:
+				PIESettingsOverride.bUseSpatial = true; // turn on for Spatial
+				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
+				for (; SpatialTestIt; ++SpatialTestIt)
+				{
+					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
+				}
+				break;
+			default:
+				checkf(false, TEXT("Unsupported Testing Mode"));
+				break;
+			}
+
+			PIESettingsOverride.NumberOfClients = NumberOfClients;
+		}
+	}
+	return PIESettingsOverride;
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
