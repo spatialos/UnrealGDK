@@ -3,8 +3,8 @@
 #include "Interop/GlobalStateManager.h"
 
 #if WITH_EDITOR
-#include "Settings/LevelEditorPlaySettings.h"
 #include "Editor.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 #include "Engine/Classes/AI/AISystemBase.h"
@@ -18,8 +18,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Kismet/GameplayStatics.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -92,9 +92,11 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	// from when canBeginPlay=true was loaded from the snapshot and was received as an
 	// AddComponent. This is important for handling startup Actors correctly in a zoned
 	// environment.
-	const bool bHasReceivedStartupActorData = StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	const bool bWorkerEntityReady = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID &&
-		StaticComponentView->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+	const bool bHasReceivedStartupActorData =
+		StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	const bool bWorkerEntityReady =
+		NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID
+		&& StaticComponentView->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
 
 	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityReady)
 	{
@@ -146,17 +148,18 @@ void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 void UGlobalStateManager::SendShutdownMultiProcessRequest()
 {
 	/** When running with Use Single Process unticked, send a shutdown command to the servers to allow SpatialOS to shutdown.
-	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
-	  * to those external process.
-	  * The GDK requires shutdown code to be ran for workers to disconnect cleanly so instead of abruptly shutting down the server worker,
-	  * just send a command to the worker to begin it's shutdown phase.
-	  */
+	 * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
+	 * to those external process.
+	 * The GDK requires shutdown code to be ran for workers to disconnect cleanly so instead of abruptly shutting down the server worker,
+	 * just send a command to the worker to begin it's shutdown phase.
+	 */
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	CommandRequest.command_index = SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest();
 
-	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
+	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest,
+											  SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
 }
 
 void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
@@ -165,7 +168,8 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
 
-		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server.
+		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the
+		// client connects quicker than the server.
 		SetAcceptingPlayers(false);
 		DeploymentSessionId = 0;
 		SendSessionIdUpdate();
@@ -201,7 +205,8 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 {
 	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID))
 	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to send shutdown_additional_servers event on the GSM but this worker does not have authority."));
+		UE_LOG(LogGlobalStateManager, Warning,
+			   TEXT("Tried to send shutdown_additional_servers event on the GSM but this worker does not have authority."));
 		return;
 	}
 
@@ -232,7 +237,8 @@ void UGlobalStateManager::SetDeploymentState()
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting deployment URL to '%s'"), *CurrentWorld->URL.Map);
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting schema hash to '%u'"), NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting schema hash to '%u'"),
+		   NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
 
 	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
@@ -243,7 +249,8 @@ void UGlobalStateManager::SetDeploymentState()
 	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map));
 
 	// Set the schema hash for connecting workers to check against
-	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH,
+					 NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
@@ -255,7 +262,8 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// - we're authoritative over the DeploymentMap which has the acceptingPlayers property,
 	// - we've called BeginPlay (so startup Actors can do initialization before any spawn requests are received),
 	// - we aren't duplicating the current state.
-	const bool bHasDeploymentMapAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+	const bool bHasDeploymentMapAuthority =
+		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
 	const bool bHasBegunPlay = NetDriver->GetWorld()->HasBegunPlay();
 	const bool bIsDuplicatingCurrentState = bAcceptingPlayers == bInAcceptingPlayers;
 	if (!bHasDeploymentMapAuthority || !bHasBegunPlay || bIsDuplicatingCurrentState)
@@ -280,8 +288,8 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
-		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT ("does not have"));
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
+		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -290,33 +298,33 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 
 	switch (AuthOp.component_id)
 	{
-		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		{
-			GlobalStateManagerEntityId = AuthOp.entity_id;
-			SetDeploymentState();
-			SetAcceptingPlayers(true);
-			break;
-		}
-		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		{
-			// The bCanSpawnWithAuthority member determines whether a server-side worker
-			// should consider calling BeginPlay on startup Actors if the load-balancing
-			// strategy dictates that the worker should have authority over the Actor
-			// (providing Unreal load balancing is enabled). This should only happen for
-			// workers launching for fresh deployments, since for restarted workers and
-			// when deployments are launched from a snapshot, the entities representing
-			// startup Actors should already exist. If bCanBeginPlay is set to false, this
-			// means it's a fresh deployment, so bCanSpawnWithAuthority should be true.
-			// Conversely, if bCanBeginPlay is set to true, this worker is either a restarted
-			// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
-			// should be false.
-			bCanSpawnWithAuthority = !bCanBeginPlay;
-			break;
-		}
-		default:
-		{
-			break;
-		}
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+	{
+		GlobalStateManagerEntityId = AuthOp.entity_id;
+		SetDeploymentState();
+		SetAcceptingPlayers(true);
+		break;
+	}
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+	{
+		// The bCanSpawnWithAuthority member determines whether a server-side worker
+		// should consider calling BeginPlay on startup Actors if the load-balancing
+		// strategy dictates that the worker should have authority over the Actor
+		// (providing Unreal load balancing is enabled). This should only happen for
+		// workers launching for fresh deployments, since for restarted workers and
+		// when deployments are launched from a snapshot, the entities representing
+		// startup Actors should already exist. If bCanBeginPlay is set to false, this
+		// means it's a fresh deployment, so bCanSpawnWithAuthority should be true.
+		// Conversely, if bCanBeginPlay is set to true, this worker is either a restarted
+		// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
+		// should be false.
+		bCanSpawnWithAuthority = !bCanBeginPlay;
+		break;
+	}
+	default:
+	{
+		break;
+	}
 	}
 }
 
@@ -324,18 +332,19 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
-		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
-			return true;
-		default:
-			return false;
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+		return true;
+	default:
+		return false;
 	}
 }
 
 void UGlobalStateManager::ResetGSM()
 {
-	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager not accepting players and resetting BeginPlay lifecycle properties. Session restarting."));
+	UE_LOG(LogGlobalStateManager, Display,
+		   TEXT("GlobalStateManager not accepting players and resetting BeginPlay lifecycle properties. Session restarting."));
 
 	SetAcceptingPlayers(false);
 
@@ -348,7 +357,8 @@ void UGlobalStateManager::BeginDestroy()
 	Super::BeginDestroy();
 
 #if WITH_EDITOR
-	if (NetDriver != nullptr && NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+	if (NetDriver != nullptr
+		&& NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
 		// If we are deleting dynamically spawned entities, we need to
 		if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
@@ -374,7 +384,7 @@ void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
 		{
 			if (Actor->GetIsReplicated())
 			{
-				const bool bAuthoritative =  NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+				const bool bAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 				Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 				Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 			}
@@ -384,7 +394,8 @@ void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	const bool bHasStartupActorAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	const bool bHasStartupActorAuthority =
+		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	if (bHasStartupActorAuthority)
 	{
 		SendCanBeginPlayUpdate(true);
@@ -410,7 +421,9 @@ bool UGlobalStateManager::GetCanBeginPlay() const
 
 bool UGlobalStateManager::IsReady() const
 {
-	return GetCanBeginPlay() || NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	return GetCanBeginPlay()
+		   || NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId,
+														   SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 }
 
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
@@ -430,8 +443,8 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 }
 
 // Queries for the GlobalStateManager in the deployment.
-// bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
-// This is so clients know when to connect to the deployment.
+// bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given
+// arguments This is so clients know when to connect to the deployment.
 void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 {
 	// Build a constraint for the GSM.
@@ -450,8 +463,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op)
-	{
+	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
@@ -495,8 +507,7 @@ void UGlobalStateManager::QueryTranslation()
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
 	EntityQueryDelegate TranslationQueryDelegate;
-	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op)
-	{
+	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
 		if (!WeakGlobalStateManager.IsValid())
 		{
 			// The GSM was destroyed before receiving the response.
@@ -542,7 +553,8 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 	}
 }
 
-bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId)
+bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op,
+																		   bool& OutAcceptingPlayers, int32& OutSessionId)
 {
 	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
 
@@ -576,7 +588,8 @@ bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const
 		}
 	}
 
-	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
+	UE_LOG(LogGlobalStateManager, Warning,
+		   TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
 
 	return false;
 }

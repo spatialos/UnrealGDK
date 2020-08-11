@@ -17,8 +17,7 @@
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
-#define SCHEMA_GENERATOR_TEST(TestName) \
-	GDK_TEST(SpatialGDKEditor, SchemaGenerator, TestName)
+#define SCHEMA_GENERATOR_TEST(TestName) GDK_TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
 namespace
 {
@@ -36,7 +35,9 @@ TArray<FString> LoadSchemaFileForClassToStringArray(const FString& InSchemaOutpu
 	}
 
 	TArray<FString> FileContent;
-	FFileHelper::LoadFileToStringArray(FileContent, *FPaths::SetExtension(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder, CurrentClass->GetName()), TEXT(".schema")));
+	FFileHelper::LoadFileToStringArray(
+		FileContent,
+		*FPaths::SetExtension(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder, CurrentClass->GetName()), TEXT(".schema")));
 
 	return FileContent;
 }
@@ -81,11 +82,9 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 		{
 			FString ParsedSubobjectName = SubobjectNameRegMatcher.GetCaptureGroup(2);
 
-			if (!ParsedSubobjectName.IsEmpty() &&
-				ParsedSubobjectName.Compare(TEXT("attachmentreplication_attachparent")) != 0 &&
-				ParsedSubobjectName.Compare(TEXT("attachmentreplication_attachcomponent")) != 0 &&
-				ParsedSubobjectName.Compare(TEXT("owner")) != 0 &&
-				ParsedSubobjectName.Compare(TEXT("instigator")) != 0)
+			if (!ParsedSubobjectName.IsEmpty() && ParsedSubobjectName.Compare(TEXT("attachmentreplication_attachparent")) != 0
+				&& ParsedSubobjectName.Compare(TEXT("attachmentreplication_attachcomponent")) != 0
+				&& ParsedSubobjectName.Compare(TEXT("owner")) != 0 && ParsedSubobjectName.Compare(TEXT("instigator")) != 0)
 			{
 				ParsedNamesAndIds.SubobjectNames.Push(ParsedSubobjectName);
 			}
@@ -95,7 +94,8 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 	return ParsedNamesAndIds;
 }
 
-bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
+bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder,
+										 const USchemaDatabase* SchemaDatabase)
 {
 	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(InSchemaOutputFolder, CurrentClass);
 	ComponentNamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(LoadedSchema);
@@ -127,7 +127,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			}
 
 			// TODO: UNR-2298 - Uncomment and fix it
-			//for (int i = 0; i < ParsedNamesAndIds.SubobjectNames.Num(); ++i)
+			// for (int i = 0; i < ParsedNamesAndIds.SubobjectNames.Num(); ++i)
 			//{
 			//	const auto& Predicate = [&SchemaName = ParsedNamesAndIds.SubobjectNames[i]](const FActorSpecificSubobjectSchemaData& Data)
 			//	{
@@ -194,57 +194,57 @@ FString LoadSchemaFileForClass(const FString& InSchemaOutputFolder, const UClass
 	}
 
 	FString FileContent;
-	FFileHelper::LoadFileToString(FileContent, *FPaths::SetExtension(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder, CurrentClass->GetName()), TEXT(".schema")));
+	FFileHelper::LoadFileToString(
+		FileContent,
+		*FPaths::SetExtension(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder, CurrentClass->GetName()), TEXT(".schema")));
 
 	return FileContent;
 }
 
 const TArray<UObject*>& AllTestClassesArray()
 {
-	static TArray<UObject*> TestClassesArray = {
-		USchemaGenObjectStub::StaticClass(),
-		USpatialTypeObjectStub::StaticClass(),
-		UChildOfSpatialTypeObjectStub::StaticClass(),
-		UNotSpatialTypeObjectStub::StaticClass(),
-		UChildOfNotSpatialTypeObjectStub::StaticClass(),
-		UNoSpatialFlagsObjectStub::StaticClass(),
-		UChildOfNoSpatialFlagsObjectStub::StaticClass(),
-		ASpatialTypeActor::StaticClass(),
-		ANonSpatialTypeActor::StaticClass(),
-		USpatialTypeActorComponent::StaticClass(),
-		ASpatialTypeActorWithActorComponent::StaticClass(),
-		ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-		ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
-		ASpatialTypeActorWithSubobject::StaticClass()
-	};
+	static TArray<UObject*> TestClassesArray = { USchemaGenObjectStub::StaticClass(),
+												 USpatialTypeObjectStub::StaticClass(),
+												 UChildOfSpatialTypeObjectStub::StaticClass(),
+												 UNotSpatialTypeObjectStub::StaticClass(),
+												 UChildOfNotSpatialTypeObjectStub::StaticClass(),
+												 UNoSpatialFlagsObjectStub::StaticClass(),
+												 UChildOfNoSpatialFlagsObjectStub::StaticClass(),
+												 ASpatialTypeActor::StaticClass(),
+												 ANonSpatialTypeActor::StaticClass(),
+												 USpatialTypeActorComponent::StaticClass(),
+												 ASpatialTypeActorWithActorComponent::StaticClass(),
+												 ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
+												 ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+												 ASpatialTypeActorWithSubobject::StaticClass() };
 	return TestClassesArray;
 };
 
 const TSet<UClass*>& AllTestClassesSet()
 {
-	static TSet<UClass*> TestClassesSet = {
-		USchemaGenObjectStub::StaticClass(),
-		USpatialTypeObjectStub::StaticClass(),
-		UChildOfSpatialTypeObjectStub::StaticClass(),
-		UNotSpatialTypeObjectStub::StaticClass(),
-		UChildOfNotSpatialTypeObjectStub::StaticClass(),
-		UNoSpatialFlagsObjectStub::StaticClass(),
-		UChildOfNoSpatialFlagsObjectStub::StaticClass(),
-		ASpatialTypeActor::StaticClass(),
-		ANonSpatialTypeActor::StaticClass(),
-		USpatialTypeActorComponent::StaticClass(),
-		ASpatialTypeActorWithActorComponent::StaticClass(),
-		ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-		ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
-		ASpatialTypeActorWithSubobject::StaticClass()
-	};
+	static TSet<UClass*> TestClassesSet = { USchemaGenObjectStub::StaticClass(),
+											USpatialTypeObjectStub::StaticClass(),
+											UChildOfSpatialTypeObjectStub::StaticClass(),
+											UNotSpatialTypeObjectStub::StaticClass(),
+											UChildOfNotSpatialTypeObjectStub::StaticClass(),
+											UNoSpatialFlagsObjectStub::StaticClass(),
+											UChildOfNoSpatialFlagsObjectStub::StaticClass(),
+											ASpatialTypeActor::StaticClass(),
+											ANonSpatialTypeActor::StaticClass(),
+											USpatialTypeActorComponent::StaticClass(),
+											ASpatialTypeActorWithActorComponent::StaticClass(),
+											ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
+											ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+											ASpatialTypeActorWithSubobject::StaticClass() };
 	return TestClassesSet;
 };
 
 #if ENGINE_MINOR_VERSION < 25
-FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
+FString ExpectedContentsDirectory =
+	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
 #else
-FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_425");
+FString ExpectedContentsDirectory =
+	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_425");
 #endif
 TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
@@ -262,7 +262,8 @@ class SchemaValidator
 public:
 	bool ValidateGeneratedSchemaAgainstExpectedSchema(const FString& GeneratedSchemaContent, const FString& ExpectedSchemaFilename)
 	{
-		FString ExpectedContentFullPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(ExpectedContentsDirectory), ExpectedSchemaFilename);
+		FString ExpectedContentFullPath =
+			FPaths::Combine(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(ExpectedContentsDirectory), ExpectedSchemaFilename);
 
 		FString ExpectedContent;
 		FFileHelper::LoadFileToString(ExpectedContent, *ExpectedContentFullPath);
@@ -283,10 +284,7 @@ public:
 	}
 
 private:
-	int GetNextFreeId()
-	{
-		return FreeId++;
-	}
+	int GetNextFreeId() { return FreeId++; }
 
 	int FreeId = 10000;
 
@@ -316,7 +314,6 @@ public:
 	}
 
 private:
-
 	void DeleteTestFolders()
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -344,14 +341,8 @@ private:
 class SchemaRPCEndpointTestFixture : public SchemaTestFixture
 {
 public:
-	SchemaRPCEndpointTestFixture()
-	{
-		SetMaxRPCRingBufferSize();
-	}
-	~SchemaRPCEndpointTestFixture()
-	{
-		ResetMaxRPCRingBufferSize();
-	}
+	SchemaRPCEndpointTestFixture() { SetMaxRPCRingBufferSize(); }
+	~SchemaRPCEndpointTestFixture() { ResetMaxRPCRingBufferSize(); }
 
 private:
 	void SetMaxRPCRingBufferSize()
@@ -481,11 +472,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 	SchemaTestFixture Fixture;
 
 	// GIVEN
-	TSet<UClass*> Classes =
-	{
-		USpatialTypeObjectStub::StaticClass(),
-		ASpatialTypeActor::StaticClass()
-	};
+	TSet<UClass*> Classes = { USpatialTypeObjectStub::StaticClass(), ASpatialTypeActor::StaticClass() };
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -531,18 +518,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 
 	// GIVEN
 	SchemaValidator Validator;
-	TSet<UClass*> Classes =
-	{
-		ASpatialTypeActor::StaticClass(),
-		ANonSpatialTypeActor::StaticClass()
-	};
+	TSet<UClass*> Classes = { ASpatialTypeActor::StaticClass(), ANonSpatialTypeActor::StaticClass() };
 
 	// Classes need to be sorted to have proper ids
-	Classes.Sort([](const UClass& A, const UClass& B)
-	{
+	Classes.Sort([](const UClass& A, const UClass& B) {
 		return A.GetPathName() < B.GetPathName();
 	});
-
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -573,7 +554,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_t
 	UClass* CurrentClass = USpatialTypeActorComponent::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
-
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
@@ -584,7 +564,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_t
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists)
+SCHEMA_GENERATOR_TEST(
+	GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -603,7 +584,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generate
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist)
+SCHEMA_GENERATOR_TEST(
+	GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -622,7 +604,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_g
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist)
+SCHEMA_GENERATOR_TEST(
+	GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -646,11 +629,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_refresh_generated_f
 	SchemaTestFixture Fixture;
 
 	// GIVEN
-	TSet<UClass*> Classes =
-	{
-		USpatialTypeObjectStub::StaticClass(),
-		ASpatialTypeActor::StaticClass()
-	};
+	TSet<UClass*> Classes = { USpatialTypeObjectStub::StaticClass(), ASpatialTypeActor::StaticClass() };
 
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
@@ -685,11 +664,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	SchemaTestFixture Fixture;
 
 	// GIVEN
-	TSet<UClass*> Classes =
-	{
-		USpatialTypeObjectStub::StaticClass(),
-		ASpatialTypeActor::StaticClass()
-	};
+	TSet<UClass*> Classes = { USpatialTypeObjectStub::StaticClass(), ASpatialTypeActor::StaticClass() };
 
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
@@ -698,7 +673,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 
 	// THEN
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
-	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString ExpectedSchemaDatabaseFileName =
+		FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	TestTrue("Generated schema database exists", PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName));
 
@@ -789,11 +765,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
-	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString ExpectedSchemaDatabaseFileName =
+		FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	bool bFileCreated = PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName);
 
 	// WHEN
-	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName);
 
 	// THEN
 	bool bResult = bFileCreated && !PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName);
@@ -827,11 +804,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_TH
 	SchemaTestFixture Fixture;
 
 	// GIVEN
-	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName);
 
 	// WHEN
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
-	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString ExpectedSchemaDatabaseFileName =
+		FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	bool bSuccess = SpatialGDKEditor::Schema::LoadGeneratorStateFromSchemaDatabase(SchemaDatabaseFileName);
 
 	// THEN
@@ -846,33 +824,27 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 
 	// GIVEN
 	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/schema/unreal/gdk"));
-	FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
-	TArray<FString> GDKSchemaFilePaths =
-	{
-		"authority_intent.schema",
-		"component_presence.schema",
-		"core_types.schema",
-		"debug_metrics.schema",
-		"global_state_manager.schema",
-		"heartbeat.schema",
-		"net_owning_client_worker.schema",
-		"not_streamed.schema",
-		"relevant.schema",
-		"rpc_components.schema",
-		"rpc_payload.schema",
-		"server_worker.schema",
-		"spawndata.schema",
-		"spawner.schema",
-		"spatial_debugging.schema",
-		"tombstone.schema",
-		"unreal_metadata.schema",
-		"virtual_worker_translation.schema"
-	};
-	TArray<FString> CoreSDKFilePaths =
-	{
-		"improbable\\restricted\\system_components.schema",
-		"improbable\\standard_library.schema"
-	};
+	FString CoreSDKSchemaCopyDir =
+		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
+	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
+										   "component_presence.schema",
+										   "core_types.schema",
+										   "debug_metrics.schema",
+										   "global_state_manager.schema",
+										   "heartbeat.schema",
+										   "net_owning_client_worker.schema",
+										   "not_streamed.schema",
+										   "relevant.schema",
+										   "rpc_components.schema",
+										   "rpc_payload.schema",
+										   "server_worker.schema",
+										   "spawndata.schema",
+										   "spawner.schema",
+										   "spatial_debugging.schema",
+										   "tombstone.schema",
+										   "unreal_metadata.schema",
+										   "virtual_worker_translation.schema" };
+	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN
 	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
@@ -928,18 +900,15 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 	TSet<UClass*> FilteredClasses = SpatialGDKEditor::Schema::GetAllSupportedClasses(Classes);
 
 	// THEN
-	TSet<UClass*> ExpectedClasses =
-	{
-		USpatialTypeObjectStub::StaticClass(),
-		UChildOfSpatialTypeObjectStub::StaticClass(),
-		ASpatialTypeActor::StaticClass(),
-		ANonSpatialTypeActor::StaticClass(),
-		USpatialTypeActorComponent::StaticClass(),
-		ASpatialTypeActorWithActorComponent::StaticClass(),
-		ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-		ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
-		ASpatialTypeActorWithSubobject::StaticClass()
-	};
+	TSet<UClass*> ExpectedClasses = { USpatialTypeObjectStub::StaticClass(),
+									  UChildOfSpatialTypeObjectStub::StaticClass(),
+									  ASpatialTypeActor::StaticClass(),
+									  ANonSpatialTypeActor::StaticClass(),
+									  USpatialTypeActorComponent::StaticClass(),
+									  ASpatialTypeActorWithActorComponent::StaticClass(),
+									  ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
+									  ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+									  ASpatialTypeActorWithSubobject::StaticClass() };
 
 	bool bClassesFilteredCorrectly = true;
 	if (FilteredClasses.Num() == ExpectedClasses.Num())
@@ -963,7 +932,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
+SCHEMA_GENERATOR_TEST(
+	GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
 {
 	SchemaTestFixture Fixture;
 
@@ -1009,7 +979,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endp
 	FString FileContent;
 	FFileHelper::LoadFileToString(FileContent, *FPaths::Combine(SchemaOutputFolder, ExpectedRPCEndpointsSchemaFilename));
 
-	TestTrue("Generated RPC endpoints schema matches the expected schema", Validator.ValidateGeneratedSchemaAgainstExpectedSchema(FileContent, ExpectedRPCEndpointsSchemaFilename));
+	TestTrue("Generated RPC endpoints schema matches the expected schema",
+			 Validator.ValidateGeneratedSchemaAgainstExpectedSchema(FileContent, ExpectedRPCEndpointsSchemaFilename));
 
 	return true;
 }

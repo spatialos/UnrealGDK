@@ -112,7 +112,7 @@ struct Query
 
 	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
 	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-	SchemaResultType ResultComponentIds; // Which components should be included.
+	SchemaResultType ResultComponentIds;	// Which components should be included.
 
 	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
 	// particular query. An empty option represents no rate-limiting (ie. updates are received
@@ -154,7 +154,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 {
 	Schema_Object* QueryConstraintObject = Schema_AddObject(QueryObject, Id);
 
-	//option<SphereConstraint> sphere_constraint = 1;
+	// option<SphereConstraint> sphere_constraint = 1;
 	if (Constraint.SphereConstraint.IsSet())
 	{
 		Schema_Object* SphereConstraintObject = Schema_AddObject(QueryConstraintObject, 1);
@@ -163,7 +163,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		Schema_AddDouble(SphereConstraintObject, 2, Constraint.SphereConstraint->Radius);
 	}
 
-	//option<CylinderConstraint> cylinder_constraint = 2;
+	// option<CylinderConstraint> cylinder_constraint = 2;
 	if (Constraint.CylinderConstraint.IsSet())
 	{
 		Schema_Object* CylinderConstraintObject = Schema_AddObject(QueryConstraintObject, 2);
@@ -172,7 +172,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		Schema_AddDouble(CylinderConstraintObject, 2, Constraint.CylinderConstraint->Radius);
 	}
 
-	//option<BoxConstraint> box_constraint = 3;
+	// option<BoxConstraint> box_constraint = 3;
 	if (Constraint.BoxConstraint.IsSet())
 	{
 		Schema_Object* BoxConstraintObject = Schema_AddObject(QueryConstraintObject, 3);
@@ -180,7 +180,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		AddCoordinateToSchema(BoxConstraintObject, 2, Constraint.BoxConstraint->EdgeLength);
 	}
 
-	//option<RelativeSphereConstraint> relative_sphere_constraint = 4;
+	// option<RelativeSphereConstraint> relative_sphere_constraint = 4;
 	if (Constraint.RelativeSphereConstraint.IsSet())
 	{
 		Schema_Object* RelativeSphereConstraintObject = Schema_AddObject(QueryConstraintObject, 4);
@@ -188,33 +188,33 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		Schema_AddDouble(RelativeSphereConstraintObject, 1, Constraint.RelativeSphereConstraint->Radius);
 	}
 
-	//option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
+	// option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
 	if (Constraint.RelativeCylinderConstraint.IsSet())
 	{
 		Schema_Object* RelativeCylinderConstraintObject = Schema_AddObject(QueryConstraintObject, 5);
 		Schema_AddDouble(RelativeCylinderConstraintObject, 1, Constraint.RelativeCylinderConstraint->Radius);
 	}
 
-	//option<RelativeBoxConstraint> relative_box_constraint = 6;
+	// option<RelativeBoxConstraint> relative_box_constraint = 6;
 	if (Constraint.RelativeBoxConstraint.IsSet())
 	{
 		Schema_Object* RelativeBoxConstraintObject = Schema_AddObject(QueryConstraintObject, 6);
 		AddCoordinateToSchema(RelativeBoxConstraintObject, 1, Constraint.RelativeBoxConstraint->EdgeLength);
 	}
 
-	//option<int64> entity_id_constraint = 7;
+	// option<int64> entity_id_constraint = 7;
 	if (Constraint.EntityIdConstraint.IsSet())
 	{
 		Schema_AddInt64(QueryConstraintObject, 7, *Constraint.EntityIdConstraint);
 	}
 
-	//option<uint32> component_constraint = 8;
+	// option<uint32> component_constraint = 8;
 	if (Constraint.ComponentConstraint)
 	{
 		Schema_AddUint32(QueryConstraintObject, 8, *Constraint.ComponentConstraint);
 	}
 
-	//list<QueryConstraint> and_constraint = 9;
+	// list<QueryConstraint> and_constraint = 9;
 	if (Constraint.AndConstraint.Num() > 0)
 	{
 		for (const QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
@@ -223,7 +223,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		}
 	}
 
-	//list<QueryConstraint> or_constraint = 10;
+	// list<QueryConstraint> or_constraint = 10;
 	if (Constraint.OrConstraint.Num() > 0)
 	{
 		for (const QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
@@ -235,7 +235,8 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 
 inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const Query& Query)
 {
-	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentIds.Num() > 0), TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
+	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentIds.Num() > 0),
+		   TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
 
 	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
@@ -324,7 +325,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 		NewQueryConstraint.RelativeBoxConstraint->EdgeLength = GetCoordinateFromSchema(RelativeBoxConstraintObject, 1);
 	}
 
-	//option<int64> entity_id_constraint = 7;
+	// option<int64> entity_id_constraint = 7;
 	if (Schema_GetObjectCount(QueryConstraintObject, 7) > 0)
 	{
 		Schema_Object* EntityIdConstraintObject = Schema_GetObject(QueryConstraintObject, 7);
@@ -431,10 +432,7 @@ struct Interest : Component
 		}
 	}
 
-	bool IsEmpty()
-	{
-		return ComponentInterestMap.Num() == 0;
-	}
+	bool IsEmpty() { return ComponentInterestMap.Num() == 0; }
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{

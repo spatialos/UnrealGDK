@@ -16,8 +16,5 @@ class SPATIALGDKTESTS_API ULBStrategyStub : public UAbstractLBStrategy
 	GENERATED_BODY()
 
 public:
-	VirtualWorkerId GetVirtualWorkerId() const
-	{
-		return LocalVirtualWorkerId;
-	}
+	VirtualWorkerId GetVirtualWorkerId() const { return LocalVirtualWorkerId; }
 };

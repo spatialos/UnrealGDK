@@ -11,81 +11,81 @@ using namespace SpatialGDK;
 
 namespace
 {
-	FString ERPCResultToString(ERPCResult Result)
+FString ERPCResultToString(ERPCResult Result)
+{
+	switch (Result)
 	{
-		switch (Result)
-		{
-		case ERPCResult::Success:
-			return TEXT("");
+	case ERPCResult::Success:
+		return TEXT("");
 
-		case ERPCResult::UnresolvedTargetObject:
-			return TEXT("Unresolved Target Object");
+	case ERPCResult::UnresolvedTargetObject:
+		return TEXT("Unresolved Target Object");
 
-		case ERPCResult::MissingFunctionInfo:
-			return TEXT("Missing UFunction info");
+	case ERPCResult::MissingFunctionInfo:
+		return TEXT("Missing UFunction info");
 
-		case ERPCResult::UnresolvedParameters:
-			return TEXT("Unresolved Parameters");
+	case ERPCResult::UnresolvedParameters:
+		return TEXT("Unresolved Parameters");
 
-		case ERPCResult::NoActorChannel:
-			return TEXT("No Actor Channel");
+	case ERPCResult::NoActorChannel:
+		return TEXT("No Actor Channel");
 
-		case ERPCResult::SpatialActorChannelNotListening:
-			return TEXT("Spatial Actor Channel Not Listening");
+	case ERPCResult::SpatialActorChannelNotListening:
+		return TEXT("Spatial Actor Channel Not Listening");
 
-		case ERPCResult::NoNetConnection:
-			return TEXT("No Net Connection");
+	case ERPCResult::NoNetConnection:
+		return TEXT("No Net Connection");
 
-		case ERPCResult::NoAuthority:
-			return TEXT("No Authority");
+	case ERPCResult::NoAuthority:
+		return TEXT("No Authority");
 
-		case ERPCResult::InvalidRPCType:
-			return TEXT("Invalid RPC Type");
+	case ERPCResult::InvalidRPCType:
+		return TEXT("Invalid RPC Type");
 
-		case ERPCResult::NoOwningController:
-			return TEXT("No Owning Controller");
+	case ERPCResult::NoOwningController:
+		return TEXT("No Owning Controller");
 
-		case ERPCResult::NoControllerChannel:
-			return TEXT("No Controller Channel");
+	case ERPCResult::NoControllerChannel:
+		return TEXT("No Controller Channel");
 
-		case ERPCResult::ControllerChannelNotListening:
-			return TEXT("Controller Channel Not Listening");
+	case ERPCResult::ControllerChannelNotListening:
+		return TEXT("Controller Channel Not Listening");
 
-		case ERPCResult::RPCServiceFailure:
-			return TEXT("SpatialRPCService couldn't handle the RPC");
+	case ERPCResult::RPCServiceFailure:
+		return TEXT("SpatialRPCService couldn't handle the RPC");
 
-		default:
-			return TEXT("Unknown");
-		}
-	}
-
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const FPendingRPCParams& Params)
-	{
-		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-
-		// The format is expected to be:
-		// Function <objectName>::<functionName> sending/execution dropped/queued for <duration>. Reason: <reason>
-		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s %s for %s. Reason: %s"),
-			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
-			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
-			QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			ErrorInfo.QueueProcessResult == ERPCQueueProcessResult::ContinueProcessing ? TEXT("queued") : TEXT("dropped"),
-			*TimeDiff.ToString(),
-			*ERPCResultToString(ErrorInfo.ErrorCode));
-
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		check(SpatialGDKSettings != nullptr);
-
-		if (TimeDiff.GetTotalSeconds() > SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
-		{
-			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
-		}
-		else
-		{
-			UE_LOG(LogRPCContainer, Verbose, TEXT("%s"), *OutputLog);
-		}
+	default:
+		return TEXT("Unknown");
 	}
 }
+
+void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const FPendingRPCParams& Params)
+{
+	const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+
+	// The format is expected to be:
+	// Function <objectName>::<functionName> sending/execution dropped/queued for <duration>. Reason: <reason>
+	FString OutputLog = FString::Printf(
+		TEXT("Function %s::%s %s %s for %s. Reason: %s"),
+		ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
+		ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
+		QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+		ErrorInfo.QueueProcessResult == ERPCQueueProcessResult::ContinueProcessing ? TEXT("queued") : TEXT("dropped"), *TimeDiff.ToString(),
+		*ERPCResultToString(ErrorInfo.ErrorCode));
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	check(SpatialGDKSettings != nullptr);
+
+	if (TimeDiff.GetTotalSeconds() > SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
+	{
+		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
+	}
+	else
+	{
+		UE_LOG(LogRPCContainer, Verbose, TEXT("%s"), *OutputLog);
+	}
+}
+} // namespace
 
 FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload)
 	: ObjectRef(InTargetObjectRef)
@@ -97,7 +97,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 
 void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload)
 {
-	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload)};
+	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload) };
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
@@ -173,9 +173,9 @@ void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
 
 bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const
 {
-	if(const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))
+	if (const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))
 	{
-		if(const FArrayOfParams* RPCList = MapOfQueues->Find(EntityId))
+		if (const FArrayOfParams* RPCList = MapOfQueues->Find(EntityId))
 		{
 			return (RPCList->Num() > 0);
 		}
@@ -183,7 +183,7 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 
 	return false;
 }
- 
+
 FRPCContainer::FRPCContainer(ERPCQueueType InQueueType)
 	: QueueType(InQueueType)
 {

@@ -2,9 +2,9 @@
 
 #include "SpatialGDKEditorSettings.h"
 
+#include "ISettingsModule.h"
 #include "Interfaces/ITargetPlatformManagerModule.h"
 #include "Internationalization/Regex.h"
-#include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
@@ -53,7 +53,8 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, bIsAutoGenerateCloudConfigEnabled(true)
-	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT(
+		  "SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
 	, bConnectServerToCloud(false)
@@ -365,8 +366,8 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 			// Check manual_worker_connection flag, if it exists.
 			if (LayerConfiguration->TryGetObjectField("options", OptionsField)
-			 && (*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag)
-			 && ManualWorkerConnectionFlag)
+				&& (*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag)
+				&& ManualWorkerConnectionFlag)
 			{
 				FString WorkerName;
 				if (LayerConfiguration->TryGetStringField("layer", WorkerName))
@@ -375,7 +376,8 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 				}
 				else
 				{
-					UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
+					UE_LOG(LogSpatialEditorSettings, Error,
+						   TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
 				}
 			}
 		}
@@ -399,7 +401,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	}
 	if (!IsDeploymentNameValid(PrimaryDeploymentName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"),
+			   *SpatialConstants::DeploymentPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
@@ -422,7 +425,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	{
 		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"),
+				   *SpatialConstants::DeploymentPatternHint.ToString());
 			bValid = false;
 		}
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
@@ -440,7 +444,10 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	TArray<FString> WorkersManuallyLaunched;
 	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
 	{
-		FString WorkersReportString (LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch the following worker types. Do you want to continue?\n").ToString());
+		FString WorkersReportString(
+			LOCTEXT("AllowManualWorkerConnection",
+					"Chosen launch configuration will not automatically launch the following worker types. Do you want to continue?\n")
+				.ToString());
 
 		for (const FString& Worker : WorkersManuallyLaunched)
 		{
