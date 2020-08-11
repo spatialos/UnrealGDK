@@ -13,6 +13,4 @@ class AReplicatedVisibilityTestActor : public AReplicatedTestActorBase
 
 public:
 	AReplicatedVisibilityTestActor();
-
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

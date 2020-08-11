@@ -11,8 +11,3 @@ AReplicatedVisibilityTestActor::AReplicatedVisibilityTestActor()
 	bNetLoadOnNonAuthServer = true;
 	SetActorEnableCollision(false);
 }
-
-void AReplicatedVisibilityTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-}

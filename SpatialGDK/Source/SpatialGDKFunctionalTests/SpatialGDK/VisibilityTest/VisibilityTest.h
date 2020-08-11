@@ -19,9 +19,9 @@ public:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(Replicated)
-		TArray<APlayerController*> Controllers;
+	TArray<APlayerController*> Controllers;
 	UPROPERTY(Replicated)
-		TArray<ATestMovementCharacter*> TestPawns;
+	TArray<ATestMovementCharacter*> TestPawns;
 
 	// To possess original pawns
 	TArray<TPair<AController*, APawn*>> OriginalPawns;
