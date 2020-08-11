@@ -234,7 +234,9 @@ bool FSpatialGDKEditorCommandLineArgsManager::TryConstructMobileCommandLineArgum
 	}
 	else if (ConnectionFlow == ESpatialOSNetFlow::CloudDeployment)
 	{
-		TravelUrl = TEXT("connect.to.spatialos");
+		// 127.0.0.1 is only used to indicate that we want to connect to a deployment.
+		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection if it fails.
+		TravelUrl = TEXT("127.0.0.1");
 
 		if (SpatialGDKSettings->DevelopmentAuthenticationToken.IsEmpty())
 		{

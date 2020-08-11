@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/WorkerView.h"
+
+#include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/SplitOpList.h"
 
@@ -14,10 +16,7 @@ WorkerView::WorkerView()
 ViewDelta WorkerView::GenerateViewDelta()
 {
 	ViewDelta Delta;
-	for (auto& Ops : QueuedOps)
-	{
-		Delta.AddOpList(MoveTemp(Ops), AddedComponents);
-	}
+	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
 	QueuedOps.Empty();
 	return Delta;
 }
@@ -77,18 +76,26 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 
 void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	AddedComponents.Add(EntityComponentId{ EntityId, Data.GetComponentId() });
+	EntityViewElement& Element = View.FindChecked(EntityId);
+	Element.Components.Emplace(Data.DeepCopy());
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data), SpanId);
 }
 
 void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
+	EntityViewElement& Element = View.FindChecked(EntityId);
+	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
+	check(Component != nullptr);
+	Component->ApplyUpdate(Update);
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
 }
 
 void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	AddedComponents.Remove(EntityComponentId{ EntityId, ComponentId });
+	EntityViewElement& Element = View.FindChecked(EntityId);
+	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ ComponentId });
+	check(Component != nullptr);
+	Element.Components.RemoveAtSwap(Component - Element.Components.GetData());
 	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId, SpanId);
 }
 
