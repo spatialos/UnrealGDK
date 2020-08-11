@@ -52,7 +52,6 @@ void AVisibilityTest::BeginPlay()
 
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
 	Character1StartingLocation = FVector(0.0f, 120.0f, 50.0f);
-	Character2StartingLocation = FVector(0.0f, 240.0f, 50.0f);
 
 	{	// Step 1 - Set up the world Spawn PlayerCharacter and make sure the cube is in the world.
 		AddStep(TEXT("ServerSetup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
@@ -60,6 +59,8 @@ void AVisibilityTest::BeginPlay()
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
 			FVector StartingLocation = FVector::ZeroVector;
+			float YToSpawnAt = 120.0f;
+			float YSpawnIncrement = 120.0f;
 
 			TestPawns.Empty();
 			Controllers.Empty();
@@ -78,17 +79,11 @@ void AVisibilityTest::BeginPlay()
 				{
 					continue;
 				}
-
-				if (FlowController->WorkerDefinition.Id == 1)
-				{
-					StartingLocation = Character1StartingLocation;
-				}
-				else if (FlowController->WorkerDefinition.Id == 2)
-				{
-					StartingLocation = Character2StartingLocation;
-				}
-
+				
+				StartingLocation = FVector(0.0f, YToSpawnAt, 50.0f);
 				ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(StartingLocation, FRotator::ZeroRotator, FActorSpawnParameters());
+				YToSpawnAt += YSpawnIncrement;
+
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 				Controllers.Add(PlayerController);
 

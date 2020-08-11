@@ -28,5 +28,4 @@ public:
 
 	FVector CharacterRemoteLocation;
 	FVector Character1StartingLocation;
-	FVector Character2StartingLocation;
 };
