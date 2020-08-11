@@ -10,8 +10,8 @@
 #include "Utils/SchemaUtils.h"
 
 #include "GameFramework/Actor.h"
-#include "UObject/UObjectHash.h"
 #include "UObject/Package.h"
+#include "UObject/UObjectHash.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -22,15 +22,19 @@ using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
 namespace SpatialGDK
 {
-
 struct UnrealMetadata : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InClassPath, const TSchemaOption<bool>& InbNetStartup)
-		: StablyNamedRef(InStablyNamedRef), ClassPath(InClassPath), bNetStartup(InbNetStartup) {}
+	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InClassPath,
+				   const TSchemaOption<bool>& InbNetStartup)
+		: StablyNamedRef(InStablyNamedRef)
+		, ClassPath(InClassPath)
+		, bNetStartup(InbNetStartup)
+	{
+	}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
@@ -83,13 +87,18 @@ struct UnrealMetadata : Component
 #endif
 		UClass* Class = FindObject<UClass>(nullptr, *ClassPath, false);
 
-		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see USpatialSender::CreateEntity)
-		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent loads.
+		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see
+		// USpatialSender::CreateEntity)
+		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent
+		// loads.
 		if (Class == nullptr && !(StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue()))
 		{
 			if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
 			{
-				UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("Class couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it synchronously. Class: %s"), *ClassPath);
+				UE_LOG(LogSpatialUnrealMetadata, Warning,
+					   TEXT("Class couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it "
+							"synchronously. Class: %s"),
+					   *ClassPath);
 			}
 
 			Class = LoadObject<UClass>(nullptr, *ClassPath);

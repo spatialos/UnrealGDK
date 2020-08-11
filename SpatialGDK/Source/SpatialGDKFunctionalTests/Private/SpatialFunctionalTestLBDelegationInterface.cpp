@@ -1,14 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialFunctionalTestLBDelegationInterface.h"
+#include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 #include "SpatialCommonTypes.h"
-#include "Utils/SpatialStatics.h"
 #include "SpatialFunctionalTestWorkerDelegationComponent.h"
-#include "EngineUtils.h"
+#include "Utils/SpatialStatics.h"
 
-bool ISpatialFunctionalTestLBDelegationInterface::AddActorDelegation(AActor* Actor, VirtualWorkerId WorkerId, bool bPersistOnTestFinished /*= false*/)
+bool ISpatialFunctionalTestLBDelegationInterface::AddActorDelegation(AActor* Actor, VirtualWorkerId WorkerId,
+																	 bool bPersistOnTestFinished /*= false*/)
 {
 	if (Actor == nullptr)
 	{
@@ -17,13 +17,15 @@ bool ISpatialFunctionalTestLBDelegationInterface::AddActorDelegation(AActor* Act
 
 	if (!Actor->HasAuthority())
 	{
-		ensureMsgf(false, TEXT("Only the worker authoritative over an Actor can delegate it to another worker. Tried to delegate %s to %d"), *Actor->GetName(), WorkerId);
+		ensureMsgf(false, TEXT("Only the worker authoritative over an Actor can delegate it to another worker. Tried to delegate %s to %d"),
+				   *Actor->GetName(), WorkerId);
 		return false;
 	}
 
-	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Cast<USpatialFunctionalTestWorkerDelegationComponent>(Actor->GetComponentByClass(USpatialFunctionalTestWorkerDelegationComponent::StaticClass()));
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Cast<USpatialFunctionalTestWorkerDelegationComponent>(
+		Actor->GetComponentByClass(USpatialFunctionalTestWorkerDelegationComponent::StaticClass()));
 
-	if( DelegationComponent == nullptr )
+	if (DelegationComponent == nullptr)
 	{
 		DelegationComponent = NewObject<USpatialFunctionalTestWorkerDelegationComponent>(Actor, "Delegation Component");
 		DelegationComponent->RegisterComponent();
@@ -42,7 +44,8 @@ bool ISpatialFunctionalTestLBDelegationInterface::RemoveActorDelegation(AActor* 
 		return false;
 	}
 
-	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent =
+		Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
 	if (DelegationComponent == nullptr)
 	{
 		return false;
@@ -62,7 +65,8 @@ bool ISpatialFunctionalTestLBDelegationInterface::HasActorDelegation(AActor* Act
 	{
 		return false;
 	}
-	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent =
+		Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
 
 	if (DelegationComponent != nullptr)
 	{
@@ -76,12 +80,13 @@ bool ISpatialFunctionalTestLBDelegationInterface::HasActorDelegation(AActor* Act
 
 void ISpatialFunctionalTestLBDelegationInterface::RemoveAllActorDelegations(UWorld* World, bool bRemovePersistent /*= false*/)
 {
-	for(TActorIterator<AActor> It(World); It; ++It)
+	for (TActorIterator<AActor> It(World); It; ++It)
 	{
-		if( It->HasAuthority() )
+		if (It->HasAuthority())
 		{
-			USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent = It->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
-			if(DelegationComponent != nullptr)
+			USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent =
+				It->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
+			if (DelegationComponent != nullptr)
 			{
 				if (!DelegationComponent->bIsPersistent || bRemovePersistent)
 				{
