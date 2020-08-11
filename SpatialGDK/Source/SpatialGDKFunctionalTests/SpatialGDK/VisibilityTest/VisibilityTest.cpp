@@ -42,7 +42,6 @@ void AVisibilityTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AVisibilityTest, Controllers);
 	DOREPLIFETIME(AVisibilityTest, TestPawns);
 }
 
@@ -63,7 +62,6 @@ void AVisibilityTest::BeginPlay()
 			float YSpawnIncrement = 120.0f;
 
 			TestPawns.Empty();
-			Controllers.Empty();
 
 			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
@@ -85,7 +83,6 @@ void AVisibilityTest::BeginPlay()
 				YToSpawnAt += YSpawnIncrement;
 
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-				Controllers.Add(PlayerController);
 
 				TestPawns.Add(TestCharacter);
 
@@ -238,7 +235,6 @@ void AVisibilityTest::BeginPlay()
 	{	// Step 10 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("ServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
-
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
@@ -271,7 +267,6 @@ void AVisibilityTest::BeginPlay()
 					FinishStep();
 				}
 			}
-				
 		}, 5.0f);
 	}
 
