@@ -37,6 +37,8 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 {
 	bool bHasSpatialNetDriver = false;
 
+	const bool bUseSpatial = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
 	if (WorldContext != nullptr)
 	{
 		UWorld* World = GetWorld();
@@ -46,7 +48,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		if (NetDriver == nullptr)
 		{
 			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
-			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+			if (bUseSpatial)
 			{
 				if (FNetDriverDefinition* DriverDefinition =
 						GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef) {
@@ -73,7 +75,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
+	if (bUseSpatial && !bHasSpatialNetDriver)
 	{
 		UE_LOG(LogSpatialGameInstance, Error,
 			   TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
