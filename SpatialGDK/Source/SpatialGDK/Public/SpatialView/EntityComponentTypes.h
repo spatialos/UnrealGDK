@@ -44,4 +44,13 @@ struct EntityComponentIdEquality
 	bool operator()(const EntityComponentCompleteUpdate& Element) const { return Element.GetEntityComponentId() == Id; }
 };
 
+struct ComponentIdEquality
+{
+	Worker_ComponentId Id;
+
+	bool operator()(const ComponentData& Element) const { return Element.GetComponentId() == Id; }
+
+	bool operator()(const ComponentUpdate& Element) const { return Element.GetComponentId() == Id; }
+};
+
 } // namespace SpatialGDK

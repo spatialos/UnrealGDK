@@ -4,7 +4,6 @@
 
 namespace SpatialGDK
 {
-
 EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 	: OpListData(MakeUnique<EntityComponentOpListData>())
 {
