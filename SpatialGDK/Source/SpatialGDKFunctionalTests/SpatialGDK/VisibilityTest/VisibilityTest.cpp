@@ -15,11 +15,11 @@
  * The test includes a single server and two client workers.
  * The flow is as follows:
  *  - Setup:
- *	  - On cube actor already placed in the level Location FVector(0.0f, 0.0f, 50.0f)
- *    - Two test character pawns are spawned, one for each client
- *    - The controllers for each client  possess the spawned test character pawns
+ *	  - One cube actor already placed in the level at Location FVector(0.0f, 0.0f, 50.0f).
+ *    - Two test character pawns are spawned, one for each client.
+ *    - The controllers for each client possess the spawned test character pawns.
  *  - Test:
- *    - Server moves one Client to a remote position where Client can not see the HiddenActor(Cube) .
+ *    - Server moves one Client to a remote position where Client can not see the HiddenActor(Cube).
  *	  - Check if the Clients can see the HiddenActor(Cube).
  *	  - Server sets the HiddenActor(Cube) as bHidden.
  *	  - Server moves the remote Client back close to the HiddenActor(Cube).
@@ -27,8 +27,8 @@
  *	  - Server sets the HiddenActor(Cube) as Visible (bHidden = false).
  *	  - Check if the Clients can see the HiddenActor(Cube).
  *  - Cleanup:
- *    - The clients repossess their default pawns
- *    - The test pawns are destroyed
+ *    - The clients repossess their default pawns.
+ *    - The test pawns are destroyed.
  */
 
 AVisibilityTest::AVisibilityTest()

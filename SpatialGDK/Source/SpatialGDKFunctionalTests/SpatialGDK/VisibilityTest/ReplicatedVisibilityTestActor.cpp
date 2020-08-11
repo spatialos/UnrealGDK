@@ -2,8 +2,6 @@
 
 
 #include "ReplicatedVisibilityTestActor.h"
-#include "Components/StaticMeshComponent.h"
-#include "Materials/Material.h"
 
 AReplicatedVisibilityTestActor::AReplicatedVisibilityTestActor()
 {
