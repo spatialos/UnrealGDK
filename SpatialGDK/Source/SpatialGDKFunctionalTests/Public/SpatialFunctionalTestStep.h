@@ -25,9 +25,8 @@ enum class ESpatialFunctionalTestWorkerType : uint8
 {
 	Server,
 	Client,
-	All		// Special type that allows you to reference all the Servers and Clients
+	All // Special type that allows you to reference all the Servers and Clients
 };
-
 
 USTRUCT(BlueprintType)
 struct FWorkerDefinition
@@ -35,7 +34,7 @@ struct FWorkerDefinition
 	GENERATED_BODY()
 
 	// Type of Worker, usually Server or Client.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spatial Functional Test")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test")
 	ESpatialFunctionalTestWorkerType Type = ESpatialFunctionalTestWorkerType::Server;
 
 	// Ids of Workers start from 1.
@@ -60,15 +59,9 @@ struct FWorkerDefinition
 	// Helper for Client Worker Definition
 	static FWorkerDefinition Client(int ClientId);
 
-	bool operator == (const FWorkerDefinition& Other)
-	{
-		return Type == Other.Type && Id == Other.Id;
-	};
+	bool operator==(const FWorkerDefinition& Other) { return Type == Other.Type && Id == Other.Id; };
 
-	bool operator != (const FWorkerDefinition& Other)
-	{
-		return Type != Other.Type || Id != Other.Id;
-	};
+	bool operator!=(const FWorkerDefinition& Other) { return Type != Other.Type || Id != Other.Id; };
 };
 
 USTRUCT(BlueprintType, meta = (HasNativeMake = ""))
@@ -132,6 +125,6 @@ public:
 	ASpatialFunctionalTest* Owner;
 	bool bIsRunning;
 	bool bIsReady;
-	
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 };

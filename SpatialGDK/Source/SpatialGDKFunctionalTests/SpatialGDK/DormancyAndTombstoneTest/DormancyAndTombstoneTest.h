@@ -10,7 +10,7 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADormancyAndTombstoneTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
-	
+
 public:
 	ADormancyAndTombstoneTest();
 

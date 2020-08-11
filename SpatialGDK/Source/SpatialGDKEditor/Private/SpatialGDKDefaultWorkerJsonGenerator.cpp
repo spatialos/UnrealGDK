@@ -2,8 +2,8 @@
 
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include "Misc/FileHelper.h"
 
@@ -12,7 +12,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 
 bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTypeName, bool& bOutRedeployRequired)
 {
-	const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
+	const FString TemplateWorkerJsonPath =
+		FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
 
 	FString Contents;
 	if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
@@ -32,7 +33,8 @@ bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTyp
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
+		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to read default worker json template at %s"),
+			   *TemplateWorkerJsonPath)
 	}
 
 	return false;

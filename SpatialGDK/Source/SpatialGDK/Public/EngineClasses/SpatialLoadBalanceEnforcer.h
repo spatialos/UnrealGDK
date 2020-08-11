@@ -25,7 +25,8 @@ public:
 		TArray<Worker_ComponentId> ComponentIds;
 	};
 
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView,
+							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 
 	bool HandlesComponent(Worker_ComponentId ComponentId) const;
 

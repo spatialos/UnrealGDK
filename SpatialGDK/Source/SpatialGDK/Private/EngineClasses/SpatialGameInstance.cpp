@@ -28,29 +28,33 @@ DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 USpatialGameInstance::USpatialGameInstance()
 	: Super()
 	, bIsSpatialNetDriverReady(false)
-{}
+{
+}
 
 bool USpatialGameInstance::HasSpatialNetDriver() const
 {
 	bool bHasSpatialNetDriver = false;
 
+	const bool bUseSpatial = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
 	if (WorldContext != nullptr)
 	{
 		UWorld* World = GetWorld();
-		UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		UNetDriver* NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		bool bShouldDestroyNetDriver = false;
 
 		if (NetDriver == nullptr)
 		{
 			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
-			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+			if (bUseSpatial)
 			{
-				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef)
+				if (FNetDriverDefinition* DriverDefinition =
+						GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef) {
+							return CurDef.DefName == NAME_GameNetDriver;
+						}))
 				{
-					return CurDef.DefName == NAME_GameNetDriver;
-				}))
-				{
-					DriverDefinition->DriverClassName = DriverDefinition->DriverClassNameFallback = TEXT("/Script/SpatialGDK.SpatialNetDriver");
+					DriverDefinition->DriverClassName = DriverDefinition->DriverClassNameFallback =
+						TEXT("/Script/SpatialGDK.SpatialNetDriver");
 				}
 			}
 
@@ -69,11 +73,12 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
+	if (bUseSpatial && !bHasSpatialNetDriver)
 	{
-		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
-										  "Please make sure you set up the net driver definitions as specified in the porting "
-										  "guide and that you don't override the main net driver."));
+		UE_LOG(LogSpatialGameInstance, Error,
+			   TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
+					"Please make sure you set up the net driver definitions as specified in the porting "
+					"guide and that you don't override the main net driver."));
 	}
 
 	return bHasSpatialNetDriver;
@@ -109,7 +114,8 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 }
 
 #if WITH_EDITOR
-FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
+FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer,
+																		   const FGameInstancePIEParameters& Params)
 {
 	SpatialWorkerType = Params.SpatialWorkerType;
 	bIsSimulatedPlayer = Params.bIsSimulatedPlayer;
@@ -131,7 +137,8 @@ void USpatialGameInstance::StartSpatialConnection()
 	else
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		FString WorkerName =
+			FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
@@ -143,7 +150,8 @@ void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
 	{
 		SetHasPreviouslyConnectedToSpatial();
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
-		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to
+		// provide parity with native.
 
 		// Initialize a locator configuration which will parse command line arguments.
 		FLocatorConfig LocatorConfig;
@@ -264,11 +272,8 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
-	if (OwningWorld != GetWorld()
-		|| !OwningWorld->IsServer()
-		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
-		|| (OwningWorld->WorldType != EWorldType::PIE
-			&& OwningWorld->WorldType != EWorldType::Game
+	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+		|| (OwningWorld->WorldType != EWorldType::PIE && OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
 		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
@@ -306,7 +311,8 @@ void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLe
 				}
 				else
 				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("This worker %s is not the owner of startup actor %s, exchanging Roles"), *GetPathNameSafe(Actor));
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("This worker %s is not the owner of startup actor %s, exchanging Roles"),
+						   *GetPathNameSafe(Actor));
 					ENetRole Temp = Actor->Role;
 					Actor->Role = Actor->RemoteRole;
 					Actor->RemoteRole = Temp;

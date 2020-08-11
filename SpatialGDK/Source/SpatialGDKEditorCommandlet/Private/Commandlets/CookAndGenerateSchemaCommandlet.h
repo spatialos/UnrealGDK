@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Commandlets/CookCommandlet.h"
+#include "CoreMinimal.h"
 #include "CookAndGenerateSchemaCommandlet.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCookAndGenerateSchemaCommandlet, Log, All);
@@ -16,11 +16,13 @@ struct FObjectListener;
  * schema for blueprints required by the cook.
  *
  * Usage:
- * Engine\Binaries\Win64\UE4Editor-Cmd.exe <PathToGame>.uproject -run=CookAndGenerateSchema -targetplatform=LinuxServer -SkipShaderCompile  <...Native Cook Params>
+ * Engine\Binaries\Win64\UE4Editor-Cmd.exe <PathToGame>.uproject -run=CookAndGenerateSchema -targetplatform=LinuxServer -SkipShaderCompile
+ * <...Native Cook Params>
  *
  * Known Issues:
  * - SchemaDatabase.uasset will need to be cooked again after running this Commandlet, potentially with [-iterate] flag.
- * - [-iterate] flag will result in schema only generated for dirty packages, you maintain previous .schema files if you want to use this flag.
+ * - [-iterate] flag will result in schema only generated for dirty packages, you maintain previous .schema files if you want to use this
+ * flag.
  *
  * Recommended Workflow:
  *  1. Run CookAndGenerateSchema for a LinuxServer platform with [-SkipShaderCompile] for needed maps WITHOUT [-iterate]
