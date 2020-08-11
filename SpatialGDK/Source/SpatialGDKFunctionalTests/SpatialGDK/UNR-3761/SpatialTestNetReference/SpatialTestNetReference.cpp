@@ -98,6 +98,9 @@ void ASpatialTestNetReference::BeginPlay()
 		ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 
+		// Set a reference to the previous Pawn so that it can be possessed back in the last step of the test
+		OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
+
 		RegisterAutoDestroyActor(TestCharacter);
 		PlayerController->Possess(TestCharacter);
 
@@ -206,6 +209,14 @@ void ASpatialTestNetReference::BeginPlay()
 				}
 			}, 5.0f);
 	}
+
+	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		{
+			// Possess the original pawn, so that other tests start from the expected, default set-up
+			OriginalPawn.Key->Possess(OriginalPawn.Value);
+
+			FinishStep();
+		});
 }
 
 void ASpatialTestNetReference::FinishTest(EFunctionalTestResult TestResult, const FString& Message)
