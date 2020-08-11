@@ -57,19 +57,18 @@ void AVisibilityTest::BeginPlay()
 	{	// Step 1 - Set up the world Spawn PlayerCharacter and make sure the cube is in the world.
 		AddStep(TEXT("ServerSetup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
-			AVisibilityTest* Test = Cast<AVisibilityTest>(NetTest);
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
 			FVector StartingLocation = FVector::ZeroVector;
 
-			Test->TestPawns.Empty();
-			Test->Controllers.Empty();
+			TestPawns.Empty();
+			Controllers.Empty();
 
 			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
 
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
@@ -91,19 +90,19 @@ void AVisibilityTest::BeginPlay()
 
 				ATestMovementCharacter* TestCharacter = GetWorld()->SpawnActor<ATestMovementCharacter>(StartingLocation, FRotator::ZeroRotator, FActorSpawnParameters());
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-				Test->Controllers.Add(PlayerController);
+				Controllers.Add(PlayerController);
 
-				Test->TestPawns.Add(TestCharacter);
+				TestPawns.Add(TestCharacter);
 
-				Test->RegisterAutoDestroyActor(TestCharacter);
+				RegisterAutoDestroyActor(TestCharacter);
 
 				// Save old one to put it back in the final step
-				Test->OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
+				OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
 
 				PlayerController->Possess(TestCharacter);
 
 			}
-			NetTest->FinishStep();
+			FinishStep();
 		});
 	}
 
@@ -128,7 +127,6 @@ void AVisibilityTest::BeginPlay()
 	{	// Step 3 - Server moves Client 1 to a remote location where it can not see the cube. 
 		AddStep(TEXT("ServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
-
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
@@ -139,7 +137,7 @@ void AVisibilityTest::BeginPlay()
 				{
 					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
 					{
-						NetTest->FinishStep();
+						FinishStep();
 					}
 				}
 			}
@@ -176,8 +174,8 @@ void AVisibilityTest::BeginPlay()
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 1 world"), NetTest);
-				NetTest->FinishStep();
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 1 world"), NetTest);
+				FinishStep();
 			}
 		}, 5.0f);
 	}
@@ -187,14 +185,14 @@ void AVisibilityTest::BeginPlay()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 2 world"), NetTest);
-				NetTest->FinishStep();
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 2 world"), NetTest);
+				FinishStep();
 			}
 		}, 5.0f);
 	}
@@ -203,14 +201,14 @@ void AVisibilityTest::BeginPlay()
 		AddStep(TEXT("ServerSetActorHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 				Iter->SetHidden(true);
-				NetTest->AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
+				AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
-			NetTest->FinishStep();
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
+			FinishStep();
 		});
 	}
 
@@ -219,12 +217,12 @@ void AVisibilityTest::BeginPlay()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 					Counter++;
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
-			NetTest->FinishStep();
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
+			FinishStep();
 		});
 	}
 
@@ -233,12 +231,12 @@ void AVisibilityTest::BeginPlay()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 0;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the client world"), NetTest);
-			NetTest->FinishStep();
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the client world"), NetTest);
+			FinishStep();
 		});
 	}
 
@@ -256,7 +254,7 @@ void AVisibilityTest::BeginPlay()
 				{
 					if (PlayerCharacter->GetActorLocation().Equals(Character1StartingLocation, 50.0f))
 					{
-						NetTest->FinishStep();
+						FinishStep();
 					}
 				}
 			}
@@ -287,15 +285,15 @@ void AVisibilityTest::BeginPlay()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 0;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				NetTest->AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
+				AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
-				NetTest->FinishStep();
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
+				FinishStep();
 			}
 		},5.0f);
 	}
@@ -305,14 +303,14 @@ void AVisibilityTest::BeginPlay()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 				Iter->SetHidden(false);
-				NetTest->AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
+				AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
-			NetTest->FinishStep();
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
+			FinishStep();
 		});
 	}
 
@@ -321,15 +319,15 @@ void AVisibilityTest::BeginPlay()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				NetTest->AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
+				AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				NetTest->AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
-				NetTest->FinishStep();
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
+				FinishStep();
 			}
 		});
 	}
@@ -338,12 +336,11 @@ void AVisibilityTest::BeginPlay()
 		AddStep(TEXT("ServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			// Possess the original pawn, so that the spawned character can get destroyed correctly
-			AVisibilityTest* Test = Cast<AVisibilityTest>(NetTest);
-			for (const auto& OriginalPawnPair : Test->OriginalPawns)
+			for (const auto& OriginalPawnPair : OriginalPawns)
 			{
 				OriginalPawnPair.Key->Possess(OriginalPawnPair.Value);
 			}
-			Test->FinishStep();
+			FinishStep();
 		});
 	}
 }
