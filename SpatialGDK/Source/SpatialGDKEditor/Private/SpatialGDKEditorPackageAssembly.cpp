@@ -3,6 +3,7 @@
 #include "SpatialGDKEditorPackageAssembly.h"
 
 #include "Async/Async.h"
+#include "DesktopPlatformModule.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
@@ -35,11 +36,11 @@ void FSpatialGDKPackageAssembly::LaunchTask(const FString& Exe, const FString& A
 	PackageAssemblyTask->Launch();
 }
 
-void FSpatialGDKPackageAssembly::BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs)
+void FSpatialGDKPackageAssembly::BuildAssembly(const FString& TargetName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs)
 {
 	FString WorkingDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	FString Project = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
-	FString Args = FString::Printf(TEXT("%s %s %s \"%s\" %s"), *ProjectName, *Platform, *Configuration, *Project, *AdditionalArgs);
+	FString Args = FString::Printf(TEXT("%s %s %s \"%s\" %s"), *TargetName, *Platform, *Configuration, *Project, *AdditionalArgs);
 	LaunchTask(SpatialBuildExe, Args, WorkingDir);
 }
 
@@ -109,13 +110,13 @@ bool FSpatialGDKPackageAssembly::NextStep()
 		case EPackageAssemblyStep::BUILD_CLIENT:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				BuildAssembly(FApp::GetProjectName(), Win64Platform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildClientExtraArgs);
+				BuildAssembly(FApp::GetProjectName(), Win64Platform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildClientExtraArgs + GetExtraArgsForClientTarget());
 			});
 			break;
 		case EPackageAssemblyStep::BUILD_SIMULATED_PLAYERS:
 			AsyncTask(ENamedThreads::GameThread, [this]()
 			{
-				BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildSimulatedPlayerExtraArgs);
+				BuildAssembly(FString::Printf(TEXT("%sSimulatedPlayer"), FApp::GetProjectName()), LinuxPlatform, CloudDeploymentConfiguration.BuildConfiguration, CloudDeploymentConfiguration.BuildSimulatedPlayerExtraArgs + GetExtraArgsForClientTarget());
 			});
 			break;
 		case EPackageAssemblyStep::UPLOAD_ASSEMBLY:
@@ -192,6 +193,30 @@ void FSpatialGDKPackageAssembly::OnTaskCanceled()
 	{
 		ShowTaskEndedNotification(NotificationMessage, SNotificationItem::CS_Fail);
 	});
+}
+
+FString FSpatialGDKPackageAssembly::GetExtraArgsForClientTarget()
+{
+	// This will determine if the target with the project name (<ProjectName>.Target.cs) has the TargetType.Client,
+	// in which case we will pass '-client -noserver' to the build executable when packaging the assembly.
+	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+
+	TArray<FTargetInfo> Targets = DesktopPlatform->GetTargetsForCurrentProject();
+	const FString TargetName = FApp::GetProjectName();
+
+	for (const FTargetInfo& Target : Targets)
+	{
+		if (Target.Name == TargetName)
+		{
+			if (Target.Type == EBuildTargetType::Client)
+			{
+				return TEXT(" -client -noserver");
+			}
+			break;
+		}
+	}
+
+	return FString();
 }
 
 void FSpatialGDKPackageAssembly::HandleCancelButtonClicked()
