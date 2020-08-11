@@ -65,17 +65,17 @@ namespace ReleaseTool
             return markdownLine.StartsWith(heading);
         }
 
-        public static bool UpdateChangeLog(string ChangeLogFilePath, string Version, GitClient gitClient, string ChangeLogReleaseHeadingTemplate)
+        public static bool UpdateChangeLog(string changeLogFilePath, string version, GitClient gitClient, string changeLogReleaseHeadingTemplate)
         {
             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
-                if (File.Exists(ChangeLogFilePath))
+                if (File.Exists(changeLogFilePath))
                 {
-                    var originalContents = File.ReadAllText(ChangeLogFilePath);
-                    var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
-                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, Version,
+                    var originalContents = File.ReadAllText(changeLogFilePath);
+                    var changelog = File.ReadAllLines(changeLogFilePath).ToList();
+                    var releaseHeading = string.Format(changeLogReleaseHeadingTemplate, version,
                         DateTime.Now);
-                    var releaseIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2, $"[`{Version}`] - "));
+                    var releaseIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2, $"[`{version}`] - "));
                     // If we already have a changelog entry for this release, replace it.
                     if (releaseIndex != -1)
                     {
@@ -92,42 +92,44 @@ namespace ReleaseTool
                             releaseHeading
                         });
                     }
-                    File.WriteAllLines(ChangeLogFilePath, changelog);
+                    File.WriteAllLines(changeLogFilePath, changelog);
 
                     // If nothing has changed, return false, so we can react to it from the caller.
-                    if (File.ReadAllText(ChangeLogFilePath) == originalContents)
+                    if (File.ReadAllText(changeLogFilePath) == originalContents)
                     {
                         return false;
                     }
 
-                    gitClient.StageFile(ChangeLogFilePath);
+                    gitClient.StageFile(changeLogFilePath);
                     return true;
                 }
             }
-            return false;
+
+            throw new Exception($"Failed to update the changelog. Arguments: " +
+                $"ChangeLogFilePath: {changeLogFilePath}, Version: {version}, Heading template: {changeLogReleaseHeadingTemplate}.");
         }
 
-        public static bool UpdateVersionFile(GitClient gitClient, string fileContents, string relativeFilePath, NLog.Logger Logger)
+        public static bool UpdateVersionFile(GitClient gitClient, string fileContents, string versionFileRelativePath, NLog.Logger logger)
         {
             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
-                Logger.Info("Updating contents of version file '{0}' to '{1}'...", relativeFilePath, fileContents);
+                logger.Info("Updating contents of version file '{0}' to '{1}'...", versionFileRelativePath, fileContents);
 
-                if (!File.Exists(relativeFilePath))
+                if (!File.Exists(versionFileRelativePath))
                 {
                     throw new InvalidOperationException("Could not update the version file as the file " +
-                        $"'{relativeFilePath}' does not exist.");
+                        $"'{versionFileRelativePath}' does not exist.");
                 }
 
-                if (File.ReadAllText(relativeFilePath) == fileContents)
+                if (File.ReadAllText(versionFileRelativePath) == fileContents)
                 {
-                    Logger.Info("Contents of '{0}' are already up-to-date ('{1}').", relativeFilePath, fileContents);
+                    logger.Info("Contents of '{0}' are already up-to-date ('{1}').", versionFileRelativePath, fileContents);
                     return false;
                 }
 
-                File.WriteAllText(relativeFilePath, $"{fileContents}");
+                File.WriteAllText(versionFileRelativePath, $"{fileContents}");
 
-                gitClient.StageFile(relativeFilePath);
+                gitClient.StageFile(versionFileRelativePath);
             }
 
             return true;

@@ -157,14 +157,15 @@ namespace ReleaseTool
                     {
                         mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge, $"Merging final GDK for Unreal {options.Version} release");
                     }
-                    catch (Octokit.PullRequestNotMergeableException) {} // Will be covered by log below
+                    catch (Octokit.PullRequestNotMergeableException e) {
+                        Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {e.Message}");
+                    }
                     if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
                     {
                         throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
                     }
                     if (!mergeResult.Merged)
                     {
-                        Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                         Logger.Info($"{options.PullRequestUrl} is not in a mergeable state, will query mergeability again in one minute.");
                         Thread.Sleep(TimeSpan.FromMinutes(1));
                     }
