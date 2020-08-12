@@ -134,7 +134,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		check(Property->ArrayDim == 1); // Arrays not handled yet
 
 		// convert the property to a FJsonValue
-		if (UnrealStrProperty *StringProperty = Cast<UnrealStrProperty>(Property))
+		if (UnrealStrProperty *StringProperty = CastField<UnrealStrProperty>(Property))
 		{
 			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
 		}

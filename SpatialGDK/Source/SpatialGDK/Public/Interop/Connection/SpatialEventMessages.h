@@ -15,6 +15,8 @@ static_assert(sizeof(VirtualWorkerId) == sizeof(uint32), "VirtualWorkerId assume
 static_assert(sizeof(TraceKey) == sizeof(int32), "TraceKey assumed 32-bit here");
 static_assert(sizeof(Worker_RequestId) == sizeof(int64), "RequestId assumed 64-bit here");
 
+#define GDK_EVENT_NAMESPACE "unreal_gdk."
+
 USTRUCT()
 struct FEventMessage
 {
@@ -38,10 +40,10 @@ struct FEventGenericMessage : public FEventMessage
 	GENERATED_BODY()
 
 	FEventGenericMessage()
-		: FEventMessage("GenericMessage")
+		: FEventMessage("generic_message")
 	{}
 	FEventGenericMessage(const FString& Message)
-		: FEventMessage("GenericMessage")
+		: FEventMessage(GDK_EVENT_NAMESPACE"generic_message")
 		, Message(Message)
 	{}
 
@@ -54,10 +56,10 @@ struct FEventCreateEntity : public FEventMessage
 	GENERATED_BODY()
 
 	FEventCreateEntity()
-		: FEventMessage("CreateEntity")
+		: FEventMessage(GDK_EVENT_NAMESPACE"create_entity")
 	{}
 	FEventCreateEntity(int64 EntityId, const AActor* Actor)
-		: FEventMessage("CreateEntity")
+		: FEventMessage(GDK_EVENT_NAMESPACE"create_entity")
 		, EntityId(EntityId)
 		, Actor(Actor)
 	{}
@@ -72,10 +74,10 @@ struct FEventRemoveEntity : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRemoveEntity()
-		: FEventMessage("RemoveEntity")
+		: FEventMessage(GDK_EVENT_NAMESPACE"remove_entity")
 	{}
 	FEventRemoveEntity(int64 EntityId, const AActor* Actor)
-		: FEventMessage("RemoveEntity")
+		: FEventMessage(GDK_EVENT_NAMESPACE"remove_entity")
 		, EntityId(EntityId)
 		, Actor(Actor)
 	{}
@@ -90,10 +92,10 @@ struct FEventCreateEntitySuccess : public FEventMessage
 	GENERATED_BODY()
 
 	FEventCreateEntitySuccess()
-		: FEventMessage("CreateEntitySuccess")
+		: FEventMessage(GDK_EVENT_NAMESPACE"create_entity_success")
 	{}
 	FEventCreateEntitySuccess(int64 EntityId, const AActor* Actor)
-		: FEventMessage("CreateEntitySuccess")
+		: FEventMessage(GDK_EVENT_NAMESPACE"create_entity_success")
 		, EntityId(EntityId)
 		, Actor(Actor)
 	{}
@@ -108,10 +110,10 @@ struct FEventAuthorityIntentUpdate : public FEventMessage
 	GENERATED_BODY()
 
 	FEventAuthorityIntentUpdate()
-		: FEventMessage("AuthorityIntentUpdate")
+		: FEventMessage(GDK_EVENT_NAMESPACE"authority_intent_update")
 	{}
 	FEventAuthorityIntentUpdate(uint32 NewWorkerId, const AActor* Actor)
-		: FEventMessage("AuthorityIntentUpdate")
+		: FEventMessage(GDK_EVENT_NAMESPACE"authority_intent_update")
 		, NewWorkerId(NewWorkerId)
 		, Actor(Actor)
 	{}
@@ -126,10 +128,10 @@ struct FEventAuthorityLossImminent : public FEventMessage
 	GENERATED_BODY()
 
 	FEventAuthorityLossImminent()
-		: FEventMessage("AuthorityLossImminent")
+		: FEventMessage(GDK_EVENT_NAMESPACE"authority_loss_imminent")
 	{}
 	FEventAuthorityLossImminent(TEnumAsByte<ENetRole> Role, const AActor* Actor)
-		: FEventMessage("AuthorityLossImminent")
+		: FEventMessage(GDK_EVENT_NAMESPACE"authority_loss_imminent")
 		, Role(Role)
 		, Actor(Actor)
 	{}
@@ -144,10 +146,10 @@ struct FEventRetireEntityRequest : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRetireEntityRequest()
-		: FEventMessage("EntityRetire")
+		: FEventMessage(GDK_EVENT_NAMESPACE"entity_retire")
 	{}
 	FEventRetireEntityRequest(int64 EntityId, const AActor* Actor)
-		: FEventMessage("EntityRetire")
+		: FEventMessage(GDK_EVENT_NAMESPACE"entity_retire")
 		, EntityId(EntityId)
 		, Actor(Actor)
 	{}
@@ -162,10 +164,10 @@ struct FEventSendRPC : public FEventMessage
 	GENERATED_BODY()
 
 	FEventSendRPC()
-		: FEventMessage("SendRPC")
+		: FEventMessage(GDK_EVENT_NAMESPACE"send_rpc")
 	{}
 	FEventSendRPC(const UObject* TargetObject, const UFunction* Function)
-		: FEventMessage("SendRPC")
+		: FEventMessage(GDK_EVENT_NAMESPACE"send_rpc")
 		, TargetObject(TargetObject)
 		, Function(Function)
 	{}
@@ -180,10 +182,10 @@ struct FEventRPCQueued : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCQueued()
-		: FEventMessage("RPCQueued")
+		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_queued")
 	{}
 	FEventRPCQueued(const UObject* TargetObject, const UFunction* Function)
-		: FEventMessage("RPCQueued")
+		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_queued")
 		, TargetObject(TargetObject)
 		, Function(Function)
 	{}
@@ -198,7 +200,7 @@ struct FEventRPCRetried : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCRetried()
-		: FEventMessage("RPCRetried")
+		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_retired")
 	{}
 };
 
@@ -208,10 +210,10 @@ struct FEventRPCProcessed : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCProcessed()
-		: FEventMessage("RPCProcessed")
+		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_processed")
 	{}
 	FEventRPCProcessed(const UObject* TargetObject, const UFunction* Function)
-		: FEventMessage("RPCProcessed")
+		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_processed")
 		, TargetObject(TargetObject)
 		, Function(Function)
 	{}
@@ -226,10 +228,10 @@ struct FEventComponentUpdate : public FEventMessage
 	GENERATED_BODY()
 
 	FEventComponentUpdate()
-		: FEventMessage("ComponentUpdate")
+		: FEventMessage(GDK_EVENT_NAMESPACE"component_update")
 	{}
 	FEventComponentUpdate(const AActor* Actor, const UObject* TargetObject, uint32 ComponentId)
-		: FEventMessage("ComponentUpdate")
+		: FEventMessage(GDK_EVENT_NAMESPACE"component_update")
 		, Actor(Actor)
 		, TargetObject(TargetObject)
 		, ComponentId(ComponentId)
@@ -246,19 +248,19 @@ struct FEventCommandResponse : public FEventMessage
 	GENERATED_BODY()
 
 	FEventCommandResponse()
-		: FEventMessage("CommandResponse")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_response")
 	{}
 	FEventCommandResponse(const FString& Command)
-		: FEventMessage("CommandResponse")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_response")
 		, Command(Command)
 	{}
 	FEventCommandResponse(const FString& Command, int64 RequestID)
-		: FEventMessage("CommandResponse")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_response")
 		, Command(Command)
 		, RequestID(RequestID)
 	{}
 	FEventCommandResponse(const FString& Command, const AActor* Actor, const UObject* TargetObject, const UFunction* Function, int64 RequestID, bool bSuccess)
-		: FEventMessage("CommandResponse")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_response")
 		, Command(Command)
 		, Actor(Actor)
 		, TargetObject(TargetObject)
@@ -281,15 +283,15 @@ struct FEventCommandRequest : public FEventMessage
 	GENERATED_BODY()
 
 	FEventCommandRequest()
-		: FEventMessage("CommandRequest")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_request")
 	{}
 	FEventCommandRequest(const FString& Command, int64 RequestID)
-		: FEventMessage("CommandRequest")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_request")
 		, Command(Command)
 		, RequestID(RequestID)
 	{}
 	FEventCommandRequest(const FString& Command, const AActor* Actor, const UObject* TargetObject, const UFunction* Function, int32 TraceId, int64 RequestID)
-		: FEventMessage("CommandRequest")
+		: FEventMessage(GDK_EVENT_NAMESPACE"command_request")
 		, Command(Command)
 		, Actor(Actor)
 		, TargetObject(TargetObject)
@@ -305,3 +307,5 @@ struct FEventCommandRequest : public FEventMessage
 	UPROPERTY() int32 TraceId { -1 };
 	UPROPERTY() int64 RequestID { -1 };
 };
+
+#undef GDK_EVENT_NAMESPACE
