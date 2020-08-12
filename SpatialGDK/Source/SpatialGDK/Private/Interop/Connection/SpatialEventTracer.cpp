@@ -138,7 +138,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		{
 			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
 		}
-		else if (UnrealObjectProperty* ObjectProperty = Cast<UnrealObjectProperty>(Property))
+		else if (UnrealObjectProperty* ObjectProperty = CastField<UnrealObjectProperty>(Property))
 		{
 			UObject* Object = ObjectProperty->GetPropertyValue(Value);
 			if (Object)
