@@ -22,6 +22,7 @@ void ASpatialAuthorityTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	//DOREPLIFETIME(ASpatialAuthorityTestActor, OwnerTest);
 	DOREPLIFETIME(ASpatialAuthorityTestActor, AuthorityOnBeginPlay);
 	DOREPLIFETIME(ASpatialAuthorityTestActor, AuthorityOnTick);
 }
@@ -31,11 +32,11 @@ void ASpatialAuthorityTestActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if( OwnerTest == nullptr )
-	{
-		ensureMsgf(false, TEXT("AuthoritySpatialTestActor needs Test to be set"));
-		return;
-	}
+	//if( OwnerTest == nullptr )
+	//{
+	//	ensureMsgf(false, TEXT("AuthoritySpatialTestActor needs Test to be set"));
+	//	return;
+	//}
 
 	if (HasAuthority())
 	{

@@ -28,5 +28,14 @@ public:
 	ASpatialAuthorityTestReplicatedActor* LevelReplicatedActor;
 
 	UPROPERTY(Replicated)
+	ASpatialAuthorityTestReplicatedActor* DynamicReplicatedActor;
+
+	UPROPERTY()
+	ASpatialAuthorityTestActor* DynamicNonReplicatedActor;
+
+private:
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
 
 };

@@ -3,25 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "SpatialAuthorityTestActor.generated.h"
-
-class ASpatialFunctionalTest;
-class ASpatialFunctionalTestFlowController;
+#include "GameFramework/GameModeBase.h"
+#include "SpatialAuthorityTestGameMode.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestActor : public AActor
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASpatialAuthorityTestActor();
+	ASpatialAuthorityTestGameMode();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	//UPROPERTY(EditAnywhere, Replicated, Category = "Default")
-	//ASpatialFunctionalTest* OwnerTest;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Default")
 	int32 AuthorityOnBeginPlay;
