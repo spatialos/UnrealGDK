@@ -118,7 +118,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// We try to stop a local deployment either when the appropriate setting is selected, or when running with automation tests
 	// TODO: Reuse local deployment between test maps: UNR-2488
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE) && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE) && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
