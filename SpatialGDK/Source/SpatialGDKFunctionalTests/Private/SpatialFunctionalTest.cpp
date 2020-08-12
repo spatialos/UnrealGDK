@@ -192,7 +192,7 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 	return Counter;
 }
 
-void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
+void ASpatialFunctionalTest::AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
@@ -204,7 +204,7 @@ void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, in
 	}
 }
 
-void ASpatialFunctionalTest::RemoveActorDelegation_Implementation(AActor* Actor)
+void ASpatialFunctionalTest::RemoveActorDelegation(AActor* Actor)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
