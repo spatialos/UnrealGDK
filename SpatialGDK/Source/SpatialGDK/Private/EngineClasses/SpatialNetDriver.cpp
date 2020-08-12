@@ -439,7 +439,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const UWorld* CurrentWorld = GetWorld();
 	check(CurrentWorld != nullptr);
 
-	bool bMultiWorkerEnabled = true;
+	bool bMultiWorkerEnabled = false;
 	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
 	TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = USpatialMultiWorkerSettings::StaticClass();
 
@@ -452,7 +452,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		// If pass multiWorkerSettingsClass from command line, it infers multi-worker enabled
 		bMultiWorkerEnabled = true;
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("set MultiWorkerSettingsClass as '%s' from command line '%s'"),
-			*MultiWorkerSettingsClass->GetName(), *SpatialMultiWorkerSettingsClassName);
+			   *MultiWorkerSettingsClass->GetName(), *SpatialMultiWorkerSettingsClassName);
 	}
 	else
 	{
@@ -463,7 +463,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			MultiWorkerSettingsClass = *WorldSettings->MultiWorkerSettingsClass;
 			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("set MultiWorkerSettingsClass as '%s' from SpatialWorldSettings"),
-				*MultiWorkerSettingsClass->GetName());
+				   *MultiWorkerSettingsClass->GetName());
 		}
 	}
 
