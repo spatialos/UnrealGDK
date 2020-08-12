@@ -439,14 +439,33 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const UWorld* CurrentWorld = GetWorld();
 	check(CurrentWorld != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
-	check(WorldSettings != nullptr);
-
-	const bool bMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(CurrentWorld);
-
+	bool bMultiWorkerEnabled = true;
 	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
-		bMultiWorkerEnabled ? *WorldSettings->MultiWorkerSettingsClass : USpatialMultiWorkerSettings::StaticClass();
+	TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = USpatialMultiWorkerSettings::StaticClass();
+
+	FString SpatialMultiWorkerSettingsClassName;
+	const TCHAR* CommandLine = FCommandLine::Get();
+	if (FParse::Value(CommandLine, TEXT("multiWorkerSettingsClass="), SpatialMultiWorkerSettingsClassName))
+	{
+		FSoftClassPath MultiWorkerSettingsSoftClassPath(SpatialMultiWorkerSettingsClassName);
+		MultiWorkerSettingsClass = MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
+		// If pass multiWorkerSettingsClass from command line, it infers multi-worker enabled
+		bMultiWorkerEnabled = true;
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("set MultiWorkerSettingsClass as '%s' from command line '%s'"),
+			*MultiWorkerSettingsClass->GetName(), *SpatialMultiWorkerSettingsClassName);
+	}
+	else
+	{
+		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
+		check(WorldSettings != nullptr);
+		bMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(CurrentWorld);
+		if (bMultiWorkerEnabled)
+		{
+			MultiWorkerSettingsClass = *WorldSettings->MultiWorkerSettingsClass;
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("set MultiWorkerSettingsClass as '%s' from SpatialWorldSettings"),
+				*MultiWorkerSettingsClass->GetName());
+		}
+	}
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
