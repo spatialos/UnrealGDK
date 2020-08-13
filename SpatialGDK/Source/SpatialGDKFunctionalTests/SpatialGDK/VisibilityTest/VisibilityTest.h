@@ -25,5 +25,5 @@ public:
 	TArray<TPair<AController*, APawn*>> OriginalPawns;
 
 	FVector CharacterRemoteLocation;
-	FVector Character1StartingLocation;
+	FVector CharacterOneStartingLocation;
 };

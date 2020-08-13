@@ -558,10 +558,19 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (Actor->GetIsHiddenDirty())
 	{
-		if (!Actor->GetRootComponent() || !Actor->GetRootComponent()->IsCollisionEnabled())
+		// Unreal applies the following rules (in order) in determining the relevant set of Actors for a player:
+		// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
+		// We apply the same rules to add/remove the Visibility component to an actor that determines if clients will checkout Actors or not.
+		if (Actor->IsHidden() && (!Actor->GetRootComponent() || !Actor->GetRootComponent()->IsCollisionEnabled()))
 		{
-			NetDriver->RefreshActorVisibility(Actor, !Actor->IsHidden());
+			NetDriver->RefreshActorVisibility(Actor, false);
 		}
+
+		if (!Actor->IsHidden() || (Actor->IsHidden() && (Actor->GetRootComponent() || Actor->GetRootComponent()->IsCollisionEnabled())))
+		{
+			NetDriver->RefreshActorVisibility(Actor, true);
+		}
+
 
 		Actor->SetIsHiddenDirty(false);
 	}

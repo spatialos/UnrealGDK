@@ -2450,34 +2450,28 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 	if (bHasAuthority == false)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Unable to change visibility on an actor without authority. Actor's name: %s "), *Actor->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to change visibility on an actor without authority. Actor's name: %s "), *Actor->GetName());
 		return;
 	}
 
 	const bool bVisibilityComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 
 	// If the Actor is Visible make sure it has the Visible component
-	if (bMakeVisible)
+	if (bMakeVisible && !bVisibilityComponentExists)
 	{
-		if (!bVisibilityComponentExists)
-		{
-			Worker_AddComponentOp AddComponentOp{};
-			AddComponentOp.entity_id = EntityId;
-			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
-			Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
-			StaticComponentView->OnAddComponent(AddComponentOp);
-		}
+		Worker_AddComponentOp AddComponentOp{};
+		AddComponentOp.entity_id = EntityId;
+		AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
+		Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
+		StaticComponentView->OnAddComponent(AddComponentOp);
 	}
-	else
+	else if(!bMakeVisible && bVisibilityComponentExists)
 	{
-		if (bVisibilityComponentExists)
-		{
-			Worker_RemoveComponentOp RemoveComponentOp{};
-			RemoveComponentOp.entity_id = EntityId;
-			RemoveComponentOp.component_id = SpatialConstants::VISIBLE_COMPONENT_ID;
-			Sender->SendRemoveComponents(EntityId, { SpatialConstants::VISIBLE_COMPONENT_ID });
-			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
-		}
+		Worker_RemoveComponentOp RemoveComponentOp{};
+		RemoveComponentOp.entity_id = EntityId;
+		RemoveComponentOp.component_id = SpatialConstants::VISIBLE_COMPONENT_ID;
+		Sender->SendRemoveComponents(EntityId, { SpatialConstants::VISIBLE_COMPONENT_ID });
+		StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 	}
 }
 

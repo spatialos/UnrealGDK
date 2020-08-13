@@ -50,7 +50,7 @@ void AVisibilityTest::BeginPlay()
 	Super::BeginPlay();
 
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
-	Character1StartingLocation = FVector(0.0f, 120.0f, 50.0f);
+	CharacterOneStartingLocation = FVector(0.0f, 120.0f, 50.0f);
 
 	{	// Step 1 - Set up the world Spawn PlayerCharacter and make sure the cube is in the world.
 		AddStep(TEXT("ServerSetup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
@@ -105,7 +105,7 @@ void AVisibilityTest::BeginPlay()
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
 
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-			if(IsValid(PlayerController))
+			if (IsValid(PlayerController))
 			{
 					if (TestPawns[FlowController->WorkerDefinition.Id - 1] == PlayerController->AcknowledgedPawn)
 					{
@@ -121,10 +121,9 @@ void AVisibilityTest::BeginPlay()
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
+
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
-			if (PlayerCharacter->GetActorLocation().Equals(Character1StartingLocation, 50.0f))
-			{
 				if (PlayerCharacter->SetActorLocation(CharacterRemoteLocation))
 				{
 					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
@@ -132,7 +131,6 @@ void AVisibilityTest::BeginPlay()
 						FinishStep();
 					}
 				}
-			}
 		});
 	}
 
@@ -190,7 +188,8 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{	// Step 7 - Server Set Actor Hidden.
-		AddStep(TEXT("ServerSetActorHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerSetActorHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
 			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
@@ -204,21 +203,7 @@ void AVisibilityTest::BeginPlay()
 		});
 	}
 
-	{	// Step 8 - Observe if the test actor has been replicated to the server.
-		AddStep(TEXT("ServerCheckReplicatedActorsAfterSetActorHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
-		{
-			int Counter = 0;
-			int ExpectedReplicatedActors = 1;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
-			{
-					Counter++;
-			}
-			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
-			FinishStep();
-		});
-	}
-
-	{	// Step 9 - Observe if the test actor has been replicated to the Clients.
+	{	// Step 8 - Observe if the test actor has been replicated to the Clients.
 		AddStep(TEXT("ClientCheckReplicatedActorsAfterSetActorHidden"), FWorkerDefinition::AllClients, nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			int Counter = 0;
@@ -232,18 +217,19 @@ void AVisibilityTest::BeginPlay()
 		});
 	}
 
-	{	// Step 10 - Server moves Client 1 close to the cube.
+	{	// Step 9 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("ServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
+
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 			if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
 			{
-				if (PlayerCharacter->SetActorLocation(Character1StartingLocation))
+				if (PlayerCharacter->SetActorLocation(CharacterOneStartingLocation))
 				{
-					if (PlayerCharacter->GetActorLocation().Equals(Character1StartingLocation, 50.0f))
+					if (PlayerCharacter->GetActorLocation().Equals(CharacterOneStartingLocation, 50.0f))
 					{
 						FinishStep();
 					}
@@ -252,7 +238,7 @@ void AVisibilityTest::BeginPlay()
 		});
 	}
 
-	{   // Step 11 - Make sure that the Client moved to the correct location.
+	{   // Step 10 - Make sure that the Client moved to the correct location.
 		AddStep(TEXT("ClientCheckSecondMovement"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
@@ -262,7 +248,7 @@ void AVisibilityTest::BeginPlay()
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 			if (IsValid(PlayerCharacter))
 			{
-				if (PlayerCharacter->GetActorLocation().Equals(Character1StartingLocation, 50.0f))
+				if (PlayerCharacter->GetActorLocation().Equals(CharacterOneStartingLocation, 50.0f))
 				{
 					FinishStep();
 				}
@@ -270,7 +256,7 @@ void AVisibilityTest::BeginPlay()
 		}, 5.0f);
 	}
 
-	{	// Step 12 - Observe if the test actor has been replicated to the clients.
+	{	// Step 11 - Observe if the test actor has been replicated to the clients.
 		AddStep(TEXT("ClientCheckFinalReplicatedActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			int Counter = 0;
@@ -278,7 +264,6 @@ void AVisibilityTest::BeginPlay()
 			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
@@ -288,7 +273,7 @@ void AVisibilityTest::BeginPlay()
 		},5.0f);
 	}
 
-	{	// Step 13 - Server Set Actor Hidden False.
+	{	// Step 12 - Server Set Actor Hidden False.
 		AddStep(TEXT("ServerSetActorNotHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			int Counter = 0;
@@ -304,7 +289,7 @@ void AVisibilityTest::BeginPlay()
 		});
 	}
 
-	{	// Step 14 - Observe if the test actor has been replicated to the clients.
+	{	// Step 13 - Observe if the test actor has been replicated to the clients.
 		AddStep(TEXT("ClientCheckFinalReplicatedNonHiddenActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			int Counter = 0;
@@ -322,7 +307,7 @@ void AVisibilityTest::BeginPlay()
 		});
 	}
 
-	{	// Step 15 - Server Cleanup.
+	{	// Step 14 - Server Cleanup.
 		AddStep(TEXT("ServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
 			// Possess the original pawn, so that the spawned character can get destroyed correctly
