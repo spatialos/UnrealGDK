@@ -438,12 +438,10 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	// not.
 	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Do not replicate it is hidden and no collisions! Actor's name: %s "), *InActor->GetName());
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
 	else if (!InActor->IsHidden() || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Replicate it is not hidden  or it has collisions! Actor's name: %s "), *InActor->GetName());
 		NetDriver->RefreshActorVisibility(InActor, true);
 	}
 }
