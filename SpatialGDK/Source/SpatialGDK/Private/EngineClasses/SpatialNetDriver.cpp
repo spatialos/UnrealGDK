@@ -2446,7 +2446,6 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 		return;
 	}
 
-
 	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 	if (bHasAuthority == false)
 	{
@@ -2465,7 +2464,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 		Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
 		StaticComponentView->OnAddComponent(AddComponentOp);
 	}
-	else if(!bMakeVisible && bVisibilityComponentExists)
+	else if (!bMakeVisible && bVisibilityComponentExists)
 	{
 		Worker_RemoveComponentOp RemoveComponentOp{};
 		RemoveComponentOp.entity_id = EntityId;
