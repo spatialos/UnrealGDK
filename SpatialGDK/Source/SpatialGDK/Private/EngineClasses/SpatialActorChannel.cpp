@@ -424,6 +424,29 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 	return HandoverChanged;
 }
+void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
+{
+	//Make sure that the Actor is not always relevant.
+	if(InActor->bAlwaysRelevant)
+	{
+		return;
+	}
+
+	// Unreal applies the following rules (in order) in determining the relevant set of Actors for a player:
+	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
+	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
+	// not.
+	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Do not replicate it is hidden and no collisions! Actor's name: %s "), *InActor->GetName());
+		NetDriver->RefreshActorVisibility(InActor, false);
+	}
+	else if (!InActor->IsHidden() || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Replicate it is not hidden  or it has collisions! Actor's name: %s "), *InActor->GetName());
+		NetDriver->RefreshActorVisibility(InActor, true);
+	}
+}
 
 int64 USpatialActorChannel::ReplicateActor()
 {
@@ -558,19 +581,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (Actor->GetIsHiddenDirty())
 	{
-		// Unreal applies the following rules (in order) in determining the relevant set of Actors for a player:
-		// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
-		// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
-		// not.
-		if (Actor->IsHidden() && (!Actor->GetRootComponent() || !Actor->GetRootComponent()->IsCollisionEnabled()))
-		{
-			NetDriver->RefreshActorVisibility(Actor, false);
-		}
-		else if (!Actor->IsHidden() || (Actor->IsHidden() && (Actor->GetRootComponent() || Actor->GetRootComponent()->IsCollisionEnabled())))
-		{
-			NetDriver->RefreshActorVisibility(Actor, true);
-		}
-
+		UpdateVisibleComponent(Actor);
 		Actor->SetIsHiddenDirty(false);
 	}
 
