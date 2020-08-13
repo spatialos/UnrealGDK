@@ -166,7 +166,6 @@ void USpatialReceiver::LeaveCriticalSection()
 	PendingAddActors.Empty();
 	PendingAddComponents.Empty();
 	PendingAuthorityChanges.Empty();
-
 }
 
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
