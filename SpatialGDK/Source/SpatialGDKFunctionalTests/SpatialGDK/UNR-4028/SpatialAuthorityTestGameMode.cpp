@@ -31,10 +31,9 @@ void ASpatialAuthorityTestGameMode::BeginPlay()
 	if (HasAuthority() && AuthorityOnBeginPlay == 0)
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		if (SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr)
-		{
-			AuthorityOnBeginPlay = SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
-		}
+		AuthorityOnBeginPlay = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr
+								   ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()
+								   : 1;
 	}
 }
 
@@ -42,13 +41,14 @@ void ASpatialAuthorityTestGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (HasAuthority() && AuthorityOnTick == 0)
+	// Needs to check HasActorBegunPlay() because the GameMode Ticks before BeginPlay,
+	// and at that point LoadBalanceStrategy is not initialized yet.
+	if (HasAuthority() && AuthorityOnTick == 0 && HasActorBegunPlay())
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		if (SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr)
-		{
-			AuthorityOnTick = SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
-		}
+		AuthorityOnTick = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr
+							  ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()
+							  : 1;
 	}
 }
 

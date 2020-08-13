@@ -9,6 +9,7 @@
 class ASpatialAuthorityTestActor;
 class ASpatialAuthorityTestReplicatedActor;
 
+/** Check SpatialAuthorityTest.cpp for Test explanation. */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTest : public ASpatialFunctionalTest
 {
@@ -26,6 +27,14 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Default")
 	ASpatialAuthorityTestReplicatedActor* LevelReplicatedActor;
+
+	// This needs to be a position that belongs to Server 1.
+	UPROPERTY(EditAnywhere, Category = "Default")
+	FVector Server1Position;
+
+	// This needs to be a position that belongs to Server 2.
+	UPROPERTY(EditAnywhere, Category = "Default")
+	FVector Server2Position;
 
 	UPROPERTY(Replicated)
 	ASpatialAuthorityTestReplicatedActor* DynamicReplicatedActor;
@@ -52,5 +61,5 @@ public:
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetGameStateAuthorityFromWorker(const FWorkerDefinition& WorkerDefinition, int Authority);
-
+	
 };

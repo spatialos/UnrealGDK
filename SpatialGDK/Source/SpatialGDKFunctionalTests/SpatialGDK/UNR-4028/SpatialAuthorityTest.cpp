@@ -20,22 +20,22 @@
   *		- GameState
   * Keep in mind that we're assuming a 1x2 Grid Load-Balancing Strategy, otherwise the ownership of
   * these actors may be something completely different (specially important for actors placed in the Level).
+  * You have some flexibility to change the Server1/2Position properties to test in different Load-Balancing Strategies.
   */
 ASpatialAuthorityTest::ASpatialAuthorityTest()
 {
 	Author = "Nuno Afonso";
-	Description = TEXT("Test HasAuthority under multi-worker setups");
+	Description = TEXT("Test HasAuthority under multi-worker setups. It also ensure to work in Native");
 
 	FlowControllerActorClass = ASpatialAuthorityTestFlowController::StaticClass();
+
+	Server1Position = FVector(-250.0f, -250.0f, 0.0f);
+	Server2Position = FVector(-250.0f, 250.0f, 0.0f);
 }
 
 void ASpatialAuthorityTest::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Keep in mind that these positions will work for a 1x2 Grid Load-Balancing Strategy.
-	FVector Server1Position = FVector(-250.0f, -250.0f, 0.0f);
-	FVector Server2Position = FVector(-250.0f, 250.0f, 0.0f);
 
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{
@@ -74,7 +74,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Replicated Dynamic Actor Spawned On Same Server. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Spawn"), FWorkerDefinition::Server(1), nullptr,
-			[this, Server1Position](ASpatialFunctionalTest* Test)
+			[this](ASpatialFunctionalTest* Test)
 			{
 				ASpatialAuthorityTestReplicatedActor* Actor = GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(
 					Server1Position, FRotator::ZeroRotator);
@@ -105,10 +105,9 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Replicated Dynamic Actor Spawned On Different Server. Server 1 should have Authority on BeginPlay, Server 2 on Tick
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Spawn"), FWorkerDefinition::Server(1), nullptr,
-				[this, Server2Position](ASpatialFunctionalTest* Test) {
+				[this](ASpatialFunctionalTest* Test) {
 					ASpatialAuthorityTestReplicatedActor* Actor = GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(
 						Server2Position, FRotator::ZeroRotator);
-					// Actor->OwnerTest = this;
 					CrossServerSetDynamicReplicatedActor(Actor);
 					FinishStep();
 				});
@@ -117,9 +116,11 @@ void ASpatialAuthorityTest::BeginPlay()
 			TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 on Tick"), FWorkerDefinition::AllWorkers, nullptr,
 			nullptr,
 			[this](ASpatialFunctionalTest* Test, float DeltaTime) {
+				// Allow it to continue working in Native / Single worker setups.
+				int ExpectedAuthorityServer = GetNumberOfServerWorkers() > 1 ? 2 : 1;				
 				if (DynamicReplicatedActor != nullptr
 					&& DynamicReplicatedActor->AuthorityOnBeginPlay == 1
-					&& DynamicReplicatedActor->AuthorityOnTick == 2)
+					&& DynamicReplicatedActor->AuthorityOnTick == ExpectedAuthorityServer)
 				{
 					FinishStep();
 				}
@@ -139,7 +140,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Non-replicated Dynamic Actor. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Non-replicated Dynamic Actor - Spawn"), FWorkerDefinition::Server(1), nullptr,
-			[this, Server2Position](ASpatialFunctionalTest* Test)
+			[this](ASpatialFunctionalTest* Test)
 			{
 				// Spawning directly on Server 2, but since it's non-replicated it shouldn't migrate to Server 2.
 				DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(Server2Position, FRotator::ZeroRotator);

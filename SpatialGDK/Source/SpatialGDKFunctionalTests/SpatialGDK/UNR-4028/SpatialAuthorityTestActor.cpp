@@ -29,7 +29,9 @@ void ASpatialAuthorityTestActor::BeginPlay()
 
 	if (HasAuthority() && AuthorityOnBeginPlay == 0)
 	{
-		AuthorityOnBeginPlay = Cast<USpatialNetDriver>(GetNetDriver())->LoadBalanceStrategy->GetLocalVirtualWorkerId();
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+
+		AuthorityOnBeginPlay = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
 	}
 }
 
@@ -39,7 +41,8 @@ void ASpatialAuthorityTestActor::Tick(float DeltaTime)
 
 	if (HasAuthority() && AuthorityOnTick == 0)
 	{
-		AuthorityOnTick = Cast<USpatialNetDriver>(GetNetDriver())->LoadBalanceStrategy->GetLocalVirtualWorkerId();
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+		AuthorityOnTick = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
 	}
 }
 
