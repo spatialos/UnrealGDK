@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   1. The time since the last sent position update is greater than or equal to PositionUpdateThresholdMinSeconds AND the distance travelled since the last update is greater than or equal to PositionUpdateThresholdMinDistance.
   1. The time since tha last sent position update is greater than or equal to PositionUpdateThresholdMaxSeconds AND the Actor has moved a non-zero amount.
   1. The distance travelled since the last sent position update is greater than or equal to PositionUpdateThresholdMaxDistance.
+- New setting "Auto-stop local SpatialOS deployment" that allows you to specific Never (doesn't automatically stop), OnEndPIE (when a PIE session is ended) and OnExitEditor (only when the editor is shutdown). The default is OnExitEditor.
 - Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts.
 
 ### Bug fixes:
@@ -41,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   1. Navigate to the root of GDK repo and run `git fetch && git checkout 0.11.0`.
   1. In the same GDK directory, run `Setup.bat`.
 - `-nocompile` flag that was previously used with `BuildWorker.bat` to skip building the game binaries and automation scripts, is now split into `-nobuild` to skip building the game binaries and `-nocompile` to skip compiling the automation scripts.
+- The simulated player worker configuration has been updated. Instead of using `connect.to.spatialos` to indicate that you want to connect to a cloud deployment, we now use `127.0.0.1` to ensure that address resolution upon initializing the connection passes. The passed IP address won't be used when actually connecting to a cloud deployment.
+
+### New known issues:
+- The "Use RPC Ring Buffers" setting in the SpatialOS GDK for Unreal - Runtime Settings section is required when using multi-worker configurations, but this is not currently enforced.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.

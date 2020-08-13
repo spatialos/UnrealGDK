@@ -5,9 +5,9 @@
 
 namespace SpatialGDK
 {
-
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
-	: ConnectionHandler(MoveTemp(ConnectionHandler)), NextRequestId(1)
+	: ConnectionHandler(MoveTemp(ConnectionHandler))
+	, NextRequestId(1)
 {
 }
 
@@ -49,44 +49,44 @@ void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_Compo
 
 Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis)
 {
-	View.SendReserveEntityIdsRequest({NextRequestId, NumberOfEntityIds, TimeoutMillis});
+	View.SendReserveEntityIdsRequest({ NextRequestId, NumberOfEntityIds, TimeoutMillis });
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
-	TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis)
+Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+														  TOptional<uint32> TimeoutMillis)
 {
-	View.SendCreateEntityRequest({NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis});
+	View.SendCreateEntityRequest({ NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis });
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis)
 {
-	View.SendDeleteEntityRequest({NextRequestId, EntityId, TimeoutMillis});
+	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis });
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis)
 {
-	View.SendEntityQueryRequest({NextRequestId, MoveTemp(Query), TimeoutMillis});
+	View.SendEntityQueryRequest({ NextRequestId, MoveTemp(Query), TimeoutMillis });
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
-	TOptional<uint32> TimeoutMillis)
+														   TOptional<uint32> TimeoutMillis)
 {
-	View.SendEntityCommandRequest({EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis});
+	View.SendEntityCommandRequest({ EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis });
 	return NextRequestId++;
 }
 
 void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response)
 {
-	View.SendEntityCommandResponse({RequestId, MoveTemp(Response)});
+	View.SendEntityCommandResponse({ RequestId, MoveTemp(Response) });
 }
 
 void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message)
 {
-	View.SendEntityCommandFailure({RequestId, MoveTemp(Message)});
+	View.SendEntityCommandFailure({ RequestId, MoveTemp(Message) });
 }
 
 void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
@@ -96,7 +96,7 @@ void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 
 void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
 {
-	View.SendLogMessage({Level, LoggerName, MoveTemp(Message)});
+	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
 }
 
 const FString& ViewCoordinator::GetWorkerId() const
@@ -109,4 +109,4 @@ const TArray<FString>& ViewCoordinator::GetWorkerAttributes() const
 	return ConnectionHandler->GetWorkerAttributes();
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

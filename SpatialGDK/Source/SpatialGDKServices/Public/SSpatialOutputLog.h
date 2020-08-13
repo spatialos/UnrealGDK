@@ -15,9 +15,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOutputLog, Log, All);
 class FArchiveLogFileReader : public FArchiveFileReaderGeneric
 {
 public:
-	FArchiveLogFileReader(IFileHandle* InHandle, const TCHAR* InFilename, int64 InSize, uint32 InBufferSize /*= PLATFORM_FILE_READER_BUFFER_SIZE*/)
+	FArchiveLogFileReader(IFileHandle* InHandle, const TCHAR* InFilename, int64 InSize,
+						  uint32 InBufferSize /*= PLATFORM_FILE_READER_BUFFER_SIZE*/)
 		: FArchiveFileReaderGeneric(InHandle, InFilename, InSize, InBufferSize)
-	{}
+	{
+	}
 	void UpdateFileSize();
 };
 

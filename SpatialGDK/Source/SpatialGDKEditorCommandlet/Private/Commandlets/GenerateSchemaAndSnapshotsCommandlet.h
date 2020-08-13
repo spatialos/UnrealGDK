@@ -20,8 +20,9 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 private:
-	const FString MapPathsParamName = TEXT("MapPaths");	// Commandline Argument Name used to declare the paths to generate schema/snapshots against
-	const FString AssetPathGameDirName = TEXT("/Game");	// Root asset path directory name that maps will ultimately be found in
+	const FString MapPathsParamName =
+		TEXT("MapPaths"); // Commandline Argument Name used to declare the paths to generate schema/snapshots against
+	const FString AssetPathGameDirName = TEXT("/Game"); // Root asset path directory name that maps will ultimately be found in
 
 	TArray<FString> GeneratedMapPaths;
 

@@ -29,7 +29,8 @@ DEFINE_LOG_CATEGORY(LogSpatialDebugger);
 
 namespace
 {
-	const FString DEFAULT_WORKER_REGION_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+const FString DEFAULT_WORKER_REGION_MATERIAL =
+	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
 }
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -152,14 +153,16 @@ void ASpatialDebugger::OnAuthorityGained()
 			return;
 		}
 
-		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy =
+				Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
 		{
 			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 			WorkerRegions.SetNum(LBStrategyRegions.Num());
 			for (int i = 0; i < LBStrategyRegions.Num(); i++)
 			{
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
+				const PhysicalWorkerName* WorkerName =
+					NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
 				FWorkerRegionInfo WorkerRegionInfo;
 				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
 				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
@@ -175,7 +178,7 @@ void ASpatialDebugger::CreateWorkerRegions()
 	if (WorkerRegionMaterial == nullptr)
 	{
 		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
-			*DEFAULT_WORKER_REGION_MATERIAL);
+			   *DEFAULT_WORKER_REGION_MATERIAL);
 		return;
 	}
 
@@ -244,8 +247,10 @@ void ASpatialDebugger::LoadIcons()
 	const float IconHeight = 16.0f;
 
 	Icons[ICON_AUTH] = UCanvas::MakeIcon(AuthTexture != nullptr ? AuthTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
-	Icons[ICON_AUTH_INTENT] = UCanvas::MakeIcon(AuthIntentTexture != nullptr ? AuthIntentTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
-	Icons[ICON_UNLOCKED] = UCanvas::MakeIcon(UnlockedTexture != nullptr ? UnlockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[ICON_AUTH_INTENT] =
+		UCanvas::MakeIcon(AuthIntentTexture != nullptr ? AuthIntentTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[ICON_UNLOCKED] =
+		UCanvas::MakeIcon(UnlockedTexture != nullptr ? UnlockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
 	Icons[ICON_LOCKED] = UCanvas::MakeIcon(LockedTexture != nullptr ? LockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
 	Icons[ICON_BOX] = UCanvas::MakeIcon(BoxTexture != nullptr ? BoxTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
 }
@@ -297,11 +302,12 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 	if (DebuggingInfo == nullptr)
 	{
 		// Some entities won't have debug info, so create it now.
-		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
+		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+										  InvalidServerTintColor, false);
 		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
 		return;
 	}
-		 
+
 	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
 	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
 	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
@@ -314,7 +320,8 @@ void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, Vir
 	check(DebuggingInfo != nullptr);
 	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
 
-	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
+	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName =
+		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
 	check(NewAuthoritativePhysicalWorkerName != nullptr);
 
 	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
@@ -326,7 +333,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
 
-	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled https://improbableio.atlassian.net/browse/UNR-2360.
+	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled
+	// https://improbableio.atlassian.net/browse/UNR-2360.
 	int32 HorizontalOffset = -32.0f;
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
@@ -364,9 +372,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(ServerWorkerColor);
 		const float BoxScaleBasedOnNumberSize = 0.75f * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
+							   FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(ServerWorkerColor));
-		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1, ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
+						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
 		HorizontalOffset += (BaseHorizontalOffset * BoxScaleBasedOnNumberSize);
 	}
 
@@ -379,9 +389,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		HorizontalOffset += 16.0f;
 		Canvas->SetDrawColor(VirtualWorkerColor);
 		const float BoxScaleBasedOnNumberSize = 0.75f * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
+							   FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
-		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1, ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
+						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
 		HorizontalOffset += (BaseHorizontalOffset * BoxScaleBasedOnNumberSize);
 	}
 
@@ -426,7 +438,8 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 #if WITH_EDITOR
 	// Prevent one client's data rendering in another client's view in PIE when using UDebugDrawService.  Lifted from EQSRenderingComponent.
-	if (Canvas && Canvas->SceneView && Canvas->SceneView->Family && Canvas->SceneView->Family->Scene && Canvas->SceneView->Family->Scene->GetWorld() != GetWorld())
+	if (Canvas && Canvas->SceneView && Canvas->SceneView->Family && Canvas->SceneView->Family->Scene
+		&& Canvas->SceneView->Family->Scene->GetWorld() != GetWorld())
 	{
 		return;
 	}
@@ -464,7 +477,8 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			if (LocalPlayerController.IsValid())
 			{
 				SCOPE_CYCLE_COUNTER(STAT_Projection);
-				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset, ScreenLocation, false);
+				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset,
+													   ScreenLocation, false);
 			}
 
 			if (ScreenLocation.IsZero())
@@ -484,12 +498,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 		return;
 	}
 
-	const TArray<TWeakObjectPtr<AActor>> LocalPlayerActors =
-	{
-		LocalPawn,
-		LocalPlayerController,
-		LocalPlayerState
-	};
+	const TArray<TWeakObjectPtr<AActor>> LocalPlayerActors = { LocalPawn, LocalPlayerController, LocalPlayerState };
 
 	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
 
@@ -516,7 +525,8 @@ void ASpatialDebugger::SpatialToggleDebugger()
 	}
 	else
 	{
-		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
+		DrawDebugDelegateHandle =
+			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
 		if (bShowWorkerRegions)
 		{
 			CreateWorkerRegions();

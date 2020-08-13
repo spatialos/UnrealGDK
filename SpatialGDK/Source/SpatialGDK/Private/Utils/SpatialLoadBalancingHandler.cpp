@@ -4,9 +4,9 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
-#include "Interop/SpatialSender.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/SpatialDebugging.h"
 
@@ -15,10 +15,10 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
 FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 {
-
 }
 
-FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId)
+FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner,
+																									VirtualWorkerId& OutWorkerId)
 {
 	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
@@ -51,7 +51,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		{
 			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
 
-			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
+			const float TimeSinceReceivingAuthInSeconds =
+				double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
 			const float MigrationBackoffTimeInSeconds = 1.0f;
 
 			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
@@ -71,19 +72,22 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (SpatialGDK::AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(OwnerId))
+					if (SpatialGDK::AuthorityIntent* OwnerAuthIntent =
+							NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(OwnerId))
 					{
 						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
 					}
 					else
 					{
-						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) cannot join its owner %s (%llu)"), *Actor->GetName(), EntityId, *NetOwner->GetName(), OwnerId);
+						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) cannot join its owner %s (%llu)"),
+							   *Actor->GetName(), EntityId, *NetOwner->GetName(), OwnerId);
 					}
 				}
 
 				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
-					UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+					UE_LOG(LogSpatialLoadBalancingHandler, Error,
+						   TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 				}
 				else
 				{
@@ -117,7 +121,8 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
 {
-	if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
+	if (SpatialGDK::SpatialDebugging* DebuggingInfo =
+			NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
 	{
 		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 		if (DebuggingInfo->IsLocked != bIsLocked)

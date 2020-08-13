@@ -8,7 +8,6 @@
 
 namespace SpatialGDK
 {
-
 namespace EntityComponentTestUtils
 {
 const Schema_FieldId EVENT_ID = 1;
@@ -88,8 +87,7 @@ inline bool CompareComponentUpdates(const ComponentUpdate& Lhs, const ComponentU
 	{
 		return false;
 	}
-	return CompareSchemaObjects(Lhs.GetFields(), Rhs.GetFields()) &&
-		CompareSchemaObjects(Lhs.GetEvents(), Rhs.GetEvents());
+	return CompareSchemaObjects(Lhs.GetFields(), Rhs.GetFields()) && CompareSchemaObjects(Lhs.GetEvents(), Rhs.GetEvents());
 }
 
 /** Returns true if Lhs and Rhs have the same entity ID, component ID, and state. */
@@ -137,7 +135,7 @@ inline bool CompareEntityComponentId(const EntityComponentId& Lhs, const EntityC
 	return Lhs == Rhs;
 }
 
-template<typename T, typename Predicate>
+template <typename T, typename Predicate>
 bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, Predicate&& Compare)
 {
 	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
@@ -163,4 +161,4 @@ inline bool AreEquivalent(const TArray<EntityComponentId>& Lhs, const TArray<Ent
 	return AreEquivalent(Lhs, Rhs, CompareEntityComponentId);
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

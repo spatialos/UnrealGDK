@@ -8,7 +8,6 @@
 
 namespace SpatialGDK
 {
-
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
 {
 public:
@@ -33,4 +32,4 @@ private:
 	TArray<FString> WorkerAttributes;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK
