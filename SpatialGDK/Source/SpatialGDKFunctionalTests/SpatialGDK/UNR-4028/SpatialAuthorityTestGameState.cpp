@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 
 #include "SpatialAuthorityTestGameState.h"
@@ -7,11 +7,9 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Net/UnrealNetwork.h"
 
-// Sets default values
 ASpatialAuthorityTestGameState::ASpatialAuthorityTestGameState()
 	: Super()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -23,18 +21,11 @@ void ASpatialAuthorityTestGameState::GetLifetimeReplicatedProps(TArray<FLifetime
 	DOREPLIFETIME(ASpatialAuthorityTestGameState, AuthorityOnTick);
 }
 
-// Called when the game starts or when spawned
 void ASpatialAuthorityTestGameState::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	//if( OwnerTest == nullptr )
-	//{
-	//	ensureMsgf(false, TEXT("AuthoritySpatialTestActor needs Test to be set"));
-	//	return;
-	//}
-
-	if (HasAuthority())
+	if (HasAuthority() && AuthorityOnBeginPlay == 0)
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 		if (SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr)
@@ -44,12 +35,11 @@ void ASpatialAuthorityTestGameState::BeginPlay()
 	}
 }
 
-// Called every frame
 void ASpatialAuthorityTestGameState::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (HasAuthority())
+	if (HasAuthority() && AuthorityOnTick == 0)
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 		if (SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr)

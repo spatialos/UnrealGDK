@@ -1,11 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "SpatialFunctionalTest.h"
-#include "SpatialFunctionalTestFlowController.h"
 #include "SpatialAuthorityTestActor.h"
 #include "SpatialAuthorityTestReplicatedActor.generated.h"
 
@@ -15,24 +12,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestReplicatedActor : publi
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ASpatialAuthorityTestReplicatedActor();
 
-	//void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	//ASpatialFunctionalTest* OwnerTest;
-
-	//UPROPERTY(Replicated)
-	//ASpatialFunctionalTestFlowController* AuthorityOnBeginPlay;
-
-	//UPROPERTY(Replicated)
-	//ASpatialFunctionalTestFlowController* AuthorityOnTick;
-
-protected:
-	// Called when the game starts or when spawned
-	//virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	//virtual void Tick(float DeltaTime) override;
+	virtual void OnAuthorityGained() override;
 };

@@ -33,9 +33,24 @@ public:
 	UPROPERTY()
 	ASpatialAuthorityTestActor* DynamicNonReplicatedActor;
 
-private:
+	UPROPERTY(Replicated)
+	TArray<int> GameModeServerAuthorities;
+
+	UPROPERTY(Replicated)
+	TArray<int> GameStateServerAuthorities;
+
+	UPROPERTY(Replicated)
+	TArray<int> GameStateClientAuthorities;
+
+	virtual void StartTest() override;
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerSetGameModeAuthorityFromServerWorker(int ServerWorkerId, int Authority);
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerSetGameStateAuthorityFromWorker(const FWorkerDefinition& WorkerDefinition, int Authority);
 
 };

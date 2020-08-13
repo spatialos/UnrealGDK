@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialAuthorityTestActor.h"
 #include "Components/SceneComponent.h"
@@ -9,10 +8,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 
-// Sets default values
 ASpatialAuthorityTestActor::ASpatialAuthorityTestActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(FName("RootComponent"));
@@ -22,34 +19,25 @@ void ASpatialAuthorityTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(ASpatialAuthorityTestActor, OwnerTest);
 	DOREPLIFETIME(ASpatialAuthorityTestActor, AuthorityOnBeginPlay);
 	DOREPLIFETIME(ASpatialAuthorityTestActor, AuthorityOnTick);
 }
 
-// Called when the game starts or when spawned
 void ASpatialAuthorityTestActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	//if( OwnerTest == nullptr )
-	//{
-	//	ensureMsgf(false, TEXT("AuthoritySpatialTestActor needs Test to be set"));
-	//	return;
-	//}
 
-	if (HasAuthority())
+	if (HasAuthority() && AuthorityOnBeginPlay == 0)
 	{
 		AuthorityOnBeginPlay = Cast<USpatialNetDriver>(GetNetDriver())->LoadBalanceStrategy->GetLocalVirtualWorkerId();
 	}
 }
 
-// Called every frame
 void ASpatialAuthorityTestActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (HasAuthority())
+	if (HasAuthority() && AuthorityOnTick == 0)
 	{
 		AuthorityOnTick = Cast<USpatialNetDriver>(GetNetDriver())->LoadBalanceStrategy->GetLocalVirtualWorkerId();
 	}
