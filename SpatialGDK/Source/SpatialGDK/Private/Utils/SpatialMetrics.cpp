@@ -296,17 +296,17 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		{
 			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMinSeconds = Value;
 		}
-		else if (Name == TEXT("PositionUpdateThresholdMinDistance"))
+		else if (Name == TEXT("PositionUpdateThresholdMinCentimeters"))
 		{
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMinDistance = Value;
+			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMinCentimeters = Value;
 		}
 		else if (Name == TEXT("PositionUpdateThresholdMaxSeconds"))
 		{
 			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxSeconds = Value;
 		}
-		else if (Name == TEXT("PositionUpdateThresholdMaxDistance"))
+		else if (Name == TEXT("PositionUpdateThresholdMaxCentimeters"))
 		{
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxDistance = Value;
+			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = Value;
 		}
 		else
 		{

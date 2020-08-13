@@ -1163,38 +1163,13 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			return;
 		}
 	}
-	
-	// Check that the Actor has satisfied both minimum thresholds OR either of the maximum thresholds
-	bool bSatisifiedPositionUpdateRequirements = false;
 
-	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
-
-	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMinDistance);
-	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMaxDistance);
-
-	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMinSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
-	{
-		bSatisifiedPositionUpdateRequirements = true;
-	}
-	else if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMaxSeconds && DistanceTravelledSinceLastUpdateSquared > 0.0f)
-	{
-		bSatisifiedPositionUpdateRequirements = true;
-	}
-	else if (DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
-	{
-		bSatisifiedPositionUpdateRequirements = true;
-	}
-
-	if (!bSatisifiedPositionUpdateRequirements)
+	if (!SatisfiesSpatialPositionUpdateRequirements())
 	{
 		return;
 	}
 
-	LastPositionSinceUpdate = ActorSpatialPosition;
+	LastPositionSinceUpdate = SpatialGDK::GetActorSpatialPosition(Actor);
 	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
 
 	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
@@ -1366,4 +1341,40 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	{
 		RepLayout.CopyProperties(StaticBuffer, reinterpret_cast<uint8*>(TargetObject));
 	}
+}
+
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+{
+	// Check that the Actor satisfies both minimum thresholds OR either of the maximum thresholds
+
+	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
+
+	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
+	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMinCentimeters);
+	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters);
+
+	if (FMath::IsNearlyZero(DistanceTravelledSinceLastUpdateSquared))
+	{
+		return false;
+	}
+
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMinSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
+	{
+		return true;
+	}
+
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMaxSeconds)
+	{
+		return true;
+	}
+
+	if (DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
+	{
+		return true;
+	}
+
+	return false;
 }
