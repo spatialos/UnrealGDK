@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - You can now use the new GDK editor setting `Stop local deployment on stop play in editor` to automatically stop a deployment when you stop playing in the Editor.
 - Added a checkbox `Connect local server worker to the cloud deployment` to the SpatialOS **Editor Settings**. This controls whether you start and connect a local server-worker instance to the cloud deployment, when `Connect to cloud deployment` is enabled.
-- You can now suppress RPC warnings of the form `Executed RPC with unresolved references`, by RPC type. To do this, use the new `SpatialGDKsetting RPCTypeAllowUnresolvedParamMap`.
+- You can now suppress RPC warnings of the form `Executed RPC <RPCName> with unresolved references`, by RPC type. To do this, use the new `SpatialGDKsetting RPCTypeAllowUnresolvedParamMap`.
 - Decoupled `QueuedIncomingRPCWaitTime` from reprocessing flush time by adding a new parameter `QueuedIncomingRPCRetryTime` (default value 1.0s). This enables you to independently control how long to wait for queued RPCs to resolve parameters, and how frequently to check whether parameters are resolved. 
 - Command-line arguments are now only available by default in non-shipping builds. To enable them in a shipping build, use the target rule `bEnableSpatialCmdlineInShipping`.
 - Dynamic worker flags are now supported with the Standard Runtime variant.
