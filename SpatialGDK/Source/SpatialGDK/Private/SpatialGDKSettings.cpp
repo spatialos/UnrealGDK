@@ -65,7 +65,7 @@ void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Par
 
 void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<FString>& StrOutValue)
 {
-#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
+#if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
 	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
 	{
@@ -151,9 +151,10 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"),
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
-		TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 
-	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"), OverrideMultiWorkerSettingsClass);
+	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
+									   OverrideMultiWorkerSettingsClass);
 }
 
 #if WITH_EDITOR
