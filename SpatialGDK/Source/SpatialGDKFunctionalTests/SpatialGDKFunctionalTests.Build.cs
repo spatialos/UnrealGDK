@@ -19,6 +19,7 @@ public class SpatialGDKFunctionalTests : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[] {
                 "SpatialGDK",
+                "SpatialGDKServices",
                 "Core",
                 "CoreUObject",
                 "Engine",
