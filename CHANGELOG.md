@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We no longer support Unreal Engine version 4.23. We recommend that you upgrade to the newest version 4.25 to continue receiving updates. See [Unreal Engine Version Support](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support) for more information on versions. Follow the instructions in [Update your GDK](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to update to 4.25.
 - We have removed multi-worker settings from the `SpatialWorldSettings` properties and added them to a new class `USpatialMultiWorkerSettings`. To update your project, create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration. Then, in your level’s World settings, select that class as the `Multi-worker settings class` property.
 - The `-nocompile` flag used with `Buildworker.bat` is now split into two. Use the following flags:
-  - `nobuild` to skip building the game binaries.
-  - `nocompile` to skip compiling the automation scripts. 
+  - `-nobuild` to skip building the game binaries.
+  - `-nocompile` to skip compiling the automation scripts. 
 - Updated the simulated player worker configuration. Instead of using `connect.to.spatialos` to indicate that you want to connect to a cloud deployment, we now use `127.0.0.1` to ensure that an address resolves when a connection initializes. The passed IP address is not used when connecting to a cloud deployment.
 - The `SpatialMetrics::WorkerMetricsUpdated` function is no longer static and the function signature now receives histogram metrics.
 
