@@ -99,7 +99,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
-	, bWorkerFlushAfterOutgoingNetworkOp(false)
+	, bWorkerFlushAfterOutgoingNetworkOp(true)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
