@@ -61,7 +61,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 	PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
 
-	AddStep(TEXT("SpatialTestNetReferenceServerSetup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestNetReferenceServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Set up the cubes' spawn locations
 		TArray<FVector> CubeLocations;
 		CubeLocations.Add(FVector(0.0f, -11000.0f, 40.0f));
@@ -118,7 +118,7 @@ void ASpatialTestNetReference::BeginPlay()
 		int CurrentMoveIndex = i % TestLocations.Num();
 
 		AddStep(TEXT("SpatialTestNetReferenceServerMove"), FWorkerDefinition::Server(1), nullptr,
-				[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest) {
+				[this, CurrentMoveIndex]() {
 					ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 					APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 					ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
@@ -138,7 +138,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
-			[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, CurrentMoveIndex](float DeltaTime) {
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
@@ -151,7 +151,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckNumberOfReferences"), FWorkerDefinition::Client(1), nullptr, nullptr,
-			[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, CurrentMoveIndex](float DeltaTime) {
 				TArray<AActor*> CubesWithReferences;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACubeWithReferences::StaticClass(), CubesWithReferences);
 
@@ -166,7 +166,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckReferences"), FWorkerDefinition::Client(1), nullptr, nullptr,
-			[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, CurrentMoveIndex](float DeltaTime) {
 				TArray<AActor*> CubesWithReferences;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACubeWithReferences::StaticClass(), CubesWithReferences);
 
@@ -223,7 +223,7 @@ void ASpatialTestNetReference::BeginPlay()
 			5.0f);
 	}
 
-	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			// Possess the original pawn, so that other tests start from the expected, default set-up
 			OriginalPawn.Key->Possess(OriginalPawn.Value);

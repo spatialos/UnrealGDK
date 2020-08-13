@@ -16,9 +16,9 @@ DECLARE_DYNAMIC_DELEGATE(FStepStartDelegate);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FStepTickDelegate, float, DeltaTime);
 
 // C++ Delegates
-DECLARE_DELEGATE_RetVal_OneParam(bool, FNativeStepIsReadyDelegate, ASpatialFunctionalTest*);
-DECLARE_DELEGATE_OneParam(FNativeStepStartDelegate, ASpatialFunctionalTest*);
-DECLARE_DELEGATE_TwoParams(FNativeStepTickDelegate, ASpatialFunctionalTest*, float /*DeltaTime*/);
+DECLARE_DELEGATE_RetVal(bool, FNativeStepIsReadyDelegate);
+DECLARE_DELEGATE(FNativeStepStartDelegate);
+DECLARE_DELEGATE_OneParam(FNativeStepTickDelegate, float /*DeltaTime*/);
 
 UENUM()
 enum class ESpatialFunctionalTestWorkerType : uint8
