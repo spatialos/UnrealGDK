@@ -124,13 +124,13 @@ void AVisibilityTest::BeginPlay()
 
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
-				if (PlayerCharacter->SetActorLocation(CharacterRemoteLocation))
+			if (PlayerCharacter->SetActorLocation(CharacterRemoteLocation))
+			{
+				if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
 				{
-					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
-					{
 						FinishStep();
-					}
 				}
+			}
 		});
 	}
 
@@ -149,7 +149,6 @@ void AVisibilityTest::BeginPlay()
 					FinishStep();
 				}
 			}
-
 		}, 5.0f);
 	}
 
