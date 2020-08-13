@@ -108,7 +108,7 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 	}
 
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
+	if (WorldSettings != nullptr && SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
 	{
 		FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
 		FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
