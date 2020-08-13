@@ -120,7 +120,6 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		bool UpperBreak = false;
 		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);
 		switch (QueueProcessResult)
 		{

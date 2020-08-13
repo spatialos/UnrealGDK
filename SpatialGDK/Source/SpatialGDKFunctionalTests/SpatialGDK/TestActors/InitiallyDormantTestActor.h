@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "ReplicatedTestActorBase.h"
-#include "hardwarebp.h"
 #include "InitiallyDormantTestActor.generated.h"
 
 /**
@@ -17,6 +16,4 @@ class AInitiallyDormantTestActor : public AReplicatedTestActorBase
 
 public:
 	AInitiallyDormantTestActor();
-
-	HardwareBreakpoint HardWareBp;
 };

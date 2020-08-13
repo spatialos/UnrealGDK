@@ -168,13 +168,13 @@ public:
 
 	// # Actor Delegation APIs
 	// clang-format off
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test",
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 		meta = (ServerWorkerId = "1", ToolTip = "Allows you to delegate authority over this Actor to a specific Server Worker. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
 	// clang-format on
 	void AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished = false);
 
 	// clang-format off
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test",
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 		meta = (ToolTip = "Remove Actor authority delegation, making it fallback to the Default Load Balacing Strategy. \n\nKeep in mind that currently this functionality only works in single layer Load Balancing Strategies, and your Default Load Balancing Strategy needs to implement ISpatialFunctionalTestLBDelegationInterface."))
 	// clang-format on
 	void RemoveActorDelegation(AActor* Actor);

@@ -15,5 +15,4 @@ AReplicatedTestActorBase::AReplicatedTestActorBase()
 	CubeComponent->SetVisibility(true);
 
 	RootComponent = CubeComponent;
-
 }
