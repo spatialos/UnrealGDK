@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "CoreMinimal.h"
