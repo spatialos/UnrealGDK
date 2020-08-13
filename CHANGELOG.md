@@ -12,44 +12,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.11.0`] - 2020-07-29
 
 ### Breaking changes:
-- Multi-worker settings configured previously as `SpatialWorldSettings` properties are now encapsulated within the `USpatialMultiWorkerSettings` class. To update your project, you should create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration then, in your levels' World Settings, select that class as the `Multi-worker settings class` property.
-- Unreal Engine version `4.23` is no longer supported. We recommend upgrading to the newest version (`4.25.3`) to continue receiving updates.
-- When upgrading to Unreal Engine 4.25, either follow the [docs](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date), or a short upgrade guide is included here:
-  1. In the engine folder, run `git checkout 4.25-SpatialOSUnrealGDK-release`
-  1. Download and install the `-v16 clang-9.0.1-based` toolchain from [this Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
-  1. Run `Setup.bat`, which is located in the root directory of the UnrealEngine repository.
-  1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
-  1. Navigate to the root of the GDK repository, and if you previously installed the GDK using `InstallGDK.bat`, run `git checkout release`
-  1. Run `git pull`, still in the root of the GDK repo.
-  1. Run `Setup.bat`, still in the root of the GDK repo.
-- `-nocompile` flag that was previously used with `BuildWorker.bat` to skip building the game binaries and automation scripts, is now split into `-nobuild` to skip building the game binaries and `-nocompile` to skip compiling the automation scripts.
-- The simulated player worker configuration has been updated. Instead of using `connect.to.spatialos` to indicate that you want to connect to a cloud deployment, we now use `127.0.0.1` to ensure that address resolution upon initializing the connection passes. The passed IP address won't be used when actually connecting to a cloud deployment.
+- We no longer support Unreal Engine version 4.23. We recommend that you upgrade to the newest version 4.25 to continue receiving updates. See [Unreal Engine Version Support](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support) for more information on versions. Follow the instructions in [Update your GDK](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to update to 4.25.
+- We have removed multi-worker settings from the `SpatialWorldSettings` properties and added them to a new class `USpatialMultiWorkerSettings`. To update your project, create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration. Then, in your level’s World settings, select that class as the `Multi-worker settings class` property.
+- The `-nocompile` flag used with `Buildworker.bat` is now split into two. Use the following flags:
+  - `nobuild` to skip building the game binaries.
+  - `nocompile` to skip compiling the automation scripts. 
+- Updated the simulated player worker configuration. Instead of using `connect.to.spatialos` to indicate that you want to connect to a cloud deployment, we now use `127.0.0.1` to ensure that an address resolves when a connection initializes. The passed IP address is not used when connecting to a cloud deployment.
+- The `SpatialMetrics::WorkerMetricsUpdated` function is no longer static and the function signature now receives histogram metrics.
 
 ### New known issues:
-- The "Use RPC Ring Buffers" setting in the SpatialOS GDK for Unreal - Runtime Settings section is required when using multi-worker configurations, but this is not currently enforced.
+- The `Use RPC Ring Buffers` option in **SpatialOS GDK for Unreal** > **Runtime Settings** is required when using multi-worker configurations, but is not currently enforced.
 
 ### Features:
-- You can now change the GDK Editor Setting `Stop local deployment on stop play in editor` in order to automatically stop deployment when you stop playing in editor.
-- Added the `Connect local server worker to the cloud deployment` checkbox in **SpatialOS Editor Settings**, that enables/disables the option to start and connect a local server to the cloud deployment when `Connect to cloud deployment` is enabled.
-- Added the ability to suppress RPC warnings of the form "Executed RPC <RPCName> with unresolved references" by RPC Type using new SpatialGDKSetting RPCTypeAllowUnresolvedParamMap.
-- Decoupled QueuedIncomingRPCWaitTime from reprocessing flush time with new parameter QueuedIncomingRPCRetryTime (default value 1.0s).  This enables independent control over how long to wait for queued RPCs to resolve parameters, as well as how frequently to check if the parameters are resolved.
-- Command-line arguments are now only available in non-shipping builds, if you wish to use command-line arguments for shipping builds the target rule `bEnableSpatialCmdlineInShipping` will let you do so.
-- Dynamic Worker Flags are once again supported with the Standard Runtime Variant.
-- Simulated Player deployments started with the DeploymentLauncher now startup faster thanks to Dynamic Worker Flags. DeploymentLauncher `createsim` usage has been updated to include the new boolean argument `<auto-connect>` which will automatically connect your sim players to your deployment when it is ready.
-- Unreal Engine version `4.25.3` is now supported.
+- You can now use the new GDK editor setting `Stop local deployment on stop play in editor` to automatically stop a deployment when you stop playing in the Editor.
+- Added a checkbox `Connect local server worker to the cloud deployment` to the SpatialOS **Editor Settings**. This controls whether you start and connect a local server-worker instance to the cloud deployment, when `Connect to cloud deployment` is enabled.
+- You can now suppress RPC warnings of the form `Executed RPM with unresolved references`, by RPC type. To do this, use the new `SpatialGDKsetting RPCTypeAllowUnresolvedParamMap`.
+- Decoupled `QueuedIncomingRPCWaitTime` from reprocessing flush time by adding a new parameter `QueuedIncomingRPCRetryTime` (default value 1.0s). This enables you to independently control how long to wait for queued RPCs to resolve parameters, and how frequently to check whether parameters are resolved. 
+- Command-line arguments are now only available by default in non-shipping builds. To enable them in a shipping build, use the target rule `bEnableSpatialCmdlineInShipping`.
+- Dynamic worker flags are now supported with the Standard Runtime variant.
+- Dynamic worker flags now enable faster startup for simulated player deployments started with the `DeploymentLauncher`. `DeploymentLauncher createsim` now includes a boolean argument `auto-connect`. This enables you to automatically connect your sim players to your deployment when it is ready.
 
 ### Bug fixes:
-- The example worker configuration for the simulated player coordinator has been updated to be compatible with the previously updated authentication flow.
-- `Cloud Deployment Name` field in the dropdown now refers to the same property as `Deployment Name` in the Cloud Deployment Configuration window, so the `Start Deployment` toolbar button will now use the name specified in the dropdown when quickly starting the new deployment without going through the Cloud Deployment Configuration window.
-- `Local Deployment IP` and `Cloud Deployment Name` labels now get grayed out correctly when the edit box is disabled.
-- Entering an invalid IP into the `Exposed local runtime IP address` field in the editor settings will trigger a warning popup and reset the value to an empty string.
-- Fixed bug causing this error to fire: "ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset".
-- SpatialMetrics::WorkerMetricsRecieved is no longer static and the function signature now also receives histogram metrics.
-- Log an error including Position when GridBasedLBStrategy can't locate a worker to take authority over an Actor.
-- Changed the SpatialGDK Setting bEnableMultiWorker to private, to enforce usage of IsMultiWorkerEnabled which respects the `-OverrideMultiWorker` flag.
-- No longer assert when SpatialStatics::GetActorEntityId() is passed a nullptr, return SpatialConstants::INVALID_ENTITY_ID instead.
-- Removed the `EditorWorkerController`, because it is not required anymore for running consecutive PIE sessions.
-- Fixed a crash that occured when overflowed RPCs remained overflowed after trying to flush them.
+- The example worker configuration for the simulated player coordinator is now compatible with the authentication flow.
+- The `Cloud Deployment Name` field in the `Start Deployment` drop-down menu and the `Deployment name` in the `Cloud Deployment Configuration` window now refer to the same property. The `Start Deployment` toolbar button now uses the name specified in the drop-down menu.
+- The `Local Deployment IP` and `Cloud Deployment Name` labels in the `Start Deployment` drop-down menu are now grayed out correctly when the edit box is disabled.
+- Entering an invalid IP into the `Exposed local runtime IP address` field in the **Editor Settings** now triggers a warning pop-up and resets the value to an empty string.
+- Fixed a bug that caused this error: `ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset`.
+- When `GridBasedLBStrategy` can't locate a worker instance to take authority over an Actor, it now logs an error that includes `Position`.
+- The `SpatialGDKsetting bEnableMultiWorker` is now private, to enforce the use of `IsMultiWorkerEnabled` which respects the `-OverrideMultiWorker` flag.
+- When the `SpatialStatics::GetActorEntityId` function is passed a `nullptr`, it now returns `SpatialConstants::INVALID_ENTITY_ID`.
+- Removed the `EditorWorkerController` class. It is no longer required for running consecutive PIE sessions.
+- Fixed a crash that occurred when overflowed RPCs remained overflowed after a flush attempt.
 
 ## [`0.10.0`] - 2020-07-08
 
