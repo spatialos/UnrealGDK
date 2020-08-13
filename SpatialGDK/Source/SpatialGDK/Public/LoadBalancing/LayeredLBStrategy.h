@@ -3,12 +3,12 @@
 #pragma once
 
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/AbstractLockingPolicy.h"
 
 #include "Utils/LayerInfo.h"
 
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
-#include "Math/Vector2D.h"
 
 #include "LayeredLBStrategy.generated.h"
 
