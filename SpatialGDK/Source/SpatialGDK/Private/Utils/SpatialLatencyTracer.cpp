@@ -56,7 +56,7 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 {
 #if TRACE_LIB_ACTIVE
 	ResetWorkerId();
-	FParse::Value(FCommandLine::Get(), TEXT("traceMetadata"), TraceMetadata);
+	FParse::Value(FCommandLine::Get(), TEXT("traceMetadata="), TraceMetadata);
 #endif
 }
 
