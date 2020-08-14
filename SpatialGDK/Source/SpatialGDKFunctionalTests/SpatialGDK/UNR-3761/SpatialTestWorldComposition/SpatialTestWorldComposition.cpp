@@ -59,28 +59,22 @@ void ASpatialTestWorldComposition::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Step definition for Client 1 to move its Pawn
-	FSpatialFunctionalTestStepDefinition ClientMovePawnStepDefinition;
-	ClientMovePawnStepDefinition.bIsNativeDefinition = true;
-	ClientMovePawnStepDefinition.TimeLimit = 5.0f;
-	ClientMovePawnStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest* NetTest)
+	// Step definition for Client 1 to move its Pawn and check if the levels loaded correctly.
+	FSpatialFunctionalTestStepDefinition ClientCheckLocationStepDefinition;
+	ClientCheckLocationStepDefinition.bIsNativeDefinition = true;
+	ClientCheckLocationStepDefinition.TimeLimit = 10.0f;
+	ClientCheckLocationStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest* NetTest)
+	{
+		ClientOnePawn->SetActorLocation(TestStepsData[TestLocationIndex].Key);
+	});
+	ClientCheckLocationStepDefinition.NativeTickEvent.BindLambda([this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+	{
+		if (IsCorrectAtLocation(TestLocationIndex))
 		{
-			ClientOnePawn->SetActorLocation(TestStepsData[TestLocationIndex].Key);
+			TestLocationIndex++;
 			FinishStep();
-		});
-
-	// Step definition for Client 1 to check if the levels loaded correctly.
-	FSpatialFunctionalTestStepDefinition ClientCheckStepDefinition;
-	ClientCheckStepDefinition.bIsNativeDefinition = true;
-	ClientCheckStepDefinition.TimeLimit = 10.0f;
-	ClientCheckStepDefinition.NativeTickEvent.BindLambda([this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-		{
-			if (IsCorrectAtLocation(TestLocationIndex))
-			{
-				TestLocationIndex++;
-				FinishStep();
-			}
-		});
+		}
+	});
 
 	// Run through each of the test locations twice to ensure that levels can be loaded and unloaded successfully multiple times.
 	for (int i = 0; i < 2; ++i)
@@ -96,36 +90,21 @@ void ASpatialTestWorldComposition::BeginPlay()
 				FinishStep();
 			});
 
-		// Move the Pawn to the TestLocation with index 0.
-		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
-
+		// Move the Pawn to the TestLocation with index 0 and test that the InitiallyDormantActorLevel was loaded correctly and the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were unloaded.
 		// Note that since initially, the pawn spawns close to the origin, it will load the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel, failing to unload those will first be seen in this step. 
-		// Test that the InitiallyDormantActorLevel was loaded correctly and the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were unloaded.
-		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
+		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Move the Pawn to the TestLocation with index 1.
-		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
+		// Move the Pawn to the TestLocation with index 1 and test that the ReplicatedActorLevel was loaded correctly and the IntiallyDormantActorLevel was unloaded.
+		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Test that the ReplicatedActorLevel was loaded correctly and the IntiallyDormantActorLevel was unloaded.
-		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
+		// Move the Pawn to the TestLocation with index 2 and test that the ReplicatedAndNetLoadOnClientLevel was loaded correctly and the ReplicatedActorLevel was unloaded.
+		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Move the Pawn to the TestLocation with index 2.
-		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
+		// Move the Pawn to the TestLocation with index 3 and test that the InitiallyDormantAndNetLoadLevel was loaded correctly and the ReplicatedAndNetLoadOnClientLevel was unloaded.
+		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Test that the ReplicatedAndNetLoadOnClientLevel was loaded correctly and the ReplicatedActorLevel was unloaded.
-		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
-
-		// Move the Pawn to the TestLocation with index 3.
-		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
-
-		// Test that the InitiallyDormantAndNetLoadLevel was loaded correctly and the ReplicatedAndNetLoadOnClientLevel was unloaded.
-		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
-
-		// Move the Pawn to the TestLocation with index 4.
-		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
-
-		// Test that both ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were loaded correctly, and that the InitiallyDormantAndNetLoadLevel was unloaded.
-		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
+		// Move the Pawn to the TestLocation with index 4 and test that both ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were loaded correctly, and that the InitiallyDormantAndNetLoadLevel was unloaded.
+		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 	}
 }
 
