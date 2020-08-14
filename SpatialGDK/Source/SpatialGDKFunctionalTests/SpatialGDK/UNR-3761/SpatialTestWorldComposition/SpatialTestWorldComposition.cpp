@@ -30,16 +30,27 @@ ASpatialTestWorldComposition::ASpatialTestWorldComposition()
 	Author = "Andrei";
 	Description = TEXT("Test World Composition");
 
-	TestLocations.Add(FVector(-150.0f, -1200.0f, 60.0f));
-	TestLocations.Add(FVector(-150.0f, -400.0f, 60.0f));
-	TestLocations.Add(FVector(-150.0f, 400.0f, 60.0f));
-	TestLocations.Add(FVector(-150.0f, 1200.0f, 60.0f));
-	TestLocations.Add(FVector(0.0f, 0.0f, 60.0f));
+	TArray<FExpectedActor> ExpectedConditionsAtStep0;
+	ExpectedConditionsAtStep0.Add(FExpectedActor{ FVector(330.0f, -1200.0f, 80.0f), AInitiallyDormantTestActor::StaticClass() });
 
-	ActorsLocations.Add(FVector(330.0f, -1200.0f, 80.0f));
-	ActorsLocations.Add(FVector(330.0f, -400.0f, 80.0f));
-	ActorsLocations.Add(FVector(330.0f, 400.0f, 80.0f));
-	ActorsLocations.Add(FVector(330.0f, 1200.0f, 80.0f));
+	TArray<FExpectedActor> ExpectedConditionsAtStep1;
+	ExpectedConditionsAtStep1.Add(FExpectedActor{ FVector(330.0f, -400.0f, 80.0f), AReplicatedTestActorBase::StaticClass() });
+
+	TArray<FExpectedActor> ExpectedConditionsAtStep2;
+	ExpectedConditionsAtStep2.Add(FExpectedActor{ FVector(330.0f, 400.0f, 80.0f), AReplicatedTestActorBase::StaticClass() });
+
+	TArray<FExpectedActor> ExpectedConditionsAtStep3;
+	ExpectedConditionsAtStep3.Add(FExpectedActor{ FVector(330.0f, 1200.0f, 80.0f), AInitiallyDormantTestActor::StaticClass() });
+
+	TArray<FExpectedActor> ExpectedConditionsAtStep4;
+	ExpectedConditionsAtStep4.Add(ExpectedConditionsAtStep1[0]);
+	ExpectedConditionsAtStep4.Add(ExpectedConditionsAtStep2[0]);
+
+	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(-150.0f, -1200.0f, 60.0f), ExpectedConditionsAtStep0));
+	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(-150.0f, -400.0f, 60.0f), ExpectedConditionsAtStep1));
+	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(-150.0f, 400.0f, 60.0f), ExpectedConditionsAtStep2));
+	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(-150.0f, 1200.0f, 60.0f), ExpectedConditionsAtStep3));
+	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(0.0f, 0.0f, 60.0f), ExpectedConditionsAtStep4));
 
 	SetNumRequiredClients(1);
 }
@@ -54,10 +65,21 @@ void ASpatialTestWorldComposition::BeginPlay()
 	ClientMovePawnStepDefinition.TimeLimit = 5.0f;
 	ClientMovePawnStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest* NetTest)
 		{
-			ClientOnePawn->SetActorLocation(TestLocations[TestLocationIndex]);
-			TestLocationIndex++;
-
+			ClientOnePawn->SetActorLocation(TestStepsData[TestLocationIndex].Key);
 			FinishStep();
+		});
+
+	// Step definition for Client 1 to check if the levels loaded correctly.
+	FSpatialFunctionalTestStepDefinition ClientCheckStepDefinition;
+	ClientCheckStepDefinition.bIsNativeDefinition = true;
+	ClientCheckStepDefinition.TimeLimit = 10.0f;
+	ClientCheckStepDefinition.NativeTickEvent.BindLambda([this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		{
+			if (IsCorrectAtLocation(TestLocationIndex))
+			{
+				TestLocationIndex++;
+				FinishStep();
+			}
 		});
 
 	// Run through each of the test locations twice to ensure that levels can be loaded and unloaded successfully multiple times.
@@ -79,114 +101,68 @@ void ASpatialTestWorldComposition::BeginPlay()
 
 		// Note that since initially, the pawn spawns close to the origin, it will load the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel, failing to unload those will first be seen in this step. 
 		// Test that the InitiallyDormantActorLevel was loaded correctly and the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were unloaded.
-		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation0"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-			{
-				if (bIsCorrectAtLocation(0))
-				{
-					FinishStep();
-				}
-			}, 10.0f);
+		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
 
 		// Move the Pawn to the TestLocation with index 1.
 		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
 
 		// Test that the ReplicatedActorLevel was loaded correctly and the IntiallyDormantActorLevel was unloaded.
-		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation1"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-			{
-				if (bIsCorrectAtLocation(1))
-				{
-					FinishStep();
-				}
-			}, 10.0f);
+		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
 
 		// Move the Pawn to the TestLocation with index 2.
 		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
 
 		// Test that the ReplicatedAndNetLoadOnClientLevel was loaded correctly and the ReplicatedActorLevel was unloaded.
-		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation2"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-			{
-				if (bIsCorrectAtLocation(2))
-				{
-					FinishStep();
-				}
-			}, 10.0f);
+		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
 
 		// Move the Pawn to the TestLocation with index 3.
 		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
 
 		// Test that the InitiallyDormantAndNetLoadLevel was loaded correctly and the ReplicatedAndNetLoadOnClientLevel was unloaded.
-		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation3"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-			{
-				if (bIsCorrectAtLocation(3))
-				{
-					FinishStep();
-				}
-			}, 10.0f);
+		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
 
 		// Move the Pawn to the TestLocation with index 4.
 		AddStepFromDefinition(ClientMovePawnStepDefinition, FWorkerDefinition::Client(1));
 
 		// Test that both ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were loaded correctly, and that the InitiallyDormantAndNetLoadLevel was unloaded.
-		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation4"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
-			{
-				if (bIsCorrectAtLocation(4))
-				{
-					FinishStep();
-				}
-			}, 10.0f);
+		AddStepFromDefinition(ClientCheckStepDefinition, FWorkerDefinition::Client(1));
 	}
 }
 
-bool ASpatialTestWorldComposition::bIsCorrectAtLocation(int TestLocation)
+bool ASpatialTestWorldComposition::IsCorrectAtLocation(int TestLocation)
 {
 	// Check that the movement was correctly applied before checking if levels loaded correctly.
-	if (ClientOnePawn->GetActorLocation().Equals(TestLocations[TestLocation], 1.0f))
+	if (!ClientOnePawn->GetActorLocation().Equals(TestStepsData[TestLocation].Key, 1.0f))
 	{
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
-		switch (TestLocation)
+		return false;
+	}
+	 
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
+	TArray<FExpectedActor> ExpectedLocationConditions = TestStepsData[TestLocation].Value;
+
+	if (ExpectedLocationConditions.Num() != FoundReplicatedBaseActors.Num())
+	{
+		return false;
+	}
+
+	int CorrectActors = 0;
+
+	for (AActor* FoundActor : FoundReplicatedBaseActors)
+	{
+		for (auto Condition : ExpectedLocationConditions)
 		{
-			case 0:
-				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->IsA(AInitiallyDormantTestActor::StaticClass()))
-				{
-					if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[0], 10.0f))
-					{
-						return true;
-					}
-				}
+			if (FoundActor->GetActorLocation().Equals(Condition.ExpectedActorLocation, 1.0f) && FoundActor->IsA(Condition.ExpectedActorClass))
+			{
+				CorrectActors++;
 				break;
-			case 1:
-				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[1], 10.0f))
-				{
-					return true;
-				}
-				break;
-			case 2:
-				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[2], 10.0f))
-				{
-					return true;
-				}
-				break;
-			case 3:
-				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->IsA(AInitiallyDormantTestActor::StaticClass()))
-				{
-					if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[3], 10.0f))
-					{
-						return true;
-					}
-				}
-				break;
-			case 4:
-				if (FoundReplicatedBaseActors.Num() == 2)
-				{
-					if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[1], 10.0f) && FoundReplicatedBaseActors[1]->GetActorLocation().Equals(ActorsLocations[2], 10.0f)
-					||  FoundReplicatedBaseActors[1]->GetActorLocation().Equals(ActorsLocations[1], 10.0f) && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[2], 10.0f))
-					{
-						return true;
-					}
-				}
-				break;
+			}
 		}
 	}
 
-	return false;
+	if (CorrectActors != ExpectedLocationConditions.Num())
+	{
+		return false;
+	}
+
+	return true;
 }
