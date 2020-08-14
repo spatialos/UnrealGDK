@@ -122,7 +122,6 @@ public:
 
 	bool HasReadyEvent();
 
-	ASpatialFunctionalTest* Owner;
 	bool bIsRunning;
 	bool bIsReady;
 
