@@ -16,6 +16,8 @@ public:
 
 	virtual void BeginPlay() override;
 
+	bool bIsCorrectAtLocation(int TestLocationIndex);
+
 	// Helper array used to store all the references returned by GetAllActorsOfClass.
 	TArray<AActor*> FoundReplicatedBaseActors;
 

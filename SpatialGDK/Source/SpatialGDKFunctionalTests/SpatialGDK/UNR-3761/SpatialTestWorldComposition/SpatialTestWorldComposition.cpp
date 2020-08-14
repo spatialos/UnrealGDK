@@ -81,18 +81,9 @@ void ASpatialTestWorldComposition::BeginPlay()
 		// Test that the InitiallyDormantActorLevel was loaded correctly and the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were unloaded.
 		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation0"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{
-				// Check that the movement was correctly applied before checking the level loaded correctly.
-				if (ClientOnePawn->GetActorLocation().Equals(TestLocations[0], 1.0f))
+				if (bIsCorrectAtLocation(0))
 				{
-					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
-
-					if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->IsA(AInitiallyDormantTestActor::StaticClass()))
-					{
-						if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[0], 10.0f))
-						{
-							FinishStep();
-						}
-					}
+					FinishStep();
 				}
 			}, 10.0f);
 
@@ -102,15 +93,9 @@ void ASpatialTestWorldComposition::BeginPlay()
 		// Test that the ReplicatedActorLevel was loaded correctly and the IntiallyDormantActorLevel was unloaded.
 		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation1"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{
-				// Check that the movement was correctly applied before checking the level loaded correctly.
-				if (ClientOnePawn->GetActorLocation().Equals(TestLocations[1], 1.0f))
+				if (bIsCorrectAtLocation(1))
 				{
-					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
-
-					if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[1], 10.0f))
-					{
-						FinishStep();
-					}
+					FinishStep();
 				}
 			}, 10.0f);
 
@@ -120,15 +105,9 @@ void ASpatialTestWorldComposition::BeginPlay()
 		// Test that the ReplicatedAndNetLoadOnClientLevel was loaded correctly and the ReplicatedActorLevel was unloaded.
 		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation2"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{
-				// Check that the movement was correctly applied before checking the level loaded correctly.
-				if (ClientOnePawn->GetActorLocation().Equals(TestLocations[2], 1.0f))
+				if (bIsCorrectAtLocation(2))
 				{
-					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
-
-					if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[2], 10.0f))
-					{
-						FinishStep();
-					}
+					FinishStep();
 				}
 			}, 10.0f);
 
@@ -138,18 +117,9 @@ void ASpatialTestWorldComposition::BeginPlay()
 		// Test that the InitiallyDormantAndNetLoadLevel was loaded correctly and the ReplicatedAndNetLoadOnClientLevel was unloaded.
 		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation3"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{
-				// Check that the movement was correctly applied before checking the level loaded correctly.
-				if (ClientOnePawn->GetActorLocation().Equals(TestLocations[3], 1.0f))
+				if (bIsCorrectAtLocation(3))
 				{
-					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
-
-					if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->IsA(AInitiallyDormantTestActor::StaticClass()))
-					{
-						if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[3], 10.0f))
-						{
-							FinishStep();
-						}
-					}
+					FinishStep();
 				}
 			}, 10.0f);
 
@@ -159,20 +129,64 @@ void ASpatialTestWorldComposition::BeginPlay()
 		// Test that both ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were loaded correctly, and that the InitiallyDormantAndNetLoadLevel was unloaded.
 		AddStep(TEXT("SpatialTestWorldCompositionClientCheckTestLocation4"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 			{
-				// Check that the movement was correctly applied before checking the level loaded correctly.
-				if (ClientOnePawn->GetActorLocation().Equals(TestLocations[4], 1))
+				if (bIsCorrectAtLocation(4))
 				{
-					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
-
-					if (FoundReplicatedBaseActors.Num() == 2)
-					{
-						if(FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[1], 10.0f) && FoundReplicatedBaseActors[1]->GetActorLocation().Equals(ActorsLocations[2], 10.0f)
-						|| FoundReplicatedBaseActors[1]->GetActorLocation().Equals(ActorsLocations[1], 10.0f) && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[2], 10.0f))
-						{ 
-							FinishStep();
-						}
-					}
+					FinishStep();
 				}
 			}, 10.0f);
 	}
+}
+
+bool ASpatialTestWorldComposition::bIsCorrectAtLocation(int TestLocation)
+{
+	// Check that the movement was correctly applied before checking if levels loaded correctly.
+	if (ClientOnePawn->GetActorLocation().Equals(TestLocations[TestLocation], 1.0f))
+	{
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
+		switch (TestLocation)
+		{
+			case 0:
+				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->IsA(AInitiallyDormantTestActor::StaticClass()))
+				{
+					if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[0], 10.0f))
+					{
+						return true;
+					}
+				}
+				break;
+			case 1:
+				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[1], 10.0f))
+				{
+					return true;
+				}
+				break;
+			case 2:
+				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[2], 10.0f))
+				{
+					return true;
+				}
+				break;
+			case 3:
+				if (FoundReplicatedBaseActors.Num() == 1 && FoundReplicatedBaseActors[0]->IsA(AInitiallyDormantTestActor::StaticClass()))
+				{
+					if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[3], 10.0f))
+					{
+						return true;
+					}
+				}
+				break;
+			case 4:
+				if (FoundReplicatedBaseActors.Num() == 2)
+				{
+					if (FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[1], 10.0f) && FoundReplicatedBaseActors[1]->GetActorLocation().Equals(ActorsLocations[2], 10.0f)
+					||  FoundReplicatedBaseActors[1]->GetActorLocation().Equals(ActorsLocations[1], 10.0f) && FoundReplicatedBaseActors[0]->GetActorLocation().Equals(ActorsLocations[2], 10.0f))
+					{
+						return true;
+					}
+				}
+				break;
+		}
+	}
+
+	return false;
 }
