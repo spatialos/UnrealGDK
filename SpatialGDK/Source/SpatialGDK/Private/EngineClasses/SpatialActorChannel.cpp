@@ -4,6 +4,7 @@
 
 #include "Engine/DemoNetDriver.h"
 #include "Engine/World.h"
+#include "GameFramework/GameMode.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -424,10 +425,30 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 	return HandoverChanged;
 }
+
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 {
-	//Make sure that the Actor is not always relevant.
+	// Make sure that the Actor is not always relevant.
 	if(InActor->bAlwaysRelevant)
+	{
+		return;
+	}
+
+	// Make sure that the actor is not PlayerController, GameplayDebuggerCategoryReplicator and GameMode.
+	APlayerController* PC = Cast<APlayerController>(InActor);
+	if(IsValid(PC))
+	{
+		return;
+	}
+
+	FString ActorsName = InActor->GetName();
+	if(ActorsName.Contains(TEXT("GameplayDebuggerCategoryReplicator")))
+	{
+		return;
+	}
+
+	AGameModeBase* GM = Cast<AGameModeBase>(InActor);
+	if(IsValid(GM))
 	{
 		return;
 	}

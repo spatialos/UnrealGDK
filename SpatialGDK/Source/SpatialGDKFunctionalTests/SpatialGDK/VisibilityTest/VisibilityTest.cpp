@@ -107,11 +107,14 @@ void AVisibilityTest::BeginPlay()
 			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 			if (IsValid(PlayerController))
 			{
+				if(TestPawns.Num() >0)
+				{
 					if (TestPawns[FlowController->WorkerDefinition.Id - 1] == PlayerController->AcknowledgedPawn)
 					{
 						AssertTrue(true, TEXT("Player pawn is set properly"), PlayerController);
 						FinishStep();
 					}
+				}
 			}
 		}, 5.0f);
 	}
