@@ -51,7 +51,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 	Super::BeginPlay();
 
 	// Universal setup step to create the TriggerBox and to set the helper variable
-	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 		bCharacterReachedDestination = false;
 
 		ATriggerBox* TriggerBox =
@@ -71,7 +71,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
 	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr,
-			[this](ASpatialFunctionalTest* NetTest) {
+			[this]() {
 				for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 				{
 					if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -102,8 +102,8 @@ void ASpatialTestCharacterMovement::BeginPlay()
 	// Client 1 moves his character and asserts that it reached the Destination locally.
 	AddStep(
 		TEXT("SpatialTestCharacterMovementClient1Move"), FWorkerDefinition::Client(1),
-		[](ASpatialFunctionalTest* NetTest) -> bool {
-			AController* PlayerController = Cast<AController>(NetTest->GetLocalFlowController()->GetOwner());
+		[this]() -> bool {
+			AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
 			// Since the character is simulating gravity, it will drop from the original position close to (0, 0, 40), depending on the size
@@ -111,7 +111,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 			return IsValid(PlayerCharacter) && PlayerCharacter->GetActorLocation().Equals(FVector(0.0f, 0.0f, 40.0f), 2.0f);
 		},
 		nullptr,
-		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this](float DeltaTime) {
 			AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
@@ -123,29 +123,30 @@ void ASpatialTestCharacterMovement::BeginPlay()
 				FinishStep();
 			}
 		},
-		3.0f);
+		10.0f);
 
 	// Server asserts that the character of client 1 has reached the Destination.
 	AddStep(
 		TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), FWorkerDefinition::Server(1), nullptr, nullptr,
-		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this](float DeltaTime) {
 			if (bCharacterReachedDestination)
 			{
 				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the server."));
 				FinishStep();
 			}
 		},
-		1.0f);
+
+		5.0f);
 
 	// Client 2 asserts that the character of client 1 has reached the Destination.
 	AddStep(
 		TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), FWorkerDefinition::Client(2), nullptr, nullptr,
-		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this](float DeltaTime) {
 			if (bCharacterReachedDestination)
 			{
 				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the simulated proxy"));
 				FinishStep();
 			}
 		},
-		1.0f);
+		5.0f);
 }

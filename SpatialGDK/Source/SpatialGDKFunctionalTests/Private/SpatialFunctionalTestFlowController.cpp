@@ -219,7 +219,6 @@ void ASpatialFunctionalTestFlowController::StartStepInternal(const int StepIndex
 	const FSpatialFunctionalTestStepDefinition& StepDefinition = OwningTest->GetStepDefinition(StepIndex);
 	UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Executing step %s on %s"), *StepDefinition.StepName, *GetDisplayName());
 	SetActorTickEnabled(true);
-	CurrentStep.Owner = OwningTest;
 	CurrentStep.Start(StepDefinition);
 }
 
