@@ -63,11 +63,11 @@ void ASpatialTestWorldComposition::BeginPlay()
 	FSpatialFunctionalTestStepDefinition ClientCheckLocationStepDefinition;
 	ClientCheckLocationStepDefinition.bIsNativeDefinition = true;
 	ClientCheckLocationStepDefinition.TimeLimit = 10.0f;
-	ClientCheckLocationStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest* NetTest)
+	ClientCheckLocationStepDefinition.NativeStartEvent.BindLambda([this]()
 	{
 		ClientOnePawn->SetActorLocation(TestStepsData[TestLocationIndex].Key);
 	});
-	ClientCheckLocationStepDefinition.NativeTickEvent.BindLambda([this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+	ClientCheckLocationStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime)
 	{
 		if (IsCorrectAtLocation(TestLocationIndex))
 		{
@@ -80,7 +80,7 @@ void ASpatialTestWorldComposition::BeginPlay()
 	for (int i = 0; i < 2; ++i)
 	{
 		// Setup step that sets a reference to the Pawn and resets the TestLocationIndex.
-		AddStep(TEXT("SpatialTestWorldCompositionClientSetupStep"), FWorkerDefinition::Client(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("SpatialTestWorldCompositionClientSetupStep"), FWorkerDefinition::Client(1), nullptr, [this]()
 			{
 				ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
 				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
