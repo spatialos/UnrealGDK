@@ -167,13 +167,13 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
 	float QueuedOutgoingRPCRetryTime;
 
-	/** Minimum time, in seconds, required to pass before an Actor will update its SpatialOS Position, if it has also traveled more than the PositionUpdateThresholdMinCentimeters since its last update.*/
+	/** Minimum time, in seconds, required to pass before an Actor will update its SpatialOS Position, if it has also traveled more than the PositionUpdateLowerThresholdCentimeters since its last update.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
-	float PositionUpdateThresholdMinSeconds;
+	float PositionUpdateLowerThresholdSeconds;
 
-	/** Minimum distance, in centimeters, required for an Actor to move before its SpatialOS Position is updated, if more than PositionUpdateThresholdMinSeconds seconds have also passed since its last update.*/
+	/** Minimum distance, in centimeters, required for an Actor to move before its SpatialOS Position is updated, if more than PositionUpdateLowerThresholdSeconds seconds have also passed since its last update.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
-	float PositionUpdateThresholdMinCentimeters;
+	float PositionUpdateLowerThresholdCentimeters;
 
 	/** Maximum time, in seconds, that can pass before an Actor will update its SpatialOS Position, if it has also traveled any non-null amount of centimeters since its last update.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")

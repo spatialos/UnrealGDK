@@ -1377,15 +1377,14 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 
 bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 {
-	// Check that the Actor satisfies both minimum thresholds OR either of the maximum thresholds
-
+	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
 	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
 
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
 	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMinCentimeters);
+	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateLowerThresholdCentimeters);
 	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters);
 
 	if (FMath::IsNearlyZero(DistanceTravelledSinceLastUpdateSquared))
@@ -1393,7 +1392,7 @@ bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 		return false;
 	}
 
-	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMinSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateLowerThresholdSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
 	{
 		return true;
 	}

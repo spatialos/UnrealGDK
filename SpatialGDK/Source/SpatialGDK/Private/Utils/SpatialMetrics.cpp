@@ -304,13 +304,13 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		{
 			GetMutableDefault<USpatialGDKSettings>()->EntityCreationRateLimit = static_cast<uint32>(Value);
 		}
-		else if (Name == TEXT("PositionUpdateThresholdMinSeconds"))
+		else if (Name == TEXT("PositionUpdateLowerThresholdSeconds"))
 		{
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMinSeconds = Value;
+			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateLowerThresholdSeconds = Value;
 		}
-		else if (Name == TEXT("PositionUpdateThresholdMinCentimeters"))
+		else if (Name == TEXT("PositionUpdateLowerThresholdCentimeters"))
 		{
-			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMinCentimeters = Value;
+			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateLowerThresholdCentimeters = Value;
 		}
 		else if (Name == TEXT("PositionUpdateThresholdMaxSeconds"))
 		{
