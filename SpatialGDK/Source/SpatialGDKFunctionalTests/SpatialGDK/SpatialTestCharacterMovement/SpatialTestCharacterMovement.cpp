@@ -123,7 +123,7 @@ void ASpatialTestCharacterMovement::BeginPlay()
 				FinishStep();
 			}
 		},
-		3.0f);
+		10.0f);
 
 	// Server asserts that the character of client 1 has reached the Destination.
 	AddStep(
@@ -135,7 +135,8 @@ void ASpatialTestCharacterMovement::BeginPlay()
 				FinishStep();
 			}
 		},
-		1.0f);
+
+		5.0f);
 
 	// Client 2 asserts that the character of client 1 has reached the Destination.
 	AddStep(
@@ -147,5 +148,5 @@ void ASpatialTestCharacterMovement::BeginPlay()
 				FinishStep();
 			}
 		},
-		1.0f);
+		5.0f);
 }

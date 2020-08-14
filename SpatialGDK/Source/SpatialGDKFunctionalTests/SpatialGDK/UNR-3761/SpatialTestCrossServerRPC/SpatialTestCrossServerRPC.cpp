@@ -103,5 +103,5 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 				FinishStep();
 			}
 		},
-		5.0f);
+		10.0f);
 }
