@@ -82,7 +82,7 @@ void ASpatialTestNetOwnership::BeginPlay()
 
 			FinishStep();
 		},
-		5.0f);
+		10.0f);
 
 	//  The authoritative server sets the owner of the NetOwnershipCube to Client's 1 PlayerController
 	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwner"), FWorkerDefinition::AllServers, nullptr, [this](ASpatialFunctionalTest* NetTest) {
@@ -136,7 +136,7 @@ void ASpatialTestNetOwnership::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			10.0f);
 	}
 
 	// Test Phase 2
@@ -164,5 +164,5 @@ void ASpatialTestNetOwnership::BeginPlay()
 				FinishStep();
 			}
 		},
-		5.0f);
+		10.0f);
 }

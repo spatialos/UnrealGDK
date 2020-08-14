@@ -147,7 +147,7 @@ void ASpatialTestNetReference::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			10.0f);
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckNumberOfReferences"), FWorkerDefinition::Client(1), nullptr, nullptr,
@@ -162,7 +162,7 @@ void ASpatialTestNetReference::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			10.0f);
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckReferences"), FWorkerDefinition::Client(1), nullptr, nullptr,
@@ -220,7 +220,7 @@ void ASpatialTestNetReference::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			15.0f);
 	}
 
 	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
