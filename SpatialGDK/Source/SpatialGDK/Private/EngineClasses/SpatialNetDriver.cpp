@@ -87,7 +87,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bMapLoaded(false)
 	, SessionId(0)
 	, NextRPCIndex(0)
-	, TimeWhenPositionLastUpdated(0.f)
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
@@ -1928,12 +1927,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
-			if ((GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
-			{
-				TimeWhenPositionLastUpdated = GetElapsedTime();
-
-				Sender->ProcessPositionUpdates();
-			}
+			Sender->ProcessPositionUpdates();
 		}
 
 		if (Connection != nullptr)

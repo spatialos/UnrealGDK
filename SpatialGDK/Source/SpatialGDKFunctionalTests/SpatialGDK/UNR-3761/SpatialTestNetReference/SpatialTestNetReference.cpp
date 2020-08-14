@@ -59,7 +59,7 @@ void ASpatialTestNetReference::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
+	PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
 
 	AddStep(TEXT("SpatialTestNetReferenceServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Set up the cubes' spawn locations
@@ -93,10 +93,9 @@ void ASpatialTestNetReference::BeginPlay()
 			TestCubes[i]->Neighbour2 = TestCubes[(i + NumberOfCubes - 1) % NumberOfCubes];
 		}
 
-		// Set the PositionUpdateFrequency to a higher value so that the amount of waiting time before checking the references can be
-		// smaller, decreasing the overall duration of the test
-		PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
-		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
+		// Set the PositionUpdateThresholdMaxCentimeeters to a lower value so that the spatial position updates can be sent every time the character moves, decreasing the overall duration of the test
+		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
+		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
 
 		// Spawn the TestMovementCharacter actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
@@ -236,7 +235,6 @@ void ASpatialTestNetReference::FinishTest(EFunctionalTestResult TestResult, cons
 {
 	Super::FinishTest(TestResult, Message);
 
-	// Restoring the PositionUpdateFrequency here catches most but not all of the cases when the test failing would cause
-	// PositionUpdateFrequency to be changed.
-	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = PreviousPositionUpdateFrequency;
+	// Restoring the PositionUpdateThresholdMaxCentimeters here catches most but not all of the cases when the test failing would cause PositionUpdateThresholdMaxCentimeters to be changed. 
+	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
 }
