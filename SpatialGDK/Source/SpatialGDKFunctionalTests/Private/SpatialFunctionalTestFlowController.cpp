@@ -144,8 +144,6 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 
 void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 {
-	ensureMsgf(CurrentStep.bIsRunning, TEXT("Trying to Notify Step Finished when it wasn't running. Either the Test ended prematurely or "
-											"it's logic is calling FinishStep multiple times"));
 	if (CurrentStep.bIsRunning)
 	{
 		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -185,15 +183,19 @@ bool ASpatialFunctionalTestFlowController::IsLocalController() const
 
 void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message)
 {
-	StopStepInternal();
+	// To prevent trying to Notify multiple times, which can happen for example with multiple asserts in a row.
+	if (CurrentStep.bIsRunning)
+	{
+		StopStepInternal();
 
-	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-	{
-		ServerNotifyFinishTestInternal(TestResult, Message);
-	}
-	else
-	{
-		ServerNotifyFinishTest(TestResult, Message);
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+		{
+			ServerNotifyFinishTestInternal(TestResult, Message);
+		}
+		else
+		{
+			ServerNotifyFinishTest(TestResult, Message);
+		}
 	}
 }
 

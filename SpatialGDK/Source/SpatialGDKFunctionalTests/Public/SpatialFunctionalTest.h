@@ -55,6 +55,8 @@ public:
 	// Should be called from the server with authority over this actor
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
+	virtual void LogStep(ELogVerbosity::Type Verbosity, const FString& Message) override;
+
 	// # Test APIs
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
