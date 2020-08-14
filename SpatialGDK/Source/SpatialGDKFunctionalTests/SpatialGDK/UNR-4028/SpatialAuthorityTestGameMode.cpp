@@ -2,7 +2,6 @@
 
 
 #include "SpatialAuthorityTestGameMode.h"
-#include "Components/SceneComponent.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Net/UnrealNetwork.h"
