@@ -40,7 +40,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{
 		AddStep(TEXT("Replicated Level Actor - Server 1 Has Authority"), FWorkerDefinition::AllWorkers,	nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime) {
+			[this](float DeltaTime) {
 				if (LevelReplicatedActor->AuthorityOnBeginPlay == 1 && LevelReplicatedActor->AuthorityOnTick == 1)
 				{
 					FinishStep();
@@ -51,7 +51,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Non-replicated Level Actor. Each Server should have Authority over their instance, Clients don't.
 	{
 		AddStep(TEXT("Non-replicated Level Actor - Each Server has Authority, Client doesn't know"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime) {
+			[this](float DeltaTime) {
 				if (GetLocalFlowController()->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 				{
 					if (LevelActor->AuthorityOnBeginPlay == LevelActor->AuthorityOnTick
@@ -74,7 +74,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Replicated Dynamic Actor Spawned On Same Server. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Spawn"), FWorkerDefinition::Server(1), nullptr,
-			[this](ASpatialFunctionalTest* Test)
+			[this]()
 			{
 				ASpatialAuthorityTestReplicatedActor* Actor = GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(
 					Server1Position, FRotator::ZeroRotator);
@@ -83,7 +83,7 @@ void ASpatialAuthorityTest::BeginPlay()
 			});
 
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server 1 Has Authority"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime)
+			[this](float DeltaTime)
 			{
 				if (DynamicReplicatedActor != nullptr
 					&& DynamicReplicatedActor->AuthorityOnBeginPlay == 1
@@ -94,7 +94,7 @@ void ASpatialAuthorityTest::BeginPlay()
 			}, 5.0f);
 
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Destroy"), FWorkerDefinition::Server(1), nullptr,
-			[this](ASpatialFunctionalTest* Test)
+			[this]()
 			{
 				DynamicReplicatedActor->Destroy();
 				CrossServerSetDynamicReplicatedActor(nullptr);
@@ -105,7 +105,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Replicated Dynamic Actor Spawned On Different Server. Server 1 should have Authority on BeginPlay, Server 2 on Tick
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Spawn"), FWorkerDefinition::Server(1), nullptr,
-				[this](ASpatialFunctionalTest* Test) {
+				[this]() {
 					ASpatialAuthorityTestReplicatedActor* Actor = GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(
 						Server2Position, FRotator::ZeroRotator);
 					CrossServerSetDynamicReplicatedActor(Actor);
@@ -115,7 +115,7 @@ void ASpatialAuthorityTest::BeginPlay()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 on Tick"), FWorkerDefinition::AllWorkers, nullptr,
 			nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime) {
+			[this](float DeltaTime) {
 				// Allow it to continue working in Native / Single worker setups.
 				int ExpectedAuthorityServer = GetNumberOfServerWorkers() > 1 ? 2 : 1;				
 				if (DynamicReplicatedActor != nullptr
@@ -129,7 +129,7 @@ void ASpatialAuthorityTest::BeginPlay()
 
 		// Now it's Server 2 destroying, since it has Authority over it.
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Destroy"), FWorkerDefinition::Server(2), nullptr,
-				[this](ASpatialFunctionalTest* Test)
+				[this]()
 				{
 					DynamicReplicatedActor->Destroy();
 					CrossServerSetDynamicReplicatedActor(nullptr);
@@ -140,7 +140,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// Non-replicated Dynamic Actor. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Non-replicated Dynamic Actor - Spawn"), FWorkerDefinition::Server(1), nullptr,
-			[this](ASpatialFunctionalTest* Test)
+			[this]()
 			{
 				// Spawning directly on Server 2, but since it's non-replicated it shouldn't migrate to Server 2.
 				DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(Server2Position, FRotator::ZeroRotator);
@@ -148,7 +148,7 @@ void ASpatialAuthorityTest::BeginPlay()
 			});
 
 		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Authority on Server 1"), FWorkerDefinition::Server(1), nullptr, nullptr,
-				[this](ASpatialFunctionalTest* Test, float DeltaTime)
+				[this](float DeltaTime)
 				{
 					if (DynamicNonReplicatedActor->AuthorityOnBeginPlay == 1
 						&& DynamicNonReplicatedActor->AuthorityOnTick == 1)
@@ -160,7 +160,7 @@ void ASpatialAuthorityTest::BeginPlay()
 		float Timer = 0.5f;
 
 		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-				[this, &Timer](ASpatialFunctionalTest* Test, float DeltaTime) {
+				[this, &Timer](float DeltaTime) {
 					FWorkerDefinition LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server
 						&& LocalWorkerDefinition.Id == 1)
@@ -198,7 +198,7 @@ void ASpatialAuthorityTest::BeginPlay()
 
 		// Destroy to be able to re-run.
 		AddStep(TEXT("Non-replicated Dynamic Actor - Destroy"), FWorkerDefinition::Server(1), nullptr,
-				[this](ASpatialFunctionalTest* Test) {
+				[this]() {
 					DynamicNonReplicatedActor->Destroy();
 					DynamicNonReplicatedActor = nullptr;
 					FinishStep();
@@ -208,7 +208,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	// GameMode.
 	{
 		AddStep(TEXT("GameMode - Determine Authority by every Server"), FWorkerDefinition::AllServers, nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime){
+			[this](float DeltaTime){
 				ASpatialAuthorityTestGameMode* GameMode = GetWorld()->GetAuthGameMode<ASpatialAuthorityTestGameMode>();
 				if(GameMode == nullptr)
 				{
@@ -222,7 +222,7 @@ void ASpatialAuthorityTest::BeginPlay()
 			}, 5.0f);
 
 		AddStep(TEXT("GameMode - Verify consensus on Authority"), FWorkerDefinition::Server(1), nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime)
+			[this](float DeltaTime)
 			{
 				int FirstAuthorityValue = GameModeServerAuthorities[0];
 				if (FirstAuthorityValue > 0)
@@ -244,7 +244,7 @@ void ASpatialAuthorityTest::BeginPlay()
 	{
 		AddStep(
 			TEXT("GameState - Determine Authority by every Worker"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime) {
+			[this](float DeltaTime) {
 				ASpatialAuthorityTestGameState* GameState = GetWorld()->GetGameState<ASpatialAuthorityTestGameState>();
 				if (GameState == nullptr)
 				{
@@ -275,7 +275,7 @@ void ASpatialAuthorityTest::BeginPlay()
 
 		AddStep(
 			TEXT("GameState - Verify consensus on Authority"), FWorkerDefinition::Server(1), nullptr, nullptr,
-			[this](ASpatialFunctionalTest* Test, float DeltaTime) {
+			[this](float DeltaTime) {
 				int FirstAuthorityValue = GameModeServerAuthorities[0]; // Should match the Authority of GameMode
 				if (FirstAuthorityValue > 0)
 				{
