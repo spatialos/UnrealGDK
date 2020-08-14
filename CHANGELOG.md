@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   1. The distance travelled since the last Spatial position update was sent is greater than or equal to `PositionUpdateThresholdMaxCentimeters`.
 - New setting "Auto-stop local SpatialOS deployment" that allows you to specific Never (doesn't automatically stop), OnEndPIE (when a PIE session is ended) and OnExitEditor (only when the editor is shutdown). The default is OnExitEditor.
 - Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts.
+- Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target will be automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
