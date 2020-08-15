@@ -73,19 +73,21 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		{
 		case OutgoingComponentMessage::ADD:
 		{
-			Worker_ComponentData Data = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr };
+			Worker_ComponentData Data = { nullptr, Message.GetComponentAdded().GetComponentId(),
+										  MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr };
 			Worker_Connection_SendAddComponent(Connection.Get(), Message.EntityId, &Data, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::UPDATE:
 		{
-			Worker_ComponentUpdate Update = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr };
+			Worker_ComponentUpdate Update = { nullptr, Message.GetComponentUpdate().GetComponentId(),
+											  MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr };
 			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:
 		{
-			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.ComponentId, &UpdateParams);
+			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.GetComponentRemoved(), &UpdateParams);
 			break;
 		}
 		default:

@@ -4,161 +4,171 @@
 
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
-#include "SpatialView/EntityComponentId.h"
 
 namespace SpatialGDK
 {
 // Represents one of a component addition, update, or removal.
-// Internally schema data is stored using raw pointers. However the interface exclusively uses explicitly owning objects to denote
-// ownership.
 class OutgoingComponentMessage
 {
 public:
 	enum MessageType
 	{
-		NONE,
+		REMOVE,
 		ADD,
-		UPDATE,
-		REMOVE
+		UPDATE
 	};
 
-	explicit OutgoingComponentMessage()
-		: EntityId(0)
-		, ComponentId(0)
-		, Type(NONE)
-	{
-	}
-
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded)
+	OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded)
 		: EntityId(EntityId)
-		, ComponentId(ComponentAdded.GetComponentId())
-		, ComponentAdded(MoveTemp(ComponentAdded).Release())
 		, Type(ADD)
 	{
+		new (&Message.ComponentAdded) ComponentData(MoveTemp(ComponentAdded));
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated)
+	OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated)
 		: EntityId(EntityId)
-		, ComponentId(ComponentUpdated.GetComponentId())
-		, ComponentUpdated(MoveTemp(ComponentUpdated).Release())
 		, Type(UPDATE)
 	{
+		new (&Message.Update) ComponentUpdate(MoveTemp(ComponentUpdated));
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId)
+	OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId ComponentIdRemoved)
 		: EntityId(EntityId)
-		, ComponentId(RemovedComponentId)
 		, Type(REMOVE)
 	{
+		Message.ComponentRemoved = ComponentIdRemoved;
 	}
 
-	~OutgoingComponentMessage()
-	{
-		// As data is stored in owning raw pointers we need to make sure resources are released.
-		DeleteSchemaObjects();
-	}
+	~OutgoingComponentMessage() { DeleteCurrent(); }
 
 	// Moveable, not copyable.
 	OutgoingComponentMessage(const OutgoingComponentMessage&) = delete;
-	OutgoingComponentMessage& operator=(const OutgoingComponentMessage& Other) = delete;
+	OutgoingComponentMessage& operator=(const OutgoingComponentMessage&) = delete;
 
 	OutgoingComponentMessage(OutgoingComponentMessage&& Other) noexcept
 		: EntityId(Other.EntityId)
-		, ComponentId(Other.ComponentId)
-		, Type(Other.Type)
+		, Type(REMOVE)
 	{
 		switch (Other.Type)
 		{
-		case NONE:
+		case REMOVE:
+			SetComponentRemoved(Other.Message.ComponentRemoved);
 			break;
 		case ADD:
-			ComponentAdded = Other.ComponentAdded;
-			Other.ComponentAdded = nullptr;
+			SetComponentAdded(MoveTemp(Other.Message.ComponentAdded));
 			break;
 		case UPDATE:
-			ComponentUpdated = Other.ComponentUpdated;
-			Other.ComponentUpdated = nullptr;
-			break;
-		case REMOVE:
+			SetComponentUpdate(MoveTemp(Other.Message.Update));
 			break;
 		}
-		Other.Type = NONE;
 	}
 
 	OutgoingComponentMessage& operator=(OutgoingComponentMessage&& Other) noexcept
 	{
 		EntityId = Other.EntityId;
-		ComponentId = Other.ComponentId;
-
-		// As data is stored in owning raw pointers we need to make sure resources are released.
-		DeleteSchemaObjects();
 		switch (Other.Type)
 		{
-		case NONE:
+		case REMOVE:
+			SetComponentRemoved(Other.Message.ComponentRemoved);
 			break;
 		case ADD:
-			ComponentAdded = Other.ComponentAdded;
-			Other.ComponentAdded = nullptr;
+			SetComponentAdded(MoveTemp(Other.Message.ComponentAdded));
 			break;
 		case UPDATE:
-			ComponentUpdated = Other.ComponentUpdated;
-			Other.ComponentUpdated = nullptr;
-			break;
-		case REMOVE:
+			SetComponentUpdate(MoveTemp(Other.Message.Update));
 			break;
 		}
-
-		Other.Type = NONE;
-
 		return *this;
 	}
 
 	MessageType GetType() const { return Type; }
 
+	const Worker_ComponentId& GetComponentRemoved() const
+	{
+		check(Type == REMOVE);
+		return Message.ComponentRemoved;
+	}
+
+	const ComponentData& GetComponentAdded() const
+	{
+		check(Type == ADD);
+		return Message.ComponentAdded;
+	}
+
+	const ComponentUpdate& GetComponentUpdate() const
+	{
+		check(Type == UPDATE);
+		return Message.Update;
+	}
+
 	ComponentData ReleaseComponentAdded() &&
 	{
 		check(Type == ADD);
-		ComponentData Data(OwningComponentDataPtr(ComponentAdded), ComponentId);
-		ComponentAdded = nullptr;
-		return Data;
+		return MoveTemp(Message.ComponentAdded);
 	}
 
 	ComponentUpdate ReleaseComponentUpdate() &&
 	{
 		check(Type == UPDATE);
-		ComponentUpdate Update(OwningComponentUpdatePtr(ComponentUpdated), ComponentId);
-		ComponentUpdated = nullptr;
-		return Update;
+		return MoveTemp(Message.Update);
 	}
 
 	Worker_EntityId EntityId;
-	Worker_ComponentId ComponentId;
 
 private:
-	void DeleteSchemaObjects()
+	union ComponentMessage
+	{
+		ComponentMessage()
+			: ComponentRemoved(0)
+		{
+		}
+		// The union destructor shouldn't try to clean up anything; that should be done by the tagged class. So disable the warning.
+#pragma warning(disable : 4583)
+		~ComponentMessage() {}
+#pragma warning(default : 4583)
+		Worker_ComponentId ComponentRemoved;
+		ComponentData ComponentAdded;
+		ComponentUpdate Update;
+	};
+
+	void DeleteCurrent()
 	{
 		switch (Type)
 		{
-		case NONE:
+		case REMOVE:
 			break;
 		case ADD:
-			Schema_DestroyComponentData(ComponentAdded);
+			Message.ComponentAdded.~ComponentData();
 			break;
 		case UPDATE:
-			Schema_DestroyComponentUpdate(ComponentUpdated);
-			break;
-		case REMOVE:
+			Message.Update.~ComponentUpdate();
 			break;
 		}
 	}
 
-	union
+	void SetComponentAdded(ComponentData ComponentAdded)
 	{
-		Schema_ComponentData* ComponentAdded;
-		Schema_ComponentUpdate* ComponentUpdated;
-	};
+		DeleteCurrent();
+		Type = ADD;
+		new (&Message.ComponentAdded) ComponentData(MoveTemp(ComponentAdded));
+	}
+
+	void SetComponentUpdate(ComponentUpdate Update)
+	{
+		DeleteCurrent();
+		Type = UPDATE;
+		new (&Message.Update) ComponentUpdate(MoveTemp(Update));
+	}
+
+	void SetComponentRemoved(Worker_ComponentId IdRemoved)
+	{
+		DeleteCurrent();
+		Type = UPDATE;
+		Message.ComponentRemoved = IdRemoved;
+	}
 
 	MessageType Type;
+	ComponentMessage Message;
 };
 
 } // namespace SpatialGDK
