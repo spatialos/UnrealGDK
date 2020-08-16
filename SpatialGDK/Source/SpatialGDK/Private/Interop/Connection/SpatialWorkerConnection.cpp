@@ -150,6 +150,12 @@ void USpatialWorkerConnection::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
 	Coordinator->SendMetrics(MoveTemp(Metrics));
 }
 
+void USpatialWorkerConnection::SendFencedUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
+{
+	check(Coordinator.IsValid());
+	Coordinator->SendFencedUpdate(EntityId, ToComponentUpdate(ComponentUpdate));
+}
+
 void USpatialWorkerConnection::Advance()
 {
 	check(Coordinator.IsValid());

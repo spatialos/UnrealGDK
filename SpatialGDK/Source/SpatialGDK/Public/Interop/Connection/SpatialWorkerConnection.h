@@ -43,6 +43,8 @@ public:
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
+	void SendFencedUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate);
+
 	void Advance();
 	bool HasDisconnected() const;
 	Worker_ConnectionStatusCode GetConnectionStatus() const;

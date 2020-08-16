@@ -43,10 +43,29 @@ public:
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
+	void SendFencedUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
+	void SendFenceQuery(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void CheckFenceResponse();
+	bool FenceQuerySuccess(const Worker_EntityQueryResponseOp& Op);
+	void CheckFenceComponentAuthority();
+	void CompleteCurrentFence();
+
 private:
+	struct PendingFenceData
+	{
+		Worker_EntityId EntityId;
+		Worker_ComponentId ComponentId;
+		TUniquePtr<uint8[]> Data;
+		uint32 DataLength;
+	};
+
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
 	Worker_RequestId NextRequestId;
+
+	TArray<TUniquePtr<MessagesToSend>> QueuedMessagesToSend;
+	TArray<PendingFenceData> PendingFences;
+	Worker_RequestId FenceQueryRequestId;
 };
 
 } // namespace SpatialGDK
