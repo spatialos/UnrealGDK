@@ -16,9 +16,9 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 {
 	Super::BeginPlay();
 	{ // Step 1 - Spawn Actor On Auth
-		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
-			UWorld* World = NetTest->GetWorld();
-			int NumVirtualWorkers = NetTest->GetNumberOfServerWorkers();
+		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			UWorld* World = GetWorld();
+			int NumVirtualWorkers = GetNumberOfServerWorkers();
 
 			// spawn 1 per server worker
 			// since the information about positioning of the virtual workers is currently hidden, will assume they are all around zero
@@ -28,24 +28,24 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			for (int i = 0; i != NumVirtualWorkers; ++i)
 			{
 				ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
-				NetTest->AssertTrue(
+				AssertTrue(
 					IsValid(Character),
 					FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character),
-									*NetTest->GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
+									*GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
 	}
 
 	{ // Step 2 - Check If Clients have it
 		AddStep(
 			TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::AllClients, nullptr, nullptr,
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this](float DeltaTime) {
 				int NumCharactersFound = 0;
-				int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
-				UWorld* World = NetTest->GetWorld();
+				int NumCharactersExpected = GetNumberOfServerWorkers();
+				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
 					++NumCharactersFound;
@@ -53,7 +53,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 
 				if (NumCharactersFound == NumCharactersExpected)
 				{
-					NetTest->FinishStep();
+					FinishStep();
 				}
 			},
 			5.0f);
@@ -62,10 +62,10 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 	{ // Step 3 - Destroy by all servers that have authority
 		AddStep(
 			TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllServers,
-			[](ASpatialFunctionalTest* NetTest) -> bool {
+			[this]() -> bool {
 				int NumCharactersFound = 0;
 				int NumCharactersExpected = 1;
-				UWorld* World = NetTest->GetWorld();
+				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
 				{
 					if (It->HasAuthority())
@@ -76,18 +76,18 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 
 				return NumCharactersFound == NumCharactersExpected;
 			},
-			[](ASpatialFunctionalTest* NetTest) {
-				UWorld* World = NetTest->GetWorld();
+			[this]() {
+				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
 					if (It->HasAuthority())
 					{
-						NetTest->AssertTrue(IsValid(*It),
+						AssertTrue(IsValid(*It),
 											FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *GetNameSafe(*It)));
-						NetTest->RegisterAutoDestroyActor(*It);
+						RegisterAutoDestroyActor(*It);
 					}
 				}
-				NetTest->FinishStep();
+				FinishStep();
 			},
 			nullptr, 5.0f);
 	}
@@ -107,13 +107,13 @@ void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
 		FSpatialFunctionalTestStepDefinition StepDefinition;
 		StepDefinition.bIsNativeDefinition = true;
 		StepDefinition.TimeLimit = 0.0f;
-		StepDefinition.NativeStartEvent.BindLambda([](ASpatialFunctionalTest* NetTest) {
-			UWorld* World = NetTest->GetWorld();
+		StepDefinition.NativeStartEvent.BindLambda([this]() {
+			UWorld* World = GetWorld();
 			TActorIterator<ACharacter> It(World);
 			bool bHasCharacter = static_cast<bool>(It);
-			NetTest->AssertFalse(bHasCharacter, FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"),
-																*NetTest->GetLocalFlowController()->GetDisplayName()));
-			NetTest->FinishStep();
+			AssertFalse(bHasCharacter, FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"),
+																*GetLocalFlowController()->GetDisplayName()));
+			FinishStep();
 		});
 
 		AddStepFromDefinition(StepDefinition, FWorkerDefinition::AllWorkers);

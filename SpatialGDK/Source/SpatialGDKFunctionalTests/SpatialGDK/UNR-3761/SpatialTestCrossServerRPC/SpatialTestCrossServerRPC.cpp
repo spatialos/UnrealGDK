@@ -40,7 +40,7 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 	for (int i = 1; i <= 4; ++i)
 	{
 		// Each server spawns a cube
-		AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(i), nullptr, [this, i, CubesLocations](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(i), nullptr, [this, i, CubesLocations]() {
 			ACrossServerRPCCube* TestCube =
 				GetWorld()->SpawnActor<ACrossServerRPCCube>(CubesLocations[i - 1], FRotator::ZeroRotator, FActorSpawnParameters());
 			RegisterAutoDestroyActor(TestCube);
@@ -52,14 +52,14 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 	// Each server sends an RPC to all cubes that it is NOT authoritive over.
 	AddStep(
 		TEXT("ServerSendRPCs"), FWorkerDefinition::AllServers,
-		[this, CubesLocations](ASpatialFunctionalTest* NetTest) {
+		[this, CubesLocations]() {
 			// Make sure that all cubes were spawned and are visible to all servers before trying to send the RPCs.
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
 			return TestCubes.Num() == CubesLocations.Num();
 		},
-		[this](ASpatialFunctionalTest* NetTest) {
+		[this]() {
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
@@ -80,7 +80,7 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 	// Server 1 checks if all cubes received the expected number of RPCs.
 	AddStep(
 		TEXT("Server1CheckRPCs"), FWorkerDefinition::Server(1), nullptr, nullptr,
-		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this](float DeltaTime) {
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
@@ -103,5 +103,5 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 				FinishStep();
 			}
 		},
-		5.0f);
+		10.0f);
 }

@@ -372,15 +372,6 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 }
 
-void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
-{
-	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
-	{
-		UpdateSpatialPosition();
-	}
-}
-
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -561,7 +552,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else
 		{
-			UpdateSpatialPositionWithFrequencyCheck();
+			UpdateSpatialPosition();
 		}
 	}
 
@@ -1202,15 +1193,12 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		}
 	}
 
-	// Check that the Actor has moved sufficiently far to be updated
-	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
-	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
+	if (!SatisfiesSpatialPositionUpdateRequirements())
 	{
 		return;
 	}
 
-	LastPositionSinceUpdate = ActorSpatialPosition;
+	LastPositionSinceUpdate = SpatialGDK::GetActorSpatialPosition(Actor);
 	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
 
 	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
@@ -1385,4 +1373,39 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	{
 		RepLayout.CopyProperties(StaticBuffer, reinterpret_cast<uint8*>(TargetObject));
 	}
+}
+
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+{
+	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
+	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
+	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+
+	// If the Actor did not travel at all, then we consider its position to be up to date and we early out.
+	if (FMath::IsNearlyZero(DistanceTravelledSinceLastUpdateSquared))
+	{
+		return false;
+	}
+
+	const float TimeSinceLastPositionUpdate = NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated;
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateLowerThresholdCentimeters);
+	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters);
+
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateLowerThresholdSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
+	{
+		return true;
+	}
+
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateThresholdMaxSeconds)
+	{
+		return true;
+	}
+
+	if (DistanceTravelledSinceLastUpdateSquared >= SpatialMaximumPositionThresholdSquared)
+	{
+		return true;
+	}
+
+	return false;
 }
