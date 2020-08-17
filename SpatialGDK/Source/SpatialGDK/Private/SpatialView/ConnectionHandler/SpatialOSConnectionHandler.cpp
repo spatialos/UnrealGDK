@@ -2,6 +2,8 @@
 
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
+#include "SpatialView/OpList/WorkerConnectionOpList.h"
+
 namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection)
