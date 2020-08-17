@@ -20,6 +20,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 public:
 	void SetConnection(Worker_Connection* WorkerConnectionIn);
 	void DestroyConnection();
+
+	// UObject interface.
 	virtual void FinishDestroy() override;
 
 	// Worker Connection Interface
