@@ -8,6 +8,7 @@ namespace SpatialGDK
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
 	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
+	, Dispatcher(&View.GetView())
 {
 }
 
@@ -25,6 +26,7 @@ void ViewCoordinator::Advance()
 		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
 	}
 	View.AdvanceViewDelta();
+	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 }
 
 const ViewDelta& ViewCoordinator::GetViewDelta()
@@ -107,6 +109,41 @@ void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
 {
 	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
+}
+
+CallbackId ViewCoordinator::RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityLostCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityLostTempCallback(ComponentId, MoveTemp(Callback));
+}
+
+void ViewCoordinator::RemoveCallback(CallbackId Id)
+{
+	Dispatcher.RemoveCallback(Id);
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
+#include "SpatialView/Dispatcher.h"
 #include "SpatialView/WorkerView.h"
 #include "Templates/UniquePtr.h"
 
@@ -43,10 +44,19 @@ public:
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
+	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	void RemoveCallback(CallbackId Id);
+
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
 	Worker_RequestId NextRequestId;
+	FDispatcher Dispatcher;
 };
 
 } // namespace SpatialGDK
