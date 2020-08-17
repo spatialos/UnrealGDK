@@ -8,6 +8,7 @@
 #include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
+#include "Engine/Engine.h"
 
 #define WORKERCONNECTION_TEST(TestName) GDK_TEST(Core, SpatialWorkerConnection, TestName)
 
@@ -138,6 +139,7 @@ bool FSendReserveEntityIdsRequest::Update()
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendReserveEntityIdsRequest(NumOfEntities);
+	Connection->Flush();
 
 	return true;
 }
@@ -149,6 +151,7 @@ bool FSendCreateEntityRequest::Update()
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+	Connection->Flush();
 
 	return true;
 }
@@ -159,6 +162,7 @@ bool FSendDeleteEntityRequest::Update()
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendDeleteEntityRequest(EntityId);
+	Connection->Flush();
 
 	return true;
 }
@@ -169,15 +173,13 @@ bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	for (const auto& Ops : Connection->GetOpList())
+	Connection->Advance();
+	for (const auto& Op : Connection->GetWorkerMessages())
 	{
-		for (uint32_t i = 0; i < Ops.Count; i++)
+		if (Op.op_type == ExpectedOpType)
 		{
-			if (Ops.Ops[i].op_type == ExpectedOpType)
-			{
-				bFoundOpOfExpectedType = true;
-				break;
-			}
+			bFoundOpOfExpectedType = true;
+			break;
 		}
 	}
 
