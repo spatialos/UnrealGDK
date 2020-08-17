@@ -192,6 +192,54 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return Coordinator->GetWorkerAttributes();
 }
 
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(Worker_ComponentId ComponentId,
+																				SpatialGDK::FComponentValueCallback Callback)
+{
+	check(Coordinator.IsValid());
+	return Coordinator->RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
+}
+
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentRemovedCallback(Worker_ComponentId ComponentId,
+																				  SpatialGDK::FComponentValueCallback Callback)
+{
+	check(Coordinator.IsValid());
+	return Coordinator->RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
+}
+
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentValueCallback(Worker_ComponentId ComponentId,
+																				SpatialGDK::FComponentValueCallback Callback)
+{
+	check(Coordinator.IsValid());
+	return Coordinator->RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
+}
+
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId,
+																				 SpatialGDK::FEntityCallback Callback)
+{
+	check(Coordinator.IsValid());
+	return Coordinator->RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
+}
+
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityLostCallback(Worker_ComponentId ComponentId,
+																			   SpatialGDK::FEntityCallback Callback)
+{
+	check(Coordinator.IsValid());
+	return Coordinator->RegisterAuthorityLostCallback(ComponentId, MoveTemp(Callback));
+}
+
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId,
+																				   SpatialGDK::FEntityCallback Callback)
+{
+	check(Coordinator.IsValid());
+	return Coordinator->RegisterAuthorityLostTempCallback(ComponentId, MoveTemp(Callback));
+}
+
+void USpatialWorkerConnection::RemoveCallback(SpatialGDK::CallbackId Id)
+{
+	check(Coordinator.IsValid());
+	Coordinator->RemoveCallback(Id);
+}
+
 void USpatialWorkerConnection::Flush()
 {
 	Coordinator->FlushMessagesToSend();

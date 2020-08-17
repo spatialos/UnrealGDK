@@ -53,6 +53,14 @@ public:
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	SpatialGDK::CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	void RemoveCallback(SpatialGDK::CallbackId Id);
+
 	void Flush();
 
 	void SetStartupComplete();
