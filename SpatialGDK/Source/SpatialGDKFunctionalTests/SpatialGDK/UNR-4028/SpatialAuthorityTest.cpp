@@ -25,7 +25,7 @@
 ASpatialAuthorityTest::ASpatialAuthorityTest()
 {
 	Author = "Nuno Afonso";
-	Description = TEXT("Test HasAuthority under multi-worker setups. It also ensure to work in Native");
+	Description = TEXT("Test HasAuthority under multi-worker setups. It also ensures it works in Native");
 
 	FlowControllerActorClass = ASpatialAuthorityTestFlowController::StaticClass();
 
