@@ -5,57 +5,6 @@
 
 namespace SpatialGDK
 {
-Worker_Op* FindFirstOpOfType(const TArray<OpList>& InOpLists, const Worker_OpType OpType)
-{
-	for (const OpList& Ops : InOpLists)
-	{
-		for (size_t i = 0; i < Ops.Count; ++i)
-		{
-			Worker_Op* Op = &Ops.Ops[i];
-
-			if (Op->op_type == OpType)
-			{
-				return Op;
-			}
-		}
-	}
-	return nullptr;
-}
-
-void AppendAllOpsOfType(const TArray<OpList>& InOpLists, const Worker_OpType InOpType, TArray<Worker_Op*>& FoundOps)
-{
-	for (const OpList& Ops : InOpLists)
-	{
-		for (size_t i = 0; i < Ops.Count; ++i)
-		{
-			Worker_Op* Op = &Ops.Ops[i];
-
-			if (Op->op_type == InOpType)
-			{
-				FoundOps.Add(Op);
-			}
-		}
-	}
-}
-
-Worker_Op* FindFirstOpOfTypeForComponent(const TArray<SpatialGDK::OpList>& InOpLists, const Worker_OpType OpType,
-										 const Worker_ComponentId ComponentId)
-{
-	for (const OpList& Ops : InOpLists)
-	{
-		for (size_t i = 0; i < Ops.Count; ++i)
-		{
-			Worker_Op* Op = &Ops.Ops[i];
-
-			if ((Op->op_type == OpType) && GetComponentId(Op) == ComponentId)
-			{
-				return Op;
-			}
-		}
-	}
-	return nullptr;
-}
-
 Worker_ComponentId GetComponentId(const Worker_Op* Op)
 {
 	switch (Op->op_type)
