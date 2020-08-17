@@ -59,9 +59,9 @@ void ASpatialTestNetReference::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
+	PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
 
-	AddStep(TEXT("SpatialTestNetReferenceServerSetup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestNetReferenceServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Set up the cubes' spawn locations
 		TArray<FVector> CubeLocations;
 		CubeLocations.Add(FVector(0.0f, -11000.0f, 40.0f));
@@ -93,10 +93,9 @@ void ASpatialTestNetReference::BeginPlay()
 			TestCubes[i]->Neighbour2 = TestCubes[(i + NumberOfCubes - 1) % NumberOfCubes];
 		}
 
-		// Set the PositionUpdateFrequency to a higher value so that the amount of waiting time before checking the references can be
-		// smaller, decreasing the overall duration of the test
-		PreviousPositionUpdateFrequency = GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency;
-		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = 10000.0f;
+		// Set the PositionUpdateThresholdMaxCentimeeters to a lower value so that the spatial position updates can be sent every time the character moves, decreasing the overall duration of the test
+		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
+		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
 
 		// Spawn the TestMovementCharacter actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
@@ -118,7 +117,7 @@ void ASpatialTestNetReference::BeginPlay()
 		int CurrentMoveIndex = i % TestLocations.Num();
 
 		AddStep(TEXT("SpatialTestNetReferenceServerMove"), FWorkerDefinition::Server(1), nullptr,
-				[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest) {
+				[this, CurrentMoveIndex]() {
 					ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 					APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 					ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
@@ -138,7 +137,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
-			[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, CurrentMoveIndex](float DeltaTime) {
 				AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
@@ -151,7 +150,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckNumberOfReferences"), FWorkerDefinition::Client(1), nullptr, nullptr,
-			[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, CurrentMoveIndex](float DeltaTime) {
 				TArray<AActor*> CubesWithReferences;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACubeWithReferences::StaticClass(), CubesWithReferences);
 
@@ -166,7 +165,7 @@ void ASpatialTestNetReference::BeginPlay()
 
 		AddStep(
 			TEXT("SpatialTestNetReferenceClientCheckReferences"), FWorkerDefinition::Client(1), nullptr, nullptr,
-			[this, CurrentMoveIndex](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, CurrentMoveIndex](float DeltaTime) {
 				TArray<AActor*> CubesWithReferences;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACubeWithReferences::StaticClass(), CubesWithReferences);
 
@@ -223,7 +222,7 @@ void ASpatialTestNetReference::BeginPlay()
 			15.0f);
 	}
 
-	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+	AddStep(TEXT("SpatialTestNetReferenceServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			// Possess the original pawn, so that other tests start from the expected, default set-up
 			OriginalPawn.Key->Possess(OriginalPawn.Value);
@@ -236,7 +235,6 @@ void ASpatialTestNetReference::FinishTest(EFunctionalTestResult TestResult, cons
 {
 	Super::FinishTest(TestResult, Message);
 
-	// Restoring the PositionUpdateFrequency here catches most but not all of the cases when the test failing would cause
-	// PositionUpdateFrequency to be changed.
-	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = PreviousPositionUpdateFrequency;
+	// Restoring the PositionUpdateThresholdMaxCentimeters here catches most but not all of the cases when the test failing would cause PositionUpdateThresholdMaxCentimeters to be changed. 
+	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
 }
