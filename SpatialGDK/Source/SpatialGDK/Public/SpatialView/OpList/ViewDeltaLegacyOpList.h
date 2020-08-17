@@ -12,11 +12,10 @@ struct ViewDeltaLegacyOpListData : OpListData
 {
 	TArray<Worker_Op> Ops;
 	// Used to store UTF8 disconnect string.
-	ViewDelta Delta;
 	TUniquePtr<char[]> DisconnectReason;
 };
 
 /** Creates an OpList from a ViewDelta. */
-OpList GetOpListFromViewDelta(ViewDelta Delta);
+OpList GetOpListFromViewDelta(const ViewDelta& Delta);
 
 } // namespace SpatialGDK

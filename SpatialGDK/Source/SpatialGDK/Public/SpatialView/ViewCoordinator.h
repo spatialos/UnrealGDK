@@ -21,7 +21,9 @@ public:
 	ViewCoordinator& operator=(const ViewCoordinator&) = delete;
 	ViewCoordinator& operator=(ViewCoordinator&&) = delete;
 
-	OpList Advance();
+	void Advance();
+	const ViewDelta& GetViewDelta();
+	const EntityView& GetView();
 	void FlushMessagesToSend();
 
 	const FString& GetWorkerId() const;
