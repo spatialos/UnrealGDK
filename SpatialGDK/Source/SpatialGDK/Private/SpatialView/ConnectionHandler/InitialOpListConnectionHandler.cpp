@@ -41,8 +41,12 @@ OpList InitialOpListConnectionHandler::GetNextOpList()
 		return QueueAndExtractOps();
 	case FLUSHING_QUEUED_OP_LISTS:
 	{
-		OpList Temp = MoveTemp(QueuedOpLists.Last());
-		QueuedOpLists.Pop();
+		OpList Temp = MoveTemp(QueuedOpLists[0]);
+		QueuedOpLists.RemoveAt(0);
+		if (QueuedOpLists.Num() == 0)
+		{
+			State = PASS_THROUGH;
+		}
 		return Temp;
 	}
 	case PASS_THROUGH:
@@ -77,12 +81,13 @@ OpList InitialOpListConnectionHandler::QueueAndExtractOps()
 	if (OpExtractor(EmptyOpList, *ExtractedOpList))
 	{
 		State = FLUSHING_QUEUED_OP_LISTS;
-		return OpList{ ExtractedOpList->ExtractedOps.GetData(), ExtractedOpList->ExtractedOps.Num(), MoveTemp(ExtractedOpList) };
+		return OpList{ ExtractedOpList->ExtractedOps.GetData(), static_cast<uint32>(ExtractedOpList->ExtractedOps.Num()),
+					   MoveTemp(ExtractedOpList) };
 	}
 
 	// Extract and queue ops from the inner connection handler.
 	const uint32 OpListsAvailable = InnerHandler->GetOpListCount();
-	for (int32 i = 0; i < OpListsAvailable; ++i)
+	for (uint32 i = 0; i < OpListsAvailable; ++i)
 	{
 		QueuedOpLists.Push(InnerHandler->GetNextOpList());
 		if (OpExtractor(QueuedOpLists.Last(), *ExtractedOpList))
@@ -92,6 +97,7 @@ OpList InitialOpListConnectionHandler::QueueAndExtractOps()
 		}
 	}
 
-	return OpList{ ExtractedOpList->ExtractedOps.GetData(), ExtractedOpList->ExtractedOps.Num(), MoveTemp(ExtractedOpList) };
+	return OpList{ ExtractedOpList->ExtractedOps.GetData(), static_cast<uint32>(ExtractedOpList->ExtractedOps.Num()),
+				   MoveTemp(ExtractedOpList) };
 }
 } // namespace SpatialGDK

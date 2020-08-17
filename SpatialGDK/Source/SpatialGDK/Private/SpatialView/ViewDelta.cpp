@@ -291,7 +291,7 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		ComponentChanges.Emplace(Op.op.component_update);
 		break;
 	default:
-		checkNoEntry();
+		break;
 	}
 }
 
