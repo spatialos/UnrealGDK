@@ -248,10 +248,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
-	UPROPERTY(Config)
-	bool bRunSpatialWorkerConnectionOnGameThread;
-
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
 

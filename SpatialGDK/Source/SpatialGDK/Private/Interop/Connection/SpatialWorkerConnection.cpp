@@ -157,16 +157,6 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return Coordinator->GetWorkerAttributes();
 }
 
-void USpatialWorkerConnection::ProcessOutgoingMessages()
-{
-	Coordinator->FlushMessagesToSend();
-}
-
-void USpatialWorkerConnection::MaybeFlush()
-{
-	Coordinator->FlushMessagesToSend();
-}
-
 void USpatialWorkerConnection::Flush()
 {
 	Coordinator->FlushMessagesToSend();

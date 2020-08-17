@@ -41,8 +41,6 @@ public:
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void ProcessOutgoingMessages();
-	void MaybeFlush();
 	void Flush();
 
 	void SetStartupComplete();
