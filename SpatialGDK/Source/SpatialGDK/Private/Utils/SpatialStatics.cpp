@@ -102,13 +102,7 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
-	{
-		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
-	}
-
-	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-	if (WorldSettings != nullptr)
+	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
 		if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
 		{
@@ -119,6 +113,10 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 			WorldSettings->bEnableMultiWorker = true;
 		}
 		return WorldSettings->IsMultiWorkerEnabledInWorldSettings();
+	}
+	if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
+	{
+		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
 	}
 	return false;
 }
