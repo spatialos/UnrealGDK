@@ -124,7 +124,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
-	, bUseSpatialView(false)
 	, bEnableMultiWorkerDebuggingWarnings(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;

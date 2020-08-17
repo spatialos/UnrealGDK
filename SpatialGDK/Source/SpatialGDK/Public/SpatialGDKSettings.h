@@ -350,10 +350,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
 
-	/** Experimental feature to use SpatialView layer when communicating with the Worker */
-	UPROPERTY(Config)
-	bool bUseSpatialView;
-
 	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the map's config with a 1x1 grid.
