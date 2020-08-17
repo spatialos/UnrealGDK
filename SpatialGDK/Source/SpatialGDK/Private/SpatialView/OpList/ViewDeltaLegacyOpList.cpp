@@ -6,7 +6,7 @@
 
 namespace SpatialGDK
 {
-OpList GetOpListFromViewDelta(ViewDelta Delta)
+OpList GetOpListFromViewDelta(const ViewDelta& Delta)
 {
 	// The order of ops should be:
 	// Disconnect (we do not need to add further ops if disconnected).
@@ -155,7 +155,6 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	// Worker messages do not have ordering constraints so can just go at the end.
 	Ops.Append(Delta.GetWorkerMessages());
 
-	OpData->Delta = MoveTemp(Delta);
 	return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
 }
 
