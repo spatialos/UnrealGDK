@@ -44,16 +44,21 @@ void USpatialWorkerConnection::FinishDestroy()
 	Super::FinishDestroy();
 }
 
+const TArray<SpatialGDK::EntityDelta>& USpatialWorkerConnection::GetEntityDeltas()
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetViewDelta().GetEntityDeltas();
+}
+
+const TArray<Worker_Op>& USpatialWorkerConnection::GetWorkerMessages()
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetViewDelta().GetWorkerMessages();
+}
+
 void USpatialWorkerConnection::DestroyConnection()
 {
 	Coordinator.Reset();
-}
-
-const SpatialGDK::ViewDelta& USpatialWorkerConnection::GetViewDelta()
-{
-	check(Coordinator.IsValid());
-	Coordinator->Advance();
-	return Coordinator->GetViewDelta();
 }
 
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
@@ -143,6 +148,36 @@ void USpatialWorkerConnection::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendMetrics(MoveTemp(Metrics));
+}
+
+void USpatialWorkerConnection::Advance()
+{
+	check(Coordinator.IsValid());
+	Coordinator->Advance();
+}
+
+bool USpatialWorkerConnection::HasDisconnected() const
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetViewDelta().HasDisconnected();
+}
+
+Worker_ConnectionStatusCode USpatialWorkerConnection::GetConnectionStatus() const
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetViewDelta().GetConnectionStatus();
+}
+
+FString USpatialWorkerConnection::GetDisconnectReason() const
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetViewDelta().GetDisconnectReason();
+}
+
+const SpatialGDK::EntityView& USpatialWorkerConnection::GetView() const
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetView();
 }
 
 PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const

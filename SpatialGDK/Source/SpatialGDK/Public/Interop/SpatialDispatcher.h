@@ -28,7 +28,7 @@ public:
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
 			  USpatialWorkerFlags* InSpatialWorkerFlags);
-	void ProcessOps(const SpatialGDK::OpList& Ops);
+	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 	// Each callback method returns a callback ID which is incremented for each registration.
 	// ComponentId must be in the range 1000 - 2000.
@@ -56,8 +56,8 @@ private:
 
 	using OpTypeToCallbacksMap = TMap<Worker_OpType, TArray<UserOpCallbackData>>;
 
-	bool IsExternalSchemaOp(Worker_Op* Op) const;
-	void ProcessExternalSchemaOp(Worker_Op* Op);
+	bool IsExternalSchemaOp(const Worker_Op& Op) const;
+	void ProcessExternalSchemaOp(const Worker_Op& Op);
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType,
 									 const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);

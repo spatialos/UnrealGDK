@@ -4,6 +4,7 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewCoordinator.h"
@@ -25,7 +26,9 @@ public:
 	virtual void FinishDestroy() override;
 
 	// Worker Connection Interface
-	virtual const SpatialGDK::ViewDelta& GetViewDelta() override;
+	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() override;
+	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
+
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
@@ -39,6 +42,13 @@ public:
 	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
+
+	void Advance();
+	bool HasDisconnected() const;
+	Worker_ConnectionStatusCode GetConnectionStatus() const;
+	FString GetDisconnectReason() const;
+
+	const SpatialGDK::EntityView& GetView() const;
 
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
