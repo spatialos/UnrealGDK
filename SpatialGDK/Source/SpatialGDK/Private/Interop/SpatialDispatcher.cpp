@@ -36,12 +36,6 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 	{
 		Worker_Op* Op = &Ops.Ops[i];
 
-		if (OpsToSkip.Num() != 0 && OpsToSkip.Contains(Op))
-		{
-			OpsToSkip.Remove(Op);
-			continue;
-		}
-
 		if (IsExternalSchemaOp(Op))
 		{
 			ProcessExternalSchemaOp(Op);
@@ -281,14 +275,4 @@ void SpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Worke
 	{
 		CallbackData.Callback(Op);
 	}
-}
-
-void SpatialDispatcher::MarkOpToSkip(const Worker_Op* Op)
-{
-	OpsToSkip.Add(Op);
-}
-
-int SpatialDispatcher::GetNumOpsToSkip() const
-{
-	return OpsToSkip.Num();
 }
