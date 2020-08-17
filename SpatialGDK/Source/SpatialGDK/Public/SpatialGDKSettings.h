@@ -350,10 +350,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
 
-	/** Use SpatialView to manage communication with SpatialOS. */
-	UPROPERTY(Config)
-	bool bUseSpatialView;
-
 	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the map's config with a 1x1 grid.
