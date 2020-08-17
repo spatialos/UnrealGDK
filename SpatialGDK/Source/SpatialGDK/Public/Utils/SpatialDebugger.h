@@ -65,7 +65,7 @@ public:
 	virtual void OnAuthorityGained() override;
 
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
-	virtual void SpatialToggleDebugger();
+	void SpatialToggleDebugger();
 
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
@@ -143,8 +143,6 @@ public:
 	void EditorSpatialToggleDebugger(bool bEnabled);
 
 private:
-	void CreateWorkerRegions();
-	void DestroyWorkerRegions();
 	void LoadIcons();
 
 	// FOnEntityAdded/FOnEntityRemoved Delegates
@@ -156,6 +154,9 @@ private:
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
+
+	void CreateWorkerRegions();
+	void DestroyWorkerRegions();
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
