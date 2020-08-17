@@ -93,7 +93,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
 	, MaxRPCRingBufferSize(32)
@@ -101,7 +100,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
-	, bWorkerFlushAfterOutgoingNetworkOp(false)
+	, bWorkerFlushAfterOutgoingNetworkOp(true)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
@@ -127,8 +126,6 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableMultiWorkerDebuggingWarnings"), TEXT("Multi-Worker Debugging Warnings"),
 							 bEnableMultiWorkerDebuggingWarnings);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"),
-							 TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"),
 							 bEnableNetCullDistanceInterest);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"),

@@ -1926,11 +1926,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		{
 			Sender->ProcessPositionUpdates();
 		}
-
-		if (Connection != nullptr)
-		{
-			Connection->MaybeFlush();
-		}
 #endif // WITH_SERVER_CODE
 	}
 
@@ -1945,7 +1940,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (Connection != nullptr)
 	{
-		Connection->ProcessOutgoingMessages();
+		Connection->Flush();
 	}
 
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
