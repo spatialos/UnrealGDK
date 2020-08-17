@@ -2,8 +2,6 @@
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 
-#include "Interop/Connection/LegacySpatialWorkerConnection.h"
-#include "Interop/Connection/SpatialViewWorkerConnection.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
