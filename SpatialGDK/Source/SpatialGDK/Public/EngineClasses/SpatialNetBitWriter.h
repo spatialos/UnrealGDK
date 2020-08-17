@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/CoreNet.h"
 #include "Schema/UnrealObjectRef.h"
+#include "UObject/CoreNet.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetSerialize, All, All);
 

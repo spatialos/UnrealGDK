@@ -22,7 +22,7 @@ class FTimerManager;
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
-	GENERATED_BODY()		
+	GENERATED_BODY()
 public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
@@ -43,7 +43,7 @@ public:
 	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
 
 	FNetworkGUID ResolveStablyNamedObject(UObject* Object);
-	
+
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
@@ -63,7 +63,7 @@ public:
 	bool IsEntityPoolReady() const;
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
-	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
+	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID* OutNetGUID = NULL) override;
 
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
@@ -84,7 +84,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
-		
+
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
 	void AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef);
 
@@ -92,7 +92,7 @@ public:
 	void RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
-	
+
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
@@ -108,11 +108,10 @@ private:
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const FUnrealObjectRef& ObjectRef);
-	
+
 	FNetworkGUID RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID, bool bNoLoadOnClient);
 	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
 	TMap<FNetworkGUID, FUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
-

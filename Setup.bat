@@ -17,13 +17,15 @@ call :MarkStartOfBlock "Setup the git hooks"
     rem Remove the old post-merge hook.
     if exist .git\hooks\post-merge del .git\hooks\post-merge
 
-    rem Add git hook to run Setup.bat when RequireSetup file has been updated.
-    echo #!/usr/bin/env bash>.git\hooks\post-merge
-    echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
-    echo check_run() {>>.git\hooks\post-merge
-    echo echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2>>.git\hooks\post-merge
-    echo }>>.git\hooks\post-merge
-    echo check_run RequireSetup "cmd.exe /c Setup.bat %*">>.git\hooks\post-merge
+    rem Remove the old pre-commit hook.
+    if exist .git\hooks\pre-commit del .git\hooks\pre-commit
+
+    rem Copy git hooks to .git directory.
+    xcopy /s /i /q "%~dp0\SpatialGDK\Extras\git" "%~dp0\.git\hooks"
+
+    rem We pass Setup.bat args, such as --mobile, to the post-merge hook to run Setup.bat with the same args in future.
+    set POST_MERGE_HOOK="%~dp0\.git\hooks\post-merge"
+    powershell -Command "(Get-Content -Path %POST_MERGE_HOOK%) -replace \"SETUP_ARGS\", \"%*\" | Set-Content -Path %POST_MERGE_HOOK%"
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"

@@ -7,7 +7,6 @@
 
 namespace SpatialGDK
 {
-
 // A wrapper around a Worker_EntityQuery that allows it to be stored and moved.
 class EntityQuery
 {
@@ -38,4 +37,4 @@ private:
 	uint8 ResultType;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

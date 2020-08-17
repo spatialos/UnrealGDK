@@ -8,8 +8,9 @@
 
 namespace SpatialGDK
 {
-
-bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct)
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object,
+													   int32 ArrayIndex, GDK_PROPERTY(Property) * ParentProperty,
+													   UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
@@ -30,7 +31,9 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDri
 	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Destination);
 }
 
-bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, GDK_PROPERTY(Property)* ParentProperty, UScriptStruct* NetDeltaStruct)
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object,
+														int32 ArrayIndex, GDK_PROPERTY(Property) * ParentProperty,
+														UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
@@ -51,7 +54,8 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Source);
 }
 
-void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped)
+void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data,
+														bool& bHasUnmapped)
 {
 	// Check if struct has custom NetSerialize function, otherwise call standard struct replication
 	if (Struct->StructFlags & STRUCT_NetSerializeNative)

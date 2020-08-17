@@ -10,10 +10,9 @@ class FSpatialGDKEditorToolbarCommands : public TCommands<FSpatialGDKEditorToolb
 {
 public:
 	FSpatialGDKEditorToolbarCommands()
-		: TCommands<FSpatialGDKEditorToolbarCommands>(
-			TEXT("SpatialGDKEditorToolbar"),
-			NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"), NAME_None,
-			FSpatialGDKEditorToolbarStyle::GetStyleSetName())
+		: TCommands<FSpatialGDKEditorToolbarCommands>(TEXT("SpatialGDKEditorToolbar"),
+													  NSLOCTEXT("Contexts", "SpatialGDKEditorToolbar", "SpatialGDKEditorToolbar Plugin"),
+													  NAME_None, FSpatialGDKEditorToolbarStyle::GetStyleSetName())
 	{
 	}
 
@@ -29,7 +28,7 @@ public:
 	TSharedPtr<FUICommandInfo> StartCloudSpatialDeployment;
 	TSharedPtr<FUICommandInfo> StopSpatialDeployment;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
-	
+
 	TSharedPtr<FUICommandInfo> OpenCloudDeploymentWindowAction;
 	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
 	TSharedPtr<FUICommandInfo> EnableBuildClientWorker;
