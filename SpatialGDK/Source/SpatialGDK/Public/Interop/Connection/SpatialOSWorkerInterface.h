@@ -12,7 +12,8 @@ public:
 	virtual ~SpatialOSWorkerInterface() = default;
 
 	// Worker Connection Interface
-	virtual const SpatialGDK::ViewDelta& GetViewDelta() = 0;
+	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() = 0;
+	virtual const TArray<Worker_Op>& GetWorkerMessages() = 0;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) = 0;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId) = 0;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) = 0;

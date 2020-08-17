@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
+#include "Containers/StringConv.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
@@ -58,10 +59,7 @@
 #include "SpatialGDKServicesModule.h"
 #endif
 
-using SpatialGDK::AppendAllOpsOfType;
 using SpatialGDK::ComponentFactory;
-using SpatialGDK::FindFirstOpOfType;
-using SpatialGDK::FindFirstOpOfTypeForComponent;
 using SpatialGDK::InterestFactory;
 using SpatialGDK::OpList;
 using SpatialGDK::RPCPayload;
@@ -1768,11 +1766,17 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		const SpatialGDK::ViewDelta& Delta = Connection->GetViewDelta();
+		Connection->Advance();
+		if (Connection->HasDisconnected())
+		{
+			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
+			return;
+		}
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			Dispatcher->ProcessOps(GetOpListFromViewDelta(Delta));
+			Dispatcher->ProcessOps(SpatialGDK::GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
+			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
 		if (!bIsReadyToStart)
