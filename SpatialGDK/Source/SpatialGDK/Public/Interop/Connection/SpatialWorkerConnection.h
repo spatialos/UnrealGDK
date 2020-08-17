@@ -19,11 +19,11 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 
 public:
 	void SetConnection(Worker_Connection* WorkerConnectionIn);
-	void FinishDestroy();
 	void DestroyConnection();
+	virtual void FinishDestroy() override;
 
 	// Worker Connection Interface
-	virtual TArray<SpatialGDK::OpList> GetOpList() override;
+	virtual const SpatialGDK::ViewDelta& GetViewDelta() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
