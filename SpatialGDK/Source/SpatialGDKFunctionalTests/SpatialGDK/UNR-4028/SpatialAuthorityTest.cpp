@@ -157,10 +157,11 @@ void ASpatialAuthorityTest::BeginPlay()
 					}
 				});
 
-		float Timer = 0.5f;
-
-		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-				[this, &Timer](float DeltaTime) {
+		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers, nullptr,
+				[this](){
+					Timer = 0.5f;
+				},
+				[this](float DeltaTime) {
 					FWorkerDefinition LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server
 						&& LocalWorkerDefinition.Id == 1)

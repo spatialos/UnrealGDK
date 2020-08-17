@@ -61,5 +61,8 @@ public:
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetGameStateAuthorityFromWorker(const FWorkerDefinition& WorkerDefinition, int Authority);
+
+private:
+	float Timer;
 	
 };
