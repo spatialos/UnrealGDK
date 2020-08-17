@@ -242,6 +242,7 @@ private:
 
 	void QueryGSMToLoadMap();
 
+	void TryFinishStartup();
 	void HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpLists);
 	bool FindAndDispatchStartupOpsServer(const TArray<SpatialGDK::OpList>& InOpLists);
 	bool FindAndDispatchStartupOpsClient(const TArray<SpatialGDK::OpList>& InOpLists);

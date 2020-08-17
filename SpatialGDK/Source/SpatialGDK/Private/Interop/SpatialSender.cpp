@@ -298,6 +298,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
+				Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 				return;
 			}
 

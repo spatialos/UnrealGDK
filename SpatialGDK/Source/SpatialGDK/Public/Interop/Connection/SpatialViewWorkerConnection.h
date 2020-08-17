@@ -4,6 +4,7 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/OpList/ExtractedOpList.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewCoordinator.h"
 
@@ -44,6 +45,11 @@ public:
 	virtual void MaybeFlush() override;
 	virtual void Flush() override;
 
+	virtual void SetStartupComplete() override;
+
 private:
+	static bool IsStartupComponent(Worker_ComponentId Id);
+	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
+	bool StartupComplete;
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
 };
