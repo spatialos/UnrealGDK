@@ -81,10 +81,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedIncomingRPCRetryTime(1.0f)
 	, QueuedOutgoingRPCRetryTime(1.0f)
-	, PositionUpdateLowerThresholdSeconds(1.0f)       // 1 second
+	, PositionUpdateLowerThresholdSeconds(1.0f)		  // 1 second
 	, PositionUpdateLowerThresholdCentimeters(100.0f) // 1m (100cm)
-	, PositionUpdateThresholdMaxSeconds(60.0f)      // 1 minute (60 seconds)
-	, PositionUpdateThresholdMaxCentimeters(5000.0f) // 50m (5000cm)
+	, PositionUpdateThresholdMaxSeconds(60.0f)		  // 1 minute (60 seconds)
+	, PositionUpdateThresholdMaxCentimeters(5000.0f)  // 50m (5000cm)
 	, bEnableMetrics(true)
 	, bEnableMetricsDisplay(false)
 	, MetricsReportRate(2.0f)
