@@ -1759,19 +1759,17 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		TArray<OpList> OpLists = Connection->GetOpList();
 
-		// Servers will queue ops at startup until we've extracted necessary information from the op stream
-		if (!bIsReadyToStart)
-		{
-			HandleStartupOpQueueing(MoveTemp(OpLists));
-			return;
-		}
-
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			for (const OpList& Ops : OpLists)
 			{
 				Dispatcher->ProcessOps(Ops);
 			}
+		}
+
+		if (!bIsReadyToStart)
+		{
+			TryFinishStartup();
 		}
 
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
@@ -2510,6 +2508,50 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 		Delay, false);
 }
 
+void USpatialNetDriver::TryFinishStartup()
+{
+	if (IsServer())
+	{
+		if (!PackageMap->IsEntityPoolReady())
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
+		}
+		else if (!GlobalStateManager->IsReady())
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
+		}
+		else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+		{
+			GlobalStateManager->QueryTranslation();
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
+
+			// Process levels which were loaded before the connection to Spatial was ready.
+			GetGameInstance()->CleanupCachedLevelsAfterConnection();
+
+			// We know at this point that we have all the information to set the worker's interest query.
+			Sender->UpdateServerWorkerEntityInterestAndPosition();
+
+			// We've found and dispatched all ops we need for startup,
+			// trigger BeginPlay() on the GSM and process the queued ops.
+			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
+			// to skip the startup ops that we've processed already.
+			GlobalStateManager->TriggerBeginPlay();
+
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
+		}
+	}
+	else if (bMapLoaded)
+	{
+		bIsReadyToStart = true;
+		Connection->SetStartupComplete();
+	}
+}
+
 void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpLists)
 {
 	if (InOpLists.Num() == 0)
@@ -2548,6 +2590,11 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 		return;
 	}
 
+	Connection->SetStartupComplete();
+	// Connection->GetOpList();
+	// Connection->GetOpList();
+
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Logs to skip %d"), Dispatcher->GetNumOpsToSkip());
 	for (const OpList& Ops : QueuedStartupOpLists)
 	{
 		Dispatcher->ProcessOps(Ops);

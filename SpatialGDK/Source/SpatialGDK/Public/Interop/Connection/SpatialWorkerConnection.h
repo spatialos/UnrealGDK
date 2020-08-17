@@ -28,6 +28,8 @@ public:
 	virtual void MaybeFlush() PURE_VIRTUAL(USpatialWorkerConnection::MaybeFlush, return;);
 	virtual void Flush() PURE_VIRTUAL(USpatialWorkerConnection::Flush, return;);
 
+	virtual void SetStartupComplete() {}
+
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
 

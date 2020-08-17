@@ -20,17 +20,17 @@ UENUM()
 enum class EMapTestingMode : uint8
 {
 	// It will search for ASpatialFunctionalTest, if there are any it forces Spatial otherwise Native
-	Detect							= 0,
+	Detect = 0,
 	// Forces Spatial to be off and Play Offline (1 Client, no network), the default Native behaviour
-	ForceNativeOffline			= 1,
+	ForceNativeOffline = 1,
 	// Forces Spatial to be off and Play As Listen Server (1 Client that is also Server, ie authoritive Client)
-	ForceNativeAsListenServer	= 2,
+	ForceNativeAsListenServer = 2,
 	// Forces Spatial to be off and Play As Client (1 Client + 1 Dedicated Server)
-	ForceNativeAsClient			= 3,
+	ForceNativeAsClient = 3,
 	// Forces Spatial to be on. Calculates the number of players needed based on the ASpatialFunctionalTests present, 1 if none exists
-	ForceSpatial					= 4,
+	ForceSpatial = 4,
 	// Uses current settings to run the tests
-	UseCurrentSettings				= 5  
+	UseCurrentSettings = 5
 };
 
 USTRUCT(BlueprintType)
@@ -38,11 +38,11 @@ struct FMapTestingSettings
 {
 	GENERATED_BODY();
 
-
 	/* Available Modes to run Tests:
 	- Detect: It will search for ASpatialFunctionalTest, if there are any it forces Spatial otherwise Native
 	- Force Native: Forces Spatial to be off and use only 1 Client, the default Native behaviour
-	- Force Spatial: Forces Spatial to be on. Calculates the number of players needed based on the ASpatialFunctionalTests present, 1 if none exists
+	- Force Spatial: Forces Spatial to be on. Calculates the number of players needed based on the ASpatialFunctionalTests present, 1 if
+	none exists
 	- Use Current Settings: Uses current settings to run the tests */
 	UPROPERTY(EditAnywhere, Category = "Default")
 	EMapTestingMode TestingMode = EMapTestingMode::Detect;
