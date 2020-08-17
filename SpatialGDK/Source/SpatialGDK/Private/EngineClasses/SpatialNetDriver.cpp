@@ -38,6 +38,8 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/ViewDelta.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
@@ -1757,14 +1759,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		TArray<OpList> OpLists = Connection->GetOpList();
+		const SpatialGDK::ViewDelta& Delta = Connection->GetViewDelta();
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			for (const OpList& Ops : OpLists)
-			{
-				Dispatcher->ProcessOps(Ops);
-			}
+			Dispatcher->ProcessOps(GetOpListFromViewDelta(Delta));
 		}
 
 		if (!bIsReadyToStart)

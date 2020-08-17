@@ -13,12 +13,21 @@ WorkerView::WorkerView()
 {
 }
 
-ViewDelta WorkerView::GenerateViewDelta()
+void WorkerView::AdvanceViewDelta()
 {
-	ViewDelta Delta;
+	Delta.Clear();
 	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
 	QueuedOps.Empty();
+}
+
+const ViewDelta& WorkerView::GetViewDelta() const
+{
 	return Delta;
+}
+
+const EntityView& WorkerView::GetView() const
+{
+	return View;
 }
 
 void WorkerView::EnqueueOpList(OpList Ops)

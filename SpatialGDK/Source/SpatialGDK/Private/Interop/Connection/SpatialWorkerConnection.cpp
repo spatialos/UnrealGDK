@@ -49,12 +49,11 @@ void USpatialWorkerConnection::DestroyConnection()
 	Coordinator.Reset();
 }
 
-TArray<SpatialGDK::OpList> USpatialWorkerConnection::GetOpList()
+const SpatialGDK::ViewDelta& USpatialWorkerConnection::GetViewDelta()
 {
 	check(Coordinator.IsValid());
-	TArray<SpatialGDK::OpList> OpLists;
-	OpLists.Add(Coordinator->Advance());
-	return OpLists;
+	Coordinator->Advance();
+	return Coordinator->GetViewDelta();
 }
 
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
