@@ -6,6 +6,8 @@
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
+
 namespace
 {
 SpatialGDK::ComponentData ToComponentData(FWorkerComponentData* Data)
@@ -163,11 +165,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 void USpatialWorkerConnection::MaybeFlush()
 {
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bWorkerFlushAfterOutgoingNetworkOp)
-	{
-		Coordinator->FlushMessagesToSend();
-	}
+	Coordinator->FlushMessagesToSend();
 }
 
 void USpatialWorkerConnection::Flush()

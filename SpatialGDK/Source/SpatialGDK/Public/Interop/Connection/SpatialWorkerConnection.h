@@ -18,10 +18,9 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 	GENERATED_BODY()
 
 public:
-	// Not really virtual
-	virtual void SetConnection(Worker_Connection* WorkerConnectionIn);
-	virtual void FinishDestroy() override;
-	virtual void DestroyConnection();
+	void SetConnection(Worker_Connection* WorkerConnectionIn);
+	void FinishDestroy();
+	void DestroyConnection();
 
 	// Worker Connection Interface
 	virtual TArray<SpatialGDK::OpList> GetOpList() override;
@@ -39,17 +38,14 @@ public:
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
-	// Not really virtual
-	virtual PhysicalWorkerName GetWorkerId() const;
-	virtual const TArray<FString>& GetWorkerAttributes() const;
+	PhysicalWorkerName GetWorkerId() const;
+	const TArray<FString>& GetWorkerAttributes() const;
 
-	// Not really virtual
-	virtual void ProcessOutgoingMessages();
-	virtual void MaybeFlush();
-	virtual void Flush();
+	void ProcessOutgoingMessages();
+	void MaybeFlush();
+	void Flush();
 
-	// Not really virtual
-	virtual void SetStartupComplete();
+	void SetStartupComplete();
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
