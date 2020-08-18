@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "UObject/Interface.h"
 #include "Engine/Classes/Engine/EngineTypes.h"
+#include "UObject/Interface.h"
 #include "RPCTestInterface.generated.h"
 
 UINTERFACE(Blueprintable)

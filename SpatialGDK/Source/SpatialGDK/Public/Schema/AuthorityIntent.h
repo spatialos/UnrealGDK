@@ -10,22 +10,23 @@
 
 namespace SpatialGDK
 {
-
 // The AuthorityIntent component is a piece of the Zoning solution for the UnrealGDK. For each
 // entity in SpatialOS, Unreal will use the AuthorityIntent to indicate which Unreal server worker
 // should be authoritative for the entity. No Unreal worker should write to an entity if the
-// VirtualWorkerId set here doesn't match the worker's Id. 
+// VirtualWorkerId set here doesn't match the worker's Id.
 struct AuthorityIntent : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
 	AuthorityIntent()
 		: VirtualWorkerId(SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID)
-	{}
+	{
+	}
 
 	AuthorityIntent(VirtualWorkerId InVirtualWorkerId)
 		: VirtualWorkerId(InVirtualWorkerId)
-	{}
+	{
+	}
 
 	AuthorityIntent(const Worker_ComponentData& Data)
 	{
@@ -34,10 +35,7 @@ struct AuthorityIntent : Component
 		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
 
-	Worker_ComponentData CreateAuthorityIntentData()
-	{
-		return CreateAuthorityIntentData(VirtualWorkerId);
-	}
+	Worker_ComponentData CreateAuthorityIntentData() { return CreateAuthorityIntentData(VirtualWorkerId); }
 
 	static Worker_ComponentData CreateAuthorityIntentData(VirtualWorkerId InVirtualWorkerId)
 	{
@@ -51,10 +49,7 @@ struct AuthorityIntent : Component
 		return Data;
 	}
 
-	Worker_ComponentUpdate CreateAuthorityIntentUpdate()
-	{
-		return CreateAuthorityIntentUpdate(VirtualWorkerId);
-	}
+	Worker_ComponentUpdate CreateAuthorityIntentUpdate() { return CreateAuthorityIntentUpdate(VirtualWorkerId); }
 
 	static Worker_ComponentUpdate CreateAuthorityIntentUpdate(VirtualWorkerId InVirtualWorkerId)
 	{
@@ -80,4 +75,3 @@ struct AuthorityIntent : Component
 };
 
 } // namespace SpatialGDK
-

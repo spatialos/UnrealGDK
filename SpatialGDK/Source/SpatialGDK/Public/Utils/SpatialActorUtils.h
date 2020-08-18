@@ -15,7 +15,6 @@
 
 namespace SpatialGDK
 {
-
 inline AActor* GetTopmostOwner(const AActor* Actor)
 {
 	check(Actor != nullptr);

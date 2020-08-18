@@ -12,58 +12,60 @@
 
 namespace
 {
-	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
+// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
+const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
 
-	const FName AutomationWorkerType = TEXT("AutomationWorker");
-	const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
+const FName AutomationWorkerType = TEXT("AutomationWorker");
+const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
 
-	FLocalDeploymentManager* GetLocalDeploymentManager()
-	{
-		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-		FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-		return LocalDeploymentManager;
-	}
-
-	bool GenerateWorkerAssemblies()
-	{
-		FString BuildConfigArgs = TEXT("worker build build-config");
-		FString WorkerBuildConfigResult;
-		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs, SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
-
-		const int32 ExitCodeSuccess = 0;
-		return (ExitCode == ExitCodeSuccess);
-	}
-
-	bool GenerateWorkerJson()
-	{
-		const FString WorkerJsonDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers/unreal"));
-
-		FString Filename = FString(TEXT("spatialos.")) + *AutomationWorkerType.ToString() + FString(TEXT(".worker.json"));
-		FString JsonPath = FPaths::Combine(WorkerJsonDir, Filename);
-		if (!FPaths::FileExists(JsonPath))
-		{
-			bool bRedeployRequired = false;
-			return GenerateDefaultWorkerJson(JsonPath, AutomationWorkerType.ToString(), bRedeployRequired);
-		}
-
-		return true;
-	}
+FLocalDeploymentManager* GetLocalDeploymentManager()
+{
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+	return LocalDeploymentManager;
 }
+
+bool GenerateWorkerAssemblies()
+{
+	FString BuildConfigArgs = TEXT("worker build build-config");
+	FString WorkerBuildConfigResult;
+	int32 ExitCode;
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs,
+													SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
+
+	const int32 ExitCodeSuccess = 0;
+	return (ExitCode == ExitCodeSuccess);
+}
+
+bool GenerateWorkerJson()
+{
+	const FString WorkerJsonDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers/unreal"));
+
+	FString Filename = FString(TEXT("spatialos.")) + *AutomationWorkerType.ToString() + FString(TEXT(".worker.json"));
+	FString JsonPath = FPaths::Combine(WorkerJsonDir, Filename);
+	if (!FPaths::FileExists(JsonPath))
+	{
+		bool bRedeployRequired = false;
+		return GenerateDefaultWorkerJson(JsonPath, AutomationWorkerType.ToString(), bRedeployRequired);
+	}
+
+	return true;
+}
+} // namespace
 
 bool FStartDeployment::Update()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
-		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
+		const FString LaunchConfig =
+			FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
 		const FString RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
+																 RuntimeVersion] {
 			if (!GenerateWorkerJson())
 			{
 				return;
@@ -106,8 +108,7 @@ bool FStopDeployment::Update()
 
 	if (!LocalDeploymentManager->IsDeploymentStopping())
 	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager] {
 			LocalDeploymentManager->TryStopLocalDeployment();
 		});
 	}
@@ -126,11 +127,13 @@ bool FWaitForDeployment::Update()
 		// The given time for the deployment to start/stop has expired - test its current state.
 		if (ExpectedDeploymentState == EDeploymentState::IsRunning)
 		{
-			Test->TestTrue(TEXT("Deployment is running"), LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
+			Test->TestTrue(TEXT("Deployment is running"),
+						   LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
 		}
 		else
 		{
-			Test->TestFalse(TEXT("Deployment is not running"), LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping());
+			Test->TestFalse(TEXT("Deployment is not running"),
+							LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping());
 		}
 		return true;
 	}
@@ -141,7 +144,8 @@ bool FWaitForDeployment::Update()
 	}
 	else
 	{
-		return (ExpectedDeploymentState == EDeploymentState::IsRunning) ? LocalDeploymentManager->IsLocalDeploymentRunning() : !LocalDeploymentManager->IsLocalDeploymentRunning();
+		return (ExpectedDeploymentState == EDeploymentState::IsRunning) ? LocalDeploymentManager->IsLocalDeploymentRunning()
+																		: !LocalDeploymentManager->IsLocalDeploymentRunning();
 	}
 }
 
@@ -151,11 +155,13 @@ bool FCheckDeploymentState::Update()
 
 	if (ExpectedDeploymentState == EDeploymentState::IsRunning)
 	{
-		Test->TestTrue(TEXT("Deployment is running"), LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
+		Test->TestTrue(TEXT("Deployment is running"),
+					   LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
 	}
 	else
 	{
-		Test->TestFalse(TEXT("Deployment is not running"), LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping());
+		Test->TestFalse(TEXT("Deployment is not running"),
+						LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping());
 	}
 
 	return true;

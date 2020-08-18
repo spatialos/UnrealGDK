@@ -15,7 +15,6 @@ using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
 namespace SpatialGDK
 {
-
 inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
 	FTCHARToUTF8 CStrConversion(*Value);
@@ -226,7 +225,7 @@ inline FRotator GetRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	return IndexRotatorFromSchema(Object, Id, 0);
 }
-	
+
 inline void AddVectorToSchema(Schema_Object* Object, Schema_FieldId Id, FVector Vector)
 {
 	Schema_Object* VectorObject = Schema_AddObject(Object, Id);

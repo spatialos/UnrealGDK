@@ -6,26 +6,23 @@
 
 struct FEventDeleter
 {
-	void operator()(FEvent* Event) const
-	{
-		FPlatformProcess::ReturnSynchEventToPool(Event);
-	}
+	void operator()(FEvent* Event) const { FPlatformProcess::ReturnSynchEventToPool(Event); }
 };
 
 /**
-* The reason this exists is because FEvent::Wait(Time) is not equivilant for 
-* FPlatformProcess::Sleep and has overhead which impacts latency.
-*/
+ * The reason this exists is because FEvent::Wait(Time) is not equivilant for
+ * FPlatformProcess::Sleep and has overhead which impacts latency.
+ */
 class WorkerConnectionCoordinator
 {
 	TUniquePtr<FEvent, FEventDeleter> Event;
 	int32 WaitTimeMs;
+
 public:
 	WorkerConnectionCoordinator(bool bCanWake, int32 InWaitMs)
 		: Event(bCanWake ? FGenericPlatformProcess::GetSynchEventFromPool() : nullptr)
 		, WaitTimeMs(InWaitMs)
 	{
-		
 	}
 	~WorkerConnectionCoordinator() = default;
 
@@ -37,10 +34,10 @@ public:
 		}
 		else
 		{
-			FPlatformProcess::Sleep(WaitTimeMs*0.001f);
+			FPlatformProcess::Sleep(WaitTimeMs * 0.001f);
 		}
 	}
-	
+
 	void Wake()
 	{
 		if (Event.IsValid())

@@ -1,16 +1,15 @@
 #pragma once
 
-#include "SpatialView/EntityComponentId.h"
 #include "Containers/Array.h"
+#include "SpatialView/EntityComponentId.h"
 
 namespace SpatialGDK
 {
-
- // A record of authority changes to entity-components.
- // Authority for an entity-component can be in at most one of the following states:
- //  Recorded as gained.
- //  Recorded as lost.
- //  Recorded as lost-temporarily.
+// A record of authority changes to entity-components.
+// Authority for an entity-component can be in at most one of the following states:
+//  Recorded as gained.
+//  Recorded as lost.
+//  Recorded as lost-temporarily.
 class AuthorityRecord
 {
 public:

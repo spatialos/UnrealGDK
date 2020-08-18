@@ -12,8 +12,8 @@ DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
 namespace SpatialGDK
 {
-
-SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View, USpatialLatencyTracer* SpatialLatencyTracer)
+SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
+									 USpatialLatencyTracer* SpatialLatencyTracer)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
@@ -116,7 +116,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			}
 			else
 			{
-				SpatialLatencyTracer->WriteAndEndTrace(Payload.Trace, TEXT("Multiple rpc updates in single update, ending further stack tracing"), true);
+				SpatialLatencyTracer->WriteAndEndTrace(Payload.Trace,
+													   TEXT("Multiple rpc updates in single update, ending further stack tracing"), true);
 			}
 		}
 #endif
@@ -160,22 +161,25 @@ void SpatialRPCService::PushOverflowedRPCs()
 				break;
 			case EPushRPCResult::QueueOverflowed:
 				UE_LOG(LogSpatialRPCService, Log,
-					TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still overflowed: %d, Entity: %lld, RPC type: %s"),
-					NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+					   TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still "
+							"overflowed: %d, Entity: %lld, RPC type: %s"),
+					   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
 				break;
 			case EPushRPCResult::DropOverflowed:
 				checkf(false, TEXT("Shouldn't be able to drop on overflow for RPC type that was previously queued."));
 				break;
 			case EPushRPCResult::HasAckAuthority:
 				UE_LOG(LogSpatialRPCService, Warning,
-					TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. Entity: %lld, RPC type: %s"),
-					EntityId, *SpatialConstants::RPCTypeToString(Type));
+					   TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. "
+							"Entity: %lld, RPC type: %s"),
+					   EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			case EPushRPCResult::NoRingBufferAuthority:
 				UE_LOG(LogSpatialRPCService, Warning,
-					TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"),
-					EntityId, *SpatialConstants::RPCTypeToString(Type));
+					   TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was "
+							"overflowed. Entity: %lld, RPC type: %s"),
+					   EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			default:
@@ -236,11 +240,9 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId)
 {
-	static Worker_ComponentId EndpointComponentIds[] = {
-		SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::MULTICAST_RPCS_COMPONENT_ID
-	};
+	static Worker_ComponentId EndpointComponentIds[] = { SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
+														 SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
+														 SpatialConstants::MULTICAST_RPCS_COMPONENT_ID };
 
 	TArray<FWorkerComponentData> Components;
 
@@ -257,12 +259,15 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 			// value over to last sent RPC ID, so the clients that checked out the entity process the initial RPCs.
 			if (EndpointComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 			{
-				RPCRingBufferUtils::MoveLastSentIdToInitiallyPresentCount(Schema_GetComponentDataFields(*ComponentData), LastSentRPCIds[EntityRPCType(EntityId, ERPCType::NetMulticast)]);
+				RPCRingBufferUtils::MoveLastSentIdToInitiallyPresentCount(Schema_GetComponentDataFields(*ComponentData),
+																		  LastSentRPCIds[EntityRPCType(EntityId, ERPCType::NetMulticast)]);
 			}
 
 			if (EndpointComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID)
 			{
-				UE_LOG(LogSpatialRPCService, Error, TEXT("SpatialRPCService::GetRPCComponentsOnEntityCreation: Initial RPCs present on ClientEndpoint! EntityId: %lld"), EntityId);
+				UE_LOG(LogSpatialRPCService, Error,
+					   TEXT("SpatialRPCService::GetRPCComponentsOnEntityCreation: Initial RPCs present on ClientEndpoint! EntityId: %lld"),
+					   EntityId);
 			}
 
 			Component.schema_type = *ComponentData;
@@ -315,7 +320,8 @@ void SpatialRPCService::OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId 
 
 	if (!ensure(Component != nullptr))
 	{
-		UE_LOG(LogSpatialRPCService, Error, TEXT("Multicast RPC component for entity with ID %lld was not present at point of checking out the component."), EntityId);
+		UE_LOG(LogSpatialRPCService, Error,
+			   TEXT("Multicast RPC component for entity with ID %lld was not present at point of checking out the component."), EntityId);
 		return;
 	}
 
@@ -365,7 +371,8 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 			LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component->InitiallyPresentMulticastRPCsCount);
 
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
-			Schema_Object* SchemaObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
+			Schema_Object* SchemaObject =
+				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
 			Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component->InitiallyPresentMulticastRPCsCount);
 		}
 		else
@@ -445,8 +452,10 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 		uint32 BufferSize = RPCRingBufferUtils::GetRingBufferSize(Type);
 		if (Buffer.LastSentRPCId > LastSeenRPCId + BufferSize)
 		{
-			UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: RPCs were overwritten without being processed! Entity: %lld, RPC type: %s, last seen RPC ID: %d, last sent ID: %d, buffer size: %d"),
-				EntityId, *SpatialConstants::RPCTypeToString(Type), LastSeenRPCId, Buffer.LastSentRPCId, BufferSize);
+			UE_LOG(LogSpatialRPCService, Warning,
+				   TEXT("SpatialRPCService::ExtractRPCsForType: RPCs were overwritten without being processed! Entity: %lld, RPC type: %s, "
+						"last seen RPC ID: %d, last sent ID: %d, buffer size: %d"),
+				   EntityId, *SpatialConstants::RPCTypeToString(Type), LastSeenRPCId, Buffer.LastSentRPCId, BufferSize);
 			FirstRPCIdToRead = Buffer.LastSentRPCId - BufferSize + 1;
 		}
 
@@ -464,14 +473,19 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			}
 			else
 			{
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: Ring buffer element empty. Entity: %lld, RPC type: %s, empty element RPC id: %d"), EntityId, *SpatialConstants::RPCTypeToString(Type), RPCId);
+				UE_LOG(LogSpatialRPCService, Warning,
+					   TEXT("SpatialRPCService::ExtractRPCsForType: Ring buffer element empty. Entity: %lld, RPC type: %s, empty element "
+							"RPC id: %d"),
+					   EntityId, *SpatialConstants::RPCTypeToString(Type), RPCId);
 			}
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, last sent ID: %d, last seen ID: %d"),
-			EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
+		UE_LOG(LogSpatialRPCService, Warning,
+			   TEXT("SpatialRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, "
+					"last sent ID: %d, last seen ID: %d"),
+			   EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
 	}
 
 	if (LastProcessedRPCId > LastSeenRPCId)
@@ -498,7 +512,9 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 	uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
 	if (LastAckedRPCId == nullptr)
 	{
-		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+		UE_LOG(LogSpatialRPCService, Warning,
+			   TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId,
+			   *SpatialConstants::RPCTypeToString(Type));
 		return;
 	}
 

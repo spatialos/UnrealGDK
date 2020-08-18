@@ -6,8 +6,8 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "CoreMinimal.h"
 
@@ -34,9 +34,8 @@ class SpatialOSWorkerInterface;
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
-	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
-		SpatialOSWorkerInterface* InConnection,
-		SpatialVirtualWorkerTranslator* InTranslator);
+	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver, SpatialOSWorkerInterface* InConnection,
+										   SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
@@ -67,4 +66,3 @@ private:
 
 	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId);
 };
-
