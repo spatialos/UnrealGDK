@@ -15,9 +15,10 @@ public:
 	bool LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort);
 
 	void SPATIALGDKSERVICES_API Init(int32 ReceptionistPort);
-	bool SPATIALGDKSERVICES_API TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName, const FString& ListeningAddress, int32 ReceptionistPort);
+	bool SPATIALGDKSERVICES_API TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName,
+																const FString& ListeningAddress, int32 ReceptionistPort);
 	bool SPATIALGDKSERVICES_API TryStopReceptionistProxyServer();
-	
+
 private:
 	static TSharedPtr<FJsonObject> ParsePIDFile();
 	static void SavePIDInJson(const FString& PID);

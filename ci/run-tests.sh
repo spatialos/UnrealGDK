@@ -44,7 +44,8 @@ pushd "$(dirname "$0")"
                 -unattended \
                 -nullRHI \
                 -run=GenerateSnapshot \
-                -MapPaths="${TEST_REPO_MAP}"
+                -MapPaths="${TEST_REPO_MAP}" \
+            || true
 
             cp "${TEST_REPO_PATH}/spatial/snapshots/${TEST_REPO_MAP}.snapshot" "${TEST_REPO_PATH}/spatial/snapshots/default.snapshot"
         fi
@@ -64,5 +65,5 @@ pushd "$(dirname "$0")"
             -OverrideSpatialNetworking="${RUN_WITH_SPATIAL}"
     popd
 
-    # TODO: UNR-3167 - report tests
+    ./report-tests.sh "${REPORT_OUTPUT_PATH}" MacNoEditor
 popd

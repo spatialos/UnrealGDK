@@ -3,6 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/SpatialActorUtils.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
@@ -10,7 +11,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 class FSpatialLoadBalancingHandler
 {
 public:
-
 	FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver);
 
 	// Iterates over the list of actors to replicate, to check if they should migrate to another worker
@@ -49,25 +49,21 @@ public:
 		}
 	}
 
-	const TMap<AActor*, VirtualWorkerId>& GetActorsToMigrate() const
-	{
-		return ActorsToMigrate;
-	}
+	const TMap<AActor*, VirtualWorkerId>& GetActorsToMigrate() const { return ActorsToMigrate; }
 
 	// Sends the migration instructions and update actor authority.
 	void ProcessMigrations();
 
 protected:
-	
 	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
 
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
 
 	enum class EvaluateActorResult
 	{
-		None,	// Actor not concerned by load balancing
-		Migrate,	// Actor should migrate
-		RemoveAdditional	// Actor is already marked as migrating.
+		None,			 // Actor not concerned by load balancing
+		Migrate,		 // Actor should migrate
+		RemoveAdditional // Actor is already marked as migrating.
 	};
 
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
@@ -75,7 +71,7 @@ protected:
 	template <typename ReplicationContext>
 	bool CollectActorsToMigrate(ReplicationContext& iCtx, AActor* Actor, bool bNetOwnerHasAuth)
 	{
-		if(Actor->GetIsReplicated())
+		if (Actor->GetIsReplicated())
 		{
 			if (!iCtx.IsActorReadyForMigration(Actor))
 			{
@@ -83,13 +79,12 @@ protected:
 				// Child Actors are always allowed to join the owner.
 				// This is a band aid to prevent Actors from being left behind,
 				// although it has the risk of creating an infinite lock if the child is unable to become ready.
-				if(bNetOwnerHasAuth)
+				if (bNetOwnerHasAuth)
 				{
 					AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
 					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-						TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s is not ready."),
-						*HierarchyRoot->GetName(),
-						*Actor->GetName());
+						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) is not ready."),
+						   *HierarchyRoot->GetName(), *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor));
 
 					return false;
 				}

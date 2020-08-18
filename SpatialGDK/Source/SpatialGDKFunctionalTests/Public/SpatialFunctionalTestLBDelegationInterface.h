@@ -16,7 +16,7 @@
 UINTERFACE(MinimalAPI, Blueprintable)
 class USpatialFunctionalTestLBDelegationInterface : public UInterface
 {
-	GENERATED_BODY() 
+	GENERATED_BODY()
 };
 
 class ISpatialFunctionalTestLBDelegationInterface
