@@ -696,7 +696,7 @@ namespace Improbable
             {
                 // Stop all active deployments launched by this launcher.
                 var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
-                foreach( var deployment in activeDeployments)
+                foreach (var deployment in activeDeployments)
                 {
                     deploymentIdsToStop.Add(deployment.Id);
                 }
