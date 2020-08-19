@@ -702,32 +702,34 @@ namespace Improbable
                 }
             }
 
-            var tasks = new List<Task>();
-            var failedTasks = new List<Task>();
+            var deploymentIdsToTasks = new Dictionary<string, Task>();
+            var erroredDeploymentIds = new List<string>();
 
-            Console.WriteLine($"Will stop {deploymentIdsToStop.Count()} deployments");
+            Console.WriteLine($"Will stop {deploymentIdsToStop.Count()} deployment(s)");
             foreach (var deploymentId in deploymentIdsToStop)
             {
-                tasks.Add(StopDeploymentByIdAsync(deploymentServiceClient, projectName, deploymentId));
+                deploymentIdsToTasks.Add(deploymentId, StopDeploymentByIdAsync(deploymentServiceClient, projectName, deploymentId));
             };
 
             try
             {
-                Task.WaitAll(tasks.ToArray());
+                Task.WaitAll(deploymentIdsToTasks.Values.ToArray());
             }
             catch
             {
                 // Retrieve individual exceptions from AggregateException thrown by Task.WaitAll
-                var throwers = tasks.Where(task => task.Exception != null);
-                foreach (Task erroredTask in throwers)
+                var throwers = deploymentIdsToTasks.Where(task => task.Value.Exception != null);
+                foreach (KeyValuePair<string, Task> erroredTask in throwers)
                 {
-                    Exception inner = erroredTask.Exception.InnerException;
-                    Console.WriteLine($"Error while stopping deployment: {inner.Message}");
-                    failedTasks.Add(erroredTask);
+                    Exception inner = erroredTask.Value.Exception.InnerException;
+
+                    string erroredDeploymentId = erroredTask.Key;
+                    erroredDeploymentIds.Add(erroredDeploymentId);
+                    Console.WriteLine($"Error while stopping deployment {erroredDeploymentId}: {inner.Message}");
                 }
             }
 
-            Console.WriteLine($"Deployments stopped with {failedTasks.Count()} errors");
+            Console.WriteLine($"Deployment(s) stopped with {erroredDeploymentIds.Count()} errors");
             return 0;
         }
 
