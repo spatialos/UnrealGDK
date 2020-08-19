@@ -9,6 +9,7 @@
 #include "SpatialAuthorityTestGameState.h"
 #include "SpatialAuthorityTestReplicatedActor.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "TimerManager.h"
 
 /** This Test is meant to check that HasAuthority() rules are respected on different occasions. We check
   * in BeginPlay and Tick, and in the following use cases:
@@ -36,6 +37,19 @@ void ASpatialAuthorityTest::BeginPlay()
 	Super::BeginPlay();
 
 	ResetTimer();
+
+	if(HasAuthority())
+	{
+		ASpatialAuthorityTestReplicatedActor* Actor = GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(Server1Position, FRotator::ZeroRotator);
+
+		FTimerHandle TimerHandle;
+
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateWeakLambda(this, [Actor, this](){
+			Actor->SetActorLocation(Server2Position);
+		}),1.0f, false);
+
+		CrossServerSetDynamicReplicatedActor(Actor);
+	}
 
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{

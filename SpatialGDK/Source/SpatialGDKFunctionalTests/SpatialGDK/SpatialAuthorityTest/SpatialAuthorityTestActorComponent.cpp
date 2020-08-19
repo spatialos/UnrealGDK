@@ -6,13 +6,14 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "Engine/Engine.h"
 
 USpatialAuthorityTestActorComponent::USpatialAuthorityTestActorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.TickInterval = 0.0f;
 
-	SetIsReplicatedByDefault(true);
+	//SetIsReplicatedByDefault(true); // <- Uncommenting this will make it work
 }
 
 void USpatialAuthorityTestActorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -25,11 +26,13 @@ void USpatialAuthorityTestActorComponent::GetLifetimeReplicatedProps(TArray<FLif
 void USpatialAuthorityTestActorComponent::OnAuthorityGained()
 {
 	NumAuthorityGains += 1;
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, FString::Printf(TEXT("Authority Gained total: %d"), NumAuthorityGains));
 }
 
 void USpatialAuthorityTestActorComponent::OnAuthorityLost()
 {
 	NumAuthorityLosses += 1;
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, FString::Printf(TEXT("Authority Lost total: %d"), NumAuthorityLosses));
 }
 
 void USpatialAuthorityTestActorComponent::BeginPlay()
