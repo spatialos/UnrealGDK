@@ -17,6 +17,7 @@ public:
 	// The view delta will exist until the next call to AdvanceViewDelta.
 	void AdvanceViewDelta(TArray<OpList> OpLists);
 
+	ViewDelta& GetViewDelta();
 	const ViewDelta& GetViewDelta() const;
 	const EntityView& GetView() const;
 

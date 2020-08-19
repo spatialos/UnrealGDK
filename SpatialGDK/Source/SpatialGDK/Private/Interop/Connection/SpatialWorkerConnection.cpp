@@ -162,10 +162,10 @@ void USpatialWorkerConnection::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
 	Coordinator->SendMetrics(MoveTemp(Metrics));
 }
 
-void USpatialWorkerConnection::Advance()
+void USpatialWorkerConnection::Advance(float DeltaTimeS)
 {
 	check(Coordinator.IsValid());
-	Coordinator->Advance();
+	Coordinator->Advance(DeltaTimeS);
 }
 
 bool USpatialWorkerConnection::HasDisconnected() const

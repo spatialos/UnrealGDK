@@ -18,6 +18,11 @@ void WorkerView::AdvanceViewDelta(TArray<OpList> OpLists)
 	Delta.SetFromOpList(MoveTemp(OpLists), View);
 }
 
+ViewDelta& WorkerView::GetViewDelta()
+{
+	return Delta;
+}
+
 const ViewDelta& WorkerView::GetViewDelta() const
 {
 	return Delta;

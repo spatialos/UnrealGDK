@@ -46,6 +46,7 @@ public:
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;
+	TArray<Worker_Op>& GetWorkerMessages();
 	const TArray<Worker_Op>& GetWorkerMessages() const;
 
 	bool HasConnectionStatusChanged() const;

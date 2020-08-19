@@ -67,7 +67,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
 	auto& SubView = Coordinator.CreateSubView(TagComponentId, FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity should pass through to the sub view delta.
@@ -125,7 +125,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 		},
 		TArray<FDispatcherRefreshCallback>{ Coordinator.CreateComponentChangedRefreshCallback(ValueComponentId) });
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity with the correct value should pass through to the sub view delta.
@@ -136,7 +136,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 	}
 	TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, TaggedEntityId);
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	Delta = SubView.GetViewDelta();
 
 	// The value on the other entity should have updated, so we should see an add for the second entity.
@@ -186,7 +186,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 			FSubView::NoDispatcherCallbacks));
 	}
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	FSubViewDelta Delta;
 
 	// All the subviews should have no complete entities, so their deltas should be empty.
@@ -201,7 +201,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 
 	EntityComplete = true;
 	Coordinator.RefreshEntityCompleteness(TaggedEntityId);
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 
 	// All the subviews' filters will have changed their truth value due to the change in local state.
 	for (int i = 0; i < NumberOfSubViews; ++i)
