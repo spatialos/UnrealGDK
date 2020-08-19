@@ -1780,7 +1780,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance();
+		Connection->Advance(DeltaTime);
 
 		if (Connection->HasDisconnected())
 		{
