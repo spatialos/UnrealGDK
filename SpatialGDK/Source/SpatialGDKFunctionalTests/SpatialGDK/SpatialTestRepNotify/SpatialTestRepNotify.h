@@ -19,9 +19,13 @@ public:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	bool bOnRepTestInt1Called;
+
 	bool bOnRepTestInt2Called;
+
 	int32 OldTestInt3;
+
 	int32 OldTestInt4;
+
 	TArray<int32> OldTestArray;
 
 	UPROPERTY(ReplicatedUsing = OnRep_TestInt1)
