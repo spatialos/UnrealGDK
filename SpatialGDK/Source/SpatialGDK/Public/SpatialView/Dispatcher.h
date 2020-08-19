@@ -24,6 +24,12 @@ public:
 
 	void InvokeCallbacks(const TArray<EntityDelta>& Deltas);
 
+	CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -68,7 +74,6 @@ private:
 		};
 	};
 
-	void InvokeWithExistingAuthority(Worker_ComponentId ComponentId, const FEntityCallback& Callback) const;
 	void InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback) const;
 	void HandleComponentPresenceChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
 										TCallbacks<FEntityComponentChange> FComponentCallbacks::*Callbacks);
