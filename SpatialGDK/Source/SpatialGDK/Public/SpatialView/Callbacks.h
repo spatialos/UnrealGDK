@@ -7,6 +7,11 @@ namespace SpatialGDK
 {
 using CallbackId = int32;
 
+/**
+ * Container holding a set of callbacks.
+ * Callbacks are called in the order in which they were registered.
+ * Callbacks added or removed during callback invocation will be reconciled once all callbacks have been invoked.
+ */
 template <typename T>
 class TCallbacks
 {
@@ -50,10 +55,6 @@ public:
 		++CallbackDepth;
 		for (const auto& Callback : Callbacks)
 		{
-			if (CallbacksToRemove.Contains(Callback.Id))
-			{
-				continue;
-			}
 			Callback.Callback(Value);
 		}
 		--CallbackDepth;
@@ -90,6 +91,11 @@ private:
 	TArray<CallbackId> CallbacksToRemove;
 };
 
+/**
+ * Container holding a set of callbacks.
+ * Callbacks are called in the order in which they were registered.
+ * Callbacks added or removed during callback invocation will be reconciled once all callbacks have been invoked.
+ */
 template <>
 class TCallbacks<void>
 {
@@ -133,10 +139,6 @@ public:
 		++CallbackDepth;
 		for (const auto& Callback : Callbacks)
 		{
-			if (CallbacksToRemove.Contains(Callback.Id))
-			{
-				continue;
-			}
 			Callback.Callback();
 		}
 		--CallbackDepth;
