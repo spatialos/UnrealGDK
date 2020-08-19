@@ -146,10 +146,10 @@ struct FEventRetireEntityRequest : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRetireEntityRequest()
-		: FEventMessage(GDK_EVENT_NAMESPACE"entity_retire")
+		: FEventMessage(GDK_EVENT_NAMESPACE"retire_entity")
 	{}
 	FEventRetireEntityRequest(int64 EntityId, const AActor* Actor)
-		: FEventMessage(GDK_EVENT_NAMESPACE"entity_retire")
+		: FEventMessage(GDK_EVENT_NAMESPACE"retire_entity")
 		, EntityId(EntityId)
 		, Actor(Actor)
 	{}
@@ -182,10 +182,10 @@ struct FEventRPCQueued : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCQueued()
-		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_queued")
+		: FEventMessage(GDK_EVENT_NAMESPACE"queue_rpc")
 	{}
 	FEventRPCQueued(const UObject* TargetObject, const UFunction* Function)
-		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_queued")
+		: FEventMessage(GDK_EVENT_NAMESPACE"queue_rpc")
 		, TargetObject(TargetObject)
 		, Function(Function)
 	{}
@@ -200,7 +200,7 @@ struct FEventRPCRetried : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCRetried()
-		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_retired")
+		: FEventMessage(GDK_EVENT_NAMESPACE"retire_rpc")
 	{}
 };
 
@@ -210,10 +210,10 @@ struct FEventRPCProcessed : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCProcessed()
-		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_processed")
+		: FEventMessage(GDK_EVENT_NAMESPACE"process_rpc")
 	{}
 	FEventRPCProcessed(const UObject* TargetObject, const UFunction* Function)
-		: FEventMessage(GDK_EVENT_NAMESPACE"rpc_processed")
+		: FEventMessage(GDK_EVENT_NAMESPACE"process_rpc")
 		, TargetObject(TargetObject)
 		, Function(Function)
 	{}
