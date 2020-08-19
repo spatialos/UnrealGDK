@@ -13,6 +13,7 @@
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "HttpModule.h"
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -254,6 +255,73 @@ void ASpatialFunctionalTest::AddActorInterest(int32 ServerWorkerId, AActor* Acto
 void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* Actor)
 {
 	ChangeActorInterest(ServerWorkerId, Actor, false);
+}
+
+// void UNWXTestingBlueprintLibrary::TakeSnapshot(const FOnTakeSnapshotComplete& Complete)
+//{
+// FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+// TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+//        FString Url = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
+//        // kick off http request to read
+//        HttpRequest->OnProcessRequestComplete().BindLambda([Complete] (FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool
+//        bSucceeded) {
+//            UE_LOG(LogNWXGame, Warning, TEXT("Snapshot Created"));
+//            // Go read latest file,
+//            FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+//            FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
+//            if (!FPaths::FileExists(SnapshotLatestPath))
+//            {
+//                Complete.ExecuteIfBound("", false);
+//                return;
+//            }
+//            FString LatestSnapshot;
+//            if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
+//            {
+//                Complete.ExecuteIfBound("", false);
+//                return;
+//            }
+//            Complete.ExecuteIfBound("snapshot id", bSucceeded);
+//        });
+// HttpRequest->SetURL(Url);
+//        HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
+// HttpRequest->SetVerb(TEXT("POST"));
+// const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
+//        HttpRequest->SetContent(Body);
+//        HttpRequest->ProcessRequest();
+//    }
+
+
+void ASpatialFunctionalTest::TakeSnapshot()
+{
+	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+	FString Url = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
+	// kick off http request to read
+	HttpRequest->OnProcessRequestComplete().BindLambda([/*Complete*/] (FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse,
+	bool bSucceeded) {
+	    UE_LOG(LogTemp, Warning, TEXT("Snapshot Created"));
+	    // Go read latest file,
+	    FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+	    FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
+	    if (!FPaths::FileExists(SnapshotLatestPath))
+	    {
+	        //Complete.ExecuteIfBound("", false);
+	        return;
+	    }
+	    FString LatestSnapshot;
+	    if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
+	    {
+	        //Complete.ExecuteIfBound("", false);
+	        return;
+	    }
+	    //Complete.ExecuteIfBound("snapshot id", bSucceeded);
+	});
+	HttpRequest->SetURL(Url);
+	HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
+	HttpRequest->SetVerb(TEXT("POST"));
+	const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
+	HttpRequest->SetContent(Body);
+	HttpRequest->ProcessRequest();
 }
 
 void ASpatialFunctionalTest::ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest)

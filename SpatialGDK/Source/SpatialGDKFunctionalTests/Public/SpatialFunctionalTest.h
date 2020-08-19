@@ -200,6 +200,11 @@ public:
 	// clang-format on
 	void RemoveActorInterest(int32 ServerWorkerId, AActor* Actor);
 
+
+	// # Snapshot APIs
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void TakeSnapshot();
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 
