@@ -25,11 +25,11 @@ public:
 	{
 		if (bCurrentlyInvokingCallbacks)
 		{
-			CallbacksToAdd.Push({ std::move(Callback), CallbackId });
+			CallbacksToAdd.Push({ MoveTemp(Callback), CallbackId });
 		}
 		else
 		{
-			Callbacks.Push({ std::move(Callback), CallbackId });
+			Callbacks.Push({ MoveTemp(Callback), CallbackId });
 		}
 	}
 
@@ -56,7 +56,7 @@ public:
 		check(!bCurrentlyInvokingCallbacks);
 
 		bCurrentlyInvokingCallbacks = true;
-		for (const auto& Callback : Callbacks)
+		for (const CallbackAndId& Callback : Callbacks)
 		{
 			Callback.Callback(Value);
 		}
