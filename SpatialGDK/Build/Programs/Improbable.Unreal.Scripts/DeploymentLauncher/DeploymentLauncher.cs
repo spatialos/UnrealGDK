@@ -719,7 +719,7 @@ namespace Improbable
             {
                 // Retrieve individual exceptions from AggregateException thrown by Task.WaitAll
                 var throwers = tasks.Where(task => task.Exception != null);
-                foreach(Task erroredTask in throwers)
+                foreach (Task erroredTask in throwers)
                 {
                     Exception inner = erroredTask.Exception.InnerException;
                     Console.WriteLine($"Error while stopping deployment: {inner.Message}");
