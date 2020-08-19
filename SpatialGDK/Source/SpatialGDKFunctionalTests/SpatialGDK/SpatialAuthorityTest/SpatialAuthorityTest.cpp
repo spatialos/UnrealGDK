@@ -4,11 +4,11 @@
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialAuthorityTestActor.h"
+#include "SpatialAuthorityTestActorComponent.h"
 #include "SpatialAuthorityTestGameMode.h"
 #include "SpatialAuthorityTestGameState.h"
 #include "SpatialAuthorityTestReplicatedActor.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialAuthorityTestFlowController.h"
 
 /** This Test is meant to check that HasAuthority() rules are respected on different occasions. We check
   * in BeginPlay and Tick, and in the following use cases:
@@ -27,8 +27,6 @@ ASpatialAuthorityTest::ASpatialAuthorityTest()
 	Author = "Nuno Afonso";
 	Description = TEXT("Test HasAuthority under multi-worker setups. It also ensures it works in Native");
 
-	FlowControllerActorClass = ASpatialAuthorityTestFlowController::StaticClass();
-
 	Server1Position = FVector(-250.0f, -250.0f, 0.0f);
 	Server2Position = FVector(-250.0f, 250.0f, 0.0f);
 }
@@ -37,13 +35,31 @@ void ASpatialAuthorityTest::BeginPlay()
 {
 	Super::BeginPlay();
 
+	ResetTimer();
+
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{
 		AddStep(TEXT("Replicated Level Actor - Server 1 Has Authority"), FWorkerDefinition::AllWorkers,	nullptr, nullptr,
 			[this](float DeltaTime) {
-				if (LevelReplicatedActor->AuthorityOnBeginPlay == 1 && LevelReplicatedActor->AuthorityOnTick == 1)
+				Timer -= DeltaTime;
+				if (Timer <= 0)
 				{
-					FinishStep();
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
+					{
+						if (VerifyTestActor(LevelReplicatedActor, 1, 1, 1, 0))
+						{
+							FinishStep();
+						}
+					}
+					else
+					{
+					
+						if (VerifyTestActor(LevelReplicatedActor, 0, 0, 0, 0))
+						{
+							FinishStep();
+						}
+					}
 				}
 			}, 5.0f);
 	}
@@ -52,18 +68,20 @@ void ASpatialAuthorityTest::BeginPlay()
 	{
 		AddStep(TEXT("Non-replicated Level Actor - Each Server has Authority, Client doesn't know"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				if (GetLocalFlowController()->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+				// Since this actor already was in level and we wait for timer in the previous step, we don't need to wait
+				// in this one again.
+				const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+				if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 				{
-					if (LevelActor->AuthorityOnBeginPlay == LevelActor->AuthorityOnTick
-						&& LevelActor->AuthorityOnBeginPlay == GetLocalFlowController()->WorkerDefinition.Id)
+					// Note: Non-replicated actors never get OnAuthorityGained() called.
+					if (VerifyTestActor(LevelActor, LocalWorkerDefinition.Id, LocalWorkerDefinition.Id, 0, 0))
 					{
 						FinishStep();
 					}
 				}
 				else
 				{
-					if (LevelActor->AuthorityOnBeginPlay == LevelActor->AuthorityOnTick
-						&& LevelActor->AuthorityOnBeginPlay == 0)
+					if (VerifyTestActor(LevelActor, 0, 0, 0, 0))
 					{
 						FinishStep(); // Clients don't have authority over non-replicated Level Actors.
 					}
@@ -85,11 +103,24 @@ void ASpatialAuthorityTest::BeginPlay()
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server 1 Has Authority"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime)
 			{
-				if (DynamicReplicatedActor != nullptr
-					&& DynamicReplicatedActor->AuthorityOnBeginPlay == 1
-					&& DynamicReplicatedActor->AuthorityOnTick == 1)
+				Timer -= DeltaTime;
+				if (Timer <= 0)
 				{
-					FinishStep();
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					if( LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
+						{
+							FinishStep();
+						}
+					}
+					else
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+						{
+							FinishStep();
+						}
+					}
 				}
 			}, 5.0f);
 
@@ -116,16 +147,58 @@ void ASpatialAuthorityTest::BeginPlay()
 			TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 on Tick"), FWorkerDefinition::AllWorkers, nullptr,
 			nullptr,
 			[this](float DeltaTime) {
-				// Allow it to continue working in Native / Single worker setups.
-				int ExpectedAuthorityServer = GetNumberOfServerWorkers() > 1 ? 2 : 1;				
-				if (DynamicReplicatedActor != nullptr
-					&& DynamicReplicatedActor->AuthorityOnBeginPlay == 1
-					&& DynamicReplicatedActor->AuthorityOnTick == ExpectedAuthorityServer)
+				Timer -= DeltaTime;
+				if(Timer <= 0)
 				{
-					FinishStep();
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					if(LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+					{
+						// Allow it to continue working in Native / Single worker setups.
+						if (GetNumberOfServerWorkers() > 1)
+						{
+							if (LocalWorkerDefinition.Id == 1)
+							{
+								// Note: Depending on timing / data migration, Tick may or may not have ran
+								// in Server 1, so we need to check both situations.
+								if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1)
+									|| VerifyTestActor(DynamicReplicatedActor, 1, 0, 1, 1))
+								{
+									FinishStep();
+								}
+							}
+							else if (LocalWorkerDefinition.Id == 2)
+							{
+								if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
+									&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthorityOnBeginPlay == 1)
+								{
+									FinishStep();
+								}
+							}
+							else
+							{
+								if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+								{
+									FinishStep();
+								}
+							}
+						}
+						else // Support for Native / Single Worker.
+						{
+							if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
+							{
+								FinishStep();
+							}
+						}
+					}
+					else // Clients.
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+						{
+							FinishStep();
+						}
+					}
 				}
-			},
-			5.0f);
+			}, 5.0f);
 
 		// Now it's Server 2 destroying, since it has Authority over it.
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Destroy"), FWorkerDefinition::Server(2), nullptr,
@@ -150,19 +223,16 @@ void ASpatialAuthorityTest::BeginPlay()
 		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Authority on Server 1"), FWorkerDefinition::Server(1), nullptr, nullptr,
 				[this](float DeltaTime)
 				{
-					if (DynamicNonReplicatedActor->AuthorityOnBeginPlay == 1
-						&& DynamicNonReplicatedActor->AuthorityOnTick == 1)
+					// Not replicated so OnAuthorityGained() is not called.
+					if (VerifyTestActor(DynamicNonReplicatedActor, 1, 1, 0, 0))
 					{
 						FinishStep();
 					}
-				});
+				}, 5.0f);
 
-		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers, nullptr,
-				[this](){
-					Timer = 0.5f;
-				},
+		AddStep(TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 				[this](float DeltaTime) {
-					FWorkerDefinition LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server
 						&& LocalWorkerDefinition.Id == 1)
 					{
@@ -171,7 +241,7 @@ void ASpatialAuthorityTest::BeginPlay()
 					else
 					{
 						Timer -= DeltaTime;
-						if (Timer < 0.0f)
+						if (Timer <= 0)
 						{
 							int NumNonReplicatedActorsExpected = 1; // The one that is in the Map itself
 							int NumNonReplicatedActorsInLevel = 0;
@@ -210,32 +280,33 @@ void ASpatialAuthorityTest::BeginPlay()
 	{
 		AddStep(TEXT("GameMode - Determine Authority by every Server"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime){
+				// This is running very far from the start, no need to wait more time.
 				ASpatialAuthorityTestGameMode* GameMode = GetWorld()->GetAuthGameMode<ASpatialAuthorityTestGameMode>();
-				if(GameMode == nullptr)
+				if (GameMode == nullptr)
 				{
 					FinishTest(EFunctionalTestResult::Failed, TEXT("This test requires ASpatialAuthorityTestGameMode"));
+					return;
 				}
-				if(GameMode->AuthorityOnBeginPlay > 0 && GameMode->AuthorityOnBeginPlay == GameMode->AuthorityOnTick)
+
+				bool bIsStateValid;
+
+				USpatialAuthorityTestActorComponent* AuthorityComponent = GameMode->AuthorityComponent;
+				// Either it's bigger than 0 and all match (in the Authoritive Server), or all equal to zero (except for replicated).
+				if (AuthorityComponent->AuthorityOnBeginPlay > 0)
 				{
-					CrossServerSetGameModeAuthorityFromServerWorker(GetLocalFlowController()->WorkerDefinition.Id, GameMode->AuthorityOnBeginPlay);
-					FinishStep();
+					bIsStateValid = AuthorityComponent->AuthorityOnBeginPlay == AuthorityComponent->ReplicatedAuthorityOnBeginPlay
+						   && AuthorityComponent->AuthorityOnBeginPlay == AuthorityComponent->AuthorityOnTick
+						   && AuthorityComponent->NumAuthorityGains == 1 && AuthorityComponent->NumAuthorityLosses == 0;
 				}
-			}, 5.0f);
-
-		AddStep(TEXT("GameMode - Verify consensus on Authority"), FWorkerDefinition::Server(1), nullptr, nullptr,
-			[this](float DeltaTime)
-			{
-				int FirstAuthorityValue = GameModeServerAuthorities[0];
-				if (FirstAuthorityValue > 0)
+				else
 				{
-					for(int i = 1; i < GameModeServerAuthorities.Num(); ++i)
-					{
-						if(FirstAuthorityValue != GameModeServerAuthorities[i])
-						{
-							return;
-						}
-					}
+					bIsStateValid = AuthorityComponent->ReplicatedAuthorityOnBeginPlay != 0 && AuthorityComponent->AuthorityOnBeginPlay == 0
+									&& AuthorityComponent->AuthorityOnTick == 0 && AuthorityComponent->NumAuthorityGains == 0
+									&& AuthorityComponent->NumAuthorityLosses == 0;
+				}
 
+				if(bIsStateValid)
+				{
 					FinishStep();
 				}
 			}, 5.0f);
@@ -244,58 +315,43 @@ void ASpatialAuthorityTest::BeginPlay()
 	// GameState.
 	{
 		AddStep(
-			TEXT("GameState - Determine Authority by every Worker"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("GameState - Determine Authority by every Server"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
+				// Again, no need to wait for more time.
 				ASpatialAuthorityTestGameState* GameState = GetWorld()->GetGameState<ASpatialAuthorityTestGameState>();
-				if (GameState == nullptr)
+				if (GameState == nullptr) // GameMode already checked on previous step.
 				{
 					FinishTest(EFunctionalTestResult::Failed, TEXT("This test requires ASpatialAuthorityTestGameState"));
+					return;
 				}
-				if (GameState->AuthorityOnBeginPlay > 0 && GameState->AuthorityOnBeginPlay == GameState->AuthorityOnTick)
+
+				bool bIsStateValid;
+
+				USpatialAuthorityTestActorComponent* AuthorityComponent = GameState->AuthorityComponent;
+				// Either it's bigger than 0 and all match the GameMode Authority (in the Authoritive Server),
+				// or all equal to zero (except for replicated).
+				if (AuthorityComponent->AuthorityOnBeginPlay > 0)
 				{
-					FWorkerDefinition LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-					if(LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-					{
-						CrossServerSetGameStateAuthorityFromWorker(GetLocalFlowController()->WorkerDefinition,
-																	GameState->AuthorityOnBeginPlay);
-					}
-					else
-					{
-						ASpatialAuthorityTestFlowController* LocalFlowControllerCast = Cast<ASpatialAuthorityTestFlowController>(GetLocalFlowController());
-						if( LocalFlowControllerCast == nullptr)
-						{
-							FinishTest(EFunctionalTestResult::Failed, TEXT("Test requires ASpatialAuthorityTestFlowController"));
-							return;
-						}
-						LocalFlowControllerCast->ServerSetGameStateAuthority(GameState->AuthorityOnBeginPlay);
-					}
-					FinishStep();
+					ASpatialAuthorityTestGameMode* GameMode = GetWorld()->GetAuthGameMode<ASpatialAuthorityTestGameMode>();
+					int GameModeAuthority = GameMode->AuthorityComponent->ReplicatedAuthorityOnBeginPlay;
+					bIsStateValid = AuthorityComponent->AuthorityOnBeginPlay == GameModeAuthority
+						   && AuthorityComponent->ReplicatedAuthorityOnBeginPlay == GameModeAuthority
+						   && AuthorityComponent->AuthorityOnTick == GameModeAuthority
+						   && AuthorityComponent->NumAuthorityGains == 1
+						   && AuthorityComponent->NumAuthorityLosses == 0;
 				}
-			},
-			5.0f);
-
-		AddStep(
-			TEXT("GameState - Verify consensus on Authority"), FWorkerDefinition::Server(1), nullptr, nullptr,
-			[this](float DeltaTime) {
-				int FirstAuthorityValue = GameModeServerAuthorities[0]; // Should match the Authority of GameMode
-				if (FirstAuthorityValue > 0)
+				else
 				{
-					for (int i = 0; i < GameStateServerAuthorities.Num(); ++i)
-					{
-						if (FirstAuthorityValue != GameStateServerAuthorities[i])
-						{
-							return;
-						}
-					}
 
-					for(int i = 0; i < GameStateClientAuthorities.Num(); ++i)
-					{
-						if(FirstAuthorityValue != GameStateClientAuthorities[i])
-						{
-							return;
-						}
-					}
+					bIsStateValid = AuthorityComponent->ReplicatedAuthorityOnBeginPlay != 0
+						   && AuthorityComponent->AuthorityOnBeginPlay == 0
+						   && AuthorityComponent->AuthorityOnTick == 0
+						   && AuthorityComponent->NumAuthorityGains == 0
+						   && AuthorityComponent->NumAuthorityLosses == 0;
+				}
 
+				if(bIsStateValid)
+				{
 					FinishStep();
 				}
 			},
@@ -309,30 +365,6 @@ void ASpatialAuthorityTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ASpatialAuthorityTest, DynamicReplicatedActor);
-	DOREPLIFETIME(ASpatialAuthorityTest, GameModeServerAuthorities);
-	DOREPLIFETIME(ASpatialAuthorityTest, GameStateServerAuthorities);
-	DOREPLIFETIME(ASpatialAuthorityTest, GameStateClientAuthorities);
-}
-
-void ASpatialAuthorityTest::StartTest()
-{
-	GameModeServerAuthorities.SetNum(GetNumberOfServerWorkers());
-	GameStateServerAuthorities.SetNum(GetNumberOfServerWorkers());
-	GameStateClientAuthorities.SetNum(GetNumberOfClientWorkers());
-
-	// Make sure they're zero'ed for reruns to be more accurate
-	for(int i = 0; i < GameModeServerAuthorities.Num(); ++i)
-	{
-		GameModeServerAuthorities[i] = 0;
-		GameStateServerAuthorities[i] = 0;
-	}
-
-	for(int i = 0; i < GameStateClientAuthorities.Num(); ++i)
-	{
-		GameStateClientAuthorities[i] = 0;
-	}
-
-	Super::StartTest();
 }
 
 void ASpatialAuthorityTest::CrossServerSetDynamicReplicatedActor_Implementation(ASpatialAuthorityTestReplicatedActor* Actor)
@@ -340,20 +372,16 @@ void ASpatialAuthorityTest::CrossServerSetDynamicReplicatedActor_Implementation(
 	DynamicReplicatedActor = Actor;
 }
 
-void ASpatialAuthorityTest::CrossServerSetGameModeAuthorityFromServerWorker_Implementation(int ServerWorkerId, int Authority)
+bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick
+												, int NumAuthorityGains, int NumAuthorityLosses)
 {
-	GameModeServerAuthorities[ServerWorkerId-1] = Authority;
-}
-
-void ASpatialAuthorityTest::CrossServerSetGameStateAuthorityFromWorker_Implementation(const FWorkerDefinition& WorkerDefinition,
-																					  int Authority)
-{
-	if(WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
 	{
-		GameStateServerAuthorities[WorkerDefinition.Id-1] = Authority;
+		return false;
 	}
-	else
-	{
-		GameStateClientAuthorities[WorkerDefinition.Id - 1] = Authority;
-	}
+	
+	return Actor->AuthorityComponent->AuthorityOnBeginPlay == AuthorityOnBeginPlay
+		&& Actor->AuthorityComponent->AuthorityOnTick == AuthorityOnTick
+		&& Actor->AuthorityComponent->NumAuthorityGains == NumAuthorityGains
+		&& Actor->AuthorityComponent->NumAuthorityLosses == NumAuthorityLosses;
 }

@@ -13,6 +13,4 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestReplicatedActor : publi
 	
 public:	
 	ASpatialAuthorityTestReplicatedActor();
-
-	virtual void OnAuthorityGained() override;
 };

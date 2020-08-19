@@ -6,6 +6,8 @@
 #include "GameFramework/GameStateBase.h"
 #include "SpatialAuthorityTestGameState.generated.h"
 
+class USpatialAuthorityTestActorComponent;
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestGameState : public AGameStateBase
 {
@@ -14,17 +16,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestGameState : public AGam
 public:	
 	ASpatialAuthorityTestGameState();
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Default")
-	int32 AuthorityOnBeginPlay;
-
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Default")
-	int32 AuthorityOnTick;
-
-protected:
-	virtual void BeginPlay() override;
-
-public:	
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY()
+	USpatialAuthorityTestActorComponent* AuthorityComponent;
 };

@@ -20,7 +20,16 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void FinishStep() override { ResetTimer(); Super::FinishStep();	};
+
+	void ResetTimer() {	Timer = 0.5; };
+
+	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses);
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
 
 	UPROPERTY(EditAnywhere, Category = "Default")
 	ASpatialAuthorityTestActor* LevelActor;
@@ -42,27 +51,7 @@ public:
 	UPROPERTY()
 	ASpatialAuthorityTestActor* DynamicNonReplicatedActor;
 
-	UPROPERTY(Replicated)
-	TArray<int> GameModeServerAuthorities;
 
-	UPROPERTY(Replicated)
-	TArray<int> GameStateServerAuthorities;
-
-	UPROPERTY(Replicated)
-	TArray<int> GameStateClientAuthorities;
-
-	virtual void StartTest() override;
-
-	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
-
-	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetGameModeAuthorityFromServerWorker(int ServerWorkerId, int Authority);
-
-	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetGameStateAuthorityFromWorker(const FWorkerDefinition& WorkerDefinition, int Authority);
-
-private:
 	float Timer;
 	
 };

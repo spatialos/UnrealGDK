@@ -8,9 +8,3 @@ ASpatialAuthorityTestReplicatedActor::ASpatialAuthorityTestReplicatedActor()
 {
 	bReplicates = true;
 }
-
-void ASpatialAuthorityTestReplicatedActor::OnAuthorityGained()
-{
-	// Clear Authority on Tick.
-	AuthorityOnTick = 0; 
-}
