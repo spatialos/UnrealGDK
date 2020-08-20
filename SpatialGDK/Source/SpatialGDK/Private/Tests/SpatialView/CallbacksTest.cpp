@@ -6,14 +6,12 @@
 
 #define CALLBACKS_TEST(TestName) GDK_TEST(Core, Callbacks, TestName)
 
-using namespace SpatialGDK;
-
-using FIntCallback = TCallbacks<int>::CallbackType;
+using FIntCallback = SpatialGDK::TCallbacks<int>::CallbackType;
 
 CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_IsEmpty_Called_THEN_Returns_False)
 {
 	// GIVEN
-	TCallbacks<int> Callbacks;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	TestTrue("Callbacks is initially empty", Callbacks.IsEmpty());
 
 	// WHEN
@@ -30,9 +28,9 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_IsEmpty_Called_THEN_Returns_Fa
 CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Invoke_Called_THEN_Invokes_Callback)
 {
 	// GIVEN
-	TCallbacks<int> Callbacks;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	bool Invoked = false;
-	const FIntCallback Callback = [&Invoked](int _) {
+	const FIntCallback Callback = [&Invoked](int) {
 		Invoked = true;
 	};
 	Callbacks.Register(1, Callback);
@@ -50,7 +48,7 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Invoke_Called_THEN_Invokes_Cal
 {
 	// GIVEN
 	int CorrectValue = 1;
-	TCallbacks<int> Callbacks;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	int InvokeCountWithCorrectValue = 0;
 	const FIntCallback Callback = [&InvokeCountWithCorrectValue, CorrectValue](int Value) {
 		if (Value == CorrectValue)
@@ -66,7 +64,7 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Invoke_Called_THEN_Invokes_Cal
 	Callbacks.Invoke(1);
 
 	// THEN
-	TestTrue("Callback was invoked with the correct value", InvokeCountWithCorrectValue == 2);
+	TestEqual("Callback was invoked with the correct value", InvokeCountWithCorrectValue, 2);
 
 	return true;
 }
@@ -74,9 +72,9 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Invoke_Called_THEN_Invokes_Cal
 CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Invoke_Called_THEN_Invokes_Both_Callbacks)
 {
 	// GIVEN
-	TCallbacks<int> Callbacks;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback Callback = [&InvokeCount](int _) {
+	const FIntCallback Callback = [&InvokeCount](int) {
 		InvokeCount++;
 	};
 	Callbacks.Register(1, Callback);
@@ -86,7 +84,7 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Invoke_Called_THEN_Invokes
 	Callbacks.Invoke(1);
 
 	// THEN
-	TestTrue("Callback was invoked twice", InvokeCount == 2);
+	TestEqual("Callback was invoked twice", InvokeCount, 2);
 
 	return true;
 }
@@ -94,10 +92,10 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Invoke_Called_THEN_Invokes
 CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removed_THEN_No_Longer_Calls_Back)
 {
 	// GIVEN
-	CallbackId Id = 1;
-	TCallbacks<int> Callbacks;
+	SpatialGDK::CallbackId Id = 1;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback Callback = [&InvokeCount](int _) {
+	const FIntCallback Callback = [&InvokeCount](int) {
 		InvokeCount++;
 	};
 	Callbacks.Register(Id, Callback);
@@ -108,7 +106,7 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removed_THEN_No_Longe
 	Callbacks.Invoke(1);
 
 	// THEN
-	TestTrue("Callback was invoked once", InvokeCount == 1);
+	TestEqual("Callback was invoked once", InvokeCount, 1);
 
 	return true;
 }
@@ -116,9 +114,9 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removed_THEN_No_Longe
 CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Adds_Other_Callback_THEN_Only_Calls_First_Callback)
 {
 	// GIVEN
-	TCallbacks<int> Callbacks;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback SecondCallback = [&InvokeCount](int _) {
+	const FIntCallback SecondCallback = [&InvokeCount](int) {
 		InvokeCount++;
 	};
 	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, SecondCallback](int) {
@@ -131,21 +129,26 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Adds_Other_Callback_T
 	Callbacks.Invoke(1);
 
 	// THEN
-	TestTrue("Callback was invoked once", InvokeCount == 1);
+	TestEqual("Callback was invoked once", InvokeCount, 1);
+
+	// sanity check: Both callbacks invoked on second invocation
+	InvokeCount = 0;
+	Callbacks.Invoke(1);
+	TestEqual("Both callbacks invoked", InvokeCount, 2);
 
 	return true;
 }
 
-CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removes_Other_Callback_THEN_Calls_Both_Callbacks)
+CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Callback_Removes_Other_Callback_THEN_Calls_Both_Callbacks)
 {
 	// GIVEN
-	CallbackId Id = 2;
-	TCallbacks<int> Callbacks;
+	SpatialGDK::CallbackId Id = 2;
+	SpatialGDK::TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback SecondCallback = [&InvokeCount](int _) {
+	const FIntCallback SecondCallback = [&InvokeCount](int) {
 		InvokeCount++;
 	};
-	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, Id](int _) {
+	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, Id](int) {
 		InvokeCount++;
 		Callbacks.Remove(Id);
 	};
@@ -156,7 +159,47 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removes_Other_Callbac
 	Callbacks.Invoke(1);
 
 	// THEN
-	TestTrue("Both callbacks were invoked", InvokeCount == 2);
+	TestEqual("Both callbacks were invoked", InvokeCount, 2);
+
+	// sanity check: Only one callback invoked on second invocation
+	InvokeCount = 0;
+	Callbacks.Invoke(1);
+	TestEqual("Only one callback invoked", InvokeCount, 1);
+
+	return true;
+}
+
+CALLBACKS_TEST(GIVEN_Callbacks_WHEN_Callbacks_Add_And_Remove_Other_Callback_THEN_Other_Callback_Not_Invoked)
+{
+	// GIVEN
+	SpatialGDK::CallbackId Id = 1;
+	SpatialGDK::CallbackId AddId = 2;
+	SpatialGDK::CallbackId RemoveId = 3;
+	SpatialGDK::TCallbacks<int> Callbacks;
+	bool Invoked = false;
+	const FIntCallback Callback = [&Invoked](int) {
+		Invoked = true;
+	};
+	const FIntCallback AddCallback = [&Callbacks, Id, Callback](int) {
+		Callbacks.Register(Id, Callback);
+	};
+	const FIntCallback RemoveCallback = [&Callbacks, Id](int) {
+		Callbacks.Remove(Id);
+	};
+	Callbacks.Register(RemoveId, RemoveCallback);
+	Callbacks.Register(AddId, AddCallback);
+
+	// WHEN
+	Callbacks.Invoke(1);
+
+	// THEN
+	TestFalse("Callback was not invoked", Invoked);
+
+	// sanity check: Not invoked on a second call after the other callbacks have been removed
+	Callbacks.Remove(AddId);
+	Callbacks.Remove(RemoveId);
+	Callbacks.Invoke(1);
+	TestFalse("Callback was not invoked", Invoked);
 
 	return true;
 }
