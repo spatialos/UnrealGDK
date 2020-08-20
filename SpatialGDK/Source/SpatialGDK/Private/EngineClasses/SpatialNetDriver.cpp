@@ -204,9 +204,9 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 		const FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
 		GameInstance = Cast<USpatialGameInstance>(WorldContext.OwningGameInstance);
 	}
-	else
+	else if (UWorld* World = GetWorld())
 	{
-		GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
+		GameInstance = Cast<USpatialGameInstance>(World->GetGameInstance());
 	}
 
 	return GameInstance;
