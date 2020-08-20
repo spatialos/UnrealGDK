@@ -137,10 +137,11 @@ public:
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
-	void EditorInitialise();
+#if WITH_EDITOR
 	void EditorRefreshWorkerRegions();
 	bool EditorAllowWorkerBoundaries() const;
 	void EditorSpatialToggleDebugger(bool bEnabled);
+#endif
 
 private:
 	void LoadIcons();
@@ -161,7 +162,9 @@ private:
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
 
+#if WITH_EDITOR
 	void EditorInitialiseWorkerRegions();
+#endif
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;

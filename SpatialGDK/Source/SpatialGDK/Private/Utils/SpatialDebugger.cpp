@@ -542,6 +542,7 @@ void ASpatialDebugger::SpatialToggleDebugger()
 	}
 }
 
+#if WITH_EDITOR
 void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
 {
 	bShowWorkerRegions = bEnabled;
@@ -557,30 +558,25 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 		EditorInitialiseWorkerRegions();
 		CreateWorkerRegions();
 	}
-#if WITH_EDITOR
+
 	if (GEditor != nullptr && GEditor->GetActiveViewport() != nullptr)
 	{
 		// Redraw editor window to show changes
 		GEditor->GetActiveViewport()->Invalidate();
 	}
-#endif
 }
 
 bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 {
-#if WITH_EDITOR
 	// Check if multi worker is enabled.
 	UWorld* World = GetWorld();
 	check(World != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	//const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(World);
 	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 
 	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
-#else
-	return false;
-#endif
 }
 
 void ASpatialDebugger::EditorInitialiseWorkerRegions()
@@ -593,14 +589,14 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	check(WorldSettings != nullptr);
 
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = *WorldSettings->MultiWorkerSettingsClass;
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->MultiWorkerSettingsClass;
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 	LoadBalanceStrategy->Init();
-	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
+	LoadBalanceStrategy->SetLayers(MultiWorkerSettings->WorkerLayers);
 
 	if (const UGridBasedLBStrategy* GridBasedLBStrategy =
 			Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
@@ -626,3 +622,5 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		}
 	}
 }
+
+#endif
