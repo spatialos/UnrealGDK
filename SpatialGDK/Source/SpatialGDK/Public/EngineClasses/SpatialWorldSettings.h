@@ -108,4 +108,6 @@ public:
 	// This function is used to expose the private bool property to SpatialStatics.
 	// You should call USpatialStatics::IsMultiWorkerEnabled to properly check whether multi-worker is enabled.
 	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *GetMultiWorkerSettingsClass() != nullptr; }
+
+	// Temporary comment to test if I can push from this branch
 };
