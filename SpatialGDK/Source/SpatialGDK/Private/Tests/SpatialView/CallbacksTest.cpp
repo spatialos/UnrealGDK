@@ -32,7 +32,9 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Invoke_Called_THEN_Invokes_Cal
 	// GIVEN
 	TCallbacks<int> Callbacks;
 	bool Invoked = false;
-	const FIntCallback Callback = [&Invoked](int _){Invoked = true;};
+	const FIntCallback Callback = [&Invoked](int _) {
+		Invoked = true;
+	};
 	Callbacks.Register(1, Callback);
 
 	// WHEN
@@ -50,8 +52,7 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Invoke_Called_THEN_Invokes_Cal
 	int CorrectValue = 1;
 	TCallbacks<int> Callbacks;
 	int InvokeCountWithCorrectValue = 0;
-	const FIntCallback Callback = [&InvokeCountWithCorrectValue, CorrectValue](int Value)
-	{
+	const FIntCallback Callback = [&InvokeCountWithCorrectValue, CorrectValue](int Value) {
 		if (Value == CorrectValue)
 		{
 			InvokeCountWithCorrectValue++;
@@ -75,7 +76,9 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Invoke_Called_THEN_Invokes
 	// GIVEN
 	TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback Callback = [&InvokeCount](int _){InvokeCount++;};
+	const FIntCallback Callback = [&InvokeCount](int _) {
+		InvokeCount++;
+	};
 	Callbacks.Register(1, Callback);
 	Callbacks.Register(2, Callback);
 
@@ -94,7 +97,9 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removed_THEN_No_Longe
 	CallbackId Id = 1;
 	TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback Callback = [&InvokeCount](int _){InvokeCount++;};
+	const FIntCallback Callback = [&InvokeCount](int _) {
+		InvokeCount++;
+	};
 	Callbacks.Register(Id, Callback);
 
 	// WHEN
@@ -113,9 +118,10 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Adds_Other_Callback_T
 	// GIVEN
 	TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback SecondCallback = [&InvokeCount](int _){InvokeCount++;};
-	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, SecondCallback](int _)
-	{
+	const FIntCallback SecondCallback = [&InvokeCount](int _) {
+		InvokeCount++;
+	};
+	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, SecondCallback](int) {
 		InvokeCount++;
 		Callbacks.Register(2, SecondCallback);
 	};
@@ -136,9 +142,10 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Removes_Other_Callbac
 	CallbackId Id = 2;
 	TCallbacks<int> Callbacks;
 	int InvokeCount = 0;
-	const FIntCallback SecondCallback = [&InvokeCount](int _){InvokeCount++;};
-	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, Id](int _)
-	{
+	const FIntCallback SecondCallback = [&InvokeCount](int _) {
+		InvokeCount++;
+	};
+	const FIntCallback FirstCallback = [&InvokeCount, &Callbacks, Id](int _) {
 		InvokeCount++;
 		Callbacks.Remove(Id);
 	};
