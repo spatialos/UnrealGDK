@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target will be automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 - Add ability to specify `USpatialMultiWorkerSettings` class from command line. Specifying a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
 
+
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
 - No longer AddOwnerInterestToServer unless the owner is replicating, otherwise this warning fires erroneously: "Interest for Actor <ActorName> is out of date because owner <OwnerName> does not have an entity id."
