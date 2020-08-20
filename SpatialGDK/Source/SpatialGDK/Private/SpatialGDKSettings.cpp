@@ -219,6 +219,16 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 	return RPCQueueWarningDefaultTimeout;
 }
 
+bool USpatialGDKSettings::ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const
+{
+	if (const bool* LogSetting = RPCTypeAllowUnresolvedParamMap.Find(Type))
+	{
+		return *LogSetting;
+	}
+
+	return false;
+}
+
 void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 {
 	ServicesRegion = NewRegion;

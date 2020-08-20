@@ -243,6 +243,8 @@ public:
 
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
 
+	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
+
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
@@ -324,4 +326,7 @@ public:
 	  */
 	UPROPERTY(Config)
 	bool bEnableMultiWorkerDebuggingWarnings;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay, meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
+	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 };
