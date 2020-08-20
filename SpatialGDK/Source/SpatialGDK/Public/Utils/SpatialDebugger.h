@@ -49,7 +49,7 @@ struct FWorkerRegionInfo
 };
 
 /**
- *Visualise spatial information at runtime and in the editor
+ * Visualise spatial information at runtime and in the editor
  */
 UCLASS(SpatialType = (NotPersistent), Blueprintable, NotPlaceable, Transient)
 class SPATIALGDK_API ASpatialDebugger : public AInfo
