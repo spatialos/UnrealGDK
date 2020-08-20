@@ -428,10 +428,25 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 
 	if (Type == ERPCType::NetMulticast)
 	{
+		if (!LastSeenMulticastRPCIds.Contains(EntityId))
+		{
+			UE_LOG(LogSpatialRPCService, Warning,
+				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: "
+						"Multicast"),
+				   EntityId);
+			return;
+		}
 		LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
 	}
 	else
 	{
+		if (!LastSeenRPCIds.Contains(EntityTypePair))
+		{
+			UE_LOG(LogSpatialRPCService, Warning,
+				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: %s"),
+				   EntityId, *SpatialConstants::RPCTypeToString(Type));
+			return;
+		}
 		LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
 	}
 

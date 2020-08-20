@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When the `SpatialStatics::GetActorEntityId` function is passed a `nullptr`, it now returns `SpatialConstants::INVALID_ENTITY_ID`.
 - Removed the `EditorWorkerController` class. It is no longer required for running consecutive PIE sessions.
 - Fixed a crash that occurred when overflowed RPCs remained overflowed after a flush attempt.
+- Fixed a crash that sometimes occurred after performing server travel with ring buffers enabled.
 
 ## [`0.10.0`] - 2020-07-08
 
