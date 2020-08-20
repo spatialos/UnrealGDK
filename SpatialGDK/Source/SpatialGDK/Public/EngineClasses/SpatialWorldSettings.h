@@ -55,7 +55,7 @@ UCLASS()
 class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 {
 	GENERATED_BODY()
-
+	friend class USpatialStatics;
 private:
 	/** Enable running different server worker types to split the simulation. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
