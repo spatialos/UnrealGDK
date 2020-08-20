@@ -53,7 +53,10 @@ private:
 
 		struct ComponentIdComparator
 		{
-			bool operator()(const FComponentCallbacks& Callbacks, Worker_ComponentId Id) const { return Callbacks.Id < Id; }
+			bool operator()(const FComponentCallbacks& Callbacks, Worker_ComponentId ComponentId) const
+			{
+				return Callbacks.Id < ComponentId;
+			}
 		};
 	};
 
@@ -70,7 +73,10 @@ private:
 
 		struct ComponentIdComparator
 		{
-			bool operator()(const FAuthorityCallbacks& Callbacks, Worker_ComponentId Id) const { return Callbacks.Id < Id; }
+			bool operator()(const FAuthorityCallbacks& Callbacks, Worker_ComponentId ComponentId) const
+			{
+				return Callbacks.Id < ComponentId;
+			}
 		};
 	};
 
