@@ -572,7 +572,6 @@ bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 	UWorld* World = GetWorld();
 	check(World != nullptr);
 
-	//const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(World);
 	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 
