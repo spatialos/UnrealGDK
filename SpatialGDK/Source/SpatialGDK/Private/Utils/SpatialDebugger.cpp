@@ -591,9 +591,9 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->MultiWorkerSettingsClass;
 
 	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-		NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
+		NewObject<UAbstractSpatialMultiWorkerSettings>(GetTransientPackage(), *MultiWorkerSettingsClass);
 
-	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
+	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(GetTransientPackage());
 	LoadBalanceStrategy->Init();
 	LoadBalanceStrategy->SetLayers(MultiWorkerSettings->WorkerLayers);
 
@@ -620,10 +620,6 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 			}
 		}
 	}
-	MultiWorkerSettings->ConditionalBeginDestroy();
-	MultiWorkerSettings = nullptr;
-	LoadBalanceStrategy->ConditionalBeginDestroy();
-	LoadBalanceStrategy = nullptr;
 }
 
 #endif
