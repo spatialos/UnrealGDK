@@ -766,23 +766,10 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 				FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()),
 								FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 
-			/* start of duplicate code from above - TODO refactor to new method - first check what actually needs to be done twice - if uses
-			 * the new get local config*/
-			// FSpatialLaunchConfigDescription CloudLaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-
-			// FWorkerTypeLaunchSection CloudConf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
-			// Force manual connection to true as this is the config for PIE.
-			// Conf.bManualWorkerConnectionOnly = true;
-
 			if (Conf.bAutoNumEditorInstances)
 			{
 				Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 			}
-
-			/*if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
-			{
-				return;
-			}*/
 
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
 

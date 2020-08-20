@@ -4,7 +4,7 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
-#include "SpatialCommandUtils.h"
+// Temporary note: the below include builds and runs locally but fails on a Linux build as it cannot find the header file
 #include "SpatialGDKServicesConstants.h"
 
 #include "Utils/LayerInfo.h"
@@ -108,6 +108,4 @@ public:
 	// This function is used to expose the private bool property to SpatialStatics.
 	// You should call USpatialStatics::IsMultiWorkerEnabled to properly check whether multi-worker is enabled.
 	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *GetMultiWorkerSettingsClass() != nullptr; }
-
-	// Temporary comment to test if I can push from this branch
 };
