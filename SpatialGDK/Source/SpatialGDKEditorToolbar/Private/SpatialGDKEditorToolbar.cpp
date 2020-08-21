@@ -746,7 +746,6 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	{
 		// Destroy spatial debugger when changing map as it will be invalid
 		DestroySpatialDebuggerEditor();
-
 	}
 }
 
