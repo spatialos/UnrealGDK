@@ -1429,8 +1429,7 @@ void FSpatialGDKEditorToolbarModule::InitialiseSpatialDebuggerEditor(UWorld* Wor
 
 	if (SpatialSettings->SpatialDebugger != nullptr)
 	{
-		// If Spatial networking is enabled and spatial debugger set then create the SpatialDebugger for this map to be used in the
-		// editor
+		// If spatial debugger set then create the SpatialDebugger for this map to be used in the editor
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.bHideFromSceneOutliner = true;
 		SpatialDebugger = World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger, SpawnParameters);
