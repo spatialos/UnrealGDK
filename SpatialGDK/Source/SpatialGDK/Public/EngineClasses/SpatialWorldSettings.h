@@ -6,8 +6,9 @@
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/LayerInfo.h"
-#include "Utils/SpatialStatics.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialStatics.h"
+
 
 #include "GameFramework/WorldSettings.h"
 #include "Templates/SubclassOf.h"

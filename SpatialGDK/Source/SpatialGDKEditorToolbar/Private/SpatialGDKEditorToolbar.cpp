@@ -169,7 +169,7 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 		ExecutionFailSound = nullptr;
 	}
 
-	if (FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");)
+	if (FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
 	{
 		LevelEditor->OnMapChanged().RemoveAll(this);
 	}
