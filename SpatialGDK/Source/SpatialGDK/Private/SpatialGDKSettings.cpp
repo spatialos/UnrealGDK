@@ -62,6 +62,19 @@ void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Par
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
 		   bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
 }
+
+void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
+										TOptional<FString>& StrOutValue)
+{
+#if ALLOW_SPATIAL_CMDLINE_PARSING
+	FString TempStr;
+	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
+	{
+		StrOutValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
+}
 } // namespace
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -142,6 +155,9 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+
+	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
+									   OverrideMultiWorkerSettingsClass);
 }
 
 #if WITH_EDITOR
