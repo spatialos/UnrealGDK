@@ -139,6 +139,7 @@ public:
 
 #if WITH_EDITOR
 	void EditorRefreshWorkerRegions();
+	static void EditorRefreshDisplay();
 	bool EditorAllowWorkerBoundaries() const;
 	void EditorSpatialToggleDebugger(bool bEnabled);
 #endif

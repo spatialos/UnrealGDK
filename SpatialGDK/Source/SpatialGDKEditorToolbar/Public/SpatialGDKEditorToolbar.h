@@ -76,6 +76,8 @@ private:
 	void StopSpatialServiceButtonClicked();
 
 	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
+	void DestroySpatialDebuggerEditor();
+	void InitialiseSpatialDebuggerEditor(UWorld* World);
 	bool IsSpatialDebuggerEditorEnabled() const;
 	bool AllowWorkerBoundaries() const;
 	void ToggleSpatialDebuggerEditor();
@@ -196,5 +198,4 @@ private:
 	// Used to show worker boundaries in the editor
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
-	bool bSpatialDebuggerEditorEnabled;
 };
