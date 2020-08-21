@@ -482,7 +482,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 
-	MenuBuilder.BeginSection("SpatialDebbugerEditorSettings");
+	MenuBuilder.BeginSection("SpatialDebuggerEditorSettings");
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
 	}
