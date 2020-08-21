@@ -19,10 +19,10 @@
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -52,10 +52,10 @@ void FSpatialGDKEditorModule::StartupModule()
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 
 	// Allow Spatial Plugin to stop PIE after Automation Manager completes the tests
-	IAutomationControllerModule& AutomationControllerModule = FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+	IAutomationControllerModule& AutomationControllerModule =
+		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
-	AutomationController->OnTestsComplete().AddLambda([]()
-	{
+	AutomationController->OnTestsComplete().AddLambda([]() {
 #if ENGINE_MINOR_VERSION < 25
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
 #else
@@ -213,7 +213,8 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 	else if (ShouldConnectToCloudDeployment())
 	{
 		// 127.0.0.1 is only used to indicate that we want to connect to a deployment.
-		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection if it fails.
+		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection
+		// if it fails.
 		CommandLine = TEXT("127.0.0.1 -devAuthToken ") + GetDevAuthToken();
 		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
 		if (!CloudDeploymentName.IsEmpty())
@@ -273,7 +274,7 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
 		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
-		if(TestingMode != EMapTestingMode::UseCurrentSettings)
+		if (TestingMode != EMapTestingMode::UseCurrentSettings)
 		{
 			TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
 			if (TestingMode == EMapTestingMode::Detect)

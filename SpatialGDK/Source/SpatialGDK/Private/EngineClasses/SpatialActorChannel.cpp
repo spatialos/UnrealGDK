@@ -1392,7 +1392,8 @@ bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 	const float SpatialMinimumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateLowerThresholdCentimeters);
 	const float SpatialMaximumPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters);
 
-	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateLowerThresholdSeconds && DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
+	if (TimeSinceLastPositionUpdate >= SpatialGDKSettings->PositionUpdateLowerThresholdSeconds
+		&& DistanceTravelledSinceLastUpdateSquared >= SpatialMinimumPositionThresholdSquared)
 	{
 		return true;
 	}
