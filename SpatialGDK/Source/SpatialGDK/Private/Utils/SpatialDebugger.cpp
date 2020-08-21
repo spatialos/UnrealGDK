@@ -622,4 +622,4 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	}
 }
 
-#endif
+#endif // WITH_EDITOR
