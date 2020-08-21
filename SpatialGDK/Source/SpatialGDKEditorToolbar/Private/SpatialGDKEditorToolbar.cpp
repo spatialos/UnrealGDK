@@ -28,6 +28,7 @@
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "EngineUtils.h"
 
 #include "CloudDeploymentConfiguration.h"
 #include "SpatialCommandUtils.h"
@@ -49,6 +50,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
+#include "Utils/SpatialDebugger.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -128,6 +130,10 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
+
+	// Get notified of map changed events to update worker boundaries in the editor
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	FDelegateHandle OnMapChangedHandle = LevelEditorModule.OnMapChanged().AddRaw(this, &FSpatialGDKEditorToolbarModule::MapChanged);
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -159,6 +165,11 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 			ExecutionFailSound->RemoveFromRoot();
 		}
 		ExecutionFailSound = nullptr;
+	}
+
+	if (FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor"))
+	{
+		LevelEditor->OnMapChanged().RemoveAll(this);
 	}
 
 	FSpatialGDKEditorToolbarStyle::Shutdown();
@@ -281,6 +292,12 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GDKRuntimeSettings,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GDKRuntimeSettingsClicked));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
+		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled)
+	);
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -463,6 +480,12 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 
+	MenuBuilder.BeginSection("SpatialDebuggerEditorSettings");
+	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
+	}
+	MenuBuilder.EndSection();
+	
 	return MenuBuilder.MakeWidget();
 }
 
@@ -692,6 +715,38 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 		OnShowSuccessNotification(TEXT("Spatial service stopped!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
 	});
+}
+
+void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
+{
+	if (IsValid(SpatialDebugger))
+	{
+		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+
+		SpatialDebugger->EditorSpatialToggleDebugger(SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("There was no SpatialDebugger setup when the map was loaded."));
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType MapChangeType)
+{
+	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
+	{
+		// If Spatial networking is enabled then initialise the SpatialDebugger.
+		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			InitialiseSpatialDebuggerEditor(World);
+		}
+	}
+	else if (MapChangeType == EMapChangeType::TearDownWorld)
+	{
+		// Destroy spatial debugger when changing map as it will be invalid
+		DestroySpatialDebuggerEditor();
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
@@ -929,6 +984,18 @@ void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());
+
+	// If Spatial networking is enabled then initialise the SpatialDebugger, otherwise destroy it
+	if (GeneralProjectSettings->UsesSpatialNetworking())
+	{
+		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+		check(EditorWorld);
+		InitialiseSpatialDebuggerEditor(EditorWorld);
+	}
+	else
+	{
+		DestroySpatialDebuggerEditor();
+	}
 }
 
 bool FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled() const
@@ -1026,6 +1093,13 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bConnectServerToCloud))
 		{
 			LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
+		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bSpatialDebuggerEditorEnabled))
+		{
+			if (IsValid(SpatialDebugger))
+			{
+				SpatialDebugger->EditorSpatialToggleDebugger(Settings->bSpatialDebuggerEditorEnabled);
+			}
 		}
 	}
 }
@@ -1336,6 +1410,42 @@ void FSpatialGDKEditorToolbarModule::OnCheckedSimulatedPlayers()
 bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
 {
 	return GetDefault<USpatialGDKEditorSettings>()->IsBuildClientWorkerEnabled();
+}
+
+void FSpatialGDKEditorToolbarModule::DestroySpatialDebuggerEditor()
+{
+	if (IsValid(SpatialDebugger))
+	{
+		SpatialDebugger->Destroy();
+		SpatialDebugger = nullptr;
+		ASpatialDebugger::EditorRefreshDisplay();
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::InitialiseSpatialDebuggerEditor(UWorld* World)
+{
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
+	if (SpatialSettings->SpatialDebugger != nullptr)
+	{
+		// If spatial debugger set then create the SpatialDebugger for this map to be used in the editor
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.bHideFromSceneOutliner = true;
+		SpatialDebugger = World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger, SpawnParameters);
+		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+		SpatialDebugger->EditorSpatialToggleDebugger(SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+	}
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return AllowWorkerBoundaries() && SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled;
+}
+
+bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const
+{
+	return IsValid(SpatialDebugger) && SpatialDebugger->EditorAllowWorkerBoundaries();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()
