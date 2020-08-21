@@ -94,7 +94,7 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 } // anonymous namespace
 
-uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
+uint32 GetWorkerCountFromWorldSettings(const UWorld& World, bool bForceDefault)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 	if (WorldSettings == nullptr)
@@ -109,9 +109,18 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	return WorldSettings->GetMultiWorkerSettingsClass()
-		->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
-		->GetMinimumRequiredWorkerCount();
+	if (bForceDefault)
+	{
+		return WorldSettings->MultiWorkerSettingsClass
+			->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
+			->GetMinimumRequiredWorkerCount();
+	}
+	else
+	{
+		return WorldSettings->GetMultiWorkerSettingsClass()
+			->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
+			->GetMinimumRequiredWorkerCount();
+	}
 }
 
 bool FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, FIntPoint& OutWorldDimensions)

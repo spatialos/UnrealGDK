@@ -34,7 +34,6 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	, bStoppingDeployment(false)
 	, bStartingSpatialService(false)
 	, bStoppingSpatialService(false)
-	, bLocalLaunchConfig(false)
 {
 }
 
@@ -750,11 +749,6 @@ bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
 	return bLocalDeploymentRunning;
 }
 
-bool FLocalDeploymentManager::UseLocalLaunchConfig() const
-{
-	return bLocalLaunchConfig;
-}
-
 bool FLocalDeploymentManager::IsSpatialServiceRunning() const
 {
 	return bSpatialServiceRunning;
@@ -805,11 +799,6 @@ bool FLocalDeploymentManager::ShouldWaitForDeployment() const
 void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 {
 	bAutoDeploy = bInAutoDeploy;
-}
-
-void FLocalDeploymentManager::SetLocalLaunchConfig(bool bUseLocal)
-{
-	bLocalLaunchConfig = bUseLocal;
 }
 
 #undef LOCTEXT_NAMESPACE

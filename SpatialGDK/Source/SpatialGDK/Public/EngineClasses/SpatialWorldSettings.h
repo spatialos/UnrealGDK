@@ -4,8 +4,6 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
-// Temporary note: the below include builds and runs locally but fails on a Linux build as it cannot find the header file
-#include "SpatialGDKServicesConstants.h"
 
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialStatics.h"
@@ -63,24 +61,24 @@ private:
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSubclassOf<USpatialMultiWorkerSettings> CloudMultiWorkerSettingsClass;
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSubclassOf<USpatialMultiWorkerSettings> LocalMultiWorkerSettingsClass;
+	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsClass;
 
+	/** If Editor Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings, otherwise use the default Multi Worker Settings. */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass() const
 	{
-		// If a local deployment is starting up or running return the local multi worker settings, otherwise return the cloud worker settings
-		if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+#if WITH_EDITOR
+		if (EditorMultiWorkerSettingsClass != nullptr)
 		{
-			FLocalDeploymentManager* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
-			//if (LocalDeploymentManager->IsDeploymentStarting() || LocalDeploymentManager->IsLocalDeploymentRunning())
-			if (LocalDeploymentManager->UseLocalLaunchConfig())
-			{
-				return LocalMultiWorkerSettingsClass;
-			}
+			
+			return EditorMultiWorkerSettingsClass;
 		}
-		return CloudMultiWorkerSettingsClass;
+#endif // WITH_EDITOR
+
+		return MultiWorkerSettingsClass;
+
 	}
 	
 	bool IsMultiWorkerEnabled() const
