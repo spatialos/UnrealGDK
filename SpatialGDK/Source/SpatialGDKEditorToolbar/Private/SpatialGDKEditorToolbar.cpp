@@ -169,8 +169,7 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 		ExecutionFailSound = nullptr;
 	}
 
-	FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");
-	if (LevelEditor != nullptr)
+	if (FLevelEditorModule* LevelEditor = FModuleManager::GetModulePtr<FLevelEditorModule>("LevelEditor");)
 	{
 		LevelEditor->OnMapChanged().RemoveAll(this);
 	}
@@ -483,7 +482,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	}
 	MenuBuilder.EndSection();
 
-	MenuBuilder.BeginSection("SpatialDebbugerEditorSettings");
+	MenuBuilder.BeginSection("SpatialDebuggerEditorSettings");
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
 	}

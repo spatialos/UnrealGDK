@@ -593,7 +593,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		NewObject<UAbstractSpatialMultiWorkerSettings>(GetTransientPackage(), *MultiWorkerSettingsClass);
 
-	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(GetTransientPackage());
+	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();
 	LoadBalanceStrategy->Init();
 	LoadBalanceStrategy->SetLayers(MultiWorkerSettings->WorkerLayers);
 
@@ -622,4 +622,4 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	}
 }
 
-#endif
+#endif // WITH_EDITOR
