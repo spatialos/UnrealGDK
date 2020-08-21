@@ -23,7 +23,7 @@
 ASpatialTestRepNotify::ASpatialTestRepNotify()
 	: Super()
 {
-	Author = "Miron";
+	Author = "Miron + Andrei";
 	Description = TEXT("Test RepNotify replication and shadow data");
 }
 
@@ -34,10 +34,10 @@ void ASpatialTestRepNotify::BeginPlay()
 	// The Server sets some initial values to the replicated variables.
 	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
-			TestInt1 = 1;
-			TestInt2 = 2;
-			TestInt3 = 3;
-			TestInt4 = 4;
+			OnChangedRepNotifyInt1 = 1;
+			AlwaysRepNotifyInt1 = 2;
+			OnChangedRepNotifyInt2 = 3;
+			AlwaysRepNotifyInt2 = 4;
 			TestArray.Empty();
 			TestArray.Add(1);
 			TestArray.Add(2);
@@ -48,8 +48,8 @@ void ASpatialTestRepNotify::BeginPlay()
 	// All clients check they received the correct values for the replicated variables.
 	AddStep(TEXT("SpatialTestRepNotifyAllClientsCheckReplicatedVariables"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime)
 		{
-			if (bOnRepTestInt1Called && bOnRepTestInt2Called
-				&& TestInt1 == 1 && TestInt2 == 2 && TestInt3 == 3 && TestInt4 == 4
+			if (bOnRepOnChangedRepNotifyInt1Called && bOnRepAlwaysRepNotifyInt1Called
+				&& OnChangedRepNotifyInt1 == 1 && AlwaysRepNotifyInt1 == 2 && OnChangedRepNotifyInt2 == 3 && AlwaysRepNotifyInt2 == 4
 				&& TestArray.Num() == 2 && TestArray[0] == 1 && TestArray[1] == 2)
 			{
 				FinishStep();
@@ -59,32 +59,23 @@ void ASpatialTestRepNotify::BeginPlay()
 	// All clients reset the values modified by the RepNotifies called due to the Server modifying the replicated variables.
 	AddStep(TEXT("SpatialTestRepNotifiyAllClientsLocallyChangeVariables"), FWorkerDefinition::AllClients, nullptr, [this]()
 		{
-			bOnRepTestInt1Called = false;
-			bOnRepTestInt2Called = false;
-			OldTestInt3 = -3;
-			OldTestInt4 = -4;
+			bOnRepOnChangedRepNotifyInt1Called = false;
+			bOnRepAlwaysRepNotifyInt1Called = false;
+			OldOnChangedRepNotifyInt2 = -3;
+			OldAlwaysRepNotifyInt2 = -4;
 			OldTestArray.Empty();
 
 			FinishStep();
 		});
 
 	// All clients modify 3 of the replicated variables.
-	AddStep(TEXT("SpatialTestRepNotifyAllClientsModifyReplicatedVariables"), FWorkerDefinition::AllClients, [this]() -> bool
+	AddStep(TEXT("SpatialTestRepNotifyAllClientsModifyReplicatedVariables"), FWorkerDefinition::AllClients, nullptr, [this]()
 		{
-			// Extra check to ensure that the Old values are correct before changing the replicated variables.
-			if (OldTestInt3 == -3 && OldTestInt4 == -4)
-			{
-				return true;
-			}
+			// Note that OnChangedRepNotifyInt2 is specifically not modified, this will be relevant in the SpatialTestRepNotifyAllClientsCheckValuesAndRepNotifies step.
 
-			return false;
-		}, [this]()
-		{
-			// Note that TestInt3 is specifically not modified, this will be relevant in the SpatialTestRepNotifyAllClientsCheckValuesAndRepNotifies step.
-
-			TestInt1 = 10;
-			TestInt2 = 20;
-			TestInt4 = 50;
+			OnChangedRepNotifyInt1 = 10;
+			AlwaysRepNotifyInt1 = 20;
+			AlwaysRepNotifyInt2 = 50;
 
 			FinishStep();
 		}, nullptr, 5.0f);
@@ -92,10 +83,11 @@ void ASpatialTestRepNotify::BeginPlay()
 	// The Server modifies the replicated variables once again.
 	AddStep(TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
-			TestInt1 = 10;
-			TestInt2 = 20;
-			TestInt3 = 30;
-			TestInt4 = 40;
+			OnChangedRepNotifyInt1 = 10;
+			OnChangedRepNotifyInt2 = 30;
+
+			AlwaysRepNotifyInt1 = 20;
+			AlwaysRepNotifyInt2 = 40;
 
 			TestArray.Add(30);
 			FinishStep();
@@ -105,7 +97,7 @@ void ASpatialTestRepNotify::BeginPlay()
 	AddStep(TEXT("SpatialTestRepNotifyAllClientsCheckValuesAndRepNotifies"), FWorkerDefinition::AllClients, [this]()->bool
 		{
 			// First make sure that we have correctly received the replicated variables, before checking the RepNotify behaviour.
-			if (!(TestInt1 == 10 && TestInt2 == 20 && TestInt3 == 30 && TestInt4 == 40))
+			if (!(OnChangedRepNotifyInt1 == 10 && AlwaysRepNotifyInt1 == 20 && OnChangedRepNotifyInt2 == 30 && AlwaysRepNotifyInt2 == 40))
 			{
 				return false;
 			}
@@ -121,30 +113,30 @@ void ASpatialTestRepNotify::BeginPlay()
 			// At this point, we have correctly received the values of all replicated variables, therefore the RepNotify behaviour can be checked.
 
 			// Since the RepNotify for this variable is using the default REPNOTIFY_OnChanged, we expect it not to get called on the clients.
-			if (bOnRepTestInt1Called)
+			if (bOnRepOnChangedRepNotifyInt1Called)
 			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestInt1 should not be called on the clients"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepOnChangedRepNotifyInt1 should not be called on the clients"));
 				return;
 			}
 
 			// In this case, the RepNotify uses REPNOTIFY_Always so we expect it to be called on the clients.
-			if (!bOnRepTestInt2Called)
+			if (!bOnRepAlwaysRepNotifyInt1Called)
 			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestInt1 should be called on the clients"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepOnChangedRepNotifyInt1 should be called on the clients"));
 				return;
 			}
 
 			// From the Clients, we have not modified the value of this particular variable, so we still expect the old value to be the one initially set by the Server in the first step.
-			if (OldTestInt3 != 3)
+			if (OldOnChangedRepNotifyInt2 != 3)
 			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestInt3 should have been called with the old value of 3"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepOnChangedRepNotifyInt2 should have been called with the old value of 3"));
 				return;
 			}
 
 			// Since we have modified this value from the Clients, we expect its value to be the same as set in SpatialTestRepNotifyAllClientsModifyReplicatedVariables.
-			if (OldTestInt4 != 50)
+			if (OldAlwaysRepNotifyInt2 != 50)
 			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestInt4 should have been called with the old value of 40"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepAlwaysRepNotifyInt2 should have been called with the old value of 40"));
 				return;
 			}
 
@@ -229,24 +221,24 @@ void ASpatialTestRepNotify::BeginPlay()
 		}, nullptr, 5.0f);
 }
 
-void ASpatialTestRepNotify::OnRep_TestInt1(int32 OldTestInt1)
+void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
 {
-	bOnRepTestInt1Called = true;
+	bOnRepOnChangedRepNotifyInt1Called = true;
 }
 
-void ASpatialTestRepNotify::OnRep_TestInt2(int32 OldTestInt2)
+void ASpatialTestRepNotify::OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNotifyInt1)
 {
-	bOnRepTestInt2Called = true;
+	bOnRepAlwaysRepNotifyInt1Called = true;
 }
 
-void ASpatialTestRepNotify::OnRep_TestInt3(int32 InOldTestInt3)
+void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt2(int32 InOldOnChangedRepNotifyInt2)
 {
-	OldTestInt3 = InOldTestInt3;
+	OldOnChangedRepNotifyInt2 = InOldOnChangedRepNotifyInt2;
 }
 
-void ASpatialTestRepNotify::OnRep_TestInt4(int32 InOldTestInt4)
+void ASpatialTestRepNotify::OnRep_AlwaysRepNotifyInt2(int32 InOldAlwaysRepNotifyInt2)
 {
-	OldTestInt4 = InOldTestInt4;
+	OldAlwaysRepNotifyInt2 = InOldAlwaysRepNotifyInt2;
 }
 
 void ASpatialTestRepNotify::OnRep_TestArray(TArray<int32> InOldTestArray)
@@ -258,9 +250,9 @@ void ASpatialTestRepNotify::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ASpatialTestRepNotify, TestInt1);
-	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, TestInt2, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME(ASpatialTestRepNotify, TestInt3);
-	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, TestInt4, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME(ASpatialTestRepNotify, OnChangedRepNotifyInt1);
+	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, AlwaysRepNotifyInt1, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME(ASpatialTestRepNotify, OnChangedRepNotifyInt2);
+	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, AlwaysRepNotifyInt2, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME(ASpatialTestRepNotify, TestArray);
 }

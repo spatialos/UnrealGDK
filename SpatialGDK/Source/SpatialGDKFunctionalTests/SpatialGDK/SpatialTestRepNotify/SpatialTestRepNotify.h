@@ -18,42 +18,42 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	bool bOnRepTestInt1Called;
+	bool bOnRepOnChangedRepNotifyInt1Called;
 
-	bool bOnRepTestInt2Called;
+	bool bOnRepAlwaysRepNotifyInt1Called;
 
-	int32 OldTestInt3;
+	int32 OldOnChangedRepNotifyInt2;
 
-	int32 OldTestInt4;
+	int32 OldAlwaysRepNotifyInt2;
 
 	TArray<int32> OldTestArray;
 
-	UPROPERTY(ReplicatedUsing = OnRep_TestInt1)
-	int32 TestInt1;
+	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt1)
+	int32 OnChangedRepNotifyInt1;
 
-	UPROPERTY(ReplicatedUsing = OnRep_TestInt2)
-	int32 TestInt2;
+	UPROPERTY(ReplicatedUsing = OnRep_AlwaysRepNotifyInt1)
+	int32 AlwaysRepNotifyInt1;
 
-	UPROPERTY(ReplicatedUsing = OnRep_TestInt3)
-	int32 TestInt3;
+	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt2)
+	int32 OnChangedRepNotifyInt2;
 
-	UPROPERTY(ReplicatedUsing = OnRep_TestInt4)
-	int32 TestInt4;
+	UPROPERTY(ReplicatedUsing = OnRep_AlwaysRepNotifyInt2)
+	int32 AlwaysRepNotifyInt2;
 
 	UPROPERTY(ReplicatedUsing = OnRep_TestArray)
 	TArray<int32> TestArray;
 
 	UFUNCTION()
-	void OnRep_TestInt1(int32 OldTestInt1);
+	void OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1);
 
 	UFUNCTION()
-	void OnRep_TestInt2(int32 OldTestInt2);
+	void OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNotifyInt1);
 
 	UFUNCTION()
-	void OnRep_TestInt3(int32 OldTestInt3);
+	void OnRep_OnChangedRepNotifyInt2(int32 OldOnChangedRepNotifyInt2);
 
 	UFUNCTION()
-	void OnRep_TestInt4(int32 OldTestInt4);
+	void OnRep_AlwaysRepNotifyInt2(int32 OldAlwaysRepNotifyInt2);
 
 	UFUNCTION()
 	void OnRep_TestArray(TArray<int32> OldTestArray);
