@@ -768,7 +768,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 	}
 
-
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -810,7 +809,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 		// Also create default launch config for cloud deployments.
 		{
-
 			// Revert to the setting's flag value for manual connection.
 			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
 
@@ -824,7 +822,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			}
 
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
-
 		}
 	}
 	else
