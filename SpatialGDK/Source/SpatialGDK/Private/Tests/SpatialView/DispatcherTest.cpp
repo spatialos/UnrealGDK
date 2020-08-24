@@ -38,12 +38,10 @@ TArray<SpatialGDK::EntityDelta> CreateComponentAddedDeltaWithChange(const Worker
 
 double GetValueFromSchemaComponentData(Schema_ComponentData* Data)
 {
-	return Schema_GetDouble(Schema_GetComponentDataFields(Data),
-                SpatialGDK::EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID);
+	return Schema_GetDouble(Schema_GetComponentDataFields(Data), SpatialGDK::EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID);
 }
 
-SpatialGDK::EntityViewElement CreateViewElementWithComponentValue(const Worker_ComponentId ComponentId,
-	const double Value)
+SpatialGDK::EntityViewElement CreateViewElementWithComponentValue(const Worker_ComponentId ComponentId, const double Value)
 {
 	SpatialGDK::ComponentData Data = SpatialGDK::CreateTestComponentData(ComponentId, Value);
 	SpatialGDK::EntityViewElement Element;
@@ -62,8 +60,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 	SpatialGDK::FDispatcher Dispatcher;
 
 	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange Change) {
-		if (Change.EntityId == ENTITY_ID
-			&& Change.Change.ComponentId == COMPONENT_ID
+		if (Change.EntityId == ENTITY_ID && Change.Change.ComponentId == COMPONENT_ID
 			&& GetValueFromSchemaComponentData(Change.Change.Data) == COMPONENT_VALUE)
 		{
 			Invoked = true;
@@ -126,9 +123,8 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 	const TUniquePtr<SpatialGDK::EntityView> View = MakeUnique<SpatialGDK::EntityView>();
 
 	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange Change) {
-		if (Change.EntityId == ENTITY_ID
-            && Change.Change.ComponentId == COMPONENT_ID
-            && GetValueFromSchemaComponentData(Change.Change.Data) == COMPONENT_VALUE)
+		if (Change.EntityId == ENTITY_ID && Change.Change.ComponentId == COMPONENT_ID
+			&& GetValueFromSchemaComponentData(Change.Change.Data) == COMPONENT_VALUE)
 		{
 			Invoked = true;
 		}
@@ -150,5 +146,3 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 
 	return true;
 }
-
-
