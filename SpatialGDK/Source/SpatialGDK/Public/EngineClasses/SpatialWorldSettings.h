@@ -65,6 +65,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsClass;
+
+	/** If Editor Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings, otherwise use the default
+	 * Multi Worker Settings. */
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass() const
+	{
+#if WITH_EDITOR
+		if (EditorMultiWorkerSettingsClass != nullptr)
+		{
+			return EditorMultiWorkerSettingsClass;
+		}
+#endif // WITH_EDITOR
+
+		return MultiWorkerSettingsClass;
+	}
+
 #if WITH_EDITORONLY_DATA
 	/** Defines how Unreal Editor will run the Tests in this map, without changing current Settings. */
 	UPROPERTY(EditAnywhere, Category = "Testing")
