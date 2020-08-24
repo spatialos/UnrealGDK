@@ -109,18 +109,9 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World, bool bForceDefault)
 		return 1;
 	}
 
-	if (bForceDefault)
-	{
-		return WorldSettings->MultiWorkerSettingsClass
-			->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
-			->GetMinimumRequiredWorkerCount();
-	}
-	else
-	{
-		return WorldSettings->GetMultiWorkerSettingsClass()
-			->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
-			->GetMinimumRequiredWorkerCount();
-	}
+	return WorldSettings->GetMultiWorkerSettingsClass(bForceDefault)
+		->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
+		->GetMinimumRequiredWorkerCount();
 }
 
 bool FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, FIntPoint& OutWorldDimensions)

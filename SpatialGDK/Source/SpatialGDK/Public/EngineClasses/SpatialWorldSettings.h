@@ -61,17 +61,21 @@ private:
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;
 
-public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
 	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsClass;
 
+public:
 	/** If Editor Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings, otherwise use the default
 	 * Multi Worker Settings. */
-	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass() const
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceDefault = false) const
 	{
+		if (bForceDefault)
+		{
+			return MultiWorkerSettingsClass;
+		}
 #if WITH_EDITOR
 		if (EditorMultiWorkerSettingsClass != nullptr)
 		{
@@ -100,6 +104,7 @@ public:
 		{
 			const FName PropertyName(PropertyChangedEvent.Property->GetFName());
 			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
+				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsClass)
 				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
 			{
 				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
@@ -114,5 +119,5 @@ public:
 	}
 #endif
 
-	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr; }
+	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *GetMultiWorkerSettingsClass() != nullptr; }
 };

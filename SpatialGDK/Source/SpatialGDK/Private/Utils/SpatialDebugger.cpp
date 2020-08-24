@@ -593,7 +593,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	check(WorldSettings != nullptr);
 
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->MultiWorkerSettingsClass;
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->GetMultiWorkerSettingsClass();
 
 	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		NewObject<UAbstractSpatialMultiWorkerSettings>(GetTransientPackage(), *MultiWorkerSettingsClass);
