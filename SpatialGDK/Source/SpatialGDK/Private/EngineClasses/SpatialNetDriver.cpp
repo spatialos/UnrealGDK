@@ -524,6 +524,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+			
 			if (USpatialGameInstance* GameInstance = GetGameInstance())
 			{
 				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
