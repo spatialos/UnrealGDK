@@ -1274,7 +1274,7 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
 	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
 	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 
