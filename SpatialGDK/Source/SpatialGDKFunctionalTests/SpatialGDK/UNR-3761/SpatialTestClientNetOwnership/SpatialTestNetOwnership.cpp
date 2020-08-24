@@ -105,24 +105,23 @@ void ASpatialTestNetOwnership::BeginPlay()
 	for (int i = 1; i <= TestLocations.Num(); ++i)
 	{
 		// The authoritative server moves the cube and Client1's Pawn to the corresponding test location
-		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr,
-				[this, i, TestLocations]() {
-					APlayerController* PlayerController =
-						Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-					APawn* PlayerPawn = PlayerController->GetPawn();
+		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr, [this, i, TestLocations]() {
+			APlayerController* PlayerController =
+				Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+			APawn* PlayerPawn = PlayerController->GetPawn();
 
-					if (PlayerPawn->HasAuthority())
-					{
-						PlayerPawn->SetActorLocation(TestLocations[i - 1]);
-					}
+			if (PlayerPawn->HasAuthority())
+			{
+				PlayerPawn->SetActorLocation(TestLocations[i - 1]);
+			}
 
-					if (NetOwnershipCube->HasAuthority())
-					{
-						NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
-					}
+			if (NetOwnershipCube->HasAuthority())
+			{
+				NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
+			}
 
-					FinishStep();
-				});
+			FinishStep();
+		});
 
 		//  Client 1 sends a ServerRPC from the Cube.
 		AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
@@ -142,15 +141,14 @@ void ASpatialTestNetOwnership::BeginPlay()
 	// Test Phase 2
 
 	//  The authoritative server sets the owner of the cube to be nullptr
-	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwnerToNull"), FWorkerDefinition::AllServers, nullptr,
-			[this]() {
-				if (NetOwnershipCube->HasAuthority())
-				{
-					NetOwnershipCube->SetOwner(nullptr);
-				}
+	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwnerToNull"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		if (NetOwnershipCube->HasAuthority())
+		{
+			NetOwnershipCube->SetOwner(nullptr);
+		}
 
-				FinishStep();
-			});
+		FinishStep();
+	});
 
 	//  Client 1 sends a ServerRPC from the NetOwnershipCube that should be ignored.
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));

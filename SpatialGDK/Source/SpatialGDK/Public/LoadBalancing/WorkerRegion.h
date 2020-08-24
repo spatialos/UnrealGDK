@@ -9,7 +9,7 @@
 
 #include "WorkerRegion.generated.h"
 
-UCLASS(NotPlaceable, NotBlueprintable)
+UCLASS(Transient, NotPlaceable, NotBlueprintable)
 class SPATIALGDK_API AWorkerRegion : public AActor
 {
 	GENERATED_BODY()

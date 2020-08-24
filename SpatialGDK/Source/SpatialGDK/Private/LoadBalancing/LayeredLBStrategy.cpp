@@ -222,7 +222,6 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
-	check(IsReady());
 	checkf(LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
 		   TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
 				"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),

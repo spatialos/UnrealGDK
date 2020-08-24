@@ -117,7 +117,7 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 {
 	Super::LogStep(Verbosity, Message);
 
-	if(Verbosity == ELogVerbosity::Error || Verbosity == ELogVerbosity::Fatal)
+	if (Verbosity == ELogVerbosity::Error || Verbosity == ELogVerbosity::Fatal)
 	{
 		FinishTest(EFunctionalTestResult::Failed, TEXT("Failed assertions"));
 	}
@@ -401,7 +401,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	if (HasAuthority())
 	{
 		// Make sure we don't FinishTest multiple times.
-		if( CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED )
+		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
 				   *UEnum::GetValueAsString(TestResult), *Message);
@@ -428,18 +428,20 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 
 				if (NumRegisteredClients < NumRequiredClients)
 				{
-					UE_LOG(LogSpatialGDKFunctionalTests, Warning,
-						   TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, "
-								"Required clients: %d!"),
-						   *GetName(), NumRegisteredClients, NumRequiredClients);
+					UE_LOG(
+						LogSpatialGDKFunctionalTests, Warning,
+						TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, "
+							 "Required clients: %d!"),
+						*GetName(), NumRegisteredClients, NumRequiredClients);
 				}
 
 				if (NumRegisteredServers < NumExpectedServers)
 				{
-					UE_LOG(LogSpatialGDKFunctionalTests, Warning,
-						   TEXT("In %s, the number of connected servers is less than the number of required servers: Connected servers: %d, "
-								"Required servers: %d!"),
-						   *GetName(), NumRegisteredServers, NumExpectedServers);
+					UE_LOG(
+						LogSpatialGDKFunctionalTests, Warning,
+						TEXT("In %s, the number of connected servers is less than the number of required servers: Connected servers: %d, "
+							 "Required servers: %d!"),
+						*GetName(), NumRegisteredServers, NumExpectedServers);
 				}
 			}
 
