@@ -119,5 +119,5 @@ public:
 	}
 #endif
 
-	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *GetMultiWorkerSettingsClass() != nullptr; }
+	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr; }
 };
