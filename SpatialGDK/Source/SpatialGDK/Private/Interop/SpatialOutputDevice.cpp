@@ -37,7 +37,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 		{
 			return;
 		}
-#endif //WITH_EDITOR
+#endif // WITH_EDITOR
 		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), LoggerName, InData);
 	}
 }

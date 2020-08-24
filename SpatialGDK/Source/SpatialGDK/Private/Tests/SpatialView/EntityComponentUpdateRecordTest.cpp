@@ -6,26 +6,24 @@
 
 #include "EntityComponentTestUtils.h"
 
-#define ENTITYCOMPONENTUPDATERECORD_TEST(TestName) \
-	GDK_TEST(Core, EntityComponentUpdateRecord, TestName)
+#define ENTITYCOMPONENTUPDATERECORD_TEST(TestName) GDK_TEST(Core, EntityComponentUpdateRecord, TestName)
 
 namespace SpatialGDK
 {
-
 namespace
 {
-	const Worker_EntityId TEST_ENTITY_ID = 1337;
+const Worker_EntityId TEST_ENTITY_ID = 1337;
 
-	const Worker_ComponentId TEST_COMPONENT_ID = 1338;
-	const Worker_ComponentId COMPONENT_ID_TO_REMOVE = 1347;
-	const Worker_ComponentId COMPONENT_ID_TO_KEEP = 1348;
+const Worker_ComponentId TEST_COMPONENT_ID = 1338;
+const Worker_ComponentId COMPONENT_ID_TO_REMOVE = 1347;
+const Worker_ComponentId COMPONENT_ID_TO_KEEP = 1348;
 
-	const int EVENT_VALUE = 7332;
+const int EVENT_VALUE = 7332;
 
-	const double TEST_VALUE = 7331;
-	const double TEST_UPDATE_VALUE = 7332;
-	const double UPDATE_VALUE = 7333;
-}  // anonymous namespace
+const double TEST_VALUE = 7331;
+const double TEST_UPDATE_VALUE = 7332;
+const double UPDATE_VALUE = 7333;
+} // anonymous namespace
 
 ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_empty_update_record_WHEN_update_added_THEN_update_record_has_the_update)
 {
@@ -130,7 +128,8 @@ ENTITYCOMPONENTUPDATERECORD_TEST(GIVEN_update_record_with_a_complete_update_WHEN
 
 	const TArray<EntityComponentUpdate> ExpectedUpdates{};
 	TArray<EntityComponentCompleteUpdate> ExpectedCompleteUpdates;
-	ExpectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ TEST_ENTITY_ID, MoveTemp(ExpectedCompleteUpdate), MoveTemp(ExpectedEvent) });
+	ExpectedCompleteUpdates.Push(
+		EntityComponentCompleteUpdate{ TEST_ENTITY_ID, MoveTemp(ExpectedCompleteUpdate), MoveTemp(ExpectedEvent) });
 
 	EntityComponentUpdateRecord Storage;
 	Storage.AddComponentDataAsUpdate(TEST_ENTITY_ID, MoveTemp(CompleteUpdate));

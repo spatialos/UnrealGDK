@@ -2,8 +2,8 @@
 
 #include "CloudDeploymentConfiguration.h"
 
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 
 void FCloudDeploymentConfiguration::InitFromSettings()
 {

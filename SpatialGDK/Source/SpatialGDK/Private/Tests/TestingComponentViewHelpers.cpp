@@ -5,10 +5,10 @@
 #include "CoreMinimal.h"
 
 void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
-	const Worker_EntityId EntityId,
-	const Worker_ComponentId ComponentId,
-	Schema_ComponentData* ComponentData,
-	const Worker_Authority Authority)
+																		  const Worker_EntityId EntityId,
+																		  const Worker_ComponentId ComponentId,
+																		  Schema_ComponentData* ComponentData,
+																		  const Worker_Authority Authority)
 {
 	Worker_AddComponentOp AddComponentOp;
 	AddComponentOp.entity_id = EntityId;
@@ -24,9 +24,9 @@ void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpati
 }
 
 void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
-	const Worker_EntityId EntityId,
-	const Worker_ComponentId ComponentId,
-	const Worker_Authority Authority)
+																		  const Worker_EntityId EntityId,
+																		  const Worker_ComponentId ComponentId,
+																		  const Worker_Authority Authority)
 {
 	AddEntityComponentToStaticComponentView(StaticComponentView, EntityId, ComponentId, Schema_CreateComponentData(), Authority);
 }

@@ -48,14 +48,15 @@ struct FWorkerRegionInfo
 	FBox2D Extents;
 };
 
-UCLASS(SpatialType=(NotPersistent), Blueprintable, NotPlaceable)
-class SPATIALGDK_API ASpatialDebugger :
-	public AInfo
+/**
+ * Visualise spatial information at runtime and in the editor
+ */
+UCLASS(SpatialType = (NotPersistent), Blueprintable, NotPlaceable, Transient)
+class SPATIALGDK_API ASpatialDebugger : public AInfo
 {
 	GENERATED_UCLASS_BODY()
 
 public:
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
@@ -73,13 +74,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "Y location of player data panel"))
 	int PlayerPanelStartY = 128;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General, meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
+			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
 	float MaxRange = 100.0f * 100.0f; // 100m
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Show server authority for every entity in range"))
 	bool bShowAuth = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show authority intent for every entity in range"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Show authority intent for every entity in range"))
 	bool bShowAuthIntent = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
@@ -94,31 +98,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
+			  meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
 	bool bShowWorkerRegions = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
-	UTexture2D *AuthTexture;
+	UTexture2D* AuthTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Intent Icon"))
-	UTexture2D *AuthIntentTexture;
+	UTexture2D* AuthIntentTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Unlocked Icon"))
-	UTexture2D *UnlockedTexture;
+	UTexture2D* UnlockedTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Locked Icon"))
-	UTexture2D *LockedTexture;
+	UTexture2D* LockedTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Box Icon"))
-	UTexture2D *BoxTexture;
+	UTexture2D* BoxTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
 	float WorkerRegionVerticalScale = 1.0f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
@@ -129,6 +136,13 @@ public:
 
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+
+#if WITH_EDITOR
+	void EditorRefreshWorkerRegions();
+	static void EditorRefreshDisplay();
+	bool EditorAllowWorkerBoundaries() const;
+	void EditorSpatialToggleDebugger(bool bEnabled);
+#endif
 
 private:
 	void LoadIcons();
@@ -148,6 +162,10 @@ private:
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
+
+#if WITH_EDITOR
+	void EditorInitialiseWorkerRegions();
+#endif
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;

@@ -29,15 +29,15 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
-	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op)
-	{
+	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op) {
 		bIsAwaitingResponse = false;
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
 			if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 			{
-				UE_LOG(LogSpatialEntityPool, Warning, TEXT("Failed to reserve entity IDs Reason: %s. Retrying..."), UTF8_TO_TCHAR(Op.message));
+				UE_LOG(LogSpatialEntityPool, Warning, TEXT("Failed to reserve entity IDs Reason: %s. Retrying..."),
+					   UTF8_TO_TCHAR(Op.message));
 				ReserveEntityIDs(EntitiesToReserve);
 			}
 			else
@@ -52,8 +52,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		check(EntitiesToReserve == Op.number_of_entity_ids);
 
 		// Clean up any expired Entity ranges
-		ReservedEntityIDRanges = ReservedEntityIDRanges.FilterByPredicate([](const EntityRange& Element)
-		{
+		ReservedEntityIDRanges = ReservedEntityIDRanges.FilterByPredicate([](const EntityRange& Element) {
 			return !Element.bExpired;
 		});
 
@@ -62,19 +61,22 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		NewEntityRange.LastEntityId = Op.first_entity_id + (Op.number_of_entity_ids - 1);
 		NewEntityRange.EntityRangeId = NextEntityRangeId++;
 
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d) Range ID: %d"), Op.number_of_entity_ids, Op.first_entity_id, NewEntityRange.LastEntityId, NewEntityRange.EntityRangeId);
+		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d) Range ID: %d"),
+			   Op.number_of_entity_ids, Op.first_entity_id, NewEntityRange.LastEntityId, NewEntityRange.EntityRangeId);
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
 
 		FTimerHandle ExpirationTimer;
 		TWeakObjectPtr<UEntityPool> WeakThis(this);
-		TimerManager->SetTimer(ExpirationTimer, [WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]()
-		{
-			if (UEntityPool* Pool = WeakThis.Get())
-			{
-				Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
-			}
-		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
+		TimerManager->SetTimer(
+			ExpirationTimer,
+			[WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]() {
+				if (UEntityPool* Pool = WeakThis.Get())
+				{
+					Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
+				}
+			},
+			SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
 		if (!bIsReady)
 		{
@@ -95,8 +97,7 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 {
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range expired! Range ID: %d"), ExpiringEntityRangeId);
 
-	int32 FoundEntityRangeIndex = ReservedEntityIDRanges.IndexOfByPredicate([ExpiringEntityRangeId](const EntityRange& Element)
-	{
+	int32 FoundEntityRangeIndex = ReservedEntityIDRanges.IndexOfByPredicate([ExpiringEntityRangeId](const EntityRange& Element) {
 		return Element.EntityRangeId == ExpiringEntityRangeId;
 	});
 
@@ -110,7 +111,8 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 	if (FoundEntityRangeIndex < ReservedEntityIDRanges.Num() - 1)
 	{
 		// This is not the most recent entity range, just clean up without requesting additional IDs.
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Newer range detected, cleaning up Entity range ID: %d without new request"), ExpiringEntityRangeId);
+		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Newer range detected, cleaning up Entity range ID: %d without new request"),
+			   ExpiringEntityRangeId);
 		ReservedEntityIDRanges.RemoveAt(FoundEntityRangeIndex);
 	}
 	else
@@ -131,7 +133,8 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	if (ReservedEntityIDRanges.Num() == 0)
 	{
 		// TODO: Improve error message
-		UE_LOG(LogSpatialEntityPool, Warning, TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
+		UE_LOG(LogSpatialEntityPool, Warning,
+			   TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 

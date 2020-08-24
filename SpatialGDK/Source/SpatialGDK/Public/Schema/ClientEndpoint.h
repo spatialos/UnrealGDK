@@ -11,7 +11,6 @@
 
 namespace SpatialGDK
 {
-
 struct ClientEndpoint : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
