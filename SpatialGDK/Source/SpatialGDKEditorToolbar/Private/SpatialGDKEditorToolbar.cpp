@@ -8,6 +8,7 @@
 #include "Editor/EditorEngine.h"
 #include "EditorStyleSet.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "EngineUtils.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -28,7 +29,6 @@
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
-#include "EngineUtils.h"
 
 #include "CloudDeploymentConfiguration.h"
 #include "SpatialCommandUtils.h"
@@ -120,7 +120,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// We try to stop a local deployment either when the appropriate setting is selected, or when running with automation tests
 	// TODO: Reuse local deployment between test maps: UNR-2488
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE) && LocalDeploymentManager->IsLocalDeploymentRunning())
+		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE)
+			&& LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
@@ -294,10 +295,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GDKRuntimeSettingsClicked));
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
-		FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled)
-	);
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
+								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -485,7 +485,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
 	}
 	MenuBuilder.EndSection();
-	
+
 	return MenuBuilder.MakeWidget();
 }
 

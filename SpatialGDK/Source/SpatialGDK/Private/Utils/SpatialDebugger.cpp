@@ -617,8 +617,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
 				FWorkerRegionInfo WorkerRegionInfo;
 				// Generate our own unique worker name as we only need it to generate a unique colour
-				const PhysicalWorkerName WorkerName =
-					PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
+				const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
 				WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
 				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 

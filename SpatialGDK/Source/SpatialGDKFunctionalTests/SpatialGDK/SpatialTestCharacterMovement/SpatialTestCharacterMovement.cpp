@@ -70,34 +70,33 @@ void ASpatialTestCharacterMovement::BeginPlay()
 	});
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
-	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr,
-			[this]() {
-				for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-				{
-					if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-					{
-						continue;
-					}
+	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+			{
+				continue;
+			}
 
-					AController* PlayerController = Cast<AController>(FlowController->GetOwner());
-					ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-					checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
+			checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
 
-					int FlowControllerId = FlowController->WorkerDefinition.Id;
+			int FlowControllerId = FlowController->WorkerDefinition.Id;
 
-					if (FlowControllerId == 1)
-					{
-						PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
-					}
-					else
-					{
-						PlayerCharacter->SetActorLocation(FVector(100.0f + 100 * FlowControllerId, 300.0f, 50.0f));
-					}
-				}
+			if (FlowControllerId == 1)
+			{
+				PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
+			}
+			else
+			{
+				PlayerCharacter->SetActorLocation(FVector(100.0f + 100 * FlowControllerId, 300.0f, 50.0f));
+			}
+		}
 
-				FinishStep();
-			});
+		FinishStep();
+	});
 
 	// Client 1 moves his character and asserts that it reached the Destination locally.
 	AddStep(
