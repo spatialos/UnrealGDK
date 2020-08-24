@@ -163,7 +163,7 @@ void FDispatcher::InvokeWithExistingValues(Worker_ComponentId ComponentId, const
 	for (const auto& Entity : *View)
 	{
 		const ComponentData* It = Entity.Value.Components.FindByPredicate(ComponentIdEquality{ ComponentId });
-		if (It == nullptr)
+		if (It != nullptr)
 		{
 			const ComponentChange Change(ComponentId, It->GetUnderlying());
 			Callback({ Entity.Key, Change });
