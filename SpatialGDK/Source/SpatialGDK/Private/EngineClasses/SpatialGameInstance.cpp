@@ -248,12 +248,11 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 		NetDriver.SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
 	}
-
 }
 
 void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	if (FlagName == TEXT("PrepareShutdown"))
+	if (FlagName.Equals(TEXT("PrepareShutdown"), ESearchCase::IgnoreCase))
 	{
 		if (!bPreparingForShutdown)
 		{
