@@ -529,7 +529,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			{
 				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 				{
-					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your client's schema does not match your deployment's schema"));
+					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
 					return;
 				}
 			}
