@@ -57,7 +57,7 @@ public:
 	};
 	typedef TMap<FString, WorkerHistogramValues> WorkerHistogramMetrics;
 	DECLARE_MULTICAST_DELEGATE_TwoParams(WorkerMetricsDelegate, const WorkerGaugeMetric&, const WorkerHistogramMetrics&);
-	WorkerMetricsDelegate WorkerMetricsUpdated; 
+	WorkerMetricsDelegate WorkerMetricsUpdated;
 
 	// Delegate used to poll for the current player controller's reference
 	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
@@ -66,8 +66,8 @@ public:
 	void SetWorkerLoadDelegate(const UserSuppliedMetric& Delegate) { WorkerLoadDelegate = Delegate; }
 	void SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate);
 	void RemoveCustomMetric(const FString& Metric);
-private:
 
+private:
 	// Worker SDK metrics
 	WorkerGaugeMetric WorkerSDKGaugeMetrics;
 	WorkerHistogramMetrics WorkerSDKHistogramMetrics;
@@ -104,4 +104,3 @@ private:
 	bool bRPCTrackingEnabled;
 	float RPCTrackingStartTime;
 };
-

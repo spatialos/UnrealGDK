@@ -29,12 +29,14 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
 
-	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
+	FSoftObjectPath SchemaDatabasePath =
+		FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
 	if (SchemaDatabase == nullptr)
 	{
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
+		UE_LOG(LogSpatialClassInfoManager, Error,
+			   TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
 		QuitGame();
 		return false;
 	}
@@ -46,11 +48,14 @@ bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& Pa
 {
 	if (!IsSupportedClass(PathName))
 	{
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is marked as SpatialType, and schema has been generated."), *PathName);
+		UE_LOG(LogSpatialClassInfoManager, Error,
+			   TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is "
+					"marked as SpatialType, and schema has been generated."),
+			   *PathName);
 #if !UE_BUILD_SHIPPING
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *PathName);
 		QuitGame();
-#endif //!UE_BUILD_SHIPPING
+#endif //! UE_BUILD_SHIPPING
 		return false;
 	}
 
@@ -114,7 +119,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
 
-	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
+	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass.
+	// Therefore the quitting logic cannot be moved higher up.
 	if (!ValidateOrExit_IsSupportedClass(ClassPath))
 	{
 		return;
@@ -181,8 +187,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
 		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
@@ -207,7 +212,10 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 		if (SubobjectClass == nullptr)
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *ClassPath);
+			UE_LOG(LogSpatialClassInfoManager, Error,
+				   TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able "
+						"to replicate in Spatial!"),
+				   *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *ClassPath);
 			continue;
 		}
 
@@ -217,8 +225,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 			{
 				return;
@@ -248,8 +255,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
 		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
 			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -346,12 +352,15 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
+		UE_LOG(LogSpatialClassInfoManager, Warning,
+			   TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
 
-		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
+		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use
+		// it to clean up the old entry.
 		ClassInfoMap.Remove(Info->Class);
 
-		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of TryCreateClassInfoForComponentId).
+		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of
+		// TryCreateClassInfoForComponentId).
 		TryCreateClassInfoForComponentId(ComponentId);
 		TSharedRef<FClassInfo> NewInfo = ComponentToClassInfoMap.FindChecked(ComponentId);
 		if (UClass* NewClass = NewInfo->Class.Get())
@@ -377,7 +386,8 @@ uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) con
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass,
+																					  const bool bIncludeDerivedTypes /* = true */) const
 {
 	TArray<Worker_ComponentId> OutComponentIds;
 
@@ -405,12 +415,10 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 		{
 			OutComponentIds.Add(ComponentId);
 		}
-
 	}
 
 	return OutComponentIds;
 }
-
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
@@ -506,7 +514,8 @@ const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForCo
 	}
 }
 
-const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
+																		USpatialPackageMapClient* PackageMapClient)
 {
 	const FClassInfo* Info = nullptr;
 
@@ -516,7 +525,8 @@ const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UO
 	// which has not been used on this entity.
 	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
 	{
-		if (!PackageMapClient->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
+		if (!PackageMapClient->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data]))
+				 .IsValid())
 		{
 			Info = &DynamicSubobjectInfo.Get();
 			break;
@@ -527,8 +537,10 @@ const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UO
 	if (Info == nullptr)
 	{
 		const AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
-			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *GetNameSafe(Actor));
+		UE_LOG(LogSpatialPackageMap, Error,
+			   TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
+					" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."),
+			   *Object->GetClass()->GetName(), *GetNameSafe(Actor));
 	}
 
 	return Info;
@@ -591,14 +603,18 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 		const AActor* DefaultActor = ActorForRelevancy->GetClass()->GetDefaultObject<AActor>();
 		if (ActorForRelevancy->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s, because its Net Cull Distance is different from its default one."),
-				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
+			UE_LOG(LogSpatialClassInfoManager, Error,
+				   TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s, because its Net Cull "
+						"Distance is different from its default one."),
+				   ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
 
 			return ComputeActorInterestComponentId(DefaultActor);
 		}
 		else
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s. Have you generated schema?"),
+			UE_LOG(
+				LogSpatialClassInfoManager, Error,
+				TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s. Have you generated schema?"),
 				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
 		}
 	}

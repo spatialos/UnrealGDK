@@ -12,8 +12,8 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestReplicatedStartupActor : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ASpatialTestReplicatedStartupActor();
 
 	virtual void BeginPlay() override;

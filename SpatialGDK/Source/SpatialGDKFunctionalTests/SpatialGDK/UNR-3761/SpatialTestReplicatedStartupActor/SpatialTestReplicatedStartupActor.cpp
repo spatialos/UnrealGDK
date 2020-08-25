@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialTestReplicatedStartupActor.h"
 
 #include "SpatialFunctionalTestFlowController.h"
@@ -54,6 +53,7 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 {
 	Super::BeginPlay();
 
+<<<<<<< HEAD
 	// Common Setup
 
 	// All workers set a reference to the ReplicatedStartupActor.
@@ -105,9 +105,24 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 				FinishStep();
 			}
 		}, 5.0f);
+=======
+	AddStep(
+		TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::AllClients,
+		[this]() {
+			// Make sure that the PlayerController has been set before trying to do anything with it, this might prevent Null Pointer
+			// exceptions being thrown when UE ticks at a relatively slow rate
+			AReplicatedStartupActorPlayerController* PlayerController =
+				Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+			return IsValid(PlayerController);
+		},
+		[this]() {
+			TArray<AActor*> ReplicatedActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), ReplicatedActors);
+>>>>>>> origin/master
 
 	// Phase 2
 
+<<<<<<< HEAD
 	// The server sets default values for the replicated properties.
 	AddStep(TEXT("SpatialTestReplicatedStartupActorServerSetDefaultProperties"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
@@ -115,6 +130,10 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 
 			ReplicatedStartupActor->TestArrayProperty.Empty();
 			ReplicatedStartupActor->TestArrayProperty.Add(1);
+=======
+			AReplicatedStartupActorPlayerController* PlayerController =
+				Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+>>>>>>> origin/master
 
 			ReplicatedStartupActor->TestArrayStructProperty.Empty();
 			ReplicatedStartupActor->TestArrayStructProperty.Add(FTestStruct{1});
@@ -122,17 +141,25 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 			FinishStep();
 		});
 
+<<<<<<< HEAD
 	// All workers check that the properties were replicated correctly.
 	AddStep(TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckDefaultProperties"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
 		{
 			if (ReplicatedStartupActor->TestIntProperty == 1
 				&& ReplicatedStartupActor->TestArrayProperty.Num() == 1 && ReplicatedStartupActor->TestArrayProperty[0] == 1
 				&& ReplicatedStartupActor->TestArrayStructProperty.Num() == 1 && ReplicatedStartupActor->TestArrayStructProperty[0].Int == 1)
+=======
+	AddStep(
+		TEXT("SpatialTestReplicatedStarupActorClientsCheckStep"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (bIsValidReference)
+>>>>>>> origin/master
 			{
 				FinishStep();
 			}
 		}, 5.0f);
 
+<<<<<<< HEAD
 	// The server moves the ReplicatedStartupActor out of the clients' view.
 	AddStep(TEXT("SpatialTestReplicatedStartupActorServerMoveActorOutOfView"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
 		{
@@ -140,6 +167,11 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 
 			FinishStep();
 		});
+=======
+				AReplicatedStartupActorPlayerController* PlayerController =
+					Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
+				PlayerController->ResetBoolean(this);
+>>>>>>> origin/master
 
 	// All workers check that the movement is visible.
 	AddStep(TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckMovement"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
@@ -149,6 +181,7 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 			{
 				FinishStep();
 			}
+<<<<<<< HEAD
 		}, 5.0f);
 
 	// The server updates the replicated properties whilst the ReplicatedStartupActor is out of the clients' view.
@@ -193,4 +226,8 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 				*/
 			}
 		}, 5.0f);
+=======
+		},
+		5.0);
+>>>>>>> origin/master
 }

@@ -22,10 +22,7 @@ public:
 		GUObjectArray.AddUObjectCreateListener(this);
 	}
 
-	void StopListening()
-	{
-		GUObjectArray.RemoveUObjectCreateListener(this);
-	}
+	void StopListening() { GUObjectArray.RemoveUObjectCreateListener(this); }
 
 	virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override
 	{
@@ -39,7 +36,7 @@ public:
 			if (IsSupportedClass(Object->GetClass()))
 			{
 				UE_LOG(LogCookAndGenerateSchemaCommandlet, Verbose, TEXT("Object [%s] Created, Consider Class [%s] For Schema."),
-					*Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
+					   *Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
 				VisitedClasses->Add(SoftClass);
 			}
 			else
@@ -49,10 +46,7 @@ public:
 		}
 	}
 
-	virtual void OnUObjectArrayShutdown() override
-	{
-		GUObjectArray.RemoveUObjectCreateListener(this);
-	}
+	virtual void OnUObjectArrayShutdown() override { GUObjectArray.RemoveUObjectCreateListener(this); }
 
 private:
 	TSet<FSoftClassPath>* VisitedClasses;
@@ -84,9 +78,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 0;
 	}
 
-	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
+	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash
+	// local launch and cloud upload.
 	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
+	FString CoreSDKSchemaCopyDir =
+		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
 	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
 	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 
@@ -119,8 +115,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	ObjectListener.StopListening();
 
 	// Sort classes here so that batching does not have an effect on ordering.
-	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B)
-	{
+	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B) {
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
 	});
 

@@ -14,7 +14,6 @@ const float FullFrequencyHz = 0.f;
 
 namespace SpatialGDK
 {
-
 // And this the empty optional type it will be translated to.
 const TSchemaOption<float> FullFrequencyOptional = TSchemaOption<float>();
 
@@ -54,14 +53,14 @@ FrequencyConstraints NetCullDistanceInterest::CreateLegacyNetCullDistanceConstra
 	TMap<UClass*, float> ActorComponentSetToRadius = NetCullDistanceInterest::GetActorTypeToRadius();
 
 	// For every interest distance that we still want, build a map from radius to list of actor type components that match that radius.
-	TMap<float, TArray<UClass*>> DistanceToActorTypeComponents = NetCullDistanceInterest::DedupeDistancesAcrossActorTypes(
-		ActorComponentSetToRadius);
+	TMap<float, TArray<UClass*>> DistanceToActorTypeComponents =
+		NetCullDistanceInterest::DedupeDistancesAcrossActorTypes(ActorComponentSetToRadius);
 
 	// The previously built map removes duplicates of spatial constraints. Now the actual query constraints can be built of the form:
 	// OR(AND(cylinder(radius), OR(actor 1 components, actor 2 components, ...)), ...)
 	// which is equivalent to having a separate spatial query for each actor type if the radius is the same.
-	TArray<QueryConstraint> CheckoutRadiusConstraints = NetCullDistanceInterest::BuildNonDefaultActorCheckoutConstraints(
-		DistanceToActorTypeComponents, InClassInfoManager);
+	TArray<QueryConstraint> CheckoutRadiusConstraints =
+		NetCullDistanceInterest::BuildNonDefaultActorCheckoutConstraints(DistanceToActorTypeComponents, InClassInfoManager);
 
 	// Add all the different actor queries to the overall checkout constraint.
 	for (auto& ActorCheckoutConstraint : CheckoutRadiusConstraints)
@@ -144,7 +143,8 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 	// De dupe across frequencies.
 	for (auto& FrequencyConstraintsPair : FrequencyToConstraints)
 	{
-		TSchemaOption<float> SpatialFrequency = FrequencyConstraintsPair.Key == FullFrequencyHz ? FullFrequencyOptional : TSchemaOption<float>(FrequencyConstraintsPair.Key);
+		TSchemaOption<float> SpatialFrequency =
+			FrequencyConstraintsPair.Key == FullFrequencyHz ? FullFrequencyOptional : TSchemaOption<float>(FrequencyConstraintsPair.Key);
 		if (FrequencyConstraintsPair.Value.Num() == 1)
 		{
 			CheckoutConstraints.Add({ SpatialFrequency, FrequencyConstraintsPair.Value[0] });
@@ -158,7 +158,8 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 	return CheckoutConstraints;
 }
 
-void NetCullDistanceInterest::AddToFrequencyConstraintMap(const float Frequency, const QueryConstraint& Constraint, FrequencyToConstraintsMap& OutFrequencyToConstraints)
+void NetCullDistanceInterest::AddToFrequencyConstraintMap(const float Frequency, const QueryConstraint& Constraint,
+														  FrequencyToConstraintsMap& OutFrequencyToConstraints)
 {
 	// If there is already a query defined with this frequency, group them to avoid making too many queries down the line.
 	// This avoids any extra cost due to duplicate result types across the network if they are large.
@@ -178,7 +179,7 @@ QueryConstraint NetCullDistanceInterest::GetDefaultCheckoutRadiusConstraint()
 	if (MaxDistanceSquared > FLT_EPSILON && DefaultDistanceSquared > MaxDistanceSquared)
 	{
 		UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("Default NetCullDistanceSquared is too large, clamping from %f to %f"),
-			DefaultDistanceSquared, MaxDistanceSquared);
+			   DefaultDistanceSquared, MaxDistanceSquared);
 
 		DefaultDistanceSquared = MaxDistanceSquared;
 	}
@@ -227,7 +228,7 @@ TMap<UClass*, float> NetCullDistanceInterest::GetActorTypeToRadius()
 			if (MaxDistanceSquared > FLT_EPSILON && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
 			{
 				UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
-					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
+					   *It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
 
 				ActorNetCullDistanceSquared = MaxDistanceSquared;
 			}
@@ -250,7 +251,8 @@ TMap<UClass*, float> NetCullDistanceInterest::GetActorTypeToRadius()
 	{
 		check(ActorInterestDistance.Key);
 
-		// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between the two.
+		// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between
+		// the two.
 		float SpatialDistance = NetCullDistanceSquaredToSpatialDistance(ActorInterestDistance.Value);
 
 		bool bShouldAdd = true;
@@ -289,7 +291,8 @@ TMap<float, TArray<UClass*>> NetCullDistanceInterest::DedupeDistancesAcrossActor
 	return RadiusToActorTypes;
 }
 
-TArray<QueryConstraint> NetCullDistanceInterest::BuildNonDefaultActorCheckoutConstraints(TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager)
+TArray<QueryConstraint> NetCullDistanceInterest::BuildNonDefaultActorCheckoutConstraints(TMap<float, TArray<UClass*>> DistanceToActorTypes,
+																						 USpatialClassInfoManager* ClassInfoManager)
 {
 	TArray<QueryConstraint> CheckoutConstraints;
 	for (const auto& DistanceActorsPair : DistanceToActorTypes)
@@ -314,13 +317,15 @@ TArray<QueryConstraint> NetCullDistanceInterest::BuildNonDefaultActorCheckoutCon
 
 float NetCullDistanceInterest::NetCullDistanceSquaredToSpatialDistance(float NetCullDistanceSquared)
 {
-	// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between the two.
+	// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between the
+	// two.
 	return FMath::Sqrt(NetCullDistanceSquared / (100.f * 100.f));
 }
 
 // The type hierarchy added here are the component IDs that represent the actor type hierarchy. These are added to the given constraint as:
 // OR(actor type component IDs...)
-void NetCullDistanceInterest::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint, USpatialClassInfoManager* ClassInfoManager)
+void NetCullDistanceInterest::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint,
+														   USpatialClassInfoManager* ClassInfoManager)
 {
 	check(ClassInfoManager);
 	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);

@@ -2,13 +2,12 @@
 
 #pragma once
 
+#include "Containers/Array.h"
 #include "SpatialView/EntityComponentId.h"
 #include "SpatialView/EntityComponentTypes.h"
-#include "Containers/Array.h"
 
 namespace SpatialGDK
 {
-
 class EntityComponentUpdateRecord
 {
 public:
