@@ -16,12 +16,18 @@ class AHandoverCube : public AReplicatedTestActorBase
 public:
 	AHandoverCube();
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UFUNCTION(Server, Reliable)
-	void AcquireLock();
+	void AcquireLock(int ServerID);
 
 	UFUNCTION(Server, Reliable)
 	void ReleaseLock();
 
+	UPROPERTY(Replicated)
+	int LockingServerID;
+
 private:
 	FLockingToken LockTocken;
+
 };

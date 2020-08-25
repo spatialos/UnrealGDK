@@ -2,6 +2,9 @@
 
 #include "SpatialTestHandover.h"
 #include "Kismet/GameplayStatics.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
+
 #include "HandoverCube.h"
 #include "SpatialFunctionalTestFlowController.h"
 
@@ -38,12 +41,6 @@ ASpatialTestHandover::ASpatialTestHandover()
 	TestLocations.Add(FVector(500.0f, -500.0f, 50.0f));
 	TestLocations.Add(FVector(500.0f, 500.0f, 50.0f)); 
 	TestLocations.Add(FVector(-500.0f, 500.0f, 50.0f));
-
-	ExpectedAuthoritativeServer.Add(1);
-	ExpectedAuthoritativeServer.Add(2);
-	ExpectedAuthoritativeServer.Add(2);
-	ExpectedAuthoritativeServer.Add(4);
-	ExpectedAuthoritativeServer.Add(3);
 }
 
 void ASpatialTestHandover::BeginPlay()
@@ -75,17 +72,13 @@ void ASpatialTestHandover::BeginPlay()
 	CheckAuthorityStepDefinition.TimeLimit = 10.0f;
 	CheckAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime)
 		{
-			if (AuthorityCheckIndex >= ExpectedAuthoritativeServer.Num() || AuthorityCheckIndex < 0)
-			{
-				return;
-			}
-
+			// If a Server Worker holds a lock over the HandoverCube, then it should have authority over it, if not, let the Load Balacning decide.
+			int ExpectedAuthoritativeServer = HandoverCube->LockingServerID ? HandoverCube->LockingServerID : LoadBalancingStrategy->WhoShouldHaveAuthority(*HandoverCube);
 			// Make sure the correct Server has authority over the HandoverCube.
-			if (GetLocalFlowController()->WorkerDefinition.Id == ExpectedAuthoritativeServer[AuthorityCheckIndex])
+			if (GetLocalFlowController()->WorkerDefinition.Id == ExpectedAuthoritativeServer)
 			{
 				if (HandoverCube->HasAuthority())
 				{
-					++AuthorityCheckIndex;
 					FinishStep();
 				}
 			}
@@ -94,7 +87,6 @@ void ASpatialTestHandover::BeginPlay()
 				// Also ensure that all other Servers are not authoritative over the HandoverCube.
 				if (!HandoverCube->HasAuthority())
 				{
-					++AuthorityCheckIndex;
 					FinishStep();
 				}
 			}
@@ -119,11 +111,16 @@ void ASpatialTestHandover::BeginPlay()
 			{
 				HandoverCube = Cast<AHandoverCube>(HandoverCubes[0]);
 
-				if (IsValid(HandoverCube))
+				USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+
+				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
+
+				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+				
+				if (IsValid(HandoverCube) && IsValid(LoadBalancingStrategy))
 				{
-					// Reset the 2 variables to allow multiple executions of the test.
+					// Reset the LocationIndex to allow multiple executions of the test.
 					LocationIndex = 0;
-					AuthorityCheckIndex = 0;
 					FinishStep();
 				}
 			}
@@ -141,7 +138,7 @@ void ASpatialTestHandover::BeginPlay()
 	// Server 2 acquires a lock on the HandoverCube.
 	AddStep(TEXT("SpatialTestHandoverServer2AcquireLock"), FWorkerDefinition::Server(2), nullptr, [this]()
 		{
-			HandoverCube->AcquireLock();
+			HandoverCube->AcquireLock(2);
 			FinishStep();
 		});
 

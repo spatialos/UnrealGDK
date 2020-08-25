@@ -7,6 +7,7 @@
 #include "SpatialTestHandover.generated.h"
 
 class AHandoverCube;
+class ULayeredLBStrategy;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandover : public ASpatialFunctionalTest
@@ -30,9 +31,6 @@ private:
 	// Array holding the Locations where the HandoverCube will be moved throughout the test.
 	TArray<FVector> TestLocations;
 
-	// Index used to store what Server should be authoritative over the HandoverCube at each step in the test.
-	int AuthorityCheckIndex;
-
-	// Array holding what Servers should be authoritative over the HandoverCube throughout the test.
-	TArray<int> ExpectedAuthoritativeServer;
+	// The Load Balancing used by the test, needed to decide what Server should have authority over the HandoverCube.
+	ULayeredLBStrategy* LoadBalancingStrategy;
 };
