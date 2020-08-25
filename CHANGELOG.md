@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We have removed multi-worker settings from the `SpatialWorldSettings` properties and added them to a new class `USpatialMultiWorkerSettings`. To update your project, create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration. Then, in your level’s World settings, select that class as the `Multi-worker settings class` property.
 - The `-nocompile` flag used with `Buildworker.bat` is now split into two. Use the following flags:
   - `-nobuild` to skip building the game binaries.
-  - `-nocompile` to skip compiling the automation scripts. 
+  - `-nocompile` to skip compiling the automation scripts.
 - Updated the simulated player worker configuration. Instead of using `connect.to.spatialos` to indicate that you want to connect to a cloud deployment, we now use `127.0.0.1` to ensure that an address resolves when a connection initializes. The passed IP address is not used when connecting to a cloud deployment.
 - The `SpatialMetrics::WorkerMetricsUpdated` function is no longer static and the function signature now receives histogram metrics.
 
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now use the new GDK editor setting `Stop local deployment on stop play in editor` to automatically stop a deployment when you stop playing in the Editor.
 - Added a checkbox `Connect local server worker to the cloud deployment` to the SpatialOS **Editor Settings**. This controls whether you start and connect a local server-worker instance to the cloud deployment, when `Connect to cloud deployment` is enabled.
 - You can now suppress RPC warnings of the form `Executed RPC <RPCName> with unresolved references`, by RPC type. To do this, use the new `SpatialGDKsetting RPCTypeAllowUnresolvedParamMap`.
-- Decoupled `QueuedIncomingRPCWaitTime` from reprocessing flush time by adding a new parameter `QueuedIncomingRPCRetryTime` (default value 1.0s). This enables you to independently control how long to wait for queued RPCs to resolve parameters, and how frequently to check whether parameters are resolved. 
+- Decoupled `QueuedIncomingRPCWaitTime` from reprocessing flush time by adding a new parameter `QueuedIncomingRPCRetryTime` (default value 1.0s). This enables you to independently control how long to wait for queued RPCs to resolve parameters, and how frequently to check whether parameters are resolved.
 - Command-line arguments are now only available by default in non-shipping builds. To enable them in a shipping build, use the target rule `bEnableSpatialCmdlineInShipping`.
 - Dynamic worker flags are now supported with the Standard Runtime variant.
 - Dynamic worker flags now enable faster startup for simulated player deployments started with the `DeploymentLauncher`. `DeploymentLauncher createsim` now includes a boolean argument `auto-connect`. This enables you to automatically connect your sim players to your deployment when it is ready.
@@ -44,6 +44,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the `EditorWorkerController` class. It is no longer required for running consecutive PIE sessions.
 - Fixed a crash that occurred when overflowed RPCs remained overflowed after a flush attempt.
 - Fixed a crash that sometimes occurred after performing server travel with ring buffers enabled.
+
+### [`0.11.0`] 中文版更新日志
+
+### 重大变化：
+- 我们不再维护虚幻引擎 4.23 版本。建议您升级至最新版本 4.25 以继续接收更新，按照 [更新 GDK](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/keep-your-gdk-up-to-date) 的操作步骤即可更新至 4.25 版本。注：更多版本相关信息，请参见[虚幻引擎版本控制方案](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/versioning-scheme#section-unreal-engine-version-support)。
+- 多 worker 设置已从 `SpatialWorldSettings` 属性中删除，并添加至一个新的类 `USpatialMultiWorkerSettings`。为更新项目，请您创建一个派生的 `USpatialMultiWorkerSettings` 类，以模仿您之前的配置。然后在关卡的 World Settings 中，选择该类作为 `Multi-worker settings class` 属性。
+- `Buildworker.bat` 所使用的 `-nocompile` 标记现已拆分为二，分别如下：
+  - `-nobuild` 用于跳过构建游戏二进制文件。
+  - `-nocompile` 用于跳过编译自动化脚本。
+- 模拟玩家 worker 配置已更新。我们现在使用 `127.0.0.1` 来确保在连接初始化时解析地址，而不是使用 `connect.to.spatialos` 来表示您想要连接到云部署。连接到云部署时，不会使用已传递的 IP 地址。
+- `SpatialMetrics::WorkerMetricsUpdated` 函数不再为静态，并且函数签名现在接收直方图指标。
+
+### 已知问题：
+- 使用多 worker 配置时，要求选择 `Use RPC Ring Buffers` (位于：**SpatialOS 虚幻引擎 GDK > Runtime Settings**)，但目前没有强制执行。
+
+### 功能介绍：
+- 现在您可以使用 GDK 编辑器的新设置 `Stop local deployment on stop play in editor`，在您停止“在编辑器中运行”(PIE) 时自动停止部署。
+- 在 SpatialOS **Editor Settings** 中添加了 `Connect local server worker to the cloud deployment` 复选框。在启用 `Connect to cloud deployment` 后，这将用于控制您是否启动并将本地服务端 worker 实例连接至云部署。
+- 现在您可以按照 RPC 类型，来抑制 `Executed RPC <RPCName> with unresolved references` 形式的 RPC 警告。请使用新的 `SpatialGDKsetting RPCTypeAllowUnresolvedParamMap` 进行操作。
+- 通过添加新的参数 `QueuedIncomingRPCRetryTime` (默认值为 1.0s)，您可以独立控制排队 RPC 解析参数的等待时间 (`QueuedIncomingRPCWaitTime`)，以及检查参数是否已经解析的频率 (`QueuedIncomingRPCRetryTime`)。
+- 命令行参数现仅在非交付构建版本中默认可用。为在交付构建版本中启用这些参数，请使用目标规则 `bEnableSpatialCmdlineInShipping`。
+- 标准体 (Standard) 运行时变体现支持动态 worker 标记。
+- 动态 worker 标记现支持更快地启动用 `DeploymentLauncher` 开始的模拟玩家部署。`DeploymentLauncher createsim` 现包括布尔参数 `auto-connect`。这使您能够在部署就绪时自动将模拟玩家连接至部署。
+
+### 问题修复：
+- 模拟玩家协调器的示例 worker 配置现在已与身份验证流兼容。
+- `Start Deployment` 下拉菜单中的 `Cloud Deployment Name` 字段，以及 `Cloud Deployment Configuration` 窗口中的 `Deployment name` 字段，现在指的是同一个属性。`Start Deployment` 工具栏按钮现在使用下拉菜单中指定的名称。
+- `Start Deployment` 下拉菜单中的 `Local Deployment IP`、`Cloud Deployment Name` 标签，当编辑框禁用时，其颜色会相应变灰。
+- 在 **Editor Settings** 中的 `Exposed local runtime IP address` 字段内输入无效 IP 后，现会触发警告弹窗并将值重设为空字符串。
+- 修复了导致以下错误的问题： `ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset`。
+- 当 `GridBasedLBStrategy` 无法定位对一个 Actor 具有管辖权的 worker 实例，现会记录包含 `Position` 的错误。
+- `SpatialGDKsetting bEnableMultiWorker` 现为私有变量，来保证通过 `-OverrideMultiWorker` 标记来设置 `IsMultiWorkerEnabled`。
+- 当 `SpatialStatics::GetActorEntityId` 函数传入 `nullptr` 时，现会返回 `SpatialConstants::INVALID_ENTITY_ID`。
+- 删除了 `EditorWorkerController` 类 (运行连续性 PIE 会话时不再需要此类)。
+- 修复一项崩溃：之前在尝试刷新后，溢出 RPC 会保持溢出状态。
+- 修复一项崩溃：之前在启用 ring buffer 来执行服务器穿梭后，有时会发生崩溃。
+
 
 ## [`0.10.0`] - 2020-07-08
 
@@ -101,7 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When you start a cloud deployment from the Unreal Editor, the cloud deployment now automatically has the dev_login deployment tag.
 - Several command-line parameter changes:
   - Renamed the `enableProtocolLogging` command-line parameter to `enableWorkerSDKProtocolLogging`.
-  - Added a parameter named enableWorkerSDKOpLogging so that you can log user-level ops. 
+  - Added a parameter named enableWorkerSDKOpLogging so that you can log user-level ops.
   - Renamed the `protocolLoggingPrefix` parameter to workerSDKLogPrefix. This prefix is used for both protocol logging and op logging.
   - Added a parameter named `workerSDKLogLevel` that takes the arguments `debug`, `info`, `warning`, and `error`.
   - Added a parameter named `workerSDKLogFileSize` to control the maximum file size of the Worker SDK log file.
