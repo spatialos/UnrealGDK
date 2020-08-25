@@ -32,35 +32,34 @@ void ASpatialTestPossession::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddStep(TEXT("SpatialTestPossessionServerSetupStep"), FWorkerDefinition::Server(1), nullptr, nullptr,
-			[this](float DeltaTime) {
-				float YToSpawnAt = -60.0f;
-				float YSpawnIncrement = 120.0f;
+	AddStep(TEXT("SpatialTestPossessionServerSetupStep"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
+		float YToSpawnAt = -60.0f;
+		float YSpawnIncrement = 120.0f;
 
-				for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-				{
-					if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-					{
-						continue;
-					}
-					// Spawn the actor for the client to possess, and increment the y variable for the next spawn
-					ATestPossessionPawn* TestPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(
-						FVector(0.0f, YToSpawnAt, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-					YToSpawnAt += YSpawnIncrement;
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+			{
+				continue;
+			}
+			// Spawn the actor for the client to possess, and increment the y variable for the next spawn
+			ATestPossessionPawn* TestPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(0.0f, YToSpawnAt, 50.0f),
+																						FRotator::ZeroRotator, FActorSpawnParameters());
+			YToSpawnAt += YSpawnIncrement;
 
-					RegisterAutoDestroyActor(TestPawn);
+			RegisterAutoDestroyActor(TestPawn);
 
-					AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 
-					// Save old one to put it back in the final step
-					OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
+			// Save old one to put it back in the final step
+			OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
 
-					// Actually do the possession of the test pawn
-					PlayerController->Possess(TestPawn);
-				}
+			// Actually do the possession of the test pawn
+			PlayerController->Possess(TestPawn);
+		}
 
-				FinishStep();
-			});
+		FinishStep();
+	});
 
 	AddStep(
 		TEXT("SpatialTestPossessionClientCheckStep"), FWorkerDefinition::AllClients,
@@ -75,17 +74,16 @@ void ASpatialTestPossession::BeginPlay()
 
 			// Run the assertion. This checks the currently possessed pawn is a TestPossessionPawn, and fails if not
 			AssertTrue(PlayerController->GetPawn()->GetClass() == ATestPossessionPawn::StaticClass(),
-							 TEXT("Player has possessed test pawn"), PlayerController);
+					   TEXT("Player has possessed test pawn"), PlayerController);
 
 			FinishStep();
 		});
 
-	AddStep(TEXT("SpatialTestPossessionServerPossessOldPawns"), FWorkerDefinition::Server(1), nullptr, nullptr,
-			[this](float DeltaTime) {
-				for (const auto& OriginalPawnPair : OriginalPawns)
-				{
-					OriginalPawnPair.Key->Possess(OriginalPawnPair.Value);
-				}
-				FinishStep();
-			});
+	AddStep(TEXT("SpatialTestPossessionServerPossessOldPawns"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
+		for (const auto& OriginalPawnPair : OriginalPawns)
+		{
+			OriginalPawnPair.Key->Possess(OriginalPawnPair.Value);
+		}
+		FinishStep();
+	});
 }

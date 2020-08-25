@@ -28,10 +28,9 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			for (int i = 0; i != NumVirtualWorkers; ++i)
 			{
 				ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
-				AssertTrue(
-					IsValid(Character),
-					FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character),
-									*GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
+				AssertTrue(IsValid(Character),
+						   FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character),
+										   *GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
 
@@ -82,8 +81,7 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 				{
 					if (It->HasAuthority())
 					{
-						AssertTrue(IsValid(*It),
-											FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *GetNameSafe(*It)));
+						AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *GetNameSafe(*It)));
 						RegisterAutoDestroyActor(*It);
 					}
 				}
@@ -112,7 +110,7 @@ void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
 			TActorIterator<ACharacter> It(World);
 			bool bHasCharacter = static_cast<bool>(It);
 			AssertFalse(bHasCharacter, FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"),
-																*GetLocalFlowController()->GetDisplayName()));
+													   *GetLocalFlowController()->GetDisplayName()));
 			FinishStep();
 		});
 
