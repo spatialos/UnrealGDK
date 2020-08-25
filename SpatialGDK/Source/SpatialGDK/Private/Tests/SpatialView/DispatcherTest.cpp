@@ -132,7 +132,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 
 	View->Emplace(ENTITY_ID, CreateViewElementWithComponentValue(COMPONENT_ID, COMPONENT_VALUE));
 
-	Dispatcher.RegisterAndInvokeComponentAddedCallback(COMPONENT_ID, Callback, View.Get());
+	Dispatcher.RegisterAndInvokeComponentAddedCallback(COMPONENT_ID, Callback, *View);
 
 	TestTrue("Callback was invoked", Invoked);
 
