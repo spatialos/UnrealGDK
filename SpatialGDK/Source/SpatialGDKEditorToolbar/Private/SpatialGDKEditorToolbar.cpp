@@ -60,6 +60,7 @@ FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 	: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
 	, bSchemaBuildError(false)
 	, bStartingCloudDeployment(false)
+	, SpatialDebugger(nullptr)
 {
 }
 
