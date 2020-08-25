@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialAuthorityTestActor.h"
-//#include "Components/SceneComponent.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"

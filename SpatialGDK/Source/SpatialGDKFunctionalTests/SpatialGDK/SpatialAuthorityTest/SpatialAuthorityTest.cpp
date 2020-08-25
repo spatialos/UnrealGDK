@@ -9,6 +9,7 @@
 #include "SpatialAuthorityTestGameState.h"
 #include "SpatialAuthorityTestReplicatedActor.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
 
 /** This Test is meant to check that HasAuthority() rules are respected on different occasions. We check
   * in BeginPlay and Tick, and in the following use cases:
@@ -36,6 +37,12 @@ void ASpatialAuthorityTest::BeginPlay()
 	Super::BeginPlay();
 
 	ResetTimer();
+
+	if(HasAuthority())
+	{
+		NumHadAuthorityOverGameMode = 0;
+		NumHadAuthorityOverGameState = 0;
+	}
 
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{
@@ -169,7 +176,7 @@ void ASpatialAuthorityTest::BeginPlay()
 							else if (LocalWorkerDefinition.Id == 2)
 							{
 								if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
-									&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthorityOnBeginPlay == 1)
+									&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == 1)
 								{
 									FinishStep();
 								}
@@ -291,31 +298,40 @@ void ASpatialAuthorityTest::BeginPlay()
 				bool bIsStateValid;
 
 				USpatialAuthorityTestActorComponent* AuthorityComponent = GameMode->AuthorityComponent;
-				// Either it's bigger than 0 and all match (in the Authoritive Server), or all equal to zero (except for replicated).
-				if (AuthorityComponent->AuthorityOnBeginPlay > 0)
+				// Either it's bigger than 0 and all match (in the Authoritative Server), or all equal to zero (except for replicated).
+				if (AuthorityComponent->AuthWorkerIdOnBeginPlay > 0)
 				{
-					bIsStateValid = AuthorityComponent->AuthorityOnBeginPlay == AuthorityComponent->ReplicatedAuthorityOnBeginPlay
-						   && AuthorityComponent->AuthorityOnBeginPlay == AuthorityComponent->AuthorityOnTick
-						   && AuthorityComponent->NumAuthorityGains == 1 && AuthorityComponent->NumAuthorityLosses == 0;
+					bool bIsUsingSpatial = Cast<USpatialNetDriver>(GetNetDriver()) != nullptr;
+
+					// Currently the behaviour is that if you're using native, OnAuthorityGained is never called.
+					int NumExpectedAuthorityGains = bIsUsingSpatial ? 1 : 0;
+
+					bIsStateValid = AuthorityComponent->AuthWorkerIdOnBeginPlay == AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay
+						   && AuthorityComponent->AuthWorkerIdOnBeginPlay == AuthorityComponent->AuthWorkerIdOnTick
+						   && AuthorityComponent->NumAuthorityGains == NumExpectedAuthorityGains && AuthorityComponent->NumAuthorityLosses == 0;
 				}
 				else
 				{
-					bIsStateValid = AuthorityComponent->ReplicatedAuthorityOnBeginPlay != 0 && AuthorityComponent->AuthorityOnBeginPlay == 0
-									&& AuthorityComponent->AuthorityOnTick == 0 && AuthorityComponent->NumAuthorityGains == 0
+					bIsStateValid = AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay != 0 && AuthorityComponent->AuthWorkerIdOnBeginPlay == 0
+									&& AuthorityComponent->AuthWorkerIdOnTick == 0 && AuthorityComponent->NumAuthorityGains == 0
 									&& AuthorityComponent->NumAuthorityLosses == 0;
 				}
 
 				if(bIsStateValid)
 				{
+					if( AuthorityComponent->AuthWorkerIdOnBeginPlay)
+					{
+						CrossServerNotifyHadAuthorityOverGameMode();
+					}
 					FinishStep();
 				}
-			}, 5.0f);
+			}, 50.0f);
 	}
 
 	// GameState.
 	{
 		AddStep(
-			TEXT("GameState - Determine Authority by every Server"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("GameState - Determine Authority by all Workers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				// Again, no need to wait for more time.
 				ASpatialAuthorityTestGameState* GameState = GetWorld()->GetGameState<ASpatialAuthorityTestGameState>();
@@ -328,34 +344,52 @@ void ASpatialAuthorityTest::BeginPlay()
 				bool bIsStateValid;
 
 				USpatialAuthorityTestActorComponent* AuthorityComponent = GameState->AuthorityComponent;
-				// Either it's bigger than 0 and all match the GameMode Authority (in the Authoritive Server),
+				// Either it's bigger than 0 and all match the GameMode Authority (in the Authoritative Server),
 				// or all equal to zero (except for replicated).
-				if (AuthorityComponent->AuthorityOnBeginPlay > 0)
+				if (AuthorityComponent->AuthWorkerIdOnBeginPlay > 0)
 				{
 					ASpatialAuthorityTestGameMode* GameMode = GetWorld()->GetAuthGameMode<ASpatialAuthorityTestGameMode>();
-					int GameModeAuthority = GameMode->AuthorityComponent->ReplicatedAuthorityOnBeginPlay;
-					bIsStateValid = AuthorityComponent->AuthorityOnBeginPlay == GameModeAuthority
-						   && AuthorityComponent->ReplicatedAuthorityOnBeginPlay == GameModeAuthority
-						   && AuthorityComponent->AuthorityOnTick == GameModeAuthority
+					int GameModeAuthority = GameMode->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay;
+					bIsStateValid = AuthorityComponent->AuthWorkerIdOnBeginPlay == GameModeAuthority
+						   && AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == GameModeAuthority
+						   && AuthorityComponent->AuthWorkerIdOnTick == GameModeAuthority
 						   && AuthorityComponent->NumAuthorityGains == 1
 						   && AuthorityComponent->NumAuthorityLosses == 0;
 				}
 				else
 				{
 
-					bIsStateValid = AuthorityComponent->ReplicatedAuthorityOnBeginPlay != 0
-						   && AuthorityComponent->AuthorityOnBeginPlay == 0
-						   && AuthorityComponent->AuthorityOnTick == 0
+					bIsStateValid = AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay != 0
+						   && AuthorityComponent->AuthWorkerIdOnBeginPlay == 0
+						   && AuthorityComponent->AuthWorkerIdOnTick == 0
 						   && AuthorityComponent->NumAuthorityGains == 0
 						   && AuthorityComponent->NumAuthorityLosses == 0;
 				}
 
 				if(bIsStateValid)
 				{
+					if( AuthorityComponent->AuthWorkerIdOnBeginPlay > 0)
+					{
+						CrossServerNotifyHadAuthorityOverGameState();
+					}
 					FinishStep();
 				}
 			},
 			5.0f);
+	}
+
+	// Verify GameMode/State Unique Authority
+	{
+		AddStep(TEXT("Verify GameMode/State Unique Authority"), FWorkerDefinition::Server(1), nullptr, nullptr,
+		[this](float DeltaTime){
+			if(NumHadAuthorityOverGameMode == 1 && NumHadAuthorityOverGameState == 1)
+			{
+				// Reset in case we run the Test multiple times in a row.
+				NumHadAuthorityOverGameMode = 0;
+				NumHadAuthorityOverGameState = 0;
+				FinishStep();
+			}
+		}, 5.0f);
 	}
 
 }
@@ -365,11 +399,23 @@ void ASpatialAuthorityTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ASpatialAuthorityTest, DynamicReplicatedActor);
+	DOREPLIFETIME(ASpatialAuthorityTest, NumHadAuthorityOverGameMode);
+	DOREPLIFETIME(ASpatialAuthorityTest, NumHadAuthorityOverGameState);
 }
 
 void ASpatialAuthorityTest::CrossServerSetDynamicReplicatedActor_Implementation(ASpatialAuthorityTestReplicatedActor* Actor)
 {
 	DynamicReplicatedActor = Actor;
+}
+
+void ASpatialAuthorityTest::CrossServerNotifyHadAuthorityOverGameMode_Implementation()
+{
+	NumHadAuthorityOverGameMode += 1;
+}
+
+void ASpatialAuthorityTest::CrossServerNotifyHadAuthorityOverGameState_Implementation()
+{
+	NumHadAuthorityOverGameState += 1;
 }
 
 bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick
@@ -380,8 +426,8 @@ bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, i
 		return false;
 	}
 	
-	return Actor->AuthorityComponent->AuthorityOnBeginPlay == AuthorityOnBeginPlay
-		&& Actor->AuthorityComponent->AuthorityOnTick == AuthorityOnTick
+	return Actor->AuthorityComponent->AuthWorkerIdOnBeginPlay == AuthorityOnBeginPlay
+		&& Actor->AuthorityComponent->AuthWorkerIdOnTick == AuthorityOnTick
 		&& Actor->AuthorityComponent->NumAuthorityGains == NumAuthorityGains
 		&& Actor->AuthorityComponent->NumAuthorityLosses == NumAuthorityLosses;
 }

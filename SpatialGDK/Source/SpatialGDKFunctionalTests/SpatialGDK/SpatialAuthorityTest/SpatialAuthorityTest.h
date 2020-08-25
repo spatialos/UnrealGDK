@@ -24,12 +24,18 @@ public:
 
 	virtual void FinishStep() override { ResetTimer(); Super::FinishStep();	};
 
-	void ResetTimer() {	Timer = 0.5; };
+	void ResetTimer() { Timer = 0.5; };
 
 	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerNotifyHadAuthorityOverGameMode();
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerNotifyHadAuthorityOverGameState();
 
 	UPROPERTY(EditAnywhere, Category = "Default")
 	ASpatialAuthorityTestActor* LevelActor;
@@ -51,7 +57,12 @@ public:
 	UPROPERTY()
 	ASpatialAuthorityTestActor* DynamicNonReplicatedActor;
 
+	UPROPERTY(Replicated)
+	int NumHadAuthorityOverGameMode;
 
+	UPROPERTY(Replicated)
+	int NumHadAuthorityOverGameState;
+
+	// Local timer used for some active waits.
 	float Timer;
-	
 };

@@ -26,11 +26,11 @@ public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction);
 	
 	UPROPERTY(Replicated)
-	int ReplicatedAuthorityOnBeginPlay = 0;
+	int ReplicatedAuthWorkerIdOnBeginPlay = 0;
 
-	int AuthorityOnBeginPlay = 0;
+	int AuthWorkerIdOnBeginPlay = 0;
 
-	int AuthorityOnTick = 0;
+	int AuthWorkerIdOnTick = 0;
 
 	int NumAuthorityGains = 0;
 

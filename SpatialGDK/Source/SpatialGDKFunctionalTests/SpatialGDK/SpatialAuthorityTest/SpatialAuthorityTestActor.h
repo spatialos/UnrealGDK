@@ -7,8 +7,6 @@
 #include "SpatialAuthorityTestActor.generated.h"
 
 class USpatialAuthorityTestActorComponent;
-class ASpatialFunctionalTest;
-class ASpatialFunctionalTestFlowController;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestActor : public AActor

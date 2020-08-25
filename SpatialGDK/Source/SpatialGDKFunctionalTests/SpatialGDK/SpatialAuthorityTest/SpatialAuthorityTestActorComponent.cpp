@@ -19,7 +19,7 @@ void USpatialAuthorityTestActorComponent::GetLifetimeReplicatedProps(TArray<FLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USpatialAuthorityTestActorComponent, ReplicatedAuthorityOnBeginPlay);
+	DOREPLIFETIME(USpatialAuthorityTestActorComponent, ReplicatedAuthWorkerIdOnBeginPlay);
 }
 
 void USpatialAuthorityTestActorComponent::OnAuthorityGained()
@@ -38,13 +38,13 @@ void USpatialAuthorityTestActorComponent::BeginPlay()
 
 	AActor* Owner = GetOwner();
 
-	if (Owner->HasAuthority() && AuthorityOnBeginPlay == 0)
+	if (Owner->HasAuthority() && AuthWorkerIdOnBeginPlay == 0)
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Owner->GetNetDriver());
 
-		AuthorityOnBeginPlay = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
+		AuthWorkerIdOnBeginPlay = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
 
-		ReplicatedAuthorityOnBeginPlay = AuthorityOnBeginPlay;
+		ReplicatedAuthWorkerIdOnBeginPlay = AuthWorkerIdOnBeginPlay;
 	}
 }
 
@@ -56,10 +56,10 @@ void USpatialAuthorityTestActorComponent::TickComponent(float DeltaTime, enum EL
 	AActor* Owner = GetOwner();
 
 	// Need to check HasActorBegunPlay because GameState will tick before BeginPlay.
-	if (Owner->HasActorBegunPlay() && Owner->HasAuthority() && AuthorityOnTick == 0)
+	if (Owner->HasActorBegunPlay() && Owner->HasAuthority() && AuthWorkerIdOnTick == 0)
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Owner->GetNetDriver());
-		AuthorityOnTick = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr
+		AuthWorkerIdOnTick = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr
 							  ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()
 							  : 1;
 	}
