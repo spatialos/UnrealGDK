@@ -155,11 +155,7 @@ void USpatialViewWorkerConnection::ProcessOutgoingMessages()
 
 void USpatialViewWorkerConnection::MaybeFlush()
 {
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bWorkerFlushAfterOutgoingNetworkOp)
-	{
-		Coordinator->FlushMessagesToSend();
-	}
+	Coordinator->FlushMessagesToSend();
 }
 
 void USpatialViewWorkerConnection::Flush()
