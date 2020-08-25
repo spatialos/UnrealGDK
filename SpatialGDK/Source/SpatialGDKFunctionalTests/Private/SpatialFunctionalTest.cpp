@@ -7,13 +7,13 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
+#include "HttpModule.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
-#include "HttpModule.h"
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -290,34 +290,33 @@ void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* A
 //        HttpRequest->ProcessRequest();
 //    }
 
-
 void ASpatialFunctionalTest::TakeSnapshot()
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 	FString Url = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
 	// kick off http request to read
-	HttpRequest->OnProcessRequestComplete().BindLambda([/*Complete*/] (FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse,
-	bool bSucceeded) {
-	    UE_LOG(LogTemp, Warning, TEXT("Snapshot Created"));
-	    // Go read latest file,
-	    FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-	    FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
-	    if (!FPaths::FileExists(SnapshotLatestPath))
-	    {
-	        //Complete.ExecuteIfBound("", false);
-	        return;
-	    }
-	    FString LatestSnapshot;
-	    if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
-	    {
-	        //Complete.ExecuteIfBound("", false);
-	        return;
-	    }
-		TakenSnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-		UE_LOG(LogTemp, Warning, TEXT("Snapshot path: %s"), *TakenSnapshotPath);
-	    //Complete.ExecuteIfBound("snapshot id", bSucceeded);
-	});
+	HttpRequest->OnProcessRequestComplete().BindLambda(
+		[/*Complete*/](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+			UE_LOG(LogTemp, Warning, TEXT("Snapshot Created"));
+			// Go read latest file,
+			FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+			FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
+			if (!FPaths::FileExists(SnapshotLatestPath))
+			{
+				// Complete.ExecuteIfBound("", false);
+				return;
+			}
+			FString LatestSnapshot;
+			if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
+			{
+				// Complete.ExecuteIfBound("", false);
+				return;
+			}
+			TakenSnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+			UE_LOG(LogTemp, Warning, TEXT("Snapshot path: %s"), *TakenSnapshotPath);
+			// Complete.ExecuteIfBound("snapshot id", bSucceeded);
+		});
 	HttpRequest->SetURL(Url);
 	HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
 	HttpRequest->SetVerb(TEXT("POST"));

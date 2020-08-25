@@ -749,7 +749,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot/* = ""*/)
+void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot /* = ""*/)
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
@@ -776,7 +776,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	{
 		LaunchConfig = ForceSnapshot;
 	}
-	else*/ if (SpatialGDKEditorSettings->bGenerateDefaultLaunchConfig)
+	else*/
+	if (SpatialGDKEditorSettings->bGenerateDefaultLaunchConfig)
 	{
 		bool bRedeployRequired = false;
 		if (!GenerateAllDefaultWorkerJsons(bRedeployRequired))
