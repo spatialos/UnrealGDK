@@ -28,14 +28,14 @@ void FDispatcher::InvokeCallbacks(const TArray<EntityDelta>& Deltas)
 }
 
 CallbackId FDispatcher::RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-													   const EntityView& View)
+																const EntityView& View)
 {
 	InvokeWithExistingValues(ComponentId, Callback, View);
 	return RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
 }
 
 CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-													   const EntityView& View)
+																  const EntityView& View)
 {
 	for (const auto& Entity : View)
 	{
@@ -68,7 +68,7 @@ CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(Worker_Componen
 }
 
 CallbackId FDispatcher::RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
-                                                               const EntityView& View)
+															   const EntityView& View)
 {
 	for (const auto& Entity : View)
 	{
