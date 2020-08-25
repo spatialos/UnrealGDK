@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include "ReplicationGraph.h"
-
-#include "SpatialCommonTypes.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
+
+#include "ReplicationGraph.h"
 
 #include "SpatialReplicationGraph.generated.h"
 
@@ -18,6 +17,7 @@ class SPATIALGDK_API USpatialReplicationGraph : public UReplicationGraph
 	GENERATED_BODY()
 
 public:
+	virtual void InitForNetDriver(UNetDriver*) override;
 	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner);
 
 	FGlobalActorReplicationInfoMap& GetGlobalActorReplicationInfoMap() { return GlobalActorReplicationInfoMap; }

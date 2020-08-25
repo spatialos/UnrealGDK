@@ -7,6 +7,19 @@
 #include "Interop/SpatialReplicationGraphLoadBalancingHandler.h"
 #include "Utils/SpatialActorUtils.h"
 
+void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
+{
+	UReplicationGraph::InitForNetDriver(InNetDriver);
+	
+	if (USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld()))
+	{
+		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
+		{
+			LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(SpatialNetDriver);
+		}
+	}
+}
+
 UActorChannel* USpatialReplicationGraph::GetOrCreateSpatialActorChannel(UObject* TargetObject)
 {
 	if (TargetObject != nullptr)
@@ -44,28 +57,21 @@ void USpatialReplicationGraph::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection* ConnectionManager)
 {
-	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver))
+	if (LoadBalancingHandler.IsValid())
 	{
-		if (!LoadBalancingHandler.IsValid() && USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld()))
-		{
-			LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(SpatialNetDriver);
-		}
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+		FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, ConnectionManager->ActorInfoMap, PrioritizedReplicationList);
+		LoadBalancingHandler->EvaluateActorsToMigrate(LoadBalancingCtx);
 
-		if (LoadBalancingHandler.IsValid())
+		for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
 		{
-			FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, PrioritizedReplicationList);
-			LoadBalancingHandler->EvaluateActorsToMigrate(LoadBalancingCtx);
-
-			for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
+			// Only add net owners to the list as they will visit their dependents when replicated.
+			AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+			if (NetOwner == Actor)
 			{
-				// Only add net owners to the list as they will visit their dependents when replicated.
-				AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
-				if (NetOwner == Actor)
-				{
-					FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);
-					FGlobalActorReplicationInfo& GlobalData = GlobalActorReplicationInfoMap.Get(Actor);
-					PrioritizedReplicationList.Items.Emplace(FPrioritizedRepList::FItem(0, Actor, &GlobalData, &ConnectionData));
-				}
+				FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);
+				FGlobalActorReplicationInfo& GlobalData = GlobalActorReplicationInfoMap.Get(Actor);
+				PrioritizedReplicationList.Items.Emplace(FPrioritizedRepList::FItem(0, Actor, &GlobalData, &ConnectionData));
 			}
 		}
 	}

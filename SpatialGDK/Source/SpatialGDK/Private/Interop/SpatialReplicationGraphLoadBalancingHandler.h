@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "ReplicationGraphTypes.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
+
+#include "ReplicationGraphTypes.h"
 
 class USpatialReplicationGraph;
 
@@ -11,7 +12,7 @@ class USpatialReplicationGraph;
 struct FSpatialReplicationGraphLoadBalancingContext
 {
 	FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver, USpatialReplicationGraph* InReplicationGraph,
-												 FPrioritizedRepList& InRepList);
+		FPerConnectionActorInfoMap& InfoMap, FPrioritizedRepList& InRepList);
 
 	struct FRepListArrayAdaptor
 	{
@@ -52,6 +53,7 @@ struct FSpatialReplicationGraphLoadBalancingContext
 
 	USpatialNetDriver* NetDriver;
 	USpatialReplicationGraph* ReplicationGraph;
+	FPerConnectionActorInfoMap& InfoMap;
 	FPrioritizedRepList& ActorsToReplicate;
 	TSet<AActor*> AdditionalActorsToReplicate;
 };

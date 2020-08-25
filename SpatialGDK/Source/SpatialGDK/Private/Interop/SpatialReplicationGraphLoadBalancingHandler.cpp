@@ -1,13 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialReplicationGraphLoadBalancingHandler.h"
+
 #include "EngineClasses/SpatialReplicationGraph.h"
 
 FSpatialReplicationGraphLoadBalancingContext::FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver,
 																						   USpatialReplicationGraph* InReplicationGraph,
+																							FPerConnectionActorInfoMap& InInfoMap,
 																						   FPrioritizedRepList& InRepList)
 	: NetDriver(InNetDriver)
 	, ReplicationGraph(InReplicationGraph)
+	, InfoMap(InInfoMap)
 	, ActorsToReplicate(InRepList)
 {
 }
@@ -30,7 +33,7 @@ void FSpatialReplicationGraphLoadBalancingContext::AddActorToReplicate(AActor* A
 
 FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentActors(AActor* Actor)
 {
-	static FActorRepListRefView s_EmptyList = [] {
+	static FActorRepListRefView EmptyList = [] {
 		FActorRepListRefView List;
 		List.Reset(0);
 		return List;
@@ -44,30 +47,27 @@ FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentA
 			return DependentActorList;
 		}
 	}
-	return s_EmptyList;
+	return EmptyList;
 }
 
 bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	// Auth check.
-	if (!Actor->HasAuthority())
+	if (!Actor->HasAuthority() || !Actor->IsActorReady())
 	{
 		return false;
 	}
+
+	// The following checks are extracted from UReplicationGraph::ReplicateActorListsForConnections_Default
+	// More accurately, from the loop with the section named NET_ReplicateActors_PrioritizeForConnection
+	// The part called "Distance Scaling" is ignored, since it is SpatialOS's job.
 
 	if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
 		return false;
 	}
 
-	// Additional check that the actor is seen by the spatial runtime.
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return false;
-	}
-
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	FConnectionReplicationActorInfo& ConnectionData = InfoMap.FindOrAdd(Actor);
+	if (ConnectionData.bDormantOnConnection)
 	{
 		return false;
 	}
