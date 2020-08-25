@@ -21,18 +21,18 @@ constexpr Worker_EntityId OTHER_ENTITY_ID = 2;
 constexpr double COMPONENT_VALUE = 3;
 constexpr double OTHER_COMPONENT_VALUE = 4;
 
-TUniquePtr<SpatialGDK::ComponentChange> CreateComponentAddedChange(const Worker_ComponentId ComponentId, const double Value)
+SpatialGDK::ComponentChange CreateComponentAddedChange(const Worker_ComponentId ComponentId, const double Value)
 {
 	SpatialGDK::ComponentData Data = SpatialGDK::CreateTestComponentData(ComponentId, Value);
-	return MakeUnique<SpatialGDK::ComponentChange>(ComponentId, MoveTemp(Data).Release());
+	return SpatialGDK::ComponentChange(ComponentId, MoveTemp(Data).Release());
 }
 
 TArray<SpatialGDK::EntityDelta> CreateComponentAddedDeltaWithChange(const Worker_EntityId EntityId,
-																	const TUniquePtr<SpatialGDK::ComponentChange>& Change)
+																	const SpatialGDK::ComponentChange Change)
 {
 	SpatialGDK::EntityDelta Delta = {};
 	Delta.EntityId = EntityId;
-	Delta.ComponentsAdded = SpatialGDK::ComponentSpan<SpatialGDK::ComponentChange>(Change.Get(), 1);
+	Delta.ComponentsAdded = SpatialGDK::ComponentSpan<SpatialGDK::ComponentChange>(&Change, 1);
 	return TArray<SpatialGDK::EntityDelta>{ Delta };
 }
 
@@ -68,7 +68,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 	};
 
 	Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
-	TUniquePtr<SpatialGDK::ComponentChange> Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
+	SpatialGDK::ComponentChange Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
 	Dispatcher.InvokeCallbacks(CreateComponentAddedDeltaWithChange(ENTITY_ID, Change));
 
 	TestTrue("Callback was invoked", Invoked);
@@ -101,7 +101,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Callback_WHEN_Callback_Removed_THEN_Callba
 	};
 
 	const SpatialGDK::CallbackId Id = Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
-	const TUniquePtr<SpatialGDK::ComponentChange> Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
+	const SpatialGDK::ComponentChange Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
 	const TArray<SpatialGDK::EntityDelta> Deltas = CreateComponentAddedDeltaWithChange(ENTITY_ID, Change);
 	Dispatcher.InvokeCallbacks(Deltas);
 
@@ -138,7 +138,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 
 	// Double check the callback is actually called on invocation as well
 	Invoked = false;
-	const TUniquePtr<SpatialGDK::ComponentChange> Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
+	const SpatialGDK::ComponentChange Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
 	const TArray<SpatialGDK::EntityDelta> Deltas = CreateComponentAddedDeltaWithChange(ENTITY_ID, Change);
 	Dispatcher.InvokeCallbacks(Deltas);
 
