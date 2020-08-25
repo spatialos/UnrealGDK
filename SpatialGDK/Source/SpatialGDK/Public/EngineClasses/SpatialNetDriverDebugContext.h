@@ -13,7 +13,7 @@ class UDebugLBStrategy;
 class USpatialNetDriver;
 
 UCLASS()
-class USpatialNetDriverDebugContext : public UObject
+class SPATIALGDK_API USpatialNetDriverDebugContext : public UObject
 {
 	GENERATED_BODY()
 public:
