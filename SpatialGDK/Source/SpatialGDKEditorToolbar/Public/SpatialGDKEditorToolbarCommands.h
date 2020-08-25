@@ -41,4 +41,5 @@ public:
 	TSharedPtr<FUICommandInfo> GDKRuntimeSettings;
 	TSharedPtr<FUICommandInfo> LocalDeployment;
 	TSharedPtr<FUICommandInfo> CloudDeployment;
+	TSharedPtr<FUICommandInfo> ToggleSpatialDebuggerEditor;
 };

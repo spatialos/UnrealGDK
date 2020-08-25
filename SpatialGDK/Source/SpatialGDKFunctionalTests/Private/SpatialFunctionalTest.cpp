@@ -112,6 +112,16 @@ void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy
 	}
 }
 
+void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FString& Message)
+{
+	Super::LogStep(Verbosity, Message);
+
+	if (Verbosity == ELogVerbosity::Error || Verbosity == ELogVerbosity::Fatal)
+	{
+		FinishTest(EFunctionalTestResult::Failed, TEXT("Failed assertions"));
+	}
+}
+
 bool ASpatialFunctionalTest::IsReady_Implementation()
 {
 	int NumRegisteredClients = 0;
@@ -192,7 +202,7 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 	return Counter;
 }
 
-void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
+void ASpatialFunctionalTest::AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
@@ -204,7 +214,7 @@ void ASpatialFunctionalTest::AddActorDelegation_Implementation(AActor* Actor, in
 	}
 }
 
-void ASpatialFunctionalTest::RemoveActorDelegation_Implementation(AActor* Actor)
+void ASpatialFunctionalTest::RemoveActorDelegation(AActor* Actor)
 {
 	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
 
@@ -322,50 +332,56 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
-			   *UEnum::GetValueAsString(TestResult), *Message);
-
-		if (TestResult == TimesUpResult)
+		// Make sure we don't FinishTest multiple times.
+		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
-			int NumRegisteredClients = 0;
-			int NumRegisteredServers = 0;
+			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
+				   *UEnum::GetValueAsString(TestResult), *Message);
 
-			for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
+			if (TestResult == TimesUpResult)
 			{
-				if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
+				int NumRegisteredClients = 0;
+				int NumRegisteredServers = 0;
+
+				for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 				{
-					if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+					if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
 					{
-						++NumRegisteredServers;
+						if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+						{
+							++NumRegisteredServers;
+						}
+						else
+						{
+							++NumRegisteredClients;
+						}
 					}
-					else
-					{
-						++NumRegisteredClients;
-					}
+				}
+
+				if (NumRegisteredClients < NumRequiredClients)
+				{
+					UE_LOG(
+						LogSpatialGDKFunctionalTests, Warning,
+						TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, "
+							 "Required clients: %d!"),
+						*GetName(), NumRegisteredClients, NumRequiredClients);
+				}
+
+				if (NumRegisteredServers < NumExpectedServers)
+				{
+					UE_LOG(
+						LogSpatialGDKFunctionalTests, Warning,
+						TEXT("In %s, the number of connected servers is less than the number of required servers: Connected servers: %d, "
+							 "Required servers: %d!"),
+						*GetName(), NumRegisteredServers, NumExpectedServers);
 				}
 			}
 
-			if (NumRegisteredClients < NumRequiredClients)
-			{
-				UE_LOG(LogSpatialGDKFunctionalTests, Warning,
-					   TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, "
-							"Required clients: %d!"),
-					   *GetName(), NumRegisteredClients, NumRequiredClients);
-			}
+			CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
+			OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
 
-			if (NumRegisteredServers < NumExpectedServers)
-			{
-				UE_LOG(LogSpatialGDKFunctionalTests, Warning,
-					   TEXT("In %s, the number of connected servers is less than the number of required servers: Connected servers: %d, "
-							"Required servers: %d!"),
-					   *GetName(), NumRegisteredServers, NumExpectedServers);
-			}
+			Super::FinishTest(TestResult, Message);
 		}
-
-		CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
-		OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
-
-		Super::FinishTest(TestResult, Message);
 	}
 	else
 	{

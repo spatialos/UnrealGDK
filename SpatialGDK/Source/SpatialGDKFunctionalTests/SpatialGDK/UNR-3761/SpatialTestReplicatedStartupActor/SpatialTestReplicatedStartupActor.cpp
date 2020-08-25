@@ -43,14 +43,14 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 
 	AddStep(
 		TEXT("SpatialTestReplicatedStartupActorClientsSetup"), FWorkerDefinition::AllClients,
-		[this](ASpatialFunctionalTest* NetTest) {
+		[this]() {
 			// Make sure that the PlayerController has been set before trying to do anything with it, this might prevent Null Pointer
 			// exceptions being thrown when UE ticks at a relatively slow rate
 			AReplicatedStartupActorPlayerController* PlayerController =
 				Cast<AReplicatedStartupActorPlayerController>(GetLocalFlowController()->GetOwner());
 			return IsValid(PlayerController);
 		},
-		[this](ASpatialFunctionalTest* NetTest) {
+		[this]() {
 			TArray<AActor*> ReplicatedActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), ReplicatedActors);
 
@@ -66,7 +66,7 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 
 	AddStep(
 		TEXT("SpatialTestReplicatedStarupActorClientsCheckStep"), FWorkerDefinition::AllClients, nullptr, nullptr,
-		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this](float DeltaTime) {
 			if (bIsValidReference)
 			{
 				AssertTrue(bIsValidReference, TEXT("The server has a valid reference to this client's replicated actor"));
@@ -78,5 +78,5 @@ void ASpatialTestReplicatedStartupActor::BeginPlay()
 				FinishStep();
 			}
 		},
-		2.0);
+		5.0);
 }

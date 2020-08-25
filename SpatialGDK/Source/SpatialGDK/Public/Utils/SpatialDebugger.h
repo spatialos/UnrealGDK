@@ -48,7 +48,10 @@ struct FWorkerRegionInfo
 	FBox2D Extents;
 };
 
-UCLASS(SpatialType = (NotPersistent), Blueprintable, NotPlaceable)
+/**
+ * Visualise spatial information at runtime and in the editor
+ */
+UCLASS(SpatialType = (NotPersistent), Blueprintable, NotPlaceable, Transient)
 class SPATIALGDK_API ASpatialDebugger : public AInfo
 {
 	GENERATED_UCLASS_BODY()
@@ -134,6 +137,13 @@ public:
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
+#if WITH_EDITOR
+	void EditorRefreshWorkerRegions();
+	static void EditorRefreshDisplay();
+	bool EditorAllowWorkerBoundaries() const;
+	void EditorSpatialToggleDebugger(bool bEnabled);
+#endif
+
 private:
 	void LoadIcons();
 
@@ -152,6 +162,10 @@ private:
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
+
+#if WITH_EDITOR
+	void EditorInitialiseWorkerRegions();
+#endif
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;

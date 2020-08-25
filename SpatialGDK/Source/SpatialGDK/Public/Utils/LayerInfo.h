@@ -5,6 +5,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "CoreMinimal.h"
+#include "Templates/SubclassOf.h"
 
 #include "LayerInfo.generated.h"
 

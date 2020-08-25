@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System;
+using System.Threading.Tasks;
 
 namespace Improbable
 {
@@ -683,49 +684,63 @@ namespace Improbable
 
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(useChinaPlatform), GetPlatformRefreshTokenCredential(useChinaPlatform));
 
+            var deploymentIdsToStop = new List<string>();
+
             if (args.Length == 3)
             {
                 // Stop only the specified deployment.
                 var deploymentId = args[2];
-                StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
-
-                return 0;
+                deploymentIdsToStop.Add(deploymentId);
             }
-
-            // Stop all active deployments launched by this launcher.
-            var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
-
-            foreach (var deployment in activeDeployments)
+            else
             {
-                var deploymentId = deployment.Id;
-                StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
+                // Stop all active deployments launched by this launcher.
+                var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
+                foreach (var deployment in activeDeployments)
+                {
+                    deploymentIdsToStop.Add(deployment.Id);
+                }
             }
 
+            var deploymentIdsToTasks = new Dictionary<string, Task>();
+            var erroredDeploymentIds = new List<string>();
+
+            Console.WriteLine($"Will stop {deploymentIdsToStop.Count()} deployment(s)");
+            foreach (var deploymentId in deploymentIdsToStop)
+            {
+                deploymentIdsToTasks.Add(deploymentId, StopDeploymentByIdAsync(deploymentServiceClient, projectName, deploymentId));
+            };
+
+            try
+            {
+                Task.WaitAll(deploymentIdsToTasks.Values.ToArray());
+            }
+            catch
+            {
+                // Retrieve individual exceptions from AggregateException thrown by Task.WaitAll
+                var throwers = deploymentIdsToTasks.Where(task => task.Value.Exception != null);
+                foreach (KeyValuePair<string, Task> erroredTask in throwers)
+                {
+                    Exception inner = erroredTask.Value.Exception.InnerException;
+
+                    string erroredDeploymentId = erroredTask.Key;
+                    erroredDeploymentIds.Add(erroredDeploymentId);
+                    Console.WriteLine($"Error while stopping deployment {erroredDeploymentId}: {inner.Message}");
+                }
+            }
+
+            Console.WriteLine($"Deployment(s) stopped with {erroredDeploymentIds.Count()} errors");
             return 0;
         }
 
-        private static void StopDeploymentById(DeploymentServiceClient client, string projectName, string deploymentId)
+        private static Task<StopDeploymentResponse> StopDeploymentByIdAsync(DeploymentServiceClient client, string projectName, string deploymentId)
         {
-            try
+            Console.WriteLine($"Stopping deployment with id {deploymentId}");
+            return client.StopDeploymentAsync(new StopDeploymentRequest
             {
-                Console.WriteLine($"Stopping deployment with id {deploymentId}");
-                client.StopDeployment(new StopDeploymentRequest
-                {
-                    Id = deploymentId,
-                    ProjectName = projectName
-                });
-            }
-            catch (Grpc.Core.RpcException e)
-            {
-                if (e.Status.StatusCode == Grpc.Core.StatusCode.NotFound)
-                {
-                    Console.WriteLine("<error:unknown-deployment>");
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                Id = deploymentId,
+                ProjectName = projectName
+            });
         }
 
         private static int ListDeployments(string[] args, bool useChinaPlatform)
