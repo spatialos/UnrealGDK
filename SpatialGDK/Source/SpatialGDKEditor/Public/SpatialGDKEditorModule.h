@@ -23,6 +23,11 @@ public:
 
 	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const { return SpatialGDKEditorInstance; }
 
+	/* Way to force a deployment to be launched with a specific snapshot. This is meant to be override-able only
+	 * at runtime, specifically for Functional Testing purposes.
+	 */
+	FString ForceUseSnapshotAtPath = "";
+
 private:
 	// Local deployment connection flow
 	virtual bool ShouldConnectToLocalDeployment() const override;

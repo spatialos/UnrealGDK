@@ -317,6 +317,11 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 				{
 					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
 				}
+				if (!ASpatialFunctionalTest::GetTakenSnapshotPath().IsEmpty())
+				{
+					PIESettingsOverride.ForceUseSnapshot = ASpatialFunctionalTest::GetTakenSnapshotPath();
+					ASpatialFunctionalTest::SetLoadedFromSnapshot();
+				}
 				break;
 			default:
 				checkf(false, TEXT("Unsupported Testing Mode"));

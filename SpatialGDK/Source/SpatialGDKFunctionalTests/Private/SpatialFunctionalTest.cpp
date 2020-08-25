@@ -314,6 +314,8 @@ void ASpatialFunctionalTest::TakeSnapshot()
 	        //Complete.ExecuteIfBound("", false);
 	        return;
 	    }
+		TakenSnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+		UE_LOG(LogTemp, Warning, TEXT("Snapshot path: %s"), *TakenSnapshotPath);
 	    //Complete.ExecuteIfBound("snapshot id", bSucceeded);
 	});
 	HttpRequest->SetURL(Url);
@@ -323,6 +325,33 @@ void ASpatialFunctionalTest::TakeSnapshot()
 	HttpRequest->SetContent(Body);
 	HttpRequest->ProcessRequest();
 }
+
+FString ASpatialFunctionalTest::TakenSnapshotPath = "";
+
+FString ASpatialFunctionalTest::GetTakenSnapshotPath()
+{
+	return TakenSnapshotPath;
+}
+
+bool ASpatialFunctionalTest::WasLoadedFromSnapshot()
+{
+	return bWasLoadedFromSnapshot;
+}
+
+void ASpatialFunctionalTest::ClearLoadedFromSnapshot()
+{
+	bWasLoadedFromSnapshot = false;
+	TakenSnapshotPath = "";
+}
+
+void ASpatialFunctionalTest::SetLoadedFromSnapshot()
+{
+	bWasLoadedFromSnapshot = true;
+
+	checkf(!TakenSnapshotPath.IsEmpty(), TEXT("SetLoadedFromSnapshot but there's not snapshot path"));
+}
+
+bool ASpatialFunctionalTest::bWasLoadedFromSnapshot = false;
 
 void ASpatialFunctionalTest::ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest)
 {

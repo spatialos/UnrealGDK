@@ -203,7 +203,23 @@ public:
 
 	// # Snapshot APIs
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void TakeSnapshot();
+	static void TakeSnapshot();
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	static FString GetTakenSnapshotPath();
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	static bool WasLoadedFromSnapshot();
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	static void ClearLoadedFromSnapshot();
+
+	static void SetLoadedFromSnapshot();
+
+	static bool bWasLoadedFromSnapshot;
+
+	static FString TakenSnapshotPath;
+
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
