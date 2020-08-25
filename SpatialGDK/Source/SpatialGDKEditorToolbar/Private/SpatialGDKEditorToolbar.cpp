@@ -713,7 +713,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 		FTimespan Span = FDateTime::Now() - StartTime;
 
 		OnShowSuccessNotification(TEXT("Spatial service stopped!"));
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f seconds."), Span.GetTotalSeconds());
 	});
 }
 
