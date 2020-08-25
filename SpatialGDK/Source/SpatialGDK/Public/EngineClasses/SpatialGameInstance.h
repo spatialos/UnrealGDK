@@ -62,6 +62,8 @@ public:
 	UFUNCTION()
 	void HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue);
 
+	bool IsPreparingForShutdown() { return bPreparingForShutdown; }
+
 	void CleanupCachedLevelsAfterConnection();
 
 	// Invoked when this worker has successfully connected to SpatialOS
