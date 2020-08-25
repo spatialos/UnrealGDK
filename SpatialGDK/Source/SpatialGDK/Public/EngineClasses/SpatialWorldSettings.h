@@ -69,7 +69,7 @@ private:
 
 public:
 	/** If Editor Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings, otherwise use the default
-	 * Multi Worker Settings. */
+	 * Multi Worker Settings. Use bForceDefault to always get the default Multi Worker Settings */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceDefault = false) const
 	{
 		if (bForceDefault)

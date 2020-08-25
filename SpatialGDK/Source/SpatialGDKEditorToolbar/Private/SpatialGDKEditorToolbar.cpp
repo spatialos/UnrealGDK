@@ -811,11 +811,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		{
 			// Revert to the setting's flag value for manual connection.
 			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
-
 			FString CloudLaunchConfig =
 				FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()),
 								FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
-
 			if (Conf.bAutoNumEditorInstances)
 			{
 				Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
@@ -1145,7 +1143,6 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 
 void FSpatialGDKEditorToolbarModule::LaunchOrShowCloudDeployment()
 {
-
 	if (CanStartCloudDeployment())
 	{
 		OnStartCloudDeployment();
