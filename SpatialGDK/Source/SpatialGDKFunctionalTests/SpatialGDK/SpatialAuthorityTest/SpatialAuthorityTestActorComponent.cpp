@@ -42,7 +42,9 @@ void USpatialAuthorityTestActorComponent::BeginPlay()
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Owner->GetNetDriver());
 
-		AuthWorkerIdOnBeginPlay = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 1;
+		AuthWorkerIdOnBeginPlay = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr
+									  ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()
+									  : 1;
 
 		ReplicatedAuthWorkerIdOnBeginPlay = AuthWorkerIdOnBeginPlay;
 	}
@@ -60,7 +62,7 @@ void USpatialAuthorityTestActorComponent::TickComponent(float DeltaTime, enum EL
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Owner->GetNetDriver());
 		AuthWorkerIdOnTick = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr
-							  ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()
-							  : 1;
+								 ? SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()
+								 : 1;
 	}
 }

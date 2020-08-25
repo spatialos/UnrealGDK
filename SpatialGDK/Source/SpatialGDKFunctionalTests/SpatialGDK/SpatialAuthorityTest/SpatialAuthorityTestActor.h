@@ -12,8 +12,8 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestActor : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ASpatialAuthorityTestActor();
 
 	UPROPERTY()

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "CoreMinimal.h"
 #include "SpatialAuthorityTestActorComponent.generated.h"
 
 class ASpatialFunctionalTest;
@@ -13,8 +13,8 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialAuthorityTestActorComponent : public USceneComponent
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	USpatialAuthorityTestActorComponent();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -23,8 +23,8 @@ public:
 
 	virtual void OnAuthorityLost() override;
 
-	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction);
-	
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction);
+
 	UPROPERTY(Replicated)
 	int ReplicatedAuthWorkerIdOnBeginPlay = 0;
 
@@ -35,7 +35,6 @@ public:
 	int NumAuthorityGains = 0;
 
 	int NumAuthorityLosses = 0;
-
 
 protected:
 	virtual void BeginPlay() override;

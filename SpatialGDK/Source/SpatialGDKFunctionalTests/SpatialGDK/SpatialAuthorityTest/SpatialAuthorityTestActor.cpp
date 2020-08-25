@@ -12,7 +12,7 @@
 ASpatialAuthorityTestActor::ASpatialAuthorityTestActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.TickInterval = 0.0f; 
+	PrimaryActorTick.TickInterval = 0.0f;
 
 	AuthorityComponent = CreateDefaultSubobject<USpatialAuthorityTestActorComponent>(FName("AuthorityComponent"));
 

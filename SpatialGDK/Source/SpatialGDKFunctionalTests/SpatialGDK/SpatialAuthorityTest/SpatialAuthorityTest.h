@@ -22,11 +22,16 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void FinishStep() override { ResetTimer(); Super::FinishStep();	};
+	virtual void FinishStep() override
+	{
+		ResetTimer();
+		Super::FinishStep();
+	};
 
 	void ResetTimer() { Timer = 0.5; };
 
-	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses);
+	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains,
+						 int NumAuthorityLosses);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
