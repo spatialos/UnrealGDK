@@ -399,9 +399,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (SpatialSettings->UseRPCRingBuffer())
 	{
-		RPCService =
-			MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC),
-													  StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()), ConnectionManager->GetEventTracer());
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
+			ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView,
+			USpatialLatencyTracer::GetTracer(GetWorld()), ConnectionManager->GetEventTracer());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags, ConnectionManager->GetEventTracer());

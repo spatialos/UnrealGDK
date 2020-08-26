@@ -15,7 +15,8 @@
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
 void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags, SpatialGDK::SpatialEventTracer* InEventTracer)
+							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags,
+							 SpatialGDK::SpatialEventTracer* InEventTracer)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;

@@ -12,23 +12,22 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSpanIdStore, Log, All);
 
 namespace SpatialGDK
 {
-	class SpatialSpanIdStore
-	{
-	public:
+class SpatialSpanIdStore
+{
+public:
+	worker::c::Trace_SpanId* GetEntityComponentSpanId(const EntityComponentId& Id);
+	bool ComponentAdd(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
+	bool ComponentRemove(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
+	void ComponentUpdate(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
 
-		worker::c::Trace_SpanId* GetEntityComponentSpanId(const EntityComponentId& Id);
-		bool ComponentAdd(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
-		bool ComponentRemove(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
-		void ComponentUpdate(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
+	worker::c::Trace_SpanId GetNextRPCSpanID();
 
-		worker::c::Trace_SpanId GetNextRPCSpanID();
+	void Clear();
 
-		void Clear();
+private:
+	TMap<EntityComponentId, worker::c::Trace_SpanId> SpanStore;
+	TArray<worker::c::Trace_SpanId> RPCSpanIds;
 
-	private:
-		TMap<EntityComponentId, worker::c::Trace_SpanId> SpanStore;
-		TArray<worker::c::Trace_SpanId> RPCSpanIds;
-
-		static bool IsComponentIdRPCEndpoint(const Worker_ComponentId ComponentId);
-	};
-}
+	static bool IsComponentIdRPCEndpoint(const Worker_ComponentId ComponentId);
+};
+} // namespace SpatialGDK

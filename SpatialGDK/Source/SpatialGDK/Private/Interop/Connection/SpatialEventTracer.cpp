@@ -235,17 +235,20 @@ Trace_SpanId* SpatialEventTracer::GetEntityComponentSpanId(const Worker_EntityId
 	return SpanIdStore.GetEntityComponentSpanId({ EntityId, ComponentId });
 }
 
-void SpatialEventTracer::ComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId)
+void SpatialEventTracer::ComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+									  const worker::c::Trace_SpanId SpanId)
 {
 	SpanIdStore.ComponentAdd({ EntityId, ComponentId }, SpanId);
 }
 
-void SpatialEventTracer::ComponentRemove(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId)
+void SpatialEventTracer::ComponentRemove(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+										 const worker::c::Trace_SpanId SpanId)
 {
 	SpanIdStore.ComponentRemove({ EntityId, ComponentId }, SpanId);
 }
 
-void SpatialEventTracer::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId)
+void SpatialEventTracer::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+										 const worker::c::Trace_SpanId SpanId)
 {
 	EntityComponentId Id = { EntityId, ComponentId };
 	Trace_SpanId* ExistingSpanId = SpanIdStore.GetEntityComponentSpanId(Id);
@@ -259,11 +262,10 @@ void SpatialEventTracer::ComponentUpdate(const Worker_EntityId EntityId, const W
 
 worker::c::Trace_SpanId SpatialEventTracer::GetNextRPCSpanID()
 {
-	return 	SpanIdStore.GetNextRPCSpanID();
+	return SpanIdStore.GetNextRPCSpanID();
 }
 
 void SpatialEventTracer::ClearSpanStore()
 {
 	SpanIdStore.Clear();
 }
-

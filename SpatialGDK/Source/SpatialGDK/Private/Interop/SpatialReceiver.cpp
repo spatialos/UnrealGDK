@@ -58,7 +58,8 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, SpatialGDK::SpatialEventTracer* InEventTracer)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
+							SpatialGDK::SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -1978,7 +1979,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 #if TRACE_LIB_ACTIVE
 	TraceKey TraceId = Payload.Trace;
 #else
-	TraceKey TraceId = InvalidTraceKey; 
+	TraceKey TraceId = InvalidTraceKey;
 #endif
 
 	if (EventTracer->IsEnabled())
@@ -2049,7 +2050,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_CommandResponseOp& Op
 		EventCommandResponse.Function = ReliableRPC->Function;
 		EventTracer->TraceEvent(EventCommandResponse);
 	}
-	
+
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		bool bCanRetry = false;
@@ -2176,7 +2177,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			TOptional<Trace_SpanId> ProccessSpanId;
 
 			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(TargetObject);
-			Worker_ComponentId ComponentId = bServerRPCType ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+			Worker_ComponentId ComponentId =
+				bServerRPCType ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 
 			Trace_SpanId SpanId = EventTracer->GetNextRPCSpanID();
 			ProccessSpanId = EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
@@ -2315,7 +2317,9 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 
 		if (EventTracer->IsEnabled())
 		{
-			FString Message = FString::Printf(TEXT("Stale Actor Channel - tried to delete entity before gaining authority. Actor - %s EntityId - %d"), *Channel->Actor->GetName(), Op.entity_id);
+			FString Message =
+				FString::Printf(TEXT("Stale Actor Channel - tried to delete entity before gaining authority. Actor - %s EntityId - %d"),
+								*Channel->Actor->GetName(), Op.entity_id);
 			EventTracer->TraceEvent(FEventGenericMessage(Message));
 		}
 	}

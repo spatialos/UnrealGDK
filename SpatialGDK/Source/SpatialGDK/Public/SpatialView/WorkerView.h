@@ -9,7 +9,6 @@
 
 namespace SpatialGDK
 {
-
 class SpatialEventTracer;
 
 class WorkerView

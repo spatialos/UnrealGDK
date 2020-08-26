@@ -80,6 +80,5 @@ void SpatialSpanIdStore::Clear()
 
 bool SpatialSpanIdStore::IsComponentIdRPCEndpoint(const Worker_ComponentId ComponentId)
 {
-	return Id.EntityId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
-		Id.EntityId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+	return Id.EntityId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID || Id.EntityId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
 }

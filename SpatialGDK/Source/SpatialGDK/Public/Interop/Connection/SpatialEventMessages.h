@@ -315,7 +315,6 @@ struct FEventCommandResponse : public FEventMessage
 	UPROPERTY() bool bSuccess{ false };
 };
 
-
 // Tagged with cause
 USTRUCT()
 struct FEventCommandRequest : public FEventMessage
@@ -368,8 +367,8 @@ struct FEventMergeComponentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId { -1 };
-	UPROPERTY() uint32 ComponentId { 0 };
+	UPROPERTY() int64 EntityId{ -1 };
+	UPROPERTY() uint32 ComponentId{ 0 };
 };
 
 #undef GDK_EVENT_NAMESPACE

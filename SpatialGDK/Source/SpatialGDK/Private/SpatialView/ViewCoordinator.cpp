@@ -38,12 +38,14 @@ void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData D
 	View.SendAddComponent(EntityId, MoveTemp(Data), SpanId);
 }
 
-void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update,
+										  const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
-void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+										  const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
@@ -55,8 +57,7 @@ Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEnt
 }
 
 Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-														  TOptional<uint32> TimeoutMillis,
-														  const TOptional<worker::c::Trace_SpanId>& SpanId)
+														  TOptional<uint32> TimeoutMillis, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendCreateEntityRequest({ NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
@@ -81,12 +82,14 @@ Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId Entit
 	return NextRequestId++;
 }
 
-void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response,
+												const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendEntityCommandResponse({ RequestId, MoveTemp(Response), SpanId });
 }
 
-void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message,
+											   const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendEntityCommandFailure({ RequestId, MoveTemp(Message), SpanId });
 }

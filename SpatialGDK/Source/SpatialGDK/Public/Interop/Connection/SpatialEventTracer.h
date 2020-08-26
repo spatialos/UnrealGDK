@@ -3,42 +3,43 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interop/Connection/SpatialSpanIdStore.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialEventMessages.h"
-#include "Interop/Connection/SpatialSpanIdStore.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-// TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in .cpp file, when the LatencyTracer is enabled?)
+// TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in
+// .cpp file, when the LatencyTracer is enabled?)
 // TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
-//TODO - Individual RPC Calls (distinguishing between GDK and USER)
-//TODO - RPCs on newly created objects go through a different flow and need to be handled
+// TODO - Individual RPC Calls (distinguishing between GDK and USER)
+// TODO - RPCs on newly created objects go through a different flow and need to be handled
 
 class AActor;
 class UFunction;
 
 namespace worker
 {
-	namespace c
-	{
-		struct Io_Stream;
-		struct Trace_Item;
-	}
-}
+namespace c
+{
+struct Io_Stream;
+struct Trace_Item;
+} // namespace c
+} // namespace worker
 
 // Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
 // (see SpatialConnectionManager diff)
 
 namespace SpatialGDK
 {
-
 // Note: SpatialEventTracer wraps Trace_EventTracer related functionality
 // It is constructed and owned by SpatialConnectionManager.
 // SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialConnectionManager.
-// Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure there are necessary nullptr checks if that changes.
+// Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure
+// there are necessary nullptr checks if that changes.
 
 class SpatialEventTracer
 {
@@ -52,11 +53,11 @@ public:
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
 	// TODO(EventTracer): add the option to SpatialSpanIdActivator for Sent TraceEvents.
-	// Consider making sure it's not accepting rvalue (since SpatialSpanIdActivatNetDriveror must live long enough for the worker sent op to be registered with this SpanId)
-	// e.g. void TraceEvent(... SpatialSpanIdActivator&& SpanIdActivator) = delete;
+	// Consider making sure it's not accepting rvalue (since SpatialSpanIdActivatNetDriveror must live long enough for the worker sent op to
+	// be registered with this SpanId) e.g. void TraceEvent(... SpatialSpanIdActivator&& SpanIdActivator) = delete;
 	// TODO(EventTracer): Communicate to others, that SpatialSpanIdActivator must be creating prior to calling worker send functions
 
-	template<class T>
+	template <class T>
 	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const worker::c::Trace_SpanId* Cause = nullptr)
 	{
 		return TraceEvent(EventMessage, T::StaticStruct(), Cause);
@@ -72,7 +73,6 @@ public:
 	worker::c::Trace_SpanId GetNextRPCSpanID();
 
 private:
-
 	void Enable(const FString& FileName);
 	void Disable();
 
@@ -108,7 +108,7 @@ private:
 	worker::c::Trace_EventTracer* EventTracer;
 };
 
-}
+} // namespace SpatialGDK
 
 // TODO(EventTracer): a short list of requirements by Alex
 /*
