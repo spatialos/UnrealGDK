@@ -50,10 +50,10 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 {
 	// With dynamic components enabled, it's possible to get duplicate AddComponent ops which need handling idempotently.
 	// For the sake of efficiency we just exit early here.
-	if (HasComponent(Op.entity_id, Op.data.component_id))
-	{
-		return;
-	}
+	//if (HasComponent(Op.entity_id, Op.data.component_id))
+	//{
+	//	return;
+	//}
 
 	TUniquePtr<SpatialGDK::Component> Data;
 	switch (Op.data.component_id)
@@ -99,6 +99,12 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ClientEndpoint>(Op.data);
+		{
+			SpatialGDK::ClientEndpoint* Endpoint = static_cast<SpatialGDK::ClientEndpoint*>(Data.Get());
+			UE_LOG(LogTemp, Warning, TEXT("!!! Received Client Endpoint data! Entity: %lld, Acks: reliable %lld, unreliable %lld, sent: reliable %lld, unreliable %lld"),
+				Op.entity_id,
+				Endpoint->ReliableRPCAck, Endpoint->UnreliableRPCAck, Endpoint->ReliableRPCBuffer.LastSentRPCId, Endpoint->UnreliableRPCBuffer.LastSentRPCId);
+		}
 		break;
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ServerEndpoint>(Op.data);

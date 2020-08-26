@@ -341,6 +341,11 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint->UnreliableRPCBuffer.LastSentRPCId);
+
+		UE_LOG(LogSpatialRPCService, Warning, TEXT("!!! Gained Client Endpoint authority! Entity: %lld, Acks: reliable %lld, unreliable %lld, sent: reliable %lld, unreliable %lld"),
+			EntityId,
+			Endpoint->ReliableRPCAck, Endpoint->UnreliableRPCAck, Endpoint->ReliableRPCBuffer.LastSentRPCId, Endpoint->UnreliableRPCBuffer.LastSentRPCId);
+
 		break;
 	}
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
@@ -387,6 +392,11 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
+		UE_LOG(LogSpatialRPCService, Warning, TEXT("!!! Lost Client Endpoint authority! Entity: %lld, Acks: reliable %lld, unreliable %lld, sent: reliable %lld, unreliable %lld"),
+			EntityId,
+			LastAckedRPCIds[EntityRPCType(EntityId, ERPCType::ClientReliable)], LastAckedRPCIds[EntityRPCType(EntityId, ERPCType::ClientUnreliable)],
+			LastSentRPCIds[EntityRPCType(EntityId, ERPCType::ServerReliable)], LastSentRPCIds[EntityRPCType(EntityId, ERPCType::ServerUnreliable)]);
+
 		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
