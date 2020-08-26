@@ -189,7 +189,7 @@ UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegio
 }
 
 #if WITH_EDITOR
-void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) 
+void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -198,8 +198,8 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Rows)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Cols)
-				|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
-					|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
 		{
 			ASpatialDebugger::EditorRefreshSpatialDebugger();
 		}
