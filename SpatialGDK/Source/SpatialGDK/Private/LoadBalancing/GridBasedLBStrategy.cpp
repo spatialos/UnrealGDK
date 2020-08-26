@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "Templates/Tuple.h"
 
@@ -186,3 +187,22 @@ UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegio
 	}
 	return VirtualWorkerToCell;
 }
+
+#if WITH_EDITOR
+void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) 
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property != nullptr)
+	{
+		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Rows)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Cols)
+				|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
+					|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
+		{
+			ASpatialDebugger::EditorRefreshSpatialDebugger();
+		}
+	}
+}
+#endif // WITH_EDITOR

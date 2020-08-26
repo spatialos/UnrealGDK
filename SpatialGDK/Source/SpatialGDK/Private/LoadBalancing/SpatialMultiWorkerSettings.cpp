@@ -7,6 +7,7 @@
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Utils/LayerInfo.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "Misc/MessageDialog.h"
 
@@ -27,13 +28,14 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 		ValidateNoActorClassesDuplicatedAmongLayers();
 		ValidateAllLayersHaveUniqueNonemptyNames();
 		ValidateAllLayersHaveLoadBalancingStrategy();
+		ASpatialDebugger::EditorRefreshSpatialDebugger();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, LockingPolicy))
 	{
 		ValidateLockingPolicyIsSet();
 	}
 };
-#endif
+#endif // WITH_EDITOR
 
 uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() const
 {

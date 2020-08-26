@@ -558,6 +558,17 @@ void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
 	EditorRefreshWorkerRegions();
 }
 
+void ASpatialDebugger::EditorRefreshSpatialDebugger()
+{
+	// Refresh the worker boundaries in the editor
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	for (TActorIterator<ASpatialDebugger> It(World); It; ++It)
+	{
+		ASpatialDebugger* FoundActor = *It;
+		FoundActor->EditorRefreshWorkerRegions();
+	}
+}
+
 void ASpatialDebugger::EditorRefreshWorkerRegions()
 {
 	DestroyWorkerRegions();

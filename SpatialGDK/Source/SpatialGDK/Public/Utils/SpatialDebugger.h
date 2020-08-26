@@ -142,6 +142,7 @@ public:
 	static void EditorRefreshDisplay();
 	bool EditorAllowWorkerBoundaries() const;
 	void EditorSpatialToggleDebugger(bool bEnabled);
+	static void EditorRefreshSpatialDebugger();
 #endif
 
 private:

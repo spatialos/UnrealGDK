@@ -85,17 +85,11 @@ public:
 			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
 				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
 			{
-				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
-				UWorld* World = GetWorld();
-				for (TActorIterator<ASpatialDebugger> It(World); It; ++It)
-				{
-					ASpatialDebugger* FoundActor = *It;
-					FoundActor->EditorRefreshWorkerRegions();
-				}
+				ASpatialDebugger::EditorRefreshSpatialDebugger();
 			}
 		}
 	}
-#endif
+#endif // WITH_EDITOR
 
 	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr; }
 };
