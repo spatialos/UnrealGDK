@@ -24,7 +24,7 @@ Worker_Op CreateEmptyCreateEntityResponseOp()
 WORKERVIEW_TEST(GIVEN_WorkerView_with_one_CreateEntityRequest_WHEN_FlushLocalChanges_called_THEN_one_CreateEntityRequest_returned)
 {
 	// GIVEN
-	WorkerView View;
+	WorkerView View(nullptr);
 	CreateEntityRequest Request = {};
 	View.SendCreateEntityRequest(MoveTemp(Request));
 
@@ -41,7 +41,7 @@ WORKERVIEW_TEST(
 	GIVEN_WorkerView_with_multiple_CreateEntityRequest_WHEN_FlushLocalChanges_called_THEN_mutliple_CreateEntityRequests_returned)
 {
 	// GIVEN
-	WorkerView View;
+	WorkerView View(nullptr);
 	CreateEntityRequest Request = {};
 	View.SendCreateEntityRequest(MoveTemp(Request));
 	View.SendCreateEntityRequest(MoveTemp(Request));

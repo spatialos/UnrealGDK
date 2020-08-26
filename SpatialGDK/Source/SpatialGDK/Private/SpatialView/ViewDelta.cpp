@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewDelta.h"
+
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/EntityComponentTypes.h"
 
 #include "Algo/StableSort.h"
@@ -8,6 +10,11 @@
 
 namespace SpatialGDK
 {
+ViewDelta::ViewDelta(SpatialEventTracer* InEventTracer)
+	: EventTracer(InEventTracer)
+{
+}
+
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 {
 	Clear();
@@ -247,6 +254,12 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 
 void ViewDelta::ProcessOp(Worker_Op& Op)
 {
+	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
+	if (bEventTracerEnabled)
+	{
+		EventTracer->ClearSpanStore();
+	}
+
 	switch (static_cast<Worker_OpType>(Op.op_type))
 	{
 	case WORKER_OP_TYPE_DISCONNECT:
@@ -277,9 +290,17 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		break;
 	case WORKER_OP_TYPE_ADD_COMPONENT:
 		ComponentChanges.Emplace(Op.op.add_component);
+		if (bEventTracerEnabled)
+		{
+			EventTracer->ComponentAdd(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, Op.span_id);
+		}
 		break;
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
 		ComponentChanges.Emplace(Op.op.remove_component);
+		if (bEventTracerEnabled)
+		{
+			EventTracer->ComponentRemove(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, Op.span_id);
+		}
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 		if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
@@ -289,6 +310,10 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 		ComponentChanges.Emplace(Op.op.component_update);
+		if (bEventTracerEnabled)
+		{
+			EventTracer->ComponentUpdate(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, Op.span_id);
+		}
 		break;
 	default:
 		checkNoEntry();

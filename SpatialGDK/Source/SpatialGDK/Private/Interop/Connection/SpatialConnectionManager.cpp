@@ -530,7 +530,7 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
-void USpatialConnectionManager::CreateEventTracer(const FString& WorkerName)
+void USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
 {
-	EventTracer = MakeUnique<SpatialEventTracer>(WorkerName);
+	EventTracer = MakeUnique<SpatialEventTracer>(WorkerId);
 }

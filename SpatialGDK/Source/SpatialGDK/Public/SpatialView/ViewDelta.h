@@ -11,6 +11,8 @@
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.
@@ -31,6 +33,9 @@ namespace SpatialGDK
 class ViewDelta
 {
 public:
+
+	explicit ViewDelta(SpatialEventTracer* InEventTracer);
+
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
 	void Clear();
 
@@ -40,6 +45,8 @@ public:
 	bool HasDisconnected() const;
 	Worker_ConnectionStatusCode GetConnectionStatus() const;
 	FString GetDisconnectReason() const;
+
+	SpatialEventTracer* EventTracer;
 
 private:
 	struct ReceivedComponentChange

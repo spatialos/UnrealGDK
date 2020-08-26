@@ -5,8 +5,9 @@
 
 namespace SpatialGDK
 {
-ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
-	: ConnectionHandler(MoveTemp(ConnectionHandler))
+ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, SpatialEventTracer* EventTracer)
+	: View(EventTracer)
+	, ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
 {
 }

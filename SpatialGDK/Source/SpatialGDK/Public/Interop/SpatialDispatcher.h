@@ -21,13 +21,18 @@ class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialWorkerFlags;
 
+namespace SpatialGDK
+{
+class SpatialEventTracer;
+}
+
 class SPATIALGDK_API SpatialDispatcher
 {
 public:
 	using FCallbackId = uint32;
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
-			  USpatialWorkerFlags* InSpatialWorkerFlags);
+			  USpatialWorkerFlags* InSpatialWorkerFlags, SpatialGDK::SpatialEventTracer* InEventTracer);
 	void ProcessOps(const SpatialGDK::OpList& Ops);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
@@ -82,4 +87,6 @@ private:
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
 	TArray<const Worker_Op*> OpsToSkip;
+
+	SpatialGDK::SpatialEventTracer* EventTracer;
 };

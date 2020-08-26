@@ -3,9 +3,9 @@
 #include "Interop/Connection/LegacySpatialWorkerConnection.h"
 
 #include "Async/Async.h"
-#include "improbable/c_trace.h"
-#include "SpatialView/OpList/WorkerConnectionOpList.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/OpList/WorkerConnectionOpList.h"
+#include "improbable/c_trace.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -103,23 +103,27 @@ Worker_RequestId ULegacySpatialWorkerConnection::SendCreateEntityRequest(TArray<
 	return NextRequestId++;
 }
 
-Worker_RequestId ULegacySpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId)
+Worker_RequestId ULegacySpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId,
+																		 const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId, SpanId);
 	return NextRequestId++;
 }
 
-void ULegacySpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ULegacySpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+													  const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData, SpanId);
 }
 
-void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ULegacySpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+														 const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId, SpanId);
 }
 
-void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ULegacySpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+														 const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, SpanId);
 }
@@ -131,12 +135,14 @@ Worker_RequestId ULegacySpatialWorkerConnection::SendCommandRequest(Worker_Entit
 	return NextRequestId++;
 }
 
-void ULegacySpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ULegacySpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
+														 const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response, SpanId);
 }
 
-void ULegacySpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void ULegacySpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
+														const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	QueueOutgoingMessage<FCommandFailure>(RequestId, Message, SpanId);
 }

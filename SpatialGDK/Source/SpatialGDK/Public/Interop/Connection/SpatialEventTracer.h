@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialEventMessages.h"
+#include "Interop/Connection/SpatialSpanIdStore.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -42,7 +43,7 @@ namespace SpatialGDK
 class SpatialEventTracer
 {
 public:
-	SpatialEventTracer(const FString& WorkerName);
+	SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 	Trace_SpanId CreateNewSpanId();
 	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
@@ -63,6 +64,13 @@ public:
 
 	bool IsEnabled() const { return !!bEnabled; }
 
+	worker::c::Trace_SpanId* GetEntityComponentSpanId(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	void ComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
+	void ComponentRemove(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
+	void ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
+	void ClearSpanStore();
+	worker::c::Trace_SpanId GetNextRPCSpanID();
+
 private:
 
 	void Enable(const FString& FileName);
@@ -81,6 +89,8 @@ private:
 	uint64 MaxFileSize{ 0 };
 
 	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const worker::c::Trace_SpanId* Cause);
+
+	SpatialSpanIdStore SpanIdStore;
 };
 
 struct SpatialSpanIdActivator

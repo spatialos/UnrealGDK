@@ -22,7 +22,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	//
 	// Worker messages can be placed anywhere.
 
-	auto OpData = MakeUnique<ViewDeltaLegacyOpListData>();
+	auto OpData = MakeUnique<ViewDeltaLegacyOpListData>(Delta.EventTracer);
 
 	if (Delta.HasDisconnected())
 	{

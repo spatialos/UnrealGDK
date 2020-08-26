@@ -1880,7 +1880,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 		if (EventTracer->IsEnabled())
 		{
-			EventTracer->TraceEvent(FEventCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), Op.request_id));
+			EventTracer->TraceEvent(FEventCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), Op.request_id, Op.));
 		}
 
 		return;
@@ -2163,20 +2163,25 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		// Get the RPC target Actor.
 		AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
 		ERPCType RPCType = PendingRPCParams.Type;
+		bool bServerRPCType = (RPCType == ERPCType::ServerReliable || RPCType == ERPCType::ServerUnreliable);
 
-		if (Actor->Role == ROLE_SimulatedProxy && (RPCType == ERPCType::ServerReliable || RPCType == ERPCType::ServerUnreliable))
+		if (Actor->Role == ROLE_SimulatedProxy && bServerRPCType)
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
 		}
 		else
 		{
-			TargetObject->ProcessEvent(Function, Parms);
+			TOptional<Trace_SpanId> SendSpanId = PendingRPCParams.Payload.SpanId;
+			TOptional<Trace_SpanId> ProccessSpanId;
 
-			if (EventTracer->IsEnabled())
-			{
-				EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function));
-			}
+			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(TargetObject);
+			Worker_ComponentId ComponentId = bServerRPCType ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+
+			Trace_SpanId SpanId = EventTracer->GetNextRPCSpanID();
+			ProccessSpanId = EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
+
+			TargetObject->ProcessEvent(Function, Parms);
 
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::CrossServer
 				&& RPCType != ERPCType::NetMulticast)

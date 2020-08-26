@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialDispatcher.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
@@ -14,7 +15,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
 void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags, SpatialGDK::SpatialEventTracer* InEventTracer)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
@@ -25,12 +26,21 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 	check(InSpatialMetrics != nullptr);
 	SpatialMetrics = InSpatialMetrics;
 	SpatialWorkerFlags = InSpatialWorkerFlags;
+
+	check(InEventTracer != nullptr);
+	EventTracer = InEventTracer;
 }
 
 void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 {
 	check(Receiver.IsValid());
 	check(StaticComponentView.IsValid());
+
+	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
+	if (bEventTracerEnabled)
+	{
+		EventTracer->ClearSpanStore();
+	}
 
 	for (size_t i = 0; i < Ops.Count; ++i)
 	{
@@ -67,13 +77,25 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
+			if (bEventTracerEnabled)
+			{
+				EventTracer->ComponentAdd(Op->op.add_component.entity_id, Op->op.add_component.data.component_id, Op->span_id);
+			}
 			StaticComponentView->OnAddComponent(Op->op.add_component);
 			Receiver->OnAddComponent(Op->op.add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			if (bEventTracerEnabled)
+			{
+				EventTracer->ComponentRemove(Op->op.add_component.entity_id, Op->op.add_component.data.component_id, Op->span_id);
+			}
 			Receiver->OnRemoveComponent(Op->op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
+			if (bEventTracerEnabled)
+			{
+				EventTracer->ComponentUpdate(Op->op.add_component.entity_id, Op->op.add_component.data.component_id, Op->span_id);
+			}
 			StaticComponentView->OnComponentUpdate(Op->op.component_update);
 			Receiver->OnComponentUpdate(Op->op.component_update);
 			break;

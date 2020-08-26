@@ -9,10 +9,13 @@
 
 namespace SpatialGDK
 {
+
+class SpatialEventTracer;
+
 class WorkerView
 {
 public:
-	WorkerView();
+	explicit WorkerView(SpatialEventTracer* InEventTracer);
 
 	// Process queued op lists to create a new view delta.
 	// The view delta will exist until the next call to advance.
@@ -44,6 +47,8 @@ private:
 	TArray<OpList> OpenCriticalSectionOps;
 
 	TUniquePtr<MessagesToSend> LocalChanges;
+
+	SpatialEventTracer* EventTracer;
 };
 
 } // namespace SpatialGDK

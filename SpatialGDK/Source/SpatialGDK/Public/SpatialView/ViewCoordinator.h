@@ -8,10 +8,12 @@
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class ViewCoordinator
 {
 public:
-	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler);
+	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, SpatialEventTracer* EventTracer);
 
 	~ViewCoordinator();
 

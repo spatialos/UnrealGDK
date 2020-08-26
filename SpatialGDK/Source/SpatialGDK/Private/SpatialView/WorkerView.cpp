@@ -8,14 +8,15 @@
 
 namespace SpatialGDK
 {
-WorkerView::WorkerView()
+WorkerView::WorkerView(SpatialEventTracer* InEventTracer)
 	: LocalChanges(MakeUnique<MessagesToSend>())
+	, EventTracer(InEventTracer)
 {
 }
 
 ViewDelta WorkerView::GenerateViewDelta()
 {
-	ViewDelta Delta;
+	ViewDelta Delta(EventTracer);
 	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
 	QueuedOps.Empty();
 	return Delta;
