@@ -166,10 +166,8 @@ void ASpatialAuthorityTest::BeginPlay()
 						{
 							if (LocalWorkerDefinition.Id == 1)
 							{
-								// Note: Depending on timing / data migration, Tick may or may not have ran
-								// in Server 1, so we need to check both situations.
-								if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1)
-									|| VerifyTestActor(DynamicReplicatedActor, 1, 0, 1, 1))
+								// Note: An Actor always ticks on the spawning Worker before migrating.
+								if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
 								{
 									FinishStep();
 								}
