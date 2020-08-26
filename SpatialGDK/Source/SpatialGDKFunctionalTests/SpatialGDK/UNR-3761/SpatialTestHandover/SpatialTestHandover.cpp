@@ -90,7 +90,7 @@ void ASpatialTestHandover::BeginPlay()
 				}
 			}
 
-			// Update the number of AuthorityChanges the HandoverCube had so far.
+			// Update the number of expected AuthorityChanges the HandoverCube should have had so far.
 			if (HandoverCube->LockingServerID == 0)
 			{
 				++AuthorityChanges;
