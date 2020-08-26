@@ -8,6 +8,7 @@ AHandoverCube::AHandoverCube()
 {
 	SetReplicateMovement(true);
 	LockingServerID = 0;
+	AuthorityChanges = 0;
 }
 
 void AHandoverCube::AcquireLock_Implementation(int ServerID)
@@ -28,9 +29,17 @@ void AHandoverCube::ReleaseLock_Implementation()
 	}
 }
 
+void AHandoverCube::OnAuthorityGained()
+{
+	Super::OnAuthorityGained();
+
+	++AuthorityChanges;
+}
+
 void AHandoverCube::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AHandoverCube, LockingServerID);
+	DOREPLIFETIME(AHandoverCube, AuthorityChanges);
 }

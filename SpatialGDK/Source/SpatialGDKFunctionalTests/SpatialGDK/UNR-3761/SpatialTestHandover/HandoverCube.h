@@ -18,6 +18,8 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	void OnAuthorityGained() override;
+
 	UFUNCTION(Server, Reliable)
 	void AcquireLock(int ServerID);
 
@@ -27,7 +29,9 @@ public:
 	UPROPERTY(Replicated)
 	int LockingServerID;
 
+	UPROPERTY(Replicated)
+	int AuthorityChanges;
+
 private:
 	FLockingToken LockTocken;
-
 };

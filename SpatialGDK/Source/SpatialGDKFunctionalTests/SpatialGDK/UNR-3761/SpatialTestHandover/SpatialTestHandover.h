@@ -33,4 +33,7 @@ private:
 
 	// The Load Balancing used by the test, needed to decide what Server should have authority over the HandoverCube.
 	ULayeredLBStrategy* LoadBalancingStrategy;
+
+	// Int holding the number of authority changes the HandoverCube had throughout the test.
+	int AuthorityChanges;
 };

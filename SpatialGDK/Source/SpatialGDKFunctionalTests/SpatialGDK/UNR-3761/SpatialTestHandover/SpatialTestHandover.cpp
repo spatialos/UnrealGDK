@@ -72,8 +72,33 @@ void ASpatialTestHandover::BeginPlay()
 	CheckAuthorityStepDefinition.TimeLimit = 10.0f;
 	CheckAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime)
 		{
-			// If a Server Worker holds a lock over the HandoverCube, then it should have authority over it, if not, let the Load Balacning decide.
+			// If we have no locking server, then the HandoverCube is expected to have changed authority.
+			if (HandoverCube->LockingServerID == 0)
+			{
+				// Early out if the HandoverCube did not change authority.
+				if (HandoverCube->AuthorityChanges != AuthorityChanges + 1)
+				{
+					return;
+				}
+			}
+			else
+			{
+				// If there is a locking server, then the HandoverCube should have not changed authority, therefore we early out if it has changed authority.
+				if (HandoverCube->AuthorityChanges != AuthorityChanges)
+				{
+					return;
+				}
+			}
+
+			// Update the number of AuthorityChanges the HandoverCube had so far.
+			if (HandoverCube->LockingServerID == 0)
+			{
+				++AuthorityChanges;
+			}
+
+			// If a Server Worker holds a lock over the HandoverCube, then it should have authority over it, if not, let the Load Balancer decide.
 			int ExpectedAuthoritativeServer = HandoverCube->LockingServerID ? HandoverCube->LockingServerID : LoadBalancingStrategy->WhoShouldHaveAuthority(*HandoverCube);
+			
 			// Make sure the correct Server has authority over the HandoverCube.
 			if (GetLocalFlowController()->WorkerDefinition.Id == ExpectedAuthoritativeServer)
 			{
@@ -119,8 +144,9 @@ void ASpatialTestHandover::BeginPlay()
 				
 				if (IsValid(HandoverCube) && IsValid(LoadBalancingStrategy))
 				{
-					// Reset the LocationIndex to allow multiple executions of the test.
+					// Reset the LocationIndex and the AuthorityChanges to allow multiple executions of the test.
 					LocationIndex = 0;
+					AuthorityChanges = 0;
 					FinishStep();
 				}
 			}
