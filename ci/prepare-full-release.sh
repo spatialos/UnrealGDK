@@ -4,15 +4,13 @@
 ### If you don't work at Improbable, this may be interesting as a guide to what software versions we use for our
 ### automation, but not much more than that.
 
-prepareRelease () {
+prepfullrelease () {
   local REPO_NAME="${1}"
-  local SOURCE_BRANCH="${2}"
-  local CANDIDATE_BRANCH="${3}"
-  local RELEASE_BRANCH="${4}"
-  local GITHUB_ORG="${5}"
-  local ENGINE_VERSIONS_LOCAL_VAR=$(echo ${ENGINE_VERSIONS[*]// })
-  
-  echo "--- Preparing ${REPO_NAME}: Cutting ${CANDIDATE_BRANCH} from ${SOURCE_BRANCH}, and creating a PR into ${RELEASE_BRANCH} :package:"
+  local CANDIDATE_BRANCH="${2}"
+  local PR_URL="${3}"
+  local GITHUB_ORG="${4}"
+
+  echo "--- Preparing ${REPO_NAME} for the full release!"
 
   docker run \
     -v "${BUILDKITE_ARGS[@]}" \
@@ -20,14 +18,11 @@ prepareRelease () {
     -v "${SECRETS_DIR}":/var/github \
     -v "$(pwd)"/logs:/var/logs \
     local:gdk-release-tool \
-        prep "${GDK_VERSION}" \
-        --source-branch="${SOURCE_BRANCH}" \
+        prepfullrelease "${GDK_VERSION}" \
         --candidate-branch="${CANDIDATE_BRANCH}" \
-        --release-branch="${RELEASE_BRANCH}" \
-        --git-repository-name="${REPO_NAME}" \
         --github-key-file="/var/github/github_token" \
-        --github-organization="${GITHUB_ORG}" \
-        --engine-versions="${ENGINE_VERSIONS_LOCAL_VAR}"
+        --pull-request-url="${PR_URL}" \
+        --github-organization="${GITHUB_ORG}"
 }
 
 set -e -u -o pipefail
@@ -81,11 +76,6 @@ if [[ -n "${BUILDKITE:-}" ]]; then
     )
 fi
 
-setupReleaseTool
-
-mkdir -p ./logs
-USER_ID=$(id -u)
-
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
@@ -95,20 +85,32 @@ DRY_RUN_PREFIX=$(getDryrunBranchPrefix)
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
 
-# Run the C Sharp Release Tool for each candidate we want to cut.
-prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
-prepareRelease "UnrealGDKExampleProject"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
-prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
-prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "improbable"
-prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "improbable"
+setupReleaseTool
 
+mkdir -p ./logs
+USER_ID=$(id -u)
+
+# Run the C Sharp Release Tool for each candidate we want to release.
+
+# The format is:
+# 1. REPO_NAME
+# 2. CANDIDATE_BRANCH
+# 3. PR_URL
+# 4. GITHUB_ORG
+
+# Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
 for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
 do
-   : 
+   :
    # Once per ENGINE_VERSION do:
-   prepareRelease "UnrealEngine" \
-    "${ENGINE_VERSION}" \
+   prepfullrelease "UnrealEngine" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "${DRY_RUN_PREFIX}${ENGINE_VERSION}-release" \
+    "$(buildkite-agent meta-data get UnrealEngine-${ENGINE_VERSION}-pr-url)" \
     "improbableio"
 done
+
+prepfullrelease "UnrealGDK"               "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"
+prepfullrelease "UnrealGDKExampleProject" "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDKExampleProject-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)" "spatialos"
+prepfullrelease "UnrealGDKTestGyms"       "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDKTestGyms-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"       "spatialos"
+prepfullrelease "UnrealGDKEngineNetTest"  "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"  "improbable"
+prepfullrelease "TestGymBuildKite"        "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get TestGymBuildKite-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"        "improbable"

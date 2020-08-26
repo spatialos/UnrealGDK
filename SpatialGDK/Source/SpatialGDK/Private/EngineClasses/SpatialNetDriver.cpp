@@ -87,7 +87,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bMapLoaded(false)
 	, SessionId(0)
 	, NextRPCIndex(0)
-	, TimeWhenPositionLastUpdated(0.f)
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
@@ -205,9 +204,9 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 		const FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
 		GameInstance = Cast<USpatialGameInstance>(WorldContext.OwningGameInstance);
 	}
-	else
+	else if (World != nullptr)
 	{
-		GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
+		GameInstance = Cast<USpatialGameInstance>(World->GetGameInstance());
 	}
 
 	return GameInstance;
@@ -525,6 +524,15 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+			
+			if (USpatialGameInstance* GameInstance = GetGameInstance())
+			{
+				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+				{
+					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+					return;
+				}
+			}
 		}
 
 		UWorld* CurrentWorld = GetWorld();
@@ -1928,12 +1936,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
-			if ((GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
-			{
-				TimeWhenPositionLastUpdated = GetElapsedTime();
-
-				Sender->ProcessPositionUpdates();
-			}
+			Sender->ProcessPositionUpdates();
 		}
 
 		if (Connection != nullptr)

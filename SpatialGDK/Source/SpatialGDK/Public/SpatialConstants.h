@@ -120,6 +120,13 @@ const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
+// System query tags for entity completeness
+const Worker_ComponentId SERVER_AUTH_TAG_COMPONENT_ID = 1000;
+const Worker_ComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 1001;
+const Worker_ComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 1002;
+const Worker_ComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 1003;
+const Worker_ComponentId LB_TAG_COMPONENT_ID = 1004;
+
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
 const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID = 3;

@@ -13,9 +13,9 @@
 
 namespace
 {
-typedef TFunction<bool(ASpatialFunctionalTest* NetTest)> FIsReadyEventFunc;
-typedef TFunction<void(ASpatialFunctionalTest* NetTest)> FStartEventFunc;
-typedef TFunction<void(ASpatialFunctionalTest* NetTest, float DeltaTime)> FTickEventFunc;
+typedef TFunction<bool()> FIsReadyEventFunc;
+typedef TFunction<void()> FStartEventFunc;
+typedef TFunction<void(float DeltaTime)> FTickEventFunc;
 
 // we need 2 values since the way we clean up tests is based on replication of variables,
 // so if the test fails to start, the cleanup process would never be triggered
@@ -54,6 +54,8 @@ public:
 
 	// Should be called from the server with authority over this actor
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
+
+	virtual void LogStep(ELogVerbosity::Type Verbosity, const FString& Message) override;
 
 	// # Test APIs
 

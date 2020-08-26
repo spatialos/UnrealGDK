@@ -16,7 +16,7 @@ class ASpatialDebugger;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
- **/
+ */
 UENUM()
 namespace ESettingsWorkerLogVerbosity
 {
@@ -88,8 +88,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Refresh Count"))
 	uint32 EntityPoolRefreshCount;
 
-	/** Specifies the amount of time, in seconds, between heartbeat events sent from a game client to notify the server-worker instances
-	 * that it's connected. */
+	/**
+	 * Specifies the amount of time, in seconds, between heartbeat events sent from a game client to notify the server-worker instances
+	 * that it's connected.
+	 */
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (DisplayName = "Heartbeat Interval (seconds)"))
 	float HeartbeatIntervalSeconds;
 
@@ -141,8 +143,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
-	/** Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will
-	 * be set based on the load balancing strategy.*/
+	/**
+	 * Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will
+	 * be set based on the load balancing strategy.
+	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication")
 	bool bEnableHandover;
 
@@ -167,13 +171,30 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
 	float QueuedOutgoingRPCRetryTime;
 
-	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
+	/**
+	 * Minimum time, in seconds, required to pass before an Actor will update its SpatialOS Position, if it has also traveled more than the
+	 * PositionUpdateLowerThresholdCentimeters since its last update.
+	 */
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
-	float PositionUpdateFrequency;
+	float PositionUpdateLowerThresholdSeconds;
 
-	/** Threshold an Actor needs to move, in centimeters, before its SpatialOS Position is updated.*/
+	/**
+	 * Minimum distance, in centimeters, required for an Actor to move before its SpatialOS Position is updated, if more than
+	 * PositionUpdateLowerThresholdSeconds seconds have also passed since its last update.
+	 */
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
-	float PositionDistanceThreshold;
+	float PositionUpdateLowerThresholdCentimeters;
+
+	/**
+	 * Maximum time, in seconds, that can pass before an Actor will update its SpatialOS Position, if it has also traveled any non-null
+	 * amount of centimeters since its last update.
+	 */
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
+	float PositionUpdateThresholdMaxSeconds;
+
+	/** Maximum distance, in centimeters, an Actor can move before its SpatialOS Position is updated.*/
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
+	float PositionUpdateThresholdMaxCentimeters;
 
 	/** Metrics about client and server performance can be reported to SpatialOS to monitor a deployments health.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics")
@@ -258,8 +279,10 @@ public:
 
 	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
 
-	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and
-	 * break snapshot compatibility. */
+	/**
+	 * The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and
+	 * break snapshot compatibility.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
 
@@ -336,6 +359,12 @@ public:
 	 * the map's config with a 1x1 grid.
 	 */
 	TOptional<bool> bOverrideMultiWorker;
+
+	/**
+	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
+	 * the multi-worker settings class
+	 */
+	TOptional<FString> OverrideMultiWorkerSettingsClass;
 
 	/**
 	 * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.

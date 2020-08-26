@@ -33,30 +33,29 @@ void ADormancyAndTombstoneTest::BeginPlay()
 	Super::BeginPlay();
 
 	{ // Step 1 - Set TestIntProp to 1.
-		AddStep(TEXT("ServerSetTestIntPropTo1"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerSetTestIntPropTo1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			int Counter = 0;
 			int ExpectedDormancyActors = 1;
-			for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				NetTest->AssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"),
-										 NetTest);
+				AssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"), this);
 				Iter->TestIntProp = 1;
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
 	}
 	{ // Step 2 - Observe TestIntProp on client should still be 0.
 		AddStep(
 			TEXT("ClientCheckValue"), FWorkerDefinition::AllClients, nullptr, nullptr,
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this](float DeltaTime) {
 				bool bPassesChecks = true;
 
 				int Counter = 0;
 				int ExpectedDormancyActors = 1;
-				for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 				{
 					Counter++;
 					if (Iter->TestIntProp != 0 || Iter->NetDormancy != DORM_Initial)
@@ -67,45 +66,43 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				}
 				if (Counter == ExpectedDormancyActors && bPassesChecks)
 				{
-					NetTest->AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"),
-											 NetTest);
+					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
 
-					NetTest->FinishStep();
+					FinishStep();
 				}
 			},
 			5.0f);
 	}
 
 	{ // Step 3 - Delete the test actor on the server.
-		AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			int Counter = 0;
 			int ExpectedDormancyActors = 1;
-			for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 				Iter->Destroy();
 			}
-			NetTest->AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
 	}
 
 	{ // Step 4 - Observe the test actor has been deleted on the client.
 		AddStep(
 			TEXT("ClientCheckActorDestroyed"), FWorkerDefinition::AllClients, nullptr, nullptr,
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this](float DeltaTime) {
 				int Counter = 0;
 				int ExpectedDormancyActors = 0;
-				for (TActorIterator<ADormancyTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 				{
 					Counter++;
 				}
 				if (Counter == ExpectedDormancyActors)
 				{
-					NetTest->AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"),
-											 NetTest);
-					NetTest->FinishStep();
+					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
+					FinishStep();
 				}
 			},
 			5.0f);
