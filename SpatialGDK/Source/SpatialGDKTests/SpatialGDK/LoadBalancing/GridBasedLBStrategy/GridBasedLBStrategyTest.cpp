@@ -54,6 +54,10 @@ DEFINE_LATENT_AUTOMATION_COMMAND(FCleanup);
 bool FCleanup::Update()
 {
 	TestWorld = nullptr;
+	for (auto Pair : TestActors)
+	{
+		Pair.Value->Destroy(true);
+	}
 	TestActors.Empty();
 	Strat = nullptr;
 
