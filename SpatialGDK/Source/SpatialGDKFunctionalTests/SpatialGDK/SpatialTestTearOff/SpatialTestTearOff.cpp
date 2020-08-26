@@ -15,14 +15,14 @@
  * The test includes 1 Server and 2 Client workers.
  * The flow is as follows:
  * - Setup:
- *  - A ReplicatedTearOffActor is placed in the map that is running the test.
+ *  - A ReplicatedTearOffActor must be placed in the map that is running the test, as a start-up actor.
  *  - All workers set a reference to the start-up actor.
  * - Test:
  *  - The server modifies a replicated property of the start-up Actor.
  *  - The clients check that the modification was ignored.
  *  - The server spawns a ReplicatedTearOffActor.
  *  - The clients check that the spawned ReplicatedTearOffActor was not replicated at all.
- *  - The server spawns a ReplicatedTestActorBase.
+ *  - The server spawns a ReplicatedTestActorBase, which is not torn off by deafult.
  *  - The clients check that the spawned ReplicatedTestActorBase is correctly replicated.
  *  - The server calls TearOff on the ReplicatedTestActorBase and changes its location.
  *  - The clients check that the location update is ignored.
@@ -36,7 +36,10 @@ ASpatialTestTearOff::ASpatialTestTearOff()
 	Author = "Andrei";
 	Description = TEXT("Test TearOff prevents Actors from replicating");
 
-	SpwanedReplicatedActorBaseLocation = FVector(150.0f, 150.0f, 80.0f);
+	ReplicatedTestActorBaseInitialLocation = FVector(150.0f, 150.0f, 80.0f);
+	ReplicatedTestActorBaseMoveLocationBeforeTearOff = FVector(-150.0f, -150.0f, 80.0f);
+	ReplicatedTestActorBaseMoveLocationAfterTearOff = FVector(30.0f, -20.0f, 80.0f);
+
 }
 
 void ASpatialTestTearOff::BeginPlay()
@@ -132,7 +135,7 @@ void ASpatialTestTearOff::BeginPlay()
 	// Spawn a replicated Actor that does not call TearOff on BeginPlay().
 	AddStep(TEXT("SpatialTestTearOffServerSpawnReplicatedActor"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
-			SpawnedReplicatedActorBase = GetWorld()->SpawnActor<AReplicatedTestActorBase>(SpwanedReplicatedActorBaseLocation, FRotator::ZeroRotator, FActorSpawnParameters());
+			SpawnedReplicatedActorBase = GetWorld()->SpawnActor<AReplicatedTestActorBase>(ReplicatedTestActorBaseInitialLocation, FRotator::ZeroRotator, FActorSpawnParameters());
 			RegisterAutoDestroyActor(SpawnedReplicatedActorBase);
 			FinishStep();
 		});
@@ -157,19 +160,54 @@ void ASpatialTestTearOff::BeginPlay()
 					SpawnedReplicatedActorBase = Cast<AReplicatedTestActorBase>(ReplicatedActors[0]);
 				}
 
-				if (IsValid(SpawnedReplicatedActorBase) && SpawnedReplicatedActorBase->GetActorLocation().Equals(SpwanedReplicatedActorBaseLocation, 1.0f))
+				if (IsValid(SpawnedReplicatedActorBase) && SpawnedReplicatedActorBase->GetActorLocation().Equals(ReplicatedTestActorBaseInitialLocation, 1.0f))
 				{
 					FinishStep();
 				}
 			}
 		}, 5.0f);
 
-	// Tear off the spawned replicated Actor and move it to a new location.
+	// Move the spawned actor to make sure its movement is being replicated correctly.
+	AddStep(TEXT("SpatialTestTearOffSeverMoveSpawnedActor"), FWorkerDefinition::Server(1), nullptr, [this]()
+		{
+			SpawnedReplicatedActorBase->SetActorLocation(ReplicatedTestActorBaseMoveLocationBeforeTearOff);
+
+			FinishStep();
+		});
+
+	// Clients check that the spawned actor correctly replicates movement before calling TearOff.
+	AddStep(TEXT("SpatialTestTearOffClientsCheckMovement"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime)
+		{
+			if (SpawnedReplicatedActorBase->GetActorLocation().Equals(ReplicatedTestActorBaseMoveLocationBeforeTearOff, 1.0f))
+			{
+				FinishStep();
+			}
+		}, 5.0f);
+
+	// Tear off the spawned replicated ReplicatedTestActorBase.
 	AddStep(TEXT("SpatialTestTearOffServerSetTearOffAndMoveActor"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			SpawnedReplicatedActorBase->TearOff();
-			SpawnedReplicatedActorBase->SetActorLocation(FVector(30.0f, -20.0f, 80.0f));
+
 			FinishStep();
+		});
+
+	// Wait for the TearOff to propagate.
+	AddStep(TEXT("SpatialTestTearOffAllWorkersCheckTearOff"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float DeltaTime)
+		{
+			if (SpawnedReplicatedActorBase->GetTearOff())
+			{
+				FinishStep();
+			}
+		}, 5.0f);
+
+	// Now that the Actor is TornOff, move it from the server.
+	AddStep(TEXT("SpatialTestTearOfFServerMoveTornOffActor"), FWorkerDefinition::Server(1), nullptr, [this]()
+		{
+			if (SpawnedReplicatedActorBase->SetActorLocation(ReplicatedTestActorBaseMoveLocationAfterTearOff))
+			{
+				FinishStep();
+			}
 		});
 
 	// Allow for potential replication to propagate before checking that the location update for SpawnedReplicatedActorBase was ignored.
@@ -178,9 +216,9 @@ void ASpatialTestTearOff::BeginPlay()
 	// Clients check that the Location update was ignored.
 	AddStep(TEXT("SpatialTestTearOffClientsLocationUpdateWasIgnored"), FWorkerDefinition::AllClients, nullptr, [this]()
 		{
-			if (SpawnedReplicatedActorBase->GetActorLocation().Equals(SpwanedReplicatedActorBaseLocation, 1.0f))
+			if (SpawnedReplicatedActorBase->GetActorLocation().Equals(ReplicatedTestActorBaseMoveLocationBeforeTearOff, 1.0f))
 			{
 				FinishStep();
 			}
-		});
+		}, nullptr, 2.0f);
 }

@@ -23,10 +23,17 @@ public:
 	AReplicatedTearOffActor* StartupTearOffActor;
 
 	// Variable used to reference the spawned AReplicatedTestActorBase.
+	UPROPERTY()
 	AReplicatedTestActorBase* SpawnedReplicatedActorBase;
 
-	// The location of the spawned ReplicatedActorBase.
-	FVector SpwanedReplicatedActorBaseLocation;
+	// The location where the ReplicatedActorBase is spawned.
+	FVector ReplicatedTestActorBaseInitialLocation;
+
+	// The location where the ReplicatedActorBase is moved before calling TearOff.
+	FVector ReplicatedTestActorBaseMoveLocationBeforeTearOff;
+
+	// THe location where the ReplicatedActorBase is moved after calling TearOff.
+	FVector	ReplicatedTestActorBaseMoveLocationAfterTearOff;
 
 	// Helper variable used for implementing the WorkerWaitForTimeStepDefinition.
 	float TimerHelper;
