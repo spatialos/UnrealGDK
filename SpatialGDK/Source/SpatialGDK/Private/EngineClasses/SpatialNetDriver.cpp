@@ -1039,7 +1039,20 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 	Channel->MarkInterestDirty();
 
-	Channel->ServerProcessOwnershipChange();
+	OwnershipChangedEntities.Add(EntityId);
+}
+
+void USpatialNetDriver::ProcessOwnershipChanges()
+{
+	for (Worker_EntityId EntityId : OwnershipChangedEntities)
+	{
+		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
+		{
+			Channel->ServerProcessOwnershipChange();
+		}
+	}
+
+	OwnershipChangedEntities.Empty();
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
@@ -1798,6 +1811,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)
 	{
 		Sender->FlushRPCService();
+	}
+
+	if (IsServer())
+	{
+		ProcessOwnershipChanges();
 	}
 
 	ProcessPendingDormancy();
