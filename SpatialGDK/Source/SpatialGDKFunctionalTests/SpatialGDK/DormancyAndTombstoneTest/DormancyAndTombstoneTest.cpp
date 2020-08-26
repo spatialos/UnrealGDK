@@ -39,8 +39,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				AssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"),
-										 this);
+				AssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"), this);
 				Iter->TestIntProp = 1;
 			}
 			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
@@ -67,8 +66,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				}
 				if (Counter == ExpectedDormancyActors && bPassesChecks)
 				{
-					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"),
-											 this);
+					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
 
 					FinishStep();
 				}
@@ -103,8 +101,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				}
 				if (Counter == ExpectedDormancyActors)
 				{
-					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"),
-											 this);
+					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
 					FinishStep();
 				}
 			},

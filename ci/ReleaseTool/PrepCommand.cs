@@ -25,7 +25,6 @@ namespace ReleaseTool
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
-        private const string ReleaseBranchCreationCommitMessageTemplate = "Created a release branch based on {0} release candidate.";
         private const string PullRequestTemplate = "Release {0}";
         private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
             "in the repo `{1}` from `{2}` into `{3}`. " +
@@ -111,11 +110,11 @@ namespace ReleaseTool
                     // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
-
                     if (!gitClient.LocalBranchExists($"origin/{options.CandidateBranch}"))
                     {
+                        // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
+                        gitClient.CheckoutRemoteBranch(options.SourceBranch);
+
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                         switch (options.GitRepoName)
                         {
@@ -155,8 +154,7 @@ namespace ReleaseTool
                     if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
                         gitClient.Fetch();
-                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
-                        gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
+                        gitClient.CheckoutRemoteBranch(options.SourceBranch);
                         gitClient.ForcePush(options.ReleaseBranch);
                     }
 
@@ -184,8 +182,8 @@ namespace ReleaseTool
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", prAnnotation, true);
 
                     Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                    Logger.Info("Successfully created release!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                    Logger.Info("Successfully created pull request for the release!");
+                    Logger.Info("PR head hash: {0}", gitClient.GetHeadCommit().Sha);
                 }
             }
             catch (Exception e)
