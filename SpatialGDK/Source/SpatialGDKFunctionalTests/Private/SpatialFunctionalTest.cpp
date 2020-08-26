@@ -14,6 +14,11 @@
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "HAL/FileManagerGeneric.h"
+#include "GameFramework/Actor.h"
+#include "TimerManager.h"
+
+#pragma optimize("", off)
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -294,30 +299,99 @@ void ASpatialFunctionalTest::TakeSnapshot()
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-	FString Url = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
+	FString KrakenURL = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
+	//FString SquidUrl = "http://localhost:5006/snapshot";
 	// kick off http request to read
 	HttpRequest->OnProcessRequestComplete().BindLambda(
-		[/*Complete*/](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-			UE_LOG(LogTemp, Warning, TEXT("Snapshot Created"));
-			// Go read latest file,
-			FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-			FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
-			if (!FPaths::FileExists(SnapshotLatestPath))
-			{
-				// Complete.ExecuteIfBound("", false);
-				return;
-			}
-			FString LatestSnapshot;
-			if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
-			{
-				// Complete.ExecuteIfBound("", false);
-				return;
-			}
-			TakenSnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-			UE_LOG(LogTemp, Warning, TEXT("Snapshot path: %s"), *TakenSnapshotPath);
+		[/*Complete*/this](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+
+			// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
+			// the wrong info! So let's wait a bit
+
+			FTimerHandle TimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, [](){
+					// Go read latest file,
+					FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+					FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
+					if (!FPaths::FileExists(SnapshotLatestPath))
+					{
+						// Complete.ExecuteIfBound("", false);
+						return;
+					}
+					FString LatestSnapshot;
+					if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
+					{
+						// Complete.ExecuteIfBound("", false);
+						return;
+					}
+
+					FString SnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+
+					FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
+
+					bool bSavedSuccessfully = FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *SnapshotPath, true, true) == 0;
+
+					if( bSavedSuccessfully)
+					{
+						ASpatialFunctionalTest::TakenSnapshotPath = TEXT("functional_testing.snapshot");
+					}
+
+					//UE_LOG(LogTemp, Warning, TEXT("Outcome: %d - Path: %s"), bSavedSuccessfully, *SnapshotSavePath);
+			}, 0.1f, false);
+
+			//UE_LOG(LogTemp, Warning, TEXT("Snapshot Created"));
+			//// Go read latest file,
+			//FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+			//FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
+			//if (!FPaths::FileExists(SnapshotLatestPath))
+			//{
+			//	// Complete.ExecuteIfBound("", false);
+			//	return;
+			//}
+			//FString LatestSnapshot;
+			//if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
+			//{
+			//	// Complete.ExecuteIfBound("", false);
+			//	return;
+			//}
+
+			//FString SnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+
+			//FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
+
+			//bool bSavedSuccessfully = FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *SnapshotPath, true, true) == 0;
+
+			//FDateTime LatestTimeStamp = FDateTime::MinValue();
+			//FString LatestFileName = "";
+
+			//FFileManagerGeneric::Get().IterateDirectory(
+			//	*FString::Printf(TEXT("%s/.improbable/local_snapshots/"), *AppDataLocalPath),
+			//	[&LatestTimeStamp, &LatestFileName](const TCHAR* FileName, bool bIsDirectory) -> bool {
+			//	FDateTime FileTimeStamp = FFileManagerGeneric::Get().GetTimeStamp(FileName);
+			//	if( FileTimeStamp > LatestTimeStamp )
+			//	{
+			//		LatestTimeStamp = FileTimeStamp;
+			//		LatestFileName = FString::Printf(TEXT("%s"), FileName);
+			//	}
+			//	return true;
+			//});
+
+			//if (!LatestFileName.IsEmpty())
+			//{
+			//	UE_LOG(LogTemp, Warning, TEXT("Latest from File: %s ; Latest from Directory: %s"), *LatestSnapshot, *LatestFileName);
+			//}
+
+			//IPlatformFile::CopyFile(SnapshotSavePath,SnapshotPath, EPlatformFileRead::None, EPlatformFileWrite::None );
+
+			//FFileHelper::SaveStringToFile(LatestSnapshot, )
+
+			//UE_LOG(LogTemp, Warning, TEXT("Outcome: %d - Path: %s"), bSavedSuccessfully, * SnapshotSavePath);
+
+			//TakenSnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+			//UE_LOG(LogTemp, Warning, TEXT("Snapshot path: %s"), *TakenSnapshotPath);
 			// Complete.ExecuteIfBound("snapshot id", bSucceeded);
 		});
-	HttpRequest->SetURL(Url);
+	HttpRequest->SetURL(KrakenURL);
 	HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
 	HttpRequest->SetVerb(TEXT("POST"));
 	const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
@@ -731,6 +805,7 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	FlowControllerSpawner.SpawnServerFlowController();
 }
 
+
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 {
 	GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateLambda([this](AActor* Spawned) {
@@ -743,6 +818,7 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 		}
 	}));
 }
+
 
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 {
@@ -758,3 +834,5 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 		}
 	}
 }
+
+#pragma optimize("", on)

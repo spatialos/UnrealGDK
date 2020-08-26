@@ -375,12 +375,15 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
+#pragma optimize("", off)
+
+void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy(bool bOnlyHandleNonPersistent)
 {
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
+		if (Actor != nullptr && !Actor->IsPendingKill()
+			&& (!bOnlyHandleNonPersistent || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent)))
 		{
 			if (Actor->GetIsReplicated())
 			{
@@ -391,6 +394,8 @@ void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
 		}
 	}
 }
+
+#pragma optimize("", on)
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
@@ -405,9 +410,9 @@ void UGlobalStateManager::TriggerBeginPlay()
 	SetAcceptingPlayers(true);
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
-	if (bCanSpawnWithAuthority)
+	//if (bCanSpawnWithAuthority)
 	{
-		SetAllActorRolesBasedOnLBStrategy();
+		SetAllActorRolesBasedOnLBStrategy(!bCanSpawnWithAuthority);
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();

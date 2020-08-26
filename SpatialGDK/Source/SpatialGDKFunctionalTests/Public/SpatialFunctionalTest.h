@@ -27,7 +27,7 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// represents test already 
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
  */
-UCLASS(Blueprintable, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
+UCLASS(Blueprintable, SpatialType = NotPersistent, hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest
 {
 	GENERATED_BODY()
@@ -202,16 +202,16 @@ public:
 
 	// # Snapshot APIs
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	static void TakeSnapshot();
+	void TakeSnapshot();
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	static FString GetTakenSnapshotPath();
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	static bool WasLoadedFromSnapshot();
+	bool WasLoadedFromSnapshot();
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	static void ClearLoadedFromSnapshot();
+	void ClearLoadedFromSnapshot();
 
 	static void SetLoadedFromSnapshot();
 

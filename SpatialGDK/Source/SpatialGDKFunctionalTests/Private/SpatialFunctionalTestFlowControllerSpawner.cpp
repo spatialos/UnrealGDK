@@ -8,6 +8,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 
+#pragma optimize("", off)
+
 SpatialFunctionalTestFlowControllerSpawner::SpatialFunctionalTestFlowControllerSpawner()
 	: SpatialFunctionalTestFlowControllerSpawner(
 		nullptr, TSubclassOf<ASpatialFunctionalTestFlowController>(ASpatialFunctionalTestFlowController::StaticClass()))
@@ -103,3 +105,5 @@ void SpatialFunctionalTestFlowControllerSpawner::LockFlowControllerDelegations(A
 		SpatialNetDriver->LockingPolicy->AcquireLock(FlowController);
 	}
 }
+
+#pragma optimize("", on)
