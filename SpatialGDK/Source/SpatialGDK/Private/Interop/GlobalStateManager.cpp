@@ -410,7 +410,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	SetAcceptingPlayers(true);
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
-	//if (bCanSpawnWithAuthority)
+	// if (bCanSpawnWithAuthority)
 	{
 		SetAllActorRolesBasedOnLBStrategy(!bCanSpawnWithAuthority);
 	}

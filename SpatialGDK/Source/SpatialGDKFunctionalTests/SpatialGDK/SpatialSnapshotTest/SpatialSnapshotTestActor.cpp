@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestPossession.h"
 #include "Containers/Array.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialTestPossession.h"
 #include "TestPossessionPawn.h"
 
 /**
