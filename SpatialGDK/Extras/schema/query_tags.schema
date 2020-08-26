@@ -1,0 +1,24 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// System query tags for entity completeness
+
+component ServerAuthTag {
+    id = 2001;
+}
+
+component ServerNonAuthTag {
+    id = 2002;
+}
+
+component ClientAuthTag {
+    id = 2003;
+}
+
+component ClientNonAuthTag {
+    id = 2004;
+}
+
+component LBTag {
+    id = 2005;
+}
