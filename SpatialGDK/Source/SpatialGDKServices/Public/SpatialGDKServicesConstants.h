@@ -46,4 +46,12 @@ namespace SpatialGDKServicesConstants
 	const FString DevLoginDeploymentTag = TEXT("dev_login");
 
 	const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
+
+	const FString ProxyFileDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable")));
+	const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("ServerReceptionistProxyInfo.json"));
+
+#if PLATFORM_MAC
+	const FString LsofCmdFilePath = TEXT("/usr/sbin/");
+	const FString KillCmdFilePath = TEXT("/bin/");
+#endif
 }

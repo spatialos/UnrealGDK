@@ -24,10 +24,10 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -79,22 +79,6 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 
 	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxSendingChangeHistory;
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
-}
-
-void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, const AActor* HierarchyActor, const AActor* OriginalActorBeingReplicated)
-{
-	if (HierarchyActor->GetIsReplicated() && HierarchyActor != OriginalActorBeingReplicated)
-	{
-		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
-		{
-			Channel->ReplicateActor();
-		}
-	}
-
-	for (const AActor* Child : HierarchyActor->Children)
-	{
-		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActorBeingReplicated);
-	}
 }
 
 } // end anonymous namespace
@@ -209,7 +193,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
-	, TimeWhenPositionLastUpdated(0.0f)
+	, TimeWhenPositionLastUpdated(0.0)
 {
 }
 
@@ -226,7 +210,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bIsAuthClient = false;
 	bIsAuthServer = false;
 	LastPositionSinceUpdate = FVector::ZeroVector;
-	TimeWhenPositionLastUpdated = 0.0f;
+	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 
 	PendingDynamicSubobjects.Empty();
@@ -389,7 +373,7 @@ void USpatialActorChannel::UpdateShadowData()
 void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
 {
 	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	if ((NetDriver->GetElapsedTime() - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		UpdateSpatialPosition();
 	}
@@ -444,25 +428,6 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	}
 
 	return HandoverChanged;
-}
-
-void USpatialActorChannel::GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp)
-{
-	if (HierarchyActor->GetIsReplicated())
-	{
-		if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(const_cast<AActor*>(HierarchyActor)))
-		{
-			if (Channel->AuthorityReceivedTimestamp > OutTimestamp)
-			{
-				OutTimestamp = Channel->AuthorityReceivedTimestamp;
-			}
-		}
-	}
-
-	for (const AActor* Child : HierarchyActor->Children)
-	{
-		GetLatestAuthorityChangeFromHierarchy(Child, OutTimestamp);
-	}
 }
 
 int64 USpatialActorChannel::ReplicateActor()
@@ -743,70 +708,12 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
-	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-	if (NetDriver->LoadBalanceStrategy != nullptr &&
-		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
-	{
-		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
-		{
-			const AActor* NetOwner = Actor->GetNetOwner();
-
-			uint64 HierarchyAuthorityReceivedTimestamp = AuthorityReceivedTimestamp;
-			if (NetOwner != nullptr)
-			{
-				GetLatestAuthorityChangeFromHierarchy(NetOwner, HierarchyAuthorityReceivedTimestamp);
-			}
-
-			const float TimeSinceReceivingAuthInSeconds = double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
-			const float MigrationBackoffTimeInSeconds = 1.0f;
-
-			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
-			{
-				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
-			}
-			else
-			{
-				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
-				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-				{
-					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
-				}
-				else
-				{
-					Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
-
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
-
-					if (NetOwner != nullptr)
-					{
-						ForceReplicateOnActorHierarchy(NetDriver, NetOwner, Actor);
-					}
-				}
-			}
-		}
-
-		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
-		{
-			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-			if (DebuggingInfo->IsLocked != bIsLocked)
-			{
-				DebuggingInfo->IsLocked = bIsLocked;
-				FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-				NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-			}
-		}
-	}
 #if USE_NETWORK_PROFILER
 	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
 #endif
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
-	LastUpdateTime = Connection->Driver->Time;
+	LastUpdateTime = NetDriver->GetElapsedTime();
 
 	MemMark.Pop();
 
@@ -1165,7 +1072,7 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
+void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property)*>& RepNotifies)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
@@ -1266,7 +1173,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	LastPositionSinceUpdate = ActorSpatialPosition;
-	TimeWhenPositionLastUpdated = NetDriver->Time;
+	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
 
 	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
 
@@ -1292,11 +1199,11 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	}
 }
 
-void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
+void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property)*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
-	RepNotifies.RemoveAll([&](UProperty* Property)
+	RepNotifies.RemoveAll([&](GDK_PROPERTY(Property)* Property)
 	{
 		for (auto& ObjRef : RefMap)
 		{
@@ -1313,7 +1220,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 			}
 
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
-			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || Cast<UArrayProperty>(Property) != nullptr;
+			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property) != nullptr;
 			if (bIsSameRepNotify && !bIsArray)
 			{
 				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());
@@ -1328,8 +1235,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 {
 	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
-		SCOPE_CYCLE_COUNTER(STAT_IsAuthoritativeServer);
-		if (!IsAuthoritativeServer())
+		if (!IsReadyForReplication()
+		|| !IsAuthoritativeServer())
 		{
 			return;
 		}

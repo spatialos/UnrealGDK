@@ -14,6 +14,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -96,7 +97,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
-					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+					GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
 
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
@@ -178,9 +179,9 @@ uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject
 	return BytesEnd - BytesStart;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property)* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)
 {
-	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
+	if (GDK_PROPERTY(StructProperty)* StructProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
 		FSpatialNetBitWriter ValueDataWriter(PackageMap);
@@ -212,53 +213,53 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 
 		AddBytesToSchema(Object, FieldId, ValueDataWriter);
 	}
-	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
+	else if (GDK_PROPERTY(BoolProperty)* BoolProperty = GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(Property))
 	{
 		Schema_AddBool(Object, FieldId, (uint8)BoolProperty->GetPropertyValue(Data));
 	}
-	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
+	else if (GDK_PROPERTY(FloatProperty)* FloatProperty = GDK_CASTFIELD<GDK_PROPERTY(FloatProperty)>(Property))
 	{
 		Schema_AddFloat(Object, FieldId, FloatProperty->GetPropertyValue(Data));
 	}
-	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
+	else if (GDK_PROPERTY(DoubleProperty)* DoubleProperty = GDK_CASTFIELD<GDK_PROPERTY(DoubleProperty)>(Property))
 	{
 		Schema_AddDouble(Object, FieldId, DoubleProperty->GetPropertyValue(Data));
 	}
-	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
+	else if (GDK_PROPERTY(Int8Property)* Int8Property = GDK_CASTFIELD<GDK_PROPERTY(Int8Property)>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, (int32)Int8Property->GetPropertyValue(Data));
 	}
-	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
+	else if (GDK_PROPERTY(Int16Property)* Int16Property = GDK_CASTFIELD<GDK_PROPERTY(Int16Property)>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, (int32)Int16Property->GetPropertyValue(Data));
 	}
-	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
+	else if (GDK_PROPERTY(IntProperty)* IntProperty = GDK_CASTFIELD<GDK_PROPERTY(IntProperty)>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, IntProperty->GetPropertyValue(Data));
 	}
-	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
+	else if (GDK_PROPERTY(Int64Property)* Int64Property = GDK_CASTFIELD<GDK_PROPERTY(Int64Property)>(Property))
 	{
 		Schema_AddInt64(Object, FieldId, Int64Property->GetPropertyValue(Data));
 	}
-	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
+	else if (GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, (uint32)ByteProperty->GetPropertyValue(Data));
 	}
-	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
+	else if (GDK_PROPERTY(UInt16Property)* UInt16PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
 	{
-		Schema_AddUint32(Object, FieldId, (uint32)UInt16Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, (uint32)UInt16PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
+	else if (GDK_PROPERTY(UInt32Property)* UInt32PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
 	{
-		Schema_AddUint32(Object, FieldId, UInt32Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, UInt32PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
+	else if (GDK_PROPERTY(UInt64Property)* UInt64PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
 	{
-		Schema_AddUint64(Object, FieldId, UInt64Property->GetPropertyValue(Data));
+		Schema_AddUint64(Object, FieldId, UInt64PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
+	else if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property))
 	{
-		if (Cast<USoftObjectProperty>(Property))
+		if (GDK_CASTFIELD<GDK_PROPERTY(SoftObjectProperty)>(Property))
 		{
 			const FSoftObjectPtr* ObjectPtr = reinterpret_cast<const FSoftObjectPtr*>(Data);
 
@@ -275,19 +276,19 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
 		}
 	}
-	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
+	else if (GDK_PROPERTY(NameProperty)* NameProperty = GDK_CASTFIELD<GDK_PROPERTY(NameProperty)>(Property))
 	{
 		AddStringToSchema(Object, FieldId, NameProperty->GetPropertyValue(Data).ToString());
 	}
-	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
+	else if (GDK_PROPERTY(StrProperty)* StrProperty = GDK_CASTFIELD<GDK_PROPERTY(StrProperty)>(Property))
 	{
 		AddStringToSchema(Object, FieldId, StrProperty->GetPropertyValue(Data));
 	}
-	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
+	else if (GDK_PROPERTY(TextProperty)* TextProperty = GDK_CASTFIELD<GDK_PROPERTY(TextProperty)>(Property))
 	{
 		AddStringToSchema(Object, FieldId, TextProperty->GetPropertyValue(Data).ToString());
 	}
-	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
+	else if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property))
 	{
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
@@ -300,7 +301,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			ClearedIds->Add(FieldId);
 		}
 	}
-	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
+	else if (GDK_PROPERTY(EnumProperty)* EnumProperty = GDK_CASTFIELD<GDK_PROPERTY(EnumProperty)>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
@@ -311,15 +312,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, ClearedIds);
 		}
 	}
-	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>() || Property->IsA<UInterfaceProperty>())
+	else if (Property->IsA<GDK_PROPERTY(DelegateProperty)>() || Property->IsA<GDK_PROPERTY(MulticastDelegateProperty)>() || Property->IsA<GDK_PROPERTY(InterfaceProperty)>())
 	{
 		// These properties can be set to replicate, but won't serialize across the network.
 	}
-	else if (Property->IsA<UMapProperty>())
+	else if (Property->IsA<GDK_PROPERTY(MapProperty)>())
 	{
 		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
-	else if (Property->IsA<USetProperty>())
+	else if (Property->IsA<GDK_PROPERTY(SetProperty)>())
 	{
 		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}

@@ -1,7 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma once
-
 #include "SpatialOSDispatcherSpy.h"
 
 SpatialOSDispatcherSpy::SpatialOSDispatcherSpy()

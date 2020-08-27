@@ -158,15 +158,24 @@ void SpatialRPCService::PushOverflowedRPCs()
 			case EPushRPCResult::Success:
 				NumProcessed++;
 				break;
+			case EPushRPCResult::QueueOverflowed:
+				UE_LOG(LogSpatialRPCService, Log,
+					TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still overflowed: %d, Entity: %lld, RPC type: %s"),
+					NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+				break;
 			case EPushRPCResult::DropOverflowed:
 				checkf(false, TEXT("Shouldn't be able to drop on overflow for RPC type that was previously queued."));
 				break;
 			case EPushRPCResult::HasAckAuthority:
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+				UE_LOG(LogSpatialRPCService, Warning,
+					TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. Entity: %lld, RPC type: %s"),
+					EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			case EPushRPCResult::NoRingBufferAuthority:
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+				UE_LOG(LogSpatialRPCService, Warning,
+					TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"),
+					EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			default:
@@ -326,6 +335,8 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
 		const ClientEndpoint* Endpoint = View->GetComponentData<ClientEndpoint>(EntityId);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCAck);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint->UnreliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
@@ -335,6 +346,8 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	{
 		const ServerEndpoint* Endpoint = View->GetComponentData<ServerEndpoint>(EntityId);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCAck);
+		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint->UnreliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
@@ -374,15 +387,20 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
+
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	{
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
+		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
@@ -410,11 +428,26 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 
 	if (Type == ERPCType::NetMulticast)
 	{
+		if (!LastSeenMulticastRPCIds.Contains(EntityId))
+		{
+			UE_LOG(LogSpatialRPCService, Warning,
+				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: "
+						"Multicast"),
+				   EntityId);
+			return;
+		}
 		LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
 	}
 	else
 	{
-		LastSeenRPCId = LastAckedRPCIds[EntityTypePair];
+		if (!LastSeenRPCIds.Contains(EntityTypePair))
+		{
+			UE_LOG(LogSpatialRPCService, Warning,
+				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: %s"),
+				   EntityId, *SpatialConstants::RPCTypeToString(Type));
+			return;
+		}
+		LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
 	}
 
 	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
@@ -437,7 +470,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue());
+				const bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue());
 				if (!bKeepExtracting)
 				{
 					break;
@@ -464,14 +497,32 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 		}
 		else
 		{
-			LastAckedRPCIds[EntityTypePair] = LastProcessedRPCId;
-			const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
-
-			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
-
-			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, LastProcessedRPCId);
+			LastSeenRPCIds[EntityTypePair] = LastProcessedRPCId;
 		}
 	}
+}
+
+void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)
+{
+	if (Type == ERPCType::NetMulticast)
+	{
+		return;
+	}
+
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+	uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
+	if (LastAckedRPCId == nullptr)
+	{
+		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
+		return;
+	}
+
+	++(*LastAckedRPCId);
+
+	const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
+
+	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
 
 void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload)

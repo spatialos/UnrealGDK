@@ -27,7 +27,7 @@ namespace Improbable
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nobuild] [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
@@ -36,8 +36,9 @@ namespace Improbable
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            var noBuild = args.Count(arg => arg.ToLowerInvariant() == "-nobuild") > 0;
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
-            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
+            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
 
             var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "assembly", "worker"));
@@ -152,7 +153,7 @@ exit /b !ERRORLEVEL!";
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "BuildCookRun",
-                    noCompile ? "-nobuild" : "-build",
+                    noBuild ? "-nobuild" : "-build",
                     noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
@@ -195,13 +196,13 @@ exit /b !ERRORLEVEL!";
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "BuildCookRun",
-                    "-build",
+                    noBuild ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
                     "-clientconfig=" + configuration,
                     "-serverconfig=" + configuration,
                     "-utf8output",
-                    "-compile",
                     "-cook",
                     "-stage",
                     "-package",
@@ -260,7 +261,7 @@ exit /b !ERRORLEVEL!";
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "BuildCookRun",
-                    noCompile ? "-nobuild" : "-build",
+                    noBuild ? "-nobuild" : "-build",
                     noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
@@ -311,7 +312,7 @@ exit /b !ERRORLEVEL!";
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "BuildCookRun",
-                    noCompile ? "-nobuild" : "-build",
+                    noBuild ? "-nobuild" : "-build",
                     noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",

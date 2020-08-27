@@ -2,6 +2,10 @@
 
 #include "Utils/LaunchConfigurationEditor.h"
 
+#include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKSettings.h"
+
+#include "Editor.h"
 #include "DesktopPlatformModule.h"
 #include "Framework/Application/SlateApplication.h"
 #include "IDesktopPlatform.h"
@@ -10,18 +14,24 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 
-#include "SpatialGDKDefaultLaunchConfigGenerator.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialRuntimeLoadBalancingStrategies.h"
+#define LOCTEXT_NAMESPACE "SpatialLaunchConfigurationEditor"
 
 void ULaunchConfigurationEditor::PostInitProperties()
 {
 	Super::PostInitProperties();
 
+	if (GEditor == nullptr || GEditor->GetWorldContexts().Num() == 0)
+	{
+		return;
+	}
+
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	check(EditorWorld != nullptr);
+
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkerConfig, LaunchConfiguration.World.Dimensions);
+	LaunchConfiguration.ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 }
 
 void ULaunchConfigurationEditor::SaveConfiguration()
@@ -59,15 +69,18 @@ namespace
 	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 	{
-		const UProperty& Property = PropertyAndParent.Property;
+		const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
 
 		if (bHaveTemplate)
 		{
+#if ENGINE_MINOR_VERSION <= 24
 			const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
+#else
+			const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
+#endif
 			const bool bDisableEditOnTemplate = PropertyOwnerClass
 				&& PropertyOwnerClass->IsNative()
 				&& Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
-
 			if (bDisableEditOnTemplate)
 			{
 				return false;
@@ -152,7 +165,7 @@ void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWin
 	}
 
 	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(FText::FromString(TEXT("Launch Configuration Editor")))
+		.Title(LOCTEXT("LaunchConfigurationEditor_Title", "Launch Configuration Editor"))
 		.ClientSize(FVector2D(600, 400))
 		[
 			SNew(SBorder)
@@ -182,3 +195,5 @@ void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWin
 		FSlateApplication::Get().AddModalWindow(NewSlateWindow, nullptr);
 	}
 }
+
+#undef LOCTEXT_NAMESPACE

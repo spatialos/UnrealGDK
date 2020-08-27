@@ -7,7 +7,6 @@
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
-#include "SpatialRuntimeLoadBalancingStrategies.h"
 
 #include "CoreMinimal.h"
 
@@ -83,7 +82,6 @@ bool FStartDeployment::Update()
 			{
 				return;
 			}
-			SetLevelEditorPlaySettingsWorkerType(Conf);
 
 			if (LocalDeploymentManager->IsLocalDeploymentRunning())
 			{
@@ -136,7 +134,7 @@ bool FWaitForDeployment::Update()
 		}
 		return true;
 	}
-	
+
 	if (LocalDeploymentManager->IsDeploymentStopping())
 	{
 		return false;

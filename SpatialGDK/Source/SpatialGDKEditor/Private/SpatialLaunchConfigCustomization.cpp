@@ -12,6 +12,8 @@
 #include "Widgets/SToolTip.h"
 #include "Widgets/Text/STextBlock.h"
 
+#define LOCTEXT_NAMESPACE "SpatialLaunchConfigCustomization"
+
 TSharedRef<IPropertyTypeCustomization> FSpatialLaunchConfigCustomization::MakeInstance()
 {
 	return MakeShared<FSpatialLaunchConfigCustomization>();
@@ -51,7 +53,7 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 
 			const FSpatialLaunchConfigDescription* LaunchConfigDesc = reinterpret_cast<const FSpatialLaunchConfigDescription*>(StructPtr);
 
-			FString PinnedTemplateDisplay = FString::Printf(TEXT("Default: %s"), *LaunchConfigDesc->GetDefaultTemplateForRuntimeVariant());
+			FText PinnedTemplateDisplay = FText::Format(LOCTEXT("DefaultTemplate", "Default: {0}"), FText::FromString(LaunchConfigDesc->GetDefaultTemplateForRuntimeVariant()));
 
 			IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
@@ -75,7 +77,7 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 				.AutoWidth()
 				[
 					SNew(STextBlock)
-					.Text(FText::FromString(PinnedTemplateDisplay))
+					.Text(PinnedTemplateDisplay)
 				]
 				];
 		}
@@ -87,3 +89,5 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 		}
 	}
 }
+
+#undef LOCTEXT_NAMESPACE
