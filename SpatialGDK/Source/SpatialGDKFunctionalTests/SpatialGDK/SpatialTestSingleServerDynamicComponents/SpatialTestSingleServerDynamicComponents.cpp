@@ -13,7 +13,7 @@
  * The test includes 1 Server and 2 Clients.
  * The flow is as follows:
  * - Setup:
- *	- The TestActor is spawned and a dynamic component is immediately created and attached to it.
+ *  - The TestActor is spawned and a dynamic component is immediately created and attached to it.
  *  - The TestActor by itself attaches another dynamic component as part of ATestDynamicComponentActor::PostInitializeComponents.
  *  - After one second, the Server creates and attaches one more dynamic component to the TestActor.
  *  - All the components have a replicated array that contains references to the TestActor and to the test itself.
