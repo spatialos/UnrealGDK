@@ -203,7 +203,7 @@ bool FCleanup::Update()
 {
 	for (auto Pair : TestData->TestActors)
 	{
-		Pair.Value->Destroy(true);
+		Pair.Value->Destroy(/*bNetForce*/ true);
 	}
 
 	return true;
