@@ -47,7 +47,7 @@ struct FMapTestingSettings
 	none exists
 	- Use Current Settings: Uses current settings to run the tests */
 	UPROPERTY(EditAnywhere, Category = "Default")
-	EMapTestingMode TestingMode = EMapTestingMode::Detect;
+	EMapTestingMode TestingMode = EMapTestingMode::UseCurrentSettings;
 };
 
 UCLASS()
