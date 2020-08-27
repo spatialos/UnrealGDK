@@ -17,6 +17,8 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 #include "TimerManager.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Interfaces/IHttpBase.h"
 
 #pragma optimize("", off)
 
@@ -262,138 +264,88 @@ void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* A
 	ChangeActorInterest(ServerWorkerId, Actor, false);
 }
 
-// void UNWXTestingBlueprintLibrary::TakeSnapshot(const FOnTakeSnapshotComplete& Complete)
-//{
-// FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
-// TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-//        FString Url = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
-//        // kick off http request to read
-//        HttpRequest->OnProcessRequestComplete().BindLambda([Complete] (FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool
-//        bSucceeded) {
-//            UE_LOG(LogNWXGame, Warning, TEXT("Snapshot Created"));
-//            // Go read latest file,
-//            FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-//            FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
-//            if (!FPaths::FileExists(SnapshotLatestPath))
-//            {
-//                Complete.ExecuteIfBound("", false);
-//                return;
-//            }
-//            FString LatestSnapshot;
-//            if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
-//            {
-//                Complete.ExecuteIfBound("", false);
-//                return;
-//            }
-//            Complete.ExecuteIfBound("snapshot id", bSucceeded);
-//        });
-// HttpRequest->SetURL(Url);
-//        HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
-// HttpRequest->SetVerb(TEXT("POST"));
-// const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
-//        HttpRequest->SetContent(Body);
-//        HttpRequest->ProcessRequest();
-//    }
+void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback)
+{
+	TakeSnapshot(BlueprintCallback, nullptr);
+}
 
-void ASpatialFunctionalTest::TakeSnapshot()
+void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenFunc& CppCallback)
+{
+	TakeSnapshot(FSnapshotTakenDelegate(), CppCallback);
+}
+
+void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback, const FSnapshotTakenFunc& CppCallback)
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-	FString KrakenURL = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
-	// FString SquidUrl = "http://localhost:5006/snapshot";
-	// kick off http request to read
+	FString KrakenSnapshotURL = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
+	// FString SquidSnapshotUrl = "http://localhost:5006/snapshot";
 	HttpRequest->OnProcessRequestComplete().BindLambda(
-		[/*Complete*/ this](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		[this, BlueprintCallback, CppCallback](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+
+			if(!bSucceeded)
+			{
+				UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
+					   *HttpRequest->GetURL(), *HttpResponse->GetContentAsString());
+				BlueprintCallback.ExecuteIfBound(false);
+				if(CppCallback != nullptr)
+				{
+					CppCallback(false);
+				}
+				return;
+			}
+
 			// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
-			// the wrong info! So let's wait a bit
+			// the wrong info! So let's wait a bit..
 
 			FTimerHandle TimerHandle;
 			GetWorld()->GetTimerManager().SetTimer(
 				TimerHandle,
-				[]() {
+				[BlueprintCallback, CppCallback]() {
+					bool bSuccess = false;
+
 					// Go read latest file,
 					FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-					FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
-					if (!FPaths::FileExists(SnapshotLatestPath))
-					{
-						// Complete.ExecuteIfBound("", false);
-						return;
-					}
+					FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
 					FString LatestSnapshot;
-					if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
+					if (FPaths::FileExists(LatestSnapshotInfoPath)
+						&& FFileHelper::LoadFileToString(LatestSnapshot, *LatestSnapshotInfoPath))
 					{
-						// Complete.ExecuteIfBound("", false);
-						return;
+						FString LatestSnapshotPath =
+							FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+
+						// Currently there's a limitation that snapshots can only be read from this folder and you
+						// can only pass file name.
+						FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
+
+						if (FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *LatestSnapshotPath, true, true) == 0)
+						{
+							bSuccess = true;
+							ASpatialFunctionalTest::TakenSnapshotPath = TEXT("functional_testing.snapshot");
+						}
+						else
+						{
+							UE_LOG(LogSpatialGDKFunctionalTests, Error,
+								   TEXT("Failed to copy snapshot file '%s' to '%s'"),
+								   *LatestSnapshotInfoPath, *SnapshotSavePath);
+						}
+					}
+					else
+					{
+						UE_LOG(LogSpatialGDKFunctionalTests, Error,
+							   TEXT("Couldn't find or read the file with info of which is the latest snapshot '%s'"),
+							   *LatestSnapshotInfoPath);
 					}
 
-					FString SnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-
-					FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
-
-					bool bSavedSuccessfully = FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *SnapshotPath, true, true) == 0;
-
-					if (bSavedSuccessfully)
+					BlueprintCallback.ExecuteIfBound(bSuccess);
+					if(CppCallback != nullptr)
 					{
-						ASpatialFunctionalTest::TakenSnapshotPath = TEXT("functional_testing.snapshot");
+						CppCallback(bSuccess);
 					}
-
-					// UE_LOG(LogTemp, Warning, TEXT("Outcome: %d - Path: %s"), bSavedSuccessfully, *SnapshotSavePath);
 				},
 				0.1f, false);
-
-			// UE_LOG(LogTemp, Warning, TEXT("Snapshot Created"));
-			//// Go read latest file,
-			// FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-			// FString SnapshotLatestPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
-			// if (!FPaths::FileExists(SnapshotLatestPath))
-			//{
-			//	// Complete.ExecuteIfBound("", false);
-			//	return;
-			//}
-			// FString LatestSnapshot;
-			// if (!FFileHelper::LoadFileToString(LatestSnapshot, *SnapshotLatestPath))
-			//{
-			//	// Complete.ExecuteIfBound("", false);
-			//	return;
-			//}
-
-			// FString SnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-
-			// FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
-
-			// bool bSavedSuccessfully = FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *SnapshotPath, true, true) == 0;
-
-			// FDateTime LatestTimeStamp = FDateTime::MinValue();
-			// FString LatestFileName = "";
-
-			// FFileManagerGeneric::Get().IterateDirectory(
-			//	*FString::Printf(TEXT("%s/.improbable/local_snapshots/"), *AppDataLocalPath),
-			//	[&LatestTimeStamp, &LatestFileName](const TCHAR* FileName, bool bIsDirectory) -> bool {
-			//	FDateTime FileTimeStamp = FFileManagerGeneric::Get().GetTimeStamp(FileName);
-			//	if( FileTimeStamp > LatestTimeStamp )
-			//	{
-			//		LatestTimeStamp = FileTimeStamp;
-			//		LatestFileName = FString::Printf(TEXT("%s"), FileName);
-			//	}
-			//	return true;
-			//});
-
-			// if (!LatestFileName.IsEmpty())
-			//{
-			//	UE_LOG(LogTemp, Warning, TEXT("Latest from File: %s ; Latest from Directory: %s"), *LatestSnapshot, *LatestFileName);
-			//}
-
-			// IPlatformFile::CopyFile(SnapshotSavePath,SnapshotPath, EPlatformFileRead::None, EPlatformFileWrite::None );
-
-			// FFileHelper::SaveStringToFile(LatestSnapshot, )
-
-			// UE_LOG(LogTemp, Warning, TEXT("Outcome: %d - Path: %s"), bSavedSuccessfully, * SnapshotSavePath);
-
-			// TakenSnapshotPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-			// UE_LOG(LogTemp, Warning, TEXT("Snapshot path: %s"), *TakenSnapshotPath);
-			// Complete.ExecuteIfBound("snapshot id", bSucceeded);
 		});
-	HttpRequest->SetURL(KrakenURL);
+	HttpRequest->SetURL(KrakenSnapshotURL);
 	HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
 	HttpRequest->SetVerb(TEXT("POST"));
 	const TArray<uint8> Body = { 0, 0, 0, 0, 0 };

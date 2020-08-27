@@ -124,19 +124,20 @@ void ASpatialSnapshotTest::BeginPlay()
 		FirstVerifyDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyDataStepDef.StepName);
 		AddStepFromDefinition(FirstVerifyDataStepDef, FWorkerDefinition::AllWorkers);
 
-		// @TODO refactor to pass lambda but also support BPs
 		AddStep(
 			TEXT("First Run - Take Snapshot"), FWorkerDefinition::Server(1), nullptr,
 			[this]() {
-				TakeSnapshot();
-			},
-			[this](float DeltaTime) {
-				if (GetTakenSnapshotPath().Len() > 0)
-				{
-					FinishStep();
-				}
-			},
-			10.0f);
+				TakeSnapshot([this](bool bSuccess){
+					if(bSuccess)
+					{
+						FinishStep();
+					}
+					else
+					{
+						FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to take snapshot"));
+					}
+				});
+			}, nullptr, 10.0f);
 	}
 	else
 	{

@@ -11,16 +11,22 @@
 #include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
+// Blueprint Delegate
+DECLARE_DYNAMIC_DELEGATE_OneParam(FSnapshotTakenDelegate, bool, bSuccess);
+
 namespace
 {
+// C++ hooks for Lambdas.
 typedef TFunction<bool()> FIsReadyEventFunc;
 typedef TFunction<void()> FStartEventFunc;
 typedef TFunction<void(float DeltaTime)> FTickEventFunc;
 
-// we need 2 values since the way we clean up tests is based on replication of variables,
-// so if the test fails to start, the cleanup process would never be triggered
-constexpr int SPATIAL_FUNCTIONAL_TEST_NOT_STARTED = -1; // represents test waiting to run
-constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// represents test already ran
+typedef TFunction<void(bool bSuccess)> FSnapshotTakenFunc;
+
+// We need 2 values since the way we clean up tests is based on replication of variables,
+// so if the test fails to start, the cleanup process would never be triggered.
+constexpr int SPATIAL_FUNCTIONAL_TEST_NOT_STARTED = -1; // Represents test waiting to run.
+constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already ran.
 } // namespace
 
 /*
@@ -202,10 +208,12 @@ public:
 	void RemoveActorInterest(int32 ServerWorkerId, AActor* Actor);
 
 	// # Snapshot APIs
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void TakeSnapshot();
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Allows a Server Worker to request a SpatialOS Snapshot to be taken. Keep in mind that this should be done at the last Step of your Test."))
+	void TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	// C++ version that allows you to hook up a lambda.
+	void TakeSnapshot(const FSnapshotTakenFunc& CppCallback);
+
 	static FString GetTakenSnapshotPath();
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
@@ -215,10 +223,6 @@ public:
 	void ClearLoadedFromSnapshot();
 
 	static void SetLoadedFromSnapshot();
-
-	static bool bWasLoadedFromSnapshot;
-
-	static FString TakenSnapshotPath;
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
@@ -261,4 +265,13 @@ private:
 	void SetupClientPlayerRegistrationFlow();
 
 	void ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest);
+
+	// @Note not a big fan of this, but I guess we need to make it expose to both BPs and Cpp lambdas.
+	void TakeSnapshot(const FSnapshotTakenDelegate& BluprintCallback, const FSnapshotTakenFunc& CppCallback);
+
+	// Holds if currently we're running from a Loaded snapshot and not the default / blank snapshot.
+	static bool bWasLoadedFromSnapshot;
+
+	// Holds the path of the snapshot taken during tests. If empty, it means that there was not snapshot taken.
+	static FString TakenSnapshotPath;
 };
