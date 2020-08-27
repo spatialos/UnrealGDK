@@ -367,10 +367,10 @@ public:
 	TOptional<FString> OverrideMultiWorkerSettingsClass;
 
 	/**
-	 * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
+	 * This will allow Actors to be spawned on a layer different to the intended authoritative layer.
 	 */
 	UPROPERTY(Config)
-	bool bEnableMultiWorkerDebuggingWarnings;
+	bool bEnableCrossLayerActorSpawning;
 
 	// clang-format off
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay,
