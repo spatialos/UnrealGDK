@@ -1875,7 +1875,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
 			   TEXT("USpatialReceiver::OnCommandRequest: Actor class async loading, cannot handle command. Entity %lld, Class %s"),
-			EntityId, *EntitiesWaitingForAsyncLoad[EntityId].ClassPath);
+			   EntityId, *EntitiesWaitingForAsyncLoad[EntityId].ClassPath);
 		Sender->SendCommandFailure(RequestId, TEXT("Target actor async loading."));
 		return;
 	}
@@ -1904,8 +1904,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		return;
 	}
-	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID
-			 && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
+	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(EntityId);
 		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId);
@@ -1975,8 +1974,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	UFunction* Function = Info.RPCs[Payload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"), EntityId,
-		ComponentId, *Function->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"), EntityId, ComponentId,
+		   *Function->GetName());
 
 	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 	Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId);
