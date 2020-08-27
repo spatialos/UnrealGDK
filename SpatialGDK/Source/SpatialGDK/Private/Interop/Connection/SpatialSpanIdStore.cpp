@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialSpanIdStore.h"
 
+#include "SpatialConstants.h"
 #include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
@@ -16,10 +17,10 @@ Trace_SpanId* SpatialSpanIdStore::GetEntityComponentSpanId(const EntityComponent
 
 bool SpatialSpanIdStore::ComponentAdd(const EntityComponentId Id, const Trace_SpanId SpanId)
 {
-	if (IsComponentIdRPCEndpoint(Id.EntityId))
+	if (IsComponentIdRPCEndpoint(Id.ComponentId))
 	{
 		RPCSpanIds.Add(SpanId);
-		return;
+		return true;
 	}
 
 	if (!SpanStore.Contains(Id))
@@ -32,10 +33,10 @@ bool SpatialSpanIdStore::ComponentAdd(const EntityComponentId Id, const Trace_Sp
 
 bool SpatialSpanIdStore::ComponentRemove(const EntityComponentId Id, const Trace_SpanId SpanId)
 {
-	if (IsComponentIdRPCEndpoint(Id.EntityId))
+	if (IsComponentIdRPCEndpoint(Id.ComponentId))
 	{
 		RPCSpanIds.Empty();
-		return;
+		return true;
 	}
 
 	if (SpanStore.Contains(Id))
@@ -48,7 +49,7 @@ bool SpatialSpanIdStore::ComponentRemove(const EntityComponentId Id, const Trace
 
 void SpatialSpanIdStore::ComponentUpdate(const EntityComponentId Id, const Trace_SpanId SpanId)
 {
-	if (IsComponentIdRPCEndpoint(Id.EntityId))
+	if (IsComponentIdRPCEndpoint(Id.ComponentId))
 	{
 		RPCSpanIds.Add(SpanId);
 		return;
@@ -66,11 +67,24 @@ void SpatialSpanIdStore::ComponentUpdate(const EntityComponentId Id, const Trace
 worker::c::Trace_SpanId SpatialSpanIdStore::GetNextRPCSpanID()
 {
 	const int32 NumRPCSpanIds = RPCSpanIds.Num();
+	UE_LOG(LogSpatialSpanIdStore, Log, TEXT("RPCSpanId queue size - %d"), NumRPCSpanIds);
+
 	if (NumRPCSpanIds == 0)
 	{
 		return worker::c::Trace_SpanId();
 	}
 	return RPCSpanIds.Pop();
+}
+
+void SpatialSpanIdStore::RemoveRPCSpanIds(int32 NumToRemove)
+{
+	const int32 FirstIndex = RPCSpanIds.Num() - 1;
+	const int32 IndexToStop = FMath::Max(0, FirstIndex - NumToRemove);
+
+	for (int i = FirstIndex; i > IndexToStop; --i)
+	{
+		RPCSpanIds.Pop();
+	}
 }
 
 void SpatialSpanIdStore::Clear()
@@ -80,5 +94,5 @@ void SpatialSpanIdStore::Clear()
 
 bool SpatialSpanIdStore::IsComponentIdRPCEndpoint(const Worker_ComponentId ComponentId)
 {
-	return Id.EntityId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID || Id.EntityId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+	return ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 }

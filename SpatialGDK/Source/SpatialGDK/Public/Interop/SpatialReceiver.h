@@ -85,7 +85,7 @@ public:
 	// SpatialRPCService::ExtractRPCsForEntity.
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
-	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
+	virtual void OnCommandRequest(const Worker_Op& Op) override;
 	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
 
 	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;

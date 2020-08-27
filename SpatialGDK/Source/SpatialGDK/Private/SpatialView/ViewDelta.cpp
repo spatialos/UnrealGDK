@@ -299,7 +299,7 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		ComponentChanges.Emplace(Op.op.remove_component);
 		if (bEventTracerEnabled)
 		{
-			EventTracer->ComponentRemove(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, Op.span_id);
+			EventTracer->ComponentRemove(Op.op.remove_component.entity_id, Op.op.remove_component.component_id, Op.span_id);
 		}
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
@@ -312,7 +312,7 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		ComponentChanges.Emplace(Op.op.component_update);
 		if (bEventTracerEnabled)
 		{
-			EventTracer->ComponentUpdate(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, Op.span_id);
+			EventTracer->ComponentUpdate(Op.op.component_update.entity_id, Op.op.component_update.update.component_id, Op.span_id);
 		}
 		break;
 	default:

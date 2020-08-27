@@ -30,7 +30,7 @@ bool SpatialOSDispatcherSpy::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPC
 	return false;
 }
 
-void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_CommandRequestOp& Op) {}
+void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::OnCommandResponse(const Worker_CommandResponseOp& Op) {}
 

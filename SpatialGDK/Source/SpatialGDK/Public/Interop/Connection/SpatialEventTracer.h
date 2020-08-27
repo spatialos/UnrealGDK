@@ -71,6 +71,7 @@ public:
 	void ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
 	void ClearSpanStore();
 	worker::c::Trace_SpanId GetNextRPCSpanID();
+	void RemoveRPCSpanIds(int32 NumToRemove);
 
 private:
 	void Enable(const FString& FileName);

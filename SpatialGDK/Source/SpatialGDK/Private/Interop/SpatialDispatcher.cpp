@@ -88,14 +88,14 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			if (bEventTracerEnabled)
 			{
-				EventTracer->ComponentRemove(Op->op.add_component.entity_id, Op->op.add_component.data.component_id, Op->span_id);
+				EventTracer->ComponentRemove(Op->op.remove_component.entity_id, Op->op.remove_component.component_id, Op->span_id);
 			}
 			Receiver->OnRemoveComponent(Op->op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			if (bEventTracerEnabled)
 			{
-				EventTracer->ComponentUpdate(Op->op.add_component.entity_id, Op->op.add_component.data.component_id, Op->span_id);
+				EventTracer->ComponentUpdate(Op->op.component_update.entity_id, Op->op.component_update.update.component_id, Op->span_id);
 			}
 			StaticComponentView->OnComponentUpdate(Op->op.component_update);
 			Receiver->OnComponentUpdate(Op->op.component_update);
@@ -103,7 +103,7 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op->op.command_request);
+			Receiver->OnCommandRequest(*Op);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
 			Receiver->OnCommandResponse(Op->op.command_response);

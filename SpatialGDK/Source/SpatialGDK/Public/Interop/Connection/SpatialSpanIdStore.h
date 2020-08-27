@@ -21,6 +21,7 @@ public:
 	void ComponentUpdate(const EntityComponentId Id, const worker::c::Trace_SpanId SpanId);
 
 	worker::c::Trace_SpanId GetNextRPCSpanID();
+	void RemoveRPCSpanIds(int32 NumToRemove);
 
 	void Clear();
 

@@ -1860,36 +1860,42 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 	RPCService->ExtractRPCsForEntity(Op.entity_id, Op.update.component_id);
 }
 
-void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
+void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandRequest);
-	Schema_FieldId CommandIndex = Op.request.command_index;
 
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	const Worker_CommandRequestOp& CommandRequestOp = Op.op.command_request;
+	const Worker_CommandRequest& Request = CommandRequestOp.request;
+	const Worker_EntityId EntityId = CommandRequestOp.entity_id;
+	const Worker_ComponentId ComponentId = Request.component_id;
+	const Worker_RequestId RequestId = CommandRequestOp.request_id;
+	const Schema_FieldId CommandIndex = Request.command_index;
+
+	if (IsEntityWaitingForAsyncLoad(CommandRequestOp.entity_id))
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
 			   TEXT("USpatialReceiver::OnCommandRequest: Actor class async loading, cannot handle command. Entity %lld, Class %s"),
-			   Op.entity_id, *EntitiesWaitingForAsyncLoad[Op.entity_id].ClassPath);
-		Sender->SendCommandFailure(Op.request_id, TEXT("Target actor async loading."));
+			EntityId, *EntitiesWaitingForAsyncLoad[EntityId].ClassPath);
+		Sender->SendCommandFailure(RequestId, TEXT("Target actor async loading."));
 		return;
 	}
 
-	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID
+	if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID
 		&& CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(Op);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
 
 		if (EventTracer->IsEnabled())
 		{
-			EventTracer->TraceEvent(FEventCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), Op.request_id, Op.));
+			EventTracer->TraceEvent(FEventCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId));
 		}
 
 		return;
 	}
-	else if (Op.request.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID
+	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
-		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(Op);
+		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
 
 		if (EventTracer->IsEnabled())
 		{
@@ -1898,35 +1904,35 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 		return;
 	}
-	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID
+	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID
 			 && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
-		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
-		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		Sender->ClearRPCsOnEntityCreation(EntityId);
+		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId);
 
 		if (EventTracer->IsEnabled())
 		{
-			EventTracer->TraceEvent(FEventCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), Op.request_id));
+			EventTracer->TraceEvent(FEventCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId));
 		}
 
 		return;
 	}
 #if WITH_EDITOR
-	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
+	else if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
 
 		if (EventTracer->IsEnabled())
 		{
-			EventTracer->TraceEvent(FEventCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), Op.request_id));
+			EventTracer->TraceEvent(FEventCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId));
 		}
 
 		return;
 	}
 #endif // WITH_EDITOR
 #if !UE_BUILD_SHIPPING
-	else if (Op.request.component_id == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
+	else if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
 	{
 		switch (CommandIndex)
 		{
@@ -1938,30 +1944,30 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 			break;
 		case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
 		{
-			Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+			Schema_Object* Payload = Schema_GetCommandRequestObject(CommandRequestOp.request.schema_type);
 			NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
 			break;
 		}
 		default:
 			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex,
-				   Op.entity_id);
+				   EntityId);
 			break;
 		}
 
-		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId);
 		return;
 	}
 #endif // !UE_BUILD_SHIPPING
 
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 
 	RPCPayload Payload(RequestObject);
-	FUnrealObjectRef ObjectRef = FUnrealObjectRef(Op.entity_id, Payload.Offset);
+	FUnrealObjectRef ObjectRef = FUnrealObjectRef(EntityId, Payload.Offset);
 	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 	if (TargetObject == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
-		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), EntityId);
+		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId);
 		return;
 	}
 
@@ -1969,13 +1975,13 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UFunction* Function = Info.RPCs[Payload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"), Op.entity_id,
-		   Op.request.component_id, *Function->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"), EntityId,
+		ComponentId, *Function->GetName());
 
 	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
-	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+	Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId);
 
-	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
+	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 #if TRACE_LIB_ACTIVE
 	TraceKey TraceId = Payload.Trace;
 #else
@@ -1985,7 +1991,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	if (EventTracer->IsEnabled())
 	{
 		UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-		EventTracer->TraceEvent(FEventCommandRequest("COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, Op.request_id));
+		EventTracer->TraceEvent(FEventCommandRequest("COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId));
 	}
 }
 
@@ -2170,18 +2176,12 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
+			EventTracer->RemoveRPCSpanIds(IncomingRPCs.GetNumQueuedRPCs());
 		}
 		else
 		{
-			TOptional<Trace_SpanId> SendSpanId = PendingRPCParams.Payload.SpanId;
-			TOptional<Trace_SpanId> ProccessSpanId;
-
-			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(TargetObject);
-			Worker_ComponentId ComponentId =
-				bServerRPCType ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
-
 			Trace_SpanId SpanId = EventTracer->GetNextRPCSpanID();
-			ProccessSpanId = EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
+			EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function));
 
 			TargetObject->ProcessEvent(Function, Parms);
 
@@ -2212,6 +2212,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
+		EventTracer->RemoveRPCSpanIds(IncomingRPCs.GetNumQueuedRPCs());
 		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
 
@@ -2220,6 +2221,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
+		EventTracer->RemoveRPCSpanIds(1);
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 

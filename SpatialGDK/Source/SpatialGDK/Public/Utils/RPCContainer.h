@@ -102,6 +102,7 @@ public:
 	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessRPCs();
 	void DropForEntity(const Worker_EntityId& EntityId);
+	int32 GetNumQueuedRPCs() const { return QueuedRPCs.Num(); }
 
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const;
 

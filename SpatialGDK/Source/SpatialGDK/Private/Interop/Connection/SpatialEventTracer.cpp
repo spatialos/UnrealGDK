@@ -265,6 +265,11 @@ worker::c::Trace_SpanId SpatialEventTracer::GetNextRPCSpanID()
 	return SpanIdStore.GetNextRPCSpanID();
 }
 
+void SpatialEventTracer::RemoveRPCSpanIds(int32 NumToRemove)
+{
+	SpanIdStore.RemoveRPCSpanIds(NumToRemove);
+}
+
 void SpatialEventTracer::ClearSpanStore()
 {
 	SpanIdStore.Clear();
