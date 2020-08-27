@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -28,7 +29,7 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 		ValidateNoActorClassesDuplicatedAmongLayers();
 		ValidateAllLayersHaveUniqueNonemptyNames();
 		ValidateAllLayersHaveLoadBalancingStrategy();
-		ASpatialDebugger::EditorRefreshSpatialDebugger();
+		ASpatialWorldSettings::EditorRefreshSpatialDebugger();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, LockingPolicy))
 	{

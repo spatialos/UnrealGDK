@@ -3,6 +3,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -40,6 +41,7 @@ void UGridBasedLBStrategy::Init()
 	float YMin = WorldWidthMin;
 	float XMax, YMax;
 
+	WorkerCells.Empty();
 	for (uint32 Col = 0; Col < Cols; ++Col)
 	{
 		YMax = YMin + ColumnWidth;
@@ -201,7 +203,7 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
 		{
-			ASpatialDebugger::EditorRefreshSpatialDebugger();
+			ASpatialWorldSettings::EditorRefreshSpatialDebugger();
 		}
 	}
 }

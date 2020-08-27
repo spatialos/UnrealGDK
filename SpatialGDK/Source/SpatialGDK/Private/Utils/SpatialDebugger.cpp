@@ -558,17 +558,6 @@ void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
 	EditorRefreshWorkerRegions();
 }
 
-void ASpatialDebugger::EditorRefreshSpatialDebugger()
-{
-	// Refresh the worker boundaries in the editor
-	UWorld* World = GEditor->GetEditorWorldContext().World();
-	for (TActorIterator<ASpatialDebugger> It(World); It; ++It)
-	{
-		ASpatialDebugger* FoundActor = *It;
-		FoundActor->EditorRefreshWorkerRegions();
-	}
-}
-
 void ASpatialDebugger::EditorRefreshWorkerRegions()
 {
 	DestroyWorkerRegions();
@@ -607,29 +596,32 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
-	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();
-	LoadBalanceStrategy->Init();
-	LoadBalanceStrategy->SetLayers(MultiWorkerSettings->WorkerLayers);
-
-	if (const UGridBasedLBStrategy* GridBasedLBStrategy =
-			Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
+	for (FLayerInfo WorkerLayer : MultiWorkerSettings->WorkerLayers)
 	{
-		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
-		const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
-
-		WorkerRegions.SetNum(LBStrategyRegions.Num());
-		for (int i = 0; i < LBStrategyRegions.Num(); i++)
+		if (WorkerLayer.Name == SpatialConstants::DefaultLayer)
 		{
-			const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-			FWorkerRegionInfo WorkerRegionInfo;
-			// Generate our own unique worker name as we only need it to generate a unique colour
-			const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
-			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
-			WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+			if (UGridBasedLBStrategy* GridBasedLBStrategy =
+					Cast<UGridBasedLBStrategy>(WorkerLayer.LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>()))
+			{
+				GridBasedLBStrategy->Init();
+				GridBasedLBStrategy->SetVirtualWorkerIds(1, GridBasedLBStrategy->GetMinimumRequiredWorkers());
 
-			WorkerRegions[i] = WorkerRegionInfo;
+				const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
+
+				WorkerRegions.SetNum(LBStrategyRegions.Num());
+				for (int i = 0; i < LBStrategyRegions.Num(); i++)
+				{
+					const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+					FWorkerRegionInfo WorkerRegionInfo;
+					// Generate our own unique worker name as we only need it to generate a unique colour
+					const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
+					WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+					WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+
+					WorkerRegions[i] = WorkerRegionInfo;
+				}
+			}
 		}
 	}
 }
-
 #endif // WITH_EDITOR
