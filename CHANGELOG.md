@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - We’ve removed `Singleton` as a class specifier, and you need to remove your uses of it. You can achieve the behavior of former Singleton Actors by ensuring that your Actor is spawned once by a single server-worker instance in your deployment.
 - We’ve renamed `OnConnected` and `OnConnectionFailed` (on `SpatialGameInstance`) to `OnSpatialConnected` and `OnSpatialConnectionFailed`. They are now also Blueprint-assignable.
 - The `GenerateSchema` and `GenerateSchemaAndSnapshots` commandlets do not generate schema any more. We’ve deprecated them in favor of `CookAndGenerateSchemaCommandlet`. (`GenerateSchemaAndSnapshots` still works if you use the `-SkipSchema` option.)
-- We’ve combined the settings for offloading and load balancing and moved them from the Editor and Runtime Settings to be per map in the World Settings. For more information, see the [offloading tutorial](https://documentation.improbable.io/gdk-for-unreal/docs/multiserver-offloading-1-set-up).
+- We’ve combined the settings for offloading and load balancing and moved them from the Editor and Runtime Settings to be per map in the World Settings. For more information, see the [offloading tutorial](https://documentation.improbable.io/gdk-for-unreal/docs/1-set-up-multiserver).
 - We’ve removed the command-line arguments `OverrideSpatialOffloading` and `OverrideLoadBalancer`, and GDK load balancing is always enabled. To override a map's `Enable Multi Worker` setting, use the command-line flag `OverrideMultiWorker`.
 - It is now mandatory to run a deployment with result types (previously result types were enabled by default). We’ve removed the Runtime setting `bEnableResultTypes` to reflect this.
 - Whether an Actor is offloaded depends on whether the root owner of that Actor is offloaded. This might affect you if you're using functions such as `IsActorGroupOwnerForActor`.
@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When you start a cloud deployment from the Unreal Editor, the cloud deployment now automatically has the dev_login deployment tag.
 - Several command-line parameter changes:
   - Renamed the `enableProtocolLogging` command-line parameter to `enableWorkerSDKProtocolLogging`.
-  - Added a parameter named enableWorkerSDKOpLogging so that you can log user-level ops. 
+  - Added a parameter named enableWorkerSDKOpLogging so that you can log user-level ops.
   - Renamed the `protocolLoggingPrefix` parameter to workerSDKLogPrefix. This prefix is used for both protocol logging and op logging.
   - Added a parameter named `workerSDKLogLevel` that takes the arguments `debug`, `info`, `warning`, and `error`.
   - Added a parameter named `workerSDKLogFileSize` to control the maximum file size of the Worker SDK log file.
