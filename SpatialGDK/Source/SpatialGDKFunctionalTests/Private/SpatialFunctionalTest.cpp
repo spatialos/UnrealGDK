@@ -10,6 +10,8 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
+#include "Interfaces/IHttpBase.h"
+#include "Interfaces/IHttpResponse.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "Net/UnrealNetwork.h"
@@ -17,8 +19,6 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 #include "TimerManager.h"
-#include "Interfaces/IHttpResponse.h"
-#include "Interfaces/IHttpBase.h"
 
 #pragma optimize("", off)
 
@@ -280,71 +280,67 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 	FString KrakenSnapshotURL = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
 	// FString SquidSnapshotUrl = "http://localhost:5006/snapshot";
-	HttpRequest->OnProcessRequestComplete().BindLambda(
-		[this, BlueprintCallback, CppCallback](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-
-			if(!bSucceeded)
+	HttpRequest->OnProcessRequestComplete().BindLambda([this, BlueprintCallback, CppCallback](
+														   FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		if (!bSucceeded)
+		{
+			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"), *HttpRequest->GetURL(),
+				   *HttpResponse->GetContentAsString());
+			BlueprintCallback.ExecuteIfBound(false);
+			if (CppCallback != nullptr)
 			{
-				UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
-					   *HttpRequest->GetURL(), *HttpResponse->GetContentAsString());
-				BlueprintCallback.ExecuteIfBound(false);
-				if(CppCallback != nullptr)
-				{
-					CppCallback(false);
-				}
-				return;
+				CppCallback(false);
 			}
+			return;
+		}
 
-			// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
-			// the wrong info! So let's wait a bit..
+		// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
+		// the wrong info! So let's wait a bit..
 
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(
-				TimerHandle,
-				[BlueprintCallback, CppCallback]() {
-					bool bSuccess = false;
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			TimerHandle,
+			[BlueprintCallback, CppCallback]() {
+				bool bSuccess = false;
 
-					// Go read latest file,
-					FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-					FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
-					FString LatestSnapshot;
-					if (FPaths::FileExists(LatestSnapshotInfoPath)
-						&& FFileHelper::LoadFileToString(LatestSnapshot, *LatestSnapshotInfoPath))
+				// Go read latest file,
+				FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+				FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
+				FString LatestSnapshot;
+				if (FPaths::FileExists(LatestSnapshotInfoPath) && FFileHelper::LoadFileToString(LatestSnapshot, *LatestSnapshotInfoPath))
+				{
+					FString LatestSnapshotPath =
+						FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+
+					// Currently there's a limitation that snapshots can only be read from this folder and you
+					// can only pass file name.
+					FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
+
+					if (FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *LatestSnapshotPath, true, true) == 0)
 					{
-						FString LatestSnapshotPath =
-							FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-
-						// Currently there's a limitation that snapshots can only be read from this folder and you
-						// can only pass file name.
-						FString SnapshotSavePath = FPaths::ProjectDir() + "../spatial/snapshots/functional_testing.snapshot";
-
-						if (FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *LatestSnapshotPath, true, true) == 0)
-						{
-							bSuccess = true;
-							ASpatialFunctionalTest::TakenSnapshotPath = TEXT("functional_testing.snapshot");
-						}
-						else
-						{
-							UE_LOG(LogSpatialGDKFunctionalTests, Error,
-								   TEXT("Failed to copy snapshot file '%s' to '%s'"),
-								   *LatestSnapshotInfoPath, *SnapshotSavePath);
-						}
+						bSuccess = true;
+						ASpatialFunctionalTest::TakenSnapshotPath = TEXT("functional_testing.snapshot");
 					}
 					else
 					{
-						UE_LOG(LogSpatialGDKFunctionalTests, Error,
-							   TEXT("Couldn't find or read the file with info of which is the latest snapshot '%s'"),
-							   *LatestSnapshotInfoPath);
+						UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to copy snapshot file '%s' to '%s'"),
+							   *LatestSnapshotInfoPath, *SnapshotSavePath);
 					}
+				}
+				else
+				{
+					UE_LOG(LogSpatialGDKFunctionalTests, Error,
+						   TEXT("Couldn't find or read the file with info of which is the latest snapshot '%s'"), *LatestSnapshotInfoPath);
+				}
 
-					BlueprintCallback.ExecuteIfBound(bSuccess);
-					if(CppCallback != nullptr)
-					{
-						CppCallback(bSuccess);
-					}
-				},
-				0.1f, false);
-		});
+				BlueprintCallback.ExecuteIfBound(bSuccess);
+				if (CppCallback != nullptr)
+				{
+					CppCallback(bSuccess);
+				}
+			},
+			0.1f, false);
+	});
 	HttpRequest->SetURL(KrakenSnapshotURL);
 	HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
 	HttpRequest->SetVerb(TEXT("POST"));

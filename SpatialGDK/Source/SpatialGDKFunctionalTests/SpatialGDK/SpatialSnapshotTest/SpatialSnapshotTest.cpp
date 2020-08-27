@@ -127,8 +127,8 @@ void ASpatialSnapshotTest::BeginPlay()
 		AddStep(
 			TEXT("First Run - Take Snapshot"), FWorkerDefinition::Server(1), nullptr,
 			[this]() {
-				TakeSnapshot([this](bool bSuccess){
-					if(bSuccess)
+				TakeSnapshot([this](bool bSuccess) {
+					if (bSuccess)
 					{
 						FinishStep();
 					}
@@ -137,7 +137,8 @@ void ASpatialSnapshotTest::BeginPlay()
 						FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to take snapshot"));
 					}
 				});
-			}, nullptr, 10.0f);
+			},
+			nullptr, 10.0f);
 	}
 	else
 	{
