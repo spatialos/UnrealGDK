@@ -5,7 +5,7 @@
 
 namespace
 {
-constexpr bool bTargetBoolProperty	= true;
+constexpr bool bTargetBoolProperty = true;
 constexpr int32 TargetInt32Property = -1050;
 constexpr int64 TargetInt64Property = 8000000;
 constexpr float TargetFloatProperty = 1000.0f;
@@ -15,13 +15,13 @@ constexpr wchar_t* TargetNameProperty = TEXT("Some String");
 TArray<int> GetTargetIntArrayProperty()
 {
 	TArray<int> Array;
-	for(int i = 0; i != 10; ++i)
+	for (int i = 0; i != 10; ++i)
 	{
 		Array.Add(i);
 	}
 	return Array;
 }
-}
+} // namespace
 
 ASpatialSnapshotTestActor::ASpatialSnapshotTestActor()
 	: Super()
@@ -49,7 +49,6 @@ void ASpatialSnapshotTestActor::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	DOREPLIFETIME(ASpatialSnapshotTestActor, IntArrayProperty);
 }
 
-
 void ASpatialSnapshotTestActor::CrossServerSetProperties_Implementation()
 {
 	bBoolProperty = bTargetBoolProperty;
@@ -62,7 +61,7 @@ void ASpatialSnapshotTestActor::CrossServerSetProperties_Implementation()
 	IntArrayProperty.Empty();
 
 	TArray<int> TargetArray = GetTargetIntArrayProperty();
-	for(int i : TargetArray)
+	for (int i : TargetArray)
 	{
 		IntArrayProperty.Add(i);
 	}
@@ -101,13 +100,13 @@ bool ASpatialSnapshotTestActor::VerifyName()
 bool ASpatialSnapshotTestActor::VerifyIntArray()
 {
 	TArray<int> TargetIntArray = GetTargetIntArrayProperty();
-	if(IntArrayProperty.Num() != TargetIntArray.Num())
+	if (IntArrayProperty.Num() != TargetIntArray.Num())
 	{
 		return false;
 	}
-	for(int i = 0; i != IntArrayProperty.Num(); ++i)
+	for (int i = 0; i != IntArrayProperty.Num(); ++i)
 	{
-		if(IntArrayProperty[i] != TargetIntArray[i])
+		if (IntArrayProperty[i] != TargetIntArray[i])
 		{
 			return false;
 		}

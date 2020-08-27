@@ -60,12 +60,12 @@ void ASpatialSnapshotTest::BeginPlay()
 	FSpatialFunctionalTestStepDefinition VerifyDataStepDef = FSpatialFunctionalTestStepDefinition(true);
 	VerifyDataStepDef.StepName = TEXT("Verify Data Properly Set");
 	VerifyDataStepDef.TimeLimit = 5.0f;
-	VerifyDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime){
+	VerifyDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		ASpatialSnapshotTestActor* Actor = nullptr;
 		int NumActors = 0;
 		for (TActorIterator<ASpatialSnapshotTestActor> It(GetWorld()); It; ++It)
 		{
-			if(NumActors == 1)
+			if (NumActors == 1)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestActor"));
 				return;
@@ -74,10 +74,10 @@ void ASpatialSnapshotTest::BeginPlay()
 			++NumActors;
 		}
 
-		if(IsValid(Actor))
+		if (IsValid(Actor))
 		{
 			// @TODO improve when we have The Verify functions
-			if(!Actor->VerifyBool())
+			if (!Actor->VerifyBool())
 			{
 				return;
 			}
@@ -109,11 +109,10 @@ void ASpatialSnapshotTest::BeginPlay()
 		}
 	});
 
-	if(bIsRunningFirstTime)
+	if (bIsRunningFirstTime)
 	{
 		// The first run we want to setup the data, verify it, and take snapshot.
-		AddStep(TEXT("First Run - Spawn Replicated Actor"), FWorkerDefinition::Server(1), nullptr,
-		[this](){
+		AddStep(TEXT("First Run - Spawn Replicated Actor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialSnapshotTestActor* Actor = GetWorld()->SpawnActor<ASpatialSnapshotTestActor>();
 
 			Actor->CrossServerSetProperties();
@@ -126,18 +125,18 @@ void ASpatialSnapshotTest::BeginPlay()
 		AddStepFromDefinition(FirstVerifyDataStepDef, FWorkerDefinition::AllWorkers);
 
 		// @TODO refactor to pass lambda but also support BPs
-		AddStep(TEXT("First Run - Take Snapshot"), FWorkerDefinition::Server(1), nullptr,
-		[this]()
-		{
-			TakeSnapshot();
-		},
-		[this](float DeltaTime)
-		{
-			if(GetTakenSnapshotPath().Len() > 0)
-			{
-				FinishStep();
-			}
-		}, 10.0f);
+		AddStep(
+			TEXT("First Run - Take Snapshot"), FWorkerDefinition::Server(1), nullptr,
+			[this]() {
+				TakeSnapshot();
+			},
+			[this](float DeltaTime) {
+				if (GetTakenSnapshotPath().Len() > 0)
+				{
+					FinishStep();
+				}
+			},
+			10.0f);
 	}
 	else
 	{
@@ -147,9 +146,7 @@ void ASpatialSnapshotTest::BeginPlay()
 		SecondVerifyDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("Second Run"), *VerifyDataStepDef.StepName);
 		AddStepFromDefinition(SecondVerifyDataStepDef, FWorkerDefinition::AllWorkers);
 
-		AddStep(TEXT("Second Run - Clear Snapshot"), FWorkerDefinition::Server(1), nullptr,
-		[this]()
-		{
+		AddStep(TEXT("Second Run - Clear Snapshot"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ClearLoadedFromSnapshot();
 			FinishStep();
 		});
