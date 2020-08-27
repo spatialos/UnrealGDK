@@ -55,5 +55,103 @@ void ASpatialSnapshotTest::BeginPlay()
 	Super::BeginPlay();
 
 	// First we need to know if we're launching from the default Snapshot or from a taken Snapshot.
-	// bool bIsRunningFirstTime = !Was
+	bool bIsRunningFirstTime = !WasLoadedFromSnapshot();
+
+	FSpatialFunctionalTestStepDefinition VerifyDataStepDef = FSpatialFunctionalTestStepDefinition(true);
+	VerifyDataStepDef.StepName = TEXT("Verify Data Properly Set");
+	VerifyDataStepDef.TimeLimit = 5.0f;
+	VerifyDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime){
+		ASpatialSnapshotTestActor* Actor = nullptr;
+		int NumActors = 0;
+		for (TActorIterator<ASpatialSnapshotTestActor> It(GetWorld()); It; ++It)
+		{
+			if(NumActors == 1)
+			{
+				FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestActor"));
+				return;
+			}
+			Actor = *It;
+			++NumActors;
+		}
+
+		if(IsValid(Actor))
+		{
+			// @TODO improve when we have The Verify functions
+			if(!Actor->VerifyBool())
+			{
+				return;
+			}
+			if (!Actor->VerifyInt32())
+			{
+				return;
+			}
+			if (!Actor->VerifyInt64())
+			{
+				return;
+			}
+			if (!Actor->VerifyFloat())
+			{
+				return;
+			}
+			if (!Actor->VerifyString())
+			{
+				return;
+			}
+			if (!Actor->VerifyName())
+			{
+				return;
+			}
+			if (!Actor->VerifyIntArray())
+			{
+				return;
+			}
+			FinishStep();
+		}
+	});
+
+	if(bIsRunningFirstTime)
+	{
+		// The first run we want to setup the data, verify it, and take snapshot.
+		AddStep(TEXT("First Run - Spawn Replicated Actor"), FWorkerDefinition::Server(1), nullptr,
+		[this](){
+			ASpatialSnapshotTestActor* Actor = GetWorld()->SpawnActor<ASpatialSnapshotTestActor>();
+
+			Actor->CrossServerSetProperties();
+
+			FinishStep();
+		});
+
+		FSpatialFunctionalTestStepDefinition FirstVerifyDataStepDef = VerifyDataStepDef;
+		FirstVerifyDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyDataStepDef.StepName);
+		AddStepFromDefinition(FirstVerifyDataStepDef, FWorkerDefinition::AllWorkers);
+
+		// @TODO refactor to pass lambda but also support BPs
+		AddStep(TEXT("First Run - Take Snapshot"), FWorkerDefinition::Server(1), nullptr,
+		[this]()
+		{
+			TakeSnapshot();
+		},
+		[this](float DeltaTime)
+		{
+			if(GetTakenSnapshotPath().Len() > 0)
+			{
+				FinishStep();
+			}
+		}, 10.0f);
+	}
+	else
+	{
+		// The second run we want to verify the data loaded from snapshot was correct, clear the snapshot.
+
+		FSpatialFunctionalTestStepDefinition SecondVerifyDataStepDef = VerifyDataStepDef;
+		SecondVerifyDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("Second Run"), *VerifyDataStepDef.StepName);
+		AddStepFromDefinition(SecondVerifyDataStepDef, FWorkerDefinition::AllWorkers);
+
+		AddStep(TEXT("Second Run - Clear Snapshot"), FWorkerDefinition::Server(1), nullptr,
+		[this]()
+		{
+			ClearLoadedFromSnapshot();
+			FinishStep();
+		});
+	}
 }
