@@ -525,12 +525,14 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
-			
+
 			if (USpatialGameInstance* GameInstance = GetGameInstance())
 			{
 				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 				{
-					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+					GEngine->BroadcastNetworkFailure(
+						GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient,
+						TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
 					return;
 				}
 			}
@@ -760,9 +762,6 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		// before connecting to Spatial, we return early.
 		return;
 	}
-
-	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
-																	 SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
 	if (!LoadBalanceStrategy->IsReady())
 	{
