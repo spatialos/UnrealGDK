@@ -23,8 +23,7 @@ void ARPCInInterfaceTest::BeginPlay()
 
 	{ // Step 1 - Create actor
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			ASpatialFunctionalTestFlowController* Client1FlowController =
-				GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			ASpatialFunctionalTestFlowController* Client1FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 			TestActor = GetWorld()->SpawnActor<ARPCInInterfaceActor>();
 			AssertIsValid(TestActor, "Actor exists", this);
@@ -38,13 +37,12 @@ void ARPCInInterfaceTest::BeginPlay()
 		});
 	}
 	{ // Step 2 - Make sure client has ownership of Actor
-		AddStep(TEXT("ClientCheckOwnership"), FWorkerDefinition::Client(1), nullptr, nullptr,
-				[this](float DeltaTime) {
-					if (IsValid(TestActor) && TestActor->GetOwner() == GetLocalFlowController()->GetOwner())
-					{
-						FinishStep();
-					}
-				});
+		AddStep(TEXT("ClientCheckOwnership"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime) {
+			if (IsValid(TestActor) && TestActor->GetOwner() == GetLocalFlowController()->GetOwner())
+			{
+				FinishStep();
+			}
+		});
 	}
 	{ // Step 3 - Call client RPC on interface
 		AddStep(

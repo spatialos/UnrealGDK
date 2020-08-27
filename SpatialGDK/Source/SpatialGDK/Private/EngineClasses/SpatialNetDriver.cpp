@@ -22,6 +22,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -204,9 +205,9 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 		const FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
 		GameInstance = Cast<USpatialGameInstance>(WorldContext.OwningGameInstance);
 	}
-	else
+	else if (World != nullptr)
 	{
-		GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
+		GameInstance = Cast<USpatialGameInstance>(World->GetGameInstance());
 	}
 
 	return GameInstance;
@@ -524,6 +525,15 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+			
+			if (USpatialGameInstance* GameInstance = GetGameInstance())
+			{
+				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+				{
+					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+					return;
+				}
+			}
 		}
 
 		UWorld* CurrentWorld = GetWorld();
@@ -1059,6 +1069,11 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	if (LockingPolicy != nullptr)
 	{
 		LockingPolicy->OnOwnerUpdated(Actor, OldOwner);
+	}
+
+	if (USpatialReplicationGraph* ReplicationGraph = Cast<USpatialReplicationGraph>(GetReplicationDriver()))
+	{
+		ReplicationGraph->OnOwnerUpdated(Actor, OldOwner);
 	}
 
 	// If PackageMap doesn't exist, we haven't connected yet, which means
