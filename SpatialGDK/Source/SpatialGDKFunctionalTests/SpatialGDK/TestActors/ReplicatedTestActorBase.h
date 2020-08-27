@@ -7,7 +7,7 @@
 #include "ReplicatedTestActorBase.generated.h"
 
 /**
- * A replicated Actor with a Cube Mesh, used as a base for Actors used in tests.
+ * A replicated Actor with a Cube Mesh, used as a base for Actors used in spatial tests.
  */
 UCLASS()
 class AReplicatedTestActorBase : public AActor
