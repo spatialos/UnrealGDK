@@ -382,9 +382,8 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) &&
-		!USpatialStatics::IsActorGroupOwnerForActor(Actor) &&
-		!Actor->bNetLoadOnNonAuthServer)
+	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
+		&& !Actor->bNetLoadOnNonAuthServer)
 	{
 		Actor->Destroy(true);
 		return;

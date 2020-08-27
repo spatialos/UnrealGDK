@@ -138,7 +138,8 @@ void USpatialGDKSettings::PostInitProperties()
 	const TCHAR* CommandLine = FCommandLine::Get();
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("OverrideMultiWorker"), TEXT("Multi-Worker"), bOverrideMultiWorker);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"), bEnableCrossLayerActorSpawning);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
+							 bEnableCrossLayerActorSpawning);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"),
 							 TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);

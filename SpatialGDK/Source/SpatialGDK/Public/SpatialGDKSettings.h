@@ -367,8 +367,8 @@ public:
 	TOptional<FString> OverrideMultiWorkerSettingsClass;
 
 	/**
-	  * This will allow Actors to be spawned on a layer different to the intended authoritative layer.
-	  */
+	 * This will allow Actors to be spawned on a layer different to the intended authoritative layer.
+	 */
 	UPROPERTY(Config)
 	bool bEnableCrossLayerActorSpawning;
 

@@ -255,18 +255,14 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
-void USpatialGameInstance::
-(ULevel* LoadedLevel, UWorld* OwningWorld) const
+void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld) const
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelInitializedNetworkActors: Level (%s) OwningWorld (%s) World (%s)"),
-		*GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(OwningWorld));
+		   *GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(OwningWorld));
 
-	if (OwningWorld != GetWorld()
-		|| !OwningWorld->IsServer()
-		|| OwningWorld->GetNetDriver() == nullptr
+	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || OwningWorld->GetNetDriver() == nullptr
 		|| !Cast<USpatialNetDriver>(OwningWorld->GetNetDriver())->IsReady()
-		|| (OwningWorld->WorldType != EWorldType::PIE
-			&& OwningWorld->WorldType != EWorldType::Game
+		|| (OwningWorld->WorldType != EWorldType::PIE && OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
 		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game

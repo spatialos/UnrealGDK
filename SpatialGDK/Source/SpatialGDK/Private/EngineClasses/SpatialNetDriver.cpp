@@ -525,12 +525,14 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
-			
+
 			if (USpatialGameInstance* GameInstance = GetGameInstance())
 			{
 				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 				{
-					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+					GEngine->BroadcastNetworkFailure(
+						GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient,
+						TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
 					return;
 				}
 			}
@@ -672,8 +674,11 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 		return;
 	}
 
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor will be destroyed in 0.01s"),
-		LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+	UE_LOG(LogSpatialOSNetDriver, Error,
+		   TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor "
+				"will be destroyed in 0.01s"),
+		   LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()),
+		   LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
 
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would
 	// complain if we destroyed it.
