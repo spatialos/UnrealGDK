@@ -15,6 +15,7 @@
 #include "CloudDeploymentConfiguration.h"
 #include "LocalDeploymentManager.h"
 #include "LocalReceptionistProxyServerManager.h"
+#include "SpatialGDKEditorSettings.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -26,6 +27,7 @@ class USoundBase;
 
 struct FWorkerTypeLaunchSection;
 class UAbstractRuntimeLoadBalancingStrategy;
+class ASpatialDebugger;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -40,15 +42,9 @@ public:
 
 	/** FTickableEditorObject interface */
 	void Tick(float DeltaTime) override;
-	bool IsTickable() const override
-	{
-		return true;
-	}
+	bool IsTickable() const override { return true; }
 
-	TStatId GetStatId() const override
-	{
-		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
-	}
+	TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables); }
 
 	void OnShowSingleFailureNotification(const FString& NotificationText);
 	void OnShowSuccessNotification(const FString& NotificationText);
@@ -78,6 +74,13 @@ private:
 
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
+
+	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
+	void DestroySpatialDebuggerEditor();
+	void InitialiseSpatialDebuggerEditor(UWorld* World);
+	bool IsSpatialDebuggerEditorEnabled() const;
+	bool AllowWorkerBoundaries() const;
+	void ToggleSpatialDebuggerEditor();
 
 	bool StartNativeIsVisible() const;
 	bool StartNativeCanExecute() const;
@@ -143,7 +146,8 @@ private:
 	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
 	using IsEnabledFunc = bool();
-	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted, IsEnabledFunc IsEnabled);
+	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted,
+													   IsEnabledFunc IsEnabled);
 
 	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
@@ -163,8 +167,7 @@ private:
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
-	bool bStopSpatialOnExit;
-	bool bStopLocalDeploymentOnEndPIE;
+	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
 	bool bSchemaBuildError;
 
@@ -180,7 +183,7 @@ private:
 
 	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKCloudDeploymentConfiguration> CloudDeploymentConfigPtr;
-	
+
 	FLocalDeploymentManager* LocalDeploymentManager;
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 
@@ -191,4 +194,8 @@ private:
 	bool bStartingCloudDeployment;
 
 	void GenerateConfigFromCurrentMap();
+
+	// Used to show worker boundaries in the editor
+	UPROPERTY()
+	ASpatialDebugger* SpatialDebugger;
 };

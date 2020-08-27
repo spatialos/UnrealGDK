@@ -7,7 +7,6 @@
 
 namespace SpatialGDK
 {
-
 // Represents any Unreal rep component
 struct DynamicComponent : Component
 {

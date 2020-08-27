@@ -89,15 +89,18 @@ USER_ID=$(id -u)
 # This assigns the gdk-version key that was set in .buildkite\release.steps.yaml to the variable GDK-VERSION
 GDK_VERSION="$(buildkite-agent meta-data get gdk-version)"
 
+# This assigns the (potential) dry-run prefix to this variable if we are doing a dry-run
+DRY_RUN_PREFIX=$(getDryrunBranchPrefix)
+
 # This assigns the engine-version key that was set in .buildkite\release.steps.yaml to the variable ENGINE-VERSION
 ENGINE_VERSIONS=($(buildkite-agent meta-data get engine-source-branches))
 
 # Run the C Sharp Release Tool for each candidate we want to cut.
-prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "spatialos"
-prepareRelease "UnrealGDKExampleProject"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "spatialos"
-prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "spatialos"
-prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "improbable"
-prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "release" "improbable"
+prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
+prepareRelease "UnrealGDKExampleProject"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
+prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
+prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "improbable"
+prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "improbable"
 
 for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
 do
@@ -106,6 +109,6 @@ do
    prepareRelease "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "${ENGINE_VERSION}-release" \
+    "${DRY_RUN_PREFIX}${ENGINE_VERSION}-release" \
     "improbableio"
 done

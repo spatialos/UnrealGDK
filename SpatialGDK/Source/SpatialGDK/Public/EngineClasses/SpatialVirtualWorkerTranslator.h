@@ -5,8 +5,8 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "Containers/Queue.h"
 #include "CoreMinimal.h"
@@ -19,8 +19,7 @@ class SPATIALGDK_API SpatialVirtualWorkerTranslator
 {
 public:
 	SpatialVirtualWorkerTranslator() = delete;
-	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
-		PhysicalWorkerName InPhysicalWorkerName);
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InPhysicalWorkerName);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.

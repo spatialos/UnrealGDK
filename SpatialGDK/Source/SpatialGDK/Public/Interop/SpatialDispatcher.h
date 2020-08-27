@@ -26,7 +26,8 @@ class SPATIALGDK_API SpatialDispatcher
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags);
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
+			  USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(const SpatialGDK::OpList& Ops);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
@@ -62,7 +63,8 @@ private:
 
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
 	void ProcessExternalSchemaOp(Worker_Op* Op);
-	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
+	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType,
+									 const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
 	TWeakObjectPtr<USpatialReceiver> Receiver;
@@ -73,8 +75,8 @@ private:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
 	// This index is incremented and returned every time an AddOpCallback function is called.
-	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 
-	// RunCallbacks is called by the SpatialDispatcher and executes all user registered 
+	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function.
+	// RunCallbacks is called by the SpatialDispatcher and executes all user registered
 	// callbacks for the matching component ID and network operation type.
 	FCallbackId NextCallbackId;
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;

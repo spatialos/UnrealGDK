@@ -2,15 +2,14 @@
 
 #pragma once
 
+#include "Containers/Array.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 #include "SpatialView/OpList/OpList.h"
-#include "Containers/Array.h"
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
 {
-
 // Data for a set of ops representing
 struct EntityComponentOpListData : OpListData
 {
@@ -22,6 +21,8 @@ struct EntityComponentOpListData : OpListData
 class EntityComponentOpListBuilder
 {
 public:
+	EntityComponentOpListBuilder();
+
 	EntityComponentOpListBuilder& AddComponent(Worker_EntityId EntityId, ComponentData Data);
 	EntityComponentOpListBuilder& UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update);
 	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
@@ -33,4 +34,4 @@ private:
 	TUniquePtr<EntityComponentOpListData> OpListData;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "SpatialView/MessagesToSend.h"
-#include "SpatialView/ViewDelta.h"
-#include "SpatialView/OpList/OpList.h"
 #include "Containers/Set.h"
+#include "SpatialView/MessagesToSend.h"
+#include "SpatialView/OpList/OpList.h"
+#include "SpatialView/ViewDelta.h"
 
 namespace SpatialGDK
 {
-
 class WorkerView
 {
 public:
@@ -39,11 +38,12 @@ public:
 	void SendLogMessage(LogMessage Log);
 
 private:
+	EntityView View;
+
 	TArray<OpList> QueuedOps;
 	TArray<OpList> OpenCriticalSectionOps;
 
 	TUniquePtr<MessagesToSend> LocalChanges;
-	TSet<EntityComponentId> AddedComponents;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

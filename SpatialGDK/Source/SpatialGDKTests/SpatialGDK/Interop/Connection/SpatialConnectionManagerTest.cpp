@@ -1,11 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Tests/TestDefinitions.h"
-#include "Interop/Connection/SpatialConnectionManager.h"
 #include "CoreMinimal.h"
+#include "Interop/Connection/SpatialConnectionManager.h"
+#include "Tests/TestDefinitions.h"
 
-#define CONNECTIONMANAGER_TEST(TestName) \
-	GDK_TEST(Core, SpatialConnectionManager, TestName)
+#define CONNECTIONMANAGER_TEST(TestName) GDK_TEST(Core, SpatialConnectionManager, TestName)
 
 class FTemporaryCommandLine
 {
@@ -78,7 +77,8 @@ CONNECTIONMANAGER_TEST(SetupFromURL_DevAuth)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
-	const FURL URL(nullptr,
+	const FURL URL(
+		nullptr,
 		TEXT("10.20.30.40?devauth?customLocator?devauthtoken=foo?deployment=bar?playerid=666?displayname=n00bkilla?metadata=important"),
 		TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
@@ -212,7 +212,8 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Locator)
 CONNECTIONMANAGER_TEST(SetupFromCommandLine_DevAuth)
 {
 	// GIVEN
-	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 10.20.30.40 -devAuthToken foo -deployment bar -playerId 666 -displayName n00bkilla -metadata important");
+	FTemporaryCommandLine TemporaryCommandLine(
+		"-locatorHost 10.20.30.40 -devAuthToken foo -deployment bar -playerId 666 -displayName n00bkilla -metadata important");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN

@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include "SpatialView/WorkerView.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
+#include "SpatialView/WorkerView.h"
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
 {
-
 class ViewCoordinator
 {
 public:
@@ -32,12 +31,11 @@ public:
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents,
-		TOptional<Worker_EntityId> EntityId, TOptional<uint32> TimeoutMillis = {});
+	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+											 TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
-		TOptional<uint32> TimeoutMillis = {});
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {});
 	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response);
 	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message);
 	void SendMetrics(SpatialMetrics Metrics);

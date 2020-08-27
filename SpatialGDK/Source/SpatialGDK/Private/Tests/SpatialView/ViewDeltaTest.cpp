@@ -4,5 +4,4 @@
 
 #include "SpatialView/ViewDelta.h"
 
-#define VIEWDELTA_TEST(TestName) \
-	GDK_TEST(Core, ViewDelta, TestName)
+#define VIEWDELTA_TEST(TestName) GDK_TEST(Core, ViewDelta, TestName)
