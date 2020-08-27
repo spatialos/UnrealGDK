@@ -198,6 +198,17 @@ bool FCheckShouldHaveAuthMatchesWhoShouldHaveAuth::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCleanup, TSharedPtr<TestData>, TestData);
+bool FCleanup::Update()
+{
+	for (auto Pair : TestData->TestActors)
+	{
+		Pair.Value->Destroy(/*bNetForce*/ true);
+	}
+
+	return true;
+}
+
 LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
@@ -315,6 +326,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer1PawnAtLocation(Data, TEXT("DefaultLayerActor"), FVector::ZeroVector));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckWhoShouldHaveAuthority(Data, this, "DefaultLayerActor", 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -358,6 +370,7 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor1"), TEXT("Layer1Actor2"), true));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer2Actor1"), TEXT("Later2Actor2"), true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -380,6 +393,7 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_two_actors_of_different_types_and_same_positions_ma
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnLayer2PawnAtLocation(Data, TEXT("Layer2Actor"), FVector::ZeroVector));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor"), TEXT("Layer2Actor"), false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
