@@ -44,7 +44,9 @@ ASpatialSnapshotTest::ASpatialSnapshotTest()
 	: Super()
 {
 	Author = "Nuno";
-	Description = TEXT("Test SpatialOS Snapshots. This test is expected to run twice, the first time sets up the data and takes a Snapshot and the second time loads from it and verifies the data is set.");
+	Description = TEXT(
+		"Test SpatialOS Snapshots. This test is expected to run twice, the first time sets up the data and takes a Snapshot and the second "
+		"time loads from it and verifies the data is set.");
 	SetNumRequiredClients(1);
 }
 
@@ -53,5 +55,5 @@ void ASpatialSnapshotTest::BeginPlay()
 	Super::BeginPlay();
 
 	// First we need to know if we're launching from the default Snapshot or from a taken Snapshot.
-	//bool bIsRunningFirstTime = !Was
+	// bool bIsRunningFirstTime = !Was
 }

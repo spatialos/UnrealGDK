@@ -11,7 +11,6 @@ ASpatialSnapshotTestActor::ASpatialSnapshotTestActor()
 void ASpatialSnapshotTestActor::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void ASpatialSnapshotTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

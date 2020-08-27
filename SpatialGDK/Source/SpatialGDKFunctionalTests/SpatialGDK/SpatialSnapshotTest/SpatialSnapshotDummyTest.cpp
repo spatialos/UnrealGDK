@@ -21,8 +21,7 @@ void ASpatialSnapshotDummyTest::BeginPlay()
 	Super::BeginPlay();
 
 	{
-		AddStep(TEXT("Always Pass"), FWorkerDefinition::Server(1), nullptr,
-		[this](){
+		AddStep(TEXT("Always Pass"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			FinishStep();
 		});
 	}
