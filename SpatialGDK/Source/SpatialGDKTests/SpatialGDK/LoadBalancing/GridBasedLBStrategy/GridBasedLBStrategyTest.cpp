@@ -53,7 +53,7 @@ bool FCleanup::Update()
 	TestWorld = nullptr;
 	for (auto Pair : TestActors)
 	{
-		Pair.Value->Destroy(true);
+		Pair.Value->Destroy(/*bNetForce*/ true);
 	}
 	TestActors.Empty();
 	Strat = nullptr;
