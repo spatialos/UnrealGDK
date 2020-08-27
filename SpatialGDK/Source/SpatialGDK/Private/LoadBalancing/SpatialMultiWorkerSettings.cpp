@@ -8,7 +8,6 @@
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Utils/LayerInfo.h"
-#include "Utils/SpatialDebugger.h"
 
 #include "Misc/MessageDialog.h"
 
