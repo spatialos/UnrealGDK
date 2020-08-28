@@ -31,8 +31,7 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 
 bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	// Auth check.
-	if (!Actor->HasAuthority())
+	if (!Actor->HasAuthority() || !Actor->IsActorReady())
 	{
 		return false;
 	}
@@ -58,18 +57,6 @@ bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Act
 	}
 
 	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
-	{
-		return false;
-	}
-
-	// Additional check that the actor is seen by the spatial runtime.
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return false;
-	}
-
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
 		return false;
 	}
