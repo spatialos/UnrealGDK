@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/LegacySpatialWorkerConnection.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
@@ -9,6 +9,8 @@
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
+
+std::atomic_uint ULegacySpatialWorkerConnection::GDK_CurCreatedCount(0);
 
 void ULegacySpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
@@ -227,9 +229,45 @@ void ULegacySpatialWorkerConnection::QueueLatestOpList()
 
 void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	bool bSentData = false;
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
+		unsigned int curCount = GDK_CurCreatedCount.load(std::memory_order::memory_order_relaxed);
+		if (curCount >= SpatialSettings->EntityCreationRateLimit)
+		{
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("TEST_LIMIT GDK_CurCreatedCount %d, EntityCreationRateLimit %d"), curCount,
+				   SpatialSettings->EntityCreationRateLimit);
+			break;
+		}
+
+		{
+			// yunjie: control rpc frequency
+			auto nowDate = FDateTime::Now();
+			int64 NowTs = nowDate.ToUnixTimestamp();
+			int64 ms = nowDate.GetMillisecond();
+			int64 NowMs = NowTs * 1000 + ms;
+
+			if (0 == GDK_CompUpdateBeginTime)
+			{
+				GDK_CompUpdateBeginTime = NowMs;
+			}
+
+			int64 elapsedMilliseconds = NowMs - GDK_CompUpdateBeginTime;
+
+			if (elapsedMilliseconds)
+			{
+				float rate = (float)GDK_CompUpdateAccCount / (float)elapsedMilliseconds;
+				if (rate >= SpatialSettings->EntityCreationRateLimit / (float)1000)
+				{
+					UE_LOG(LogSpatialWorkerConnection, Warning,
+						   TEXT("TEST_COMP_UPDATE GDK_CompUpdateAccCount %d, EntityCreationRateLimit %d, ElapsedMS %d, Rate %f"),
+						   GDK_CompUpdateAccCount, SpatialSettings->EntityCreationRateLimit, elapsedMilliseconds, rate);
+					break;
+				}
+			}
+		}
+
 		bSentData = true;
 
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
@@ -268,6 +306,10 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 #endif
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection, ComponentCount, ComponentData,
 													  Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr, nullptr);
+
+			GDK_CurCreatedCount.fetch_add(1, std::memory_order::memory_order_relaxed);
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("TEST_CREATE GDK_CurCreatedCount %d, EntityCreationRateLimit %d, EntityId %d"),
+				   curCount + 1, SpatialSettings->EntityCreationRateLimit, Message->EntityId.GetValue());
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:
@@ -282,6 +324,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
 
 			Worker_Connection_SendAddComponent(WorkerConnection, Message->EntityId, &Message->Data, &DisableLoopback);
+			GDK_CompUpdateAccCount++;
 			break;
 		}
 		case EOutgoingMessageType::RemoveComponent:
@@ -296,6 +339,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
 			Worker_Connection_SendComponentUpdate(WorkerConnection, Message->EntityId, &Message->Update, &DisableLoopback);
+			GDK_CompUpdateAccCount++;
 
 			break;
 		}
@@ -305,6 +349,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 
 			static const Worker_CommandParameters DefaultCommandParams{};
 			Worker_Connection_SendCommandRequest(WorkerConnection, Message->EntityId, &Message->Request, nullptr, &DefaultCommandParams);
+			GDK_CompUpdateAccCount++;
 			break;
 		}
 		case EOutgoingMessageType::CommandResponse:
@@ -341,6 +386,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 
 			Worker_Connection_SendComponentInterest(WorkerConnection, Message->EntityId, Message->Interests.GetData(),
 													Message->Interests.Num());
+			GDK_CompUpdateAccCount++;
 			break;
 		}
 		case EOutgoingMessageType::EntityQueryRequest:
@@ -348,6 +394,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			FEntityQueryRequest* Message = static_cast<FEntityQueryRequest*>(OutgoingMessage.Get());
 
 			Worker_Connection_SendEntityQueryRequest(WorkerConnection, &Message->EntityQuery, nullptr);
+			GDK_CompUpdateAccCount++;
 			break;
 		}
 		case EOutgoingMessageType::Metrics:

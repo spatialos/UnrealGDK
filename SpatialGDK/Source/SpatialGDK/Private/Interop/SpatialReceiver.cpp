@@ -16,6 +16,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/LegacySpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
@@ -2168,6 +2169,11 @@ void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsR
 void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCreateEntityResponse);
+
+	unsigned int oldCount = ULegacySpatialWorkerConnection::GDK_CurCreatedCount.fetch_sub(1, std::memory_order::memory_order_relaxed);
+	UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("TEST_RESP OnCreateEntityResponse GDK_CurCreatedCount %d, EntityId %d"), oldCount - 1,
+			Op.entity_id);
+
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
 	case WORKER_STATUS_CODE_SUCCESS:

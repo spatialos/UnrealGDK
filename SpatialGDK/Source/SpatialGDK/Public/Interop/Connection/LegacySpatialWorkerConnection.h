@@ -1,6 +1,8 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
+#include <atomic>
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
@@ -51,6 +53,11 @@ public:
 	virtual void ProcessOutgoingMessages() override;
 	virtual void MaybeFlush() override;
 	virtual void Flush() override;
+
+public:
+	static std::atomic_uint GDK_CurCreatedCount;
+	int64 GDK_CompUpdateBeginTime = 0;
+	int64 GDK_CompUpdateAccCount = 0;
 
 private:
 	void QueueLatestOpList();
