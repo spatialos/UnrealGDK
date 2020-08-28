@@ -223,7 +223,6 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 					}
 				}
 			}
-
 		}
 	}
 }
