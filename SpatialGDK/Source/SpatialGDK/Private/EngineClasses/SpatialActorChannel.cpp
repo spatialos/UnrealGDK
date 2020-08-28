@@ -31,6 +31,7 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
+#include "GameplayDebuggerCategoryReplicator.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -434,21 +435,10 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 		return;
 	}
 
-	// Make sure that the actor is not PlayerController, GameplayDebuggerCategoryReplicator and GameMode.
-	APlayerController* PC = Cast<APlayerController>(InActor);
-	if (IsValid(PC))
-	{
-		return;
-	}
-
-	FString ActorsName = InActor->GetName();
-	if (ActorsName.Contains(TEXT("GameplayDebuggerCategoryReplicator")))
-	{
-		return;
-	}
-
-	AGameModeBase* GM = Cast<AGameModeBase>(InActor);
-	if (IsValid(GM))
+	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
+	if (InActor->IsA(APlayerController::StaticClass())
+	    || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
+		|| InActor->IsA(AGameModeBase::StaticClass()))
 	{
 		return;
 	}

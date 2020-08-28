@@ -41,7 +41,8 @@ public class SpatialGDK : ModuleRules
                 "OnlineSubsystemUtils",
                 "InputCore",
                 "Sockets",
-                "ReplicationGraph"
+                "ReplicationGraph",
+                "GameplayDebugger"
             });
 
         if (Target.bBuildEditor)
