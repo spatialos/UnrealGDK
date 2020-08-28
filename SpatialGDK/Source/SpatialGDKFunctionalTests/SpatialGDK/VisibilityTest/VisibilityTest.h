@@ -7,23 +7,30 @@
 #include "VisibilityTest.generated.h"
 
 class ATestMovementCharacter;
+class AReplicatedVisibilityTestActor;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AVisibilityTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
+
 public:
 	AVisibilityTest();
 
 	virtual void BeginPlay() override;
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Replicated)
-	TArray<ATestMovementCharacter*> TestPawns;
+	int GetNumberOfVisibilityTestActors();
 
-	// To possess original pawns
-	TArray<TPair<AController*, APawn*>> OriginalPawns;
+	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
+	APawn* ClientOneDefaultPawn;
 
+	ATestMovementCharacter* ClientOneSpwanedPawn;
+
+	AReplicatedVisibilityTestActor* TestActor;
+
+	// The spawn location for Client 1's Pawn;
+	FVector CharacterSpawnLocation;
+
+	// A remote location where Client 1's Pawn will be moved in order to not see the AReplicatedVisibilityTestActor.
 	FVector CharacterRemoteLocation;
-	FVector CharacterOneStartingLocation;
 };
