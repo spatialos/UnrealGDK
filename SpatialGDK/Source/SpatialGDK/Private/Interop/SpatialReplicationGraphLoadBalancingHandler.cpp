@@ -6,7 +6,7 @@
 
 FSpatialReplicationGraphLoadBalancingContext::FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver,
 																						   USpatialReplicationGraph* InReplicationGraph,
-																							FPerConnectionActorInfoMap& InInfoMap,
+																						   FPerConnectionActorInfoMap& InInfoMap,
 																						   FPrioritizedRepList& InRepList)
 	: NetDriver(InNetDriver)
 	, ReplicationGraph(InReplicationGraph)
