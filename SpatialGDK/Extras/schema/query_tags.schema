@@ -22,3 +22,15 @@ component ClientNonAuthTag {
 component LBTag {
     id = 2005;
 }
+
+component ServerAuthGDKKnownEntityTag {
+    id = 2006;
+}
+
+component ServerNonAuthGDKKnownEntityTag {
+    id = 2007;
+}
+
+component ClientGDKKnownEntityTag {
+    id = 2008;
+}

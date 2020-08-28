@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target will be automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 - Add ability to specify `USpatialMultiWorkerSettings` class from command line. Specifying a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
 - Added `BroadcastNetworkFailure` with type `OutdatedClient` on client schema hash mismatch with server. Add your own callback to `GEngine->NetworkFailureEvent` to add custom behaviour for outdated clients attempting to join.
+- You can now see the Spatial Debugger in-editor mode similar to the one you see in play mode. Select `Spatial Editor Debugger` from the drop option from the `Start Deployment` button on the toolbar to toggle the visibility of the worker boundaries on and off in-editor.
 
 
 
