@@ -38,7 +38,7 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 }
 void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 {
-	UWorld* World = GEditor->GetEditorWorldContext().World();
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());

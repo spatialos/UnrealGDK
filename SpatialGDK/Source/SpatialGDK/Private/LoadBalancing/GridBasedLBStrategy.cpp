@@ -202,7 +202,7 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
 		{
-			UWorld* World = GEditor->GetEditorWorldContext().World();
+			const UWorld* World = GEditor->GetEditorWorldContext().World();
 			check(World != nullptr);
 
 			const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
