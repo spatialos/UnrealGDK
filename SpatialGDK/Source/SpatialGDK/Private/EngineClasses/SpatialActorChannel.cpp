@@ -19,6 +19,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "GameplayDebuggerCategoryReplicator.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -31,7 +32,6 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
-#include "GameplayDebuggerCategoryReplicator.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -436,8 +436,7 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	}
 
 	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
-	if (InActor->IsA(APlayerController::StaticClass())
-	    || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
+	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
 		|| InActor->IsA(AGameModeBase::StaticClass()))
 	{
 		return;
