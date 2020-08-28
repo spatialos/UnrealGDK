@@ -98,6 +98,21 @@ inline bool CompareSchemaComponentRefresh(const CompleteUpdateData Lhs, const Co
 		return false;
 	}
 
+	if (Lhs.Events == nullptr)
+	{
+		if (Lhs.Events == Rhs.Events)
+		{
+			return true;
+		}
+
+		return Schema_GetWriteBufferLength(Rhs.Events) == 0;
+	}
+
+	if (Rhs.Events == nullptr)
+	{
+		return Schema_GetWriteBufferLength(Lhs.Events) == 0;
+	}
+
 	return CompareSchemaObjects(Lhs.Events, Rhs.Events);
 }
 
