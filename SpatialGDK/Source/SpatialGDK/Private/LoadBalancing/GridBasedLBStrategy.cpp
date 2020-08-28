@@ -220,6 +220,7 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 					if (VisibleLoadBalanceStrategy != nullptr && VisibleLoadBalanceStrategy == GetClass())
 					{
 						ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+						break;
 					}
 				}
 			}
