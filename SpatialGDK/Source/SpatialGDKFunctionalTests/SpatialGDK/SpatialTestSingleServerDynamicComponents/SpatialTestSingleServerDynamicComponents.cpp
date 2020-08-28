@@ -60,7 +60,7 @@ void ASpatialTestSingleServerDynamicComponents::BeginPlay()
 		}, [this]()
 		{
 			// Make sure the PostInitializeComponent was created and it does not have any reference at this stage.
-			if (!TestActor->PostInitializeComponent || TestActor->PostInitializeComponent->ReferencesArray.Num() != 0)
+			if (TestActor->PostInitializeComponent == nullptr || TestActor->PostInitializeComponent->ReferencesArray.Num() != 0)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("The PostInitializedComponent was not created correctly!"));
 				return;

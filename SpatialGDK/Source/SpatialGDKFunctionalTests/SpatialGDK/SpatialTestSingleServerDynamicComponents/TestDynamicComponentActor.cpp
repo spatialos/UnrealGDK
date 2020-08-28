@@ -24,7 +24,7 @@ void ATestDynamicComponentActor::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	if (HasAuthority() && !PostInitializeComponent)
+	if (HasAuthority() && PostInitializeComponent == nullptr)
 	{
 		PostInitializeComponent = NewObject<UTestDynamicComponent>(this, TEXT("PostInitializeDynamicComponent"));
 		PostInitializeComponent->SetupAttachment(GetRootComponent());
