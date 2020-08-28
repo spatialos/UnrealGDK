@@ -525,12 +525,14 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
-			
+
 			if (USpatialGameInstance* GameInstance = GetGameInstance())
 			{
 				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 				{
-					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+					GEngine->BroadcastNetworkFailure(
+						GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient,
+						TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
 					return;
 				}
 			}
@@ -646,10 +648,10 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(QueryDelegate);
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor)
+void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (!SpatialGDKSettings->bEnableMultiWorkerDebuggingWarnings)
+	if (!SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;
 	}
@@ -672,20 +674,11 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		return;
 	}
 
-	if (LoadBalanceStrategy != nullptr)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error,
-			   TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The "
-					"actor will be destroyed in 0.01s"),
-			   LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()),
-			   LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
-	}
-	else
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error,
-			   TEXT("Worker spawned replicated actor %s (owner: %s) but should not have authority. The actor will be destroyed in 0.01s"),
-			   *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()));
-	}
+	UE_LOG(LogSpatialOSNetDriver, Error,
+		   TEXT("Worker ID %d spawned replicated actor %s (owner: %s) but should not have authority. It should be owned by %d. The actor "
+				"will be destroyed in 0.01s"),
+		   LoadBalanceStrategy->GetLocalVirtualWorkerId(), *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()),
+		   LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
 
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would
 	// complain if we destroyed it.
@@ -746,41 +739,6 @@ void USpatialNetDriver::MakePlayerSpawnRequest()
 		PlayerSpawner->SendPlayerSpawnRequest();
 		bWaitingToSpawn = false;
 		bPersistSpatialConnection = false;
-	}
-}
-
-void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
-{
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelAddedToWorld: Level (%s) OwningWorld (%s) World (%s)"), *GetNameSafe(LoadedLevel),
-		   *GetNameSafe(OwningWorld), *GetNameSafe(World));
-
-	if (OwningWorld != World || !IsServer() || GlobalStateManager == nullptr)
-	{
-		// If the world isn't our owning world, we are a client, or we loaded the levels
-		// before connecting to Spatial, we return early.
-		return;
-	}
-
-	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
-																	 SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-
-	if (!LoadBalanceStrategy->IsReady())
-	{
-		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to
-		// spatial.
-		return;
-	}
-
-	for (auto Actor : LoadedLevel->Actors)
-	{
-		// If load balancing is disabled, we must be the GSM-authoritative worker, so set Role_Authority
-		// otherwise, load balancing is enabled, so check the lb strategy.
-		if (Actor->GetIsReplicated())
-		{
-			const bool bRoleAuthoritative = LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
-			Actor->Role = bRoleAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
-			Actor->RemoteRole = bRoleAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
-		}
 	}
 }
 
@@ -2556,9 +2514,6 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 
 		if (bIsReadyToStart)
 		{
-			// Process levels which were loaded before the connection to Spatial was ready.
-			GetGameInstance()->CleanupCachedLevelsAfterConnection();
-
 			// We know at this point that we have all the information to set the worker's interest query.
 			Sender->UpdateServerWorkerEntityInterestAndPosition();
 

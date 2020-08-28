@@ -57,6 +57,7 @@ private:
 	void ValidateAllLayersHaveUniqueNonemptyNames();
 	void ValidateAllLayersHaveLoadBalancingStrategy();
 	void ValidateLockingPolicyIsSet();
+	void EditorRefreshSpatialDebugger() const;
 #endif
 };
 

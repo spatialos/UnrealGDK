@@ -57,6 +57,10 @@ public:
 
 	LBStrategyRegions GetLBStrategyRegions() const;
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	uint32 Rows;
