@@ -263,21 +263,6 @@ void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, c
 	}
 }
 
-void USpatialGameInstance::CleanupCachedLevelsAfterConnection()
-{
-	// Cleanup any actors which were created during level load.
-	UWorld* World = GetWorld();
-	check(World != nullptr);
-	for (ULevel* Level : CachedLevelsForNetworkIntialize)
-	{
-		if (World->ContainsLevel(Level))
-		{
-			CleanupLevelInitializedNetworkActors(Level);
-		}
-	}
-	CachedLevelsForNetworkIntialize.Empty();
-}
-
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
@@ -293,9 +278,13 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
-void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
+void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld) const
 {
-	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelInitializedNetworkActors: Level (%s) OwningWorld (%s) World (%s)"),
+		   *GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(OwningWorld));
+
+	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || OwningWorld->GetNetDriver() == nullptr
+		|| !Cast<USpatialNetDriver>(OwningWorld->GetNetDriver())->IsReady()
 		|| (OwningWorld->WorldType != EWorldType::PIE && OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
@@ -303,53 +292,8 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
-	if (bIsSpatialNetDriverReady)
+	for (AActor* Actor : LoadedLevel->Actors)
 	{
-		CleanupLevelInitializedNetworkActors(LoadedLevel);
-	}
-	else
-	{
-		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
-	}
-}
-
-void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel)
-{
-	bIsSpatialNetDriverReady = true;
-	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
-	{
-		AActor* Actor = LoadedLevel->Actors[ActorIndex];
-		if (Actor == nullptr)
-		{
-			continue;
-		}
-
-		if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()))
-		{
-			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
-			{
-				if (!Actor->bNetLoadOnNonAuthServer)
-				{
-					Actor->Destroy(true);
-				}
-				else
-				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("This worker %s is not the owner of startup actor %s, exchanging Roles"),
-						   *GetPathNameSafe(Actor));
-					ENetRole Temp = Actor->Role;
-					Actor->Role = Actor->RemoteRole;
-					Actor->RemoteRole = Temp;
-				}
-			}
-		}
-		else
-		{
-			if (Actor->GetIsReplicated())
-			{
-				// Always wait for authority to be delegated down from SpatialOS, if not using offloading
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
-		}
+		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
 }

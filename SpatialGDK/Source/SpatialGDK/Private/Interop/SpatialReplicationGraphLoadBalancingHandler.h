@@ -12,7 +12,7 @@ class USpatialReplicationGraph;
 struct FSpatialReplicationGraphLoadBalancingContext
 {
 	FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver, USpatialReplicationGraph* InReplicationGraph,
-		FPerConnectionActorInfoMap& InfoMap, FPrioritizedRepList& InRepList);
+												 FPerConnectionActorInfoMap& InfoMap, FPrioritizedRepList& InRepList);
 
 	struct FRepListArrayAdaptor
 	{
