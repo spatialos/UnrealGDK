@@ -10,7 +10,7 @@
 void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
 {
 	UReplicationGraph::InitForNetDriver(InNetDriver);
-	
+
 	if (USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld()))
 	{
 		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
@@ -60,7 +60,8 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 	if (LoadBalancingHandler.IsValid())
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
-		FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, ConnectionManager->ActorInfoMap, PrioritizedReplicationList);
+		FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, ConnectionManager->ActorInfoMap,
+																	  PrioritizedReplicationList);
 		LoadBalancingHandler->EvaluateActorsToMigrate(LoadBalancingCtx);
 
 		for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
