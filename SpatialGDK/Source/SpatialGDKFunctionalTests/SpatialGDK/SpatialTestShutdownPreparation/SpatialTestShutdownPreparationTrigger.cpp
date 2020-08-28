@@ -20,27 +20,27 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 {
 	Super::BeginPlay();
 	{ // Step 1 - Test print on all workers
-		AddStep(TEXT("AllWorkers_SetupListener"), FWorkerDefinition::AllWorkers, nullptr, [this](ASpatialFunctionalTest* NetTest) {
-			UWorld* World = NetTest->GetWorld();
+		AddStep(TEXT("AllWorkers_SetupListener"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
+			UWorld* World = GetWorld();
 
 			// Spawn a non-replicated actor that will listen for the shutdown event.
 			// Using a non-replicated actor since this is the easiest way to make sure that every worker has exactly one instance of it.
 			LocalListener = World->SpawnActor<ATestPrepareShutdownListener>(PrepareShutdownListenerClass, FVector::ZeroVector, FRotator::ZeroRotator);
-			NetTest->AssertTrue(IsValid(LocalListener), TEXT("Listener actor is valid."));
-			NetTest->RegisterAutoDestroyActor(LocalListener);
+			AssertTrue(IsValid(LocalListener), TEXT("Listener actor is valid."));
+			RegisterAutoDestroyActor(LocalListener);
 
 			LocalListener->RegisterCallback();
 			if(LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
 			{
 				UE_LOG(LogTemp, Log, TEXT("Failing test due to event counts starting out wrong. native: %d, blueprint: %d"), LocalListener->NativePrepareShutdownEventCount, LocalListener->BlueprintPrepareShutdownEventCount);
-				NetTest->FinishTest(EFunctionalTestResult::Failed, TEXT("Number of triggered events should start out at 0"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("Number of triggered events should start out at 0"));
 				return;
 			}
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
 
-		AddStep(TEXT("Server1_TriggerShutdownPreparation1"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("Server1_TriggerShutdownPreparation1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			FString WorkerFlagSetArgs = TEXT("local worker-flag set UnrealWorker PrepareShutdown Yes --local_service_grpc_port 9876");
 
 			FString WorkerFlagSetResult;
@@ -50,28 +50,28 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 
 			if(ExitCode != 0)
 			{
-				NetTest->FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
+				FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
 				return;
 			}
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
 
-		AddStep(TEXT("AllServers_CheckEventHasTriggered"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("AllServers_CheckEventHasTriggered"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 			// On servers, we expect the event to have been triggered
 			if (LocalListener->NativePrepareShutdownEventCount == 1 && LocalListener->BlueprintPrepareShutdownEventCount == 1)
 			{
-				NetTest->FinishStep();
+				FinishStep();
 				return;
 			}
 			// If the count is 0, we might not have received the event yet. We will keep checking by ticking this function.
 		});
 
-		AddStep(TEXT("AllClients_CheckEventHasNotTriggered"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("AllClients_CheckEventHasNotTriggered"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
 			// On clients, the event should not be triggered
 			if (LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
 			{
-				NetTest->FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event was received on a client"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event was received on a client"));
 				return;
 			}
 
@@ -79,12 +79,12 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			StepTimer += DeltaTime;
 			if (StepTimer > EventWaitTime)
 			{
-				NetTest->FinishStep();
+				FinishStep();
 				StepTimer = 0.0f;
 			}
 		});
 
-		AddStep(TEXT("Server1_TriggerShutdownPreparation2"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("Server1_TriggerShutdownPreparation2"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			FString WorkerFlagSetArgs = TEXT("local worker-flag set UnrealWorker PrepareShutdown Other --local_service_grpc_port 9876");
 
 			FString WorkerFlagSetResult;
@@ -94,33 +94,33 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 
 			if(ExitCode != 0)
 			{
-				NetTest->FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
+				FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
 				return;
 			}
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
 
-		AddStep(TEXT("AllServers_CheckEventHasTriggeredOnce"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("AllServers_CheckEventHasTriggeredOnce"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 			if(LocalListener->NativePrepareShutdownEventCount != 1 || LocalListener->BlueprintPrepareShutdownEventCount != 1)
 			{
-				NetTest->FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event has been received more than once."));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event has been received more than once."));
 				return;
 			}
 
 			StepTimer += DeltaTime;
 			if (StepTimer > EventWaitTime)
 			{
-				NetTest->FinishStep();
+				FinishStep();
 				StepTimer = 0.0f;
 			}
 		});
 
-		AddStep(TEXT("AllClients_CheckEventStillHasNotTriggered"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		AddStep(TEXT("AllClients_CheckEventStillHasNotTriggered"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
 			// On clients, the event should not be triggered
 			if (LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
 			{
-				NetTest->FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event was received on a client"));
+				FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event was received on a client"));
 				return;
 			}
 
@@ -128,7 +128,7 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			StepTimer += DeltaTime;
 			if (StepTimer > EventWaitTime)
 			{
-				NetTest->FinishStep();
+				FinishStep();
 				StepTimer = 0.0f;
 			}
 		});
