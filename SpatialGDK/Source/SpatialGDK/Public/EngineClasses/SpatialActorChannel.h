@@ -297,9 +297,9 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
-	bool SatisfiesSpatialPositionUpdateRequirements();
-	
 	void UpdateVisibleComponent(AActor* Actor);
+
+	bool SatisfiesSpatialPositionUpdateRequirements();
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.

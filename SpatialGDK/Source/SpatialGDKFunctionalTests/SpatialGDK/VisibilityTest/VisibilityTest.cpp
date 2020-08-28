@@ -7,7 +7,7 @@
 #include "Net/UnrealNetwork.h"
 #include "ReplicatedVisibilityTestActor.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMovement/TestMovementCharacter.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 
 /**
  * This test tests if a bHidden Actor is replicating properly to Server and Clients.
@@ -53,7 +53,7 @@ void AVisibilityTest::BeginPlay()
 	CharacterOneStartingLocation = FVector(0.0f, 120.0f, 50.0f);
 
 	{	// Step 1 - Set up the world Spawn PlayerCharacter and make sure the cube is in the world.
-		AddStep(TEXT("ServerSetup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
@@ -67,7 +67,7 @@ void AVisibilityTest::BeginPlay()
 			{
 				Counter++;
 			}
-			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the server world"));
 
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
@@ -99,7 +99,7 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{	// Step 2 - Check if the Character pawn is properly set in all clients.
-		AddStep(TEXT("ClientCheckPossesionFinished"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckPossesionFinished"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime)
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
@@ -120,7 +120,7 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{	// Step 3 - Server moves Client 1 to a remote location where it can not see the cube. 
-		AddStep(TEXT("ServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
@@ -138,7 +138,7 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{   // Step 4 - Make sure that the Client moved to the correct location.
-		AddStep(TEXT("ClientCheckFirstMovement"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckFirstMovement"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime)
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
@@ -156,24 +156,24 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{	// Step 5 - Observe if the test actor has been replicated to the client 1.
-		AddStep(TEXT("ClientCheckReplicatedActorsBeforeActorHidden"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckReplicatedActorsBeforeActorHidden"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime)
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 0;
-			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(NetTest->GetWorld()); Iter; ++Iter)
+			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 1 world"), NetTest);
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 1 world"));
 				FinishStep();
 			}
 		}, 5.0f);
 	}
 
 	{	// Step 6 - Observe if the test actor has been replicated to the client 2.
-		AddStep(TEXT("ClientCheckReplicatedActorsBeforeActorHidden"), FWorkerDefinition::Client(2), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckReplicatedActorsBeforeActorHidden"), FWorkerDefinition::Client(2), nullptr, nullptr, [this](float DeltaTime)
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
@@ -183,14 +183,14 @@ void AVisibilityTest::BeginPlay()
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 2 world"), NetTest);
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client 2 world"));
 				FinishStep();
 			}
 		}, 5.0f);
 	}
 
 	{	// Step 7 - Server Set Actor Hidden.
-		AddStep(TEXT("ServerSetActorHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ServerSetActorHidden"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
@@ -198,15 +198,15 @@ void AVisibilityTest::BeginPlay()
 			{
 				Counter++;
 				Iter->SetHidden(true);
-				AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
+				AssertEqual_Bool(Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"));
 			}
-			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"));
 			FinishStep();
 		});
 	}
 
 	{	// Step 8 - Observe if the test actor has been replicated to the Clients.
-		AddStep(TEXT("ClientCheckReplicatedActorsAfterSetActorHidden"), FWorkerDefinition::AllClients, nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ClientCheckReplicatedActorsAfterSetActorHidden"), FWorkerDefinition::AllClients, nullptr, [this]()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 0;
@@ -214,13 +214,13 @@ void AVisibilityTest::BeginPlay()
 			{
 				Counter++;
 			}
-			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the client world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in the client world"));
 			FinishStep();
 		});
 	}
 
 	{	// Step 9 - Server moves Client 1 close to the cube.
-		AddStep(TEXT("ServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
@@ -241,7 +241,7 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{   // Step 10 - Make sure that the Client moved to the correct location.
-		AddStep(TEXT("ClientCheckSecondMovement"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckSecondMovement"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime)
 		{
 			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
 			checkf(FlowController, TEXT("Can't be running test without valid FlowControl."));
@@ -259,7 +259,7 @@ void AVisibilityTest::BeginPlay()
 	}
 
 	{	// Step 11 - Observe if the test actor has been replicated to the clients.
-		AddStep(TEXT("ClientCheckFinalReplicatedActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckFinalReplicatedActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime)
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 0;
@@ -269,14 +269,14 @@ void AVisibilityTest::BeginPlay()
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"));
 				FinishStep();
 			}
 		},5.0f);
 	}
 
 	{	// Step 12 - Server Set Actor Hidden False.
-		AddStep(TEXT("ServerSetActorNotHidden"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ServerSetActorNotHidden"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
@@ -284,33 +284,33 @@ void AVisibilityTest::BeginPlay()
 			{
 				Counter++;
 				Iter->SetHidden(false);
-				AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"), NetTest);
+				AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors is Hidden in the server world"));
 			}
-			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"), NetTest);
+			AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in server world"));
 			FinishStep();
 		});
 	}
 
 	{	// Step 13 - Observe if the test actor has been replicated to the clients.
-		AddStep(TEXT("ClientCheckFinalReplicatedNonHiddenActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](ASpatialFunctionalTest* NetTest, float DeltaTime)
+		AddStep(TEXT("ClientCheckFinalReplicatedNonHiddenActors"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime)
 		{
 			int Counter = 0;
 			int ExpectedReplicatedActors = 1;
 			for (TActorIterator<AReplicatedVisibilityTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"), NetTest);
+				AssertEqual_Bool(!Iter->IsHidden(), true, TEXT("TestHiddenActors Hidden in the client world"));
 			}
 			if (Counter == ExpectedReplicatedActors)
 			{
-				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"), NetTest);
+				AssertEqual_Int(Counter, ExpectedReplicatedActors, TEXT("Number of TestHiddenActors in client world"));
 				FinishStep();
 			}
 		});
 	}
 
 	{	// Step 14 - Server Cleanup.
-		AddStep(TEXT("ServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest)
+		AddStep(TEXT("ServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
 			// Possess the original pawn, so that the spawned character can get destroyed correctly
 			for (const auto& OriginalPawnPair : OriginalPawns)

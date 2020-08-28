@@ -429,26 +429,26 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 {
 	// Make sure that the Actor is not always relevant.
-	if(InActor->bAlwaysRelevant)
+	if (InActor->bAlwaysRelevant)
 	{
 		return;
 	}
 
 	// Make sure that the actor is not PlayerController, GameplayDebuggerCategoryReplicator and GameMode.
 	APlayerController* PC = Cast<APlayerController>(InActor);
-	if(IsValid(PC))
+	if (IsValid(PC))
 	{
 		return;
 	}
 
 	FString ActorsName = InActor->GetName();
-	if(ActorsName.Contains(TEXT("GameplayDebuggerCategoryReplicator")))
+	if (ActorsName.Contains(TEXT("GameplayDebuggerCategoryReplicator")))
 	{
 		return;
 	}
 
 	AGameModeBase* GM = Cast<AGameModeBase>(InActor);
-	if(IsValid(GM))
+	if (IsValid(GM))
 	{
 		return;
 	}
@@ -461,7 +461,8 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	{
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
-	else if (!InActor->IsHidden() || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())))
+	else if (!InActor->IsHidden()
+			 || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())))
 	{
 		NetDriver->RefreshActorVisibility(InActor, true);
 	}
