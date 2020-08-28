@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestReplicatedStartupActor.generated.h"
 
+class AReplicatedStartupActor;
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestReplicatedStartupActor : public ASpatialFunctionalTest
 {
@@ -21,5 +23,5 @@ public:
 	UPROPERTY(Replicated)
 	bool bIsValidReference;
 
-	AActor* ReplicatedActor;
+	AReplicatedStartupActor* ReplicatedStartupActor;
 };

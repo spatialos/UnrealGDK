@@ -134,7 +134,7 @@ public:
 
 	// Terminate current Running Step (called once per FlowController executing it)
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void FinishStep();
+	virtual void FinishStep();
 
 	const FSpatialFunctionalTestStepDefinition GetStepDefinition(int StepIndex) const;
 
