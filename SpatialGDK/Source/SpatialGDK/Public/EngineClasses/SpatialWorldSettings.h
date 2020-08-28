@@ -65,21 +65,21 @@ private:
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsClass;
+	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
 
 public:
 	/** If Editor Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings, otherwise use the default
-	 * Multi Worker Settings. Use bForceDefault to always get the default Multi Worker Settings */
-	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceDefault = false) const
+	 * Multi Worker Settings. Use bForceNonEditorSettings to always get the Multi Worker Settings */
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false) const
 	{
-		if (bForceDefault)
+		if (bForceNonEditorSettings)
 		{
 			return MultiWorkerSettingsClass;
 		}
 #if WITH_EDITOR
-		if (EditorMultiWorkerSettingsClass != nullptr)
+		if (EditorMultiWorkerSettingsOverride != nullptr)
 		{
-			return EditorMultiWorkerSettingsClass;
+			return EditorMultiWorkerSettingsOverride;
 		}
 #endif // WITH_EDITOR
 
@@ -104,7 +104,7 @@ public:
 		{
 			const FName PropertyName(PropertyChangedEvent.Property->GetFName());
 			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
-				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsClass)
+				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsOverride)
 				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
 			{
 				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
