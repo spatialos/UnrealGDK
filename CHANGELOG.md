@@ -4,8 +4,8 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**Note**: Since GDK for Unreal v0.8.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
-**注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
+**Note**: Since GDK for Unreal v0.10.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
+**注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
 
@@ -194,6 +194,120 @@ Features listed in this section are not ready to use. However, in the spirit of 
 
 - The SpatialOS GDK for Unreal is now released automatically using Buildkite CI. This should result in more frequent releases.
 - Improbable now measures the non-functional characteristics of the GDK in Buildkite CI. This enables us to reason about and improve these characteristics. We track them as non-functional requirements (NFRs).
+
+### [`0.10.0`] 中文版更新日志
+
+### 已知问题
+- 使用 `COND_SkipOwner` 复制条件的复制属性在 Actor 成为所属的前几帧中仍然可以复制。
+- Microsoft 已修复 MSVC 中导致构建虚幻引擎时出错的一个缺陷。我们在 GDK 版本 [`0.7.0-preview`](#070-preview---2019-10-11) 中记录了此问题的解决方法。如果您在计算机上设置的 GDK 版本介于 `0.7.0` 和 `0.10.0` 之间，那么您已经应用此解决方法，但该解决方法不再需要。要撤销此解决方法，完成以下步骤：
+1. 打开 Visual Studio Installer。
+1. 在您安装的 Visual Studio 2019 中，点击 **Modify**。
+1. 在 **Installation details** 区域, 清空所有工作负载和组件的复选框 (除了 **Visual Studio Code editor**)。
+1. 在 **Workloads** 选项卡，选中以下内容：
+   - **Universal Windows Platform development**
+   - **.NET desktop development** (您必须同时勾选 **.NET Framework 4.6.2 development tools**)
+   - **Desktop development with C++**
+5. 点击 **Modify** 确认更改。
+
+### 重大变化
+- 我们已经弃用了 `preview` 分支。现在，我们仅将 GDK 发布到 `release` 分支，该分支经全面测试、性能稳定且有相关文档。如果您检出了 `preview` 分支，那么必须检出 `release` 以接收最新更改。
+- SpatialOS 运行时标准体 (Standard) 需要最新版本的 SpatialOS CLI。运行 `spatial update` 以获取最新版本。
+- 旧快照与 GDK 的 0.10 版本不兼容。升级到 0.10 版本后，您必须生成新的快照。
+- 旧的 Inspector 与 SpatialOS 运行时标准体不兼容。默认情况下，标准体使用新的 Inspector。
+- 我们已经移除 `Singleton` 作为类说明符，您也需要删除对它的使用。要实现以前的 Singleton Actor 的行为，确保您的 Actor 仅由部署中的单个服务端 worker 实例生成一次。
+- 我们已将 `SpatialGameInstance` 上的 `OnConnected` 和 `OnConnectionFailed` 重命名为 `OnSpatialConnected` 和 `OnSpatialConnectionFailed`。它们现在也可以分配给蓝图。
+- `GenerateSchema` 和 `GenerateSchemaAndSnapshots` 命令行开关不再生成结构描述 (schema)。我们已弃用它们，推荐您使用 `CookAndGenerateSchemaCommandlet`。如果您使用 `-SkipSchema` 选项，` GenerateSchemaAndSnapshots` 仍然有效。
+- 我们合并了负载拆分和负载均衡设置，并将它们从 Editor 和 Runtime Settings 面板中移到了 World Settings 中的每个地图上。更多信息，查看 [负载拆分教程](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/1-set-up-multiserver)。
+- 我们已经删除了命令行参数 `OverrideSpatialOffloading` 和 `OverrideLoadBalancer`，并且 GDK 负载均衡始终处于启用状态。要覆盖地图上的 “`Enable Multi Worker` 设置，使用命令行标记 `OverrideMultiWorker`。
+- 现在必须使用结果类型 (此前默认已启用结果类型 - result types) 运行部署。我们已删除运行时设置 `bEnableResultTypes`  以反映这一点。
+- 某 Actor 是否已负载拆分取决于该 Actor 的根所有者 (root owner) 是否已负载拆分。如果您使用的是例如 `IsActorGroupOwnerForActor` 的函数，这可能会影响您。
+- 我们删除了 `QueuedOutgoingRPCWaitTime`。现在，所有 RPC 故障案例都已正确队列或丢弃。
+- 我们已从生成的 worker 配置文件中删除了 `Max connection capacity limit` 和 `Login rate limit`，因为我们不再支持它们。
+- 我们不再支持在虚幻编辑器中运行游戏时安全的 worker 连接。我们仍然支持打包构建时安全的 worker 连接。
+
+### 功能介绍
+- GDK 现使用 SpatialOS Worker SDK 版本 [`14.6.1`](https://documentation.improbable.io/sdks-and-data/lang-zh_CN/docs/release-notes#section-14-6-1)。
+- 支持 SpatialOS 运行时  [标准体](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/the-spatialos-runtime#section-runtime-variants), 0.4.3 版本。
+- 支持 SpatialOS 运行时 [兼容模式](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/the-spatialos-runtime#section-runtime-variants)，[`14.5.4`](https://forums.improbable.io/t/spatialos-13-runtime-release-notes-14-5-4/7333) 版本。
+- 在 Editor Settings 面板中添加一个新的下拉菜单，因此您可以选择使用哪个 SpatialOS 运行时变体。有两个变体可选：标准体和兼容模式。对于 Windows 用户，默认情况下使用标准体，但当您升级到最新 GDK 版本时如果遇到网络问题，您可以使用兼容模式。对于 macOS 用户，默认情况下使用兼容模式，并且您无法使用标准体。更多信息，查看 [运行时变体](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/the-spatialos-runtime#section-runtime-variants).
+- 添加新的默认游戏模板。您的默认游戏模板取决于您选择的 SpatialOS 运行时变体以及您的主要部署地区。
+- 默认情况下， SpatialOS 运行时标准使用新的 Inspector，并且与旧的 Inspector 不兼容；默认情况下，“兼容模式”变体使用旧的 Inspector，并且与新的 Inspector 不兼容。
+- 示例项目具有一个新的默认游戏模式：控制。该游戏模式取代了死亡竞赛。在 “控制” 中，两个团队竞争以占领地图上的控制点。 NPC 保护控制点，如果您占领 NPC 的控制点，那么 NPC 就会加入您的团队。
+- 您现在可以为开头是数字的类生成有效的结构描述。生成的结构描述类在内部以 `ZZ`  作为前缀。
+- Handover properties are now automatically replicated when this is required for load balancing. `bEnableHandover` is off by default. 当负载均衡需要时，迁移属性现在会自动迁移复制。默认情况下，`bEnableHandover` 关闭。
+- 在 `SpatialGameInstance` 中添加 `OnSpatialPlayerSpawnFailed` 委托。如果您已成功建立从客户端 worker 实例到 SpatialOS 运行时的连接，但服务端 worker 实例崩溃时，这将很有用。
+- 添加 `bWorkerFlushAfterOutgoingNetworkOp` (默认为 false)，可立即通过网络发送 RPC 和属性复制更改，以降低延迟。您可以将其与 `bRunSpatialWorkerConnectionOnGameThread` 结合使用，以权衡带宽而获得最低的可用延迟。
+- 您现在可以在 `Cloud Deployment Configuration` 对话框中编辑项目名称字段。您在此处所做的更改将反映在项目的 `spatialos.json` 文件中。
+- 您现在可以在 Runtime Settings 面板中定义 worker 类型。
+- 本地部署现在使用地图的负载均衡策略来获取启动配置设置。每个地图的启动配置文件都保存在 `Intermediate/Improbable` 文件夹中。
+- 在 Cloud 工具栏按钮下添加 `Launch Configuration Editor`。
+- 在 `Cloud Deployment Configuration` 对话框中，您现在可以从当前地图生成一个启动配置文件，或者您可以点击打开 `Launch Configuration Editor`。
+- 现在，您可以使用 `SpatialMetrics::SetWorkerLoadDelegate` 在游戏逻辑中指定Worker 负载。
+- 现在，您可以在 `Cloud Deployment Configuration` 对话框中指定部署标签。
+- 现在，您可以执行在 `UInterface` 中声明的 RPC。之前，这会引起运行时断言。
+- 完全扫描 (Full Scan) 结构描述生成现在使用 `CookAndGenerateSchema`  命令行开关，这样可以为大型项目更迅速、更稳定地生成结构描述。
+- 在 `Cloud Deployment Configuration` 对话框中添加 `Open Deployment Page` 按钮。
+- `Cloud Deployment Configuration` 对话框中的 `Start Deployment` 按钮现在会生成结构描述和快照，并且在部署启动前构建所有选定的 worker 和上传程序集。提供了复选框，您可以选择是否生成结构描述和快照，以及是否构建游戏客户端和添加模拟玩家。
+- 在虚幻编辑器启动云部署时，云部署现在会自动具有 `dev_login` 部署标签。
+- 几个命令行参数更改：
+  - 将 `enableProtocolLogging` 命令行参数重命名为 `enableWorkerSDKProtocolLogging`。
+  - 添加一个名为 `enableWorkerSDKOpLogging` 的参数，因而您可以记录用户级别操作日志。
+  - 将 `protocolLoggingPrefix` 参数重命名为 `workerSDKLogPrefix`。该前缀同时用于协议日志和操作日志。
+  - 添加一个名为 `workerSDKLogLevel` 的参数，该参数带有参数 `debug`、`info`、`warning` 和 `error`。
+  - 添加一个名为 `workerSDKLogFileSize` 的参数，以控制 Worker SDK 日志文件的最大文件大小。
+- `Start Deployment` 工具栏按钮上的图标现在会根据您选择的连接工作流而变化。
+- 在 GDK 工具栏中创建一个新的下拉菜单，用来配置如何连接您的 PIE 客户端或是设备上启动的客户端：
+  - 在 `Connect to a local deployment` 和 `Connect to a cloud deployment` 之间进行选择，以指定在选择 `Play` 或 `Launch` 时客户端应自动使用的流。
+  - 添加 `Local Deployment IP` 字段，以指定客户端应连接到的本地部署。默认情况下，IP为 `127.0.0.1`。
+  - 添加 `Cloud deployment name` 字段，以指定客户端应连接到的云部署。如果选择 `Connect to cloud deployment`，但未指定云部署，则客户端将尝试连接到第一个运行中具有 `dev_login` 部署标签的部署。
+  - 添加 `Editor Settings` 字段，以便您可以快速访问 SpatialOS Editor Settings 面板。
+- 在 `Connection` 下拉菜单中添加 `Build Client Worker` 和 `Build Simulated Player` 复选框，以便您可以快速选择是否要构建并在程序集中包括客户端 worker 实例和模拟玩家 worker 实例。
+- 更新 GDK 工具栏图标。
+- 当您指定一个 URL 来通过 Receptionist 将客户端连接到部署时，现在会使用该 URL 端口选项。但是，在某些情况下，初始连接尝试使用 `-receptionistPort` 命令行参数。
+- 现在，当您使用 `client` 运行 `BuildWorker.bat` 时，这将构建您项目的客户端目标。
+- 当您在 `Cloud Deployment Configuration` 对话框中更改项目名称时，这将自动重新生成开发身份验证令牌。
+- 更改了以下工具栏按钮的名称：
+  - `Start` 现改名为 `Start Deployment`
+  - `Deploy` 现改名为 `Cloud`
+- 在 `Cloud Deployment Configuration` 对话框中，用星号标记所有必填项。
+- 您现在可以在 Editor Settings 面板中更改项目名称。
+- 将 **Cloud Deployment Configuration** 对话框中的 **Generate from current map** 按钮替换为一个标记为 **Automatically Generate Launch Configuration** 的复选框。如果选中此框，当您点击 **Start Deployment** 时，GDK 会从当前地图生成最新的启动配置文件。
+- Android 和 iOS 现处于预览状态。我们支持在 Android 和 iOS 设备上进行游戏开发和工作室内测试的工作流，并提供工作流的相关文档。我们还支持在 macOS (也在预览中) 计算机上开发和测试 iOS 游戏客户端。
+
+### 问题修复
+- 修复导致负载均衡的云部署在高负载下无法启动的问题。
+- 进行修复，以避免使用仍在异步加载线程中处理的包。
+- 修复有时导致 GDK 安装脚本无法解压缩依赖项的错误。
+- 修复一个错误，该错误导致在调用  `CreateEntityRequest`前调用的 RPC 在 RPC 环形缓冲区系统中未尽早处理，从而导致客户端启动延迟。
+- 修复在运行使用 `nullrhi` 和 `SpatialDebugger` 的游戏时发生的崩溃。
+- 当您在命令行中使用带有参数的 URL 时，我们现在可以正确解析 Receptionist 参数，在必要时使用 URL。
+- 修复在同时创建多个动态子对象时，导致在客户端上创建失败的错误。
+- 当 worker 实例获得对 Actor 的管辖权时， `OwnerOnly` 组件可以正确复制。以前，有时只有当它们的值更改时才会进行复制 (在 worker 实例获得管辖权后)。
+- 修复将动态子对象附加到 Actor 后立即关闭该 Actor 通道时可能发生的罕见服务器崩溃的情况。
+- 修复 `InstallGDK.bat` 中的一个缺陷，该缺陷有时会导致当正确克隆仓库时，它错误地报告 `Error: Could not clone…`。
+- 来自同一所有权层次结构的 Actor，当对它们进行负载均衡后，可以一起处理。
+
+### SpatialOS 工具兼容性
+如果您正在使用运行时的标准体，注意以下兼容问题：
+- 旧版 [old Inspector](https://documentation.improbable.io/spatialos-tools/lang-zh_CN/docs/the-inspector) 不适用。您必需使用 [新版 Inspector](https://documentation.improbable.io/spatialos-tools/lang-zh_CN/docs/the-new-inspector)。
+- 在 [基于 C# 的 Platform SDK](https://documentation.improbable.io/sdks-and-data/lang-zh_CN/docs/platform-csharp-introduction) 中，您不能设置 [容量限制](https://documentation.improbable.io/sdks-and-data/lang-zh_CN/docs/platform-csharp-capacity-limiting)，或使用 [远程交互服务](https://documentation.improbable.io/sdks-and-data/lang-zh_CN/docs/platform-csharp-remote-interactions)。您也不能使用 Platform SDK 生成云部署的快照，但是我们将在以后的版本中修复此快照问题。
+- 您不能生成云部署的快照，但是我们将在以后的版本中修复此快照问题。
+- [CLI](https://documentation.improbable.io/spatialos-tools/lang-zh_CN/docs/cli-introduction) 中, 以下命令无法工作：
+  - `spatial local worker replace`
+  - `spatial project deployment worker replace`
+  - `spatial local worker-flag set`
+  - `spatial project deployment worker-flag delete`
+  - `spatial project deployment worker-flag set`
+  - `spatial cloud runtime flags set` (在未来的版本中，我们将改进调试工具，并将功能添加到 [动态更改 worker 标记值](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/worker-flags#section-change-worker-flag-values-while-the-deployment-is-running)。)
+
+如果您需要上面列出的任何功能，[将运行时变体更改为兼容模式](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/the-spatialos-runtime#section-change-your-runtime-variant)。
+
+### 内部变更
+本节中列出的功能尚无法使用。但是，本着开放、开发的精神，我们记录了对 GDK 所做的每项更改。
+
+- SpatialOS 的虚幻引擎开发套件现通过 Buildkite CI 自动发布。这意味着未来会有更频繁的发布。
+- 英礴现可以统计 Buildkite CI 中 GDK 的非功能性特征。这使我们能够判断并改善这些特性。我们将它们作为非功能性需求 (NFRs) 进行跟踪。
+
 
 ## [`0.9.0`] - 2020-05-05
 
