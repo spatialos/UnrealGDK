@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestShutdownPreparationTrigger.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialFunctionalTestLBDelegationInterface.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "TestPrepareShutdownListener.h"
@@ -25,14 +25,16 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 
 			// Spawn a non-replicated actor that will listen for the shutdown event.
 			// Using a non-replicated actor since this is the easiest way to make sure that every worker has exactly one instance of it.
-			LocalListener = World->SpawnActor<ATestPrepareShutdownListener>(PrepareShutdownListenerClass, FVector::ZeroVector, FRotator::ZeroRotator);
+			LocalListener =
+				World->SpawnActor<ATestPrepareShutdownListener>(PrepareShutdownListenerClass, FVector::ZeroVector, FRotator::ZeroRotator);
 			AssertTrue(IsValid(LocalListener), TEXT("Listener actor is valid."));
 			RegisterAutoDestroyActor(LocalListener);
 
 			LocalListener->RegisterCallback();
-			if(LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
+			if (LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Failing test due to event counts starting out wrong. native: %d, blueprint: %d"), LocalListener->NativePrepareShutdownEventCount, LocalListener->BlueprintPrepareShutdownEventCount);
+				UE_LOG(LogTemp, Log, TEXT("Failing test due to event counts starting out wrong. native: %d, blueprint: %d"),
+					   LocalListener->NativePrepareShutdownEventCount, LocalListener->BlueprintPrepareShutdownEventCount);
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Number of triggered events should start out at 0"));
 				return;
 			}
@@ -46,9 +48,10 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			FString WorkerFlagSetResult;
 			FString StdErr;
 			int32 ExitCode;
-			FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *WorkerFlagSetArgs, &ExitCode, &WorkerFlagSetResult, &StdErr, *SpatialGDKServicesConstants::SpatialOSDirectory);
+			FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *WorkerFlagSetArgs, &ExitCode, &WorkerFlagSetResult,
+										  &StdErr, *SpatialGDKServicesConstants::SpatialOSDirectory);
 
-			if(ExitCode != 0)
+			if (ExitCode != 0)
 			{
 				FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
 				return;
@@ -75,7 +78,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 				return;
 			}
 
-			// The callback may take some time to be called on workers after being triggered. So we should wait a while before claiming that it hasn't been called on a client.
+			// The callback may take some time to be called on workers after being triggered. So we should wait a while before claiming that
+			// it hasn't been called on a client.
 			StepTimer += DeltaTime;
 			if (StepTimer > EventWaitTime)
 			{
@@ -90,9 +94,10 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			FString WorkerFlagSetResult;
 			FString StdErr;
 			int32 ExitCode;
-			FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *WorkerFlagSetArgs, &ExitCode, &WorkerFlagSetResult, &StdErr, *SpatialGDKServicesConstants::SpatialOSDirectory);
+			FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *WorkerFlagSetArgs, &ExitCode, &WorkerFlagSetResult,
+										  &StdErr, *SpatialGDKServicesConstants::SpatialOSDirectory);
 
-			if(ExitCode != 0)
+			if (ExitCode != 0)
 			{
 				FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
 				return;
@@ -102,7 +107,7 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 		});
 
 		AddStep(TEXT("AllServers_CheckEventHasTriggeredOnce"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-			if(LocalListener->NativePrepareShutdownEventCount != 1 || LocalListener->BlueprintPrepareShutdownEventCount != 1)
+			if (LocalListener->NativePrepareShutdownEventCount != 1 || LocalListener->BlueprintPrepareShutdownEventCount != 1)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event has been received more than once."));
 				return;
@@ -116,21 +121,23 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			}
 		});
 
-		AddStep(TEXT("AllClients_CheckEventStillHasNotTriggered"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
-			// On clients, the event should not be triggered
-			if (LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
-			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event was received on a client"));
-				return;
-			}
+		AddStep(TEXT("AllClients_CheckEventStillHasNotTriggered"), FWorkerDefinition::AllClients, nullptr, nullptr,
+				[this](float DeltaTime) {
+					// On clients, the event should not be triggered
+					if (LocalListener->NativePrepareShutdownEventCount != 0 || LocalListener->BlueprintPrepareShutdownEventCount != 0)
+					{
+						FinishTest(EFunctionalTestResult::Failed, TEXT("The prepare shutdown event was received on a client"));
+						return;
+					}
 
-			// The callback may take some time to be called on workers after being triggered. So we should wait a while before claiming that it hasn't been called on a client.
-			StepTimer += DeltaTime;
-			if (StepTimer > EventWaitTime)
-			{
-				FinishStep();
-				StepTimer = 0.0f;
-			}
-		});
+					// The callback may take some time to be called on workers after being triggered. So we should wait a while before
+					// claiming that it hasn't been called on a client.
+					StepTimer += DeltaTime;
+					if (StepTimer > EventWaitTime)
+					{
+						FinishStep();
+						StepTimer = 0.0f;
+					}
+				});
 	}
 }
