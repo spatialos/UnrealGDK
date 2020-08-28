@@ -36,7 +36,7 @@ ExpectedViewDelta& ExpectedViewDelta::AddComponentUpdate(Worker_EntityId EntityI
 ExpectedViewDelta& ExpectedViewDelta::AddComponentRefreshed(Worker_EntityId EntityId, ComponentUpdate ComponentUpdate,
 															ComponentData ComponentData)
 {
-	EntityDeltas[EntityId].ComponentUpdates.Push(
+	EntityDeltas[EntityId].ComponentsRefreshed.Push(
 		ComponentChange(ComponentUpdate.GetComponentId(), ComponentData.GetUnderlying(), ComponentUpdate.GetEvents()));
 	return *this;
 }

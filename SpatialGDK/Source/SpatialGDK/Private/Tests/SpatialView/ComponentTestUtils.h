@@ -54,6 +54,16 @@ inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, int
 /** Returns true if Lhs and Rhs have the same serialized form. */
 inline bool CompareSchemaObjects(const Schema_Object* Lhs, const Schema_Object* Rhs)
 {
+	if (Lhs == nullptr && Lhs == Rhs)
+	{
+		return true;
+	}
+
+	if (Lhs == nullptr || Rhs == nullptr)
+	{
+		return false;
+	}
+
 	const auto Length = Schema_GetWriteBufferLength(Lhs);
 	if (Schema_GetWriteBufferLength(Rhs) != Length)
 	{
@@ -113,16 +123,29 @@ inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentC
 		return false;
 	}
 
-	if (Lhs.Type == ComponentChange::ADD && !CompareSchemaComponentData(Lhs.Data, Rhs.Data))
+	switch (Lhs.Type)
 	{
-		return false;
-	}
-	else if (Lhs.Type == ComponentChange::UPDATE && !CompareSchemaComponentUpdate(Lhs.Update, Rhs.Update))
-	{
-		return false;
-	}
-	else if (Lhs.Type == ComponentChange::COMPLETE_UPDATE && !CompareSchemaComponentRefresh(Lhs.CompleteUpdate, Rhs.CompleteUpdate))
-	{
+	case ComponentChange::ADD:
+		if (!CompareSchemaComponentData(Lhs.Data, Rhs.Data))
+		{
+			return false;
+		}
+		break;
+	case ComponentChange::UPDATE:
+		if (!CompareSchemaComponentUpdate(Lhs.Update, Rhs.Update))
+		{
+			return false;
+		}
+		break;
+	case ComponentChange::COMPLETE_UPDATE:
+		if (!CompareSchemaComponentRefresh(Lhs.CompleteUpdate, Rhs.CompleteUpdate))
+		{
+			return false;
+		}
+		break;
+	case ComponentChange::REMOVE:
+		break;
+	default:
 		return false;
 	}
 

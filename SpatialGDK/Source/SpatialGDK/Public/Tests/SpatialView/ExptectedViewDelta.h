@@ -28,6 +28,7 @@ public:
 	ExpectedViewDelta& AddAuthorityLostTemporarily(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	ExpectedViewDelta& AddDisconnect(uint8_t StatusCode, FString StatusMessage);
 
+	// Compares the Connection Status and the stored Entity Deltas
 	bool Compare(ViewDelta& Other);
 
 private:
