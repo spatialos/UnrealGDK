@@ -8,13 +8,6 @@
 
 namespace SpatialGDK
 {
-ViewDelta::ViewDelta() {}
-
-ViewDelta::ViewDelta(TArray<EntityDelta>& EntityDeltas)
-{
-	this->EntityDeltas = EntityDeltas;
-}
-
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 {
 	Clear();

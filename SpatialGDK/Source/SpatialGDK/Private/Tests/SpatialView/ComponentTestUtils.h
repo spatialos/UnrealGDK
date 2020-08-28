@@ -222,11 +222,16 @@ inline bool CompareWorkerEntityIdKey(const Worker_EntityId Lhs, const Worker_Ent
 template <typename T, typename Predicate>
 bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, Predicate&& Compare)
 {
-	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
+	if (Lhs.Num() != Rhs.Num())
+	{
+		return false;
+	}
+
+	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), Forward<Predicate>(Compare));
 }
 
 template <typename T, typename Predicate>
-bool AreEquivalent(const ComponentSpan<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Compare)
+bool AreEquivalent(const TArray<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Compare)
 {
 	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
 }

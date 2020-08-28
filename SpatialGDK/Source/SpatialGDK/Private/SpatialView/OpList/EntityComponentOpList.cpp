@@ -9,6 +9,26 @@ EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 {
 }
 
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_EntityId EntityId)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
+	Op.op.add_entity.entity_id = EntityId;
+
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(Worker_EntityId EntityId)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
+	Op.op.remove_entity.entity_id = EntityId;
+
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_EntityId EntityId, ComponentData Data)
 {
 	Worker_Op Op = {};
@@ -57,9 +77,31 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_
 	return *this;
 }
 
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker_ConnectionStatusCode StatusCode, FString DisconnectReason)
+{
+	// Convert an FString to a char* that we can store.
+	FTCHARToUTF8 Reason(*DisconnectReason);
+
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_DISCONNECT;
+	Op.op.disconnect.connection_status_code = StatusCode;
+	Op.op.disconnect.reason = Reason.Get();
+
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
 OpList EntityComponentOpListBuilder::CreateOpList() &&
 {
 	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
+}
+
+TArray<OpList> EntityComponentOpListBuilder::CreateOpLists() &&
+{
+	OpList Ops = { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
+	TArray<OpList> OpLists;
+	OpLists.Push(MoveTemp(Ops));
+	return OpLists;
 }
 
 } // namespace SpatialGDK

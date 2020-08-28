@@ -31,9 +31,6 @@ namespace SpatialGDK
 class ViewDelta
 {
 public:
-	ViewDelta();
-	ViewDelta(TArray<EntityDelta>& EntityDeltas);
-
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
 	void Clear();
 
