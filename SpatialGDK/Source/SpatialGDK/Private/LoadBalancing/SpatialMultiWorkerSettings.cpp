@@ -46,7 +46,7 @@ void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 
 	const TSubclassOf<USpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass = WorldSettings->MultiWorkerSettingsClass;
 
-	if (VisibleMultiWorkerSettingsClass != nullptr && VisibleMultiWorkerSettingsClass == this->GetClass())
+	if (VisibleMultiWorkerSettingsClass != nullptr && VisibleMultiWorkerSettingsClass == GetClass())
 	{
 		ASpatialWorldSettings::EditorRefreshSpatialDebugger();
 	}

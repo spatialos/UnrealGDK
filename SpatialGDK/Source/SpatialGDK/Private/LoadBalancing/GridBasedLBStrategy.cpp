@@ -217,9 +217,10 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 				{
 					const TSubclassOf<UAbstractLBStrategy> VisibleLoadBalanceStrategy = WorkerLayer.LoadBalanceStrategy;
 
-					if (VisibleLoadBalanceStrategy != nullptr && VisibleLoadBalanceStrategy == this->GetClass())
+					if (VisibleLoadBalanceStrategy != nullptr && VisibleLoadBalanceStrategy == GetClass())
 					{
 						ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+						break;
 					}
 				}
 			}
