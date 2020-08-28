@@ -202,7 +202,28 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
 		{
-			ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+			UWorld* World = GEditor->GetEditorWorldContext().World();
+			check(World != nullptr);
+
+			const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+			check(WorldSettings != nullptr);
+
+			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+				WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+
+			for (const FLayerInfo WorkerLayer : MultiWorkerSettings->WorkerLayers)
+			{
+				if (WorkerLayer.Name == SpatialConstants::DefaultLayer)
+				{
+					const TSubclassOf<UAbstractLBStrategy> VisibleLoadBalanceStrategy = WorkerLayer.LoadBalanceStrategy;
+
+					if (VisibleLoadBalanceStrategy != nullptr && VisibleLoadBalanceStrategy == this->GetClass())
+					{
+						ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+					}
+				}
+			}
+
 		}
 	}
 }
