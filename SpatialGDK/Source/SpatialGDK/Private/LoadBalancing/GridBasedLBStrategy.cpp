@@ -40,7 +40,6 @@ void UGridBasedLBStrategy::Init()
 	float YMin = WorldWidthMin;
 	float XMax, YMax;
 
-	WorkerCells.Empty();
 	for (uint32 Col = 0; Col < Cols; ++Col)
 	{
 		YMax = YMin + ColumnWidth;
