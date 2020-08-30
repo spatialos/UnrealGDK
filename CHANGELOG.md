@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`0.11.0`] - 2020-07-29
+## [`0.11.0`] - 2020-08-30
 
 ### Breaking changes:
 - We no longer support Unreal Engine version 4.23. We recommend that you upgrade to the newest version 4.25 to continue receiving updates. See [Unreal Engine Version Support](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support) for more information on versions. Follow the instructions in [Update your GDK](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to update to 4.25.
