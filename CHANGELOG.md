@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add ability to specify `USpatialMultiWorkerSettings` class from command line. Specifying a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
 - You can now override the load balancing strategy in-editor so that it is different from the cloud. Set `Editor Multi Worker Settings Class` in the `World Settings` to specify the in-editor load balancing strategy. If it is not specified, the existing `Multi Worker Settings Class` will determine both the local and cloud load balancing strategy.
 - Added `BroadcastNetworkFailure` with type `OutdatedClient` on client schema hash mismatch with server. Add your own callback to `GEngine->NetworkFailureEvent` to add custom behaviour for outdated clients attempting to join.
+- You can now see the Spatial Debugger in-editor mode similar to the one you see in play mode. Select `Spatial Editor Debugger` from the drop option from the `Start Deployment` button on the toolbar to toggle the visibility of the worker boundaries on and off in-editor.
 
 
 

@@ -60,6 +60,7 @@ FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 	: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
 	, bSchemaBuildError(false)
 	, bStartingCloudDeployment(false)
+	, SpatialDebugger(nullptr)
 {
 }
 
@@ -719,7 +720,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 {
-	if (IsValid(SpatialDebugger))
+	if (SpatialDebugger.IsValid())
 	{
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
@@ -1101,7 +1102,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bSpatialDebuggerEditorEnabled))
 		{
-			if (IsValid(SpatialDebugger))
+			if (SpatialDebugger.IsValid())
 			{
 				SpatialDebugger->EditorSpatialToggleDebugger(Settings->bSpatialDebuggerEditorEnabled);
 			}
@@ -1419,7 +1420,7 @@ bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
 
 void FSpatialGDKEditorToolbarModule::DestroySpatialDebuggerEditor()
 {
-	if (IsValid(SpatialDebugger))
+	if (SpatialDebugger.IsValid())
 	{
 		SpatialDebugger->Destroy();
 		SpatialDebugger = nullptr;
@@ -1450,7 +1451,7 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const
 {
-	return IsValid(SpatialDebugger) && SpatialDebugger->EditorAllowWorkerBoundaries();
+	return SpatialDebugger.IsValid() && SpatialDebugger->EditorAllowWorkerBoundaries();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()

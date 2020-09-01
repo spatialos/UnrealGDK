@@ -196,6 +196,5 @@ private:
 	void GenerateConfigFromCurrentMap();
 
 	// Used to show worker boundaries in the editor
-	UPROPERTY()
-	ASpatialDebugger* SpatialDebugger;
+	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
 };

@@ -593,10 +593,8 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	check(WorldSettings != nullptr);
 
-	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass = WorldSettings->GetMultiWorkerSettingsClass();
-
-	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-		NewObject<UAbstractSpatialMultiWorkerSettings>(GetTransientPackage(), *MultiWorkerSettingsClass);
+	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+		WorldSettings->GetMultiWorkerSettingsClass()->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();
 	LoadBalanceStrategy->Init();
@@ -608,23 +606,21 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 		const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 
-		// Only show worker regions if there is more than one
-		if (LBStrategyRegions.Num() > 1)
+		WorkerRegions.SetNum(LBStrategyRegions.Num());
+		for (int i = 0; i < LBStrategyRegions.Num(); i++)
 		{
-			WorkerRegions.SetNum(LBStrategyRegions.Num());
-			for (int i = 0; i < LBStrategyRegions.Num(); i++)
-			{
-				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				FWorkerRegionInfo WorkerRegionInfo;
-				// Generate our own unique worker name as we only need it to generate a unique colour
-				const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
-				WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
-				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+			const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+			FWorkerRegionInfo WorkerRegionInfo;
+			// Generate our own unique worker name as we only need it to generate a unique colour
+			const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
+			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+			WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 
-				WorkerRegions[i] = WorkerRegionInfo;
-			}
+			WorkerRegions[i] = WorkerRegionInfo;
 		}
 	}
-}
 
+	// Needed to clean up LoadBalanceStrategy memory, otherwise it gets duplicated exponentially
+	GEngine->ForceGarbageCollection(true);
+}
 #endif // WITH_EDITOR
