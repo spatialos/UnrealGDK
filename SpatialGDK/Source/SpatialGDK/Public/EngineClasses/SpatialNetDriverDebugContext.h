@@ -12,6 +12,16 @@
 class UDebugLBStrategy;
 class USpatialNetDriver;
 
+/*
+ * Implement the debug layer from SpatialFunctionalTest, which is enabled by a map flag.
+ * The goal is to be able to arbitrarily gain interest and manipulate authority of any actors.
+ * This is done by adding an extra debug component to all actors, which will contain tags.
+ * All server workers will have interest over this component, allowing them to inspect tags, and check out extra actors if they need to.
+ * Arbitrary authority delegation is achieved by wrapping the NetDriver's load balancing strategy into a debug one, which will inspect tags
+ * first. One caveat that all servers must declare the same delegation at the same time (this requirement could be lifted if this object was
+ * made to behave like a singleton).
+ */
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriverDebugContext : public UObject
 {
@@ -31,7 +41,8 @@ public:
 	void AddInterestOnTag(FName Tag);
 	void RemoveInterestOnTag(FName Tag);
 	void KeepActorOnLocalWorker(AActor* Actor);
-	void DelegateTagToWorker(FName Tag, int32 WorkerId);
+	void DelegateTagToWorker(FName Tag, uint32 WorkerId);
+	void RemoveTagDelegation(FName Tag);
 	TOptional<VirtualWorkerId> GetActorHierarchyExplicitDelegation(const AActor* Actor);
 
 	// Utility
@@ -55,7 +66,7 @@ protected:
 		SpatialGDK::DebugComponent Component;
 		Worker_EntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
 		bool bAdded = false;
-		bool bUpdated = false;
+		bool bDirty = false;
 	};
 
 	DebugComponentView& GetDebugComponentView(AActor* Actor);

@@ -564,7 +564,7 @@ ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 	if (ensureMsgf(NetDriver != nullptr, TEXT("Trying to get a load balancing strategy while the NetDriver is not Spatial")))
 	{
-		if (NetDriver->DebugCtx)
+		if (NetDriver->DebugCtx != nullptr)
 		{
 			return Cast<ULayeredLBStrategy>(NetDriver->DebugCtx->DebugStrategy->GetWrappedStrategy());
 		}
@@ -631,6 +631,14 @@ void ASpatialFunctionalTest::DelegateTagToWorker(FName Tag, int32 WorkerId)
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
 		NetDriver->DebugCtx->DelegateTagToWorker(Tag, WorkerId);
+	}
+}
+
+void ASpatialFunctionalTest::RemoveTagDelegation(FName Tag)
+{
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->RemoveTagDelegation(Tag);
 	}
 }
 

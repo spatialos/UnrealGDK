@@ -134,7 +134,7 @@ void USpatialReceiver::LeaveCriticalSection()
 
 		if (PendingAddComponent.ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 		{
-			if (NetDriver->DebugCtx)
+			if (NetDriver->DebugCtx != nullptr)
 			{
 				NetDriver->DebugCtx->OnDebugComponentUpdateReceived(PendingAddComponent.EntityId);
 			}
@@ -291,7 +291,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
-		if (NetDriver->DebugCtx)
+		if (NetDriver->DebugCtx != nullptr)
 		{
 			if (bInCriticalSection)
 			{
@@ -1681,7 +1681,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
-		if (NetDriver->DebugCtx)
+		if (NetDriver->DebugCtx != nullptr)
 		{
 			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
 		}

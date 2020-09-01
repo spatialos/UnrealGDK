@@ -120,7 +120,7 @@ void USpatialNetDriverDebugContext::AddActorTag(AActor* Actor, FName Tag)
 		{
 			AddEntityToWatch(Comp.Entity);
 		}
-		Comp.bUpdated = true;
+		Comp.bDirty = true;
 	}
 }
 
@@ -134,7 +134,7 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 		{
 			RemoveEntityToWatch(Comp.Entity);
 		}
-		Comp.bUpdated = true;
+		Comp.bDirty = true;
 	}
 }
 
@@ -205,15 +205,12 @@ void USpatialNetDriverDebugContext::AddInterestOnTag(FName Tag)
 
 		for (const auto& Item : ActorDebugInfo)
 		{
-			if (!Item.Value.bAdded || Item.Value.bUpdated)
+			if (Item.Value.Component.ActorTags.Contains(Tag))
 			{
-				if (Item.Value.Component.ActorTags.Contains(Tag))
+				Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
+				if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 				{
-					Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
-					if (Entity != SpatialConstants::INVALID_ENTITY_ID)
-					{
-						AddEntityToWatch(Entity);
-					}
+					AddEntityToWatch(Entity);
 				}
 			}
 		}
@@ -243,15 +240,12 @@ void USpatialNetDriverDebugContext::RemoveInterestOnTag(FName Tag)
 
 		for (const auto& Item : ActorDebugInfo)
 		{
-			if (!Item.Value.bAdded || Item.Value.bUpdated)
+			if (!IsSetIntersectionEmpty(Item.Value.Component.ActorTags, SemanticInterest))
 			{
-				if (!IsSetIntersectionEmpty(Item.Value.Component.ActorTags, SemanticInterest))
+				Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
+				if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 				{
-					Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
-					if (Entity != SpatialConstants::INVALID_ENTITY_ID)
-					{
-						AddEntityToWatch(Entity);
-					}
+					AddEntityToWatch(Entity);
 				}
 			}
 		}
@@ -264,20 +258,18 @@ void USpatialNetDriverDebugContext::KeepActorOnLocalWorker(AActor* Actor)
 	{
 		DebugComponentView& Comp = GetDebugComponentView(Actor);
 		Comp.Component.DelegatedWorkerId = DebugStrategy->GetLocalVirtualWorkerId();
-		Comp.bUpdated = true;
+		Comp.bDirty = true;
 	}
 }
 
-void USpatialNetDriverDebugContext::DelegateTagToWorker(FName Tag, int32 WorkerId)
+void USpatialNetDriverDebugContext::DelegateTagToWorker(FName Tag, uint32 WorkerId)
 {
-	if (WorkerId < 0)
-	{
-		SemanticDelegations.Remove(Tag);
-	}
-	else
-	{
-		SemanticDelegations.Add(Tag, WorkerId);
-	}
+	SemanticDelegations.Add(Tag, WorkerId);
+}
+
+void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
+{
+	SemanticDelegations.Remove(Tag);
 }
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)
@@ -346,31 +338,33 @@ void USpatialNetDriverDebugContext::TickServer()
 {
 	for (auto& Entry : ActorDebugInfo)
 	{
-		if (!Entry.Value.bAdded)
+		AActor* Actor = Entry.Key;
+		DebugComponentView& View = Entry.Value;
+		if (!View.bAdded)
 		{
-			Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Entry.Key);
+			Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 			if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 			{
-				if (!IsSetIntersectionEmpty(Entry.Value.Component.ActorTags, SemanticInterest))
+				if (!IsSetIntersectionEmpty(View.Component.ActorTags, SemanticInterest))
 				{
 					AddEntityToWatch(Entity);
 				}
 
 				// There is a requirement of readiness before we can use SendAddComponent
-				if (IsActorReady(Entry.Key))
+				if (IsActorReady(Actor))
 				{
-					Worker_ComponentData CompData = Entry.Value.Component.CreateDebugComponent();
+					Worker_ComponentData CompData = View.Component.CreateDebugComponent();
 					NetDriver->Sender->SendAddComponents(Entity, { CompData });
-					Entry.Value.Entity = Entity;
-					Entry.Value.bAdded = true;
+					View.Entity = Entity;
+					View.bAdded = true;
 				}
 			}
 		}
-		else if (Entry.Value.bUpdated)
+		else if (View.bDirty)
 		{
-			FWorkerComponentUpdate CompUpdate = Entry.Value.Component.CreateDebugComponentUpdate();
-			NetDriver->Connection->SendComponentUpdate(Entry.Value.Entity, &CompUpdate);
-			Entry.Value.bUpdated = false;
+			FWorkerComponentUpdate CompUpdate = View.Component.CreateDebugComponentUpdate();
+			NetDriver->Connection->SendComponentUpdate(View.Entity, &CompUpdate);
+			View.bDirty = false;
 		}
 	}
 

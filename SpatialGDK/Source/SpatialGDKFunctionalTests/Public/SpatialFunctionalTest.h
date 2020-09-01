@@ -171,25 +171,37 @@ public:
 
 	ULayeredLBStrategy* GetLoadBalancingStrategy();
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (ToolTip = "Add a debug tag to the given Actor that will be matched with interest and delegation declarations."))
 	void AddDebugTag(AActor* Actor, FName Tag);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Add a debug tag from the given Actor."))
 	void RemoveDebugTag(AActor* Actor, FName Tag);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (ToolTip = "Add extra interest queries, allowing the current worker to see all Actors having the given tag."))
 	void AddInterestOnTag(FName Tag);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (ToolTip = "Remove the extra interest query on the given tag."))
 	void RemoveInterestOnTag(FName Tag);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers "
+								"must declare the same delegation at the same time."))
 	void DelegateTagToWorker(FName Tag, int32 WorkerId);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	UFUNCTION(
+		BlueprintCallable, Category = "Spatial Functional Test",
+		meta = (ToolTip = "Removed the forced authority delegation. All server workers must declare the same delegation at the same time."))
+	void RemoveTagDelegation(FName Tag);
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
 	void ClearTagDelegationAndInterest();
 
 protected:

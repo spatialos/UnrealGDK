@@ -18,17 +18,21 @@ class USpatialNetDriverDebugContext;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogDebugLBStrategy, Log, All)
 
+/*
+ * Debug load balancing strategy for SpatialFunctionalTest.
+ * It is wrapping the load balancing strategy set on the NetDriver,
+ * and inspecting debug tags before deferring to the wrapped strategy, effectively overriding it when needed.
+ */
 UCLASS(HideDropdown, NotBlueprintable)
 class SPATIALGDK_API UDebugLBStrategy : public UAbstractLBStrategy
 {
 	GENERATED_BODY()
-
 public:
 	UDebugLBStrategy();
 	void InitDebugStrategy(USpatialNetDriverDebugContext* DebugCtx, UAbstractLBStrategy* WrappedStrategy);
 
 	/* UAbstractLBStrategy Interface */
-	virtual void Init() override {};
+	virtual void Init() override{};
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -50,7 +54,6 @@ public:
 	UAbstractLBStrategy* GetWrappedStrategy() const { return WrappedStrategy; }
 
 private:
-
 	UPROPERTY()
 	UAbstractLBStrategy* WrappedStrategy = nullptr;
 
