@@ -325,7 +325,7 @@ void ATestDebugInterface::BeginPlay()
 				}
 			}
 
-			DelegateTagToWorker(GetTestTag(), -1);
+			RemoveTagDelegation(GetTestTag());
 			FinishStep();
 		},
 		nullptr, 5.0f);
