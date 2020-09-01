@@ -301,5 +301,5 @@ private:
 
 	void ProcessOwnershipChanges();
 
-	TSet<Worker_EntityId> OwnershipChangedEntities;
+	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 };
