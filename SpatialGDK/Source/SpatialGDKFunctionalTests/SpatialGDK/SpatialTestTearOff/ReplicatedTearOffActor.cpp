@@ -6,7 +6,7 @@
 AReplicatedTearOffActor::AReplicatedTearOffActor()
 {
 	bNetLoadOnClient = true;
-	bReplicateMovement = true;
+	SetReplicatingMovement(true);
 	TestInteger = 0;
 }
 
