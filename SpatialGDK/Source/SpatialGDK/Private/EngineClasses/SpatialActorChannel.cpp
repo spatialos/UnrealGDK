@@ -429,11 +429,6 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 {
-	// Make sure that the Actor is not always relevant.
-	if (InActor->bAlwaysRelevant)
-	{
-		return;
-	}
 
 	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
 	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
@@ -445,13 +440,13 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	// Unreal applies the following rules (in order) in determining the relevant set of Actors for a player:
 	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
 	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
-	// not.
-	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()))
+	// not. Make sure that the Actor is also not always relevant.
+	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()) && !InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
 	else if (!InActor->IsHidden()
-			 || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())))
+			 || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())) || InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, true);
 	}

@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "GameplayDebuggerCategoryReplicator.h"
 #include "Interop/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
@@ -220,7 +221,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
-	if (!Actor->IsHidden())
+	if (Actor->bAlwaysRelevant || !Actor->IsHidden() || Actor->IsA(APlayerController::StaticClass()) || Actor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
+		|| Actor->IsA(AGameModeBase::StaticClass()))
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
 	}
