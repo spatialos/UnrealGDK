@@ -6,8 +6,8 @@ set -e -u -o pipefail
 changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"
 
 [[ "$(uname -s)" != "Darwin" ]] \
-    && setup_command="exec \"cmd.exe /c Setup.bat SETUP_ARGS\"" \
+    && setup_command="exec cmd.exe /c Setup.bat SETUP_ARGS" \
     || setup_command="sh Setup.sh SETUP_ARGS"
 
-echo "${changed_files}" | grep --quiet RequireSetup && setup_command
+echo "${changed_files}" | grep --quiet RequireSetup && $setup_command
 
