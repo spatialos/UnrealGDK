@@ -429,7 +429,6 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 {
-
 	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
 	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
 		|| InActor->IsA(AGameModeBase::StaticClass()))
@@ -446,7 +445,7 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
 	else if (!InActor->IsHidden()
-			 || (InActor->IsHidden() && (InActor->GetRootComponent() || InActor->GetRootComponent()->IsCollisionEnabled())) || InActor->bAlwaysRelevant)
+			 || (InActor->IsHidden() && (InActor->GetRootComponent() && InActor->GetRootComponent()->IsCollisionEnabled())) || InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, true);
 	}
