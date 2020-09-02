@@ -208,10 +208,10 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// This implementation depends on:
 	// 1) the load-balancing strategy having the same rules for PlayerStart Actors and Characters / Controllers / Player States or,
 	// 2) the authoritative virtual worker ID for a PlayerStart Actor not changing during the lifetime of a deployment.
-	check(NetDriver->LoadBalanceStrategy != nullptr)
+	check(NetDriver->LoadBalanceStrategy != nullptr);
 
-		// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
-		const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
+	// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
+	const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
 
 	// Find a PlayerStart Actor on this server.
 	AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
