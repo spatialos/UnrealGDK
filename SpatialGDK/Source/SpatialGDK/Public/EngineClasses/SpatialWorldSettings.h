@@ -69,11 +69,11 @@ private:
 
 public:
 	/** If command line override for Multi Worker Settings Class is set then use the specified Multi Worker Settings class.
-	* Else if multi worker is disabled, use the single worker behaviour.
-	* Else if bForceNonEditorSettings is set use the Multi Worker Settings class.
-	* Else if the Editor Multi Worker Settings Override is set and we are in the Editor use the Editor Multi Worker Settings.
-	* Else if the Multi Worker Settings Class is set use it.
-	* Otherwise default to single worker behaviour.  */
+	 * Else if multi worker is disabled, use the single worker behaviour.
+	 * Else if bForceNonEditorSettings is set use the Multi Worker Settings class.
+	 * Else if the Editor Multi Worker Settings Override is set and we are in the Editor use the Editor Multi Worker Settings.
+	 * Else if the Multi Worker Settings Class is set use it.
+	 * Otherwise default to single worker behaviour.  */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false) const
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -100,7 +100,8 @@ public:
 		}
 		else if (bForceNonEditorSettings)
 		{
-			// If bForceNonEditorSettings is set and no multi worker settings class is set always return a valid class (use single worker behaviour).
+			// If bForceNonEditorSettings is set and no multi worker settings class is set always return a valid class (use single worker
+			// behaviour).
 			return USpatialMultiWorkerSettings::StaticClass();
 		}
 #if WITH_EDITOR
@@ -165,7 +166,7 @@ public:
 		{
 			return true;
 		}
-		// Check if multi-worker was overridden from the command line 
+		// Check if multi-worker was overridden from the command line
 		else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker.GetValue())
 		{
 			return false;

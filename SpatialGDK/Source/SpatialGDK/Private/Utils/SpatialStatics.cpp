@@ -94,13 +94,13 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
-bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject) 
+bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject)
 {
 	checkf(WorldContextObject != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr WorldContextObject*"));
 
 	const UWorld* World = WorldContextObject->GetWorld();
 	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
-	
+
 	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
 		return WorldSettings->IsMultiWorkerEnabledInWorldSettings();
@@ -108,8 +108,8 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 	return false;
 }
 
-TSubclassOf<UAbstractSpatialMultiWorkerSettings> USpatialStatics::GetSpatialMultiWorkerClass(
-	const UObject* WorldContextObject, bool bForceNonEditorSettings)
+TSubclassOf<UAbstractSpatialMultiWorkerSettings> USpatialStatics::GetSpatialMultiWorkerClass(const UObject* WorldContextObject,
+																							 bool bForceNonEditorSettings)
 {
 	checkf(WorldContextObject != nullptr, TEXT("Called GetSpatialMultiWorkerClass with a nullptr WorldContextObject*"));
 
