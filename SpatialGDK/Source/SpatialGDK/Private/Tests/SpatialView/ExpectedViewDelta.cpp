@@ -1,7 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma once
-
 #include "ComponentTestUtils.h"
 #include "SpatialView/ViewDelta.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
@@ -126,7 +124,7 @@ bool ExpectedViewDelta::Compare(ViewDelta& Other)
 	}
 
 	SortEntityDeltas();
-	TArray<Worker_EntityId> DeltaKeys;
+	TArray<uint32> DeltaKeys;
 	EntityDeltas.GetKeys(DeltaKeys);
 	for (int i = 0; i < DeltaKeys.Num(); i++)
 	{

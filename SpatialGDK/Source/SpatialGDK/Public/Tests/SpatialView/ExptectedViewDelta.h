@@ -33,7 +33,7 @@ public:
 
 private:
 	void SortEntityDeltas();
-	TMap<Worker_EntityId, ExpectedEntityDelta> EntityDeltas;
+	TMap<uint32, ExpectedEntityDelta> EntityDeltas;
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;
 
