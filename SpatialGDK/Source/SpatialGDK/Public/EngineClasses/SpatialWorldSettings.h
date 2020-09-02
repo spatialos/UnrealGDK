@@ -68,22 +68,58 @@ private:
 	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
 
 public:
-	/** If Editor Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings, otherwise use the default
-	 * Multi Worker Settings. Use bForceNonEditorSettings to always get the Multi Worker Settings */
+	/** If command line override for Multi Worker Settings Class is set then use the specified Multi Worker Settings class.
+	* Else if multi worker is disabled, use the single worker behaviour.
+	* Else if bForceNonEditorSettings is set use the Multi Worker Settings class.
+	* Else if the Editor Multi Worker Settings Override is set and we are in the Editor use the Editor Multi Worker Settings.
+	* Else if the Multi Worker Settings Class is set use it.
+	* Otherwise default to single worker behaviour.  */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false) const
 	{
-		if (bForceNonEditorSettings)
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+		if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
 		{
+			// If command line override for Multi Worker Settings is set then use the specified Multi Worker Settings class.
+			FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
+			FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
+			TSubclassOf<USpatialMultiWorkerSettings> CommandLineMultiWorkerSettingsOverride =
+				MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
+			checkf(CommandLineMultiWorkerSettingsOverride != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
+			return CommandLineMultiWorkerSettingsOverride;
+		}
+		else if (!IsMultiWorkerEnabledInWorldSettings())
+		{
+			// If multi worker is disabled, use the single worker behaviour.
+			return USpatialMultiWorkerSettings::StaticClass();
+		}
+		else if (bForceNonEditorSettings && MultiWorkerSettingsClass != nullptr)
+		{
+			// If bForceNonEditorSettings is set and the multi worker setting class is set use the multi worker settings.
 			return MultiWorkerSettingsClass;
 		}
-#if WITH_EDITOR
-		if (EditorMultiWorkerSettingsOverride != nullptr)
+		else if (bForceNonEditorSettings)
 		{
+			// If bForceNonEditorSettings is set and no multi worker settings class is set always return a valid class (use single worker behaviour).
+			return USpatialMultiWorkerSettings::StaticClass();
+		}
+#if WITH_EDITOR
+		else if (EditorMultiWorkerSettingsOverride != nullptr)
+		{
+			// If the editor override Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings.
 			return EditorMultiWorkerSettingsOverride;
 		}
 #endif // WITH_EDITOR
-
-		return MultiWorkerSettingsClass;
+		else if (MultiWorkerSettingsClass != nullptr)
+		{
+			// If the multi worker setting class is set use the multi worker settings.
+			return MultiWorkerSettingsClass;
+		}
+		else
+		{
+			// If no class is set always return a valid class, (use single worker behaviour).
+			return USpatialMultiWorkerSettings::StaticClass();
+		}
 	}
 
 #if WITH_EDITORONLY_DATA
@@ -91,9 +127,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Testing")
 	FMapTestingSettings TestingSettings;
 #endif
-
-	// This function is used to expose the private bool property to SpatialStatics.
-	// You should call USpatialStatics::IsMultiWorkerEnabled to properly check whether multi-worker is enabled.
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override
@@ -124,5 +157,19 @@ public:
 	}
 #endif // WITH_EDITOR
 
-	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr; }
+	bool IsMultiWorkerEnabledInWorldSettings() const
+	{
+		// Check if multi-worker settings class was overridden from the command line
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
+		{
+			return true;
+		}
+		// Check if multi-worker was overridden from the command line 
+		else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker.GetValue())
+		{
+			return false;
+		}
+		return bEnableMultiWorker;
+	}
 };

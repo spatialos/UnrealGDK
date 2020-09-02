@@ -204,11 +204,8 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 			const UWorld* World = GEditor->GetEditorWorldContext().World();
 			check(World != nullptr);
 
-			const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-			check(WorldSettings != nullptr);
-
 			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-				WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 			for (const FLayerInfo WorkerLayer : MultiWorkerSettings->WorkerLayers)
 			{
