@@ -18,21 +18,21 @@ public:
 		UPDATE
 	};
 
-	ExpectedViewDelta& AddEntityDelta(Worker_EntityId EntityId, EntityChangeType Status);
-	ExpectedViewDelta& AddComponentAdded(Worker_EntityId EntityId, ComponentData ComponentData);
-	ExpectedViewDelta& AddComponentRemoved(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddComponentUpdate(Worker_EntityId EntityId, ComponentUpdate ComponentUpdate);
-	ExpectedViewDelta& AddComponentRefreshed(Worker_EntityId EntityId, ComponentUpdate ComponentUpdate, ComponentData ComponentData);
-	ExpectedViewDelta& AddAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLostTemporarily(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddDisconnect(uint8_t StatusCode, FString StatusMessage);
+	ExpectedViewDelta& AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType);
+	ExpectedViewDelta& AddComponentAdded(const Worker_EntityId EntityId, ComponentData Data);
+	ExpectedViewDelta& AddComponentRemoved(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddComponentUpdate(const Worker_EntityId EntityId, ComponentUpdate Update);
+	ExpectedViewDelta& AddComponentRefreshed(const Worker_EntityId EntityId, ComponentUpdate Update, ComponentData Data);
+	ExpectedViewDelta& AddAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLostTemporarily(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddDisconnect(const uint8_t StatusCode, const FString StatusMessage);
 
 	// Compares the Connection Status and the stored Entity Deltas
 	bool Compare(ViewDelta& Other);
 
 private:
-	TArray<ExpectedEntityDelta> GetSortedEntityDeltas();
+	void SortEntityDeltas();
 	TMap<Worker_EntityId, ExpectedEntityDelta> EntityDeltas;
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;

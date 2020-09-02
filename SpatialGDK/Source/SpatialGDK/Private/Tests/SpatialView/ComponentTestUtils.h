@@ -165,7 +165,7 @@ inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentC
 	}
 
 	return true;
-} // namespace SpatialGDK
+}
 
 inline bool CompareAuthorityChanges(AuthorityChange Lhs, AuthorityChange Rhs)
 {
