@@ -9,8 +9,8 @@
 
 #define VIEWDELTA_TEST(TestName) GDK_TEST(Core, ViewDelta, TestName)
 
-using namespace SpatialGDK;
-
+namespace SpatialGDK
+{
 VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_THEN_get_entity_in_view_and_delta)
 {
 	ViewDelta InputDelta;
@@ -380,3 +380,4 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_entity_THEN_empty_
 
 	return true;
 }
+} // namespace SpatialGDK
