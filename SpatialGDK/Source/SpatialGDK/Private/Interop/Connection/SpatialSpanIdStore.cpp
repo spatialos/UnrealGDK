@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialSpanIdStore.h"
 
+#include "UObject/Field.h"
 #include "SpatialConstants.h"
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -93,13 +94,13 @@ bool SpatialSpanIdStore::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityC
 		return false;
 	}
 
-	bool bRemoved = SpanIdMap->Remove(FieldId);
+	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
 	if (bRemoved && SpanIdMap->Num() == 0)
 	{
 		EntityComponentFieldSpanIds.Remove(Id);
 	}
 
-	return bRemoved;
+	return bDropped;
 }
 
 void SpatialSpanIdStore::DropOldSpanIds()
@@ -108,9 +109,9 @@ void SpatialSpanIdStore::DropOldSpanIds()
 	{
 		UpdateNextClearTime();
 
-		FDateTime RemoveDateTime = FDateTime::Now() - FTimespan::FromSeconds(MinSpanIdLifetime);
+		FDateTime DropDateTime = FDateTime::Now() - FTimespan::FromSeconds(MinSpanIdLifetime);
 
-		TArray<EntityComponentFieldId> EntityComponentFieldIdsToRemove;
+		TArray<EntityComponentFieldId> EntityComponentFieldIdsToDrop;
 		int32 NumDropped = 0;
 		bool bShouldBreak = false;
 
@@ -124,9 +125,9 @@ void SpatialSpanIdStore::DropOldSpanIds()
 				uint32 FieldId = UpdateSpanIdPair.Key;
 				const EntityComponentFieldIdUpdateSpanId& UpdateSpanId = UpdateSpanIdPair.Value;
 
-				if (UpdateSpanId.UpdateTime < RemoveDateTime)
+				if (UpdateSpanId.UpdateTime < DropDateTime)
 				{
-					EntityComponentFieldIdsToRemove.Add({ Id, FieldId });
+					EntityComponentFieldIdsToDrop.Add({ Id, FieldId });
 					NumDropped++;
 					if (NumDropped >= MaxSpanIdsToDrop)
 					{
@@ -144,12 +145,12 @@ void SpatialSpanIdStore::DropOldSpanIds()
 			}
 		}
 
-		for (const EntityComponentFieldId& Id : EntityComponentFieldIdsToRemove)
+		for (const EntityComponentFieldId& Id : EntityComponentFieldIdsToDrop)
 		{
 			DropSpanId(Id.EntityComponentId, Id.FieldId);
 		}
 
-		UE_LOG(LogSpatialSpanIdStore, Verbose, TEXT("Periodic SpanId drop dropped %d SpanIds."), EntityComponentFieldIdsToRemove.Num());
+		UE_LOG(LogSpatialSpanIdStore, Verbose, TEXT("Periodic SpanId drop dropped %d SpanIds."), EntityComponentFieldIdsToDrop.Num());
 
 		EntityComponentFieldSpanIds.Compact();
 	}

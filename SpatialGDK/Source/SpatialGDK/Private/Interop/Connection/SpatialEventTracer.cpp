@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 
 #include "SpatialGDKSettings.h"
+#include "UObject/UnrealTypePrivate.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -204,9 +205,9 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	}
 }
 
-void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* Stream) const
+void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* StreamToDestroy) const
 {
-	Io_Stream_Destroy(Stream);
+	Io_Stream_Destroy(StreamToDestroy);
 }
 
 void SpatialEventTracer::Disable()

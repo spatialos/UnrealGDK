@@ -76,7 +76,7 @@ private:
 
 	struct StreamDeleter
 	{
-		void operator()(worker::c::Io_Stream* Stream) const;
+		void operator()(worker::c::Io_Stream* StreamToDestroy) const;
 	};
 
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
