@@ -117,39 +117,37 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 		{
 			return false;
 		}
-		/*
-				if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLost, RhsEntityDelta.AuthorityLost, CompareAuthorityChanges))
-				{
-					return false;
-				}
 
-				if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLostTemporarily, RhsEntityDelta.AuthorityLostTemporarily,
-		   CompareAuthorityChanges))
-				{
-					return false;
-				}
+		if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLost, RhsEntityDelta.AuthorityLost, CompareAuthorityChanges))
+		{
+			return false;
+		}
 
-				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsAdded, RhsEntityDelta.ComponentsAdded, CompareComponentChanges))
-				{
-					return false;
-				}
+		if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLostTemporarily, RhsEntityDelta.AuthorityLostTemporarily,
+									  CompareAuthorityChanges))
+		{
+			return false;
+		}
 
-				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRemoved, RhsEntityDelta.ComponentsRemoved, CompareComponentChanges))
-				{
-					return false;
-				}
+		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsAdded, RhsEntityDelta.ComponentsAdded, CompareComponentChanges))
+		{
+			return false;
+		}
 
-				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRefreshed, RhsEntityDelta.ComponentsRefreshed,
-		   CompareComponentChanges))
-				{
-					return false;
-				}
+		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRemoved, RhsEntityDelta.ComponentsRemoved, CompareComponentChanges))
+		{
+			return false;
+		}
 
-				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentUpdates, RhsEntityDelta.ComponentUpdates, CompareComponentChanges))
-				{
-					return false;
-				}
-				*/
+		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRefreshed, RhsEntityDelta.ComponentsRefreshed, CompareComponentChanges))
+		{
+			return false;
+		}
+
+		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentUpdates, RhsEntityDelta.ComponentUpdates, CompareComponentChanges))
+		{
+			return false;
+		}
 	}
 
 	return true;
