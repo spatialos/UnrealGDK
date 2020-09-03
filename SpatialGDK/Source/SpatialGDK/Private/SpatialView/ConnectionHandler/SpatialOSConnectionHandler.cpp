@@ -5,7 +5,7 @@
 
 namespace SpatialGDK
 {
-	SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer)
+SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer)
 	: Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
 	, EventTracer(EventTracer)
@@ -145,7 +145,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	}
 
 	for (auto& Response : Messages->EntityCommandResponses)
-	{	
+	{
 		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Response.SpanId);
 		Worker_CommandResponse r = { nullptr, Response.Response.GetComponentId(), Response.Response.GetCommandIndex(),
 									 MoveTemp(Response.Response).Release(), nullptr };

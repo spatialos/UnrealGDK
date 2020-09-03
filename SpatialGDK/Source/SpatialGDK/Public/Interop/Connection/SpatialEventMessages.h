@@ -372,7 +372,7 @@ struct FEventMergeComponentUpdate : public FEventMessage
 };
 
 USTRUCT()
-struct FEventPropertyUpdated: public FEventMessage
+struct FEventPropertyUpdated : public FEventMessage
 {
 	GENERATED_BODY()
 
@@ -388,8 +388,8 @@ struct FEventPropertyUpdated: public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId { -1 };
-	UPROPERTY() uint32 ComponentId { 0 };
+	UPROPERTY() int64 EntityId{ -1 };
+	UPROPERTY() uint32 ComponentId{ 0 };
 	UPROPERTY() FString PropertyName;
 };
 

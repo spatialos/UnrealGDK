@@ -62,7 +62,8 @@ public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
 					  USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr, UFunction* Function = nullptr);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
+						   UFunction* Function = nullptr);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -88,12 +89,12 @@ public:
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 private:
-
 	struct PendingRPCPayload
 	{
 		PendingRPCPayload(const RPCPayload& InPayload)
 			: Payload(InPayload)
-		{}
+		{
+		}
 
 		RPCPayload Payload;
 		TOptional<worker::c::Trace_SpanId> SpanId;

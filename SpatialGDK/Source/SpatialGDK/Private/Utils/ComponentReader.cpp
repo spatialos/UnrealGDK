@@ -319,7 +319,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 				if (bEventTracerEnabled)
 				{
-					Trace_SpanId SpanId = EventTracer->GetEntityComponentFieldSpanId(EntityComponentId(Channel.GetEntityId(), ComponentId), FieldId);
+					Trace_SpanId SpanId =
+						EventTracer->GetSpanId(EntityComponentId(Channel.GetEntityId(), ComponentId), FieldId);
 					EventTracer->TraceEvent(FEventPropertyUpdated(Channel.GetEntityId(), ComponentId, Cmd.Property->GetName()), &SpanId);
 				}
 

@@ -10,7 +10,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
 
 namespace SpatialGDK
 {
-
 class SpatialEventTracer;
 
 class ComponentReader

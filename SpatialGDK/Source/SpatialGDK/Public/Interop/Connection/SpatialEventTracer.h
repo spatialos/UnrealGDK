@@ -68,12 +68,11 @@ public:
 	void ComponentUpdate(const Worker_Op& Op);
 	void DropOldUpdates();
 
-	worker::c::Trace_SpanId GetEntityComponentFieldSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
-	void ClearEntityComponentSpanIds(const EntityComponentId& EntityComponentId);
-	void RemoveEntityComponentFieldSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
+	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
+	void DropSpanIds(const EntityComponentId& EntityComponentId);
+	void DropSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 
 private:
-
 	bool bEnabled = false;
 	bool bRecordRuntimeAndWorkerEvents{ false };
 
@@ -82,7 +81,8 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
-	struct StreamDeleter {
+	struct StreamDeleter
+	{
 		void operator()(worker::c::Io_Stream* Stream) const;
 	};
 

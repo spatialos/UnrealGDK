@@ -551,8 +551,7 @@ void USpatialReceiver::OnAuthorityChange(const Worker_Op& Op)
 	// be correctly configured to process RPCs sent during Actor creation
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-			|| ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+		if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 			|| ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 		{
 			RPCService->OnEndpointAuthorityGained(EntityId, ComponentId);
@@ -819,8 +818,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 		}
 	}
 
-	if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-		|| ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+	if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 		|| ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
 		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
@@ -2005,7 +2003,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	if (EventTracer->IsEnabled())
 	{
 		UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-		EventTracer->TraceEvent(FEventCommandRequest("COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId), &Op.span_id);
+		EventTracer->TraceEvent(FEventCommandRequest("COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId),
+								&Op.span_id);
 	}
 }
 
@@ -2206,16 +2205,18 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 
 			if (bEventTracerEnabled)
 			{
-				Worker_ComponentId ComponentId = bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
-				EventTracer->ClearEntityComponentSpanIds(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId));
+				Worker_ComponentId ComponentId =
+					bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+				EventTracer->DropSpanIds(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId));
 			}
 		}
 		else
 		{
 			if (bEventTracerEnabled)
 			{
-				Worker_ComponentId ComponentId = bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
-				Trace_SpanId SpanId = EventTracer->GetEntityComponentFieldSpanId(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId), PayloadCopy.Index);
+				Worker_ComponentId ComponentId =
+					bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+				Trace_SpanId SpanId = EventTracer->GetSpanId(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId), PayloadCopy.Index);
 				EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
 			}
 
@@ -2251,9 +2252,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		if (EventTracer != nullptr && EventTracer->IsEnabled())
 		{
 			bool bServerRPCType = (Params.Type == ERPCType::ServerReliable || Params.Type == ERPCType::ServerUnreliable);
-			Worker_ComponentId ComponentId = bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+			Worker_ComponentId ComponentId =
+				bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 			EntityComponentId Id(Params.ObjectRef.Entity, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
-			EventTracer->ClearEntityComponentSpanIds(Id);
+			EventTracer->DropSpanIds(Id);
 		}
 		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
@@ -2266,9 +2268,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		if (EventTracer != nullptr && EventTracer->IsEnabled())
 		{
 			bool bServerRPCType = (Params.Type == ERPCType::ServerReliable || Params.Type == ERPCType::ServerUnreliable);
-			Worker_ComponentId ComponentId = bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+			Worker_ComponentId ComponentId =
+				bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
-			EventTracer->RemoveEntityComponentFieldSpanId(Id, Params.Payload.Index);
+			EventTracer->DropSpanId(Id, Params.Payload.Index);
 		}
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
@@ -3053,7 +3056,8 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 		const Worker_AuthorityChangeOp& PendingAuthorityChange = Op.op.authority_change;
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
-			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id, static_cast<Worker_Authority>(PendingAuthorityChange.authority));
+			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id,
+									  static_cast<Worker_Authority>(PendingAuthorityChange.authority));
 		}
 		else
 		{

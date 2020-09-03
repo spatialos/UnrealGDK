@@ -14,7 +14,7 @@ using namespace worker::c;
 
 SpatialSpanIdStore::SpatialSpanIdStore()
 {
-	NextClearTime = FDateTime::Now();
+	UpdateNextClearTime();
 }
 
 void SpatialSpanIdStore::ComponentAdd(const Worker_Op& Op)
@@ -29,7 +29,7 @@ void SpatialSpanIdStore::ComponentAdd(const Worker_Op& Op)
 
 	for (uint32 FieldId : UpdatedIds)
 	{
-		AddEntityComponentFieldSpanId(Id, FieldId, Op.span_id);
+		AddSpanId(Id, FieldId, Op.span_id);
 	}
 }
 
@@ -37,7 +37,7 @@ bool SpatialSpanIdStore::ComponentRemove(const Worker_Op& Op)
 {
 	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
 	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
-	return 	ClearEntityComponentSpanIds(Id);
+	return DropSpanIds(Id);
 }
 
 void SpatialSpanIdStore::ComponentUpdate(const Worker_Op& Op)
@@ -52,11 +52,11 @@ void SpatialSpanIdStore::ComponentUpdate(const Worker_Op& Op)
 
 	for (uint32 FieldId : UpdatedIds)
 	{
-		AddEntityComponentFieldSpanId(Id, FieldId, Op.span_id);
+		AddSpanId(Id, FieldId, Op.span_id);
 	}
 }
 
-worker::c::Trace_SpanId SpatialSpanIdStore::GetEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId)
+worker::c::Trace_SpanId SpatialSpanIdStore::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
 	worker::c::Trace_SpanId ReturnSpanId = worker::c::Trace_SpanId();
 
@@ -73,22 +73,22 @@ worker::c::Trace_SpanId SpatialSpanIdStore::GetEntityComponentFieldSpanId(const 
 	}
 
 	ReturnSpanId = UpdateSpanId->SpanId;
-	RemoveEntityComponentFieldInternal(SpanIdMap, Id, FieldId);
+	DropSpanIdInternal(SpanIdMap, Id, FieldId);
 
 	return ReturnSpanId;
 }
 
-bool SpatialSpanIdStore::ClearEntityComponentSpanIds(const EntityComponentId& Id)
+bool SpatialSpanIdStore::DropSpanIds(const EntityComponentId& Id)
 {
 	return EntityComponentFieldSpanIds.Remove(Id);
 }
 
-bool SpatialSpanIdStore::RemoveEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialSpanIdStore::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	return RemoveEntityComponentFieldInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
+	return DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
 }
 
-bool SpatialSpanIdStore::RemoveEntityComponentFieldInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialSpanIdStore::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
 {
 	if (SpanIdMap == nullptr)
 	{
@@ -104,7 +104,7 @@ bool SpatialSpanIdStore::RemoveEntityComponentFieldInternal(FieldIdMap* SpanIdMa
 	return bRemoved;
 }
 
-void SpatialSpanIdStore::DropOldUpdates()
+void SpatialSpanIdStore::DropOldSpanIds()
 {
 	if (NextClearTime < FDateTime::Now())
 	{
@@ -145,28 +145,14 @@ void SpatialSpanIdStore::DropOldUpdates()
 
 		for (const EntityComponentFieldId& Id : EntityComponentFieldIdsToRemove)
 		{
-			RemoveEntityComponentFieldSpanId(Id.EntityComponentId, Id.FieldId);
+			DropSpanId(Id.EntityComponentId, Id.FieldId);
 		}
 
 		EntityComponentFieldSpanIds.Compact();
 	}
 }
 
-void SpatialSpanIdStore::ProcessRPCComponentUpdate(const EntityComponentId& Id, Schema_Object* SchemaObject, ERPCType RPCType, worker::c::Trace_SpanId SpanId)
-{
-	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
-	for (uint32 RingBufferIndex = 0; RingBufferIndex < Descriptor.RingBufferSize; RingBufferIndex++)
-	{
-		Schema_FieldId FieldId = Descriptor.SchemaFieldStart + RingBufferIndex;
-		if (Schema_GetObjectCount(SchemaObject, FieldId) > 0)
-		{
-			RPCPayload Payload = Schema_GetObject(SchemaObject, FieldId);
-			AddEntityComponentFieldSpanId(Id, Payload.Index, SpanId);
-		}
-	}
-}
-
-void SpatialSpanIdStore::AddEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId)
+void SpatialSpanIdStore::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId)
 {
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 
@@ -178,11 +164,6 @@ void SpatialSpanIdStore::AddEntityComponentFieldSpanId(const EntityComponentId& 
 	EntityComponentFieldIdUpdateSpanId& SpawnIdRef = SpanIdMap->FindOrAdd(FieldId);
 	SpawnIdRef.SpanId = SpanId;
 	SpawnIdRef.UpdateTime = FDateTime::Now();
-}
-
-bool SpatialSpanIdStore::IsComponentIdRPCEndpoint(const Worker_ComponentId ComponentId)
-{
-	return ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 }
 
 void SpatialSpanIdStore::UpdateNextClearTime()

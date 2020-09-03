@@ -175,7 +175,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 
 bool SpatialEventTracer::IsEnabled() const
 {
-	return 	bEnabled; //Trace_EventTracer_IsEnabled(EventTracer);
+	return bEnabled; // Trace_EventTracer_IsEnabled(EventTracer);
 }
 
 void SpatialEventTracer::Enable(const FString& FileName)
@@ -232,7 +232,7 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
 	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
 
-	if (SpanIdStore.HasSpanIdForEntityComponent(Id))
+	if (SpanIdStore.HasSpanIds(Id))
 	{
 		TraceEvent(FEventMergeComponentUpdate(Id.EntityId, Id.ComponentId));
 	}
@@ -240,22 +240,22 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	SpanIdStore.ComponentUpdate(Op);
 }
 
-worker::c::Trace_SpanId SpatialEventTracer::GetEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId)
+worker::c::Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	return SpanIdStore.GetEntityComponentFieldSpanId(Id, FieldId);
+	return SpanIdStore.GetSpanId(Id, FieldId);
 }
 
-void SpatialEventTracer::ClearEntityComponentSpanIds(const EntityComponentId& Id)
+void SpatialEventTracer::DropSpanIds(const EntityComponentId& Id)
 {
-	SpanIdStore.ClearEntityComponentSpanIds(Id);
+	SpanIdStore.DropSpanIds(Id);
 }
 
-void SpatialEventTracer::RemoveEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId)
+void SpatialEventTracer::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	SpanIdStore.RemoveEntityComponentFieldSpanId(Id, FieldId);
+	SpanIdStore.DropSpanId(Id, FieldId);
 }
 
 void SpatialEventTracer::DropOldUpdates()
 {
-	SpanIdStore.DropOldUpdates();
+	SpanIdStore.DropOldSpanIds();
 }

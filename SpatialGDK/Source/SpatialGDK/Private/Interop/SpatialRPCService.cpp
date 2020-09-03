@@ -2,22 +2,21 @@
 
 #include "Interop/SpatialRPCService.h"
 
-#include "WorkerSDK/improbable/c_trace.h"
+#include "EngineClasses/SpatialNetDriver.h"		   // For EventTracing
+#include "EngineClasses/SpatialPackageMapClient.h" // For EventTracing
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "EngineClasses/SpatialNetDriver.h" // For EventTracing
-#include "EngineClasses/SpatialPackageMapClient.h" // For EventTracing
+#include "WorkerSDK/improbable/c_trace.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
 namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
-									 USpatialLatencyTracer* SpatialLatencyTracer,
-									 SpatialEventTracer* EventTracer)
+									 USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
@@ -25,7 +24,8 @@ SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, cons
 {
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target, UFunction* Function)
+EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target,
+										  UFunction* Function)
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
@@ -64,7 +64,8 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	return Result;
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload&& PendingPayload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload&& PendingPayload,
+												  bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
@@ -249,9 +250,10 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		{
 			// Attach causes together, we need to send these span ids with the RPCs to continue on the other side without
 			// joining unrelated RPCs together.
-			UpdateToSend.SpanId = Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
+			UpdateToSend.SpanId =
+				Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
 		}
-		else if(It.Value.SpanIds.Num() == 1) 
+		else if (It.Value.SpanIds.Num() == 1)
 		{
 			// No need to chain causes here
 			UpdateToSend.SpanId = It.Value.SpanIds[0];
@@ -604,7 +606,8 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
-Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const worker::c::Trace_SpanId* SpanId)
+Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair,
+																	  const worker::c::Trace_SpanId* SpanId)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)

@@ -18,27 +18,22 @@ namespace SpatialGDK
 class SpatialSpanIdStore
 {
 public:
-
 	SpatialSpanIdStore();
 
 	void ComponentAdd(const Worker_Op& Op);
 	bool ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
 
-	worker::c::Trace_SpanId GetEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId);
-	bool ClearEntityComponentSpanIds(const EntityComponentId& Id);
-	bool RemoveEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	bool DropSpanIds(const EntityComponentId& Id);
+	bool DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	void DropOldSpanIds();
 
-	bool HasSpanIdForEntityComponent(const EntityComponentId& Id) const { return EntityComponentFieldSpanIds.Contains(Id); }
-
-	void DropOldUpdates();
+	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	bool HasSpanIds(const EntityComponentId& Id) const { return EntityComponentFieldSpanIds.Contains(Id); }
 
 private:
 
-	float ClearFrequency = 10.0f;
-	float MinUpdateLifetime = 10.0f;
-	int32 MaxUpdateDrops = 5000;
-	FDateTime NextClearTime;
+	// Private Classes
 
 	struct EntityComponentFieldId
 	{
@@ -52,16 +47,20 @@ private:
 		FDateTime UpdateTime;
 	};
 
+	// Private Members
+
+	const float ClearFrequency = 5.0f;
+	const float MinUpdateLifetime = 10.0f;
+	const int32 MaxUpdateDrops = 5000;
+	FDateTime NextClearTime;
+
 	using FieldIdMap = TMap<uint32, EntityComponentFieldIdUpdateSpanId>;
 	TMap<EntityComponentId, FieldIdMap> EntityComponentFieldSpanIds;
 
+	// Private Functions
+
 	void UpdateNextClearTime();
-
-	void ProcessRPCComponentUpdate(const EntityComponentId& Id, Schema_Object* SchemaObject, ERPCType RPCType, worker::c::Trace_SpanId SpanId);
-	void AddEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId);
-
-	bool RemoveEntityComponentFieldInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId);
-
-	static bool IsComponentIdRPCEndpoint(const Worker_ComponentId ComponentId);
+	void AddSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId);
+	bool DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId);
 };
 } // namespace SpatialGDK
