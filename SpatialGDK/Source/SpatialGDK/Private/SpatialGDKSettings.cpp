@@ -8,6 +8,7 @@
 
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
+#include "Utils/SpatialStatics.h"
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
@@ -158,6 +159,9 @@ void USpatialGDKSettings::PostInitProperties()
 
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
+		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR
