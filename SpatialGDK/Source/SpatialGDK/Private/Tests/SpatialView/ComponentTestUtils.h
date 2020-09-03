@@ -49,7 +49,7 @@ inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, con
 /** Returns true if Lhs and Rhs have the same serialized form. */
 inline bool CompareSchemaObjects(const Schema_Object* Lhs, const Schema_Object* Rhs)
 {
-	if (Lhs == nullptr && Lhs == Rhs)
+	if (Lhs == Rhs)
 	{
 		return true;
 	}

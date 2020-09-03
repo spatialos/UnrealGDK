@@ -77,16 +77,21 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker_ConnectionStatusCode StatusCode, FString DisconnectReason)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString &DisconnectReason)
 {
+
 	// Convert an FString to a char* that we can store.
-	FTCHARToUTF8 Reason(*DisconnectReason);
+	const TCHAR* Reason = *DisconnectReason;
+	int32 SourceLength = TCString<TCHAR>::Strlen(Reason);
+	// Include the null terminator.
+	int32 BufferSize = FTCHARToUTF8_Convert::ConvertedLength(Reason, SourceLength) + 1;
+	OpListData->DisconnectReason = MakeUnique<char[]>(BufferSize);
+	FTCHARToUTF8_Convert::Convert(OpListData->DisconnectReason.Get(), BufferSize, Reason, SourceLength + 1);
 
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_DISCONNECT;
 	Op.op.disconnect.connection_status_code = StatusCode;
-	Op.op.disconnect.reason = Reason.Get();
-
+	Op.op.disconnect.reason = OpListData->DisconnectReason.Get();
 	OpListData->Ops.Add(Op);
 	return *this;
 }
