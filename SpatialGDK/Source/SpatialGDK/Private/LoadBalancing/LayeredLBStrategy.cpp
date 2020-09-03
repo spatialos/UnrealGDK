@@ -231,7 +231,6 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) const
 {
-	check(IsReady());
 	if (UAbstractLBStrategy* const* Entry = LayerNameToLBStrategy.Find(Layer))
 	{
 		return *Entry;

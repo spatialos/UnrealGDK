@@ -2524,8 +2524,8 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 
 		if (bIsReadyToStart)
 		{
-			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 #if WITH_EDITORONLY_DATA
+			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 			if (WorldSettings && WorldSettings->bEnableDebugInterface)
 			{
 				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(this);
