@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 
 #include "SpatialGDKSettings.h"
+#include "UObject/Field.h"
 #include "UObject/Object.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
@@ -110,13 +111,13 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	};
 
 #if ENGINE_MINOR_VERSION >= 25
-	typedef FProperty UnrealProperty;
-	typedef FStrProperty UnrealStrProperty;
-	typedef FObjectProperty UnrealObjectProperty;
+	using UnrealProperty = FProperty;
+	using UnrealStrProperty = FStrProperty;
+	using UnrealObjectProperty = FObjectProperty;
 #else
-	typedef UProperty UnrealProperty;
-	typedef UStrProperty UnrealStrProperty;
-	typedef UObjectProperty UnrealObjectProperty;
+	using UnrealProperty = UProperty;
+	using UnrealStrProperty = UStrProperty;
+	using UnrealObjectProperty = UObjectProperty;
 #endif
 	for (TFieldIterator<UnrealProperty> It(Struct); It; ++It)
 	{
