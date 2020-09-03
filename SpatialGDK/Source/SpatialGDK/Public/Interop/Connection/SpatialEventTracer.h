@@ -35,6 +35,16 @@ namespace SpatialGDK
 // Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure
 // there are necessary nullptr checks if that changes.
 
+#if ENGINE_MINOR_VERSION >= 25
+	using UnrealProperty = FProperty;
+	using UnrealStrProperty = FStrProperty;
+	using UnrealObjectProperty = FObjectProperty;
+#else
+	using UnrealProperty = UProperty;
+	using UnrealStrProperty = UStrProperty;
+	using UnrealObjectProperty = UObjectProperty;
+#endif
+
 class SpatialEventTracer
 {
 public:

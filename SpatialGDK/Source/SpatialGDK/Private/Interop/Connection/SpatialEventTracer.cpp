@@ -109,15 +109,6 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 	};
 
-#if ENGINE_MINOR_VERSION >= 25
-	using UnrealProperty = FProperty;
-	using UnrealStrProperty = FStrProperty;
-	using UnrealObjectProperty = FObjectProperty;
-#else
-	using UnrealProperty = UProperty;
-	using UnrealStrProperty = UStrProperty;
-	using UnrealObjectProperty = UObjectProperty;
-#endif
 	for (TFieldIterator<UnrealProperty> It(Struct); It; ++It)
 	{
 		UnrealProperty* Property = *It;
