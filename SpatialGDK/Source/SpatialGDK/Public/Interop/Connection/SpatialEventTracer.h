@@ -73,7 +73,6 @@ public:
 	void DropSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 
 private:
-
 	bool bEnabled{ false };
 	bool bRecordRuntimeAndWorkerEvents{ false };
 	worker::c::Trace_EventTracer* EventTracer{ nullptr };

@@ -130,7 +130,8 @@ void SpatialSpanIdStore::DropOldSpanIds()
 					NumDropped++;
 					if (NumDropped >= MaxSpanIdsToDrop)
 					{
-						UE_LOG(LogSpatialSpanIdStore, Log, TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
+						UE_LOG(LogSpatialSpanIdStore, Log,
+							   TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
 						bShouldBreak = true;
 						break;
 					}
