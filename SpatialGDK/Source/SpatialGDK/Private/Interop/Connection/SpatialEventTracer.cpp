@@ -3,7 +3,7 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 
 #include "SpatialGDKSettings.h"
-#include "UObject/UnrealTypePrivate.h"
+#include "UObject/Object.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 

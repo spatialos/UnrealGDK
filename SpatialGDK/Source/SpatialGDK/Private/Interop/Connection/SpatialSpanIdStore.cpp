@@ -2,8 +2,8 @@
 
 #include "Interop/Connection/SpatialSpanIdStore.h"
 
-#include "UObject/Field.h"
 #include "SpatialConstants.h"
+#include "UObject/Field.h"
 #include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
@@ -95,7 +95,7 @@ bool SpatialSpanIdStore::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityC
 	}
 
 	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
-	if (bRemoved && SpanIdMap->Num() == 0)
+	if (bDropped && SpanIdMap->Num() == 0)
 	{
 		EntityComponentFieldSpanIds.Remove(Id);
 	}
