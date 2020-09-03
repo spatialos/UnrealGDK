@@ -107,6 +107,15 @@ private:
 	int32 Count;
 };
 
+template <typename T>
+struct TIsContiguousContainer<ComponentSpan<T>>
+{
+	enum
+	{
+		Value = true
+	};
+};
+
 struct EntityDelta
 {
 	Worker_EntityId EntityId;

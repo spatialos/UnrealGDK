@@ -16,11 +16,6 @@ const Schema_FieldId EVENT_INT_FIELD_ID = 2;
 const Schema_FieldId TEST_DOUBLE_FIELD_ID = 1;
 } // namespace EntityComponentTestUtils
 
-inline ComponentSpan<ComponentChange> CreateTestComponentSpan(TArray<ComponentChange>& Components)
-{
-	return { Components.GetData(), Components.Num() };
-}
-
 inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const double Value)
 {
 	ComponentData Data{ Id };
@@ -37,14 +32,14 @@ inline ComponentUpdate CreateTestComponentUpdate(const Worker_ComponentId Id, co
 	return Update;
 }
 
-inline void AddTestEvent(ComponentUpdate* Update, int Value)
+inline void AddTestEvent(ComponentUpdate* Update, const int Value)
 {
 	Schema_Object* events = Update->GetEvents();
 	Schema_Object* eventData = Schema_AddObject(events, EntityComponentTestUtils::EVENT_ID);
 	Schema_AddInt32(eventData, EntityComponentTestUtils::EVENT_INT_FIELD_ID, Value);
 }
 
-inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, int Value)
+inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, const int Value)
 {
 	ComponentUpdate Update{ Id };
 	AddTestEvent(&Update, Value);
@@ -91,7 +86,7 @@ inline bool CompareSchemaComponentUpdate(Schema_ComponentUpdate* Lhs, Schema_Com
 	return CompareSchemaObjects(Schema_GetComponentUpdateEvents(Lhs), Schema_GetComponentUpdateEvents(Rhs));
 }
 
-inline bool CompareSchemaComponentRefresh(const CompleteUpdateData Lhs, const CompleteUpdateData Rhs)
+inline bool CompareSchemaComponentRefresh(const CompleteUpdateData& Lhs, const CompleteUpdateData& Rhs)
 {
 	if (!CompareSchemaObjects(Schema_GetComponentDataFields(Lhs.Data), Schema_GetComponentDataFields(Rhs.Data)))
 	{
@@ -124,6 +119,11 @@ inline bool CompareComponentData(const ComponentData& Lhs, const ComponentData& 
 		return false;
 	}
 	return CompareSchemaObjects(Lhs.GetFields(), Rhs.GetFields());
+}
+
+inline bool CompareComponentChangeById(const ComponentChange& Lhs, const ComponentChange& Rhs)
+{
+	return Lhs.ComponentId < Rhs.ComponentId;
 }
 
 inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentChange& Rhs)
@@ -161,13 +161,18 @@ inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentC
 	case ComponentChange::REMOVE:
 		break;
 	default:
-		return false;
+		checkNoEntry();
 	}
 
 	return true;
 }
 
-inline bool CompareAuthorityChanges(AuthorityChange Lhs, AuthorityChange Rhs)
+inline bool CompareAuthorityChangeById(const AuthorityChange& Lhs, const AuthorityChange& Rhs)
+{
+	return Lhs.ComponentId < Rhs.ComponentId;
+}
+
+inline bool CompareAuthorityChanges(const AuthorityChange& Lhs, const AuthorityChange& Rhs)
 {
 	if (Lhs.ComponentId != Rhs.ComponentId)
 	{
@@ -268,12 +273,6 @@ bool AreEquivalent(const TArray<T>& Lhs, const TArray<T>& Rhs, Predicate&& Compa
 	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), Forward<Predicate>(Compare));
 }
 
-template <typename T, typename Predicate>
-bool AreEquivalent(const TArray<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Compare)
-{
-	return std::is_permutation(Lhs.GetData(), Lhs.GetData() + Lhs.Num(), Rhs.GetData(), std::forward<Predicate>(Compare));
-}
-
 inline bool AreEquivalent(const TArray<EntityComponentUpdate>& Lhs, const TArray<EntityComponentUpdate>& Rhs)
 {
 	return AreEquivalent(Lhs, Rhs, CompareEntityComponentUpdates);
@@ -292,11 +291,6 @@ inline bool AreEquivalent(const TArray<EntityComponentData>& Lhs, const TArray<E
 inline bool AreEquivalent(const TArray<EntityComponentId>& Lhs, const TArray<EntityComponentId>& Rhs)
 {
 	return AreEquivalent(Lhs, Rhs, CompareEntityComponentId);
-}
-
-inline bool AreEquivalent(const TArray<ComponentData>& Lhs, const TArray<ComponentData>& Rhs)
-{
-	return AreEquivalent(Lhs, Rhs, CompareComponentData);
 }
 
 } // namespace SpatialGDK

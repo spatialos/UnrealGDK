@@ -11,17 +11,6 @@
 
 using namespace SpatialGDK;
 
-namespace
-{
-void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpListBuilder& OpListBuilder)
-{
-	OpList Ops = MoveTemp(OpListBuilder).CreateOpList();
-	TArray<OpList> OpLists;
-	OpLists.Push(MoveTemp(Ops));
-	Delta.SetFromOpList(MoveTemp(OpLists), View);
-}
-} // anonymous namespace
-
 VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_THEN_get_entity_in_view_and_delta)
 {
 	ViewDelta InputDelta;
@@ -89,24 +78,22 @@ VIEWDELTA_TEST(GIVEN_entity_in_view_WHEN_add_component_THEN_entity_and_component
 
 VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_component_THEN_component_udated_in_view)
 {
-	double NewComponentValue = 30;
-
 	ViewDelta InputDelta;
 	EntityView InputView;
 	AddEntityToView(InputView, TestEntityId);
 	AddComponentToView(InputView, TestEntityId, TestComponentId, TestComponentValue);
 
 	EntityComponentOpListBuilder OpListBuilder;
-	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, NewComponentValue));
+	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
 	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
-	AddComponentToView(ExpectedView, TestEntityId, TestComponentId, NewComponentValue);
+	AddComponentToView(ExpectedView, TestEntityId, TestComponentId, OtherTestComponentValue);
 
 	ExpectedViewDelta ExpectedDelta;
 	ExpectedDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE)
-		.AddComponentUpdate(TestEntityId, CreateTestComponentUpdate(TestComponentId, NewComponentValue));
+		.AddComponentUpdate(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
 
 	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
 	TestTrue("Views are equal", AreEquivalent(InputView, ExpectedView));
@@ -254,27 +241,24 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_remove_THEN_get_empty_view_and_delta)
 
 VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_and_add_component_THEN_component_refresh)
 {
-	double EventValue = 25;
-	double NewComponentValue = 30;
-
 	ViewDelta InputDelta;
 	EntityView InputView;
 	AddEntityToView(InputView, TestEntityId);
 	AddComponentToView(InputView, TestEntityId, TestComponentId, TestComponentValue);
 
 	EntityComponentOpListBuilder OpListBuilder;
-	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentEvent(TestComponentId, EventValue))
-		.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, NewComponentValue));
+	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentEvent(TestComponentId, TestEventValue))
+		.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, OtherTestComponentValue));
 	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
-	AddComponentToView(ExpectedView, TestEntityId, TestComponentId, NewComponentValue);
+	AddComponentToView(ExpectedView, TestEntityId, TestComponentId, OtherTestComponentValue);
 
 	ExpectedViewDelta ExpectedDelta;
 	ExpectedDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE)
-		.AddComponentRefreshed(TestEntityId, CreateTestComponentEvent(TestComponentId, EventValue),
-							   CreateTestComponentData(TestComponentId, NewComponentValue));
+		.AddComponentRefreshed(TestEntityId, CreateTestComponentEvent(TestComponentId, TestEventValue),
+							   CreateTestComponentData(TestComponentId, OtherTestComponentValue));
 
 	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
 	TestTrue("Views are equal", AreEquivalent(InputView, ExpectedView));
@@ -284,8 +268,6 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_and_add_component_
 
 VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_and_add_component_THEN_component_refresh)
 {
-	double NewComponentValue = 30;
-
 	ViewDelta InputDelta;
 	EntityView InputView;
 	AddEntityToView(InputView, TestEntityId);
@@ -293,16 +275,17 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_and_add_component_
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(TestEntityId, TestComponentId)
-		.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, NewComponentValue));
+		.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, OtherTestComponentValue));
 	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
-	AddComponentToView(ExpectedView, TestEntityId, TestComponentId, NewComponentValue);
+	AddComponentToView(ExpectedView, TestEntityId, TestComponentId, OtherTestComponentValue);
 
 	ExpectedViewDelta ExpectedDelta;
 	ExpectedDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE)
-		.AddComponentRefreshed(TestEntityId, ComponentUpdate(TestComponentId), CreateTestComponentData(TestComponentId, NewComponentValue));
+		.AddComponentRefreshed(TestEntityId, ComponentUpdate(TestComponentId),
+							   CreateTestComponentData(TestComponentId, OtherTestComponentValue));
 
 	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
 	TestTrue("Views are equal", AreEquivalent(InputView, ExpectedView));

@@ -1,5 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "Algo/Compare.h"
 #include "ComponentTestUtils.h"
 #include "SpatialView/ViewDelta.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
@@ -66,56 +67,23 @@ ExpectedViewDelta& ExpectedViewDelta::AddDisconnect(const uint8_t StatusCode, FS
 	return *this;
 }
 
-bool CompareComponentChange(ComponentChange Lhs, ComponentChange Rhs)
-{
-	return Lhs.ComponentId < Rhs.ComponentId;
-}
-
-bool CompareAuthorityChange(AuthorityChange Lhs, AuthorityChange Rhs)
-{
-	return Lhs.ComponentId < Rhs.ComponentId;
-}
-
 void ExpectedViewDelta::SortEntityDeltas()
 {
 	for (auto& Pair : EntityDeltas)
 	{
-		Pair.Value.AuthorityGained.Sort(CompareAuthorityChange);
-		Pair.Value.AuthorityLost.Sort(CompareAuthorityChange);
-		Pair.Value.AuthorityLostTemporarily.Sort(CompareAuthorityChange);
-		Pair.Value.ComponentsAdded.Sort(CompareComponentChange);
-		Pair.Value.ComponentsRemoved.Sort(CompareComponentChange);
-		Pair.Value.ComponentsRefreshed.Sort(CompareComponentChange);
-		Pair.Value.ComponentUpdates.Sort(CompareComponentChange);
+		Pair.Value.AuthorityGained.Sort(CompareAuthorityChangeById);
+		Pair.Value.AuthorityLost.Sort(CompareAuthorityChangeById);
+		Pair.Value.AuthorityLostTemporarily.Sort(CompareAuthorityChangeById);
+		Pair.Value.ComponentsAdded.Sort(CompareComponentChangeById);
+		Pair.Value.ComponentsRemoved.Sort(CompareComponentChangeById);
+		Pair.Value.ComponentsRefreshed.Sort(CompareComponentChangeById);
+		Pair.Value.ComponentUpdates.Sort(CompareComponentChangeById);
 	}
 
 	EntityDeltas.KeySort(CompareWorkerEntityIdKey);
 }
 
-template <typename T, typename Predicate>
-bool ExpectedViewDelta::Compare(const TArray<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Comparator)
-{
-	if (Lhs.Num() != Rhs.Num())
-	{
-		return false;
-	}
-
-	auto LhsFirst = Lhs.GetData();
-	auto LhsLast = Lhs.GetData() + Lhs.Num();
-	auto RhsFirst = Rhs.GetData();
-	while (LhsFirst != LhsLast)
-	{
-		if (!Comparator(*LhsFirst, *RhsFirst))
-		{
-			return false;
-		}
-		++LhsFirst, ++RhsFirst;
-	}
-
-	return true;
-}
-
-bool ExpectedViewDelta::Compare(ViewDelta& Other)
+bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
 	TArray<EntityDelta> RhsEntityDeltas = Other.GetEntityDeltas();
 	if (EntityDeltas.Num() != RhsEntityDeltas.Num())
@@ -145,40 +113,43 @@ bool ExpectedViewDelta::Compare(ViewDelta& Other)
 			return false;
 		}
 
-		if (!Compare(LhsEntityDelta.AuthorityGained, RhsEntityDelta.AuthorityGained, CompareAuthorityChanges))
+		if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityGained, RhsEntityDelta.AuthorityGained, CompareAuthorityChanges))
 		{
 			return false;
 		}
+		/*
+				if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLost, RhsEntityDelta.AuthorityLost, CompareAuthorityChanges))
+				{
+					return false;
+				}
 
-		if (!Compare(LhsEntityDelta.AuthorityLost, RhsEntityDelta.AuthorityLost, CompareAuthorityChanges))
-		{
-			return false;
-		}
+				if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLostTemporarily, RhsEntityDelta.AuthorityLostTemporarily,
+		   CompareAuthorityChanges))
+				{
+					return false;
+				}
 
-		if (!Compare(LhsEntityDelta.AuthorityLostTemporarily, RhsEntityDelta.AuthorityLostTemporarily, CompareAuthorityChanges))
-		{
-			return false;
-		}
+				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsAdded, RhsEntityDelta.ComponentsAdded, CompareComponentChanges))
+				{
+					return false;
+				}
 
-		if (!Compare(LhsEntityDelta.ComponentsAdded, RhsEntityDelta.ComponentsAdded, CompareComponentChanges))
-		{
-			return false;
-		}
+				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRemoved, RhsEntityDelta.ComponentsRemoved, CompareComponentChanges))
+				{
+					return false;
+				}
 
-		if (!Compare(LhsEntityDelta.ComponentsRemoved, RhsEntityDelta.ComponentsRemoved, CompareComponentChanges))
-		{
-			return false;
-		}
+				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRefreshed, RhsEntityDelta.ComponentsRefreshed,
+		   CompareComponentChanges))
+				{
+					return false;
+				}
 
-		if (!Compare(LhsEntityDelta.ComponentsRefreshed, RhsEntityDelta.ComponentsRefreshed, CompareComponentChanges))
-		{
-			return false;
-		}
-
-		if (!Compare(LhsEntityDelta.ComponentUpdates, RhsEntityDelta.ComponentUpdates, CompareComponentChanges))
-		{
-			return false;
-		}
+				if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentUpdates, RhsEntityDelta.ComponentUpdates, CompareComponentChanges))
+				{
+					return false;
+				}
+				*/
 	}
 
 	return true;
