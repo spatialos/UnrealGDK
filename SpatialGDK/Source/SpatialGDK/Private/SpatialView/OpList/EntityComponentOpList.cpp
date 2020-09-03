@@ -77,9 +77,9 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString &DisconnectReason)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker_ConnectionStatusCode StatusCode,
+																		  const FString& DisconnectReason)
 {
-
 	// Convert an FString to a char* that we can store.
 	const TCHAR* Reason = *DisconnectReason;
 	int32 SourceLength = TCString<TCHAR>::Strlen(Reason);

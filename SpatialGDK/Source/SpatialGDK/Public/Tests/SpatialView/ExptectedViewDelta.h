@@ -36,8 +36,5 @@ private:
 	TMap<uint32, ExpectedEntityDelta> EntityDeltas;
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;
-
-	template <typename T, typename Predicate>
-	bool Compare(const TArray<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Compare);
 };
 } // namespace SpatialGDK

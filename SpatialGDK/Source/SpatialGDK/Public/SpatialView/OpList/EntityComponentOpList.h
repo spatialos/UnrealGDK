@@ -30,7 +30,7 @@ public:
 	EntityComponentOpListBuilder& UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update);
 	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	EntityComponentOpListBuilder& SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
-	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString &DisconnectReason);
+	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString& DisconnectReason);
 
 	OpList CreateOpList() &&;
 
