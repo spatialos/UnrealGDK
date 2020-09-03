@@ -95,10 +95,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		SpanId = EventTracer->TraceEvent(FEventCreateEntity(Channel->GetEntityId(), Channel->Actor));
-	}
+	SpanId = EventTracer->TraceEvent(FEventCreateEntity(Channel->GetEntityId(), Channel->Actor));
 
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId);
 
@@ -617,12 +614,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
-	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		SpanId = EventTracer->TraceEvent(FEventAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
-	}
-
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FEventAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
@@ -992,10 +984,7 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	if (EventTracer->IsEnabled())
-	{
-		EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
-	}
+	EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
 
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
 
@@ -1071,14 +1060,10 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
-	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		FEventCommandResponse EventCommandResponse;
-		EventCommandResponse.RequestID = RequestId;
-		EventCommandResponse.bSuccess = true;
-		SpanId = EventTracer->TraceEvent(EventCommandResponse);
-	}
+	FEventCommandResponse EventCommandResponse;
+	EventCommandResponse.RequestID = RequestId;
+	EventCommandResponse.bSuccess = true;
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
@@ -1090,28 +1075,20 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.command_index = CommandIndex;
 	Response.schema_type = Schema_CreateCommandResponse();
 
-	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		FEventCommandResponse EventCommandResponse;
-		EventCommandResponse.RequestID = RequestId;
-		EventCommandResponse.bSuccess = true;
-		SpanId = EventTracer->TraceEvent(EventCommandResponse);
-	}
+	FEventCommandResponse EventCommandResponse;
+	EventCommandResponse.RequestID = RequestId;
+	EventCommandResponse.bSuccess = true;
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
-	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer->IsEnabled())
-	{
-		FEventCommandResponse EventCommandResponse;
-		EventCommandResponse.RequestID = RequestId;
-		EventCommandResponse.bSuccess = false;
-		SpanId = EventTracer->TraceEvent(EventCommandResponse);
-	}
+	FEventCommandResponse EventCommandResponse;
+	EventCommandResponse.RequestID = RequestId;
+	EventCommandResponse.bSuccess = false;
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
 
 	Connection->SendCommandFailure(RequestId, Message, SpanId);
 }
@@ -1175,12 +1152,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 
-		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer->IsEnabled())
-		{
-			SpanId = EventTracer->TraceEvent(FEventRetireEntityRequest(EntityId, Actor));
-		}
-
+		TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FEventRetireEntityRequest(EntityId, Actor));
 		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId, SpanId);
 	}
 }

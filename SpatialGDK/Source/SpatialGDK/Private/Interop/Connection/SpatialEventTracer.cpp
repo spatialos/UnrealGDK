@@ -83,6 +83,11 @@ SpatialEventTracer::~SpatialEventTracer()
 TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
 													   const worker::c::Trace_SpanId* Cause)
 {
+	if (!IsEnabled())
+	{
+		return {};
+	}
+
 	Trace_SpanId CurrentSpanId;
 	if (Cause)
 	{
