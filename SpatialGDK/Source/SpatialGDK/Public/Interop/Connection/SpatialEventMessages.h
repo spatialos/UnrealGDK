@@ -371,4 +371,26 @@ struct FEventMergeComponentUpdate : public FEventMessage
 	UPROPERTY() uint32 ComponentId{ 0 };
 };
 
+USTRUCT()
+struct FEventPropertyUpdated: public FEventMessage
+{
+	GENERATED_BODY()
+
+	FEventPropertyUpdated()
+		: FEventMessage("property_updated")
+	{
+	}
+	FEventPropertyUpdated(const int64 EntityId, uint32 ComponentId, const FString& PropertyName)
+		: FEventMessage(GDK_EVENT_NAMESPACE "property_updated")
+		, EntityId(EntityId)
+		, ComponentId(ComponentId)
+		, PropertyName(PropertyName)
+	{
+	}
+
+	UPROPERTY() int64 EntityId { -1 };
+	UPROPERTY() uint32 ComponentId { 0 };
+	UPROPERTY() FString PropertyName;
+};
+
 #undef GDK_EVENT_NAMESPACE

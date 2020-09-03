@@ -72,13 +72,13 @@ public:
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;
-	virtual void OnAddEntity(const Worker_AddEntityOp& Op) override;
+	virtual void OnAddEntity(const Worker_Op& Op) override;
 	virtual void OnAddComponent(const Worker_AddComponentOp& Op) override;
-	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
+	virtual void OnRemoveEntity(const Worker_Op& Op) override;
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
+	virtual void OnAuthorityChange(const Worker_Op& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
@@ -87,10 +87,10 @@ public:
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
 	virtual void OnCommandRequest(const Worker_Op& Op) override;
-	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
+	virtual void OnCommandResponse(const Worker_Op& Op) override;
 
 	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;
-	virtual void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op) override;
+	virtual void OnCreateEntityResponse(const Worker_Op& Op) override;
 
 	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
@@ -136,7 +136,7 @@ private:
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
 	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
-	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
+	void HandleActorAuthority(const Worker_Op& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
 	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op,
@@ -156,7 +156,7 @@ private:
 
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
 
-	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
+	void ReceiveCommandResponse(const Worker_Op& Op);
 
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
@@ -203,7 +203,7 @@ private:
 
 		bool bInCriticalSection;
 		TArray<Worker_EntityId> PendingAddActors;
-		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
+		TArray<Worker_Op> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
 
@@ -254,7 +254,7 @@ private:
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddActors;
-	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
+	TArray<Worker_Op> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 

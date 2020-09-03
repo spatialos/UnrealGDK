@@ -46,16 +46,14 @@ class SpatialEventTracer
 public:
 	SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
-	Trace_SpanId CreateNewSpanId();
-	Trace_SpanId CreateNewSpanId(const TArray<Trace_SpanId>& Causes);
 
 	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	// TODO(EventTracer): add the option to SpatialSpanIdActivator for Sent TraceEvents.
+	// TODO(EventTracer): add the option to SpatialScopedActiveSpanId for Sent TraceEvents.
 	// Consider making sure it's not accepting rvalue (since SpatialSpanIdActivatNetDriveror must live long enough for the worker sent op to
-	// be registered with this SpanId) e.g. void TraceEvent(... SpatialSpanIdActivator&& SpanIdActivator) = delete;
-	// TODO(EventTracer): Communicate to others, that SpatialSpanIdActivator must be creating prior to calling worker send functions
+	// be registered with this SpanId) e.g. void TraceEvent(... SpatialScopedActiveSpanId&& SpanIdActivator) = delete;
+	// TODO(EventTracer): Communicate to others, that SpatialScopedActiveSpanId must be creating prior to calling worker send functions
 
 	template <class T>
 	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const worker::c::Trace_SpanId* Cause = nullptr)
@@ -63,25 +61,32 @@ public:
 		return TraceEvent(EventMessage, T::StaticStruct(), Cause);
 	}
 
-	bool IsEnabled() const { return !!bEnabled; }
+	bool IsEnabled() const;
 
-	worker::c::Trace_SpanId* GetEntityComponentSpanId(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	void ComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
-	void ComponentRemove(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
-	void ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const worker::c::Trace_SpanId SpanId);
-	void ClearSpanStore();
-	worker::c::Trace_SpanId GetNextRPCSpanID();
-	void RemoveRPCSpanIds(int32 NumToRemove);
+	void ComponentAdd(const Worker_Op& Op);
+	void ComponentRemove(const Worker_Op& Op);
+	void ComponentUpdate(const Worker_Op& Op);
+	void DropOldUpdates();
+
+	worker::c::Trace_SpanId GetEntityComponentFieldSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
+	void ClearEntityComponentSpanIds(const EntityComponentId& EntityComponentId);
+	void RemoveEntityComponentFieldSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 
 private:
+
+	bool bEnabled = false;
+	bool bRecordRuntimeAndWorkerEvents{ false };
+
 	void Enable(const FString& FileName);
 	void Disable();
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
-	bool bRecordRuntimeAndWorkerEvents{ false };
 
-	bool bEnabled{ false };
-	worker::c::Io_Stream* Stream;
+	struct StreamDeleter {
+		void operator()(worker::c::Io_Stream* Stream) const;
+	};
+
+	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
 
 	worker::c::Trace_EventTracer* EventTracer{ nullptr };
 
@@ -94,15 +99,15 @@ private:
 	SpatialSpanIdStore SpanIdStore;
 };
 
-struct SpatialSpanIdActivator
+struct SpatialScopedActiveSpanId
 {
-	SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
-	~SpatialSpanIdActivator();
+	SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
+	~SpatialScopedActiveSpanId();
 
-	SpatialSpanIdActivator(const SpatialSpanIdActivator&) = delete;
-	SpatialSpanIdActivator(SpatialSpanIdActivator&&) = delete;
-	SpatialSpanIdActivator& operator=(const SpatialSpanIdActivator&) = delete;
-	SpatialSpanIdActivator& operator=(SpatialSpanIdActivator&&) = delete;
+	SpatialScopedActiveSpanId(const SpatialScopedActiveSpanId&) = delete;
+	SpatialScopedActiveSpanId(SpatialScopedActiveSpanId&&) = delete;
+	SpatialScopedActiveSpanId& operator=(const SpatialScopedActiveSpanId&) = delete;
+	SpatialScopedActiveSpanId& operator=(SpatialScopedActiveSpanId&&) = delete;
 
 private:
 	TOptional<Trace_SpanId> CurrentSpanId;

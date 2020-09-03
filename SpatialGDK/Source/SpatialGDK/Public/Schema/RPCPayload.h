@@ -63,7 +63,6 @@ struct RPCPayload
 	uint32 Index;
 	TArray<uint8> PayloadData;
 	TraceKey Trace = InvalidTraceKey;
-	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct RPCsOnEntityCreation : Component

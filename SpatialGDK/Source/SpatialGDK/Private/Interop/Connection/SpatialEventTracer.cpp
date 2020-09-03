@@ -20,7 +20,7 @@ using namespace worker::c;
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
-	if (EventTracer == nullptr || !EventTracer->bEnabled)
+	if (EventTracer == nullptr || !EventTracer->IsEnabled())
 	{
 		return;
 	}
@@ -31,7 +31,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
 	{
 		EventTracer->BytesWrittenToStream += ItemSize;
-		int Code = Trace_SerializeItemToStream(EventTracer->Stream, Item, ItemSize);
+		int Code = Trace_SerializeItemToStream(EventTracer->Stream.Get(), Item, ItemSize);
 		if (Code != 0)
 		{
 			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
@@ -39,7 +39,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialSpanIdActivator::SpatialSpanIdActivator(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId)
+SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
 	, EventTracer(InEventTracer->GetWorkerEventTracer())
 {
@@ -49,7 +49,7 @@ SpatialSpanIdActivator::SpatialSpanIdActivator(SpatialEventTracer* InEventTracer
 	}
 }
 
-SpatialSpanIdActivator::~SpatialSpanIdActivator()
+SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 {
 	if (CurrentSpanId.IsSet())
 	{
@@ -77,35 +77,20 @@ SpatialEventTracer::~SpatialEventTracer()
 	}
 }
 
-Trace_SpanId SpatialEventTracer::CreateNewSpanId()
-{
-	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
-}
-
-Trace_SpanId SpatialEventTracer::CreateNewSpanId(const TArray<Trace_SpanId>& Causes)
-{
-	return Trace_EventTracer_AddSpan(EventTracer, Causes.GetData(), Causes.Num());
-}
-
 TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
 													   const worker::c::Trace_SpanId* Cause)
 {
-	if (!IsEnabled())
-	{
-		return {};
-	}
-
 	Trace_SpanId CurrentSpanId;
 	if (Cause)
 	{
-		CurrentSpanId = CreateNewSpanId({ *Cause });
+		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Cause, 1);
 	}
 	else
 	{
-		CurrentSpanId = CreateNewSpanId();
+		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	}
 
-	Trace_Event TraceEvent{ CurrentSpanId, 0, "", EventMessage.GetType(), nullptr };
+	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, "", EventMessage.GetType(), nullptr };
 	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
 		return {};
@@ -139,7 +124,6 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 
 		check(Property->ArrayDim == 1); // Arrays not handled yet
 
-		// convert the property to a FJsonValue
 		if (UnrealStrProperty* StringProperty = CastField<UnrealStrProperty>(Property))
 		{
 			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
@@ -189,6 +173,11 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	return CurrentSpanId;
 }
 
+bool SpatialEventTracer::IsEnabled() const
+{
+	return 	bEnabled; //Trace_EventTracer_IsEnabled(EventTracer);
+}
+
 void SpatialEventTracer::Enable(const FString& FileName)
 {
 	Trace_EventTracer_Parameters parameters = {};
@@ -196,7 +185,6 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
-
 	bEnabled = true;
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
@@ -210,8 +198,13 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
-		Stream = Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE);
+		Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 	}
+}
+
+void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* Stream) const
+{
+	Io_Stream_Destroy(Stream);
 }
 
 void SpatialEventTracer::Disable()
@@ -219,58 +212,50 @@ void SpatialEventTracer::Disable()
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 	Trace_EventTracer_Disable(EventTracer);
 	bEnabled = false;
-	Io_Stream_Destroy(Stream);
 	Stream = nullptr;
 
 	Trace_EventTracer_Destroy(EventTracer);
+}
 
-	if (Stream != nullptr)
+void SpatialEventTracer::ComponentAdd(const Worker_Op& Op)
+{
+	SpanIdStore.ComponentAdd(Op);
+}
+
+void SpatialEventTracer::ComponentRemove(const Worker_Op& Op)
+{
+	SpanIdStore.ComponentRemove(Op);
+}
+
+void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
+{
+	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
+	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
+
+	if (SpanIdStore.HasSpanIdForEntityComponent(Id))
 	{
-		Io_Stream_Destroy(Stream);
-	}
-}
-
-Trace_SpanId* SpatialEventTracer::GetEntityComponentSpanId(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
-{
-	return SpanIdStore.GetEntityComponentSpanId({ EntityId, ComponentId });
-}
-
-void SpatialEventTracer::ComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-									  const worker::c::Trace_SpanId SpanId)
-{
-	SpanIdStore.ComponentAdd({ EntityId, ComponentId }, SpanId);
-}
-
-void SpatialEventTracer::ComponentRemove(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-										 const worker::c::Trace_SpanId SpanId)
-{
-	SpanIdStore.ComponentRemove({ EntityId, ComponentId }, SpanId);
-}
-
-void SpatialEventTracer::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-										 const worker::c::Trace_SpanId SpanId)
-{
-	EntityComponentId Id = { EntityId, ComponentId };
-	Trace_SpanId* ExistingSpanId = SpanIdStore.GetEntityComponentSpanId(Id);
-	if (ExistingSpanId != nullptr)
-	{
-		TraceEvent(FEventMergeComponentUpdate(EntityId, ComponentId), ExistingSpanId);
+		TraceEvent(FEventMergeComponentUpdate(Id.EntityId, Id.ComponentId));
 	}
 
-	SpanIdStore.ComponentUpdate(Id, SpanId);
+	SpanIdStore.ComponentUpdate(Op);
 }
 
-worker::c::Trace_SpanId SpatialEventTracer::GetNextRPCSpanID()
+worker::c::Trace_SpanId SpatialEventTracer::GetEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	return SpanIdStore.GetNextRPCSpanID();
+	return SpanIdStore.GetEntityComponentFieldSpanId(Id, FieldId);
 }
 
-void SpatialEventTracer::RemoveRPCSpanIds(int32 NumToRemove)
+void SpatialEventTracer::ClearEntityComponentSpanIds(const EntityComponentId& Id)
 {
-	SpanIdStore.RemoveRPCSpanIds(NumToRemove);
+	SpanIdStore.ClearEntityComponentSpanIds(Id);
 }
 
-void SpatialEventTracer::ClearSpanStore()
+void SpatialEventTracer::RemoveEntityComponentFieldSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	SpanIdStore.Clear();
+	SpanIdStore.RemoveEntityComponentFieldSpanId(Id, FieldId);
+}
+
+void SpatialEventTracer::DropOldUpdates()
+{
+	SpanIdStore.DropOldUpdates();
 }

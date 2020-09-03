@@ -88,15 +88,26 @@ public:
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 private:
+
+	struct PendingRPCPayload
+	{
+		PendingRPCPayload(const RPCPayload& InPayload)
+			: Payload(InPayload)
+		{}
+
+		RPCPayload Payload;
+		TOptional<worker::c::Trace_SpanId> SpanId;
+	};
+
 	// For now, we should drop overflowed RPCs when entity crosses the boundary.
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload&& Payload, bool bCreatedEntity);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 
-	void AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload);
+	void AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& Payload);
 
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
@@ -125,8 +136,9 @@ private:
 		Schema_ComponentUpdate* Update;
 		TArray<worker::c::Trace_SpanId> SpanIds;
 	};
+
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
-	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
+	TMap<EntityRPCType, TArray<PendingRPCPayload>> OverflowedRPCs;
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);

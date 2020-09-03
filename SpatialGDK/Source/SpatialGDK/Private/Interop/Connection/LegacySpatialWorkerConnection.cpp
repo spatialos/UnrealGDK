@@ -274,7 +274,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_ComponentData* ComponentData = Message->Components.GetData();
 			uint32 ComponentCount = Message->Components.Num();
 #endif
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
 
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection, ComponentCount, ComponentData,
 													  Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr, nullptr);
@@ -283,7 +283,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::DeleteEntityRequest:
 		{
 			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
 			Worker_Connection_SendDeleteEntityRequest(WorkerConnection, Message->EntityId, nullptr);
 			break;
 		}
@@ -304,7 +304,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::ComponentUpdate:
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
 			Worker_Connection_SendComponentUpdate(WorkerConnection, Message->EntityId, &Message->Update, &DisableLoopback);
 
 			break;
@@ -321,7 +321,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FCommandResponse* Message = static_cast<FCommandResponse*>(OutgoingMessage.Get());
 
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
 
 			Worker_Connection_SendCommandResponse(WorkerConnection, Message->RequestId, &Message->Response);
 			break;
@@ -329,7 +329,7 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 		case EOutgoingMessageType::CommandFailure:
 		{
 			FCommandFailure* Message = static_cast<FCommandFailure*>(OutgoingMessage.Get());
-			SpatialSpanIdActivator SpanWrapper(EventTracer, Message->SpanId);
+			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
 			Worker_Connection_SendCommandFailure(WorkerConnection, Message->RequestId, TCHAR_TO_UTF8(*Message->Message));
 			break;
 		}

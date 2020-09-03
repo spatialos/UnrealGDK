@@ -9,6 +9,7 @@
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -87,10 +88,12 @@ bool ReferencesChanged(FObjectReferencesMap& InObjectReferencesMap, int32 Offset
 namespace SpatialGDK
 {
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
-								 FObjectReferencesMap& InObjectReferencesMap /*, TSet<FUnrealObjectRef>& InUnresolvedRefs*/)
+								 FObjectReferencesMap& InObjectReferencesMap, /*, TSet<FUnrealObjectRef>& InUnresolvedRefs*/
+								 SpatialEventTracer* InEventTracer)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
+	, EventTracer(InEventTracer)
 	, RootObjectReferencesMap(InObjectReferencesMap)
 {
 }
@@ -175,6 +178,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsAuthServer = Channel.IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
+	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
 
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
@@ -311,6 +315,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					{
 						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
 					}
+				}
+
+				if (bEventTracerEnabled)
+				{
+					Trace_SpanId SpanId = EventTracer->GetEntityComponentFieldSpanId(EntityComponentId(Channel.GetEntityId(), ComponentId), FieldId);
+					EventTracer->TraceEvent(FEventPropertyUpdated(Channel.GetEntityId(), ComponentId, Cmd.Property->GetName()), &SpanId);
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened

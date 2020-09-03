@@ -7,11 +7,11 @@ SpatialOSDispatcherSpy::SpatialOSDispatcherSpy() {}
 // Dispatcher Calls
 void SpatialOSDispatcherSpy::OnCriticalSection(bool InCriticalSection) {}
 
-void SpatialOSDispatcherSpy::OnAddEntity(const Worker_AddEntityOp& Op) {}
+void SpatialOSDispatcherSpy::OnAddEntity(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::OnAddComponent(const Worker_AddComponentOp& Op) {}
 
-void SpatialOSDispatcherSpy::OnRemoveEntity(const Worker_RemoveEntityOp& Op) {}
+void SpatialOSDispatcherSpy::OnRemoveEntity(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::OnRemoveComponent(const Worker_RemoveComponentOp& Op) {}
 
@@ -19,7 +19,7 @@ void SpatialOSDispatcherSpy::FlushRemoveComponentOps() {}
 
 void SpatialOSDispatcherSpy::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) {}
 
-void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_AuthorityChangeOp& Op) {}
+void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}
 
@@ -32,11 +32,11 @@ bool SpatialOSDispatcherSpy::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPC
 
 void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_Op& Op) {}
 
-void SpatialOSDispatcherSpy::OnCommandResponse(const Worker_CommandResponseOp& Op) {}
+void SpatialOSDispatcherSpy::OnCommandResponse(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) {}
 
-void SpatialOSDispatcherSpy::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op) {}
+void SpatialOSDispatcherSpy::OnCreateEntityResponse(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) {}
 

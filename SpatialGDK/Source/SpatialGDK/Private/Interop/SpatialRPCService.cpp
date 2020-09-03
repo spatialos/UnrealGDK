@@ -30,29 +30,30 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	EPushRPCResult Result = EPushRPCResult::Success;
+	PendingRPCPayload PendingPayload(Payload);
 
 	if (EventTracer->IsEnabled())
 	{
-		Payload.SpanId = EventTracer->TraceEvent(FEventSendRPC(Target, Function));
+		PendingPayload.SpanId = EventTracer->TraceEvent(FEventSendRPC(Target, Function));
 	}
 
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
-		if (EventTracer->IsEnabled() && Payload.SpanId.IsSet())
+		if (EventTracer->IsEnabled())
 		{
-			Payload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), &Payload.SpanId.GetValue());
+			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), &PendingPayload.SpanId.GetValue());
 		}
-		AddOverflowedRPC(EntityType, MoveTemp(Payload));
+		AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
 		Result = EPushRPCResult::QueueOverflowed;
 	}
 	else
 	{
-		Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), bCreatedEntity);
+		Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload), bCreatedEntity);
 
 		if (Result == EPushRPCResult::QueueOverflowed)
 		{
-			AddOverflowedRPC(EntityType, MoveTemp(Payload));
+			AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
 		}
 	}
 
@@ -63,11 +64,11 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	return Result;
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload&& PendingPayload, bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
-	const EntityComponentId EntityComponent = { EntityId, RingBufferComponentId };
+	const EntityComponentId EntityComponent(EntityId, RingBufferComponentId);
 	const EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	Schema_Object* EndpointObject;
@@ -83,7 +84,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId.IsSet() ? &Payload.SpanId.GetValue() : nullptr));
+		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, &PendingPayload.SpanId.GetValue()));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -119,18 +120,18 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	// Check capacity.
 	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
 	{
-		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
+		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, PendingPayload.Payload);
 
 #if TRACE_LIB_ACTIVE
-		if (SpatialLatencyTracer != nullptr && Payload.Trace != InvalidTraceKey)
+		if (SpatialLatencyTracer != nullptr && PendingPayload.Payload.Trace != InvalidTraceKey)
 		{
 			if (PendingTraces.Find(EntityComponent) == nullptr)
 			{
-				PendingTraces.Add(EntityComponent, Payload.Trace);
+				PendingTraces.Add(EntityComponent, PendingPayload.Payload.Trace);
 			}
 			else
 			{
-				SpatialLatencyTracer->WriteAndEndTrace(Payload.Trace,
+				SpatialLatencyTracer->WriteAndEndTrace(PendingPayload.Payload.Trace,
 													   TEXT("Multiple rpc updates in single update, ending further stack tracing"), true);
 			}
 		}
@@ -160,17 +161,17 @@ void SpatialRPCService::PushOverflowedRPCs()
 	{
 		Worker_EntityId EntityId = It.Key().EntityId;
 		ERPCType Type = It.Key().Type;
-		TArray<RPCPayload>& OverflowedRPCArray = It.Value();
+		TArray<PendingRPCPayload>& OverflowedRPCArray = It.Value();
 
 		int NumProcessed = 0;
 		bool bShouldDrop = false;
-		for (RPCPayload& Payload : OverflowedRPCArray)
+		for (PendingRPCPayload& PendingPayload : OverflowedRPCArray)
 		{
-			if (EventTracer->IsEnabled() && Payload.SpanId.IsSet())
+			if (EventTracer->IsEnabled() && PendingPayload.SpanId.IsSet())
 			{
-				Payload.SpanId = EventTracer->TraceEvent(FEventRPCRetried{}, &Payload.SpanId.GetValue());
+				EventTracer->TraceEvent(FEventRPCRetried{}, &PendingPayload.SpanId.GetValue());
 			}
-			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
+			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload.Payload), false);
 
 			switch (Result)
 			{
@@ -205,7 +206,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 			}
 
 #if TRACE_LIB_ACTIVE
-			ProcessResultToLatencyTrace(Result, Payload.Trace);
+			ProcessResultToLatencyTrace(Result, PendingPayload.Payload.Trace);
 #endif
 
 			// This includes the valid case of RPCs still overflowing (EPushRPCResult::QueueOverflowed), as well as the error cases.
@@ -555,9 +556,9 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
 
-void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload)
+void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& PendingPayload)
 {
-	OverflowedRPCs.FindOrAdd(EntityType).Add(MoveTemp(Payload));
+	OverflowedRPCs.FindOrAdd(EntityType).Add(MoveTemp(PendingPayload));
 }
 
 uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, ERPCType Type)

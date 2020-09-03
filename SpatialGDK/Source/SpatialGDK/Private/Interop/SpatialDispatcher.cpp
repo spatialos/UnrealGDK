@@ -40,7 +40,7 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
 	if (bEventTracerEnabled)
 	{
-		EventTracer->ClearSpanStore();
+		EventTracer->DropOldUpdates();
 	}
 
 	for (size_t i = 0; i < Ops.Count; ++i)
@@ -68,10 +68,10 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op->op.add_entity);
+			Receiver->OnAddEntity(*Op);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op->op.remove_entity);
+			Receiver->OnRemoveEntity(*Op);
 			StaticComponentView->OnRemoveEntity(Op->op.remove_entity.entity_id);
 			Receiver->DropQueuedRemoveComponentOpsForEntity(Op->op.remove_entity.entity_id);
 			break;
@@ -80,7 +80,7 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 		case WORKER_OP_TYPE_ADD_COMPONENT:
 			if (bEventTracerEnabled)
 			{
-				EventTracer->ComponentAdd(Op->op.add_component.entity_id, Op->op.add_component.data.component_id, Op->span_id);
+				EventTracer->ComponentAdd(*Op);
 			}
 			StaticComponentView->OnAddComponent(Op->op.add_component);
 			Receiver->OnAddComponent(Op->op.add_component);
@@ -88,14 +88,14 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			if (bEventTracerEnabled)
 			{
-				EventTracer->ComponentRemove(Op->op.remove_component.entity_id, Op->op.remove_component.component_id, Op->span_id);
+				EventTracer->ComponentRemove(*Op);
 			}
 			Receiver->OnRemoveComponent(Op->op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			if (bEventTracerEnabled)
 			{
-				EventTracer->ComponentUpdate(Op->op.component_update.entity_id, Op->op.component_update.update.component_id, Op->span_id);
+				EventTracer->ComponentUpdate(*Op);
 			}
 			StaticComponentView->OnComponentUpdate(Op->op.component_update);
 			Receiver->OnComponentUpdate(Op->op.component_update);
@@ -106,12 +106,12 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 			Receiver->OnCommandRequest(*Op);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op->op.command_response);
+			Receiver->OnCommandResponse(*Op);
 			break;
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op->op.authority_change);
+			Receiver->OnAuthorityChange(*Op);
 			break;
 
 		// World Command Responses
@@ -119,7 +119,7 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 			Receiver->OnReserveEntityIdsResponse(Op->op.reserve_entity_ids_response);
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op->op.create_entity_response);
+			Receiver->OnCreateEntityResponse(*Op);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;

@@ -985,7 +985,7 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 
 	if (EventTracer->IsEnabled())
 	{
-		InPayload.SpanId = EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
+		EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
 	}
 
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
