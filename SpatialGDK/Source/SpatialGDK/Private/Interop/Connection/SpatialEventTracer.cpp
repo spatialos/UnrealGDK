@@ -4,6 +4,7 @@
 
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
+#include "UObject/WeakFieldPtr.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -108,6 +109,16 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		const ANSICHAR* Value = ValueSrc.Get();
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 	};
+
+#if ENGINE_MINOR_VERSION >= 25
+	using UnrealProperty = FProperty;
+	using UnrealStrProperty = FStrProperty;
+	using UnrealObjectProperty = FObjectProperty;
+#else
+	using UnrealProperty = UProperty;
+	using UnrealStrProperty = UStrProperty;
+	using UnrealObjectProperty = UObjectProperty;
+#endif
 
 	for (TFieldIterator<UnrealProperty> It(Struct); It; ++It)
 	{

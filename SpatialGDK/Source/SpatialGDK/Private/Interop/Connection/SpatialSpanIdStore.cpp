@@ -3,7 +3,6 @@
 #include "Interop/Connection/SpatialSpanIdStore.h"
 
 #include "SpatialConstants.h"
-#include "UObject/Field.h"
 #include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
