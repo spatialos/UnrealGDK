@@ -6,22 +6,23 @@
 
 namespace SpatialGDK
 {
-SubView::SubView(const Worker_ComponentId TagComponentId,
-	const TFunction<bool(const Worker_EntityId, const EntityViewElement&)> Filter,
-	const EntityView& View,
-	FDispatcher& Dispatcher)
-	: TagComponentId(TagComponentId), Filter(Filter), View(View),
-	TaggedEntities(TSet<Worker_EntityId>{}),
-	CompleteEntities(TSet<Worker_EntityId>{}),
-    NewlyCompleteEntities(TSet<Worker_EntityId>{}),
-    NewlyIncompleteEntities(TSet<Worker_EntityId>{})
+SubView::SubView(const Worker_ComponentId TagComponentId, const TFunction<bool(const Worker_EntityId, const EntityViewElement&)> Filter,
+				 const EntityView& View, FDispatcher& Dispatcher)
+	: TagComponentId(TagComponentId)
+	, Filter(Filter)
+	, View(View)
+	, TaggedEntities(TSet<Worker_EntityId>{})
+	, CompleteEntities(TSet<Worker_EntityId>{})
+	, NewlyCompleteEntities(TSet<Worker_EntityId>{})
+	, NewlyIncompleteEntities(TSet<Worker_EntityId>{})
 {
-	Dispatcher.RegisterAndInvokeComponentAddedCallback(TagComponentId, [this](const FEntityComponentChange Change)
-	{
-		OnTaggedEntityAdded(Change.EntityId);
-	}, View);
-	Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange Change)
-	{
+	Dispatcher.RegisterAndInvokeComponentAddedCallback(
+		TagComponentId,
+		[this](const FEntityComponentChange Change) {
+			OnTaggedEntityAdded(Change.EntityId);
+		},
+		View);
+	Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange Change) {
 		OnTaggedEntityRemoved(Change.EntityId);
 	});
 }
