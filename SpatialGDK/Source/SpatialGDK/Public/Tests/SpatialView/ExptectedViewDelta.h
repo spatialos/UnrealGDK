@@ -36,5 +36,28 @@ private:
 	TMap<uint32, ExpectedEntityDelta> EntityDeltas;
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;
+
+	template <typename T, typename Predicate>
+	bool CompareData(const TArray<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Comparator)
+	{
+		if (Lhs.Num() != Rhs.Num())
+		{
+			return false;
+		}
+
+		auto LhsFirst = Lhs.GetData();
+		auto LhsLast = Lhs.GetData() + Lhs.Num();
+		auto RhsFirst = Rhs.GetData();
+		while (LhsFirst != LhsLast)
+		{
+			if (!Comparator(*LhsFirst, *RhsFirst))
+			{
+				return false;
+			}
+			++LhsFirst, ++RhsFirst;
+		}
+
+		return true;
+	}
 };
 } // namespace SpatialGDK

@@ -113,38 +113,37 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityGained, RhsEntityDelta.AuthorityGained, CompareAuthorityChanges))
+		if (!CompareData(LhsEntityDelta.AuthorityGained, RhsEntityDelta.AuthorityGained, CompareAuthorityChanges))
 		{
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLost, RhsEntityDelta.AuthorityLost, CompareAuthorityChanges))
+		if (!CompareData(LhsEntityDelta.AuthorityLost, RhsEntityDelta.AuthorityLost, CompareAuthorityChanges))
 		{
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.AuthorityLostTemporarily, RhsEntityDelta.AuthorityLostTemporarily,
-									  CompareAuthorityChanges))
+		if (!CompareData(LhsEntityDelta.AuthorityLostTemporarily, RhsEntityDelta.AuthorityLostTemporarily, CompareAuthorityChanges))
 		{
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsAdded, RhsEntityDelta.ComponentsAdded, CompareComponentChanges))
+		if (!CompareData(LhsEntityDelta.ComponentsAdded, RhsEntityDelta.ComponentsAdded, CompareComponentChanges))
 		{
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRemoved, RhsEntityDelta.ComponentsRemoved, CompareComponentChanges))
+		if (!CompareData(LhsEntityDelta.ComponentsRemoved, RhsEntityDelta.ComponentsRemoved, CompareComponentChanges))
 		{
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentsRefreshed, RhsEntityDelta.ComponentsRefreshed, CompareComponentChanges))
+		if (!CompareData(LhsEntityDelta.ComponentsRefreshed, RhsEntityDelta.ComponentsRefreshed, CompareComponentChanges))
 		{
 			return false;
 		}
 
-		if (!Algo::CompareByPredicate(LhsEntityDelta.ComponentUpdates, RhsEntityDelta.ComponentUpdates, CompareComponentChanges))
+		if (!CompareData(LhsEntityDelta.ComponentUpdates, RhsEntityDelta.ComponentUpdates, CompareComponentChanges))
 		{
 			return false;
 		}
