@@ -9,14 +9,7 @@
 
 namespace SpatialGDK
 {
-Worker_EntityId TestEntityId = 1;
-Worker_ComponentId TestComponentId = 1;
-double TestComponentValue = 20;
-double OtherTestComponentValue = 30;
-double TestEventValue = 25;
-FString DisconnectReason = TEXT("Test disconnection reason");
-
-void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpListBuilder& OpListBuilder)
+inline void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpListBuilder& OpListBuilder)
 {
 	OpList Ops = MoveTemp(OpListBuilder).CreateOpList();
 	TArray<OpList> OpLists;
@@ -29,9 +22,9 @@ inline void AddEntityToView(EntityView& View, const Worker_EntityId EntityId)
 	View.Add(EntityId, EntityViewElement());
 }
 
-inline void AddComponentToView(EntityView& View, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const double Value)
+inline void AddComponentToView(EntityView& View, const Worker_EntityId EntityId, ComponentData Data)
 {
-	View[EntityId].Components.Push(CreateTestComponentData(ComponentId, Value));
+	View[EntityId].Components.Push(MoveTemp(Data));
 }
 
 inline void AddAuthorityToView(EntityView& View, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
@@ -39,7 +32,7 @@ inline void AddAuthorityToView(EntityView& View, const Worker_EntityId EntityId,
 	View[EntityId].Authority.Push(ComponentId);
 }
 
-inline bool AreEquivalent(const EntityView& Lhs, const EntityView& Rhs)
+inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 {
 	TArray<Worker_EntityId_Key> LhsKeys;
 	TArray<Worker_EntityId_Key> RhsKeys;

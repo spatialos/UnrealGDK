@@ -26,7 +26,7 @@ public:
 	ExpectedViewDelta& AddAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	ExpectedViewDelta& AddAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	ExpectedViewDelta& AddAuthorityLostTemporarily(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddDisconnect(const uint8_t StatusCode, FString StatusMessage);
+	ExpectedViewDelta& AddDisconnect(const uint8 StatusCode, FString StatusMessage);
 
 	// Compares the Connection Status and the stored Entity Deltas
 	bool Compare(const ViewDelta& Other);

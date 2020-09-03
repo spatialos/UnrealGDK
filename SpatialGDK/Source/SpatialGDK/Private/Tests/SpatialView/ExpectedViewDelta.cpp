@@ -60,7 +60,7 @@ ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLostTemporarily(const Worker_E
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddDisconnect(const uint8_t StatusCode, FString StatusMessage)
+ExpectedViewDelta& ExpectedViewDelta::AddDisconnect(const uint8 StatusCode, FString StatusMessage)
 {
 	ConnectionStatusCode = StatusCode;
 	ConnectionStatusMessage = MoveTemp(StatusMessage);
@@ -94,7 +94,7 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 	SortEntityDeltas();
 	TArray<uint32> DeltaKeys;
 	EntityDeltas.GetKeys(DeltaKeys);
-	for (int i = 0; i < DeltaKeys.Num(); i++)
+	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
 		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
 		EntityDelta RhsEntityDelta = RhsEntityDeltas[i];

@@ -141,23 +141,11 @@ inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentC
 	switch (Lhs.Type)
 	{
 	case ComponentChange::ADD:
-		if (!CompareSchemaComponentData(Lhs.Data, Rhs.Data))
-		{
-			return false;
-		}
-		break;
+		return CompareSchemaComponentData(Lhs.Data, Rhs.Data);
 	case ComponentChange::UPDATE:
-		if (!CompareSchemaComponentUpdate(Lhs.Update, Rhs.Update))
-		{
-			return false;
-		}
-		break;
+		return CompareSchemaComponentUpdate(Lhs.Update, Rhs.Update);
 	case ComponentChange::COMPLETE_UPDATE:
-		if (!CompareSchemaComponentRefresh(Lhs.CompleteUpdate, Rhs.CompleteUpdate))
-		{
-			return false;
-		}
-		break;
+		return CompareSchemaComponentRefresh(Lhs.CompleteUpdate, Rhs.CompleteUpdate);
 	case ComponentChange::REMOVE:
 		break;
 	default:
