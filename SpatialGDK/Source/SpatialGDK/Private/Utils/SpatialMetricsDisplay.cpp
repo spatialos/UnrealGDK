@@ -195,12 +195,12 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	// Cleanup stats entries for workers that have not reported stats for awhile
 	if (Role == ROLE_Authority)
 	{
-		const float CurrentTime = SpatialNetDriver->Time;
+		const float CurrentTime = SpatialNetDriver->GetElapsedTime();
 		TArray<FWorkerStats> WorkerStatsToRemove;
 
 		for (const FWorkerStats& OneWorkerStats : WorkerStats)
 		{
-			if (ShouldRemoveStats(SpatialNetDriver->Time, OneWorkerStats))
+			if (ShouldRemoveStats(SpatialNetDriver->GetElapsedTime(), OneWorkerStats))
 			{
 				WorkerStatsToRemove.Add(OneWorkerStats);
 			}
@@ -251,7 +251,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	}
 #endif // USE_SERVER_PERF_COUNTERS
 
-	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
+	ServerUpdateWorkerStats(SpatialNetDriver->GetElapsedTime(), Stats);
 
 #endif // !UE_BUILD_SHIPPING
 }

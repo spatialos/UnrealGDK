@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -16,6 +17,34 @@
 #include "Utils/InspectionColors.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
+
+namespace
+{
+bool CanProcessActor(const AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on nullptr Actor is invalid."));
+		return false;
+	}
+
+	const UNetDriver* NetDriver = Actor->GetWorld()->GetNetDriver();
+	if (!NetDriver->IsServer())
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on a client is invalid. Actor: %s"), *GetNameSafe(Actor));
+		return false;
+	}
+
+	if (!Actor->HasAuthority())
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on a non-auth Actor is invalid. Actor: %s."),
+            *GetNameSafe(Actor));
+		return false;
+	}
+
+	return true;
+}
+} // anonymous namespace
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
@@ -41,7 +70,7 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 	{
 		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
+			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags)
 			{
 				return SpatialWorkerFlags->GetWorkerFlag(InFlagName, OutFlagValue);
 			}
@@ -66,13 +95,36 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
+bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject)
+{
+	checkf(WorldContextObject != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr WorldContextObject*"));
+
+	const UWorld* World = WorldContextObject->GetWorld();
+	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
+	{
+		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
+	}
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	return WorldSettings != nullptr && WorldSettings->IsMultiWorkerEnabledInWorldSettings();
+}
+
 bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 {
 	if (World != nullptr)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			return IsSpatialNetworkingEnabled() && WorldSettings->WorkerLayers.Num() > 0 && WorldSettings->IsMultiWorkerEnabled();
+			if (!IsSpatialMultiWorkerEnabled(World))
+			{
+				return false;
+			}
+
+			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+			return MultiWorkerSettings->WorkerLayers.Num() > 1;
 		}
 	}
 
@@ -142,12 +194,17 @@ void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText 
 
 int64 USpatialStatics::GetActorEntityId(const AActor* Actor)
 {
-	check(Actor);
+	if (Actor == nullptr)
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
 	{
 		return static_cast<int64>(SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor));
 	}
-	return 0;
+
+	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
 FString USpatialStatics::EntityIdToString(int64 EntityId)
@@ -163,4 +220,45 @@ FString USpatialStatics::EntityIdToString(int64 EntityId)
 FString USpatialStatics::GetActorEntityIdAsString(const AActor* Actor)
 {
 	return EntityIdToString(GetActorEntityId(Actor));
+}
+
+FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugString)
+{
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	{
+		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
+	}
+
+	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
+
+	const ActorLockToken LockToken = LockingPolicy->AcquireLock(Actor, DebugString);
+
+	UE_LOG(LogSpatial, Verbose, TEXT("LockingComponent called AcquireLock. Actor: %s. Token: %lld. New lock count: %d"),
+        *Actor->GetName(), LockToken, LockingPolicy->GetActorLockCount(Actor));
+
+	return FLockingToken{ LockToken };
+}
+
+bool USpatialStatics::IsLocked(const AActor* Actor)
+{
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	{
+		return false;
+	}
+
+	return Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy->IsLocked(Actor);
+}
+
+void USpatialStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
+{
+	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	{
+		return;
+	}
+
+	UAbstractLockingPolicy* LockingPolicy = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver())->LockingPolicy;
+	LockingPolicy->ReleaseLock(LockToken.Token);
+
+	UE_LOG(LogSpatial, Verbose, TEXT("LockingComponent called ReleaseLock. Actor: %s. Token: %lld. Resulting lock count: %d"),
+        *Actor->GetName(), LockToken.Token, LockingPolicy->GetActorLockCount(Actor));
 }

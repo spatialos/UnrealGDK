@@ -16,7 +16,7 @@
 namespace SpatialGDK
 {
 
-inline AActor* GetHierarchyRoot(const AActor* Actor)
+inline AActor* GetTopmostOwner(const AActor* Actor)
 {
 	check(Actor != nullptr);
 
@@ -32,6 +32,12 @@ inline AActor* GetHierarchyRoot(const AActor* Actor)
 	}
 
 	return Owner;
+}
+
+inline AActor* GetHierarchyRoot(const AActor* Actor)
+{
+	AActor* TopmostOwner = GetTopmostOwner(Actor);
+	return TopmostOwner != nullptr ? TopmostOwner : const_cast<AActor*>(Actor);
 }
 
 inline FString GetConnectionOwningWorkerId(const AActor* Actor)

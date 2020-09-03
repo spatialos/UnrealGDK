@@ -95,7 +95,6 @@ bool FSpawnActor::Update()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.Name = Handle;
 
 	AActor* Actor = Data->TestWorld->SpawnActor<ADefaultPawn>(SpawnParams);
 	Data->TestActors.Add(Handle, Actor);
@@ -145,7 +144,7 @@ bool FAcquireLock::Update()
 {
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Called AcquireLock when CanAcquireLock returned false."), EAutomationExpectedErrorFlags::Contains, 1);
+		Test->AddExpectedError(TEXT("Called AcquireLock but CanAcquireLock returned false."), EAutomationExpectedErrorFlags::Contains, 1);
 	}
 
 	AActor* Actor = Data->TestActors[ActorHandle];
@@ -158,9 +157,9 @@ bool FAcquireLock::Update()
 		for (const TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
 		{
 			const TArray<LockingTokenAndDebugString>& LockingTokensAndDebugStrings = ActorLockingTokenAndDebugStrings.Value;
-			bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& Data)
+			const bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& InnerData)
 			{
-				return Token == Data.Key;
+				return Token == InnerData.Key;
 			});
 			if (TokenAlreadyExists)
 			{
@@ -196,9 +195,9 @@ bool FReleaseLock::Update()
 		return true;
 	}
 
-	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& Data)
+	const int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& InnerData)
 	{
-		return Data.Value == LockDebugString;
+		return InnerData.Value == LockDebugString;
 	});
 	Test->TestTrue("Found valid lock token", TokenIndex != INDEX_NONE);
 
@@ -236,8 +235,8 @@ bool FReleaseAllLocks::Update()
 		{
 			const ActorLockToken Token = TokenAndDebugString.Key;
 			const bool bReleaseLockSucceeded = Data->LockingPolicy->ReleaseLock(Token);
-			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %d"), Token), !bExpectedSuccess && bReleaseLockSucceeded);
-			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %d"), Token), bExpectedSuccess && !bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %lld"), Token), !bExpectedSuccess && bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %lld"), Token), bExpectedSuccess && !bReleaseLockSucceeded);
 		}
 	}
 
@@ -290,9 +289,20 @@ bool FTestIsLocked::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCleanup, TSharedPtr<TestData>, Data);
+bool FCleanup::Update()
+{
+	for (auto Pair : Data->TestActors)
+	{
+		Pair.Value->Destroy(/*bNetForce*/ true);
+	}
+	Data->TestActors.Empty();
+	return true;
+}
+
 void SpawnABCDHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 {
-	//        A 
+	//        A
 	//       / \
 	//	    B   D
 	//     /
@@ -339,6 +349,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -356,6 +367,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -372,6 +384,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 	ADD_LATENT_AUTOMATION_COMMAND(FSetActorRole(Data, "Actor", ROLE_SimulatedProxy));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -391,6 +404,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 	// We cannot call IsLocked with a deleted Actor so instead we try to release the lock we held
 	// for the Actor and check that it fails.
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(this, Data, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -411,6 +425,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Ac
 	// We cannot call IsLocked with a deleted Actor so instead we try to release the lock we held
 	// for the Actor and check that it fails.
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(this, Data, 2));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -429,6 +444,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Is
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -451,6 +467,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_W
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -470,6 +487,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Re
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -490,6 +508,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Ac
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -519,6 +538,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -546,6 +566,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -573,6 +594,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -608,6 +630,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_mult
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -634,6 +657,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -653,11 +677,12 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 
 	//    C (explicitly locked)         A
 	//				                    |
-	//	                                D           
+	//	                                D
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -677,11 +702,12 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 
 	//             B                   D
 	//			   |
-	//	   C (explicitly locked)     
+	//	   C (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -701,11 +727,12 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 
 	//    B (explicitly locked)         D
 	//		       |
-	//	           C        
+	//	           C
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -725,11 +752,12 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_
 
 	//             B                   D
 	//			   |
-	//	           C    
+	//	           C
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -754,6 +782,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -774,7 +803,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "A", "E"));
 
 	//              E
-	//             / 
+	//             /
 	//            A
 	//	    	 / \
 	//          B    D
@@ -786,6 +815,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -807,13 +837,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	//        |                 |
 	//        D        B (explicitly locked)
 	//                          |
-	//                          C 
+	//                          C
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -840,6 +871,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -868,6 +900,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -886,7 +919,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "A", "E"));
 
 	//                         E
-	//                         | 
+	//                         |
 	//                         A
 	//	    	              / \
 	//   B (explicitly locked)   D
@@ -898,6 +931,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -924,6 +958,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -954,6 +989,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_h
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -982,6 +1018,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_h
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -999,6 +1036,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -1017,6 +1055,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_exec
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -1039,6 +1078,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_exec
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }
@@ -1058,6 +1098,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_ar
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	return true;
 }

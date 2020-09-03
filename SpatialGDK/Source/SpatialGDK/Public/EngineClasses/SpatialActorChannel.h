@@ -13,6 +13,7 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/SpatialStatics.h"
 
@@ -38,7 +39,7 @@ struct FObjectReferences
 		, Property(Other.Property) {}
 
 	// Single property constructor
-	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty)
 		: bSingleProp(true), bFastArrayProp(false), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty)
 	{
 		if (bUnresolved)
@@ -52,11 +53,11 @@ struct FObjectReferences
 	}
 
 	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs, TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty, bool InFastArrayProp = false)
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs, TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty, bool InFastArrayProp = false)
 		: MappedRefs(MoveTemp(InDynamicRefs)), UnresolvedRefs(MoveTemp(InUnresolvedRefs)), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	// Array constructor
-	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property)* InProperty)
 		: bSingleProp(false), bFastArrayProp(false), Array(InArray), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	TSet<FUnrealObjectRef>				MappedRefs;
@@ -70,7 +71,7 @@ struct FObjectReferences
 	TUniquePtr<FObjectReferencesMap>	Array;
 	int32								ShadowOffset;
 	int32								ParentIndex;
-	UProperty*							Property;
+	GDK_PROPERTY(Property)*				Property;
 };
 
 struct FPendingSubobjectAttachment
@@ -195,6 +196,11 @@ public:
 		bIsAuthServer = IsAuth;
 	}
 
+	uint64 GetAuthorityReceivedTimestamp() const
+	{
+		return AuthorityReceivedTimestamp;
+	}
+
 	inline bool IsAuthoritativeServer() const
 	{
 		return bIsAuthServer;
@@ -237,11 +243,11 @@ public:
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
+	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property)*>& RepNotifies);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
-	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
+	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property)*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 
 	void UpdateShadowData();
 	void UpdateSpatialPositionWithFrequencyCheck();
@@ -274,8 +280,6 @@ private:
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
-
-	void GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor, uint64& OutTimestamp);
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
@@ -317,7 +321,7 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastPositionSinceUpdate;
-	float TimeWhenPositionLastUpdated;
+	double TimeWhenPositionLastUpdated;
 
 	uint8 FramesTillDormancyAllowed = 0;
 
