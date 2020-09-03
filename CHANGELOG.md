@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No longer AddOwnerInterestToServer unless the owner is replicating, otherwise this warning fires erroneously: "Interest for Actor <ActorName> is out of date because owner <OwnerName> does not have an entity id."
 - Properly handle pairs of Add/Remove component in critical section. The issue manifested in the form of remnant actors which the worker should have lost interest in.
 - Made the DeploymentLauncher stop multiple deployments in parallel to improve performance when working with large numbers of deployments.
+- Fixed an issue where possessing a new pawn and immediately setting the owner of the old pawn to the controller could cause server RPCs from that pawn to be dropped.
 
 ## [`0.11.0`] - 2020-07-29
 
