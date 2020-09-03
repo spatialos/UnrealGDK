@@ -47,7 +47,7 @@ void SpatialFunctionalTestStep::Tick(float DeltaTime)
 		{
 			if (StepDefinition.bIsNativeDefinition)
 			{
-				bIsReady = StepDefinition.NativeIsReadyEvent.Execute(Owner);
+				bIsReady = StepDefinition.NativeIsReadyEvent.Execute();
 			}
 			else
 			{
@@ -63,7 +63,7 @@ void SpatialFunctionalTestStep::Tick(float DeltaTime)
 		{
 			if (StepDefinition.bIsNativeDefinition)
 			{
-				StepDefinition.NativeStartEvent.ExecuteIfBound(Owner);
+				StepDefinition.NativeStartEvent.ExecuteIfBound();
 			}
 			else
 			{
@@ -76,7 +76,7 @@ void SpatialFunctionalTestStep::Tick(float DeltaTime)
 	{
 		if (StepDefinition.bIsNativeDefinition)
 		{
-			StepDefinition.NativeTickEvent.ExecuteIfBound(Owner, DeltaTime);
+			StepDefinition.NativeTickEvent.ExecuteIfBound(DeltaTime);
 		}
 		else
 		{

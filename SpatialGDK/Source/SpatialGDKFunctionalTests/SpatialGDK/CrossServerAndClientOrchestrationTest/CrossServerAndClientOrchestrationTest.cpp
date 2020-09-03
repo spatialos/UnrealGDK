@@ -35,37 +35,34 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 
 	{
 		// Step 1 - Set all server values
-		AddStep(TEXT("Servers_SetupSetValue"), FWorkerDefinition::AllServers, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("Servers_SetupSetValue"), FWorkerDefinition::AllServers, nullptr, [this]() {
 			// Send CrossServer RPC to Test actor to set the flag for this server flow controller instance
-			ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-			ASpatialFunctionalTestFlowController* FlowController = CrossServerTest->GetLocalFlowController();
-			CrossServerTest->CrossServerSetTestValue(FlowController->WorkerDefinition.Type, FlowController->WorkerDefinition.Id);
-			CrossServerTest->FinishStep();
+			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+			CrossServerSetTestValue(FlowController->WorkerDefinition.Type, FlowController->WorkerDefinition.Id);
+			FinishStep();
 		});
 	}
 	{
 		// Step 2 - Set all client values
-		AddStep(TEXT("Clients_SetupSetValue"), FWorkerDefinition::AllClients, nullptr, [](ASpatialFunctionalTest* NetTest) {
+		AddStep(TEXT("Clients_SetupSetValue"), FWorkerDefinition::AllClients, nullptr, [this]() {
 			// Send Server RPC via flow controller to set the Test actor flag for this client flow controller instance
 			ACrossServerAndClientOrchestrationFlowController* FlowController =
-				Cast<ACrossServerAndClientOrchestrationFlowController>(NetTest->GetLocalFlowController());
+				Cast<ACrossServerAndClientOrchestrationFlowController>(GetLocalFlowController());
 			FlowController->ServerClientReadValueAck();
-			NetTest->FinishStep();
+			FinishStep();
 		});
 	}
 	{
 		// Step 3 - Verify steps for server 1 run in right context and can read all values set in test by other workers
 		AddStep(
 			TEXT("Server1_Validate"), FWorkerDefinition::Server(1), nullptr,
-			[](ASpatialFunctionalTest* NetTest) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				CrossServerTest->Assert_ServerStepIsRunningInExpectedEnvironment(1, CrossServerTest->GetLocalFlowController());
+			[this]() {
+				Assert_ServerStepIsRunningInExpectedEnvironment(1, GetLocalFlowController());
 			},
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				if (CrossServerTest->CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
+			[this](float DeltaTime) {
+				if (CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
 				{
-					CrossServerTest->FinishStep();
+					FinishStep();
 				}
 			},
 			5.0f);
@@ -74,15 +71,13 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 		// Step 4 - Verify steps for server 2 run in right context and can read all values set in test by other workers
 		AddStep(
 			TEXT("Server2_Validate"), FWorkerDefinition::Server(2), nullptr,
-			[](ASpatialFunctionalTest* NetTest) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				CrossServerTest->Assert_ServerStepIsRunningInExpectedEnvironment(2, CrossServerTest->GetLocalFlowController());
+			[this]() {
+				Assert_ServerStepIsRunningInExpectedEnvironment(2, GetLocalFlowController());
 			},
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				if (CrossServerTest->CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
+			[this](float DeltaTime) {
+				if (CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
 				{
-					CrossServerTest->FinishStep();
+					FinishStep();
 				}
 			},
 			5.0f);
@@ -91,15 +86,13 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 		// Step 5 - Verify steps for client 1 run in right context and can read all values set in test by other workers
 		AddStep(
 			TEXT("Client1_Validate"), FWorkerDefinition::Client(1), nullptr,
-			[](ASpatialFunctionalTest* NetTest) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				CrossServerTest->Assert_ClientStepIsRunningInExpectedEnvironment(1, CrossServerTest->GetLocalFlowController());
+			[this]() {
+				Assert_ClientStepIsRunningInExpectedEnvironment(1, GetLocalFlowController());
 			},
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				if (CrossServerTest->CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
+			[this](float DeltaTime) {
+				if (CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
 				{
-					CrossServerTest->FinishStep();
+					FinishStep();
 				}
 			},
 			5.0f);
@@ -108,15 +101,13 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 		// Step 6 - Verify steps for client 2 run in right context and can read all values set in test by other workers
 		AddStep(
 			TEXT("Client2_Validate"), FWorkerDefinition::Client(2), nullptr,
-			[](ASpatialFunctionalTest* NetTest) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				CrossServerTest->Assert_ClientStepIsRunningInExpectedEnvironment(2, CrossServerTest->GetLocalFlowController());
+			[this]() {
+				Assert_ClientStepIsRunningInExpectedEnvironment(2, GetLocalFlowController());
 			},
-			[](ASpatialFunctionalTest* NetTest, float DeltaTime) {
-				ACrossServerAndClientOrchestrationTest* CrossServerTest = Cast<ACrossServerAndClientOrchestrationTest>(NetTest);
-				if (CrossServerTest->CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
+			[this](float DeltaTime) {
+				if (CheckAllValuesHaveBeenSetAndCanBeLocallyRead())
 				{
-					CrossServerTest->FinishStep();
+					FinishStep();
 				}
 			},
 			5.0f);

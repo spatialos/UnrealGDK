@@ -20,6 +20,7 @@ public class SpatialGDKEditor : ModuleRules
 			new string[] {
 				"Core",
 				"CoreUObject",
+				"DesktopPlatform",
 				"EditorStyle",
 				"Engine",
  				"EngineSettings",

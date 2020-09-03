@@ -245,10 +245,7 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
-	UFUNCTION()
-	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
-
-	void OnActorSpawned(AActor* Actor);
+	void OnActorSpawned(AActor* Actor) const;
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 
@@ -278,8 +275,6 @@ private:
 	// in the correct order, if needed.
 	int NextRPCIndex;
 
-	float TimeWhenPositionLastUpdated;
-
 	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
 	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
 	// The GDK does not use this address for any networked purpose, only bookkeeping.
@@ -303,4 +298,8 @@ private:
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
 	bool ClientCanSendPlayerSpawnRequests();
+
+	void ProcessOwnershipChanges();
+
+	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 };

@@ -3,6 +3,8 @@
 #include "Utils/SpatialDebugger.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -19,8 +21,10 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "GameFramework/WorldSettings.h"
 #include "GenericPlatform/GenericPlatformMath.h"
 #include "Kismet/GameplayStatics.h"
+#include "Modules/ModuleManager.h"
 #include "Net/UnrealNetwork.h"
 
 using namespace SpatialGDK;
@@ -185,6 +189,9 @@ void ASpatialDebugger::CreateWorkerRegions()
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
+#if WITH_EDITOR
+	SpawnParams.bHideFromSceneOutliner = true;
+#endif
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
@@ -231,8 +238,9 @@ void ASpatialDebugger::Destroyed()
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
-		DestroyWorkerRegions();
 	}
+
+	DestroyWorkerRegions();
 
 	Super::Destroyed();
 }
@@ -533,3 +541,86 @@ void ASpatialDebugger::SpatialToggleDebugger()
 		}
 	}
 }
+
+#if WITH_EDITOR
+void ASpatialDebugger::EditorRefreshDisplay()
+{
+	if (GEditor != nullptr && GEditor->GetActiveViewport() != nullptr)
+	{
+		// Redraw editor window to show changes
+		GEditor->GetActiveViewport()->Invalidate();
+	}
+}
+
+void ASpatialDebugger::EditorSpatialToggleDebugger(bool bEnabled)
+{
+	bShowWorkerRegions = bEnabled;
+	EditorRefreshWorkerRegions();
+}
+
+void ASpatialDebugger::EditorRefreshWorkerRegions()
+{
+	DestroyWorkerRegions();
+
+	if (bShowWorkerRegions && EditorAllowWorkerBoundaries())
+	{
+		EditorInitialiseWorkerRegions();
+		CreateWorkerRegions();
+	}
+
+	EditorRefreshDisplay();
+}
+
+bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
+{
+	// Check if multi worker is enabled.
+	UWorld* World = GetWorld();
+	check(World != nullptr);
+
+	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(World);
+	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
+	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
+}
+
+void ASpatialDebugger::EditorInitialiseWorkerRegions()
+{
+	WorkerRegions.Empty();
+
+	const UWorld* World = GetWorld();
+	check(World != nullptr);
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	check(WorldSettings != nullptr);
+
+	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+		WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+
+	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();
+	LoadBalanceStrategy->Init();
+	LoadBalanceStrategy->SetLayers(MultiWorkerSettings->WorkerLayers);
+
+	if (const UGridBasedLBStrategy* GridBasedLBStrategy =
+			Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
+	{
+		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+		const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
+
+		WorkerRegions.SetNum(LBStrategyRegions.Num());
+		for (int i = 0; i < LBStrategyRegions.Num(); i++)
+		{
+			const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+			FWorkerRegionInfo WorkerRegionInfo;
+			// Generate our own unique worker name as we only need it to generate a unique colour
+			const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
+			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+			WorkerRegionInfo.Extents = LBStrategyRegion.Value;
+
+			WorkerRegions[i] = WorkerRegionInfo;
+		}
+	}
+
+	// Needed to clean up LoadBalanceStrategy memory, otherwise it gets duplicated exponentially
+	GEngine->ForceGarbageCollection(true);
+}
+#endif // WITH_EDITOR

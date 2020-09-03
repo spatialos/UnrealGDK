@@ -170,6 +170,8 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	{
 		Metrics.SendToConnection(Connection.Get());
 	}
+
+	Worker_Connection_Alpha_Flush(Connection.Get());
 }
 
 const FString& SpatialOSConnectionHandler::GetWorkerId() const

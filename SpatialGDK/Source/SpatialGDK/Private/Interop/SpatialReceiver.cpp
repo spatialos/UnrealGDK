@@ -391,6 +391,10 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		}
 		else
 		{
+			if (bInCriticalSection)
+			{
+				PendingAddActors.Remove(Op.entity_id);
+			}
 			RemoveActor(Op.entity_id);
 		}
 	}
@@ -405,6 +409,15 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 	if (LoadBalanceEnforcer != nullptr && LoadBalanceEnforcer->HandlesComponent(Op.component_id))
 	{
 		LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
+	}
+
+	if (bInCriticalSection)
+	{
+		// Cancel out the Pending adds to avoid getting errors if an actor is not created for these components when leaving the critical
+		// section. Paired Add/Remove could happen, and processing the queued ops would happen too late to prevent it.
+		PendingAddComponents.RemoveAll([&Op](const PendingAddComponentWrapper& PendingAdd) {
+			return PendingAdd.EntityId == Op.entity_id && PendingAdd.ComponentId == Op.component_id;
+		});
 	}
 
 	// We are queuing here because if an Actor is removed from your view, remove component ops will be

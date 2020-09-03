@@ -62,6 +62,19 @@ void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Par
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
 		   bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
 }
+
+void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
+										TOptional<FString>& StrOutValue)
+{
+#if ALLOW_SPATIAL_CMDLINE_PARSING
+	FString TempStr;
+	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
+	{
+		StrOutValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
+}
 } // namespace
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -81,8 +94,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedIncomingRPCRetryTime(1.0f)
 	, QueuedOutgoingRPCRetryTime(1.0f)
-	, PositionUpdateFrequency(1.0f)
-	, PositionDistanceThreshold(100.0f) // 1m (100cm)
+	, PositionUpdateLowerThresholdSeconds(1.0f)		  // 1 second
+	, PositionUpdateLowerThresholdCentimeters(100.0f) // 1m (100cm)
+	, PositionUpdateThresholdMaxSeconds(60.0f)		  // 1 minute (60 seconds)
+	, PositionUpdateThresholdMaxCentimeters(5000.0f)  // 50m (5000cm)
 	, bEnableMetrics(true)
 	, bEnableMetricsDisplay(false)
 	, MetricsReportRate(2.0f)
@@ -110,7 +125,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseSpatialView(false)
-	, bEnableMultiWorkerDebuggingWarnings(false)
+	, bEnableCrossLayerActorSpawning(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -123,8 +138,8 @@ void USpatialGDKSettings::PostInitProperties()
 	const TCHAR* CommandLine = FCommandLine::Get();
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideOptionalBool(CommandLine, TEXT("OverrideMultiWorker"), TEXT("Multi-Worker"), bOverrideMultiWorker);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableMultiWorkerDebuggingWarnings"), TEXT("Multi-Worker Debugging Warnings"),
-							 bEnableMultiWorkerDebuggingWarnings);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
+							 bEnableCrossLayerActorSpawning);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"),
 							 TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
@@ -140,6 +155,9 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+
+	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
+									   OverrideMultiWorkerSettingsClass);
 }
 
 #if WITH_EDITOR

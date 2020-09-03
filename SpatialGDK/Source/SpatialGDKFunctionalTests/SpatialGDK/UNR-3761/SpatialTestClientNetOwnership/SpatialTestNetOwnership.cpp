@@ -49,7 +49,7 @@ void ASpatialTestNetOwnership::BeginPlay()
 	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;
 	ClientSendRPCStepDefinition.bIsNativeDefinition = true;
 	ClientSendRPCStepDefinition.TimeLimit = 5.0f;
-	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this](ASpatialFunctionalTest* NetTest) {
+	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this]() {
 		NetOwnershipCube->ServerIncreaseRPCCount();
 
 		FinishStep();
@@ -58,7 +58,7 @@ void ASpatialTestNetOwnership::BeginPlay()
 	// Test Phase 1
 
 	// Server 1 spawns the NetOwnershipCube and registers it for auto-destroy.
-	AddStep(TEXT("SpatialTestNetOwnershipServerSpawnCube"), FWorkerDefinition::Server(1), nullptr, [this](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestNetOwnershipServerSpawnCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		ANetOwnershipCube* Cube =
 			GetWorld()->SpawnActor<ANetOwnershipCube>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(Cube);
@@ -68,7 +68,7 @@ void ASpatialTestNetOwnership::BeginPlay()
 
 	AddStep(
 		TEXT("SpatialTestNetOwnershipAllWorkersSetReference"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-		[this](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this](float DeltaTime) {
 			TArray<AActor*> NetOwnershipCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ANetOwnershipCube::StaticClass(), NetOwnershipCubes);
 
@@ -82,10 +82,10 @@ void ASpatialTestNetOwnership::BeginPlay()
 
 			FinishStep();
 		},
-		5.0f);
+		10.0f);
 
 	//  The authoritative server sets the owner of the NetOwnershipCube to Client's 1 PlayerController
-	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwner"), FWorkerDefinition::AllServers, nullptr, [this](ASpatialFunctionalTest* NetTest) {
+	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwner"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		if (NetOwnershipCube->HasAuthority())
 		{
 			APlayerController* PlayerController =
@@ -105,24 +105,23 @@ void ASpatialTestNetOwnership::BeginPlay()
 	for (int i = 1; i <= TestLocations.Num(); ++i)
 	{
 		// The authoritative server moves the cube and Client1's Pawn to the corresponding test location
-		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr,
-				[this, i, TestLocations](ASpatialFunctionalTest* NetTest) {
-					APlayerController* PlayerController =
-						Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-					APawn* PlayerPawn = PlayerController->GetPawn();
+		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr, [this, i, TestLocations]() {
+			APlayerController* PlayerController =
+				Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+			APawn* PlayerPawn = PlayerController->GetPawn();
 
-					if (PlayerPawn->HasAuthority())
-					{
-						PlayerPawn->SetActorLocation(TestLocations[i - 1]);
-					}
+			if (PlayerPawn->HasAuthority())
+			{
+				PlayerPawn->SetActorLocation(TestLocations[i - 1]);
+			}
 
-					if (NetOwnershipCube->HasAuthority())
-					{
-						NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
-					}
+			if (NetOwnershipCube->HasAuthority())
+			{
+				NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
+			}
 
-					FinishStep();
-				});
+			FinishStep();
+		});
 
 		//  Client 1 sends a ServerRPC from the Cube.
 		AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
@@ -130,27 +129,26 @@ void ASpatialTestNetOwnership::BeginPlay()
 		//  All workers check that the number of RPCs received by the server authoritative over NetOwnershipCube the is correct.
 		AddStep(
 			TEXT("SpatialTestNetOwnershipAllWorkersTestCount"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-			[this, i](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+			[this, i](float DeltaTime) {
 				if (NetOwnershipCube->ReceivedRPCs == i)
 				{
 					FinishStep();
 				}
 			},
-			5.0f);
+			10.0f);
 	}
 
 	// Test Phase 2
 
 	//  The authoritative server sets the owner of the cube to be nullptr
-	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwnerToNull"), FWorkerDefinition::AllServers, nullptr,
-			[this](ASpatialFunctionalTest* NetTest) {
-				if (NetOwnershipCube->HasAuthority())
-				{
-					NetOwnershipCube->SetOwner(nullptr);
-				}
+	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwnerToNull"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		if (NetOwnershipCube->HasAuthority())
+		{
+			NetOwnershipCube->SetOwner(nullptr);
+		}
 
-				FinishStep();
-			});
+		FinishStep();
+	});
 
 	//  Client 1 sends a ServerRPC from the NetOwnershipCube that should be ignored.
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
@@ -158,11 +156,11 @@ void ASpatialTestNetOwnership::BeginPlay()
 	//  All workers check that the number of RPCs received by the authoritative server is correct.
 	AddStep(
 		TEXT("SpatialTestNetOwnershipAllWorkersTestCount2"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-		[this, TestLocations](ASpatialFunctionalTest* NetTest, float DeltaTime) {
+		[this, TestLocations](float DeltaTime) {
 			if (NetOwnershipCube->ReceivedRPCs == TestLocations.Num())
 			{
 				FinishStep();
 			}
 		},
-		5.0f);
+		10.0f);
 }

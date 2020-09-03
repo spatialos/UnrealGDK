@@ -281,6 +281,13 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
+
+	// GDK known entities completeness tags
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+
+	// Presence component. Must be calculated after all other components have been added.
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);

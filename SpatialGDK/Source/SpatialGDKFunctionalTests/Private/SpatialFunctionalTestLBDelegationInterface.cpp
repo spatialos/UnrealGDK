@@ -44,6 +44,13 @@ bool ISpatialFunctionalTestLBDelegationInterface::RemoveActorDelegation(AActor* 
 		return false;
 	}
 
+	if (!Actor->HasAuthority())
+	{
+		ensureMsgf(false, TEXT("Only the worker authoritative over an Actor can remove delegation. Tried to remove delegation on %s"),
+				   *Actor->GetName());
+		return false;
+	}
+
 	USpatialFunctionalTestWorkerDelegationComponent* DelegationComponent =
 		Actor->FindComponentByClass<USpatialFunctionalTestWorkerDelegationComponent>();
 	if (DelegationComponent == nullptr)
