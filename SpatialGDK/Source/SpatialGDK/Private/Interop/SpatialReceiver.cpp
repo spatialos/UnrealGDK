@@ -2216,7 +2216,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			{
 				Worker_ComponentId ComponentId =
 					bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
-				Trace_SpanId SpanId = EventTracer->GetSpanId(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId), PayloadCopy.Index);
+				Trace_SpanId SpanId =
+					EventTracer->GetSpanId(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId), PayloadCopy.Index);
 				EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
 			}
 

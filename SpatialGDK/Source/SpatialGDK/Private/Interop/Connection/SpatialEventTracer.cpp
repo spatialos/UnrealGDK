@@ -25,14 +25,17 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		return;
 	}
 
-	checkf(EventTracer->Stream, TEXT("Tracer in an invalid state in TraceCallback"));
+	if (!ensure(EventTracer->Stream.Get() != nullptr))
+	{
+		return;
+	}
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
 	{
 		EventTracer->BytesWrittenToStream += ItemSize;
 		int Code = Trace_SerializeItemToStream(EventTracer->Stream.Get(), Item, ItemSize);
-		if (Code != 0)
+		if (Code != 1)
 		{
 			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
 		}

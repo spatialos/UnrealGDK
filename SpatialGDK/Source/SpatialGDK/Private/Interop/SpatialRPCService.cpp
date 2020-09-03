@@ -2,8 +2,6 @@
 
 #include "Interop/SpatialRPCService.h"
 
-#include "EngineClasses/SpatialNetDriver.h"		   // For EventTracing
-#include "EngineClasses/SpatialPackageMapClient.h" // For EventTracing
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"

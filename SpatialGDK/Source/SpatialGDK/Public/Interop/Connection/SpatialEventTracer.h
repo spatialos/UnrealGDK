@@ -73,13 +73,13 @@ public:
 	void DropSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 
 private:
-	bool bEnabled = false;
+
+	bool bEnabled{ false };
 	bool bRecordRuntimeAndWorkerEvents{ false };
+	worker::c::Trace_EventTracer* EventTracer{ nullptr };
 
-	void Enable(const FString& FileName);
-	void Disable();
-
-	static void TraceCallback(void* UserData, const Trace_Item* Item);
+	uint64 BytesWrittenToStream{ 0 };
+	uint64 MaxFileSize{ 0 };
 
 	struct StreamDeleter
 	{
@@ -88,15 +88,14 @@ private:
 
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
 
-	worker::c::Trace_EventTracer* EventTracer{ nullptr };
+	SpatialSpanIdStore SpanIdStore;
 
-	FString WorkerName;
-	uint64 BytesWrittenToStream{ 0 };
-	uint64 MaxFileSize{ 0 };
+	void Enable(const FString& FileName);
+	void Disable();
+
+	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
 	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const worker::c::Trace_SpanId* Cause);
-
-	SpatialSpanIdStore SpanIdStore;
 };
 
 struct SpatialScopedActiveSpanId
@@ -115,10 +114,3 @@ private:
 };
 
 } // namespace SpatialGDK
-
-// TODO(EventTracer): a short list of requirements by Alex
-/*
-Actor name, Position,
-Add/Remove Entity (can we also distinguish Remove Entity when moving to another worker vs Delete entity),
-RPC calls (when they were sent/received/processed),
-*/

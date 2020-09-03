@@ -2,9 +2,7 @@
 
 #include "Interop/Connection/SpatialSpanIdStore.h"
 
-#include "Schema/RPCPayload.h"
 #include "SpatialConstants.h"
-#include "Utils/RPCRingBuffer.h"
 #include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
@@ -58,7 +56,7 @@ void SpatialSpanIdStore::ComponentUpdate(const Worker_Op& Op)
 
 worker::c::Trace_SpanId SpatialSpanIdStore::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	worker::c::Trace_SpanId ReturnSpanId = worker::c::Trace_SpanId();
+	worker::c::Trace_SpanId ReturnSpanId;
 
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
@@ -110,27 +108,29 @@ void SpatialSpanIdStore::DropOldSpanIds()
 	{
 		UpdateNextClearTime();
 
-		FDateTime RemoveDateTime = FDateTime::Now() - FTimespan::FromSeconds(MinUpdateLifetime);
+		FDateTime RemoveDateTime = FDateTime::Now() - FTimespan::FromSeconds(MinSpanIdLifetime);
 
 		TArray<EntityComponentFieldId> EntityComponentFieldIdsToRemove;
 		int32 NumDropped = 0;
 		bool bShouldBreak = false;
 
-		for (auto& Pair : EntityComponentFieldSpanIds)
+		for (const auto& Pair : EntityComponentFieldSpanIds)
 		{
 			const EntityComponentId& Id = Pair.Key;
-			FieldIdMap Map = Pair.Value;
+			const FieldIdMap& Map = Pair.Value;
 
-			for (auto& UpdateSpanIdPair : Map)
+			for (const auto& UpdateSpanIdPair : Map)
 			{
 				uint32 FieldId = UpdateSpanIdPair.Key;
-				EntityComponentFieldIdUpdateSpanId& UpdateSpanId = UpdateSpanIdPair.Value;
+				const EntityComponentFieldIdUpdateSpanId& UpdateSpanId = UpdateSpanIdPair.Value;
+
 				if (UpdateSpanId.UpdateTime < RemoveDateTime)
 				{
 					EntityComponentFieldIdsToRemove.Add({ Id, FieldId });
 					NumDropped++;
-					if (NumDropped >= MaxUpdateDrops)
+					if (NumDropped >= MaxSpanIdsToDrop)
 					{
+						UE_LOG(LogSpatialSpanIdStore, Log, TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
 						bShouldBreak = true;
 						break;
 					}
@@ -148,25 +148,21 @@ void SpatialSpanIdStore::DropOldSpanIds()
 			DropSpanId(Id.EntityComponentId, Id.FieldId);
 		}
 
+		UE_LOG(LogSpatialSpanIdStore, Verbose, TEXT("Periodic SpanId drop dropped %d SpanIds."), EntityComponentFieldIdsToRemove.Num());
+
 		EntityComponentFieldSpanIds.Compact();
 	}
 }
 
 void SpatialSpanIdStore::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId)
 {
-	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
-
-	if (SpanIdMap == nullptr)
-	{
-		SpanIdMap = &EntityComponentFieldSpanIds.Add(Id);
-	}
-
-	EntityComponentFieldIdUpdateSpanId& SpawnIdRef = SpanIdMap->FindOrAdd(FieldId);
+	FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
+	EntityComponentFieldIdUpdateSpanId& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
 	SpawnIdRef.SpanId = SpanId;
 	SpawnIdRef.UpdateTime = FDateTime::Now();
 }
 
 void SpatialSpanIdStore::UpdateNextClearTime()
 {
-	NextClearTime = FDateTime::Now() + FTimespan::FromSeconds(ClearFrequency);
+	NextClearTime = FDateTime::Now() + FTimespan::FromSeconds(DropFrequency);
 }

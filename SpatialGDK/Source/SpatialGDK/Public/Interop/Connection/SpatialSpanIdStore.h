@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 
 #include "Misc/DateTime.h"
-#include "SpatialCommonTypes.h"
-#include "SpatialConstants.h"
 #include "SpatialView/EntityComponentId.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -32,7 +30,6 @@ public:
 	bool HasSpanIds(const EntityComponentId& Id) const { return EntityComponentFieldSpanIds.Contains(Id); }
 
 private:
-
 	// Private Classes
 
 	struct EntityComponentFieldId
@@ -49,9 +46,9 @@ private:
 
 	// Private Members
 
-	const float ClearFrequency = 5.0f;
-	const float MinUpdateLifetime = 10.0f;
-	const int32 MaxUpdateDrops = 5000;
+	const float DropFrequency = 5.0f;
+	const float MinSpanIdLifetime = 10.0f;
+	const int32 MaxSpanIdsToDrop = 5000;
 	FDateTime NextClearTime;
 
 	using FieldIdMap = TMap<uint32, EntityComponentFieldIdUpdateSpanId>;
