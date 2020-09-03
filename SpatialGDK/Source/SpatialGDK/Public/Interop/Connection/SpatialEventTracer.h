@@ -4,10 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Interop/Connection/SpatialSpanIdStore.h"
-#include "SpatialCommonTypes.h"
 #include "SpatialEventMessages.h"
-
-#include <WorkerSDK/improbable/c_worker.h>
 
 // TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in
 // .cpp file, when the LatencyTracer is enabled?)
@@ -17,9 +14,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 // TODO - Individual RPC Calls (distinguishing between GDK and USER)
 // TODO - RPCs on newly created objects go through a different flow and need to be handled
-
-class AActor;
-class UFunction;
 
 namespace worker
 {

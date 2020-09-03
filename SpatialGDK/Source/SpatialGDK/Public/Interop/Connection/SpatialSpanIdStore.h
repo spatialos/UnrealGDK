@@ -7,8 +7,6 @@
 #include "Misc/DateTime.h"
 #include "SpatialView/EntityComponentId.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSpanIdStore, Log, All);
 
 namespace SpatialGDK

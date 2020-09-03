@@ -78,7 +78,7 @@ worker::c::Trace_SpanId SpatialSpanIdStore::GetSpanId(const EntityComponentId& I
 
 bool SpatialSpanIdStore::DropSpanIds(const EntityComponentId& Id)
 {
-	return EntityComponentFieldSpanIds.Remove(Id);
+	return EntityComponentFieldSpanIds.Remove(Id) > 0;
 }
 
 bool SpatialSpanIdStore::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)

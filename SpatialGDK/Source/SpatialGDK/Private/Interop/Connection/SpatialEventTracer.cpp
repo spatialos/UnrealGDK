@@ -2,13 +2,7 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
-#include "EngineMinimal.h"
-#include "GameFramework/Actor.h"
-#include "GenericPlatform/GenericPlatformAtomics.h"
-#include "Interop/Connection/SpatialConnectionManager.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "UObject/Class.h"
+#include "SpatialGDKSettings.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
