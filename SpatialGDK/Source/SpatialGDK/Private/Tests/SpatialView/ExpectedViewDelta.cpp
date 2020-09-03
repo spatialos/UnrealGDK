@@ -59,10 +59,10 @@ ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLostTemporarily(const Worker_E
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddDisconnect(const uint8_t StatusCode, const FString StatusMessage)
+ExpectedViewDelta& ExpectedViewDelta::AddDisconnect(const uint8_t StatusCode, FString StatusMessage)
 {
 	ConnectionStatusCode = StatusCode;
-	ConnectionStatusMessage = StatusMessage;
+	ConnectionStatusMessage = MoveTemp(StatusMessage);
 	return *this;
 }
 

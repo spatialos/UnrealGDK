@@ -32,7 +32,6 @@ public:
 	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, FString DisconnectReason);
 
 	OpList CreateOpList() &&;
-	TArray<OpList> CreateOpLists() &&;
 
 private:
 	TUniquePtr<EntityComponentOpListData> OpListData;

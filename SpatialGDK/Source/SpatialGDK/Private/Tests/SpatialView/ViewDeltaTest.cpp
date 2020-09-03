@@ -11,6 +11,17 @@
 
 using namespace SpatialGDK;
 
+namespace
+{
+void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpListBuilder& OpListBuilder)
+{
+	OpList Ops = MoveTemp(OpListBuilder).CreateOpList();
+	TArray<OpList> OpLists;
+	OpLists.Push(MoveTemp(Ops));
+	Delta.SetFromOpList(MoveTemp(OpLists), View);
+}
+} // anonymous namespace
+
 VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_THEN_get_entity_in_view_and_delta)
 {
 	ViewDelta InputDelta;
@@ -18,8 +29,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_THEN_get_entity_in_view_and_delt
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -41,8 +51,7 @@ VIEWDELTA_TEST(GIVEN_entity_in_view_WHEN_remove_entity_THEN_empty_view)
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveEntity(TestEntityId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	ExpectedViewDelta ExpectedDelta;
@@ -62,8 +71,7 @@ VIEWDELTA_TEST(GIVEN_entity_in_view_WHEN_add_component_THEN_entity_and_component
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -90,8 +98,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_component_THEN_com
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, NewComponentValue));
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -116,8 +123,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_component_THEN_com
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(TestEntityId, TestComponentId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -140,8 +146,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_authority_gained_THEN_aut
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_AUTHORITATIVE);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -167,8 +172,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_auth_component_in_view_WHEN_authority_lost_THEN_
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -190,8 +194,7 @@ VIEWDELTA_TEST(GIVEN_connected_view_WHEN_disconnect_op_THEN_disconnected_view)
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetDisconnect(WORKER_CONNECTION_STATUS_CODE_REJECTED, TEXT("Disconnected"));
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 
@@ -215,8 +218,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_auth_component_in_view_WHEN_authority_lost_and_g
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 		.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_AUTHORITATIVE);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -239,8 +241,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_remove_THEN_get_empty_view_and_delta)
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId).RemoveEntity(TestEntityId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	ExpectedViewDelta ExpectedDelta;
@@ -264,8 +265,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_and_add_component_
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentEvent(TestComponentId, EventValue))
 		.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, NewComponentValue));
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -294,8 +294,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_and_add_component_
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(TestEntityId, TestComponentId)
 		.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, NewComponentValue));
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -319,8 +318,7 @@ VIEWDELTA_TEST(GIVEN_entity_view_WHEN_entity_remove_and_add_THEN_no_entity_flag)
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveEntity(TestEntityId).AddEntity(TestEntityId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -341,8 +339,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_remove_add_THEN_entity_in_view_and_delt
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId).RemoveEntity(TestEntityId).AddEntity(TestEntityId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -363,8 +360,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_add_component_THEN_entity_and_co
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId).AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -388,8 +384,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_entity_THEN_empty_
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveEntity(TestEntityId);
-	TArray<OpList> OpLists = MoveTemp(OpListBuilder).CreateOpLists();
-	InputDelta.SetFromOpList(MoveTemp(OpLists), InputView);
+	SetFromOpList(InputDelta, InputView, OpListBuilder);
 
 	EntityView ExpectedView;
 

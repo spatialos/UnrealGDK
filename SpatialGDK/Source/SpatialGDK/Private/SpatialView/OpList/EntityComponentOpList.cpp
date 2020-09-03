@@ -95,13 +95,4 @@ OpList EntityComponentOpListBuilder::CreateOpList() &&
 {
 	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
 }
-
-TArray<OpList> EntityComponentOpListBuilder::CreateOpLists() &&
-{
-	OpList Ops = { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
-	TArray<OpList> OpLists;
-	OpLists.Push(MoveTemp(Ops));
-	return OpLists;
-}
-
 } // namespace SpatialGDK
