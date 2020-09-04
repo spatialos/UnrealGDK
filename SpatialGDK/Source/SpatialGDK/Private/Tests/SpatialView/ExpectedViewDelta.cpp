@@ -1,10 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "Tests/SpatialView/ExpectedViewDelta.h"
+
 #include "Algo/Compare.h"
 #include "ComponentTestUtils.h"
 #include "SpatialView/ViewDelta.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
-#include "Tests/SpatialView/ExptectedViewDelta.h"
 
 using namespace SpatialGDK;
 
