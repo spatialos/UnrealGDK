@@ -51,15 +51,13 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_UCLASS_BODY()
 	friend class USpatialStatics;
 
-	virtual void PostLoad() override;
-
 	/** If command line override -OverrideMultiWorkerSettingsClass is set then return the specified class from the command line.
 	 * Else if multi-worker is disabled, return the single worker settings class.
 	 * Else if bForceNonEditorSettings is set, return the MultiWorkerSettingsClass.
 	 * Else if the EditorMultiWorkerSettingsOverride is set and we are in the Editor, return the EditorMultiWorkerSettings.
 	 * Else if the MultiWorkerSettingsClass is set return it.
 	 * Otherwise return the single worker settings class.  */
-	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false) const;
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
 #if WITH_EDITORONLY_DATA
 	/** Defines how Unreal Editor will run the Tests in this map, without changing current Settings. */
@@ -75,7 +73,7 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	/** Is multi-worker enabled from the commmand line or in the WorldSettings*/
 	bool IsMultiWorkerEnabled() const;
 
-	private:
+private:
 	/** Enable running different server worker types to split the simulation. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
 	bool bEnableMultiWorker;

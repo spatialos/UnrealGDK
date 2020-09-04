@@ -10,38 +10,10 @@ ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectIni
 	, bEnableMultiWorker(false)
 	, MultiWorkerSettingsClass(nullptr)
 	, EditorMultiWorkerSettingsOverride(nullptr)
-{	
+{
 }
 
- void ASpatialWorldSettings::PostLoad()
- {
-	 Super::PostLoad();
-
-	 // Check for command line overrides
-	 const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	 if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
-	 {
-		 UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 1"));
-
-		 // If command line override for Multi Worker Settings is set then use the specified Multi Worker Settings class.
-		 FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
-		 FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
-		 TSubclassOf<USpatialMultiWorkerSettings> CommandLineMultiWorkerSettingsOverride =
-			 MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
-		 checkf(CommandLineMultiWorkerSettingsOverride != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
-		 UE_LOG(LogTemp, Warning, TEXT("Using class: %s"), *OverrideMultiWorkerSettingsClass);
-		 MultiWorkerSettingsClass = CommandLineMultiWorkerSettingsOverride;
-		 bEnableMultiWorker = true;
-	 }
-	 else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker.GetValue())
-	 {
-		 // If enable multi-worker was overridden from the command line update it 
-		 bEnableMultiWorker = false;
-	 }
- }
-
-TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSettingsClass(bool bForceNonEditorSettings /*= false*/) const
+TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSettingsClass(bool bForceNonEditorSettings /*= false*/)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -49,6 +21,12 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 	{
 		UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 1"));
 
+		// If command line override for Multi Worker Settings is set then use the specified Multi Worker Settings class.
+		FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
+		FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
+		MultiWorkerSettingsClass = MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
+		checkf(MultiWorkerSettingsClass != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
+		UE_LOG(LogTemp, Warning, TEXT("Using class: %s"), *OverrideMultiWorkerSettingsClass);
 		return GetValidWorkerSettings();
 	}
 	else if (!IsMultiWorkerEnabled())
@@ -83,7 +61,6 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 	return GetValidWorkerSettings();
 }
 
-
 TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetValidWorkerSettings() const
 {
 	if (MultiWorkerSettingsClass != nullptr)
@@ -101,7 +78,7 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetValidWorkerSe
 }
 
 #if WITH_EDITOR
-void ASpatialWorldSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) 
+void ASpatialWorldSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -131,6 +108,18 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 
 bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	// Check if multi-worker settings class was overridden from the command line
+	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
+	{
+		// If command line override for Multi Worker Settings is set then enable multi-worker.
+		return true;
+	}
+	else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker.GetValue())
+	{
+		// If enable multi-worker was overridden from the command line then disable multi worker.
+		return false;
+	}
 	return bEnableMultiWorker;
 }
