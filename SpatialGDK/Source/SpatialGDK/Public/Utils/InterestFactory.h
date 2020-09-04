@@ -26,8 +26,8 @@
  * for servers and clients, and if the actor is a player controller, the client worker's interest is also built for that actor.
  *
  * The other is server worker interest. Given a load balancing strategy, the factory will take the strategy's defined query constraint
- * and produce an interest component to exist on the server's worker entity. This interest component contains the primary interest query made
- * by that server worker.
+ * and produce an interest component to exist on the server's worker entity. This interest component contains the primary interest query
+ * made by that server worker.
  */
 
 class UAbstractLBStrategy;
@@ -38,7 +38,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
-
 class SPATIALGDK_API InterestFactory
 {
 public:
@@ -48,6 +47,9 @@ public:
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
+
+	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
+	bool DoOwnersHaveEntityId(const AActor* Actor) const;
 
 private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
@@ -64,22 +66,28 @@ private:
 
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
-	// Self interests require the entity ID to know which entity is "self". This would no longer be required if there was a first class self constraint.
-	// The components clients need to see on entities they are have authority over that they don't already see through authority.
+	// Self interests require the entity ID to know which entity is "self". This would no longer be required if there was a first class self
+	// constraint. The components clients need to see on entities they are have authority over that they don't already see through
+	// authority.
 	void AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
+	// Add interest to the actor's owner.
+	void AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
 	// Add the always relevant and the always interested query.
-	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
+	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
+											 const QueryConstraint& LevelConstraint) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
-	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const;
+	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints,
+											 bool bRecurseChildren) const;
 
 	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
-	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd) const;
+	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
+												  const Query& QueryToAdd) const;
 
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
@@ -89,7 +97,7 @@ private:
 	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;
 
-	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase)* Property, uint8* Data, QueryConstraint& OutConstraint) const;
+	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;

@@ -16,9 +16,11 @@ SpatialSnapshotManager::SpatialSnapshotManager()
 	: Connection(nullptr)
 	, GlobalStateManager(nullptr)
 	, Receiver(nullptr)
-{}
+{
+}
 
-void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver)
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager,
+								  USpatialReceiver* InReceiver)
 {
 	check(InConnection != nullptr);
 	Connection = InConnection;
@@ -36,7 +38,8 @@ void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGloba
 // Should only be triggered by the worker which is authoritative over the GSM.
 void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
-	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
+	UE_LOG(LogSnapshotManager, Log,
+		   TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
 
 	Worker_Constraint UnrealMetadataConstraint;
 	UnrealMetadataConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
@@ -51,8 +54,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	RequestID = Connection->SendEntityQueryRequest(&WorldQuery);
 
 	EntityQueryDelegate WorldQueryDelegate;
-	WorldQueryDelegate.BindLambda([Connection = this->Connection, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
-	{
+	WorldQueryDelegate.BindLambda([Connection = this->Connection, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - World entity query failed: %s"), UTF8_TO_TCHAR(Op.message));
@@ -87,7 +89,8 @@ void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& 
 	}
 }
 
-// GetSnapshotPath will take a snapshot (with or without the .snapshot extension) name and convert it to a relative path in the Game/Content folder.
+// GetSnapshotPath will take a snapshot (with or without the .snapshot extension) name and convert it to a relative path in the Game/Content
+// folder.
 FString GetSnapshotPath(const FString& SnapshotName)
 {
 	FString SnapshotsDirectory = FPaths::ProjectContentDir() + TEXT("Spatial/Snapshots/");
@@ -165,8 +168,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
-	SpawnEntitiesDelegate.BindLambda([Connection = this->Connection, GlobalStateManager = this->GlobalStateManager, EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op)
-	{
+	SpawnEntitiesDelegate.BindLambda([Connection = this->Connection, GlobalStateManager = this->GlobalStateManager,
+									  EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op) {
 		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn

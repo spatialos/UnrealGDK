@@ -1,17 +1,16 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved	
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma once	
+#pragma once
 
-#include "Schema/Component.h"	
-#include "SpatialConstants.h"	
-#include "Utils/SchemaUtils.h"	
+#include "Schema/Component.h"
+#include "SpatialConstants.h"
+#include "Utils/SchemaUtils.h"
 
-#include <WorkerSDK/improbable/c_schema.h>	
-#include <WorkerSDK/improbable/c_worker.h>	
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
-
 struct ClientRPCEndpointLegacy : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
@@ -20,7 +19,7 @@ struct ClientRPCEndpointLegacy : Component
 
 	ClientRPCEndpointLegacy(const Worker_ComponentData& Data)
 	{
-		Schema_Object* EndpointObject  = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* EndpointObject = Schema_GetComponentDataFields(Data.schema_type);
 		bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 	}
 

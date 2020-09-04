@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -27,13 +28,30 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 		ValidateNoActorClassesDuplicatedAmongLayers();
 		ValidateAllLayersHaveUniqueNonemptyNames();
 		ValidateAllLayersHaveLoadBalancingStrategy();
+
+		EditorRefreshSpatialDebugger();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, LockingPolicy))
 	{
 		ValidateLockingPolicyIsSet();
 	}
+}
+void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
+{
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
+	check(World != nullptr);
+
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	check(WorldSettings != nullptr);
+
+	const TSubclassOf<USpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass = WorldSettings->MultiWorkerSettingsClass;
+
+	if (VisibleMultiWorkerSettingsClass != nullptr && VisibleMultiWorkerSettingsClass == GetClass())
+	{
+		ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+	}
 };
-#endif
+#endif // WITH_EDITOR
 
 uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() const
 {
@@ -57,12 +75,13 @@ void UAbstractSpatialMultiWorkerSettings::ValidateFirstLayerIsDefaultLayer()
 
 void UAbstractSpatialMultiWorkerSettings::ValidateNonEmptyWorkerLayers()
 {
-	if (WorkerLayers.Num() == 0 )
+	if (WorkerLayers.Num() == 0)
 	{
 		WorkerLayers.Emplace(UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo());
-		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("EmptyWorkerLayer_Prompt", "You need at least one layer in your settings. "
-			"Adding back the default layer. File: {0}"), FText::FromString(GetNameSafe(this))));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("EmptyWorkerLayer_Prompt",
+																	"You need at least one layer in your settings. "
+																	"Adding back the default layer. File: {0}"),
+															FText::FromString(GetNameSafe(this))));
 	}
 }
 
@@ -77,9 +96,12 @@ void UAbstractSpatialMultiWorkerSettings::ValidateSomeLayerHasActorClass()
 	if (!bHasTopLevelActorClass)
 	{
 		WorkerLayers[0].ActorClasses.Add(AActor::StaticClass());
-		FMessageDialog::Open(EAppMsgType::Ok,FText::Format(LOCTEXT("MissingActorLayer_Prompt",
-			"Some worker layer must contain the root Actor class. Adding AActor to the first worker layer entry. "
-			"File: {0}"), FText::FromString(GetNameSafe(this))));
+		FMessageDialog::Open(
+			EAppMsgType::Ok,
+			FText::Format(LOCTEXT("MissingActorLayer_Prompt",
+								  "Some worker layer must contain the root Actor class. Adding AActor to the first worker layer entry. "
+								  "File: {0}"),
+						  FText::FromString(GetNameSafe(this))));
 	}
 }
 
@@ -112,9 +134,12 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongL
 		{
 			DuplicatedActorsList.Append(FString::Printf(TEXT("%s, "), *DuplicatedClass.GetAssetName()));
 		}
-		FMessageDialog::Open(EAppMsgType::Ok,FText::Format(LOCTEXT("MultipleActorLayers_Prompt",
-			"Defining the same Actor type across multiple layers is invalid. Removed all occurences after the first. "
-            "File: {0}. Duplicate Actor types: {1}"), FText::FromString(GetNameSafe(this)), FText::FromString(DuplicatedActorsList)));
+		FMessageDialog::Open(
+			EAppMsgType::Ok,
+			FText::Format(LOCTEXT("MultipleActorLayers_Prompt",
+								  "Defining the same Actor type across multiple layers is invalid. Removed all occurences after the first. "
+								  "File: {0}. Duplicate Actor types: {1}"),
+						  FText::FromString(GetNameSafe(this)), FText::FromString(DuplicatedActorsList)));
 	}
 }
 
@@ -145,9 +170,10 @@ void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveUniqueNonemptyNam
 
 	if (bSomeLayerNameWasChanged)
 	{
-		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("BadLayerName_Prompt", "Found a worker layer with a duplicate name. "
-				"This has been fixed, please check your layers. File: {0}"), FText::FromString(GetNameSafe(this))));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("BadLayerName_Prompt",
+																	"Found a worker layer with a duplicate name. "
+																	"This has been fixed, please check your layers. File: {0}"),
+															FText::FromString(GetNameSafe(this))));
 	}
 }
 
@@ -166,9 +192,11 @@ void UAbstractSpatialMultiWorkerSettings::ValidateAllLayersHaveLoadBalancingStra
 
 	if (bSomeLayerWasMissingStrategy)
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("UnsetLoadBalancingStrategy_Prompt",
-			"Found a worker layer with an unset load balancing strategy. Defaulting to a 1x1 grid. "
-			"File: {0}"), FText::FromString(GetNameSafe(this))));
+		FMessageDialog::Open(EAppMsgType::Ok,
+							 FText::Format(LOCTEXT("UnsetLoadBalancingStrategy_Prompt",
+												   "Found a worker layer with an unset load balancing strategy. Defaulting to a 1x1 grid. "
+												   "File: {0}"),
+										   FText::FromString(GetNameSafe(this))));
 	}
 }
 
@@ -177,9 +205,10 @@ void UAbstractSpatialMultiWorkerSettings::ValidateLockingPolicyIsSet()
 	if (*LockingPolicy == nullptr)
 	{
 		LockingPolicy = UOwnershipLockingPolicy::StaticClass();
-		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::Format(LOCTEXT("UnsetLockingPolicy_Prompt", "Locking policy must be set. "
-				"Resetting to default policy. File: {0}"), FText::FromString(GetNameSafe(this))));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("UnsetLockingPolicy_Prompt",
+																	"Locking policy must be set. "
+																	"Resetting to default policy. File: {0}"),
+															FText::FromString(GetNameSafe(this))));
 	}
 }
 #endif

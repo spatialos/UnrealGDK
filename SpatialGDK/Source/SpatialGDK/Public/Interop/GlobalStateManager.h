@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-
 #include "Utils/SchemaUtils.h"
+
+#include "CoreMinimal.h"
+#include "EngineUtils.h"
+#include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -36,7 +37,8 @@ public:
 
 	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
 	void QueryGSM(const QueryDelegate& Callback);
-	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId);
+	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
+														  int32& OutSessionId);
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
@@ -64,6 +66,8 @@ public:
 
 	bool IsReady() const;
 
+	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
+
 	Worker_EntityId GlobalStateManagerEntityId;
 
 private:
@@ -90,8 +94,6 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 
-	void BecomeAuthoritativeOverAllActors();
-	void SetAllActorRolesBasedOnLBStrategy();
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
 #if WITH_EDITOR

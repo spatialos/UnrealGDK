@@ -13,7 +13,8 @@
  * do runtime delegations of Actors to specific Server Workers.
  */
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy, public ISpatialFunctionalTestLBDelegationInterface
+class SPATIALGDKFUNCTIONALTESTS_API USpatialFunctionalTestGridLBStrategy : public UGridBasedLBStrategy,
+																		   public ISpatialFunctionalTestLBDelegationInterface
 {
 	GENERATED_BODY()
 
@@ -22,4 +23,8 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+
+	TArray<int64> Entities;
 };

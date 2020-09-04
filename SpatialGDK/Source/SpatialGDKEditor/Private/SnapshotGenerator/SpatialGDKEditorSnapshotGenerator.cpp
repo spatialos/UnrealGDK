@@ -11,8 +11,8 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/EntityFactory.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/EntityFactory.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -23,8 +23,8 @@
 #include "HAL/PlatformFilemanager.h"
 #include "UObject/UObjectIterator.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 using namespace SpatialGDK;
 
@@ -74,6 +74,13 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(PlayerSpawnerData);
+
+	// GDK known entities completeness tags
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+
+	// Presence component. Must be calculated after all other components have been added.
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(SpawnerEntity, Components);
@@ -143,6 +150,13 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+
+	// GDK known entities completeness tags
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+
+	// Presence component. Must be calculated after all other components have been added.
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(GSM, Components);
@@ -181,6 +195,13 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
 	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+
+	// GDK known entities completeness tags
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+
+	// Presence component. Must be calculated after all other components have been added.
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	SetEntityData(VirtualWorkerTranslator, Components);
@@ -214,13 +235,16 @@ bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStrea
 {
 	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
 	{
-		if (SnapshotGenerationClass->IsChildOf(USnapshotGenerationTemplate::StaticClass()) && *SnapshotGenerationClass != USnapshotGenerationTemplate::StaticClass())
+		if (SnapshotGenerationClass->IsChildOf(USnapshotGenerationTemplate::StaticClass())
+			&& *SnapshotGenerationClass != USnapshotGenerationTemplate::StaticClass())
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found user snapshot generation class: %s"), *SnapshotGenerationClass->GetName());
-			USnapshotGenerationTemplate *SnapshotGenerationObj = NewObject<USnapshotGenerationTemplate>(GetTransientPackage(), *SnapshotGenerationClass);
+			USnapshotGenerationTemplate* SnapshotGenerationObj =
+				NewObject<USnapshotGenerationTemplate>(GetTransientPackage(), *SnapshotGenerationClass);
 			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextAvailableEntityID))
 			{
-				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failure returned in user snapshot generation override method from class: %s"), *SnapshotGenerationClass->GetName());
+				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failure returned in user snapshot generation override method from class: %s"),
+					   *SnapshotGenerationClass->GetName());
 				return false;
 			}
 		}
@@ -232,26 +256,30 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
 	if (!CreateSpawnerEntity(OutputStream))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 
 	if (!CreateGlobalStateManager(OutputStream))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 
 	if (!CreateVirtualWorkerTranslator(OutputStream))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating VirtualWorkerTranslator in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating VirtualWorkerTranslator in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 
 	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
 	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 

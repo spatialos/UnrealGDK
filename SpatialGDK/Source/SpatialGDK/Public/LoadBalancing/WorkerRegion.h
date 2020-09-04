@@ -9,7 +9,7 @@
 
 #include "WorkerRegion.generated.h"
 
-UCLASS(NotPlaceable, NotBlueprintable)
+UCLASS(Transient, NotPlaceable, NotBlueprintable)
 class SPATIALGDK_API AWorkerRegion : public AActor
 {
 	GENERATED_BODY()
@@ -20,10 +20,10 @@ public:
 	void Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale);
 
 	UPROPERTY()
-	UStaticMeshComponent *Mesh;
+	UStaticMeshComponent* Mesh;
 
 	UPROPERTY()
-	UMaterialInstanceDynamic *MaterialInstance;
+	UMaterialInstanceDynamic* MaterialInstance;
 
 private:
 	void SetOpacity(const float Opacity);
