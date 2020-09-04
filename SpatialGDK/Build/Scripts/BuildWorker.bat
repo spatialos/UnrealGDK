@@ -1,7 +1,5 @@
 @echo off
 
-if [%4] == [] goto :MissingParams
-
 rem Try and build as a project plugin first, check for a project plugin structure.
 set UNREAL_PROJECT_DIR="%~dp0..\..\..\..\..\"
 set FOUND_UPROJECT=""
@@ -21,6 +19,9 @@ goto :Build
 
 :BuildAsEnginePlugin
 rem If we are running as an Engine plugin then we need a full path to the .uproject file!
+rem Path to the SpatialGDK build tool as an Engine plugin.
+set BUILD_EXE_PATH="%~dp0..\..\Binaries\ThirdParty\Improbable\Programs\Build.exe"
+if [%4] == [] goto :MissingParams
 set UPROJECT=%4
 
 if not exist %UPROJECT% (
@@ -34,13 +35,9 @@ for %%i in (%UPROJECT%) do (
 	set UNREAL_PROJECT_DIR="%%~di%%~pi"
 )
 
-rem Path to the SpatialGDK build tool as an Engine plugin.
-set BUILD_EXE_PATH="%~dp0..\..\Binaries\ThirdParty\Improbable\Programs\Build.exe"
 set SPATIAL_DIR=%UNREAL_PROJECT_DIR%..\spatial\
 
-
 :Build
-
 if not exist %SPATIAL_DIR% (
 	echo Could not find the project's 'spatial' directory! Please ensure your input arguments are correct and your GDK is correctly installed.
 	exit /b 1
@@ -69,5 +66,6 @@ popd
 exit /b %ERRORLEVEL%
 
 :MissingParams
-echo Missing input arguments! Usage: "<GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>"
+echo Missing input arguments!
+%BUILD_EXE_PATH% --help
 exit /b 1
