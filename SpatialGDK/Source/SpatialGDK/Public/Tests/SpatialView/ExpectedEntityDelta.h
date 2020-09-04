@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityDelta.h"
 
 namespace SpatialGDK
