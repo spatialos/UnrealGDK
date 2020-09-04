@@ -138,6 +138,7 @@ bool FSendReserveEntityIdsRequest::Update()
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendReserveEntityIdsRequest(NumOfEntities);
+	Connection->Flush();
 
 	return true;
 }
@@ -149,6 +150,7 @@ bool FSendCreateEntityRequest::Update()
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+	Connection->Flush();
 
 	return true;
 }
@@ -159,6 +161,7 @@ bool FSendDeleteEntityRequest::Update()
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendDeleteEntityRequest(EntityId);
+	Connection->Flush();
 
 	return true;
 }
