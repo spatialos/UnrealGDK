@@ -381,6 +381,11 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	Algo::StableSort(AuthorityChanges, EntityComponentComparison{});
 	Algo::StableSort(EntityChanges, EntityComparison{});
 
+	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
+	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
+	// will be greater than all valid IDs.
+	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+
 	// Add sentinel elements to the ends of the arrays.
 	// Prevents the need for bounds checks on the iterators.
 	ComponentChanges.Emplace(Worker_RemoveComponentOp{ SENTINEL_ENTITY_ID, 0 });
