@@ -7,7 +7,6 @@
 #include "SpatialView/OpList/OpList.h"
 
 #include "Containers/Array.h"
-#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
@@ -32,6 +31,9 @@ class ViewDelta
 {
 public:
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
+	// Entity ID arrays are assumed to be sorted for view delta projection.
+	void Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
+		const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities);
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;
@@ -69,6 +71,17 @@ private:
 		bool bAdded;
 	};
 
+	struct EntityProjection
+	{
+		Worker_EntityId EntityId;
+		enum
+		{
+			COMPLETE,
+            NEWLY_COMPLETE,
+            NEWLY_INCOMPLETE
+        } Type;
+	};
+
 	// Comparator that will return true when the entity change in question is not for the same entity ID as stored.
 	struct DifferentEntity
 	{
@@ -99,6 +112,7 @@ private:
 	struct EntityComparison
 	{
 		bool operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const;
+		bool operator()(const EntityProjection& Lhs, const EntityProjection& Rhs) const;
 	};
 
 	// Calculate and return the net component added in [`Start`, `End`).
@@ -140,6 +154,11 @@ private:
 	// After returning `*ViewElement` will point to that entity in the view or nullptr if it doesn't exist.
 	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
 													   EntityViewElement** ViewElement, EntityView& View);
+
+	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
+	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
+	// will be greater than all valid IDs.
+	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
 
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;
