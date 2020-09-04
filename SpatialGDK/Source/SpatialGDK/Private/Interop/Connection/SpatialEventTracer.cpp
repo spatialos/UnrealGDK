@@ -8,7 +8,6 @@
 #include <WorkerSDK/improbable/c_trace.h>
 
 #if ENGINE_MINOR_VERSION >= 25
-#else
 #include "UObject/UnrealTypePrivate.h"
 #else
 #include "UObject/UnrealType.h"
