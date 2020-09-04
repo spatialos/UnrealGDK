@@ -4,6 +4,7 @@
 
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
+#include "UObject/UnrealType.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -109,9 +110,11 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 	};
 
+#if ENGINE_MINOR_VERSION >= 25
 	using UnrealProperty = FProperty;
-	using UnrealStrProperty = FStrProperty;
-	using UnrealObjectProperty = FObjectProperty;
+#else
+	using UnrealProperty = UProperty;
+#endif
 
 	for (TFieldIterator<UnrealProperty> It(Struct); It; ++It)
 	{
@@ -122,11 +125,19 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 
 		check(Property->ArrayDim == 1); // Arrays not handled yet
 
-		if (UnrealStrProperty* StringProperty = CastField<UnrealStrProperty>(Property))
+#if ENGINE_MINOR_VERSION >= 25
+		if (FStrProperty* StringProperty = CastField<FStrProperty>(Property))
+#else
+		if (UStrProperty* StringProperty = Cast<UStrProperty>(Property))
+#endif
 		{
 			AddTraceEventStringField(VariableName, StringProperty->GetPropertyValue(Value));
 		}
-		else if (UnrealObjectProperty* ObjectProperty = CastField<UnrealObjectProperty>(Property))
+#if ENGINE_MINOR_VERSION >= 25
+		else if (FObjectProperty* ObjectProperty = CastField<FObjectProperty>(Property))
+#else
+		else if (UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property))
+#endif
 		{
 			UObject* Object = ObjectProperty->GetPropertyValue(Value);
 			if (Object)
