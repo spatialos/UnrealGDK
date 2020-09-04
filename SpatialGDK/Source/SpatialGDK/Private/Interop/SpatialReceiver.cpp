@@ -2182,12 +2182,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 					RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
 					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
 
-					Trace_SpanId SpanId =
-						EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId), FieldId);
-					EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
+					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId), FieldId);
+					EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &CauseSpanId);
 				}
-
-
 			}
 
 			TargetObject->ProcessEvent(Function, Parms);
