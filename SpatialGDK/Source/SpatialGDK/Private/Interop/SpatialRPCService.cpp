@@ -35,7 +35,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
-		PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), &PendingPayload.SpanId.GetValue());
+		PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
 		AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
 		Result = EPushRPCResult::QueueOverflowed;
 	}
@@ -77,7 +77,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, &PendingPayload.SpanId.GetValue()));
+		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -160,7 +160,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (PendingRPCPayload& PendingPayload : OverflowedRPCArray)
 		{
-			EventTracer->TraceEvent(FEventRPCRetried(), &PendingPayload.SpanId.GetValue());
+			EventTracer->TraceEvent(FEventRPCRetried(), PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload.Payload), false);
 
 			switch (Result)
