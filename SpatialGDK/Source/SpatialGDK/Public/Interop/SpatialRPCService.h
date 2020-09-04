@@ -88,6 +88,8 @@ public:
 	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
+	uint64 GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const;
+
 private:
 	struct PendingRPCPayload
 	{

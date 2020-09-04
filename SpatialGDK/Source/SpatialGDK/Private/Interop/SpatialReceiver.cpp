@@ -2173,11 +2173,21 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			if (EventTracer->IsEnabled())
 			{
-				Worker_ComponentId ComponentId =
-					bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
-				Trace_SpanId SpanId =
-					EventTracer->GetSpanId(EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId), PayloadCopy.Index);
-				EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
+				Worker_EntityId EntityId = PendingRPCParams.ObjectRef.Entity;
+				uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
+				if (RPCId != 0)
+				{
+					Worker_ComponentId ComponentId =
+						bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+					RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
+
+					Trace_SpanId SpanId =
+						EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId), FieldId);
+					EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), &SpanId);
+				}
+
+
 			}
 
 			TargetObject->ProcessEvent(Function, Parms);

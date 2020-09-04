@@ -9,6 +9,8 @@
 
 #if ENGINE_MINOR_VERSION >= 25
 #include "UObject/UnrealType.h"
+#else
+#include "UObject/UnrealTypePrivate.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);

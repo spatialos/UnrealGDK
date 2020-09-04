@@ -56,7 +56,7 @@ void SpatialSpanIdStore::ComponentUpdate(const Worker_Op& Op)
 
 worker::c::Trace_SpanId SpatialSpanIdStore::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
-	worker::c::Trace_SpanId ReturnSpanId;
+	worker::c::Trace_SpanId ReturnSpanId = worker::c::Trace_SpanId();
 
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)

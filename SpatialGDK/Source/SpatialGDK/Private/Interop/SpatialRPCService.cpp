@@ -522,6 +522,17 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 }
 
+uint64 SpatialRPCService::GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const
+{
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+	const uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
+	if (LastAckedRPCId != nullptr)
+	{
+		return *LastAckedRPCId;
+	}
+	return 0;
+}
+
 void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)
 {
 	if (Type == ERPCType::NetMulticast)
