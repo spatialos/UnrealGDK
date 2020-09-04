@@ -71,17 +71,6 @@ private:
 		bool bAdded;
 	};
 
-	struct EntityProjection
-	{
-		Worker_EntityId EntityId;
-		enum
-		{
-			COMPLETE,
-			NEWLY_COMPLETE,
-			NEWLY_INCOMPLETE
-		} Type;
-	};
-
 	// Comparator that will return true when the entity change in question is not for the same entity ID as stored.
 	struct DifferentEntity
 	{
