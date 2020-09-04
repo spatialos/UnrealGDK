@@ -4,9 +4,12 @@
 
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
-#include "UObject/WeakFieldPtr.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
+
+#if ENGINE_MINOR_VERSION >= 25
+#include "UObject/UnrealType.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
