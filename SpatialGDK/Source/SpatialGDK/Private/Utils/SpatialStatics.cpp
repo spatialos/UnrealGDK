@@ -103,7 +103,7 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 
 	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		return WorldSettings->IsMultiWorkerEnabledInWorldSettings();
+		return WorldSettings->IsMultiWorkerEnabled();
 	}
 	return false;
 }

@@ -7,6 +7,7 @@
 #include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Editor.h"
 #include "ISettingsModule.h"

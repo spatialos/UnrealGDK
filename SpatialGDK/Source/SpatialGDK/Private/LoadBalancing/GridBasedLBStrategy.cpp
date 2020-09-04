@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Templates/Tuple.h"
 
