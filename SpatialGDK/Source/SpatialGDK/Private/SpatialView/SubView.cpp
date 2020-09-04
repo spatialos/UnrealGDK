@@ -6,8 +6,8 @@
 
 namespace SpatialGDK
 {
-SubView::SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate Filter,
-	                 const EntityView& View, FDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
+SubView::SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate Filter, const EntityView& View, FDispatcher& Dispatcher,
+				 const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
 	: TagComponentId(TagComponentId)
 	, Filter(Filter)
 	, View(View)
@@ -71,24 +71,22 @@ void SubView::RefreshEntity(const Worker_EntityId EntityId)
 	}
 }
 
-
 void SubView::RegisterTagCallbacks(const EntityView& View, FDispatcher& Dispatcher)
 {
 	Dispatcher.RegisterAndInvokeComponentAddedCallback(
-        TagComponentId,
-        [this](const FEntityComponentChange Change) {
-            OnTaggedEntityAdded(Change.EntityId);
-        },
-        View);
+		TagComponentId,
+		[this](const FEntityComponentChange Change) {
+			OnTaggedEntityAdded(Change.EntityId);
+		},
+		View);
 	Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange Change) {
-        OnTaggedEntityRemoved(Change.EntityId);
-    });
+		OnTaggedEntityRemoved(Change.EntityId);
+	});
 }
 
 void SubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
 {
-	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId EntityId)
-	{
+	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId EntityId) {
 		RefreshEntity(EntityId);
 	};
 	for (FDispatcherRefreshCallback Callback : DispatcherRefreshCallbacks)

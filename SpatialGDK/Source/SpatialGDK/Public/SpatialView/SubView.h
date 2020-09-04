@@ -15,8 +15,8 @@ namespace SpatialGDK
 class SubView
 {
 public:
-	SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate Filter,
-			const EntityView& View, FDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
+	SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate Filter, const EntityView& View, FDispatcher& Dispatcher,
+			const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
 
 	void TagQuery(Query& QueryToTag) const;
 	void TagEntity(TArray<FWorkerComponentData>& Components) const;
