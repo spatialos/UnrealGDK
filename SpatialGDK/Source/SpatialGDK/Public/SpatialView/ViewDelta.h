@@ -155,11 +155,6 @@ private:
 	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
 													   EntityViewElement** ViewElement, EntityView& View);
 
-	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
-	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
-	// will be greater than all valid IDs.
-	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
-
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;
 	TArray<Worker_AuthorityChangeOp> AuthorityChanges;
