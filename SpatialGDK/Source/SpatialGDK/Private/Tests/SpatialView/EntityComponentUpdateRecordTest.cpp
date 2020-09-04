@@ -4,7 +4,7 @@
 
 #include "SpatialView/EntityComponentUpdateRecord.h"
 
-#include "EntityComponentTestUtils.h"
+#include "ComponentTestUtils.h"
 
 #define ENTITYCOMPONENTUPDATERECORD_TEST(TestName) GDK_TEST(Core, EntityComponentUpdateRecord, TestName)
 
