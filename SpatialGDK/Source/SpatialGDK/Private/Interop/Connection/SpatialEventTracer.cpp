@@ -7,12 +7,6 @@
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
-#if ENGINE_MINOR_VERSION >= 25
-#include "UObject/UnrealTypePrivate.h"
-#else
-#include "UObject/UnrealType.h"
-#endif
-
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 using namespace SpatialGDK;
@@ -90,7 +84,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	}
 
 	Trace_SpanId CurrentSpanId;
-	if (Cause)
+	if (Cause != nullptr)
 	{
 		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Cause, 1);
 	}
@@ -115,15 +109,9 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 	};
 
-#if ENGINE_MINOR_VERSION >= 25
 	using UnrealProperty = FProperty;
 	using UnrealStrProperty = FStrProperty;
 	using UnrealObjectProperty = FObjectProperty;
-#else
-	using UnrealProperty = UProperty;
-	using UnrealStrProperty = UStrProperty;
-	using UnrealObjectProperty = UObjectProperty;
-#endif
 
 	for (TFieldIterator<UnrealProperty> It(Struct); It; ++It)
 	{
