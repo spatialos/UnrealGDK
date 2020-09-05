@@ -209,11 +209,6 @@ bool ViewDelta::EntityComparison::operator()(const ReceivedEntityChange& Lhs, co
 	return Lhs.EntityId < Rhs.EntityId;
 }
 
-bool ViewDelta::EntityComparison::operator()(const EntityProjection& Lhs, const EntityProjection& Rhs) const
-{
-	return Lhs.EntityId < Rhs.EntityId;
-}
-
 ComponentChange ViewDelta::CalculateAdd(ReceivedComponentChange* Start, ReceivedComponentChange* End, TArray<ComponentData>& Components)
 {
 	// There must be at least one component add; anything before it can be ignored.
