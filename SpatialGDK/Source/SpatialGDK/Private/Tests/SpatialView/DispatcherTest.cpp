@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "EntityComponentTestUtils.h"
+#include "ComponentTestUtils.h"
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/Dispatcher.h"
