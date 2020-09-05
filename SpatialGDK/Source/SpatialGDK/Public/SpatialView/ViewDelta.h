@@ -101,7 +101,6 @@ private:
 	struct EntityComparison
 	{
 		bool operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const;
-		bool operator()(const EntityProjection& Lhs, const EntityProjection& Rhs) const;
 	};
 
 	// Calculate and return the net component added in [`Start`, `End`).

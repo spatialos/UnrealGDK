@@ -26,7 +26,7 @@ public:
 	void RefreshEntity(const Worker_EntityId EntityId);
 
 private:
-	void RegisterTagCallbacks(const EntityView& View, FDispatcher& Dispatcher);
+	void RegisterTagCallbacks(FDispatcher& Dispatcher);
 	void RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
 	void OnTaggedEntityAdded(const Worker_EntityId EntityId);
 	void OnTaggedEntityRemoved(const Worker_EntityId EntityId);

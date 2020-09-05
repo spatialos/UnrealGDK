@@ -16,7 +16,7 @@ SubView::SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate
 	, NewlyCompleteEntities(TArray<Worker_EntityId>{})
 	, NewlyIncompleteEntities(TArray<Worker_EntityId>{})
 {
-	RegisterTagCallbacks(View, Dispatcher);
+	RegisterTagCallbacks(Dispatcher);
 	RegisterRefreshCallbacks(DispatcherRefreshCallbacks);
 }
 
@@ -71,7 +71,7 @@ void SubView::RefreshEntity(const Worker_EntityId EntityId)
 	}
 }
 
-void SubView::RegisterTagCallbacks(const EntityView& View, FDispatcher& Dispatcher)
+void SubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 {
 	Dispatcher.RegisterAndInvokeComponentAddedCallback(
 		TagComponentId,
