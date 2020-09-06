@@ -44,7 +44,7 @@ private:
 	TArray<Worker_EntityId> CompleteEntities;
 	TArray<Worker_EntityId> NewlyCompleteEntities;
 	TArray<Worker_EntityId> NewlyIncompleteEntities;
-	// TODO: TempIncompleteEntities
+	TArray<Worker_EntityId> TemporarilyIncompleteEntities;
 };
 
 } // namespace SpatialGDK

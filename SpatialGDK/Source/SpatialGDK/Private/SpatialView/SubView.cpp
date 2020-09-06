@@ -15,6 +15,7 @@ SubView::SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate
 	, CompleteEntities(TArray<Worker_EntityId>{})
 	, NewlyCompleteEntities(TArray<Worker_EntityId>{})
 	, NewlyIncompleteEntities(TArray<Worker_EntityId>{})
+	, TemporarilyIncompleteEntities(TArray<Worker_EntityId>{})
 {
 	RegisterTagCallbacks(Dispatcher);
 	RegisterRefreshCallbacks(DispatcherRefreshCallbacks);
@@ -50,12 +51,14 @@ void SubView::AdvanceViewDelta(const ViewDelta& Delta)
 	Algo::Sort(CompleteEntities);
 	Algo::Sort(NewlyCompleteEntities);
 	Algo::Sort(NewlyIncompleteEntities);
+	Algo::Sort(TemporarilyIncompleteEntities);
 
-	SubDelta.Project(Delta, CompleteEntities, NewlyCompleteEntities, NewlyIncompleteEntities);
+	SubDelta.Project(Delta, CompleteEntities, NewlyCompleteEntities, NewlyIncompleteEntities, TemporarilyIncompleteEntities);
 
 	CompleteEntities.Append(NewlyCompleteEntities);
 	NewlyCompleteEntities.Empty();
 	NewlyIncompleteEntities.Empty();
+	TemporarilyIncompleteEntities.Empty();
 }
 
 const ViewDelta& SubView::GetViewDelta() const
@@ -120,10 +123,11 @@ void SubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
 void SubView::EntityComplete(const Worker_EntityId EntityId)
 {
 	// We were just about to remove this entity, but it has become complete again before the delta was read.
-	// Act as if it was never incomplete.
+	// Mark it as temporarily incomplete, but otherwise treat it as if it hadn't gone incomplete.
 	if (NewlyIncompleteEntities.RemoveSingleSwap(EntityId))
 	{
 		CompleteEntities.Add(EntityId);
+		TemporarilyIncompleteEntities.Add(EntityId);
 		return;
 	}
 	// This is new to us. Mark it as newly complete.

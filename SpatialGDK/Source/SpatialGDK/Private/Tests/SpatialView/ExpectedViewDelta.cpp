@@ -11,7 +11,7 @@ using namespace SpatialGDK;
 
 ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType)
 {
-	EntityDeltas.Add(EntityId, { EntityId, ChangeType == ADD, ChangeType == REMOVE });
+	EntityDeltas.Add(EntityId, { EntityId, ChangeType == ADD ? ExpectedEntityDelta::ADD : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE : ExpectedEntityDelta::UPDATE});
 	return *this;
 }
 
@@ -104,14 +104,34 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 			return false;
 		}
 
-		if (LhsEntityDelta.bAdded != RhsEntityDelta.bAdded)
+		switch (LhsEntityDelta.Type)
 		{
-			return false;
-		}
-
-		if (LhsEntityDelta.bRemoved != RhsEntityDelta.bRemoved)
-		{
-			return false;
+			case ExpectedEntityDelta::UPDATE:
+				if (!(RhsEntityDelta.Type == EntityDelta::UPDATE))
+				{
+					return false;
+				}
+				break;
+			case ExpectedEntityDelta::ADD:
+				if (!(RhsEntityDelta.Type == EntityDelta::ADD))
+				{
+					return false;
+				}
+				break;
+			case ExpectedEntityDelta::REMOVE:
+				if (!(RhsEntityDelta.Type == EntityDelta::REMOVE))
+				{
+					return false;
+				}
+				break;
+			case ExpectedEntityDelta::TEMPORARILY_REMOVED:
+				if (!(RhsEntityDelta.Type == EntityDelta::TEMPORARILY_REMOVED))
+				{
+					return false;
+				}
+				break;
+			default:
+				checkNoEntry();
 		}
 
 		if (!CompareData(LhsEntityDelta.AuthorityGained, RhsEntityDelta.AuthorityGained, CompareAuthorityChanges))
