@@ -44,14 +44,23 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 
 	for (;;)
 	{
-		const Worker_EntityId MinEntityId = FMath::Min(FMath::Min(DeltaIt->EntityId, *CompleteIt),
-													   FMath::Min3(*NewlyCompleteIt, *NewlyIncompleteIt, *TemporarilyIncompleteIt));
+		const Worker_EntityId MinEntityId = FMath::Min3(FMath::Min(DeltaIt->EntityId, *CompleteIt),
+													   FMath::Min(*NewlyCompleteIt, *NewlyIncompleteIt),
+													   *TemporarilyIncompleteIt);
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.
 		if (CompleteIt && DeltaIt && *CompleteIt == MinEntityId && DeltaIt->EntityId == MinEntityId)
 		{
-			EntityDeltas.Emplace(*DeltaIt);
+			EntityDelta CompleteDelta = *DeltaIt;
+			if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == MinEntityId)
+			{
+				// This is a delta for a complete entity which was also temporarily removed. Change its type to
+				// reflect that.
+				CompleteDelta.Type = EntityDelta::TEMPORARILY_REMOVED;
+				++TemporarilyIncompleteIt;
+			}
+			EntityDeltas.Emplace(CompleteDelta);
 		}
 		// Newly complete entities are represented as marker add entities with no state.
 		if (NewlyCompleteIt && *NewlyCompleteIt == MinEntityId)
@@ -65,7 +74,8 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
-		// Temporarily incomplete entities are represented as marker temporarily removed entities with no state.
+		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
+		// temporarily removed entities with no state.
 		if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == MinEntityId)
 		{
 			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::TEMPORARILY_REMOVED });

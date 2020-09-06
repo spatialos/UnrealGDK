@@ -48,6 +48,11 @@ void SubView::TagEntity(TArray<FWorkerComponentData>& Components) const
 
 void SubView::AdvanceViewDelta(const ViewDelta& Delta)
 {
+	// Note: Complete entities will be a longer list than the others for the majority of iterations under
+	// probable normal usage. This sort could then become expensive, and a potential optimisation would be
+	// to maintain the ordering of complete entities when merging in the newly complete entities and enforcing
+	// that complete entities is always sorted. This would also need to be enforced in the temporarily incomplete case.
+	// If this sort shows up in a profile it would be worth trying.
 	Algo::Sort(CompleteEntities);
 	Algo::Sort(NewlyCompleteEntities);
 	Algo::Sort(NewlyIncompleteEntities);
