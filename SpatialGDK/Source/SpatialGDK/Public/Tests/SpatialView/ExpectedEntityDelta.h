@@ -12,10 +12,10 @@ struct ExpectedEntityDelta
 	enum
 	{
 		UPDATE,
-        ADD,
-        REMOVE,
-        TEMPORARILY_REMOVED
-    } Type;
+		ADD,
+		REMOVE,
+		TEMPORARILY_REMOVED
+	} Type;
 	TArray<ComponentData> DataStorage;
 	TArray<ComponentUpdate> UpdateStorage;
 	TArray<ComponentChange> ComponentsAdded;
