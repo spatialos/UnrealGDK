@@ -45,8 +45,7 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 	for (;;)
 	{
 		const Worker_EntityId MinEntityId = FMath::Min3(FMath::Min(DeltaIt->EntityId, *CompleteIt),
-													   FMath::Min(*NewlyCompleteIt, *NewlyIncompleteIt),
-													   *TemporarilyIncompleteIt);
+														FMath::Min(*NewlyCompleteIt, *NewlyIncompleteIt), *TemporarilyIncompleteIt);
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.
