@@ -27,7 +27,7 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 }
 
 void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
-						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities)
+						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities, const TArray<Worker_EntityId>& TemporarilyIncompleteEntities)
 {
 	Clear();
 
@@ -39,11 +39,12 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 	auto CompleteIt = CompleteEntities.CreateConstIterator();
 	auto NewlyCompleteIt = NewlyCompleteEntities.CreateConstIterator();
 	auto NewlyIncompleteIt = NewlyIncompleteEntities.CreateConstIterator();
+	auto TemporarilyIncompleteIt = TemporarilyIncompleteEntities.CreateConstIterator();
 
 	for (;;)
 	{
 		const Worker_EntityId MinEntityId =
-			FMath::Min(FMath::Min(DeltaIt->EntityId, *CompleteIt), FMath::Min(*NewlyCompleteIt, *NewlyIncompleteIt));
+			FMath::Min(FMath::Min(DeltaIt->EntityId, *CompleteIt), FMath::Min3(*NewlyCompleteIt, *NewlyIncompleteIt, *TemporarilyIncompleteIt));
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.
@@ -54,14 +55,20 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 		// Newly complete entities are represented as marker add entities with no state.
 		if (NewlyCompleteIt && *NewlyCompleteIt == MinEntityId)
 		{
-			EntityDeltas.Emplace(EntityDelta{ MinEntityId, true, false });
+			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::ADD });
 			++NewlyCompleteIt;
 		}
 		// Newly incomplete entities are represented as marker remove entities with no state.
 		if (NewlyIncompleteIt && *NewlyIncompleteIt == MinEntityId)
 		{
-			EntityDeltas.Emplace(EntityDelta{ MinEntityId, false, true });
+			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
+		}
+		// Temporarily incomplete entities are represented as marker temporarily removed entities with no state.
+		if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == MinEntityId)
+		{
+			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::TEMPORARILY_REMOVED });
+			++TemporarilyIncompleteIt;
 		}
 
 		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
@@ -84,7 +91,7 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 		}
 
 		// Break when all iterators are done.
-		if (!CompleteIt && !NewlyCompleteIt && !NewlyIncompleteIt && !DeltaIt)
+		if (!CompleteIt && !NewlyCompleteIt && !NewlyIncompleteIt && !TemporarilyIncompleteIt && !DeltaIt)
 		{
 			return;
 		}
@@ -429,7 +436,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 				AuthorityIt = std::find_if(AuthorityIt, AuthorityChangesEnd, DifferentEntity{ CurrentEntityId });
 
 				// Only add the entity delta if the entity previously existed in the view.
-				if (Delta.bRemoved)
+				if (Delta.Type == EntityDelta::REMOVE)
 				{
 					EntityDeltas.Push(Delta);
 				}
@@ -595,20 +602,21 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	const bool bAlreadyInView = *ViewElement != nullptr;
 	const bool bEntityAdded = It->bAdded;
 
-	// If the entity's presence has not changed then return.
+	// If the entity's presence has not changed then it's an update.
 	if (bEntityAdded == bAlreadyInView)
 	{
+		Delta.Type = EntityDelta::UPDATE;
 		return It + 1;
 	}
 
 	if (bEntityAdded)
 	{
-		Delta.bAdded = true;
+		Delta.Type = EntityDelta::ADD;
 		*ViewElement = &View.Emplace(EntityId, EntityViewElement{});
 	}
 	else
 	{
-		Delta.bRemoved = true;
+		Delta.Type = EntityDelta::REMOVE;
 
 		// Remove components.
 		const auto& Components = (*ViewElement)->Components;

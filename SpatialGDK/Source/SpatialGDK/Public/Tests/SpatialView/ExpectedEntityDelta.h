@@ -9,8 +9,13 @@ namespace SpatialGDK
 struct ExpectedEntityDelta
 {
 	Worker_EntityId EntityId;
-	bool bAdded;
-	bool bRemoved;
+	enum
+	{
+		UPDATE,
+        ADD,
+        REMOVE,
+        TEMPORARILY_REMOVED
+    } Type;
 	TArray<ComponentData> DataStorage;
 	TArray<ComponentUpdate> UpdateStorage;
 	TArray<ComponentChange> ComponentsAdded;
