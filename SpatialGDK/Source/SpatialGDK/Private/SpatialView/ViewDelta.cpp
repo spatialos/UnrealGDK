@@ -27,7 +27,8 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 }
 
 void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
-						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities, const TArray<Worker_EntityId>& TemporarilyIncompleteEntities)
+						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities)
 {
 	Clear();
 
@@ -43,8 +44,8 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 
 	for (;;)
 	{
-		const Worker_EntityId MinEntityId =
-			FMath::Min(FMath::Min(DeltaIt->EntityId, *CompleteIt), FMath::Min3(*NewlyCompleteIt, *NewlyIncompleteIt, *TemporarilyIncompleteIt));
+		const Worker_EntityId MinEntityId = FMath::Min(FMath::Min(DeltaIt->EntityId, *CompleteIt),
+													   FMath::Min3(*NewlyCompleteIt, *NewlyIncompleteIt, *TemporarilyIncompleteIt));
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.

@@ -33,7 +33,8 @@ public:
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
 	// Entity ID arrays are assumed to be sorted for view delta projection.
 	void Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
-				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities, const TArray<Worker_EntityId>& TemporarilyIncompleteEntities);
+				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities);
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;
