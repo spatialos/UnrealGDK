@@ -226,8 +226,21 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 		   TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
 				"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),
 		   *GetNameSafe(this));
+	return GetLBStrategyForLayer(SpatialConstants::DefaultLayer);
+}
 
-	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
+UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) const
+{
+	// Editor has the option to display the load balanced zones and could query the strategy anytime.
+#ifndef WITH_EDITOR
+	check(IsReady());
+#endif
+
+	if (UAbstractLBStrategy* const* Entry = LayerNameToLBStrategy.Find(Layer))
+	{
+		return *Entry;
+	}
+	return nullptr;
 }
 
 FName ULayeredLBStrategy::GetLocalLayerName() const
