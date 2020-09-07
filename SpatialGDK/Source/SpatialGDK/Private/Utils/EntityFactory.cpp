@@ -224,6 +224,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 
 #if !UE_BUILD_SHIPPING
+	ComponentWriteAcl.Add(SpatialConstants::GDK_DEBUG_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
 		check(NetDriver->VirtualWorkerTranslator != nullptr);
