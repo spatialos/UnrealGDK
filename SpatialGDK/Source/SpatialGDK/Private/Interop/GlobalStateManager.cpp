@@ -375,24 +375,29 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-#pragma optimize("", off)
-
-void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy(bool bStartingFromEmptySnapshot)
+void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 {
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill()
-			&& (bStartingFromEmptySnapshot || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent)))
-		{
-			if (Actor->GetIsReplicated())
-			{
-				const bool bAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
-				Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
-				Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
-			}
-		}
+		return;
 	}
+
+	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
+		&& !Actor->bNetLoadOnNonAuthServer)
+	{
+		Actor->Destroy(true);
+		return;
+	}
+
+	// Non-replicated Actors should always be authoritative.
+	bool bAuthoritative = !Actor->GetIsReplicated();
+	// Replicated level Actors should only be initially authority if:
+	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
+	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
+	bAuthoritative |= bCanSpawnWithAuthority && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+
+	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
+	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
 #pragma optimize("", on)
@@ -409,8 +414,11 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// This method has early exits internally to ensure the logic is only executed on the correct worker.
 	SetAcceptingPlayers(true);
 
-	bool bStartingFromEmptySnapshot = bCanSpawnWithAuthority;
-	SetAllActorRolesBasedOnLBStrategy(bStartingFromEmptySnapshot);
+	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
+	for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
+	{
+		HandleActorBasedOnLoadBalancer(*ActorIterator);
+	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();

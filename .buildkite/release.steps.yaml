@@ -105,6 +105,7 @@ steps:
     prompt: "This action will merge all release candidates into their respective release branches."
 
   - label: Release
+    key: "release"
     command: ci/release.sh
     concurrency: 1
     concurrency_group: "unrealgdk-release"
@@ -116,7 +117,7 @@ steps:
 
   - trigger: platform-copybara
     label: "Run platform-copybara"
-    depends_on: Release
+    depends_on: release
     build:
       message: "Triggered from UnrealGDK Release"
       commit: "HEAD"

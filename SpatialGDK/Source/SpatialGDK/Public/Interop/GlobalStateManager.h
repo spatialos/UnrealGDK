@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-
 #include "Utils/SchemaUtils.h"
+
+#include "CoreMinimal.h"
+#include "EngineUtils.h"
+#include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -65,6 +66,8 @@ public:
 
 	bool IsReady() const;
 
+	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
+
 	Worker_EntityId GlobalStateManagerEntityId;
 
 private:
@@ -91,8 +94,6 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 
-	void BecomeAuthoritativeOverAllActors();
-	void SetAllActorRolesBasedOnLBStrategy(bool bStartingFromEmptySnapshot);
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
 #if WITH_EDITOR
