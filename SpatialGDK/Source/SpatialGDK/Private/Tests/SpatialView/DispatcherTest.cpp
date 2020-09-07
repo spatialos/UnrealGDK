@@ -3,14 +3,14 @@
 #include <memory>
 
 #include "ComponentTestUtils.h"
-#include "SpatialViewUtils.h"
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
-#include "SpatialView/ViewDelta.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
+#include "SpatialView/ViewDelta.h"
+#include "SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 
 #define DISPATCHER_TEST(TestName) GDK_TEST(Core, Dispatcher, TestName)
@@ -24,7 +24,8 @@ constexpr Worker_EntityId OTHER_ENTITY_ID = 2;
 constexpr double COMPONENT_VALUE = 3;
 constexpr double OTHER_COMPONENT_VALUE = 4;
 
-void PopulateViewDeltaWithComponentAdded(SpatialGDK::ViewDelta& Delta, SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const double Value)
+void PopulateViewDeltaWithComponentAdded(SpatialGDK::ViewDelta& Delta, SpatialGDK::EntityView& View, const Worker_EntityId EntityId,
+										 const Worker_ComponentId ComponentId, const double Value)
 {
 	SpatialGDK::EntityComponentOpListBuilder OpListBuilder = SpatialGDK::EntityComponentOpListBuilder{};
 	OpListBuilder.AddComponent(EntityId, SpatialGDK::CreateTestComponentData(ComponentId, Value));
