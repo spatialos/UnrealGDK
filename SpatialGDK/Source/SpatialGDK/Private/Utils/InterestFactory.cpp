@@ -101,7 +101,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -151,6 +151,15 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+
+	// Query to know about all the actors tagged with a debug component
+	if (bDebug)
+	{
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::GDK_DEBUG_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+	}
 
 	return ServerInterest;
 }

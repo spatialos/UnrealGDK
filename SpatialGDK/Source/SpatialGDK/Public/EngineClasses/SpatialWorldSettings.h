@@ -69,6 +69,9 @@ public:
 	/** Defines how Unreal Editor will run the Tests in this map, without changing current Settings. */
 	UPROPERTY(EditAnywhere, Category = "Testing")
 	FMapTestingSettings TestingSettings;
+
+	UPROPERTY(EditAnywhere, Category = "Testing")
+	bool bEnableDebugInterface = false;
 #endif
 
 	// This function is used to expose the private bool property to SpatialStatics.
