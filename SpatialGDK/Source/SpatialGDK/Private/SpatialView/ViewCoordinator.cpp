@@ -52,13 +52,6 @@ void ViewCoordinator::FlushMessagesToSend()
 SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId Tag, const FFilterPredicate Filter,
 										const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
 {
-	// System asks dispatcher for callback, has info: type of callback and transformation to entity ID
-
-	FDispatcherRefreshCallback Callback = [this](FRefreshCallback RefreshCallback) {
-		Dispatcher.RegisterComponentAddedCallback(1, [RefreshCallback](const FEntityComponentChange Change) {
-			RefreshCallback(Change.EntityId);
-		});
-	};
 	const int Index = SubViews.Emplace(SubView{ Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks });
 	return SubViews[Index];
 }
