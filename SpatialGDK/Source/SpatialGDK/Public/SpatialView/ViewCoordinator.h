@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "SubView.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/WorkerView.h"
+#include "SubView.h"
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
@@ -28,7 +28,8 @@ public:
 	const EntityView& GetView() const;
 	void FlushMessagesToSend();
 
-	SubView& CreateSubView(const Worker_ComponentId Tag, FFilterPredicate Filter, TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
+	SubView& CreateSubView(const Worker_ComponentId Tag, FFilterPredicate Filter,
+						   TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
 	SubView& CreateUnfilteredSubView(const Worker_ComponentId Tag);
 	void RefreshEntityCompleteness(const Worker_EntityId EntityId);
 

@@ -50,25 +50,26 @@ void ViewCoordinator::FlushMessagesToSend()
 }
 
 SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId Tag, const FFilterPredicate Filter,
-                                        const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
+										const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
 {
 	// System asks dispatcher for callback, has info: type of callback and transformation to entity ID
 
-	FDispatcherRefreshCallback Callback = [this](FRefreshCallback RefreshCallback)
-	{
-		Dispatcher.RegisterComponentAddedCallback(1, [RefreshCallback](const FEntityComponentChange Change)
-		{
+	FDispatcherRefreshCallback Callback = [this](FRefreshCallback RefreshCallback) {
+		Dispatcher.RegisterComponentAddedCallback(1, [RefreshCallback](const FEntityComponentChange Change) {
 			RefreshCallback(Change.EntityId);
 		});
 	};
-	const int Index = SubViews.Emplace(SubView{Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks});
+	const int Index = SubViews.Emplace(SubView{ Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks });
 	return SubViews[Index];
 }
 
-
 SubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId Tag)
 {
-	const int Index = SubViews.Emplace(SubView{Tag, [](const Worker_EntityId, const EntityViewElement&){return true;}, View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{}});
+	const int Index = SubViews.Emplace(SubView{ Tag,
+												[](const Worker_EntityId, const EntityViewElement&) {
+													return true;
+												},
+												View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{} });
 	return SubViews[Index];
 }
 
