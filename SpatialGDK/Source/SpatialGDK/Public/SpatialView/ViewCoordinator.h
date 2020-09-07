@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SubView.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/WorkerView.h"
@@ -23,9 +24,13 @@ public:
 	ViewCoordinator& operator=(ViewCoordinator&&) = delete;
 
 	void Advance();
-	const ViewDelta& GetViewDelta();
-	const EntityView& GetView();
+	const ViewDelta& GetViewDelta() const;
+	const EntityView& GetView() const;
 	void FlushMessagesToSend();
+
+	SubView& CreateSubView(const Worker_ComponentId Tag, FFilterPredicate Filter, TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
+	SubView& CreateUnfilteredSubView(const Worker_ComponentId Tag);
+	void RefreshEntityCompleteness(const Worker_EntityId EntityId);
 
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
@@ -57,6 +62,7 @@ private:
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
 	Worker_RequestId NextRequestId;
 	FDispatcher Dispatcher;
+	TArray<SubView> SubViews;
 };
 
 } // namespace SpatialGDK

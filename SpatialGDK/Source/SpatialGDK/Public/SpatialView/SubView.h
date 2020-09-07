@@ -6,9 +6,11 @@
 #include "Schema/Interest.h"
 #include "Templates/Function.h"
 
-typedef TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)> FFilterPredicate;
-typedef TFunction<void(const Worker_EntityId)> FRefreshCallback;
-typedef TFunction<void(const FRefreshCallback)> FDispatcherRefreshCallback;
+using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
+using FRefreshCallback = TFunction<void(const Worker_EntityId)>;
+using FDispatcherRefreshCallback = TFunction<void(const FRefreshCallback)>;
+using FComponentChangeRefreshPredicate = TFunction<bool(SpatialGDK::FEntityComponentChange)>;
+using FAuthorityChangeRefreshPredicate = TFunction<bool(Worker_EntityId)>;
 
 namespace SpatialGDK
 {
@@ -21,9 +23,13 @@ public:
 	void TagQuery(Query& QueryToTag) const;
 	void TagEntity(TArray<FWorkerComponentData>& Components) const;
 
-	void AdvanceViewDelta(const ViewDelta& Delta);
+	void Advance(const ViewDelta& Delta);
 	const ViewDelta& GetViewDelta() const;
 	void RefreshEntity(const Worker_EntityId EntityId);
+
+	static FDispatcherRefreshCallback CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate);
+	static FDispatcherRefreshCallback CreateComponentChangedDispatcherRefreshCallback(FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate);
+	static FDispatcherRefreshCallback CreateAuthorityChangeDispatcherRefreshCallback(FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FAuthorityChangeRefreshPredicate RefreshPredicate);
 
 private:
 	void RegisterTagCallbacks(FDispatcher& Dispatcher);
