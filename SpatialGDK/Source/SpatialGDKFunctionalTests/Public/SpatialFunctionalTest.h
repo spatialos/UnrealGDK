@@ -211,8 +211,8 @@ public:
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 			  meta = (ToolTip = "Allows a Server Worker to request a SpatialOS Snapshot to be taken. Keep in mind that this should be done at the last Step of your Test."))
-	void TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback);
 	// clang-format on
+	void TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback);
 
 	// C++ version that allows you to hook up a lambda.
 	void TakeSnapshot(const FSnapshotTakenFunc& CppCallback);
