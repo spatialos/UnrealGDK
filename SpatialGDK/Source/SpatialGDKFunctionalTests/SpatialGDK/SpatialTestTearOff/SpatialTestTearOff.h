@@ -33,7 +33,7 @@ public:
 	FVector ReplicatedTestActorBaseMoveLocationBeforeTearOff;
 
 	// THe location where the ReplicatedActorBase is moved after calling TearOff.
-	FVector	ReplicatedTestActorBaseMoveLocationAfterTearOff;
+	FVector ReplicatedTestActorBaseMoveLocationAfterTearOff;
 
 	// Helper variable used for implementing the WorkerWaitForTimeStepDefinition.
 	float TimerHelper;
