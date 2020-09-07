@@ -27,9 +27,15 @@ public:
 	const ViewDelta& GetViewDelta() const;
 	void RefreshEntity(const Worker_EntityId EntityId);
 
-	static FDispatcherRefreshCallback CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate);
-	static FDispatcherRefreshCallback CreateComponentChangedDispatcherRefreshCallback(FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate);
-	static FDispatcherRefreshCallback CreateAuthorityChangeDispatcherRefreshCallback(FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FAuthorityChangeRefreshPredicate RefreshPredicate);
+	static FDispatcherRefreshCallback CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher,
+																						Worker_ComponentId ComponentId,
+																						FComponentChangeRefreshPredicate RefreshPredicate);
+	static FDispatcherRefreshCallback CreateComponentChangedDispatcherRefreshCallback(FDispatcher& Dispatcher,
+																					  Worker_ComponentId ComponentId,
+																					  FComponentChangeRefreshPredicate RefreshPredicate);
+	static FDispatcherRefreshCallback CreateAuthorityChangeDispatcherRefreshCallback(FDispatcher& Dispatcher,
+																					 Worker_ComponentId ComponentId,
+																					 FAuthorityChangeRefreshPredicate RefreshPredicate);
 
 private:
 	void RegisterTagCallbacks(FDispatcher& Dispatcher);

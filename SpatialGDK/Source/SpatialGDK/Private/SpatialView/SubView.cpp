@@ -79,65 +79,62 @@ void SubView::RefreshEntity(const Worker_EntityId EntityId)
 	}
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher,
-	Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate = [](FEntityComponentChange){return true;})
+FDispatcherRefreshCallback SubView::CreateComponentExistenceDispatcherRefreshCallback(
+	FDispatcher& Dispatcher, Worker_ComponentId ComponentId,
+	FComponentChangeRefreshPredicate RefreshPredicate = [](FEntityComponentChange) {
+		return true;
+	})
 {
-	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback)
-	{
-		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](FEntityComponentChange Change)
-		{
+	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback) {
+		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](FEntityComponentChange Change) {
 			if (RefreshPredicate(Change))
 			{
 				Callback(Change.EntityId);
 			}
 		});
-		Dispatcher.RegisterComponentRemovedCallback(ComponentId, [RefreshPredicate, Callback](FEntityComponentChange Change)
-        {
-            if (RefreshPredicate(Change))
-            {
-                Callback(Change.EntityId);
-            }
-        });
+		Dispatcher.RegisterComponentRemovedCallback(ComponentId, [RefreshPredicate, Callback](FEntityComponentChange Change) {
+			if (RefreshPredicate(Change))
+			{
+				Callback(Change.EntityId);
+			}
+		});
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentChangedDispatcherRefreshCallback(FDispatcher& Dispatcher,
-	Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate = [](FEntityComponentChange){return true;})
-{
-	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback)
-	{
-		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange Change)
-        {
-            if (RefreshPredicate(Change))
-            {
-                Callback(Change.EntityId);
-            }
-        });
-	};
-}
-
-FDispatcherRefreshCallback SubView::CreateAuthorityChangeDispatcherRefreshCallback(FDispatcher& Dispatcher,
-	Worker_ComponentId ComponentId, FAuthorityChangeRefreshPredicate RefreshPredicate = [](Worker_EntityId)
-	{
+FDispatcherRefreshCallback SubView::CreateComponentChangedDispatcherRefreshCallback(
+	FDispatcher& Dispatcher, Worker_ComponentId ComponentId,
+	FComponentChangeRefreshPredicate RefreshPredicate = [](FEntityComponentChange) {
 		return true;
 	})
 {
-	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback)
-	{
-		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id)
-        {
-            if (RefreshPredicate(Id))
-            {
-                Callback(Id);
-            }
-        });
-		Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id)
-        {
-            if (RefreshPredicate(Id))
-            {
-                Callback(Id);
-            }
-        });
+	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback) {
+		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange Change) {
+			if (RefreshPredicate(Change))
+			{
+				Callback(Change.EntityId);
+			}
+		});
+	};
+}
+
+FDispatcherRefreshCallback SubView::CreateAuthorityChangeDispatcherRefreshCallback(
+	FDispatcher& Dispatcher, Worker_ComponentId ComponentId, FAuthorityChangeRefreshPredicate RefreshPredicate = [](Worker_EntityId) {
+		return true;
+	})
+{
+	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback) {
+		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+			if (RefreshPredicate(Id))
+			{
+				Callback(Id);
+			}
+		});
+		Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+			if (RefreshPredicate(Id))
+			{
+				Callback(Id);
+			}
+		});
 	};
 }
 
