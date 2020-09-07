@@ -3,11 +3,14 @@
 #include <memory>
 
 #include "ComponentTestUtils.h"
+#include "SpatialViewUtils.h"
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
+#include "SpatialView/ViewDelta.h"
+#include "SpatialView/OpList/EntityComponentOpList.h"
 #include "Tests/TestDefinitions.h"
 
 #define DISPATCHER_TEST(TestName) GDK_TEST(Core, Dispatcher, TestName)
@@ -21,43 +24,25 @@ constexpr Worker_EntityId OTHER_ENTITY_ID = 2;
 constexpr double COMPONENT_VALUE = 3;
 constexpr double OTHER_COMPONENT_VALUE = 4;
 
-SpatialGDK::ComponentChange CreateComponentAddedChange(const Worker_ComponentId ComponentId, const double Value)
+void PopulateViewDeltaWithComponentAdded(SpatialGDK::ViewDelta& Delta, SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, const double Value)
 {
-	SpatialGDK::ComponentData Data = SpatialGDK::CreateTestComponentData(ComponentId, Value);
-	return SpatialGDK::ComponentChange(ComponentId, MoveTemp(Data).Release());
-}
-
-TArray<SpatialGDK::EntityDelta> CreateComponentAddedDeltaWithChange(const Worker_EntityId EntityId,
-																	const SpatialGDK::ComponentChange Change)
-{
-	SpatialGDK::EntityDelta Delta = {};
-	Delta.EntityId = EntityId;
-	Delta.ComponentsAdded = SpatialGDK::ComponentSpan<SpatialGDK::ComponentChange>(&Change, 1);
-	return TArray<SpatialGDK::EntityDelta>{ Delta };
+	SpatialGDK::EntityComponentOpListBuilder OpListBuilder = SpatialGDK::EntityComponentOpListBuilder{};
+	OpListBuilder.AddComponent(EntityId, SpatialGDK::CreateTestComponentData(ComponentId, Value));
+	SetFromOpList(Delta, View, OpListBuilder);
 }
 
 double GetValueFromSchemaComponentData(Schema_ComponentData* Data)
 {
 	return Schema_GetDouble(Schema_GetComponentDataFields(Data), SpatialGDK::EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID);
 }
-
-SpatialGDK::EntityViewElement CreateViewElementWithComponentValue(const Worker_ComponentId ComponentId, const double Value)
-{
-	SpatialGDK::ComponentData Data = SpatialGDK::CreateTestComponentData(ComponentId, Value);
-	SpatialGDK::EntityViewElement Element;
-	Element.Components.Emplace(MoveTemp(Data));
-	return Element;
-}
 } // anonymous namespace
-
-//
-// Tests begin here
-//
 
 DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_Invoked_With_Correct_Values)
 {
 	bool Invoked = false;
 	SpatialGDK::FDispatcher Dispatcher;
+	SpatialGDK::EntityView View;
+	SpatialGDK::ViewDelta Delta;
 
 	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange Change) {
 		if (Change.EntityId == ENTITY_ID && Change.Change.ComponentId == COMPONENT_ID
@@ -66,26 +51,26 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 			Invoked = true;
 		}
 	};
-
 	Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
-	SpatialGDK::ComponentChange Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
-	Dispatcher.InvokeCallbacks(CreateComponentAddedDeltaWithChange(ENTITY_ID, Change));
+
+	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
 	TestTrue("Callback was invoked", Invoked);
 
 	// Now a few more times, but with incorrect values, just in case
 	Invoked = false;
 
-	Change = CreateComponentAddedChange(COMPONENT_ID, OTHER_COMPONENT_VALUE);
-	Dispatcher.InvokeCallbacks(CreateComponentAddedDeltaWithChange(ENTITY_ID, Change));
+	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, OTHER_COMPONENT_VALUE);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	TestFalse("Callback was not invoked", Invoked);
 
-	Change = CreateComponentAddedChange(OTHER_COMPONENT_ID, COMPONENT_VALUE);
-	Dispatcher.InvokeCallbacks(CreateComponentAddedDeltaWithChange(ENTITY_ID, Change));
+	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, OTHER_COMPONENT_ID, COMPONENT_VALUE);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	TestFalse("Callback was not invoked", Invoked);
 
-	Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
-	Dispatcher.InvokeCallbacks(CreateComponentAddedDeltaWithChange(OTHER_ENTITY_ID, Change));
+	PopulateViewDeltaWithComponentAdded(Delta, View, OTHER_ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	TestFalse("Callback was not invoked", Invoked);
 
 	return true;
@@ -95,21 +80,22 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Callback_WHEN_Callback_Removed_THEN_Callba
 {
 	bool Invoked = false;
 	SpatialGDK::FDispatcher Dispatcher;
+	SpatialGDK::EntityView View;
+	SpatialGDK::ViewDelta Delta;
 
 	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](SpatialGDK::FEntityComponentChange) {
 		Invoked = true;
 	};
 
 	const SpatialGDK::CallbackId Id = Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
-	const SpatialGDK::ComponentChange Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
-	const TArray<SpatialGDK::EntityDelta> Deltas = CreateComponentAddedDeltaWithChange(ENTITY_ID, Change);
-	Dispatcher.InvokeCallbacks(Deltas);
+	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
 	TestTrue("Callback was invoked", Invoked);
 
 	Invoked = false;
 	Dispatcher.RemoveCallback(Id);
-	Dispatcher.InvokeCallbacks(Deltas);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
 	TestFalse("Callback was not invoked again", Invoked);
 
@@ -120,7 +106,8 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 {
 	bool Invoked = false;
 	SpatialGDK::FDispatcher Dispatcher;
-	const TUniquePtr<SpatialGDK::EntityView> View = MakeUnique<SpatialGDK::EntityView>();
+	SpatialGDK::EntityView View;
+	SpatialGDK::ViewDelta Delta;
 
 	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange Change) {
 		if (Change.EntityId == ENTITY_ID && Change.Change.ComponentId == COMPONENT_ID
@@ -130,17 +117,17 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 		}
 	};
 
-	View->Emplace(ENTITY_ID, CreateViewElementWithComponentValue(COMPONENT_ID, COMPONENT_VALUE));
+	AddEntityToView(View, ENTITY_ID);
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::CreateTestComponentData(COMPONENT_ID, COMPONENT_VALUE));
 
-	Dispatcher.RegisterAndInvokeComponentAddedCallback(COMPONENT_ID, Callback, *View);
+	Dispatcher.RegisterAndInvokeComponentAddedCallback(COMPONENT_ID, Callback, View);
 
 	TestTrue("Callback was invoked", Invoked);
 
-	// Double check the callback is actually called on invocation as well
+	// Double check the callback is actually called on invocation as well.
 	Invoked = false;
-	const SpatialGDK::ComponentChange Change = CreateComponentAddedChange(COMPONENT_ID, COMPONENT_VALUE);
-	const TArray<SpatialGDK::EntityDelta> Deltas = CreateComponentAddedDeltaWithChange(ENTITY_ID, Change);
-	Dispatcher.InvokeCallbacks(Deltas);
+	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
 	TestTrue("Callback was invoked", Invoked);
 
