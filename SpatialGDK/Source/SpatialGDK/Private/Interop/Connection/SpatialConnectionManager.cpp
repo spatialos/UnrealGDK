@@ -278,7 +278,7 @@ void USpatialConnectionManager::RequestDeploymentLoginTokens()
 	LTParams.use_insecure_connection = false;
 
 	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(
-			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
 	{
 		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
@@ -315,7 +315,7 @@ void USpatialConnectionManager::StartDevelopmentAuth(const FString& DevAuthToken
 	PITParams.use_insecure_connection = false;
 
 	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(
-			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &PITParams))
 	{
 		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
 	}
@@ -358,7 +358,7 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*InLocatorConfig->LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*InLocatorConfig->LocatorHost), InLocatorConfig->LocatorPort, &LocatorParams);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
@@ -417,9 +417,9 @@ ESpatialConnectionType USpatialConnectionManager::GetConnectionType() const
 void USpatialConnectionManager::SetConnectionType(ESpatialConnectionType InConnectionType)
 {
 	// The locator config may not have been initialized
-	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()));
 
-		ConnectionType = InConnectionType;
+	ConnectionType = InConnectionType;
 }
 
 bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType)
@@ -459,9 +459,22 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
 		FString LocatorHostOverride;
+		int32 LocatorPortOverride;
 		if (URL.HasOption(TEXT("customLocator")))
 		{
 			LocatorHostOverride = URL.Host;
+			if (URL.Port > 0)
+			{
+				LocatorPortOverride = URL.Port;
+				if (URL.Port == FURL::UrlConfig.DefaultPort)
+				{
+					UE_LOG(LogSpatialWorkerConnection, Log,
+						   TEXT("Non-zero URL port is the same as the UrlConfig.DefaultPort: %d. Assuming no port was passed in the URL. "
+								"Will use the default locator port: %d."),
+						   URL.Port, SpatialConstants::LOCATOR_PORT);
+					LocatorPortOverride = SpatialConstants::LOCATOR_PORT;
+				}
+			}
 		}
 		else
 		{
@@ -475,6 +488,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			if (LocatorHostOverride != "")
 			{
 				DevAuthConfig.LocatorHost = LocatorHostOverride;
+				DevAuthConfig.LocatorPort = LocatorPortOverride;
 			}
 			DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
 			DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
@@ -490,6 +504,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			if (LocatorHostOverride != "")
 			{
 				LocatorConfig.LocatorHost = LocatorHostOverride;
+				LocatorConfig.LocatorPort = LocatorPortOverride;
 			}
 			LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
 			LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
