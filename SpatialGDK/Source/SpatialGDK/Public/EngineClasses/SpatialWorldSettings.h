@@ -68,6 +68,7 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	static void EditorRefreshSpatialDebugger();
+	void SetMutliWorkerEditor(bool bDisable);
 #endif // WITH_EDITOR
 
 	/** Is multi-worker enabled from the commmand line or in the WorldSettings*/

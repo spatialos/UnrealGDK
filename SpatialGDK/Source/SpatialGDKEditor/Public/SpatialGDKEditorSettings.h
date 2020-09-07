@@ -367,6 +367,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable spatial debugger in editor"))
 	bool bSpatialDebuggerEditorEnabled;
 
+	/** Show worker boundaries in the editor. */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Disable multi-worker in editor"))
+	bool bDisableMultiWorker;
+
 	/** Allows the local SpatialOS deployment to be automatically stopped. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))
 	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
@@ -652,6 +656,9 @@ public:
 
 	void SetSpatialDebuggerEditorEnabled(bool IsEnabled);
 	FORCEINLINE bool IsSpatialDebuggerEditorEnabled() const { return bSpatialDebuggerEditorEnabled; }
+
+	void SetMultiWorkerEditor(bool IsDisabled);
+	FORCEINLINE bool IsDisabledMultiWorkerEditor() const { return bDisableMultiWorker; }
 
 	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);
 	FORCEINLINE bool ShouldAutoGenerateCloudLaunchConfig() const { return bIsAutoGenerateCloudConfigEnabled; }

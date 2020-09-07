@@ -299,6 +299,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
 								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
 								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleMultiWorkerEditor,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor),
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
+								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsMultiWorkerEditorDisabled));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -484,6 +489,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	MenuBuilder.BeginSection("SpatialDebuggerEditorSettings");
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleMultiWorkerEditor);
 	}
 	MenuBuilder.EndSection();
 
@@ -730,6 +736,17 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	else
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("There was no SpatialDebugger setup when the map was loaded."));
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
+{
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKEditorSettings->SetMultiWorkerEditor(!SpatialGDKEditorSettings->bDisableMultiWorker);
+
+	if (SpatialDebugger.IsValid())
+	{
+		SpatialDebugger->EditorRefreshWorkerRegions();
 	}
 }
 
@@ -1447,6 +1464,12 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	return AllowWorkerBoundaries() && SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled;
+}
+
+bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEditorDisabled() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKEditorSettings->bDisableMultiWorker;
 }
 
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const

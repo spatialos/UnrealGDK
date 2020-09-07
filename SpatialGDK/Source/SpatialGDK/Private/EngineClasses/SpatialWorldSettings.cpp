@@ -104,6 +104,11 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 		FoundActor->EditorRefreshWorkerRegions();
 	}
 }
+
+void ASpatialWorldSettings::SetMutliWorkerEditor(bool bDisable)
+{
+	bEnableMultiWorker = !bDisable;
+}
 #endif // WITH_EDITOR
 
 bool ASpatialWorldSettings::IsMultiWorkerEnabled() const

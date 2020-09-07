@@ -37,6 +37,8 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(StopSpatialService, "Stop Service", "Stops the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(ToggleSpatialDebuggerEditor, "Spatial Editor Debugger", "Show worker boundaries in editor",
 			   EUserInterfaceActionType::ToggleButton, FInputChord());
+	UI_COMMAND(ToggleMultiWorkerEditor, "Multi-Worker Disable", "Use single worker strategy in editor",
+			   EUserInterfaceActionType::ToggleButton, FInputChord());
 	UI_COMMAND(EnableSpatialNetworking, "SpatialOS Networking",
 			   "If checked, the SpatialOS networking is used. Otherwise, native Unreal networking is used.",
 			   EUserInterfaceActionType::ToggleButton, FInputChord());

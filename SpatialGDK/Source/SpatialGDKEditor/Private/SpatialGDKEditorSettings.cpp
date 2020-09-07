@@ -13,6 +13,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
@@ -47,6 +48,8 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
+	, bSpatialDebuggerEditorEnabled(false)
+	, bDisableMultiWorker(false)
 	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnExitEditor)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
@@ -249,6 +252,18 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 void USpatialGDKEditorSettings::SetSpatialDebuggerEditorEnabled(bool IsEnabled)
 {
 	bSpatialDebuggerEditorEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetMultiWorkerEditor(bool IsDisabled)
+{
+	bDisableMultiWorker = IsDisabled;
+
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
+	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	{
+		WorldSettings->SetMutliWorkerEditor(IsDisabled);
+	}
 	SaveConfig();
 }
 
