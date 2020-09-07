@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now see the Spatial Debugger in-editor mode similar to the one you see in play mode. Select `Spatial Editor Debugger` from the drop option from the `Start Deployment` button on the toolbar to toggle the visibility of the worker boundaries on and off in-editor.
 - Enabled the `bUseSpatialView` property by default and added the `--OverrideUseSpatialView` flag.
 - Added facilities to manipulate worker interest and Actor authority in SpatialFunctionalTest.
-- Allow specifying the locator port via `?customPort=` URL option when performing client travel.
+- Allow specifying the locator port via `?locatorPort=` URL option when performing client travel.
 
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.

@@ -54,11 +54,11 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator)
 	return true;
 }
 
-CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator_CustomPort)
+CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator_LocatorPort)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("");
-	const FURL URL(nullptr, TEXT("10.20.30.40?locator?customLocator?customPort=7000?playeridentity=foo?login=bar"), TRAVEL_Absolute);
+	const FURL URL(nullptr, TEXT("10.20.30.40?locator?customLocator?locatorPort=7000?playeridentity=foo?login=bar"), TRAVEL_Absolute);
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
@@ -67,6 +67,26 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator_CustomPort)
 	// THEN
 	TestEqual("LocatorHost", Manager->LocatorConfig.LocatorHost, "10.20.30.40");
 	TestEqual("LocatorPort", Manager->LocatorConfig.LocatorPort, 7000);
+	TestEqual("PlayerIdentityToken", Manager->LocatorConfig.PlayerIdentityToken, "foo");
+	TestEqual("LoginToken", Manager->LocatorConfig.LoginToken, "bar");
+	TestEqual("WorkerType", Manager->LocatorConfig.WorkerType, "SomeWorkerType");
+
+	return true;
+}
+
+CONNECTIONMANAGER_TEST(SetupFromURL_Locator_IgnoreURLPort)
+{
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("-locatorHost 99.88.77.66");
+	const FURL URL(nullptr, TEXT("10.20.30.40:7000?locator?playeridentity=foo?login=bar"), TRAVEL_Absolute);
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
+	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
+
+	// THEN
+	TestEqual("LocatorHost", Manager->LocatorConfig.LocatorHost, "99.88.77.66");
+	TestEqual("LocatorPort", Manager->LocatorConfig.LocatorPort, SpatialConstants::LOCATOR_PORT);
 	TestEqual("PlayerIdentityToken", Manager->LocatorConfig.PlayerIdentityToken, "foo");
 	TestEqual("LoginToken", Manager->LocatorConfig.LoginToken, "bar");
 	TestEqual("WorkerType", Manager->LocatorConfig.WorkerType, "SomeWorkerType");
