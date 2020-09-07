@@ -30,12 +30,20 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	EPushRPCResult Result = EPushRPCResult::Success;
 	PendingRPCPayload PendingPayload(Payload);
 
-	PendingPayload.SpanId = EventTracer->TraceEvent(FEventSendRPC(Target, Function));
+	if (EventTracer != nullptr)
+	{
+		PendingPayload.SpanId = EventTracer->TraceEvent(FEventSendRPC(Target, Function));
+	}
 
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
+		if (EventTracer != nullptr)
+		{
+			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function),
+				PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
+		}
+
 		// Already has queued RPCs of this type, queue until those are pushed.
-		PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
 		AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
 		Result = EPushRPCResult::QueueOverflowed;
 	}
@@ -77,7 +85,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr));
+		EndpointObject = Schema_GetComponentUpdateFields(
+			GetOrCreateComponentUpdate(EntityComponent, PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -160,7 +169,11 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (PendingRPCPayload& PendingPayload : OverflowedRPCArray)
 		{
-			EventTracer->TraceEvent(FEventRPCRetried(), PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
+			if (EventTracer != nullptr)
+			{
+				EventTracer->TraceEvent(FEventRPCRetried(), PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
+			}
+
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload.Payload), false);
 
 			switch (Result)
@@ -239,8 +252,11 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		{
 			// Attach causes together, we need to send these span ids with the RPCs to continue on the other side without
 			// joining unrelated RPCs together.
-			UpdateToSend.SpanId =
-				Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
+			if (EventTracer != nullptr)
+			{
+				UpdateToSend.SpanId =
+					Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
+			}
 		}
 		else if (It.Value.SpanIds.Num() == 1)
 		{
