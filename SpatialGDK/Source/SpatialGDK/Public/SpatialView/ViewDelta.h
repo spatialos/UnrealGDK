@@ -31,6 +31,10 @@ class ViewDelta
 {
 public:
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
+	// Produces a projection of a given main view delta to a view delta for another view. The given arrays represent the
+	// state of the new view and dictates the projection.
+	// Note: This method is designed for projecting the main worker view delta to a subview delta. It may work for other
+	// cases, but there are no guarantees.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
 	void Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
 				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,

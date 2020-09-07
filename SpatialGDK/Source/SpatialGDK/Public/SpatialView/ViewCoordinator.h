@@ -28,9 +28,15 @@ public:
 	const EntityView& GetView() const;
 	void FlushMessagesToSend();
 
+	// Create a subview with the specified tag, filter, and refresh callbacks.
 	SubView& CreateSubView(const Worker_ComponentId Tag, FFilterPredicate Filter,
 						   TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
+	// Create a subview with no filter. This also means no refresh callbacks, as no change from spatial could cause
+	// the subview's filter to change its truth value.
 	SubView& CreateUnfilteredSubView(const Worker_ComponentId Tag);
+	// Force a refresh of the given entity ID across all subviews. Used when local state changes which could
+	// change any subview's filter's truth value for the given entity. Conceptually this can be thought of
+	// as marking the entity dirty for all subviews, although the refresh is immediate.
 	void RefreshEntityCompleteness(const Worker_EntityId EntityId);
 
 	const FString& GetWorkerId() const;
