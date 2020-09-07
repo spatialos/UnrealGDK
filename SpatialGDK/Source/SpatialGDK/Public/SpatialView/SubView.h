@@ -17,6 +17,11 @@ namespace SpatialGDK
 class SubView
 {
 public:
+	// The subview constructor takes the filter and the dispatcher refresh callbacks for the subview, rather than
+	// adding them to the subview later. This is to maintain the invariant that a subview always has the correct
+	// full set of complete entities. During construction, it calculates the initial set of complete entities,
+	// and registers the passed dispatcher callbacks in order to ensure all possible changes which could change
+	// the state of completeness for any entity are picked up by the subview to maintain this invariant.
 	SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate Filter, const EntityView& View, FDispatcher& Dispatcher,
 			const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
 
@@ -27,6 +32,9 @@ public:
 	const ViewDelta& GetViewDelta() const;
 	void RefreshEntity(const Worker_EntityId EntityId);
 
+	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
+	// Takes an optional predicate argument to further filter what causes a refresh. Example: Only trigger
+	// a refresh if the received component change has a change for a certain field.
 	static FDispatcherRefreshCallback CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher,
 																						Worker_ComponentId ComponentId,
 																						FComponentChangeRefreshPredicate RefreshPredicate);
