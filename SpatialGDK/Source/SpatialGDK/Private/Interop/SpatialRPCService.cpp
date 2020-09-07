@@ -40,7 +40,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 		if (EventTracer != nullptr)
 		{
 			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function),
-				PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
+															PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
 		}
 
 		// Already has queued RPCs of this type, queue until those are pushed.

@@ -2171,7 +2171,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		}
 		else
 		{
-			if (EventTracer->IsEnabled())
+			if (EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer)
 			{
 				Worker_EntityId EntityId = PendingRPCParams.ObjectRef.Entity;
 				uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;

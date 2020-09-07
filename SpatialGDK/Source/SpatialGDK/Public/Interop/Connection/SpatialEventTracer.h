@@ -57,6 +57,8 @@ public:
 
 	bool IsEnabled() const;
 
+	void RestartWithCallback(Trace_Callback* Callback);
+
 	void ComponentAdd(const Worker_Op& Op);
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
@@ -67,6 +69,7 @@ public:
 	void DropSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 
 private:
+	FString WorkerId;
 	bool bEnabled{ false };
 	bool bRecordRuntimeAndWorkerEvents{ false };
 	worker::c::Trace_EventTracer* EventTracer{ nullptr };
@@ -83,7 +86,7 @@ private:
 
 	SpatialSpanIdStore SpanIdStore;
 
-	void Enable(const FString& FileName);
+	void Enable(const FString& FileName, Trace_Callback* Callback);
 	void Disable();
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);

@@ -57,13 +57,14 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 }
 
 SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
+	: WorkerId(WorkerId)
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
 		if (Settings->bEventTracingEnabled)
 		{
 			MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
-			Enable(WorkerId);
+			Enable(WorkerId, &SpatialEventTracer::TraceCallback);
 		}
 	}
 }
@@ -187,11 +188,17 @@ bool SpatialEventTracer::IsEnabled() const
 	return bEnabled; // Trace_EventTracer_IsEnabled(EventTracer);
 }
 
-void SpatialEventTracer::Enable(const FString& FileName)
+void SpatialEventTracer::RestartWithCallback(Trace_Callback* Callback)
+{
+	Disable();
+	Enable(WorkerId, Callback);
+}
+
+void SpatialEventTracer::Enable(const FString& FileName, Trace_Callback* Callback)
 {
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
+	parameters.callback = Callback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
 	bEnabled = true;
