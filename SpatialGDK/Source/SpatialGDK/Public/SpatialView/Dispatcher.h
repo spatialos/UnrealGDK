@@ -20,8 +20,6 @@ using FComponentValueCallback = TCallbacks<FEntityComponentChange>::CallbackType
 class FDispatcher
 {
 public:
-	explicit FDispatcher();
-
 	void InvokeCallbacks(const TArray<EntityDelta>& Deltas);
 
 	CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,

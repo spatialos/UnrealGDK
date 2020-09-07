@@ -27,9 +27,9 @@ constexpr double OTHER_COMPONENT_VALUE = 4;
 void PopulateViewDeltaWithComponentAdded(SpatialGDK::ViewDelta& Delta, SpatialGDK::EntityView& View, const Worker_EntityId EntityId,
 										 const Worker_ComponentId ComponentId, const double Value)
 {
-	SpatialGDK::EntityComponentOpListBuilder OpListBuilder = SpatialGDK::EntityComponentOpListBuilder{};
+	SpatialGDK::EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddComponent(EntityId, SpatialGDK::CreateTestComponentData(ComponentId, Value));
-	SetFromOpList(Delta, View, OpListBuilder);
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
 }
 
 double GetValueFromSchemaComponentData(Schema_ComponentData* Data)
@@ -45,7 +45,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 	SpatialGDK::EntityView View;
 	SpatialGDK::ViewDelta Delta;
 
-	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange Change) {
+	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange& Change) {
 		if (Change.EntityId == ENTITY_ID && Change.Change.ComponentId == COMPONENT_ID
 			&& GetValueFromSchemaComponentData(Change.Change.Data) == COMPONENT_VALUE)
 		{
@@ -84,7 +84,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Callback_WHEN_Callback_Removed_THEN_Callba
 	SpatialGDK::EntityView View;
 	SpatialGDK::ViewDelta Delta;
 
-	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](SpatialGDK::FEntityComponentChange) {
+	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange&) {
 		Invoked = true;
 	};
 
@@ -110,7 +110,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 	SpatialGDK::EntityView View;
 	SpatialGDK::ViewDelta Delta;
 
-	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange Change) {
+	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange& Change) {
 		if (Change.EntityId == ENTITY_ID && Change.Change.ComponentId == COMPONENT_ID
 			&& GetValueFromSchemaComponentData(Change.Change.Data) == COMPONENT_VALUE)
 		{
