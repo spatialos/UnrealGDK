@@ -46,7 +46,7 @@ void SubView::TagEntity(TArray<FWorkerComponentData>& Components) const
 	Components.Add(ComponentFactory::CreateEmptyComponentData(TagComponentId));
 }
 
-void SubView::AdvanceViewDelta(const ViewDelta& Delta)
+void SubView::Advance(const ViewDelta& Delta)
 {
 	// Note: Complete entities will be a longer list than the others for the majority of iterations under
 	// probable normal usage. This sort could then become expensive, and a potential optimisation would be
@@ -77,6 +77,68 @@ void SubView::RefreshEntity(const Worker_EntityId EntityId)
 	{
 		CheckEntityAgainstFilter(EntityId);
 	}
+}
+
+FDispatcherRefreshCallback SubView::CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher,
+	Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate = [](FEntityComponentChange){return true;})
+{
+	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback)
+	{
+		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](FEntityComponentChange Change)
+		{
+			if (RefreshPredicate(Change))
+			{
+				Callback(Change.EntityId);
+			}
+		});
+		Dispatcher.RegisterComponentRemovedCallback(ComponentId, [RefreshPredicate, Callback](FEntityComponentChange Change)
+        {
+            if (RefreshPredicate(Change))
+            {
+                Callback(Change.EntityId);
+            }
+        });
+	};
+}
+
+FDispatcherRefreshCallback SubView::CreateComponentChangedDispatcherRefreshCallback(FDispatcher& Dispatcher,
+	Worker_ComponentId ComponentId, FComponentChangeRefreshPredicate RefreshPredicate = [](FEntityComponentChange){return true;})
+{
+	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback)
+	{
+		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange Change)
+        {
+            if (RefreshPredicate(Change))
+            {
+                Callback(Change.EntityId);
+            }
+        });
+	};
+}
+
+FDispatcherRefreshCallback SubView::CreateAuthorityChangeDispatcherRefreshCallback(FDispatcher& Dispatcher,
+	Worker_ComponentId ComponentId, FAuthorityChangeRefreshPredicate RefreshPredicate = [](Worker_EntityId)
+	{
+		return true;
+	})
+{
+	return [ComponentId, &Dispatcher, RefreshPredicate](FRefreshCallback Callback)
+	{
+		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id)
+        {
+            if (RefreshPredicate(Id))
+            {
+                Callback(Id);
+            }
+        });
+		Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id)
+        {
+            if (RefreshPredicate(Id))
+            {
+                Callback(Id);
+            }
+        });
+	};
 }
 
 void SubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
