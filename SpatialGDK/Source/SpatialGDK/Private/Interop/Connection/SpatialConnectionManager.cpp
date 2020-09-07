@@ -277,8 +277,8 @@ void USpatialConnectionManager::RequestDeploymentLoginTokens()
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(
-			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture =
+			Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
 	{
 		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
@@ -459,26 +459,19 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 	if (URL.HasOption(TEXT("locator")) || URL.HasOption(TEXT("devauth")))
 	{
 		FString LocatorHostOverride;
-		int32 LocatorPortOverride;
 		if (URL.HasOption(TEXT("customLocator")))
 		{
 			LocatorHostOverride = URL.Host;
-			if (URL.Port > 0)
-			{
-				LocatorPortOverride = URL.Port;
-				if (URL.Port == FURL::UrlConfig.DefaultPort)
-				{
-					UE_LOG(LogSpatialWorkerConnection, Log,
-						   TEXT("Non-zero URL port is the same as the UrlConfig.DefaultPort: %d. Assuming no port was passed in the URL. "
-								"Will use the default locator port: %d."),
-						   URL.Port, SpatialConstants::LOCATOR_PORT);
-					LocatorPortOverride = SpatialConstants::LOCATOR_PORT;
-				}
-			}
 		}
 		else
 		{
 			FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorHostOverride);
+		}
+
+		int32 LocatorPortOverride = SpatialConstants::LOCATOR_PORT;
+		if (const TCHAR* LocatorPortOption = URL.GetOption(TEXT("customPort="), nullptr))
+		{
+			LocatorPortOverride = FCString::Atoi(LocatorPortOption);
 		}
 
 		if (URL.HasOption(TEXT("devauth")))
@@ -488,8 +481,8 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			if (LocatorHostOverride != "")
 			{
 				DevAuthConfig.LocatorHost = LocatorHostOverride;
-				DevAuthConfig.LocatorPort = LocatorPortOverride;
 			}
+			DevAuthConfig.LocatorPort = LocatorPortOverride;
 			DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
 			DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
 			DevAuthConfig.PlayerId = URL.GetOption(*SpatialConstants::URL_PLAYER_ID_OPTION, *SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
@@ -504,8 +497,8 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			if (LocatorHostOverride != "")
 			{
 				LocatorConfig.LocatorHost = LocatorHostOverride;
-				LocatorConfig.LocatorPort = LocatorPortOverride;
 			}
+			LocatorConfig.LocatorPort = LocatorPortOverride;
 			LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
 			LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
 			LocatorConfig.WorkerType = SpatialWorkerType;
