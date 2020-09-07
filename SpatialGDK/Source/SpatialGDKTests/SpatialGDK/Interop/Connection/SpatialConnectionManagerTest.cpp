@@ -54,6 +54,26 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator)
 	return true;
 }
 
+CONNECTIONMANAGER_TEST(SetupFromURL_Locator_CustomLocator_CustomPort)
+{
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("");
+	const FURL URL(nullptr, TEXT("10.20.30.40?locator?customLocator?customPort=7000?playeridentity=foo?login=bar"), TRAVEL_Absolute);
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
+	Manager->SetupConnectionConfigFromURL(URL, "SomeWorkerType");
+
+	// THEN
+	TestEqual("LocatorHost", Manager->LocatorConfig.LocatorHost, "10.20.30.40");
+	TestEqual("LocatorPort", Manager->LocatorConfig.LocatorPort, 7000);
+	TestEqual("PlayerIdentityToken", Manager->LocatorConfig.PlayerIdentityToken, "foo");
+	TestEqual("LoginToken", Manager->LocatorConfig.LoginToken, "bar");
+	TestEqual("WorkerType", Manager->LocatorConfig.WorkerType, "SomeWorkerType");
+
+	return true;
+}
+
 CONNECTIONMANAGER_TEST(SetupFromURL_Locator_LocatorHost)
 {
 	// GIVEN
