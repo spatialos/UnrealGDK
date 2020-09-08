@@ -76,8 +76,7 @@ void ASpatialWorldSettings::PostEditChangeProperty(FPropertyChangedEvent& Proper
 	{
 		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsOverride)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bDisableMultiWorker))
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsOverride))
 		{
 			EditorRefreshSpatialDebugger();
 		}
@@ -111,9 +110,9 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 		// If command line override for Multi Worker Settings is set then enable multi-worker.
 		return true;
 	}
-	#if WITH_EDITOR
+#if WITH_EDITOR
 	return !bDisableMultiWorker;
-	#endif // WITH_EDITOR
+#endif // WITH_EDITOR
 
 	return true;
 }

@@ -260,7 +260,7 @@ void USpatialGDKEditorSettings::SetMultiWorkerEditor(bool IsDisabled)
 	bDisableMultiWorker = IsDisabled;
 
 	OverrideMultiWorkerEditor();
-	
+
 	SaveConfig();
 }
 
