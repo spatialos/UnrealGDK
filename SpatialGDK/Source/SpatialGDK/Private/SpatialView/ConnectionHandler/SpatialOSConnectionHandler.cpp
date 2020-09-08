@@ -182,7 +182,7 @@ void SpatialOSConnectionHandler::ConnectionDeleter::operator()(Worker_Connection
 {
 	if (ConnectionToDelete != nullptr)
 	{
-		// todo unr-4211 - This is a mitigation for the slow connection destruction code in pie.
+		// TODO: UNR-4211 - this is a mitigation for the slow connection destruction code in pie.
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionToDelete]() {
 			Worker_Connection_Destroy(ConnectionToDelete);
 		});
