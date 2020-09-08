@@ -26,6 +26,31 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		return;
 	}
 
+	if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
+	{
+		const Trace_Event& Event = Item->item.event;
+		FString SpanIdString = SpatialEventTracer::SpanIdToString(Event.span_id);
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Event: %s SpanId: %s"), *FString(Event.type), *SpanIdString);
+	}
+	else if (Item->item_type == TRACE_ITEM_TYPE_SPAN)
+	{
+		const Trace_Span& Span = Item->item.span;
+		FString SpanIdString = SpanIdToString(Span.id);
+		FString Causes;
+
+		for (uint32 i = 0; i < Span.cause_count; ++i)
+		{
+			if (i > 0)
+			{
+				Causes += ", ";
+			}
+
+			Causes += SpanIdToString(Span.causes[i]);
+		}
+
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("SpanId: %s Causes: %s"), *SpanIdString, *Causes);
+	}
+
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
 	{
@@ -75,6 +100,21 @@ SpatialEventTracer::~SpatialEventTracer()
 	{
 		Disable();
 	}
+}
+
+FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
+{
+	FString HexStr;
+	for (int i = 0; i < 16; i++)
+	{
+		{
+			char b[32];
+			unsigned int x = (unsigned char)SpanId.data[i];
+			sprintf(b, "%0x", x);
+			HexStr += ANSI_TO_TCHAR(b);
+		}
+	}
+	return HexStr;
 }
 
 TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
