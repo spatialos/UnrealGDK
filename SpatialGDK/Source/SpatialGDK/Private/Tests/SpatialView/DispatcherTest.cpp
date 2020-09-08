@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include <memory>
-
 #include "ComponentTestUtils.h"
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
@@ -54,6 +52,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 	};
 	Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
 
+	AddEntityToView(View, ENTITY_ID);
 	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
@@ -70,6 +69,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	TestFalse("Callback was not invoked", Invoked);
 
+	AddEntityToView(View, OTHER_ENTITY_ID);
 	PopulateViewDeltaWithComponentAdded(Delta, View, OTHER_ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	TestFalse("Callback was not invoked", Invoked);
@@ -89,6 +89,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Callback_WHEN_Callback_Removed_THEN_Callba
 	};
 
 	const SpatialGDK::CallbackId Id = Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
+	AddEntityToView(View, ENTITY_ID);
 	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
@@ -126,6 +127,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_And_Invoked_THEN_Callback_I
 	TestTrue("Callback was invoked", Invoked);
 
 	// Double check the callback is actually called on invocation as well.
+	View[ENTITY_ID].Components.Empty();
 	Invoked = false;
 	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, COMPONENT_ID, COMPONENT_VALUE);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
