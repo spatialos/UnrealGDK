@@ -173,7 +173,7 @@ void AVisibilityTest::BeginPlay()
 	{ // Step 8 - Clients check that the AReplicatedVisibilityTestActor is no longer replicated.
 		AddStep(TEXT("VisibilityTestClientCheckReplicatedActorsAfterSetActorHidden"), FWorkerDefinition::AllClients, nullptr, nullptr,
 				[this](float DeltaTime) {
-					if (!IsValid(TestActor))
+					if (GetNumberOfVisibilityTestActors() == 0 && !IsValid(TestActor))
 					{
 						FinishStep();
 					}
