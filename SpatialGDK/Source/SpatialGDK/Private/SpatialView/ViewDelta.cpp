@@ -50,7 +50,8 @@ void ViewDelta::Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& C
 		const Worker_EntityId NewlyIncompleteId = NewlyIncompleteIt ? *NewlyIncompleteIt : SENTINEL_ENTITY_ID;
 		const Worker_EntityId TemporarilyIncompleteId = TemporarilyIncompleteIt ? *TemporarilyIncompleteIt : SENTINEL_ENTITY_ID;
 		const uint64 MinEntityId = FMath::Min3(FMath::Min(static_cast<uint64>(DeltaId), static_cast<uint64>(CompleteId)),
-														FMath::Min(static_cast<uint64>(NewlyCompleteId), static_cast<uint64>(NewlyIncompleteId)), static_cast<uint64>(TemporarilyIncompleteId));
+											   FMath::Min(static_cast<uint64>(NewlyCompleteId), static_cast<uint64>(NewlyIncompleteId)),
+											   static_cast<uint64>(TemporarilyIncompleteId));
 		const Worker_EntityId CurrentEntityId = static_cast<Worker_EntityId>(MinEntityId);
 		// If no list has elements left to read then stop.
 		if (CurrentEntityId == SENTINEL_ENTITY_ID)

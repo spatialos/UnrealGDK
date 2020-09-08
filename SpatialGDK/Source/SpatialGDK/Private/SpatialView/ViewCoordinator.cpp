@@ -59,11 +59,12 @@ SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId& Tag, const FFi
 
 SubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId& Tag)
 {
-	const int Index = SubViews.Emplace(Tag,
-                                                [](const Worker_EntityId&, const EntityViewElement&) {
-                                                    return true;
-    },
-    View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{});
+	const int Index = SubViews.Emplace(
+		Tag,
+		[](const Worker_EntityId&, const EntityViewElement&) {
+			return true;
+		},
+		View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{});
 	return SubViews[Index];
 }
 
