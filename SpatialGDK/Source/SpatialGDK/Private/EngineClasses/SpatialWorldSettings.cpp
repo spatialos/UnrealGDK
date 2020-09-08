@@ -19,32 +19,25 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 
 	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 1"));
-
 		// If command line override for Multi Worker Settings is set then use the specified Multi Worker Settings class.
 		FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
 		FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
 		MultiWorkerSettingsClass = MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
 		checkf(MultiWorkerSettingsClass != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
-		UE_LOG(LogTemp, Warning, TEXT("Using class: %s"), *OverrideMultiWorkerSettingsClass);
 		return GetValidWorkerSettings();
 	}
 	else if (!IsMultiWorkerEnabled())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 2"));
-
 		// If multi worker is disabled, use the single worker behaviour.
 		return USpatialMultiWorkerSettings::StaticClass();
 	}
 	else if (bForceNonEditorSettings && MultiWorkerSettingsClass != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 3"));
 		// If bForceNonEditorSettings is set and the multi worker setting class is set use the multi worker settings.
 		return MultiWorkerSettingsClass;
 	}
 	else if (bForceNonEditorSettings)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 4"));
 		// If bForceNonEditorSettings is set and no multi worker settings class is set always return a valid class (use single worker
 		// behaviour).
 		return USpatialMultiWorkerSettings::StaticClass();
@@ -52,12 +45,10 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 #if WITH_EDITOR
 	else if (EditorMultiWorkerSettingsOverride != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 5"));
 		// If the editor override Multi Worker Settings is set and we are in the Editor use the Editor Multi Worker Settings.
 		return EditorMultiWorkerSettingsOverride;
 	}
 #endif // WITH_EDITOR
-	UE_LOG(LogTemp, Warning, TEXT("GetMultiWorkerSettingsClass case 6"));
 	return GetValidWorkerSettings();
 }
 
@@ -65,13 +56,11 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetValidWorkerSe
 {
 	if (MultiWorkerSettingsClass != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetValidWorkerSettings case A"));
 		// If the MultiWorkerSettingsClass is set, return it.
 		return MultiWorkerSettingsClass;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GetValidWorkerSettings case B"));
 		// Otherwise, return a valid class, return single worker settings class.
 		return USpatialMultiWorkerSettings::StaticClass();
 	}
