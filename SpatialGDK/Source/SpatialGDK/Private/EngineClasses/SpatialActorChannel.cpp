@@ -4,7 +4,6 @@
 
 #include "Engine/DemoNetDriver.h"
 #include "Engine/World.h"
-#include "GameFramework/GameMode.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
