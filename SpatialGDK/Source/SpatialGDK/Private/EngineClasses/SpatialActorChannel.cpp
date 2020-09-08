@@ -19,7 +19,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
-#include "GameplayDebuggerCategoryReplicator.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -427,21 +426,10 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	return HandoverChanged;
 }
 
-bool USpatialActorChannel::IsActorClassAlwaysRelevant(AActor* InActor)
-{
-	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
-		|| InActor->IsA(AGameModeBase::StaticClass()))
-	{
-		return true;
-	}
-
-	return false;
-}
-
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 {
 	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
-	if (IsActorClassAlwaysRelevant(InActor))
+	if (SpatialGDK::IsActorClassAlwaysRelevant(InActor))
 	{
 		return;
 	}

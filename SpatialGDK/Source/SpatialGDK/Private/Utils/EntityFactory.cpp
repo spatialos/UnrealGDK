@@ -221,7 +221,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
-	if (Actor->bAlwaysRelevant || !Actor->IsHidden() || USpatialActorChannel::IsActorClassAlwaysRelevant(Actor))
+	if (Actor->bAlwaysRelevant || !Actor->IsHidden() || IsActorClassAlwaysRelevant(Actor))
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
 	}

@@ -10,7 +10,9 @@
 #include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/GameMode.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayDebuggerCategoryReplicator.h"
 #include "Math/Vector.h"
 
 namespace SpatialGDK
@@ -86,6 +88,17 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 
 	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
+}
+
+inline bool IsActorClassAlwaysRelevant(AActor* InActor)
+{
+	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
+		|| InActor->IsA(AGameModeBase::StaticClass()))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 } // namespace SpatialGDK
