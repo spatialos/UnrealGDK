@@ -266,7 +266,6 @@ void ASpatialSnapshotTest::BeginPlay()
 		}
 	});*/
 
-
 	if (bIsRunningFirstTime)
 	{
 		// The first run we want to setup the data, verify it, and take snapshot.
@@ -281,11 +280,10 @@ void ASpatialSnapshotTest::BeginPlay()
 		VerifyActorDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyActorDataStepName);
 		AddStepFromDefinition(VerifyActorDataStepDef, FWorkerDefinition::AllWorkers);
 
-		AddStep(TEXT("First Run - GameMode Set Properties"), FWorkerDefinition::Server(1), nullptr, [this](){
-			ASpatialSnapshotTestGameMode* GameMode =
-				GetWorld()->GetAuthGameMode<ASpatialSnapshotTestGameMode>();
+		AddStep(TEXT("First Run - GameMode Set Properties"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			ASpatialSnapshotTestGameMode* GameMode = GetWorld()->GetAuthGameMode<ASpatialSnapshotTestGameMode>();
 
-			if(GameMode == nullptr)
+			if (GameMode == nullptr)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("This test requires ASpatialSnapshotTestGameMode to be set as Game Mode"));
 				return;

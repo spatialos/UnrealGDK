@@ -24,13 +24,13 @@
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
 
+#include "../../SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
 #include "IAutomationControllerModule.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
-#include "../../SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 

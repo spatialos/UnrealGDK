@@ -45,10 +45,13 @@ void ASpatialFunctionalTestFlowController::OnAuthorityGained()
 {
 	// Super hack
 	FTimerHandle Handle;
-	GetWorldTimerManager().SetTimer(Handle, [this](){
-		bReadyToRegisterWithTest = true;
-		OnReadyToRegisterWithTest();
-	}, 0.5f, false);
+	GetWorldTimerManager().SetTimer(
+		Handle,
+		[this]() {
+			bReadyToRegisterWithTest = true;
+			OnReadyToRegisterWithTest();
+		},
+		0.5f, false);
 }
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)

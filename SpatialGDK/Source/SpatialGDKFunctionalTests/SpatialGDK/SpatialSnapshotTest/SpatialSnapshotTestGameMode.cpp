@@ -24,7 +24,7 @@ TArray<int> GetTargetIntArrayProperty()
 } // namespace
 
 ASpatialSnapshotTestGameMode::ASpatialSnapshotTestGameMode()
-	:Super()
+	: Super()
 {
 }
 
