@@ -9,6 +9,7 @@ namespace SpatialGDK
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
 	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
+	, SubViews(TArray<SubView>{})
 {
 }
 
@@ -52,17 +53,17 @@ void ViewCoordinator::FlushMessagesToSend()
 SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
 										const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
-	const int Index = SubViews.Emplace(SubView{ Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks });
+	const int Index = SubViews.Emplace(Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks);
 	return SubViews[Index];
 }
 
 SubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId& Tag)
 {
-	const int Index = SubViews.Emplace(SubView{ Tag,
-												[](const Worker_EntityId&, const EntityViewElement&) {
-													return true;
-												},
-												View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{} });
+	const int Index = SubViews.Emplace(Tag,
+                                                [](const Worker_EntityId&, const EntityViewElement&) {
+                                                    return true;
+    },
+    View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{});
 	return SubViews[Index];
 }
 

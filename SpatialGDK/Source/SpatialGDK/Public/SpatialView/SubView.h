@@ -25,6 +25,10 @@ public:
 	SubView(const Worker_ComponentId& TagComponentId, const FFilterPredicate& Filter, const EntityView& View, FDispatcher& Dispatcher,
 			const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 
+	// Non-copyable
+	SubView(const SubView&) = delete;
+	SubView& operator=(const SubView&) = delete;
+
 	void TagQuery(Query& QueryToTag) const;
 	void TagEntity(TArray<FWorkerComponentData>& Components) const;
 
