@@ -51,6 +51,7 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_UCLASS_BODY()
 	friend class USpatialStatics;
 
+public:
 	/** If command line override -OverrideMultiWorkerSettingsClass is set then return the specified class from the command line.
 	 * Else if multi-worker is disabled, return the single worker settings class.
 	 * Else if bForceNonEditorSettings is set, return the MultiWorkerSettingsClass.
@@ -71,16 +72,15 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	static void EditorRefreshSpatialDebugger();
-	void SetMutliWorkerEditor(bool bDisable);
+	void SetMutliWorkerEditor(const bool bDisable);
 #endif // WITH_EDITOR
 
-	/** Is multi-worker enabled from the commmand line or in the WorldSettings*/
+	/** Is multi-worker enabled in the editor*/
 	bool IsMultiWorkerEnabled() const;
 
 private:
 	/** Enable running different server worker types to split the simulation. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
+	bool bDisableMultiWorker;
 
 	/** Specify the load balancing strategy to be used for multiple workers */
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))

@@ -7,7 +7,7 @@
 
 ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, bEnableMultiWorker(false)
+	, bDisableMultiWorker(false)
 	, MultiWorkerSettingsClass(nullptr)
 	, EditorMultiWorkerSettingsOverride(nullptr)
 {
@@ -77,7 +77,7 @@ void ASpatialWorldSettings::PostEditChangeProperty(FPropertyChangedEvent& Proper
 		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsOverride)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bDisableMultiWorker))
 		{
 			EditorRefreshSpatialDebugger();
 		}
@@ -95,9 +95,9 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 	}
 }
 
-void ASpatialWorldSettings::SetMutliWorkerEditor(bool bDisable)
+void ASpatialWorldSettings::SetMutliWorkerEditor(const bool bDisable)
 {
-	bEnableMultiWorker = !bDisable;
+	bDisableMultiWorker = bDisable;
 }
 #endif // WITH_EDITOR
 
@@ -111,10 +111,9 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 		// If command line override for Multi Worker Settings is set then enable multi-worker.
 		return true;
 	}
-	else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker.GetValue())
-	{
-		// If enable multi-worker was overridden from the command line then disable multi worker.
-		return false;
-	}
-	return bEnableMultiWorker;
+	#if WITH_EDITOR
+	return !bDisableMultiWorker;
+	#endif // WITH_EDITOR
+
+	return true;
 }

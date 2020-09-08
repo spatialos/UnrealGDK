@@ -259,12 +259,18 @@ void USpatialGDKEditorSettings::SetMultiWorkerEditor(bool IsDisabled)
 {
 	bDisableMultiWorker = IsDisabled;
 
+	OverrideMultiWorkerEditor();
+	
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::OverrideMultiWorkerEditor() const
+{
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
 		WorldSettings->SetMutliWorkerEditor(bDisableMultiWorker);
 	}
-	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
