@@ -26,17 +26,18 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 	PopulateEntityDeltas(View);
 }
 
-void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
-						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities)
+void ViewDelta::Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
+                        const TArray<Worker_EntityId>& NewlyCompleteEntities,
+                        const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+                        const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
 {
-	Clear();
+	SubDelta.EntityDeltas.Empty();
 
 	// No projection is applied to worker messages, as they are not entity specific.
-	WorkerMessages = Delta.GetWorkerMessages();
+	SubDelta.WorkerMessages = &WorkerMessages;
 
 	// All arrays here are sorted by entity ID.
-	auto DeltaIt = Delta.GetEntityDeltas().CreateConstIterator();
+	auto DeltaIt = EntityDeltas.CreateConstIterator();
 	auto CompleteIt = CompleteEntities.CreateConstIterator();
 	auto NewlyCompleteIt = NewlyCompleteEntities.CreateConstIterator();
 	auto NewlyIncompleteIt = NewlyIncompleteEntities.CreateConstIterator();
@@ -59,25 +60,25 @@ void ViewDelta::Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& C
 				CompleteDelta.Type = EntityDelta::TEMPORARILY_REMOVED;
 				++TemporarilyIncompleteIt;
 			}
-			EntityDeltas.Emplace(CompleteDelta);
+			SubDelta.EntityDeltas.Emplace(CompleteDelta);
 		}
 		// Newly complete entities are represented as marker add entities with no state.
 		if (NewlyCompleteIt && *NewlyCompleteIt == MinEntityId)
 		{
-			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::ADD });
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::ADD });
 			++NewlyCompleteIt;
 		}
 		// Newly incomplete entities are represented as marker remove entities with no state.
 		if (NewlyIncompleteIt && *NewlyIncompleteIt == MinEntityId)
 		{
-			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::REMOVE });
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
 		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
 		// temporarily removed entities with no state.
 		if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == MinEntityId)
 		{
-			EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::TEMPORARILY_REMOVED });
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ MinEntityId, EntityDelta::TEMPORARILY_REMOVED });
 			++TemporarilyIncompleteIt;
 		}
 
