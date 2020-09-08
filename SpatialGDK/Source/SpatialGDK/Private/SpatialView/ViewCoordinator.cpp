@@ -8,7 +8,6 @@ namespace SpatialGDK
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
 	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
-	, Dispatcher(&View.GetView())
 {
 }
 

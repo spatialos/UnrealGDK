@@ -9,7 +9,7 @@
 
 namespace SpatialGDK
 {
-inline void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpListBuilder& OpListBuilder)
+inline void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpListBuilder OpListBuilder)
 {
 	OpList Ops = MoveTemp(OpListBuilder).CreateOpList();
 	TArray<OpList> OpLists;
