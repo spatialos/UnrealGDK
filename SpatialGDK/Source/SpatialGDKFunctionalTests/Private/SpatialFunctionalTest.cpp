@@ -2,6 +2,8 @@
 
 #include "SpatialFunctionalTest.h"
 
+#include "../../SpatialGDKServices/Public/LocalDeploymentManager.h"
+#include "../../SpatialGDKServices/Public/SpatialGDKServicesModule.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -21,8 +23,6 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 #include "TimerManager.h"
-#include "../../SpatialGDKServices/Public/SpatialGDKServicesModule.h"
-#include "../../SpatialGDKServices/Public/LocalDeploymentManager.h"
 
 #pragma optimize("", off)
 
@@ -677,8 +677,8 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-	//FString KrakenSnapshotURL = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
-	//HttpRequest->OnProcessRequestComplete().BindLambda([this, BlueprintCallback, CppCallback](
+	// FString KrakenSnapshotURL = "http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot";
+	// HttpRequest->OnProcessRequestComplete().BindLambda([this, BlueprintCallback, CppCallback](
 	//													   FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
 	//	if (!bSucceeded)
 	//	{
@@ -739,12 +739,12 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 	//		},
 	//		0.1f, false);
 	//});
-	//HttpRequest->SetURL(KrakenSnapshotURL);
-	//HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
-	//HttpRequest->SetVerb(TEXT("POST"));
-	//const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
-	//HttpRequest->SetContent(Body);
-	//HttpRequest->ProcessRequest();
+	// HttpRequest->SetURL(KrakenSnapshotURL);
+	// HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
+	// HttpRequest->SetVerb(TEXT("POST"));
+	// const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
+	// HttpRequest->SetContent(Body);
+	// HttpRequest->ProcessRequest();
 	FString SquidSnapshotUrl = TEXT("http://localhost:5006/snapshot");
 	HttpRequest->OnProcessRequestComplete().BindLambda([this, BlueprintCallback, CppCallback](
 														   FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
@@ -773,7 +773,8 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 				FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
 				FString SpatialPath = FPaths::ProjectDir() + TEXT("../spatial/");
-				FString CurrentLocalDeploymentPath = SpatialPath + TEXT("logs/localdeployment/") + LocalDeploymentManager->GetLocalRunningDeploymentID();
+				FString CurrentLocalDeploymentPath =
+					SpatialPath + TEXT("logs/localdeployment/") + LocalDeploymentManager->GetLocalRunningDeploymentID();
 
 				IFileManager& FileManager = FFileManagerGeneric::Get();
 
@@ -785,11 +786,11 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 
 				FDateTime NewestSnapshotTimestamp = FDateTime::MinValue();
 
-				for(const FString& SnapshotFile : SnapshotFiles)
+				for (const FString& SnapshotFile : SnapshotFiles)
 				{
 					FString SnapshotFilePath = CurrentLocalDeploymentPath + TEXT("/") + SnapshotFile;
 					FDateTime SnapshotFileTimestamp = FileManager.GetTimeStamp(*SnapshotFilePath);
-					if(SnapshotFileTimestamp > NewestSnapshotTimestamp)
+					if (SnapshotFileTimestamp > NewestSnapshotTimestamp)
 					{
 						NewestSnapshotTimestamp = SnapshotFileTimestamp;
 						NewestSnapshotFilePath = SnapshotFilePath;
@@ -798,7 +799,7 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 
 				bSuccess = !NewestSnapshotFilePath.IsEmpty();
 
-				if(bSuccess)
+				if (bSuccess)
 				{
 					FString SnapshotFileName = TEXT("functional_testing.snapshot");
 					FString SnapshotSavePath = FPaths::ProjectDir() + TEXT("../spatial/snapshots/") + SnapshotFileName;
@@ -824,7 +825,7 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 				{
 					CppCallback(bSuccess);
 				}
-				
+
 				// Go read latest file,
 				/*FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
 				FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/.improbable/local_snapshots/latest"), *AppDataLocalPath);
@@ -865,7 +866,7 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenDelegate& Blueprin
 	});
 	HttpRequest->SetURL(SquidSnapshotUrl);
 	HttpRequest->SetVerb("GET");
-	//HttpRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
+	// HttpRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
 	HttpRequest->SetHeader("Content-Type", TEXT("application/json"));
 	HttpRequest->ProcessRequest();
 }
