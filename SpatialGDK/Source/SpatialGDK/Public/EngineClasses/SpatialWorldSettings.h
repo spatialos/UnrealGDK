@@ -51,6 +51,7 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 	GENERATED_UCLASS_BODY()
 	friend class USpatialStatics;
 
+public:
 	/** If command line override -OverrideMultiWorkerSettingsClass is set then return the specified class from the command line.
 	 * Else if multi-worker is disabled, return the single worker settings class.
 	 * Else if bForceNonEditorSettings is set, return the MultiWorkerSettingsClass.

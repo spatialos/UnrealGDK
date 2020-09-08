@@ -105,10 +105,10 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 		// If command line override for Multi Worker Settings is set then enable multi-worker.
 		return true;
 	}
-	else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet() && SpatialGDKSettings->bOverrideMultiWorker.GetValue())
+	else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
 	{
-		// If enable multi-worker was overridden from the command line then disable multi worker.
-		return false;
+		// If enable multi-worker was overridden from the command line then use the override.
+		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
 	}
 	return bEnableMultiWorker;
 }
