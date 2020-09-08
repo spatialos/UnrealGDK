@@ -88,7 +88,8 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
-	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const TArray<worker::c::Trace_SpanId>& Causes);
+	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
+									   const TArray<worker::c::Trace_SpanId>& Causes);
 };
 
 struct SpatialScopedActiveSpanId

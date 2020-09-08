@@ -60,7 +60,6 @@ TArray<SpatialSpanIdStore::FieldSpanIdUpdate> SpatialSpanIdStore::ComponentUpdat
 		if (SpawnIdRef != nullptr)
 		{
 			FieldCollisions.Add({ FieldId, SpawnIdRef->SpanId });
-
 		}
 		else
 		{

@@ -1986,7 +1986,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
 	EventTracer->TraceEvent(FEventCommandRequest("COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId),
-		{ Op.span_id });
+							{ Op.span_id });
 }
 
 void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)

@@ -39,7 +39,8 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	{
 		if (EventTracer != nullptr)
 		{
-			TArray<Trace_SpanId> Causes = PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
+			TArray<Trace_SpanId> Causes =
+				PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
 			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), Causes);
 		}
 
@@ -171,7 +172,8 @@ void SpatialRPCService::PushOverflowedRPCs()
 		{
 			if (EventTracer != nullptr)
 			{
-				TArray<Trace_SpanId> Causes = PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
+				TArray<Trace_SpanId> Causes =
+					PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
 				EventTracer->TraceEvent(FEventRPCRetried(), Causes);
 			}
 
@@ -253,7 +255,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		{
 			if (EventTracer != nullptr)
 			{
-				UpdateToSend.SpanId = EventTracer->TraceEvent(FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
+				UpdateToSend.SpanId = EventTracer->TraceEvent(
+					FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
 			}
 		}
 		else if (It.Value.SpanIds.Num() == 1)
