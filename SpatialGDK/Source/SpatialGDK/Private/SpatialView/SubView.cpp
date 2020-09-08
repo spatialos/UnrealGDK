@@ -118,7 +118,8 @@ FDispatcherRefreshCallback SubView::CreateComponentChangedDispatcherRefreshCallb
 }
 
 FDispatcherRefreshCallback SubView::CreateAuthorityChangeDispatcherRefreshCallback(
-	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId, const FAuthorityChangeRefreshPredicate& RefreshPredicate = [](const Worker_EntityId&) {
+	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+	const FAuthorityChangeRefreshPredicate& RefreshPredicate = [](const Worker_EntityId&) {
 		return true;
 	})
 {
