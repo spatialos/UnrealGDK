@@ -41,9 +41,8 @@ public:
 	// the projection. The given arrays represent the state of the sub view and dictates the projection.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
 	void Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
-	             const TArray<Worker_EntityId>& NewlyCompleteEntities,
-	             const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-	             const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
+				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;

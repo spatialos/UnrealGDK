@@ -27,9 +27,8 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 }
 
 void ViewDelta::Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
-                        const TArray<Worker_EntityId>& NewlyCompleteEntities,
-                        const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-                        const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
+						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
 {
 	SubDelta.EntityDeltas.Empty();
 
