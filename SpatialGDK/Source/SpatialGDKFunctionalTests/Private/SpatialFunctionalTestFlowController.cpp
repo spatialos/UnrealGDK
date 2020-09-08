@@ -41,8 +41,12 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 
 void ASpatialFunctionalTestFlowController::OnAuthorityGained()
 {
-	bReadyToRegisterWithTest = true;
-	OnReadyToRegisterWithTest();
+	// Super hack
+	FTimerHandle Handle;
+	GetWorldTimerManager().SetTimer(Handle, [this](){
+		bReadyToRegisterWithTest = true;
+		OnReadyToRegisterWithTest();
+	}, 0.5f, false);
 }
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
