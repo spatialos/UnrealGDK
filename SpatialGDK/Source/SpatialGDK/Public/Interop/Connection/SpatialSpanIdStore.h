@@ -16,16 +16,25 @@ class SpatialSpanIdStore
 public:
 	SpatialSpanIdStore();
 
+	struct FieldSpanIdUpdate
+	{
+		uint32 FieldId;
+		worker::c::Trace_SpanId OldSpanId;
+	};
+
 	void ComponentAdd(const Worker_Op& Op);
 	bool ComponentRemove(const Worker_Op& Op);
-	void ComponentUpdate(const Worker_Op& Op);
+
+	// Returns a list of the field ids that already existed in the store
+	TArray<FieldSpanIdUpdate> ComponentUpdate(const Worker_Op& Op);
+
+	void WriteSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId);
 
 	bool DropSpanIds(const EntityComponentId& Id);
 	bool DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
 	void DropOldSpanIds();
 
 	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId);
-	bool HasSpanIds(const EntityComponentId& Id) const { return EntityComponentFieldSpanIds.Contains(Id); }
 
 private:
 	// Private Classes
@@ -55,7 +64,6 @@ private:
 	// Private Functions
 
 	void UpdateNextClearTime();
-	void AddSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId);
 	bool DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId);
 };
 } // namespace SpatialGDK

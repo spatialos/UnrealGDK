@@ -50,9 +50,9 @@ public:
 	// TODO(EventTracer): Communicate to others, that SpatialScopedActiveSpanId must be creating prior to calling worker send functions
 
 	template <class T>
-	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const worker::c::Trace_SpanId* Cause = nullptr)
+	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const TArray<worker::c::Trace_SpanId>& Causes = {})
 	{
-		return TraceEvent(EventMessage, T::StaticStruct(), Cause);
+		return TraceEvent(EventMessage, T::StaticStruct(), Causes);
 	}
 
 	bool IsEnabled() const;
@@ -88,7 +88,7 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
-	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const worker::c::Trace_SpanId* Cause);
+	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct, const TArray<worker::c::Trace_SpanId>& Causes);
 };
 
 struct SpatialScopedActiveSpanId
