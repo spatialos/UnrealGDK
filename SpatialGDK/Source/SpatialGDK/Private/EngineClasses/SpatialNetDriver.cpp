@@ -442,14 +442,10 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const UWorld* CurrentWorld = GetWorld();
 	check(CurrentWorld != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
-	check(WorldSettings != nullptr);
-
 	const bool bMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(CurrentWorld);
 
-	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
-		bMultiWorkerEnabled ? *WorldSettings->MultiWorkerSettingsClass : USpatialMultiWorkerSettings::StaticClass();
+		USpatialStatics::GetSpatialMultiWorkerClass(CurrentWorld);
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
