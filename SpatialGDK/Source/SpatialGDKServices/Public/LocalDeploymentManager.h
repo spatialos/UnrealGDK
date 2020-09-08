@@ -66,6 +66,8 @@ public:
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
+	const FString& GetLocalRunningDeploymentID() { return LocalRunningDeploymentID; }
+
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);

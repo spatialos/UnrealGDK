@@ -23,7 +23,8 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "FunctionalTesting",
-                "HTTP"
+                "HTTP",
+                "SpatialGDKServices"
             });
     }
 }
