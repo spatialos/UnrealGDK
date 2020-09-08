@@ -197,9 +197,10 @@ public:
 			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
+	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers "
-								"must declare the same delegation at the same time."))
+			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+	// clang-format on
 	void DelegateTagToWorker(FName Tag, int32 WorkerId);
 
 	UFUNCTION(
@@ -214,22 +215,28 @@ public:
 	// # Snapshot APIs
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Allows a Server Worker to request a SpatialOS Snapshot to be taken. Keep in mind that this should be done at the last Step of your Test."))
+			  meta = (ToolTip = "Allows a Server Worker to request a SpatialOS snapshot to be taken. Keep in mind that this should be done at the last Step of your Test. Keep in mind that if you take a snapshot, you should eventually call ClearLoadedFromTakenSnapshot."))
 	// clang-format on
 	void TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback);
 
 	// C++ version that allows you to hook up a lambda.
 	void TakeSnapshot(const FSnapshotTakenFunc& CppCallback);
 
+	// Get the path to the current taken snapshot, empty string if it's using the default loaded snapshot.
 	static FString GetTakenSnapshotPath();
 
+	// Allows you to know if the current deployment was started from a previously taken snapshot.
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	bool WasLoadedFromSnapshot();
+	bool WasLoadedFromTakenSnapshot();
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	static void ClearLoadedFromSnapshot();
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
+			  meta = (Tooltip = "Clears the snapshot, making it start deployments with the default snapshot again. Tests that call TakeSnapshot should eventually also call ClearLoadedFromTakenSnapshot."))
+	// clang-format on
+	static void ClearLoadedFromTakenSnapshot();
 
-	static void SetLoadedFromSnapshot();
+	// Sets that it was loaded by a custom snapshot, not meant to be used directly.
+	static void SetLoadedFromTakenSnapshot();
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
@@ -241,20 +248,20 @@ private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
 	int NumRequiredClients = 2;
 
-	// number of servers that should be running in the world
+	// Number of servers that should be running in the world.
 	int NumExpectedServers = 0;
 
-	// FlowController which is locally owned
+	// FlowController which is locally owned.
 	ASpatialFunctionalTestFlowController* LocalFlowController = nullptr;
 
 	TArray<FSpatialFunctionalTestStepDefinition> StepDefinitions;
 
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllersExecutingStep;
 
-	// Time current step has been running for, used if Step Definition has TimeLimit >= 0
+	// Time current step has been running for, used if Step Definition has TimeLimit >= 0.
 	float TimeRunningStep = 0.0f;
 
-	// Current Step Index, < 0 if not executing any, check consts at the top
+	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
 

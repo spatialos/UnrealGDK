@@ -58,7 +58,7 @@ void FSpatialGDKEditorModule::StartupModule()
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
 	AutomationController->OnTestsComplete().AddLambda([]() {
 		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
-		ASpatialFunctionalTest::ClearLoadedFromSnapshot();
+		ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
 
 #if ENGINE_MINOR_VERSION < 25
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
@@ -324,7 +324,7 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 				if (!ASpatialFunctionalTest::GetTakenSnapshotPath().IsEmpty())
 				{
 					PIESettingsOverride.ForceUseSnapshot = ASpatialFunctionalTest::GetTakenSnapshotPath();
-					ASpatialFunctionalTest::SetLoadedFromSnapshot();
+					ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
 				}
 				break;
 			default:

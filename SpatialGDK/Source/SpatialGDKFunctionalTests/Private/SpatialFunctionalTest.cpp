@@ -841,18 +841,18 @@ FString ASpatialFunctionalTest::GetTakenSnapshotPath()
 	return TakenSnapshotPath;
 }
 
-bool ASpatialFunctionalTest::WasLoadedFromSnapshot()
+bool ASpatialFunctionalTest::WasLoadedFromTakenSnapshot()
 {
 	return bWasLoadedFromSnapshot;
 }
 
-void ASpatialFunctionalTest::ClearLoadedFromSnapshot()
+void ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot()
 {
 	bWasLoadedFromSnapshot = false;
 	TakenSnapshotPath = "";
 }
 
-void ASpatialFunctionalTest::SetLoadedFromSnapshot()
+void ASpatialFunctionalTest::SetLoadedFromTakenSnapshot()
 {
 	bWasLoadedFromSnapshot = true;
 

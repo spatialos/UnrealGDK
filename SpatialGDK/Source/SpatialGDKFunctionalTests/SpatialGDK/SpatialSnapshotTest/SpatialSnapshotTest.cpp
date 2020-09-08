@@ -56,7 +56,7 @@ void ASpatialSnapshotTest::BeginPlay()
 	Super::BeginPlay();
 
 	// First we need to know if we're launching from the default Snapshot or from a taken Snapshot.
-	bool bIsRunningFirstTime = !WasLoadedFromSnapshot();
+	bool bIsRunningFirstTime = !WasLoadedFromTakenSnapshot();
 
 	FString VerifyActorDataStepName = TEXT("Verify Actor Data Properly Set");
 
@@ -322,7 +322,7 @@ void ASpatialSnapshotTest::BeginPlay()
 		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllServers);
 
 		AddStep(TEXT("Second Run - Clear Snapshot"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			ClearLoadedFromSnapshot();
+			ClearLoadedFromTakenSnapshot();
 			FinishStep();
 		});
 	}
