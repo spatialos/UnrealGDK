@@ -262,7 +262,7 @@ void USpatialGDKEditorSettings::SetMultiWorkerEditor(bool IsDisabled)
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		WorldSettings->SetMutliWorkerEditor(IsDisabled);
+		WorldSettings->SetMutliWorkerEditor(bDisableMultiWorker);
 	}
 	SaveConfig();
 }

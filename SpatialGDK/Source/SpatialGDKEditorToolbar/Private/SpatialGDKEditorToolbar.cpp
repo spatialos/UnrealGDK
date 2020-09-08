@@ -1124,6 +1124,20 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				SpatialDebugger->EditorSpatialToggleDebugger(Settings->bSpatialDebuggerEditorEnabled);
 			}
 		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bDisableMultiWorker))
+		{
+			// Update multi-worker settings
+			const UWorld* World = GEditor->GetEditorWorldContext().World();
+			if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+			{
+				WorldSettings->SetMutliWorkerEditor(Settings->bDisableMultiWorker);
+			}
+			// Update worker boundaries in editor
+			if (SpatialDebugger.IsValid())
+			{
+				SpatialDebugger->EditorRefreshWorkerRegions();
+			}
+		}
 	}
 }
 
