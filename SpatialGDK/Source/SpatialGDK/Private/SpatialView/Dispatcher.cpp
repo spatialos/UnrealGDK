@@ -7,9 +7,8 @@
 
 namespace SpatialGDK
 {
-FDispatcher::FDispatcher(const EntityView* View)
-	: View(View)
-	, NextCallbackId(1)
+FDispatcher::FDispatcher()
+	: NextCallbackId(1)
 {
 }
 
@@ -28,15 +27,17 @@ void FDispatcher::InvokeCallbacks(const TArray<EntityDelta>& Deltas)
 	}
 }
 
-CallbackId FDispatcher::RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+CallbackId FDispatcher::RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+																const EntityView& View)
 {
-	InvokeWithExistingValues(ComponentId, Callback);
+	InvokeWithExistingValues(ComponentId, Callback, View);
 	return RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+																  const EntityView& View)
 {
-	for (const auto& Entity : *View)
+	for (const auto& Entity : View)
 	{
 		if (!Entity.Value.Components.ContainsByPredicate(ComponentIdEquality{ ComponentId }))
 		{
@@ -46,15 +47,17 @@ CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(Worker_Compone
 	return RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+CallbackId FDispatcher::RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+																const EntityView& View)
 {
-	InvokeWithExistingValues(ComponentId, Callback);
+	InvokeWithExistingValues(ComponentId, Callback, View);
 	return RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
+																 const EntityView& View)
 {
-	for (const auto& Entity : *View)
+	for (const auto& Entity : View)
 	{
 		if (Entity.Value.Authority.Contains(ComponentId))
 		{
@@ -64,9 +67,10 @@ CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(Worker_Componen
 	return RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+CallbackId FDispatcher::RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
+															   const EntityView& View)
 {
-	for (const auto& Entity : *View)
+	for (const auto& Entity : View)
 	{
 		if (!Entity.Value.Authority.Contains(ComponentId))
 		{
@@ -158,12 +162,12 @@ void FDispatcher::RemoveCallback(CallbackId Id)
 	}
 }
 
-void FDispatcher::InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback) const
+void FDispatcher::InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View)
 {
-	for (const auto& Entity : *View)
+	for (const auto& Entity : View)
 	{
 		const ComponentData* It = Entity.Value.Components.FindByPredicate(ComponentIdEquality{ ComponentId });
-		if (It == nullptr)
+		if (It != nullptr)
 		{
 			const ComponentChange Change(ComponentId, It->GetUnderlying());
 			Callback({ Entity.Key, Change });

@@ -20,15 +20,18 @@ using FComponentValueCallback = TCallbacks<FEntityComponentChange>::CallbackType
 class FDispatcher
 {
 public:
-	explicit FDispatcher(const EntityView* View);
+	FDispatcher();
 
 	void InvokeCallbacks(const TArray<EntityDelta>& Deltas);
 
-	CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+													   const EntityView& View);
+	CallbackId RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+														 const EntityView& View);
+	CallbackId RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+													   const EntityView& View);
+	CallbackId RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
+	CallbackId RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -80,14 +83,13 @@ private:
 		};
 	};
 
-	void InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback) const;
+	static void InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View);
 	void HandleComponentPresenceChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
 										TCallbacks<FEntityComponentChange> FComponentCallbacks::*Callbacks);
 	void HandleComponentValueChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges);
 	void HandleAuthorityChange(Worker_EntityId EntityId, const ComponentSpan<AuthorityChange>& AuthorityChanges,
 							   TCallbacks<Worker_EntityId> FAuthorityCallbacks::*Callbacks);
 
-	const EntityView* View;
 	// Component callbacks sorted by component ID;
 	TArray<FComponentCallbacks> ComponentCallbacks;
 	// Authority callbacks sorted by component ID;
