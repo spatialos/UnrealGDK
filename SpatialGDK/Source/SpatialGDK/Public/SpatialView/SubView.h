@@ -29,7 +29,7 @@ public:
 	void TagEntity(TArray<FWorkerComponentData>& Components) const;
 
 	void Advance(const ViewDelta& Delta);
-	const ViewDelta& GetViewDelta() const;
+	const SubViewDelta& GetViewDelta() const;
 	void RefreshEntity(const Worker_EntityId EntityId);
 
 	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
@@ -58,7 +58,7 @@ private:
 	const FFilterPredicate Filter;
 	const EntityView& View;
 
-	ViewDelta SubDelta;
+	SubViewDelta SubDelta;
 
 	TArray<Worker_EntityId> TaggedEntities;
 	TArray<Worker_EntityId> CompleteEntities;

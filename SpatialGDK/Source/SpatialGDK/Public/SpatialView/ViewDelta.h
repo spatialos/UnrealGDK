@@ -10,6 +10,12 @@
 
 namespace SpatialGDK
 {
+struct SubViewDelta
+{
+	TArray<EntityDelta> EntityDeltas;
+	const TArray<Worker_Op>* WorkerMessages;
+};
+
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.
@@ -31,14 +37,13 @@ class ViewDelta
 {
 public:
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
-	// Produces a projection of a given main view delta to a view delta for another view. The given arrays represent the
-	// state of the new view and dictates the projection.
-	// Note: This method is designed for projecting the main worker view delta to a subview delta. It may work for other
-	// cases, but there are no guarantees.
+	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
+	// the projection. The given arrays represent the state of the sub view and dictates the projection.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
-	void Project(const ViewDelta& Delta, const TArray<Worker_EntityId>& CompleteEntities,
-				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities);
+	void Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
+	             const TArray<Worker_EntityId>& NewlyCompleteEntities,
+	             const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+	             const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;

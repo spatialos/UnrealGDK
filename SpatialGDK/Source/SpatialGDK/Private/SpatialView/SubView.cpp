@@ -58,7 +58,7 @@ void SubView::Advance(const ViewDelta& Delta)
 	Algo::Sort(NewlyIncompleteEntities);
 	Algo::Sort(TemporarilyIncompleteEntities);
 
-	SubDelta.Project(Delta, CompleteEntities, NewlyCompleteEntities, NewlyIncompleteEntities, TemporarilyIncompleteEntities);
+	Delta.Project(SubDelta, CompleteEntities, NewlyCompleteEntities, NewlyIncompleteEntities, TemporarilyIncompleteEntities);
 
 	CompleteEntities.Append(NewlyCompleteEntities);
 	NewlyCompleteEntities.Empty();
@@ -66,7 +66,7 @@ void SubView::Advance(const ViewDelta& Delta)
 	TemporarilyIncompleteEntities.Empty();
 }
 
-const ViewDelta& SubView::GetViewDelta() const
+const SubViewDelta& SubView::GetViewDelta() const
 {
 	return SubDelta;
 }
