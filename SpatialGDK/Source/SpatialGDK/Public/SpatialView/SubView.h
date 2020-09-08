@@ -22,37 +22,37 @@ public:
 	// full set of complete entities. During construction, it calculates the initial set of complete entities,
 	// and registers the passed dispatcher callbacks in order to ensure all possible changes which could change
 	// the state of completeness for any entity are picked up by the subview to maintain this invariant.
-	SubView(const Worker_ComponentId TagComponentId, const FFilterPredicate Filter, const EntityView& View, FDispatcher& Dispatcher,
-			const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
+	SubView(const Worker_ComponentId& TagComponentId, const FFilterPredicate& Filter, const EntityView& View, FDispatcher& Dispatcher,
+			const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 
 	void TagQuery(Query& QueryToTag) const;
 	void TagEntity(TArray<FWorkerComponentData>& Components) const;
 
 	void Advance(const ViewDelta& Delta);
 	const SubViewDelta& GetViewDelta() const;
-	void RefreshEntity(const Worker_EntityId EntityId);
+	void RefreshEntity(const Worker_EntityId& EntityId);
 
 	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
 	// Takes an optional predicate argument to further filter what causes a refresh. Example: Only trigger
 	// a refresh if the received component change has a change for a certain field.
 	static FDispatcherRefreshCallback CreateComponentExistenceDispatcherRefreshCallback(FDispatcher& Dispatcher,
-																						Worker_ComponentId ComponentId,
-																						FComponentChangeRefreshPredicate RefreshPredicate);
+																						const Worker_ComponentId& ComponentId,
+																						const FComponentChangeRefreshPredicate& RefreshPredicate);
 	static FDispatcherRefreshCallback CreateComponentChangedDispatcherRefreshCallback(FDispatcher& Dispatcher,
-																					  Worker_ComponentId ComponentId,
-																					  FComponentChangeRefreshPredicate RefreshPredicate);
+	const Worker_ComponentId& ComponentId,
+      const FComponentChangeRefreshPredicate& RefreshPredicate);
 	static FDispatcherRefreshCallback CreateAuthorityChangeDispatcherRefreshCallback(FDispatcher& Dispatcher,
-																					 Worker_ComponentId ComponentId,
-																					 FAuthorityChangeRefreshPredicate RefreshPredicate);
+																					 const Worker_ComponentId& ComponentId,
+																					 const FAuthorityChangeRefreshPredicate& RefreshPredicate);
 
 private:
 	void RegisterTagCallbacks(FDispatcher& Dispatcher);
-	void RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks);
-	void OnTaggedEntityAdded(const Worker_EntityId EntityId);
-	void OnTaggedEntityRemoved(const Worker_EntityId EntityId);
-	void CheckEntityAgainstFilter(const Worker_EntityId EntityId);
-	void EntityComplete(const Worker_EntityId EntityId);
-	void EntityIncomplete(const Worker_EntityId EntityId);
+	void RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
+	void OnTaggedEntityAdded(const Worker_EntityId& EntityId);
+	void OnTaggedEntityRemoved(const Worker_EntityId& EntityId);
+	void CheckEntityAgainstFilter(const Worker_EntityId& EntityId);
+	void EntityComplete(const Worker_EntityId& EntityId);
+	void EntityIncomplete(const Worker_EntityId& EntityId);
 
 	const Worker_ComponentId TagComponentId;
 	const FFilterPredicate Filter;

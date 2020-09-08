@@ -49,24 +49,24 @@ void ViewCoordinator::FlushMessagesToSend()
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
 }
 
-SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId Tag, const FFilterPredicate Filter,
-										const TArray<FDispatcherRefreshCallback> DispatcherRefreshCallbacks)
+SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
+										const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
 	const int Index = SubViews.Emplace(SubView{ Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks });
 	return SubViews[Index];
 }
 
-SubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId Tag)
+SubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId& Tag)
 {
 	const int Index = SubViews.Emplace(SubView{ Tag,
-												[](const Worker_EntityId, const EntityViewElement&) {
+												[](const Worker_EntityId&, const EntityViewElement&) {
 													return true;
 												},
 												View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{} });
 	return SubViews[Index];
 }
 
-void ViewCoordinator::RefreshEntityCompleteness(const Worker_EntityId EntityId)
+void ViewCoordinator::RefreshEntityCompleteness(const Worker_EntityId& EntityId)
 {
 	for (SubView& SubviewToRefresh : SubViews)
 	{
