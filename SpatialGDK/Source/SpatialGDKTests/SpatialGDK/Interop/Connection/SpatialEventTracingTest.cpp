@@ -21,7 +21,6 @@ using namespace worker::c;
 
 namespace
 {
-
 FName SendRPCEventName = "unreal_gdk.send_rpc";
 
 struct TestTraceEvent
@@ -79,10 +78,7 @@ TMap<FString, TestTraceEvent> EventTracingTestData::TestTraceEvents = {};
 
 struct TestDataDeleter
 {
-	void operator()(EventTracingTestData* Data) const noexcept
-	{
-		delete Data;
-	}
+	void operator()(EventTracingTestData* Data) const noexcept { delete Data; }
 };
 
 TSharedPtr<EventTracingTestData> MakeNewTestData()
@@ -174,8 +170,7 @@ bool FFinishSendRPCTest::Update()
 		for (const FString& CauseSpanIdString : TraceEvent.CauseSpanIdStrings)
 		{
 			const TestTraceEvent* CauseTraceEvent = EventTracingTestData::TestTraceEvents.Find(CauseSpanIdString);
-			if (CauseTraceEvent == nullptr ||
-				CauseTraceEvent->EventName == SendRPCEventName)
+			if (CauseTraceEvent == nullptr || CauseTraceEvent->EventName == SendRPCEventName)
 			{
 				bSuccess = false;
 				break;
