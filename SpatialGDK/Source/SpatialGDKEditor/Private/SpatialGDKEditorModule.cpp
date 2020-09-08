@@ -30,6 +30,7 @@
 #include "IAutomationControllerModule.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
+#include "../../SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
@@ -56,6 +57,9 @@ void FSpatialGDKEditorModule::StartupModule()
 		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
 	AutomationController->OnTestsComplete().AddLambda([]() {
+		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
+		ASpatialFunctionalTest::ClearLoadedFromSnapshot();
+
 #if ENGINE_MINOR_VERSION < 25
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
 #else

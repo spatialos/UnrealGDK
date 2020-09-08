@@ -226,7 +226,7 @@ public:
 	bool WasLoadedFromSnapshot();
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void ClearLoadedFromSnapshot();
+	static void ClearLoadedFromSnapshot();
 
 	static void SetLoadedFromSnapshot();
 

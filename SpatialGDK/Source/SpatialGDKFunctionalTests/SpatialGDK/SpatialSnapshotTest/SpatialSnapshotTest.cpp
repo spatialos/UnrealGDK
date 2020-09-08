@@ -2,6 +2,7 @@
 
 #include "SpatialSnapshotTest.h"
 #include "SpatialSnapshotTestActor.h"
+#include "SpatialSnapshotTestGameMode.h"
 
 /**
  * This test handles SpatialOS Snapshots.
@@ -57,10 +58,11 @@ void ASpatialSnapshotTest::BeginPlay()
 	// First we need to know if we're launching from the default Snapshot or from a taken Snapshot.
 	bool bIsRunningFirstTime = !WasLoadedFromSnapshot();
 
-	FSpatialFunctionalTestStepDefinition VerifyDataStepDef = FSpatialFunctionalTestStepDefinition(true);
-	VerifyDataStepDef.StepName = TEXT("Verify Data Properly Set");
-	VerifyDataStepDef.TimeLimit = 5.0f;
-	VerifyDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
+	FString VerifyActorDataStepName = TEXT("Verify Actor Data Properly Set");
+
+	FSpatialFunctionalTestStepDefinition VerifyActorDataStepDef = FSpatialFunctionalTestStepDefinition(true);
+	VerifyActorDataStepDef.TimeLimit = 5.0f;
+	VerifyActorDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		ASpatialSnapshotTestActor* Actor = nullptr;
 		int NumActors = 0;
 		for (TActorIterator<ASpatialSnapshotTestActor> It(GetWorld()); It; ++It)
@@ -109,10 +111,166 @@ void ASpatialSnapshotTest::BeginPlay()
 		}
 	});
 
+	FString VerifyGameModeDataStepName = TEXT("Verify GameMode Data Properly Set");
+
+	FSpatialFunctionalTestStepDefinition VerifyGameModeDataStepDef = FSpatialFunctionalTestStepDefinition(true);
+	VerifyGameModeDataStepDef.TimeLimit = 5.0f;
+	VerifyGameModeDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
+		ASpatialSnapshotTestGameMode* GameMode = nullptr;
+		int NumGameModes = 0;
+		for (TActorIterator<ASpatialSnapshotTestGameMode> It(GetWorld()); It; ++It)
+		{
+			if (NumGameModes == 1)
+			{
+				FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestGameMode"));
+				return;
+			}
+			GameMode = *It;
+			++NumGameModes;
+		}
+
+		if (IsValid(GameMode))
+		{
+			// @TODO improve when we have The Verify functions
+			if (!GameMode->VerifyBool())
+			{
+				return;
+			}
+			if (!GameMode->VerifyInt32())
+			{
+				return;
+			}
+			if (!GameMode->VerifyInt64())
+			{
+				return;
+			}
+			if (!GameMode->VerifyFloat())
+			{
+				return;
+			}
+			if (!GameMode->VerifyString())
+			{
+				return;
+			}
+			if (!GameMode->VerifyName())
+			{
+				return;
+			}
+			if (!GameMode->VerifyIntArray())
+			{
+				return;
+			}
+			FinishStep();
+		}
+	});
+
+	/*FSpatialFunctionalTestStepDefinition VerifyDataStepDef = FSpatialFunctionalTestStepDefinition(true);
+	VerifyDataStepDef.StepName = TEXT("Verify Data Properly Set");
+	VerifyDataStepDef.TimeLimit = 5.0f;
+	VerifyDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
+		ASpatialSnapshotTestActor* TestActor = nullptr;
+		ASpatialSnapshotTestGameMode* GameMode = nullptr;
+
+		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+		{
+			AActor* Actor = *It;
+			if(Actor->IsA<ASpatialSnapshotTestActor>())
+			{
+				if(TestActor != nullptr)
+				{
+					FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestActor"));
+					return;
+				}
+
+				TestActor = Cast<ASpatialSnapshotTestActor>(Actor);
+			}
+			else if(Actor->IsA<ASpatialSnapshotTestGameMode>())
+			{
+				if(GameMode != nullptr)
+				{
+					FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestGameMode"));
+					return;
+				}
+				GameMode = Cast<ASpatialSnapshotTestGameMode>(Actor);
+			}
+		}
+
+		if(IsValid(TestActor))
+		{
+			if (!GameMode->VerifyBool())
+			{
+				return;
+			}
+			if (!GameMode->VerifyInt32())
+			{
+				return;
+			}
+			if (!GameMode->VerifyInt64())
+			{
+				return;
+			}
+			if (!GameMode->VerifyFloat())
+			{
+				return;
+			}
+			if (!GameMode->VerifyString())
+			{
+				return;
+			}
+			if (!GameMode->VerifyName())
+			{
+				return;
+			}
+			if (!GameMode->VerifyIntArray())
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+
+		if (IsValid(GameMode))
+		{
+			// @TODO improve when we have The Verify functions
+			if (!GameMode->VerifyBool())
+			{
+				return;
+			}
+			if (!GameMode->VerifyInt32())
+			{
+				return;
+			}
+			if (!GameMode->VerifyInt64())
+			{
+				return;
+			}
+			if (!GameMode->VerifyFloat())
+			{
+				return;
+			}
+			if (!GameMode->VerifyString())
+			{
+				return;
+			}
+			if (!GameMode->VerifyName())
+			{
+				return;
+			}
+			if (!GameMode->VerifyIntArray())
+			{
+				return;
+			}
+			FinishStep();
+		}
+	});*/
+
+
 	if (bIsRunningFirstTime)
 	{
 		// The first run we want to setup the data, verify it, and take snapshot.
-		AddStep(TEXT("First Run - Spawn Replicated Actor"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		AddStep(TEXT("First Run - Spawn Replicated Actor and Set Properties"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialSnapshotTestActor* Actor = GetWorld()->SpawnActor<ASpatialSnapshotTestActor>();
 
 			Actor->CrossServerSetProperties();
@@ -120,9 +278,24 @@ void ASpatialSnapshotTest::BeginPlay()
 			FinishStep();
 		});
 
-		FSpatialFunctionalTestStepDefinition FirstVerifyDataStepDef = VerifyDataStepDef;
-		FirstVerifyDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyDataStepDef.StepName);
-		AddStepFromDefinition(FirstVerifyDataStepDef, FWorkerDefinition::AllWorkers);
+		VerifyActorDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyActorDataStepName);
+		AddStepFromDefinition(VerifyActorDataStepDef, FWorkerDefinition::AllWorkers);
+
+		AddStep(TEXT("First Run - GameMode Set Properties"), FWorkerDefinition::Server(1), nullptr, [this](){
+			ASpatialSnapshotTestGameMode* GameMode =
+				GetWorld()->GetAuthGameMode<ASpatialSnapshotTestGameMode>();
+
+			if(GameMode == nullptr)
+			{
+				FinishTest(EFunctionalTestResult::Failed, TEXT("This test requires ASpatialSnapshotTestGameMode to be set as Game Mode"));
+				return;
+			}
+			GameMode->CrossServerSetProperties();
+			FinishStep();
+		});
+
+		VerifyGameModeDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyGameModeDataStepName);
+		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllServers);
 
 		AddStep(
 			TEXT("First Run - Take Snapshot"), FWorkerDefinition::Server(1), nullptr,
@@ -144,9 +317,11 @@ void ASpatialSnapshotTest::BeginPlay()
 	{
 		// The second run we want to verify the data loaded from snapshot was correct, clear the snapshot.
 
-		FSpatialFunctionalTestStepDefinition SecondVerifyDataStepDef = VerifyDataStepDef;
-		SecondVerifyDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("Second Run"), *VerifyDataStepDef.StepName);
-		AddStepFromDefinition(SecondVerifyDataStepDef, FWorkerDefinition::AllWorkers);
+		VerifyActorDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("Second Run"), *VerifyActorDataStepName);
+		AddStepFromDefinition(VerifyActorDataStepDef, FWorkerDefinition::AllWorkers);
+
+		VerifyGameModeDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("Second Run"), *VerifyGameModeDataStepName);
+		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllServers);
 
 		AddStep(TEXT("Second Run - Clear Snapshot"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ClearLoadedFromSnapshot();
