@@ -24,7 +24,7 @@ public:
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
 	APawn* ClientOneDefaultPawn;
 
-	ATestMovementCharacter* ClientOneSpwanedPawn;
+	ATestMovementCharacter* ClientOneSpawnedPawn;
 
 	AReplicatedVisibilityTestActor* TestActor;
 

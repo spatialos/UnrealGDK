@@ -37,12 +37,12 @@ public class SpatialGDK : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "EngineSettings",
-                "Projects",
-                "OnlineSubsystemUtils",
+                "GameplayDebugger",
                 "InputCore",
-                "Sockets",
+                "OnlineSubsystemUtils",
+                "Projects",
                 "ReplicationGraph",
-                "GameplayDebugger"
+                "Sockets"
             });
 
         if (Target.bBuildEditor)

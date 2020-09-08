@@ -65,13 +65,13 @@ void AVisibilityTest::BeginPlay()
 
 			if (IsValid(PlayerController))
 			{
-				ClientOneSpwanedPawn =
+				ClientOneSpawnedPawn =
 					GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator, FActorSpawnParameters());
-				RegisterAutoDestroyActor(ClientOneSpwanedPawn);
+				RegisterAutoDestroyActor(ClientOneSpawnedPawn);
 
 				ClientOneDefaultPawn = PlayerController->GetPawn();
 
-				PlayerController->Possess(ClientOneSpwanedPawn);
+				PlayerController->Possess(ClientOneSpawnedPawn);
 
 				FinishStep();
 			}
@@ -119,9 +119,9 @@ void AVisibilityTest::BeginPlay()
 	{ // Step 4 - Server moves the TestMovementCharacter of Client 1 to a remote location, so that it does not see the
 	  // AReplicatedVisibilityTestActor.
 		AddStep(TEXT("VisibilityTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			if (ClientOneSpwanedPawn->SetActorLocation(CharacterRemoteLocation))
+			if (ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation))
 			{
-				if (ClientOneSpwanedPawn->GetActorLocation().Equals(CharacterRemoteLocation, 1.0f))
+				if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterRemoteLocation, 1.0f))
 				{
 					FinishStep();
 				}
@@ -182,9 +182,9 @@ void AVisibilityTest::BeginPlay()
 
 	{ // Step 9 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("VisibilityTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			if (ClientOneSpwanedPawn->SetActorLocation(CharacterSpawnLocation))
+			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation))
 			{
-				if (ClientOneSpwanedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+				if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
 				{
 					FinishStep();
 				}
