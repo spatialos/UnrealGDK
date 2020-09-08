@@ -203,6 +203,9 @@ public:
 			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
 	void ClearTagDelegationAndInterest();
 
+	//void SoftAssertTrue(bool bCheckTrue, const FString& Msg);
+	//void SoftAssertEqual(bool bCheckTrue, const FString& Msg);
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 
