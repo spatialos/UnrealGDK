@@ -118,7 +118,7 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 }
 
 TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
-													   const worker::c::Trace_SpanId* Cause)
+													   const TArray<worker::c::Trace_SpanId>& Causes)
 {
 	if (!IsEnabled())
 	{
@@ -126,9 +126,9 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	}
 
 	Trace_SpanId CurrentSpanId;
-	if (Cause != nullptr)
+	if (Causes.Num() > 0)
 	{
-		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Cause, 1);
+		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Causes.GetData(), Causes.Num());
 	}
 	else
 	{
@@ -288,12 +288,15 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
 	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
 
-	if (SpanIdStore.HasSpanIds(Id))
+	TArray<SpatialSpanIdStore::FieldSpanIdUpdate> FieldSpanIdUpdates = SpanIdStore.ComponentUpdate(Op);
+	for (const SpatialSpanIdStore::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)
 	{
-		TraceEvent(FEventMergeComponentUpdate(Id.EntityId, Id.ComponentId));
-	}
+		uint32 FieldId = FieldSpanIdUpdate.FieldId;
+		TArray<Trace_SpanId> MergeCauses = { FieldSpanIdUpdate.OldSpanId, Op.span_id };
 
-	SpanIdStore.ComponentUpdate(Op);
+		TOptional<Trace_SpanId> NewSpanId = TraceEvent(FEventMergeComponentFieldUpdate(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
+		SpanIdStore.WriteSpanId(Id, FieldId, NewSpanId.GetValue());
+	}
 }
 
 worker::c::Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)

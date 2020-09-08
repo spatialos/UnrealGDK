@@ -39,8 +39,9 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	{
 		if (EventTracer != nullptr)
 		{
-			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function),
-															PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
+			TArray<Trace_SpanId> Causes =
+				PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
+			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), Causes);
 		}
 
 		// Already has queued RPCs of this type, queue until those are pushed.
@@ -171,7 +172,9 @@ void SpatialRPCService::PushOverflowedRPCs()
 		{
 			if (EventTracer != nullptr)
 			{
-				EventTracer->TraceEvent(FEventRPCRetried(), PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr);
+				TArray<Trace_SpanId> Causes =
+					PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
+				EventTracer->TraceEvent(FEventRPCRetried(), Causes);
 			}
 
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload.Payload), false);
@@ -250,12 +253,10 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.Update.schema_type = It.Value.Update;
 		if (It.Value.SpanIds.Num() > 1)
 		{
-			// Attach causes together, we need to send these span ids with the RPCs to continue on the other side without
-			// joining unrelated RPCs together.
 			if (EventTracer != nullptr)
 			{
-				UpdateToSend.SpanId =
-					Trace_EventTracer_AddSpan(EventTracer->GetWorkerEventTracer(), &It.Value.SpanIds[0], It.Value.SpanIds.Num());
+				UpdateToSend.SpanId = EventTracer->TraceEvent(
+					FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
 			}
 		}
 		else if (It.Value.SpanIds.Num() == 1)
