@@ -90,7 +90,7 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
 }
 
-inline bool IsActorClassAlwaysRelevant(AActor* InActor)
+inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
 {
 	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
 		|| InActor->IsA(AGameModeBase::StaticClass()))

@@ -428,7 +428,7 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 {
 	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
-	if (SpatialGDK::IsActorClassAlwaysRelevant(InActor))
+	if (SpatialGDK::DoesActorClassIgnoreVisibilityCheck(InActor))
 	{
 		return;
 	}
