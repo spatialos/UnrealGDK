@@ -109,6 +109,7 @@ const Worker_ComponentId TOMBSTONE_COMPONENT_ID = 9982;
 const Worker_ComponentId DORMANT_COMPONENT_ID = 9981;
 const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
 const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
+const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
 
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
