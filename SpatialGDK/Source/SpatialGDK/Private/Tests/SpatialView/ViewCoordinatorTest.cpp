@@ -77,7 +77,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	return true;
 }
 
-	VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_returns_sub_view_which_filters_tagged_entities)
+VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_returns_sub_view_which_filters_tagged_entities)
 {
 	const Worker_EntityId TaggedEntityId = 1;
 	const Worker_EntityId OtherTaggedEntityId = 2;
@@ -91,10 +91,10 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
 	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
-	Builder.AddComponent(TaggedEntityId, CreateTestComponentData( ValueComponentId, CorrectValue));
+	Builder.AddComponent(TaggedEntityId, CreateTestComponentData(ValueComponentId, CorrectValue));
 	Builder.AddEntity(OtherTaggedEntityId);
 	Builder.AddComponent(OtherTaggedEntityId, ComponentData{ TagComponentId });
-	Builder.AddComponent(OtherTaggedEntityId, CreateTestComponentData( ValueComponentId, IncorrectValue));
+	Builder.AddComponent(OtherTaggedEntityId, CreateTestComponentData(ValueComponentId, IncorrectValue));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
@@ -108,15 +108,17 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
 	ViewCoordinator Coordinator{ MoveTemp(Handler) };
 
-	auto& SubView = Coordinator.CreateSubView(TagComponentId, [CorrectValue, ValueComponentId](const Worker_EntityId& EntityId, const EntityViewElement& Element)
-	{
-		const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ ValueComponentId });
-        if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CorrectValue)
-		{
-			return true;
-		}
-		return false;
-	}, TArray<FDispatcherRefreshCallback>{Coordinator.CreateComponentChangedRefreshCallback(ValueComponentId)});
+	auto& SubView = Coordinator.CreateSubView(
+		TagComponentId,
+		[CorrectValue, ValueComponentId](const Worker_EntityId& EntityId, const EntityViewElement& Element) {
+			const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ ValueComponentId });
+			if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CorrectValue)
+			{
+				return true;
+			}
+			return false;
+		},
+		TArray<FDispatcherRefreshCallback>{ Coordinator.CreateComponentChangedRefreshCallback(ValueComponentId) });
 
 	Coordinator.Advance();
 	SubViewDelta Delta = SubView.GetViewDelta();
@@ -130,7 +132,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 
 	// The value on the other entity should have updated, so we should see an add for the second entity.
 	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
-	//TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 2);
+	// TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 2);
 
 	return true;
 }

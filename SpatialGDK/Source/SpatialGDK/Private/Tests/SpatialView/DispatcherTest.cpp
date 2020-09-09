@@ -163,7 +163,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Component_Removed_Callback_Added_Then_Invo
 	Dispatcher.RegisterComponentRemovedCallback(COMPONENT_ID, Callback);
 
 	AddEntityToView(View, ENTITY_ID);
-	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{COMPONENT_ID});
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
 
 	PopulateViewDeltaWithComponentRemoved(Delta, View, ENTITY_ID, COMPONENT_ID);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
@@ -186,7 +186,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Gained_Callback_Added_Then_Invok
 	Dispatcher.RegisterAuthorityGainedCallback(COMPONENT_ID, Callback);
 
 	AddEntityToView(View, ENTITY_ID);
-	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{COMPONENT_ID});
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
 
 	PopulateViewDeltaWithAuthorityChange(Delta, View, ENTITY_ID, COMPONENT_ID, WORKER_AUTHORITY_AUTHORITATIVE);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
@@ -209,7 +209,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Lost_Callback_Added_Then_Invoked
 	Dispatcher.RegisterAuthorityLostCallback(COMPONENT_ID, Callback);
 
 	AddEntityToView(View, ENTITY_ID);
-	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{COMPONENT_ID});
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
 	AddAuthorityToView(View, ENTITY_ID, COMPONENT_ID);
 
 	PopulateViewDeltaWithAuthorityChange(Delta, View, ENTITY_ID, COMPONENT_ID, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
@@ -233,7 +233,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Lost_Temp_Callback_Added_Then_In
 	Dispatcher.RegisterAuthorityLostTempCallback(COMPONENT_ID, Callback);
 
 	AddEntityToView(View, ENTITY_ID);
-	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{COMPONENT_ID});
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
 	AddAuthorityToView(View, ENTITY_ID, COMPONENT_ID);
 
 	PopulateViewDeltaWithAuthorityLostTemp(Delta, View, ENTITY_ID, COMPONENT_ID);

@@ -79,9 +79,8 @@ void SubView::RefreshEntity(const Worker_EntityId& EntityId)
 	}
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentExistenceRefreshCallback(
-	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-	const FComponentChangeRefreshPredicate& RefreshPredicate)
+FDispatcherRefreshCallback SubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+																			const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
@@ -99,9 +98,8 @@ FDispatcherRefreshCallback SubView::CreateComponentExistenceRefreshCallback(
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentChangedRefreshCallback(
-	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-	const FComponentChangeRefreshPredicate& RefreshPredicate)
+FDispatcherRefreshCallback SubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+																		  const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange Change) {
@@ -113,9 +111,8 @@ FDispatcherRefreshCallback SubView::CreateComponentChangedRefreshCallback(
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateAuthorityChangeRefreshCallback(
-	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-	const FAuthorityChangeRefreshPredicate& RefreshPredicate)
+FDispatcherRefreshCallback SubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+																		 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId& Id) {

@@ -64,15 +64,20 @@ public:
 	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
 	void RemoveCallback(CallbackId Id);
 
-	FDispatcherRefreshCallback CreateComponentExistenceRefreshCallback(const Worker_ComponentId& ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
-    return true;
-});
-	FDispatcherRefreshCallback CreateComponentChangedRefreshCallback(const Worker_ComponentId& ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
-    return true;
-});
-	FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(const Worker_ComponentId& ComponentId, const FAuthorityChangeRefreshPredicate& RefreshPredicate = [](const Worker_EntityId&) {
-    return true;
-});
+	FDispatcherRefreshCallback CreateComponentExistenceRefreshCallback(
+		const Worker_ComponentId& ComponentId,
+		const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
+			return true;
+		});
+	FDispatcherRefreshCallback CreateComponentChangedRefreshCallback(
+		const Worker_ComponentId& ComponentId,
+		const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
+			return true;
+		});
+	FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(
+		const Worker_ComponentId& ComponentId, const FAuthorityChangeRefreshPredicate& RefreshPredicate = [](const Worker_EntityId&) {
+			return true;
+		});
 
 private:
 	WorkerView View;

@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialViewUtils.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/ViewCoordinator.h"
+#include "SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/ComponentFactory.h"
 
@@ -10,28 +10,34 @@
 
 namespace SpatialGDK
 {
-	const Worker_EntityId ENTITY_ID = 1;
-	const Worker_EntityId TAGGED_ENTITY_ID = 2;
-	const Worker_EntityId OTHER_TAGGED_ENTITY_ID = 3;
-	const Worker_ComponentId TAG_COMPONENT_ID = 1;
-	const Worker_ComponentId VALUE_COMPONENT_ID = 2;
-	const double CORRECT_VALUE = 1;
-	const double INCORRECT_VALUE = 2;
+const Worker_EntityId ENTITY_ID = 1;
+const Worker_EntityId TAGGED_ENTITY_ID = 2;
+const Worker_EntityId OTHER_TAGGED_ENTITY_ID = 3;
+const Worker_ComponentId TAG_COMPONENT_ID = 1;
+const Worker_ComponentId VALUE_COMPONENT_ID = 2;
+const double CORRECT_VALUE = 1;
+const double INCORRECT_VALUE = 2;
 
-FFilterPredicate NoFilter = [](const Worker_EntityId&, const EntityViewElement&){return true;};
-FComponentChangeRefreshPredicate NoComponentChangeRefreshPredicate = [](const FEntityComponentChange&){return true;};
+FFilterPredicate NoFilter = [](const Worker_EntityId&, const EntityViewElement&) {
+	return true;
+};
+FComponentChangeRefreshPredicate NoComponentChangeRefreshPredicate = [](const FEntityComponentChange&) {
+	return true;
+};
 TArray<FDispatcherRefreshCallback> NoRefreshCallbacks = TArray<FDispatcherRefreshCallback>{};
 
 SUBVIEW_TEST(GIVEN_Set_Of_Components_WHEN_Entity_Tagged_THEN_Components_Contains_Tag)
 {
 	FDispatcher Dispatcher;
 	const EntityView View;
-	const SubView Sub{TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks};
-	TArray<FWorkerComponentData> Components{ComponentFactory::CreateEmptyComponentData(VALUE_COMPONENT_ID)};
+	const SubView Sub{ TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks };
+	TArray<FWorkerComponentData> Components{ ComponentFactory::CreateEmptyComponentData(VALUE_COMPONENT_ID) };
 
 	Sub.TagEntity(Components);
 
-	TestTrue("Components contains tag component", Components.ContainsByPredicate([](const FWorkerComponentData& Data){return Data.component_id == TAG_COMPONENT_ID;}));
+	TestTrue("Components contains tag component", Components.ContainsByPredicate([](const FWorkerComponentData& Data) {
+		return Data.component_id == TAG_COMPONENT_ID;
+	}));
 
 	return true;
 }
@@ -40,12 +46,12 @@ SUBVIEW_TEST(GIVEN_Query_WHEN_Query_Tagged_THEN_Query_Is_Tagged)
 {
 	FDispatcher Dispatcher;
 	const EntityView View;
-	SubView Sub{TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks};
+	SubView Sub{ TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks };
 	Query QueryToTag;
 	QueryConstraint Constraint;
 	Constraint.EntityIdConstraint = ENTITY_ID;
 	QueryToTag.Constraint = Constraint;
-	QueryToTag.ResultComponentIds =  SchemaResultType{ VALUE_COMPONENT_ID };
+	QueryToTag.ResultComponentIds = SchemaResultType{ VALUE_COMPONENT_ID };
 
 	Sub.TagQuery(QueryToTag);
 
@@ -54,7 +60,8 @@ SUBVIEW_TEST(GIVEN_Query_WHEN_Query_Tagged_THEN_Query_Is_Tagged)
 		return true;
 	}
 	TArray<QueryConstraint>& AndConstraint = QueryToTag.Constraint.AndConstraint;
-	Worker_ComponentId TestConstraintId = AndConstraint[0].ComponentConstraint.IsSet() ? AndConstraint[0].ComponentConstraint.GetValue() : AndConstraint[1].ComponentConstraint.GetValue();
+	Worker_ComponentId TestConstraintId = AndConstraint[0].ComponentConstraint.IsSet() ? AndConstraint[0].ComponentConstraint.GetValue()
+																					   : AndConstraint[1].ComponentConstraint.GetValue();
 	TestEqual("Constraint contains tag component constraint", TestConstraintId, TAG_COMPONENT_ID);
 
 	TestTrue("Result type contains tag", QueryToTag.ResultComponentIds.Contains(TAG_COMPONENT_ID));
@@ -68,7 +75,7 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 	EntityView View;
 	ViewDelta Delta;
 
-	SubView Sub{TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks};
+	SubView Sub{ TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks };
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, TAG_COMPONENT_ID);
@@ -95,15 +102,18 @@ SUBVIEW_TEST(GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Onl
 	EntityView View;
 	ViewDelta Delta;
 
-	SubView Sub{TAG_COMPONENT_ID, [](const Worker_EntityId&, const EntityViewElement& Element)
-	{
-		const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ VALUE_COMPONENT_ID });
-		if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CORRECT_VALUE)
-		{
-			return true;
-		}
-		return false;
-	}, View, Dispatcher, TArray<FDispatcherRefreshCallback>{SubView::CreateComponentChangedRefreshCallback(Dispatcher, VALUE_COMPONENT_ID, NoComponentChangeRefreshPredicate)}};
+	SubView Sub{ TAG_COMPONENT_ID,
+				 [](const Worker_EntityId&, const EntityViewElement& Element) {
+					 const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ VALUE_COMPONENT_ID });
+					 if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CORRECT_VALUE)
+					 {
+						 return true;
+					 }
+					 return false;
+				 },
+				 View, Dispatcher,
+				 TArray<FDispatcherRefreshCallback>{
+					 SubView::CreateComponentChangedRefreshCallback(Dispatcher, VALUE_COMPONENT_ID, NoComponentChangeRefreshPredicate) } };
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 	AddComponentToView(View, TAGGED_ENTITY_ID, CreateTestComponentData(VALUE_COMPONENT_ID, CORRECT_VALUE));
