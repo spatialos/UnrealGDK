@@ -221,7 +221,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
-	if (Actor->bAlwaysRelevant || !Actor->IsHidden() || DoesActorClassIgnoreVisibilityCheck(Actor))
+	if (ShouldActorHaveVisibleComponent(Actor))
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
 	}
@@ -459,6 +459,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		Components.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+	}
+
+	if (ShouldActorHaveVisibleComponent(Actor))
+	{
+		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
 	}
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))

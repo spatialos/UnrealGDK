@@ -101,4 +101,14 @@ inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
 	return false;
 }
 
+inline bool ShouldActorHaveVisibleComponent(AActor* InActor)
+{
+	if (InActor->bAlwaysRelevant || !InActor->IsHidden() || DoesActorClassIgnoreVisibilityCheck(InActor))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 } // namespace SpatialGDK
