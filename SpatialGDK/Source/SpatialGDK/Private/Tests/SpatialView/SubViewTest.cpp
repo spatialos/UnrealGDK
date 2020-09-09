@@ -96,7 +96,8 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 	return true;
 }
 
-SUBVIEW_TEST(GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Only_Contains_Filtered_Entities_ALSO_Dispatcher_Callback_Refreshes_Correctly)
+SUBVIEW_TEST(
+	GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Only_Contains_Filtered_Entities_ALSO_Dispatcher_Callback_Refreshes_Correctly)
 {
 	FDispatcher Dispatcher;
 	EntityView View;
@@ -167,8 +168,7 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 				 [&IsFilterComplete](const Worker_EntityId&, const EntityViewElement&) {
 					 return IsFilterComplete;
 				 },
-				 View, Dispatcher,
-				 NoRefreshCallbacks };
+				 View, Dispatcher, NoRefreshCallbacks };
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 
