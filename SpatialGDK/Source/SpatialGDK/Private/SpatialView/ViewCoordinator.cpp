@@ -178,6 +178,24 @@ void ViewCoordinator::RemoveCallback(CallbackId Id)
 	Dispatcher.RemoveCallback(Id);
 }
 
+FDispatcherRefreshCallback ViewCoordinator::CreateComponentExistenceRefreshCallback(
+const Worker_ComponentId& ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate)
+{
+	return SubView::CreateComponentExistenceRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateComponentChangedRefreshCallback(const Worker_ComponentId& ComponentId,
+const FComponentChangeRefreshPredicate& RefreshPredicate)
+{
+	return SubView::CreateComponentChangedRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback(const Worker_ComponentId& ComponentId,
+const FAuthorityChangeRefreshPredicate& RefreshPredicate)
+{
+	return SubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
 const FString& ViewCoordinator::GetWorkerId() const
 {
 	return ConnectionHandler->GetWorkerId();

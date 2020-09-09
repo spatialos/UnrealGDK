@@ -39,11 +39,11 @@ public:
 	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
 	// Takes an optional predicate argument to further filter what causes a refresh. Example: Only trigger
 	// a refresh if the received component change has a change for a certain field.
-	static FDispatcherRefreshCallback CreateComponentExistenceDispatcherRefreshCallback(
+	static FDispatcherRefreshCallback CreateComponentExistenceRefreshCallback(
 		FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate);
-	static FDispatcherRefreshCallback CreateComponentChangedDispatcherRefreshCallback(
+	static FDispatcherRefreshCallback CreateComponentChangedRefreshCallback(
 		FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate);
-	static FDispatcherRefreshCallback CreateAuthorityChangeDispatcherRefreshCallback(
+	static FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(
 		FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId, const FAuthorityChangeRefreshPredicate& RefreshPredicate);
 
 private:

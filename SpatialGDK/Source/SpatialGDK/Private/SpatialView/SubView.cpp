@@ -79,11 +79,9 @@ void SubView::RefreshEntity(const Worker_EntityId& EntityId)
 	}
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentExistenceDispatcherRefreshCallback(
+FDispatcherRefreshCallback SubView::CreateComponentExistenceRefreshCallback(
 	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-	const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
-		return true;
-	})
+	const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
@@ -101,11 +99,9 @@ FDispatcherRefreshCallback SubView::CreateComponentExistenceDispatcherRefreshCal
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentChangedDispatcherRefreshCallback(
+FDispatcherRefreshCallback SubView::CreateComponentChangedRefreshCallback(
 	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-	const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
-		return true;
-	})
+	const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange Change) {
@@ -117,11 +113,9 @@ FDispatcherRefreshCallback SubView::CreateComponentChangedDispatcherRefreshCallb
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateAuthorityChangeDispatcherRefreshCallback(
+FDispatcherRefreshCallback SubView::CreateAuthorityChangeRefreshCallback(
 	FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-	const FAuthorityChangeRefreshPredicate& RefreshPredicate = [](const Worker_EntityId&) {
-		return true;
-	})
+	const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId& Id) {
@@ -196,7 +190,7 @@ void SubView::EntityComplete(const Worker_EntityId& EntityId)
 		return;
 	}
 	// This is new to us. Mark it as newly complete.
-	if (!CompleteEntities.Contains(EntityId))
+	if (!NewlyCompleteEntities.Contains(EntityId) && !CompleteEntities.Contains(EntityId))
 	{
 		NewlyCompleteEntities.Add(EntityId);
 	}

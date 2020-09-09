@@ -45,18 +45,22 @@ private:
 	TArray<FString> Attributes{ "test" };
 };
 
-VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN_returns_sub_view_which_passes_through_tagged_entity)
+VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN_returns_sub_view_which_passes_through_only_tagged_entity)
 {
-	const Worker_EntityId EntityId = 1;
+	const Worker_EntityId TaggedEntityId = 1;
+	const Worker_EntityId OtherEntityId = 2;
 	const Worker_ComponentId TagComponentId = 1;
+	const Worker_ComponentId OtherComponentId = 2;
 
 	TArray<TArray<OpList>> ListsOfOpLists;
-	TArray<OpList> FirstOpList;
+	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
-	Builder.AddEntity(EntityId);
-	Builder.AddComponent(EntityId, ComponentData{ TagComponentId });
-	FirstOpList.Add(MoveTemp(Builder).CreateOpList());
-	ListsOfOpLists.Add(MoveTemp(FirstOpList));
+	Builder.AddEntity(TaggedEntityId);
+	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddEntity(OtherEntityId);
+	Builder.AddComponent(OtherEntityId, ComponentData{ OtherComponentId });
+	OpLists.Add(MoveTemp(Builder).CreateOpList());
+	ListsOfOpLists.Add(MoveTemp(OpLists));
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
@@ -66,8 +70,67 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	Coordinator.Advance();
 	SubViewDelta Delta = SubView.GetViewDelta();
 
+	// Only the tagged entity should pass through to the sub view delta.
 	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
 	TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 1);
+
+	return true;
+}
+
+	VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_returns_sub_view_which_filters_tagged_entities)
+{
+	const Worker_EntityId TaggedEntityId = 1;
+	const Worker_EntityId OtherTaggedEntityId = 2;
+	const Worker_ComponentId TagComponentId = 1;
+	const Worker_ComponentId ValueComponentId = 2;
+	const double CorrectValue = 1;
+	const double IncorrectValue = 2;
+
+	TArray<TArray<OpList>> ListsOfOpLists;
+	TArray<OpList> OpLists;
+	EntityComponentOpListBuilder Builder;
+	Builder.AddEntity(TaggedEntityId);
+	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, CreateTestComponentData( ValueComponentId, CorrectValue));
+	Builder.AddEntity(OtherTaggedEntityId);
+	Builder.AddComponent(OtherTaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(OtherTaggedEntityId, CreateTestComponentData( ValueComponentId, IncorrectValue));
+	OpLists.Add(MoveTemp(Builder).CreateOpList());
+	ListsOfOpLists.Add(MoveTemp(OpLists));
+
+	EntityComponentOpListBuilder SecondBuilder;
+	TArray<OpList> SecondOpLists;
+	SecondBuilder.UpdateComponent(OtherTaggedEntityId, CreateTestComponentUpdate(ValueComponentId, CorrectValue));
+	SecondOpLists.Add(MoveTemp(SecondBuilder).CreateOpList());
+	ListsOfOpLists.Add(MoveTemp(SecondOpLists));
+
+	auto Handler = MakeUnique<ConnectionHandlerStub>();
+	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
+	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+
+	auto& SubView = Coordinator.CreateSubView(TagComponentId, [CorrectValue, ValueComponentId](const Worker_EntityId& EntityId, const EntityViewElement& Element)
+	{
+		const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ ValueComponentId });
+        if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CorrectValue)
+		{
+			return true;
+		}
+		return false;
+	}, TArray<FDispatcherRefreshCallback>{Coordinator.CreateComponentChangedRefreshCallback(ValueComponentId)});
+
+	Coordinator.Advance();
+	SubViewDelta Delta = SubView.GetViewDelta();
+
+	// Only the tagged entity with the correct value should pass through to the sub view delta.
+	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+	TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 1);
+
+	Coordinator.Advance();
+	Delta = SubView.GetViewDelta();
+
+	// The value on the other entity should have updated, so we should see an add for the second entity.
+	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+	//TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 2);
 
 	return true;
 }
