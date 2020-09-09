@@ -96,7 +96,7 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 	return true;
 }
 
-SUBVIEW_TEST(GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Only_Contains_Filtered_Entities)
+SUBVIEW_TEST(GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Only_Contains_Filtered_Entities_ALSO_Dispatcher_Callback_Refreshes_Correctly)
 {
 	FDispatcher Dispatcher;
 	EntityView View;
@@ -151,6 +151,46 @@ SUBVIEW_TEST(GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Onl
 		return true;
 	}
 	TestEqual("The entity delta is for the correct entity ID", SubDelta.EntityDeltas[0].EntityId, OTHER_TAGGED_ENTITY_ID);
+
+	return true;
+}
+
+SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refresh_Entity_THEN_Entity_Is_Complete)
+{
+	FDispatcher Dispatcher;
+	EntityView View;
+	ViewDelta Delta;
+
+	bool IsFilterComplete = false;
+
+	SubView Sub{ TAG_COMPONENT_ID,
+				 [&IsFilterComplete](const Worker_EntityId&, const EntityViewElement&) {
+					 return IsFilterComplete;
+				 },
+				 View, Dispatcher,
+				 NoRefreshCallbacks };
+
+	AddEntityToView(View, TAGGED_ENTITY_ID);
+
+	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, TAG_COMPONENT_ID);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+	Sub.Advance(Delta);
+	SubViewDelta SubDelta = Sub.GetViewDelta();
+
+	TestEqual("There are no entity deltas", SubDelta.EntityDeltas.Num(), 0);
+
+	IsFilterComplete = true;
+	Sub.RefreshEntity(TAGGED_ENTITY_ID);
+	Delta.Clear();
+	Sub.Advance(Delta);
+	SubDelta = Sub.GetViewDelta();
+
+	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
+	{
+		// early out so we don't crash - test has already failed
+		return true;
+	}
+	TestEqual("The entity delta is for the correct entity ID", SubDelta.EntityDeltas[0].EntityId, TAGGED_ENTITY_ID);
 
 	return true;
 }
