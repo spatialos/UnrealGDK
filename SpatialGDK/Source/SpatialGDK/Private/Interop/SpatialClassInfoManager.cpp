@@ -560,6 +560,11 @@ bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId Com
 	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
 }
 
+bool USpatialClassInfoManager::IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const
+{
+	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
+}
+
 bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
 {
 	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
