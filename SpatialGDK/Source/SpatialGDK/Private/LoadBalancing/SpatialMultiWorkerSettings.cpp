@@ -8,6 +8,7 @@
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Utils/LayerInfo.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Misc/MessageDialog.h"
 
@@ -41,10 +42,7 @@ void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-	check(WorldSettings != nullptr);
-
-	const TSubclassOf<USpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass = WorldSettings->MultiWorkerSettingsClass;
+	const TSubclassOf<USpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass = USpatialStatics::GetSpatialMultiWorkerClass(World);
 
 	if (VisibleMultiWorkerSettingsClass != nullptr && VisibleMultiWorkerSettingsClass == GetClass())
 	{

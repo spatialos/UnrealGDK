@@ -4,14 +4,15 @@
 
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/InitiallyDormantTestActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 
 #include "Kismet/GameplayStatics.h"
 
 /**
- * This test automates the World Composition Gym which tested level loading and unloading. This test requires to be ran inside a custom map, trying to run it in another map will make the test fail.
- * NOTE: Currently, the test will fail if ran with Native networking, due to the issue described in UNR-4066.
+ * This test automates the World Composition Gym which tested level loading and unloading. This test requires to be ran inside a custom map,
+ * trying to run it in another map will make the test fail. NOTE: Currently, the test will fail if ran with Native networking, due to the
+ * issue described in UNR-4066.
  *
  * The test includes 1 server and 1 client, with all test logic ran only by the Client.
  * The flow is as follows:
@@ -20,7 +21,8 @@
  * - Test:
  *  - The test contains 2 runs of the same flow:
  *  - The Client moves its Pawn to each TestLocation.
- *  - The Client checks its Pawn has arrived at the correct location and checks if the corresponding level was loaded correctly, and all previously loaded levels were unloaded.
+ *  - The Client checks its Pawn has arrived at the correct location and checks if the corresponding level was loaded correctly, and all
+ * previously loaded levels were unloaded.
  * - Clean-up:
  *  - No clean-up is required.
  */
@@ -63,12 +65,10 @@ void ASpatialTestWorldComposition::BeginPlay()
 	FSpatialFunctionalTestStepDefinition ClientCheckLocationStepDefinition;
 	ClientCheckLocationStepDefinition.bIsNativeDefinition = true;
 	ClientCheckLocationStepDefinition.TimeLimit = 10.0f;
-	ClientCheckLocationStepDefinition.NativeStartEvent.BindLambda([this]()
-	{
+	ClientCheckLocationStepDefinition.NativeStartEvent.BindLambda([this]() {
 		ClientOnePawn->SetActorLocation(TestStepsData[TestLocationIndex].Key);
 	});
-	ClientCheckLocationStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime)
-	{
+	ClientCheckLocationStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		if (IsCorrectAtLocation(TestLocationIndex))
 		{
 			TestLocationIndex++;
@@ -80,30 +80,35 @@ void ASpatialTestWorldComposition::BeginPlay()
 	for (int i = 0; i < 2; ++i)
 	{
 		// Setup step that sets a reference to the Pawn and resets the TestLocationIndex.
-		AddStep(TEXT("SpatialTestWorldCompositionClientSetupStep"), FWorkerDefinition::Client(1), nullptr, [this]()
-			{
-				ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-				ClientOnePawn = PlayerController->GetPawn();
-				TestLocationIndex = 0;
+		AddStep(TEXT("SpatialTestWorldCompositionClientSetupStep"), FWorkerDefinition::Client(1), nullptr, [this]() {
+			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+			APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+			ClientOnePawn = PlayerController->GetPawn();
+			TestLocationIndex = 0;
 
-				FinishStep();
-			});
+			FinishStep();
+		});
 
-		// Move the Pawn to the TestLocation with index 0 and test that the InitiallyDormantActorLevel was loaded correctly and the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were unloaded.
-		// Note that since initially, the pawn spawns close to the origin, it will load the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel, failing to unload those will first be seen in this step. 
+		// Move the Pawn to the TestLocation with index 0 and test that the InitiallyDormantActorLevel was loaded correctly and the
+		// ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were unloaded. Note that since initially, the pawn spawns close to the
+		// origin, it will load the ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel, failing to unload those will first be seen
+		// in this step.
 		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Move the Pawn to the TestLocation with index 1 and test that the ReplicatedActorLevel was loaded correctly and the IntiallyDormantActorLevel was unloaded.
+		// Move the Pawn to the TestLocation with index 1 and test that the ReplicatedActorLevel was loaded correctly and the
+		// IntiallyDormantActorLevel was unloaded.
 		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Move the Pawn to the TestLocation with index 2 and test that the ReplicatedAndNetLoadOnClientLevel was loaded correctly and the ReplicatedActorLevel was unloaded.
+		// Move the Pawn to the TestLocation with index 2 and test that the ReplicatedAndNetLoadOnClientLevel was loaded correctly and the
+		// ReplicatedActorLevel was unloaded.
 		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Move the Pawn to the TestLocation with index 3 and test that the InitiallyDormantAndNetLoadLevel was loaded correctly and the ReplicatedAndNetLoadOnClientLevel was unloaded.
+		// Move the Pawn to the TestLocation with index 3 and test that the InitiallyDormantAndNetLoadLevel was loaded correctly and the
+		// ReplicatedAndNetLoadOnClientLevel was unloaded.
 		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 
-		// Move the Pawn to the TestLocation with index 4 and test that both ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were loaded correctly, and that the InitiallyDormantAndNetLoadLevel was unloaded.
+		// Move the Pawn to the TestLocation with index 4 and test that both ReplicatedActorLevel and ReplicatedAndNetLoadOnClientLevel were
+		// loaded correctly, and that the InitiallyDormantAndNetLoadLevel was unloaded.
 		AddStepFromDefinition(ClientCheckLocationStepDefinition, FWorkerDefinition::Client(1));
 	}
 }
@@ -115,7 +120,7 @@ bool ASpatialTestWorldComposition::IsCorrectAtLocation(int TestLocation)
 	{
 		return false;
 	}
-	 
+
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), FoundReplicatedBaseActors);
 	TArray<FExpectedActor> ExpectedLocationConditions = TestStepsData[TestLocation].Value;
 
@@ -130,7 +135,8 @@ bool ASpatialTestWorldComposition::IsCorrectAtLocation(int TestLocation)
 	{
 		for (auto Condition : ExpectedLocationConditions)
 		{
-			if (FoundActor->GetActorLocation().Equals(Condition.ExpectedActorLocation, 1.0f) && FoundActor->IsA(Condition.ExpectedActorClass))
+			if (FoundActor->GetActorLocation().Equals(Condition.ExpectedActorLocation, 1.0f)
+				&& FoundActor->IsA(Condition.ExpectedActorClass))
 			{
 				CorrectActors++;
 				break;
