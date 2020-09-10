@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "FileCache.h"
 #include "Modules/ModuleManager.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
 
@@ -57,6 +58,8 @@ public:
 	bool SPATIALGDKSERVICES_API ShouldWaitForDeployment() const;
 
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
+
+	void SPATIALGDKSERVICES_API TakeSnapshot(UWorld* World, bool bUseStandard, FSpatialSnapshotTakenFunc OnSnapshotTaken);
 
 	void WorkerBuildConfigAsync();
 

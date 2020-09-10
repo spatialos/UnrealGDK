@@ -322,7 +322,7 @@ void ASpatialSnapshotTest::BeginPlay()
 		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllServers);
 
 		AddStep(TEXT("Second Run - Clear Snapshot"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			ClearLoadedFromTakenSnapshot();
+			ClearSnapshot();
 			FinishStep();
 		});
 	}

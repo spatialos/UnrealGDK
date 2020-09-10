@@ -23,6 +23,8 @@ public:
 
 	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const { return SpatialGDKEditorInstance; }
 
+	virtual void TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken) override;
+
 	/* Way to force a deployment to be launched with a specific snapshot. This is meant to be override-able only
 	 * at runtime, specifically for Functional Testing purposes.
 	 */

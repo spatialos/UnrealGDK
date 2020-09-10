@@ -6,12 +6,13 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
 // Blueprint Delegate
-DECLARE_DYNAMIC_DELEGATE_OneParam(FSnapshotTakenDelegate, bool, bSuccess);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FSpatialFunctionalTestSnapshotTakenDelegate, bool, bSuccess);
 
 namespace
 {
@@ -217,26 +218,32 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 			  meta = (ToolTip = "Allows a Server Worker to request a SpatialOS snapshot to be taken. Keep in mind that this should be done at the last Step of your Test. Keep in mind that if you take a snapshot, you should eventually call ClearLoadedFromTakenSnapshot."))
 	// clang-format on
-	void TakeSnapshot(const FSnapshotTakenDelegate& BlueprintCallback);
+	void TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback);
 
 	// C++ version that allows you to hook up a lambda.
 	void TakeSnapshot(const FSnapshotTakenFunc& CppCallback);
 
-	// Get the path to the current taken snapshot, empty string if it's using the default loaded snapshot.
-	static FString GetTakenSnapshotPath();
-
-	// Allows you to know if the current deployment was started from a previously taken snapshot.
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	bool WasLoadedFromTakenSnapshot();
-
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (Tooltip = "Clears the snapshot, making it start deployments with the default snapshot again. Tests that call TakeSnapshot should eventually also call ClearLoadedFromTakenSnapshot."))
+			  meta = (Tooltip = "Clears the snapshot, making it start deployments with the default snapshot again. Tests that call TakeSnapshot should eventually also call ClearSnapshot."))
 	// clang-format on
+	void ClearSnapshot();
+
+	// Allows you to know if the current deployment was started from a previously taken snapshot.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	bool WasLoadedFromTakenSnapshot();
+
+	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
+	static FString GetTakenSnapshotPath(UWorld* World);
+
+	// Sets that this map was loaded by a taken snapshot, not meant to be used directly.
+	static void SetLoadedFromTakenSnapshot();
+
+	// Clears that this map was loaded by a taken snapshot, not meant to be used directly.
 	static void ClearLoadedFromTakenSnapshot();
 
-	// Sets that it was loaded by a custom snapshot, not meant to be used directly.
-	static void SetLoadedFromTakenSnapshot();
+	// Clears all the snapshots taken, not meant to be used directly.
+	static void ClearAllTakenSnapshots();
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
@@ -276,12 +283,15 @@ private:
 
 	void SetupClientPlayerRegistrationFlow();
 
-	// @Note not a big fan of this, but I guess we need to make it expose to both BPs and Cpp lambdas.
-	void TakeSnapshot(const FSnapshotTakenDelegate& BluprintCallback, const FSnapshotTakenFunc& CppCallback);
+	// Sets the snapshot for the map loaded by this world. When launching the test maps, the AutomationManager will
+	// check if there's a snapshot for that map and if so use it instead of the default snapshot. If PathToSnapshot
+	// is empty, it clears the entry for that map.
+	static bool SetSnapshotForMap(UWorld* World, const FString& PathToSnapshot);
 
-	// Holds if currently we're running from a Loaded snapshot and not the default / blank snapshot.
-	static bool bWasLoadedFromSnapshot;
+	// Holds if currently we're running from a taken snapshot and not the default snapshot.
+	static bool bWasLoadedFromTakenSnapshot;
 
-	// Holds the path of the snapshot taken during tests. If empty, it means that there was not snapshot taken.
-	static FString TakenSnapshotPath;
+	// Holds the paths of all the snapshots taken during tests. Test maps before running in the AutomationManager will
+	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
+	static TMap<FString, FString> TakenSnapshots;
 };

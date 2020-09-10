@@ -58,7 +58,7 @@ void FSpatialGDKEditorModule::StartupModule()
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
 	AutomationController->OnTestsComplete().AddLambda([]() {
 		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
-		ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
+		ASpatialFunctionalTest::ClearAllTakenSnapshots();
 
 #if ENGINE_MINOR_VERSION < 25
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
@@ -77,6 +77,13 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	{
 		UnregisterSettings();
 	}
+}
+
+void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
+{
+	bool bUseStandard = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandard, OnSnapshotTaken);
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
@@ -274,6 +281,9 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 
 FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
 {
+	// By default, clear that it was loaded from taken snapshot.
+	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
+
 	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
@@ -321,10 +331,15 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 				{
 					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
 				}
-				if (!ASpatialFunctionalTest::GetTakenSnapshotPath().IsEmpty())
 				{
-					PIESettingsOverride.ForceUseSnapshot = ASpatialFunctionalTest::GetTakenSnapshotPath();
-					ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
+					FString SnapshotForMap = ASpatialFunctionalTest::GetTakenSnapshotPath(World);
+
+					if (!SnapshotForMap.IsEmpty())
+					{
+						PIESettingsOverride.ForceUseSnapshot = SnapshotForMap;
+						// Set that we're loading from taken snapshot.
+						ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
+					}
 				}
 				break;
 			default:
