@@ -6,12 +6,18 @@
 #include "Async/Async.h"
 #include "DirectoryWatcherModule.h"
 #include "Editor.h"
+#include "Engine/World.h"
 #include "FileCache.h"
 #include "GeneralProjectSettings.h"
+#include "HAL/FileManagerGeneric.h"
+#include "HttpModule.h"
 #include "IPAddress.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IHttpResponse.h"
 #include "Internationalization/Internationalization.h"
 #include "Internationalization/Regex.h"
 #include "Json/Public/Dom/JsonObject.h"
+#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "SocketSubsystem.h"
 #include "Sockets.h"
@@ -19,12 +25,6 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "UObject/CoreNet.h"
-#include "Improbable/SpatialGDKSettingsBridge.h"
-#include "HAL/FileManagerGeneric.h"
-#include "HttpModule.h"
-#include "Misc/FileHelper.h"
-#include "Engine/World.h"
-#include "Interfaces/IHttpResponse.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -807,7 +807,8 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 	bAutoDeploy = bInAutoDeploy;
 }
 
-void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandard, FSpatialSnapshotTakenFunc OnSnapshotTaken)
+void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandard,
+																  FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<class IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
@@ -880,91 +881,92 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 	// HttpRequest->SetContent(Body);
 	// HttpRequest->ProcessRequest();
 
-	FString SnapshotUrl =
-		bUseStandard
-			? TEXT("http://localhost:5006/snapshot")
-			: TEXT("http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot");
-	HttpRequest->OnProcessRequestComplete().BindLambda([World, bUseStandard, OnSnapshotTaken](
-														   FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-		if (!bSucceeded)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"), *HttpRequest->GetURL(),
-				   *HttpResponse->GetContentAsString());
-			if (OnSnapshotTaken != nullptr)
+	FString SnapshotUrl = bUseStandard ? TEXT("http://localhost:5006/snapshot")
+									   : TEXT("http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot");
+	HttpRequest->OnProcessRequestComplete().BindLambda(
+		[World, bUseStandard, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+			if (!bSucceeded)
 			{
-				OnSnapshotTaken(false, FString());
-			}
-			return;
-		}
-
-		// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
-		// the wrong info! So let's wait a bit..
-		FTimerHandle TimerHandle;
-		World->GetTimerManager().SetTimer(
-			TimerHandle,
-			[bUseStandard, OnSnapshotTaken]() {
-				bool bSuccess = false;
-
-				FString NewestSnapshotFilePath;
-				FString SnapshotSearchDirectory;
-
-				if(bUseStandard)
-				{
-					FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-					FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-
-					FString SpatialPath = FPaths::ProjectDir() + TEXT("../spatial/");
-					SnapshotSearchDirectory =
-						SpatialPath + TEXT("logs/localdeployment/") + LocalDeploymentManager->GetLocalRunningDeploymentID();
-
-					IFileManager& FileManager = FFileManagerGeneric::Get();
-
-					TArray<FString> SnapshotFiles;
-
-					FileManager.FindFiles(SnapshotFiles, *SnapshotSearchDirectory, TEXT("snapshot"));
-
-					FDateTime NewestSnapshotTimestamp = FDateTime::MinValue();
-
-					for (const FString& SnapshotFile : SnapshotFiles)
-					{
-						FString SnapshotFilePath = SnapshotSearchDirectory + TEXT("/") + SnapshotFile;
-						FDateTime SnapshotFileTimestamp = FileManager.GetTimeStamp(*SnapshotFilePath);
-						if (SnapshotFileTimestamp > NewestSnapshotTimestamp)
-						{
-							NewestSnapshotTimestamp = SnapshotFileTimestamp;
-							NewestSnapshotFilePath = SnapshotFilePath;
-						}
-					}
-				}
-				else
-				{
-					FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-					SnapshotSearchDirectory = FString::Printf(TEXT("%s/.improbable/local_snapshots"), *AppDataLocalPath);
-					FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/latest"),	*SnapshotSearchDirectory);
-					FString LatestSnapshot;
-					if (FPaths::FileExists(LatestSnapshotInfoPath) && FFileHelper::LoadFileToString(LatestSnapshot, *LatestSnapshotInfoPath))
-					{
-						NewestSnapshotFilePath = FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-					}
-				}
-
-				bSuccess = !NewestSnapshotFilePath.IsEmpty();
-
-				if(!bSuccess)
-				{
-					UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file in '%s'"), *SnapshotSearchDirectory);
-				}
-
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
+					   *HttpRequest->GetURL(), *HttpResponse->GetContentAsString());
 				if (OnSnapshotTaken != nullptr)
 				{
-					OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
+					OnSnapshotTaken(false, FString());
 				}
-			},
-			0.5f, false);
-	});
+				return;
+			}
+
+			// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
+			// the wrong info! So let's wait a bit..
+			FTimerHandle TimerHandle;
+			World->GetTimerManager().SetTimer(
+				TimerHandle,
+				[bUseStandard, OnSnapshotTaken]() {
+					bool bSuccess = false;
+
+					FString NewestSnapshotFilePath;
+					FString SnapshotSearchDirectory;
+
+					if (bUseStandard)
+					{
+						FSpatialGDKServicesModule& GDKServices =
+							FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+						FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+						FString SpatialPath = FPaths::ProjectDir() + TEXT("../spatial/");
+						SnapshotSearchDirectory =
+							SpatialPath + TEXT("logs/localdeployment/") + LocalDeploymentManager->GetLocalRunningDeploymentID();
+
+						IFileManager& FileManager = FFileManagerGeneric::Get();
+
+						TArray<FString> SnapshotFiles;
+
+						FileManager.FindFiles(SnapshotFiles, *SnapshotSearchDirectory, TEXT("snapshot"));
+
+						FDateTime NewestSnapshotTimestamp = FDateTime::MinValue();
+
+						for (const FString& SnapshotFile : SnapshotFiles)
+						{
+							FString SnapshotFilePath = SnapshotSearchDirectory + TEXT("/") + SnapshotFile;
+							FDateTime SnapshotFileTimestamp = FileManager.GetTimeStamp(*SnapshotFilePath);
+							if (SnapshotFileTimestamp > NewestSnapshotTimestamp)
+							{
+								NewestSnapshotTimestamp = SnapshotFileTimestamp;
+								NewestSnapshotFilePath = SnapshotFilePath;
+							}
+						}
+					}
+					else
+					{
+						FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+						SnapshotSearchDirectory = FString::Printf(TEXT("%s/.improbable/local_snapshots"), *AppDataLocalPath);
+						FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/latest"), *SnapshotSearchDirectory);
+						FString LatestSnapshot;
+						if (FPaths::FileExists(LatestSnapshotInfoPath)
+							&& FFileHelper::LoadFileToString(LatestSnapshot, *LatestSnapshotInfoPath))
+						{
+							NewestSnapshotFilePath =
+								FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
+						}
+					}
+
+					bSuccess = !NewestSnapshotFilePath.IsEmpty();
+
+					if (!bSuccess)
+					{
+						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file in '%s'"), *SnapshotSearchDirectory);
+					}
+
+					if (OnSnapshotTaken != nullptr)
+					{
+						OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
+					}
+				},
+				0.5f, false);
+		});
 
 	HttpRequest->SetURL(SnapshotUrl);
-	if(bUseStandard)
+	if (bUseStandard)
 	{
 		HttpRequest->SetHeader("Content-Type", TEXT("application/json"));
 		HttpRequest->SetVerb("GET");

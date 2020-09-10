@@ -5,8 +5,8 @@
 #include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "FileCache.h"
-#include "Modules/ModuleManager.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
 

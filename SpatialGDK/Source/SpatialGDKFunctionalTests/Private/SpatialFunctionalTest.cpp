@@ -11,6 +11,7 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interfaces/IHttpBase.h"
 #include "Interfaces/IHttpResponse.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
@@ -21,7 +22,6 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 #include "TimerManager.h"
-#include "Improbable/SpatialGDKSettingsBridge.h"
 
 #pragma optimize("", off)
 
@@ -665,7 +665,7 @@ void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
 void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback)
 {
 	ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
-	if(SpatialGDKEditorModule != nullptr)
+	if (SpatialGDKEditorModule != nullptr)
 	{
 		UWorld* World = GetWorld();
 		SpatialGDKEditorModule->TakeSnapshot(World, [World, BlueprintCallback](bool bSuccess, const FString& PathToSnapshot) {
@@ -674,7 +674,6 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTa
 				bSuccess = SetSnapshotForMap(World, PathToSnapshot);
 			}
 			BlueprintCallback.ExecuteIfBound(bSuccess);
-
 		});
 	}
 }
@@ -698,10 +697,7 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenFunc& CppCallback)
 	}
 }
 
-void ASpatialFunctionalTest::ClearSnapshot()
-{
-	
-}
+void ASpatialFunctionalTest::ClearSnapshot() {}
 
 bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& PathToSnapshot)
 {
@@ -727,7 +723,8 @@ bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& Pat
 		else
 		{
 			bSuccess = false;
-			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to copy snapshot file '%s' to '%s'"), *PathToSnapshot, *SnapshotSavePath);
+			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to copy snapshot file '%s' to '%s'"), *PathToSnapshot,
+				   *SnapshotSavePath);
 		}
 	}
 	return bSuccess;
@@ -737,7 +734,7 @@ TMap<FString, FString> ASpatialFunctionalTest::TakenSnapshots = TMap<FString, FS
 
 FString ASpatialFunctionalTest::GetTakenSnapshotPath(UWorld* World)
 {
-	if(World == nullptr)
+	if (World == nullptr)
 	{
 		return FString();
 	}
