@@ -245,7 +245,7 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	for (const SpatialSpanIdStore::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)
 	{
 		uint32 FieldId = FieldSpanIdUpdate.FieldId;
-		TArray<Trace_SpanId> MergeCauses = { FieldSpanIdUpdate.OldSpanId, Op.span_id };
+		TArray<Trace_SpanId> MergeCauses = { FieldSpanIdUpdate.NewSpanId, FieldSpanIdUpdate.OldSpanId };
 
 		TOptional<Trace_SpanId> NewSpanId = TraceEvent(FEventMergeComponentFieldUpdate(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
 		SpanIdStore.WriteSpanId(Id, FieldId, NewSpanId.GetValue());

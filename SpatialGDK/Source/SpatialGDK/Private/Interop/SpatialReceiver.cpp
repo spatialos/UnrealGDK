@@ -179,7 +179,7 @@ void USpatialReceiver::OnAddEntity(const Worker_Op& Op)
 
 	TWeakObjectPtr<UObject> SpawnedObject = PackageMap->GetObjectFromEntityId(EntityId);
 	const AActor* Actor = SpawnedObject.IsValid() ? Cast<AActor>(SpawnedObject) : nullptr;
-	EventTracer->TraceEvent(FEventCreateEntity(EntityId, Actor));
+	EventTracer->TraceEvent(FEventCreateEntity(EntityId, Actor), { Op.span_id });
 }
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
