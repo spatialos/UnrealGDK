@@ -24,7 +24,7 @@ public:
 	// and registers the passed dispatcher callbacks in order to ensure all possible changes which could change
 	// the state of completeness for any entity are picked up by the subview to maintain this invariant.
 	FSubView(const Worker_ComponentId& TagComponentId, FFilterPredicate Filter, const EntityView* View, FDispatcher& Dispatcher,
-			const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
+			 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 
 	~FSubView() = default;
 

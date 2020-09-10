@@ -51,7 +51,7 @@ void ViewCoordinator::FlushMessagesToSend()
 }
 
 FSubView& ViewCoordinator::CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
-										const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+										 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
 	const int Index = SubViews.Emplace(MakeUnique<FSubView>(Tag, Filter, View.GetViewPtr(), Dispatcher, DispatcherRefreshCallbacks));
 	return *SubViews[Index];

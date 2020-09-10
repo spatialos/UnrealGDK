@@ -11,9 +11,11 @@ using namespace SpatialGDK;
 
 ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType)
 {
-	EntityDeltas.Add(EntityId,
-					 { EntityId, ChangeType == UPDATE ? ExpectedEntityDelta::UPDATE
-												   : ChangeType == ADD ? ExpectedEntityDelta::ADD : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE : ExpectedEntityDelta::TEMPORARILY_REMOVED});
+	EntityDeltas.Add(
+		EntityId, { EntityId, ChangeType == UPDATE ? ExpectedEntityDelta::UPDATE
+												   : ChangeType == ADD ? ExpectedEntityDelta::ADD
+																	   : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE
+																							  : ExpectedEntityDelta::TEMPORARILY_REMOVED });
 	return *this;
 }
 

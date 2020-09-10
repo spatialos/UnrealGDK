@@ -103,18 +103,19 @@ SUBVIEW_TEST(
 	EntityView View;
 	ViewDelta Delta;
 
-	FSubView SubView( TAG_COMPONENT_ID,
-				 [](const Worker_EntityId&, const EntityViewElement& Element) {
-					 const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ VALUE_COMPONENT_ID });
-					 if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CORRECT_VALUE)
-					 {
-						 return true;
-					 }
-					 return false;
-				 },
-				 &View, Dispatcher,
-				 TArray<FDispatcherRefreshCallback>{
-					 FSubView::CreateComponentChangedRefreshCallback(Dispatcher, VALUE_COMPONENT_ID, NoComponentChangeRefreshPredicate) } );
+	FSubView SubView(
+		TAG_COMPONENT_ID,
+		[](const Worker_EntityId&, const EntityViewElement& Element) {
+			const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ VALUE_COMPONENT_ID });
+			if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CORRECT_VALUE)
+			{
+				return true;
+			}
+			return false;
+		},
+		&View, Dispatcher,
+		TArray<FDispatcherRefreshCallback>{
+			FSubView::CreateComponentChangedRefreshCallback(Dispatcher, VALUE_COMPONENT_ID, NoComponentChangeRefreshPredicate) });
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 	AddComponentToView(View, TAGGED_ENTITY_ID, CreateTestComponentData(VALUE_COMPONENT_ID, CORRECT_VALUE));
@@ -164,11 +165,12 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 
 	bool IsFilterComplete = false;
 
-	FSubView SubView( TAG_COMPONENT_ID,
-				 [&IsFilterComplete](const Worker_EntityId&, const EntityViewElement&) {
-					 return IsFilterComplete;
-				 },
-				 &View, Dispatcher, NoRefreshCallbacks );
+	FSubView SubView(
+		TAG_COMPONENT_ID,
+		[&IsFilterComplete](const Worker_EntityId&, const EntityViewElement&) {
+			return IsFilterComplete;
+		},
+		&View, Dispatcher, NoRefreshCallbacks);
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 

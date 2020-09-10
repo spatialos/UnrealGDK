@@ -7,7 +7,7 @@
 namespace SpatialGDK
 {
 FSubView::FSubView(const Worker_ComponentId& TagComponentId, FFilterPredicate Filter, const EntityView* View, FDispatcher& Dispatcher,
-				 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+				   const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 	: TagComponentId(TagComponentId)
 	, Filter(MoveTemp(Filter))
 	, View(View)
@@ -80,7 +80,7 @@ void FSubView::RefreshEntity(const Worker_EntityId& EntityId)
 }
 
 FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-																			const FComponentChangeRefreshPredicate& RefreshPredicate)
+																			 const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
@@ -99,7 +99,7 @@ FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDi
 }
 
 FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-																		  const FComponentChangeRefreshPredicate& RefreshPredicate)
+																		   const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange Change) {
@@ -112,7 +112,7 @@ FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDisp
 }
 
 FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
-																		 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
+																		  const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId& Id) {

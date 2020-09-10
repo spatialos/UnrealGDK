@@ -30,7 +30,7 @@ public:
 
 	// Create a subview with the specified tag, filter, and refresh callbacks.
 	FSubView& CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
-						   const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
+							const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 	// Create a subview with no filter. This also means no refresh callbacks, as no change from spatial could cause
 	// the subview's filter to change its truth value.
 	FSubView& CreateUnfilteredSubView(const Worker_ComponentId& Tag);

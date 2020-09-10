@@ -171,11 +171,11 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 	for (int i = 0; i < NumberOfSubViews; ++i)
 	{
 		SubViews.Emplace(&Coordinator.CreateSubView(
-        TagComponentId,
-        [&EntityComplete](const Worker_EntityId&, const EntityViewElement&) {
-            return EntityComplete;
-        },
-        TArray<FDispatcherRefreshCallback>{}));
+			TagComponentId,
+			[&EntityComplete](const Worker_EntityId&, const EntityViewElement&) {
+				return EntityComplete;
+			},
+			TArray<FDispatcherRefreshCallback>{}));
 	}
 
 	Coordinator.Advance();

@@ -414,7 +414,8 @@ VIEWDELTA_TEST(GIVEN_view_delta_with_update_for_entity_complete_WHEN_project_THE
 	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{TestEntityId}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
@@ -433,7 +434,8 @@ VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_complete_entity_WHEN_project_TH
 	AddEntityToView(View, TestEntityId);
 	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{TestEntityId}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::ADD);
@@ -451,7 +453,8 @@ VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_incomplete_entity_WHEN_project_
 	AddEntityToView(View, TestEntityId);
 	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{TestEntityId}, TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId },
+				  TArray<Worker_EntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::REMOVE);
@@ -469,7 +472,8 @@ VIEWDELTA_TEST(GIVEN_empty_view_delta_with_temporarily_incomplete_entity_WHEN_pr
 	AddEntityToView(View, TestEntityId);
 	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{TestEntityId});
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{ TestEntityId });
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::TEMPORARILY_REMOVED);
@@ -500,7 +504,8 @@ VIEWDELTA_TEST(GIVEN_arbitrary_delta_and_completeness_WHEN_project_THEN_subview_
 	OpLists.Push(MoveTemp(OpListBuilder).CreateOpList());
 	Delta.SetFromOpList(MoveTemp(OpLists), View);
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{TestEntityId, YetAnotherTestEntityId}, TArray<Worker_EntityId>{OtherTestEntityId}, TArray<Worker_EntityId>{AnotherTestEntityId}, TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId, YetAnotherTestEntityId },
+				  TArray<Worker_EntityId>{ OtherTestEntityId }, TArray<Worker_EntityId>{ AnotherTestEntityId }, TArray<Worker_EntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);

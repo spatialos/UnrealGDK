@@ -30,7 +30,6 @@ const EntityView& WorkerView::GetView() const
 	return View;
 }
 
-
 const EntityView* WorkerView::GetViewPtr() const
 {
 	return &View;
