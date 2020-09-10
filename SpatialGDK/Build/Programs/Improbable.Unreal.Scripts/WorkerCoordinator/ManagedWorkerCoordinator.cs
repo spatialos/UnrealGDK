@@ -118,17 +118,18 @@ namespace Improbable.WorkerCoordinator
         {
             var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
-            // Read worker flags.
-            Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
-            Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
-            int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
 
             Logger.WriteLog("Waiting for target deployment to become ready.");
             var deploymentReadyTask = Task.Run(() => WaitForTargetDeploymentReady(connection));
             if (!deploymentReadyTask.Wait(TimeSpan.FromMinutes(15)))
             {
                 throw new TimeoutException("Timed out waiting for the deployment to be ready. Waited 15 minutes.");
-            } 
+            }
+
+            // Read worker flags.
+            Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
+            Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
+            int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
 
             Logger.WriteLog($"Target deployment is ready. Starting {NumSimulatedPlayersToStart} simulated players.");
             Thread.Sleep(InitialStartDelayMillis);
