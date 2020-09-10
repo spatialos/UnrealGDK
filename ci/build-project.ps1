@@ -11,6 +11,9 @@ param(
     [string] $build_target
 )
 
+
+Get-Process
+
 # Clone the testing project
 Write-Output "Downloading the testing project from $($test_repo_url)"
 git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
