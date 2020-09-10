@@ -59,8 +59,6 @@ public:
 
 	bool IsEnabled() const;
 
-	void RestartWithCallback(Trace_Callback* Callback);
-
 	void ComponentAdd(const Worker_Op& Op);
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
@@ -72,8 +70,11 @@ public:
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
+	const FString& GetFilePath() const { return FilePath; }
+
 private:
 	FString WorkerId;
+	FString FilePath;
 	bool bEnabled{ false };
 	bool bRecordRuntimeAndWorkerEvents{ false };
 	worker::c::Trace_EventTracer* EventTracer{ nullptr };
@@ -90,7 +91,7 @@ private:
 
 	SpatialSpanIdStore SpanIdStore;
 
-	void Enable(const FString& FileName, Trace_Callback* Callback);
+	void Enable(const FString& FileName);
 	void Disable();
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);

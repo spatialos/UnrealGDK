@@ -10,6 +10,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
+#define DEBUG_EVENT_TRACING
+
 using namespace SpatialGDK;
 using namespace worker::c;
 
@@ -26,6 +28,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		return;
 	}
 
+#ifdef DEBUG_EVENT_TRACING
 	if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
 	{
 		const Trace_Event& Event = Item->item.event;
@@ -50,6 +53,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("SpanId: %s Causes: %s"), *SpanIdString, *Causes);
 	}
+#endif // DEBUG_EVENT_TRACING
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
@@ -89,7 +93,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		if (Settings->bEventTracingEnabled)
 		{
 			MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
-			Enable(WorkerId, &SpatialEventTracer::TraceCallback);
+			Enable(WorkerId);
 		}
 	}
 }
@@ -228,17 +232,11 @@ bool SpatialEventTracer::IsEnabled() const
 	return bEnabled; // Trace_EventTracer_IsEnabled(EventTracer);
 }
 
-void SpatialEventTracer::RestartWithCallback(Trace_Callback* Callback)
-{
-	Disable();
-	Enable(WorkerId, Callback);
-}
-
-void SpatialEventTracer::Enable(const FString& FileName, Trace_Callback* Callback)
+void SpatialEventTracer::Enable(const FString& FileName)
 {
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.user_data = this;
-	parameters.callback = Callback;
+	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
 	bEnabled = true;
@@ -248,7 +246,7 @@ void SpatialEventTracer::Enable(const FString& FileName, Trace_Callback* Callbac
 	// Open a local file
 	const FString FolderPath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
 	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *FDateTime::Now().ToString());
-	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
+	FilePath = FPaths::Combine(FolderPath, FullFileName);
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
@@ -269,7 +267,6 @@ void SpatialEventTracer::Disable()
 	Trace_EventTracer_Disable(EventTracer);
 	bEnabled = false;
 	Stream = nullptr;
-
 	Trace_EventTracer_Destroy(EventTracer);
 }
 
