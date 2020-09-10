@@ -13,9 +13,10 @@ class ExpectedViewDelta
 public:
 	enum EntityChangeType
 	{
+		UPDATE,
 		ADD,
 		REMOVE,
-		UPDATE
+		TEMPORARILY_REMOVED
 	};
 
 	ExpectedViewDelta& AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType);
@@ -28,7 +29,7 @@ public:
 	ExpectedViewDelta& AddAuthorityLostTemporarily(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	ExpectedViewDelta& AddDisconnect(const uint8 StatusCode, FString StatusMessage);
 
-	// Compares the Connection Status and the stored Entity Deltas
+	// Compares the stored Entity Deltas
 	bool Compare(const ViewDelta& Other);
 
 private:
