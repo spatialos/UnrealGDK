@@ -5,15 +5,17 @@
 #include "EngineClasses/SpatialNetConnection.h"
 
 #include "Components/SceneComponent.h"
-#include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/GameMode.h"
 #include "GameFramework/PlayerController.h"
-#include "GameplayDebuggerCategoryReplicator.h"
 #include "Math/Vector.h"
+
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#include "GameplayDebuggerCategoryReplicator.h"
+#endif
 
 namespace SpatialGDK
 {
@@ -92,8 +94,13 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 
 inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
 {
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
 	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
 		|| InActor->IsA(AGameModeBase::StaticClass()))
+#else
+	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameModeBase::StaticClass()))
+#endif
+
 	{
 		return true;
 	}
