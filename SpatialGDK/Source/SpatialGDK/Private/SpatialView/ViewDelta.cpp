@@ -26,7 +26,7 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 	PopulateEntityDeltas(View);
 }
 
-void ViewDelta::Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
+void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
 						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
 						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
 {

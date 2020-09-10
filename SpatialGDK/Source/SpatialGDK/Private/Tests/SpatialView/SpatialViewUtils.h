@@ -87,7 +87,7 @@ inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 	TArray<Worker_EntityId_Key> RhsKeys;
 	Lhs.GetKeys(LhsKeys);
 	Rhs.GetKeys(RhsKeys);
-	if (!AreEquivalent(LhsKeys, RhsKeys, CompareWorkerEntityIdKey))
+	if (!AreEquivalent(LhsKeys, RhsKeys, WorkerEntityIdEquality))
 	{
 		return false;
 	}
@@ -102,7 +102,7 @@ inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 			return false;
 		}
 
-		if (!AreEquivalent(LhsElement->Authority, RhsElement->Authority, CompareWorkerComponentId))
+		if (!AreEquivalent(LhsElement->Authority, RhsElement->Authority, WorkerComponentIdEquality))
 		{
 			return false;
 		}

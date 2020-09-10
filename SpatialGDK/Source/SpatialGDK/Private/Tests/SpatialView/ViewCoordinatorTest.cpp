@@ -68,7 +68,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	auto& SubView = Coordinator.CreateUnfilteredSubView(TagComponentId);
 
 	Coordinator.Advance();
-	SubViewDelta Delta = SubView.GetViewDelta();
+	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity should pass through to the sub view delta.
 	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
@@ -121,18 +121,94 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 		TArray<FDispatcherRefreshCallback>{ Coordinator.CreateComponentChangedRefreshCallback(ValueComponentId) });
 
 	Coordinator.Advance();
-	SubViewDelta Delta = SubView.GetViewDelta();
+	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity with the correct value should pass through to the sub view delta.
-	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+	if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+	{
+		return true;
+	}
 	TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 1);
 
 	Coordinator.Advance();
 	Delta = SubView.GetViewDelta();
 
 	// The value on the other entity should have updated, so we should see an add for the second entity.
-	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
-	// TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 2);
+	if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+	{
+		return true;
+	}
+	TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 2);
+
+	return true;
+}
+
+VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_refresh_THEN_all_subviews_refreshed)
+{
+	const Worker_EntityId TaggedEntityId = 1;
+	const Worker_ComponentId TagComponentId = 1;
+	bool EntityComplete = false;
+	const int NumberOfSubViews = 100;
+
+	TArray<TArray<OpList>> ListsOfOpLists;
+
+	TArray<OpList> OpLists;
+	EntityComponentOpListBuilder Builder;
+	Builder.AddEntity(TaggedEntityId);
+	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	OpLists.Add(MoveTemp(Builder).CreateOpList());
+	ListsOfOpLists.Add(MoveTemp(OpLists));
+
+	TArray<OpList> SecondOpLists;
+	ListsOfOpLists.Add(MoveTemp(SecondOpLists));
+
+	auto Handler = MakeUnique<ConnectionHandlerStub>();
+	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
+	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+
+	TArray<FSubView*> SubViews;
+
+	for (int i = 0; i < NumberOfSubViews; ++i)
+	{
+		SubViews.Emplace(&Coordinator.CreateSubView(
+        TagComponentId,
+        [&EntityComplete](const Worker_EntityId&, const EntityViewElement&) {
+            return EntityComplete;
+        },
+        TArray<FDispatcherRefreshCallback>{}));
+	}
+
+	Coordinator.Advance();
+	FSubViewDelta Delta;
+
+	// All the subviews should have no complete entities, so their deltas should be empty.
+	for (int i = 0; i < NumberOfSubViews; ++i)
+	{
+		for (FSubView* SubView : SubViews)
+		{
+			Delta = SubView->GetViewDelta();
+			TestEqual("There are no entity deltas", Delta.EntityDeltas.Num(), 0);
+		}
+	}
+
+	EntityComplete = true;
+	Coordinator.RefreshEntityCompleteness(TaggedEntityId);
+	Coordinator.Advance();
+
+	// All the subviews' filters will have changed their truth value due to the change in local state.
+	for (int i = 0; i < NumberOfSubViews; ++i)
+	{
+		for (FSubView* SubView : SubViews)
+		{
+			Delta = SubView->GetViewDelta();
+			if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+			{
+				// test has already failed
+				return true;
+			}
+			TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, 1);
+		}
+	}
 
 	return true;
 }

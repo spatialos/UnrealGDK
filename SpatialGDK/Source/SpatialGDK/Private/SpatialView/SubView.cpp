@@ -6,10 +6,10 @@
 
 namespace SpatialGDK
 {
-SubView::SubView(const Worker_ComponentId& TagComponentId, const FFilterPredicate& Filter, const EntityView& View, FDispatcher& Dispatcher,
+FSubView::FSubView(const Worker_ComponentId& TagComponentId, FFilterPredicate Filter, const EntityView* View, FDispatcher& Dispatcher,
 				 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 	: TagComponentId(TagComponentId)
-	, Filter(Filter)
+	, Filter(MoveTemp(Filter))
 	, View(View)
 	, TaggedEntities(TArray<Worker_EntityId>{})
 	, CompleteEntities(TArray<Worker_EntityId>{})
@@ -21,7 +21,7 @@ SubView::SubView(const Worker_ComponentId& TagComponentId, const FFilterPredicat
 	RegisterRefreshCallbacks(DispatcherRefreshCallbacks);
 }
 
-void SubView::TagQuery(Query& QueryToTag) const
+void FSubView::TagQuery(Query& QueryToTag) const
 {
 	QueryToTag.ResultComponentIds.Add(TagComponentId);
 
@@ -41,12 +41,12 @@ void SubView::TagQuery(Query& QueryToTag) const
 	QueryToTag.Constraint = NewConstraint;
 }
 
-void SubView::TagEntity(TArray<FWorkerComponentData>& Components) const
+void FSubView::TagEntity(TArray<FWorkerComponentData>& Components) const
 {
 	Components.Add(ComponentFactory::CreateEmptyComponentData(TagComponentId));
 }
 
-void SubView::Advance(const ViewDelta& Delta)
+void FSubView::Advance(const ViewDelta& Delta)
 {
 	// Note: Complete entities will be a longer list than the others for the majority of iterations under
 	// probable normal usage. This sort could then become expensive, and a potential optimisation would be
@@ -58,7 +58,7 @@ void SubView::Advance(const ViewDelta& Delta)
 	Algo::Sort(NewlyIncompleteEntities);
 	Algo::Sort(TemporarilyIncompleteEntities);
 
-	Delta.Project(SubDelta, CompleteEntities, NewlyCompleteEntities, NewlyIncompleteEntities, TemporarilyIncompleteEntities);
+	Delta.Project(SubViewDelta, CompleteEntities, NewlyCompleteEntities, NewlyIncompleteEntities, TemporarilyIncompleteEntities);
 
 	CompleteEntities.Append(NewlyCompleteEntities);
 	NewlyCompleteEntities.Empty();
@@ -66,12 +66,12 @@ void SubView::Advance(const ViewDelta& Delta)
 	TemporarilyIncompleteEntities.Empty();
 }
 
-const SubViewDelta& SubView::GetViewDelta() const
+const FSubViewDelta& FSubView::GetViewDelta() const
 {
-	return SubDelta;
+	return SubViewDelta;
 }
 
-void SubView::RefreshEntity(const Worker_EntityId& EntityId)
+void FSubView::RefreshEntity(const Worker_EntityId& EntityId)
 {
 	if (TaggedEntities.Contains(EntityId))
 	{
@@ -79,7 +79,7 @@ void SubView::RefreshEntity(const Worker_EntityId& EntityId)
 	}
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
 																			const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -98,7 +98,7 @@ FDispatcherRefreshCallback SubView::CreateComponentExistenceRefreshCallback(FDis
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
 																		  const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -111,7 +111,7 @@ FDispatcherRefreshCallback SubView::CreateComponentChangedRefreshCallback(FDispa
 	};
 }
 
-FDispatcherRefreshCallback SubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
+FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId& ComponentId,
 																		 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -130,20 +130,20 @@ FDispatcherRefreshCallback SubView::CreateAuthorityChangeRefreshCallback(FDispat
 	};
 }
 
-void SubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
+void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 {
 	Dispatcher.RegisterAndInvokeComponentAddedCallback(
 		TagComponentId,
 		[this](const FEntityComponentChange& Change) {
 			OnTaggedEntityAdded(Change.EntityId);
 		},
-		View);
+		*View);
 	Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange& Change) {
 		OnTaggedEntityRemoved(Change.EntityId);
 	});
 }
 
-void SubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+void FSubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
 	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId& EntityId) {
 		RefreshEntity(EntityId);
@@ -154,21 +154,21 @@ void SubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>&
 	}
 }
 
-void SubView::OnTaggedEntityAdded(const Worker_EntityId& EntityId)
+void FSubView::OnTaggedEntityAdded(const Worker_EntityId& EntityId)
 {
 	TaggedEntities.Add(EntityId);
 	CheckEntityAgainstFilter(EntityId);
 }
 
-void SubView::OnTaggedEntityRemoved(const Worker_EntityId& EntityId)
+void FSubView::OnTaggedEntityRemoved(const Worker_EntityId& EntityId)
 {
 	TaggedEntities.RemoveSingleSwap(EntityId);
 	EntityIncomplete(EntityId);
 }
 
-void SubView::CheckEntityAgainstFilter(const Worker_EntityId& EntityId)
+void FSubView::CheckEntityAgainstFilter(const Worker_EntityId& EntityId)
 {
-	if (Filter(EntityId, View[EntityId]))
+	if (Filter(EntityId, (*View)[EntityId]))
 	{
 		EntityComplete(EntityId);
 		return;
@@ -176,7 +176,7 @@ void SubView::CheckEntityAgainstFilter(const Worker_EntityId& EntityId)
 	EntityIncomplete(EntityId);
 }
 
-void SubView::EntityComplete(const Worker_EntityId& EntityId)
+void FSubView::EntityComplete(const Worker_EntityId& EntityId)
 {
 	// We were just about to remove this entity, but it has become complete again before the delta was read.
 	// Mark it as temporarily incomplete, but otherwise treat it as if it hadn't gone incomplete.
@@ -193,7 +193,7 @@ void SubView::EntityComplete(const Worker_EntityId& EntityId)
 	}
 }
 
-void SubView::EntityIncomplete(const Worker_EntityId& EntityId)
+void FSubView::EntityIncomplete(const Worker_EntityId& EntityId)
 {
 	// If we were about to add this, don't. It's as if we never saw it.
 	if (NewlyCompleteEntities.RemoveSingleSwap(EntityId))

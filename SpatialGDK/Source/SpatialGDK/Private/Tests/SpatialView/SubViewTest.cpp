@@ -29,11 +29,11 @@ TArray<FDispatcherRefreshCallback> NoRefreshCallbacks = TArray<FDispatcherRefres
 SUBVIEW_TEST(GIVEN_Set_Of_Components_WHEN_Entity_Tagged_THEN_Components_Contains_Tag)
 {
 	FDispatcher Dispatcher;
-	const EntityView View;
-	const SubView Sub{ TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks };
+	EntityView View;
+	const FSubView SubView(TAG_COMPONENT_ID, NoFilter, &View, Dispatcher, NoRefreshCallbacks);
 	TArray<FWorkerComponentData> Components{ ComponentFactory::CreateEmptyComponentData(VALUE_COMPONENT_ID) };
 
-	Sub.TagEntity(Components);
+	SubView.TagEntity(Components);
 
 	TestTrue("Components contains tag component", Components.ContainsByPredicate([](const FWorkerComponentData& Data) {
 		return Data.component_id == TAG_COMPONENT_ID;
@@ -45,15 +45,15 @@ SUBVIEW_TEST(GIVEN_Set_Of_Components_WHEN_Entity_Tagged_THEN_Components_Contains
 SUBVIEW_TEST(GIVEN_Query_WHEN_Query_Tagged_THEN_Query_Is_Tagged)
 {
 	FDispatcher Dispatcher;
-	const EntityView View;
-	SubView Sub{ TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks };
+	EntityView View;
+	FSubView SubView(TAG_COMPONENT_ID, NoFilter, &View, Dispatcher, NoRefreshCallbacks);
 	Query QueryToTag;
 	QueryConstraint Constraint;
 	Constraint.EntityIdConstraint = ENTITY_ID;
 	QueryToTag.Constraint = Constraint;
 	QueryToTag.ResultComponentIds = SchemaResultType{ VALUE_COMPONENT_ID };
 
-	Sub.TagQuery(QueryToTag);
+	SubView.TagQuery(QueryToTag);
 
 	if (!TestNotEqual("Constraint is now an AND", QueryToTag.Constraint.AndConstraint.Num(), 0))
 	{
@@ -75,15 +75,15 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 	EntityView View;
 	ViewDelta Delta;
 
-	SubView Sub{ TAG_COMPONENT_ID, NoFilter, View, Dispatcher, NoRefreshCallbacks };
+	FSubView SubView(TAG_COMPONENT_ID, NoFilter, &View, Dispatcher, NoRefreshCallbacks);
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, TAG_COMPONENT_ID);
 
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
-	Sub.Advance(Delta);
-	SubViewDelta SubDelta = Sub.GetViewDelta();
+	SubView.Advance(Delta);
+	FSubViewDelta SubDelta = SubView.GetViewDelta();
 
 	// The tagged entity should pass through to the sub view delta.
 	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
@@ -103,7 +103,7 @@ SUBVIEW_TEST(
 	EntityView View;
 	ViewDelta Delta;
 
-	SubView Sub{ TAG_COMPONENT_ID,
+	FSubView SubView( TAG_COMPONENT_ID,
 				 [](const Worker_EntityId&, const EntityViewElement& Element) {
 					 const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ VALUE_COMPONENT_ID });
 					 if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CORRECT_VALUE)
@@ -112,9 +112,9 @@ SUBVIEW_TEST(
 					 }
 					 return false;
 				 },
-				 View, Dispatcher,
+				 &View, Dispatcher,
 				 TArray<FDispatcherRefreshCallback>{
-					 SubView::CreateComponentChangedRefreshCallback(Dispatcher, VALUE_COMPONENT_ID, NoComponentChangeRefreshPredicate) } };
+					 FSubView::CreateComponentChangedRefreshCallback(Dispatcher, VALUE_COMPONENT_ID, NoComponentChangeRefreshPredicate) } );
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 	AddComponentToView(View, TAGGED_ENTITY_ID, CreateTestComponentData(VALUE_COMPONENT_ID, CORRECT_VALUE));
@@ -123,8 +123,8 @@ SUBVIEW_TEST(
 
 	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, TAG_COMPONENT_ID);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
-	Sub.Advance(Delta);
-	SubViewDelta SubDelta = Sub.GetViewDelta();
+	SubView.Advance(Delta);
+	FSubViewDelta SubDelta = SubView.GetViewDelta();
 
 	// The tagged entity should pass through to the sub view delta.
 	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
@@ -136,15 +136,15 @@ SUBVIEW_TEST(
 
 	PopulateViewDeltaWithComponentAdded(Delta, View, OTHER_TAGGED_ENTITY_ID, TAG_COMPONENT_ID);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
-	Sub.Advance(Delta);
-	SubDelta = Sub.GetViewDelta();
+	SubView.Advance(Delta);
+	SubDelta = SubView.GetViewDelta();
 
 	TestEqual("There are no entity deltas", SubDelta.EntityDeltas.Num(), 0);
 
 	PopulateViewDeltaWithComponentUpdated(Delta, View, OTHER_TAGGED_ENTITY_ID, VALUE_COMPONENT_ID, CORRECT_VALUE);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
-	Sub.Advance(Delta);
-	SubDelta = Sub.GetViewDelta();
+	SubView.Advance(Delta);
+	SubDelta = SubView.GetViewDelta();
 
 	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
 	{
@@ -164,26 +164,26 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 
 	bool IsFilterComplete = false;
 
-	SubView Sub{ TAG_COMPONENT_ID,
+	FSubView SubView( TAG_COMPONENT_ID,
 				 [&IsFilterComplete](const Worker_EntityId&, const EntityViewElement&) {
 					 return IsFilterComplete;
 				 },
-				 View, Dispatcher, NoRefreshCallbacks };
+				 &View, Dispatcher, NoRefreshCallbacks );
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 
 	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, TAG_COMPONENT_ID);
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
-	Sub.Advance(Delta);
-	SubViewDelta SubDelta = Sub.GetViewDelta();
+	SubView.Advance(Delta);
+	FSubViewDelta SubDelta = SubView.GetViewDelta();
 
 	TestEqual("There are no entity deltas", SubDelta.EntityDeltas.Num(), 0);
 
 	IsFilterComplete = true;
-	Sub.RefreshEntity(TAGGED_ENTITY_ID);
+	SubView.RefreshEntity(TAGGED_ENTITY_ID);
 	Delta.Clear();
-	Sub.Advance(Delta);
-	SubDelta = Sub.GetViewDelta();
+	SubView.Advance(Delta);
+	SubDelta = SubView.GetViewDelta();
 
 	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
 	{

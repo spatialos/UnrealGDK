@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "Dispatcher.h"
 #include "EntityView.h"
 #include "Schema/Interest.h"
@@ -14,7 +15,7 @@ using FAuthorityChangeRefreshPredicate = TFunction<bool(Worker_EntityId)>;
 
 namespace SpatialGDK
 {
-class SubView
+class FSubView
 {
 public:
 	// The subview constructor takes the filter and the dispatcher refresh callbacks for the subview, rather than
@@ -22,18 +23,22 @@ public:
 	// full set of complete entities. During construction, it calculates the initial set of complete entities,
 	// and registers the passed dispatcher callbacks in order to ensure all possible changes which could change
 	// the state of completeness for any entity are picked up by the subview to maintain this invariant.
-	SubView(const Worker_ComponentId& TagComponentId, const FFilterPredicate& Filter, const EntityView& View, FDispatcher& Dispatcher,
+	FSubView(const Worker_ComponentId& TagComponentId, FFilterPredicate Filter, const EntityView* View, FDispatcher& Dispatcher,
 			const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 
-	// Non-copyable
-	SubView(const SubView&) = delete;
-	SubView& operator=(const SubView&) = delete;
+	~FSubView() = default;
+
+	// Non-copyable, non-movable
+	FSubView(const FSubView&) = delete;
+	FSubView(FSubView&&) = default;
+	FSubView& operator=(const FSubView&) = delete;
+	FSubView& operator=(FSubView&&) = default;
 
 	void TagQuery(Query& QueryToTag) const;
 	void TagEntity(TArray<FWorkerComponentData>& Components) const;
 
 	void Advance(const ViewDelta& Delta);
-	const SubViewDelta& GetViewDelta() const;
+	const FSubViewDelta& GetViewDelta() const;
 	void RefreshEntity(const Worker_EntityId& EntityId);
 
 	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
@@ -56,11 +61,11 @@ private:
 	void EntityComplete(const Worker_EntityId& EntityId);
 	void EntityIncomplete(const Worker_EntityId& EntityId);
 
-	const Worker_ComponentId TagComponentId;
-	const FFilterPredicate Filter;
-	const EntityView& View;
+	Worker_ComponentId TagComponentId;
+	FFilterPredicate Filter;
+	const EntityView* View;
 
-	SubViewDelta SubDelta;
+	FSubViewDelta SubViewDelta;
 
 	TArray<Worker_EntityId> TaggedEntities;
 	TArray<Worker_EntityId> CompleteEntities;

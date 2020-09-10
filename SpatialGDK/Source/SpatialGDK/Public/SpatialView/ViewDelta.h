@@ -10,7 +10,7 @@
 
 namespace SpatialGDK
 {
-struct SubViewDelta
+struct FSubViewDelta
 {
 	TArray<EntityDelta> EntityDeltas;
 	const TArray<Worker_Op>* WorkerMessages;
@@ -40,7 +40,7 @@ public:
 	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
 	// the projection. The given arrays represent the state of the sub view and dictates the projection.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
-	void Project(SubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
+	void Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
 				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
 				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
 	void Clear();

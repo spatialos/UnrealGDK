@@ -9,7 +9,7 @@ namespace SpatialGDK
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler)
 	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
-	, SubViews(TArray<SubView>{})
+	, SubViews(TArray<TUniquePtr<FSubView>>{})
 {
 }
 
@@ -29,9 +29,9 @@ void ViewCoordinator::Advance()
 	View.AdvanceViewDelta();
 	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 
-	for (SubView& SubviewToAdvance : SubViews)
+	for (const TUniquePtr<FSubView>& SubviewToAdvance : SubViews)
 	{
-		SubviewToAdvance.Advance(View.GetViewDelta());
+		SubviewToAdvance->Advance(View.GetViewDelta());
 	}
 }
 
@@ -50,29 +50,29 @@ void ViewCoordinator::FlushMessagesToSend()
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
 }
 
-SubView& ViewCoordinator::CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
+FSubView& ViewCoordinator::CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
 										const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
-	const int Index = SubViews.Emplace(Tag, Filter, View.GetView(), Dispatcher, DispatcherRefreshCallbacks);
-	return SubViews[Index];
+	const int Index = SubViews.Emplace(MakeUnique<FSubView>(Tag, Filter, View.GetViewPtr(), Dispatcher, DispatcherRefreshCallbacks));
+	return *SubViews[Index];
 }
 
-SubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId& Tag)
+FSubView& ViewCoordinator::CreateUnfilteredSubView(const Worker_ComponentId& Tag)
 {
-	const int Index = SubViews.Emplace(
+	const int Index = SubViews.Emplace(MakeUnique<FSubView>(
 		Tag,
 		[](const Worker_EntityId&, const EntityViewElement&) {
 			return true;
 		},
-		View.GetView(), Dispatcher, TArray<FDispatcherRefreshCallback>{});
-	return SubViews[Index];
+		View.GetViewPtr(), Dispatcher, TArray<FDispatcherRefreshCallback>{}));
+	return *SubViews[Index];
 }
 
 void ViewCoordinator::RefreshEntityCompleteness(const Worker_EntityId& EntityId)
 {
-	for (SubView& SubviewToRefresh : SubViews)
+	for (const TUniquePtr<FSubView>& SubviewToRefresh : SubViews)
 	{
-		SubviewToRefresh.RefreshEntity(EntityId);
+		SubviewToRefresh->RefreshEntity(EntityId);
 	}
 }
 
@@ -181,19 +181,19 @@ void ViewCoordinator::RemoveCallback(CallbackId Id)
 FDispatcherRefreshCallback ViewCoordinator::CreateComponentExistenceRefreshCallback(
 	const Worker_ComponentId& ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
-	return SubView::CreateComponentExistenceRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+	return FSubView::CreateComponentExistenceRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
 FDispatcherRefreshCallback ViewCoordinator::CreateComponentChangedRefreshCallback(const Worker_ComponentId& ComponentId,
 																				  const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
-	return SubView::CreateComponentChangedRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+	return FSubView::CreateComponentChangedRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
 FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback(const Worker_ComponentId& ComponentId,
 																				 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
-	return SubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

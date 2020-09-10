@@ -12,8 +12,8 @@ using namespace SpatialGDK;
 ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType)
 {
 	EntityDeltas.Add(EntityId,
-					 { EntityId, ChangeType == ADD ? ExpectedEntityDelta::ADD
-												   : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE : ExpectedEntityDelta::UPDATE });
+					 { EntityId, ChangeType == UPDATE ? ExpectedEntityDelta::UPDATE
+												   : ChangeType == ADD ? ExpectedEntityDelta::ADD : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE : ExpectedEntityDelta::TEMPORARILY_REMOVED});
 	return *this;
 }
 
@@ -83,13 +83,22 @@ void ExpectedViewDelta::SortEntityDeltas()
 		Pair.Value.ComponentUpdates.Sort(CompareComponentChangeById);
 	}
 
-	EntityDeltas.KeySort(CompareWorkerEntityIdKey);
+	EntityDeltas.KeySort(CompareWorkerEntityId);
 }
 
 bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
-	TArray<EntityDelta> RhsEntityDeltas = Other.GetEntityDeltas();
-	if (EntityDeltas.Num() != RhsEntityDeltas.Num())
+	return CompareDeltas(Other.GetEntityDeltas());
+}
+
+bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
+{
+	return CompareDeltas(Other.EntityDeltas);
+}
+
+bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
+{
+	if (EntityDeltas.Num() != Other.Num())
 	{
 		return false;
 	}
@@ -100,7 +109,7 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
 		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
-		EntityDelta RhsEntityDelta = RhsEntityDeltas[i];
+		EntityDelta RhsEntityDelta = Other[i];
 		if (LhsEntityDelta.EntityId != RhsEntityDelta.EntityId)
 		{
 			return false;

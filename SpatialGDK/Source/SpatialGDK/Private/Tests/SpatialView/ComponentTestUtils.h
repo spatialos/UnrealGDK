@@ -240,19 +240,24 @@ inline bool CompareEntityComponentCompleteUpdates(const EntityComponentCompleteU
 	return CompareComponentData(Lhs.CompleteUpdate, Rhs.CompleteUpdate) && CompareComponentUpdateEvents(Lhs.Events, Rhs.Events);
 }
 
-inline bool CompareEntityComponentId(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
+inline bool EntityComponentIdEquality(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
 {
 	return Lhs == Rhs;
 }
 
-inline bool CompareWorkerComponentId(const Worker_ComponentId Lhs, const Worker_ComponentId Rhs)
+inline bool WorkerComponentIdEquality(const Worker_ComponentId Lhs, const Worker_ComponentId Rhs)
 {
 	return Lhs == Rhs;
 }
 
-inline bool CompareWorkerEntityIdKey(const Worker_EntityId Lhs, const Worker_EntityId Rhs)
+inline bool WorkerEntityIdEquality(const Worker_EntityId Lhs, const Worker_EntityId Rhs)
 {
 	return Lhs == Rhs;
+}
+
+inline bool CompareWorkerEntityId(const Worker_EntityId Lhs, const Worker_EntityId Rhs)
+{
+	return Lhs < Rhs;
 }
 
 template <typename T, typename Predicate>
@@ -283,7 +288,7 @@ inline bool AreEquivalent(const TArray<EntityComponentData>& Lhs, const TArray<E
 
 inline bool AreEquivalent(const TArray<EntityComponentId>& Lhs, const TArray<EntityComponentId>& Rhs)
 {
-	return AreEquivalent(Lhs, Rhs, CompareEntityComponentId);
+	return AreEquivalent(Lhs, Rhs, EntityComponentIdEquality);
 }
 
 } // namespace SpatialGDK
