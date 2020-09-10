@@ -39,6 +39,10 @@
  * The second time will be exact the same way as above, the 2 differences are that (a) map A will be launched with the
  * Snapshot taken in the first run, and (b) ASpatialSnapshotTest will know that it is running from a custom Snapshot
  * and will execute different steps.
+ *
+ * Keep in mind that we do support running multiple snapshot testing maps, as we save snapshots tied to the map name.
+ * This means you can bulk run multiple different snapshot test maps, so you can run more than one of these maps
+ * and not have that dummy map that was built purely for GDK testing.
  */
 
 ASpatialSnapshotTest::ASpatialSnapshotTest()
@@ -163,108 +167,6 @@ void ASpatialSnapshotTest::BeginPlay()
 			FinishStep();
 		}
 	});
-
-	/*FSpatialFunctionalTestStepDefinition VerifyDataStepDef = FSpatialFunctionalTestStepDefinition(true);
-	VerifyDataStepDef.StepName = TEXT("Verify Data Properly Set");
-	VerifyDataStepDef.TimeLimit = 5.0f;
-	VerifyDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		ASpatialSnapshotTestActor* TestActor = nullptr;
-		ASpatialSnapshotTestGameMode* GameMode = nullptr;
-
-		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
-		{
-			AActor* Actor = *It;
-			if(Actor->IsA<ASpatialSnapshotTestActor>())
-			{
-				if(TestActor != nullptr)
-				{
-					FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestActor"));
-					return;
-				}
-
-				TestActor = Cast<ASpatialSnapshotTestActor>(Actor);
-			}
-			else if(Actor->IsA<ASpatialSnapshotTestGameMode>())
-			{
-				if(GameMode != nullptr)
-				{
-					FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestGameMode"));
-					return;
-				}
-				GameMode = Cast<ASpatialSnapshotTestGameMode>(Actor);
-			}
-		}
-
-		if(IsValid(TestActor))
-		{
-			if (!GameMode->VerifyBool())
-			{
-				return;
-			}
-			if (!GameMode->VerifyInt32())
-			{
-				return;
-			}
-			if (!GameMode->VerifyInt64())
-			{
-				return;
-			}
-			if (!GameMode->VerifyFloat())
-			{
-				return;
-			}
-			if (!GameMode->VerifyString())
-			{
-				return;
-			}
-			if (!GameMode->VerifyName())
-			{
-				return;
-			}
-			if (!GameMode->VerifyIntArray())
-			{
-				return;
-			}
-		}
-		else
-		{
-			return;
-		}
-
-		if (IsValid(GameMode))
-		{
-			// @TODO improve when we have The Verify functions
-			if (!GameMode->VerifyBool())
-			{
-				return;
-			}
-			if (!GameMode->VerifyInt32())
-			{
-				return;
-			}
-			if (!GameMode->VerifyInt64())
-			{
-				return;
-			}
-			if (!GameMode->VerifyFloat())
-			{
-				return;
-			}
-			if (!GameMode->VerifyString())
-			{
-				return;
-			}
-			if (!GameMode->VerifyName())
-			{
-				return;
-			}
-			if (!GameMode->VerifyIntArray())
-			{
-				return;
-			}
-			FinishStep();
-		}
-	});*/
 
 	if (bIsRunningFirstTime)
 	{
