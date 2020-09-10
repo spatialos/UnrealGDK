@@ -567,7 +567,7 @@ bool USpatialClassInfoManager::IsEntityCompletenessComponent(Worker_ComponentId 
 
 bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
 {
-	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId) || IsEntityCompletenessComponent(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()
