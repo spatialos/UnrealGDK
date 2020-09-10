@@ -31,12 +31,15 @@ public:
 
 	// Compares the stored Entity Deltas
 	bool Compare(const ViewDelta& Other);
+	bool Compare(const FSubViewDelta& Other);
 
 private:
 	void SortEntityDeltas();
 	TMap<uint32, ExpectedEntityDelta> EntityDeltas;
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;
+
+	bool CompareDeltas(const TArray<EntityDelta>& Other);
 
 	template <typename T, typename Predicate>
 	bool CompareData(const TArray<T>& Lhs, const ComponentSpan<T>& Rhs, Predicate&& Comparator)

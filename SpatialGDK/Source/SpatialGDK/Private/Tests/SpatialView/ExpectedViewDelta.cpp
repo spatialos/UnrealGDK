@@ -90,8 +90,17 @@ void ExpectedViewDelta::SortEntityDeltas()
 
 bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
-	TArray<EntityDelta> RhsEntityDeltas = Other.GetEntityDeltas();
-	if (EntityDeltas.Num() != RhsEntityDeltas.Num())
+	return CompareDeltas(Other.GetEntityDeltas());
+}
+
+bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
+{
+	return CompareDeltas(Other.EntityDeltas);
+}
+
+bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
+{
+	if (EntityDeltas.Num() != Other.Num())
 	{
 		return false;
 	}
@@ -102,7 +111,7 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
 		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
-		EntityDelta RhsEntityDelta = RhsEntityDeltas[i];
+		EntityDelta RhsEntityDelta = Other[i];
 		if (LhsEntityDelta.EntityId != RhsEntityDelta.EntityId)
 		{
 			return false;
