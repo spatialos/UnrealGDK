@@ -5,6 +5,7 @@
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/WorkerView.h"
+#include "SubView.h"
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
@@ -16,16 +17,32 @@ public:
 
 	~ViewCoordinator();
 
-	// Moveable, not copyable.
+	// Non-copyable.
 	ViewCoordinator(const ViewCoordinator&) = delete;
 	ViewCoordinator(ViewCoordinator&&) = default;
 	ViewCoordinator& operator=(const ViewCoordinator&) = delete;
 	ViewCoordinator& operator=(ViewCoordinator&&) = default;
 
 	void Advance();
-	const ViewDelta& GetViewDelta();
-	const EntityView& GetView();
+	const ViewDelta& GetViewDelta() const;
+	const EntityView& GetView() const;
 	void FlushMessagesToSend();
+
+	// Create a subview with the specified tag, filter, and refresh callbacks.
+	FSubView& CreateSubView(const Worker_ComponentId& Tag, const FFilterPredicate& Filter,
+							const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
+	// Create a subview with no filter. This also means no refresh callbacks, as no change from spatial could cause
+	// the subview's filter to change its truth value.
+	FSubView& CreateUnfilteredSubView(const Worker_ComponentId& Tag);
+	// Force a refresh of the given entity ID across all subviews. Used when local state changes which could
+	// change any subview's filter's truth value for the given entity. Conceptually this can be thought of
+	// as marking the entity dirty for all subviews, although the refresh is immediate.
+	// Note: It would be possible to only refresh the subviews that require refreshing instead of globally refreshing.
+	// This could be achieved by either having systems understand which subviews need refreshing, or by having systems
+	// broadcast events which subviews subscribe to in order to trigger a refresh. This global refresh may only be a
+	// temporary solution which keeps the API simple while the main systems are Actors and the load balancer.
+	// In the future when there could be an unbounded number of user systems this should probably be revisited.
+	void RefreshEntityCompleteness(const Worker_EntityId& EntityId);
 
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
@@ -52,11 +69,27 @@ public:
 	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
 	void RemoveCallback(CallbackId Id);
 
+	FDispatcherRefreshCallback CreateComponentExistenceRefreshCallback(
+		const Worker_ComponentId& ComponentId,
+		const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
+			return true;
+		});
+	FDispatcherRefreshCallback CreateComponentChangedRefreshCallback(
+		const Worker_ComponentId& ComponentId,
+		const FComponentChangeRefreshPredicate& RefreshPredicate = [](const FEntityComponentChange&) {
+			return true;
+		});
+	FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(
+		const Worker_ComponentId& ComponentId, const FAuthorityChangeRefreshPredicate& RefreshPredicate = [](const Worker_EntityId&) {
+			return true;
+		});
+
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
 	Worker_RequestId NextRequestId;
 	FDispatcher Dispatcher;
+	TArray<TUniquePtr<FSubView>> SubViews;
 };
 
 } // namespace SpatialGDK
