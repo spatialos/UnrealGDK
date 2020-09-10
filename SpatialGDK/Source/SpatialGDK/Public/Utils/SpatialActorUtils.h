@@ -94,12 +94,11 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 
 inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
 {
+	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameModeBase::StaticClass())
 #if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
-	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
-		|| InActor->IsA(AGameModeBase::StaticClass()))
-#else
-	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameModeBase::StaticClass()))
+		|| InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
 #endif
+	)
 
 	{
 		return true;
