@@ -200,9 +200,9 @@ void FDispatcher::HandleComponentPresenceChanges(Worker_EntityId EntityId, const
 			const FEntityComponentChange EntityComponentChange = { EntityId, *ChangeIt };
 			(CallbackIt->*Callbacks).Invoke(EntityComponentChange);
 			CallbackIt->ComponentValueCallbacks.Invoke(EntityComponentChange);
+			++ChangeIt;
+			++CallbackIt;
 		}
-		++ChangeIt;
-		++CallbackIt;
 	}
 }
 
@@ -229,9 +229,9 @@ void FDispatcher::HandleComponentValueChanges(Worker_EntityId EntityId, const Co
 		{
 			const FEntityComponentChange EntityComponentChange = { EntityId, *ChangeIt };
 			CallbackIt->ComponentValueCallbacks.Invoke(EntityComponentChange);
+			++ChangeIt;
+			++CallbackIt;
 		}
-		++ChangeIt;
-		++CallbackIt;
 	}
 }
 
@@ -258,9 +258,9 @@ void FDispatcher::HandleAuthorityChange(Worker_EntityId EntityId, const Componen
 		else
 		{
 			(CallbackIt->*Callbacks).Invoke(EntityId);
+			++ChangeIt;
+			++CallbackIt;
 		}
-		++ChangeIt;
-		++CallbackIt;
 	}
 }
 } // namespace SpatialGDK
