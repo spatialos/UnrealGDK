@@ -812,7 +812,7 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-	
+
 	HttpRequest->OnProcessRequestComplete().BindLambda(
 		[World, bUseStandard, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
 			if (!bSucceeded)
