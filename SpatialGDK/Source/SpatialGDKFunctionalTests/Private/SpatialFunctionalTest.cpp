@@ -718,7 +718,7 @@ bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& Pat
 		FString SnapshotSavePath = FPaths::ProjectDir() + TEXT("../spatial/snapshots/") + SnapshotFileName;
 		if (FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *PathToSnapshot, true, true) == 0)
 		{
-			TakenSnapshots[MapName] = SnapshotFileName;
+			TakenSnapshots.Add(MapName, SnapshotFileName);
 		}
 		else
 		{
