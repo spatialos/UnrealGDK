@@ -53,11 +53,8 @@ void ASpatialFunctionalTest::BeginPlay()
 	// Setup built-in step definitions.
 	TakeSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
 	TakeSnapshotStepDefinition.StepName = TEXT("Take SpatialOS Snapshot");
-	TakeSnapshotStepDefinition.NativeStartEvent.BindLambda(
-	[this]()
-	{
-		TakeSnapshot([this](bool bSuccess)
-		{
+	TakeSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		TakeSnapshot([this](bool bSuccess) {
 			if (bSuccess)
 			{
 				FinishStep();
