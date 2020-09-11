@@ -91,7 +91,7 @@ struct FEventRemoveEntity : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId= -1;
+	UPROPERTY() int64 EntityId = -1;
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
@@ -112,7 +112,7 @@ struct FEventCreateEntitySuccess : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId= -1;
+	UPROPERTY() int64 EntityId = -1;
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
@@ -174,7 +174,7 @@ struct FEventRetireEntityRequest : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId= -1;
+	UPROPERTY() int64 EntityId = -1;
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
@@ -194,8 +194,8 @@ struct FEventSendRPC : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject= nullptr;
-	UPROPERTY() const UFunction* Function= nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
 };
 
 // Tagged with cause
@@ -215,8 +215,8 @@ struct FEventRPCQueued : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject= nullptr;
-	UPROPERTY() const UFunction* Function= nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
 };
 
 // Tagged with cause
@@ -248,8 +248,8 @@ struct FEventRPCProcessed : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject= nullptr;
-	UPROPERTY() const UFunction* Function= nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
 };
 
 USTRUCT()
@@ -270,7 +270,7 @@ struct FEventComponentUpdate : public FEventMessage
 	}
 
 	UPROPERTY() const AActor* Actor = nullptr;
-	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
 	UPROPERTY() uint32 ComponentId = 0;
 };
 
@@ -309,9 +309,9 @@ struct FEventCommandResponse : public FEventMessage
 
 	UPROPERTY() FString Command;
 	UPROPERTY() const AActor* Actor = nullptr;
-	UPROPERTY() const UObject* TargetObject= nullptr;
-	UPROPERTY() const UFunction* Function= nullptr;
-	UPROPERTY() int64 RequestID= -1;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
+	UPROPERTY() int64 RequestID = -1;
 	UPROPERTY() bool bSuccess = false;
 };
 
@@ -345,10 +345,10 @@ struct FEventCommandRequest : public FEventMessage
 
 	UPROPERTY() FString Command;
 	UPROPERTY() const AActor* Actor = nullptr;
-	UPROPERTY() const UObject* TargetObject= nullptr;
-	UPROPERTY() const UFunction* Function= nullptr;
-	UPROPERTY() int32 TraceId= -1;
-	UPROPERTY() int64 RequestID= -1;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
+	UPROPERTY() int32 TraceId = -1;
+	UPROPERTY() int64 RequestID = -1;
 };
 
 USTRUCT()

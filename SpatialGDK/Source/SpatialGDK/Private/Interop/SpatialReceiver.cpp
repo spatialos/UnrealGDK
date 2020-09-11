@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
@@ -110,7 +111,7 @@ void USpatialReceiver::LeaveCriticalSection()
 			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 		}
 		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {
-			return Component.EntityId == PendingAddEntity;
+			return Component.EntityId == PendingAddEntity && Component.ComponentId != SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 		});
 	}
 
@@ -133,6 +134,16 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			continue;
 		}
+
+		if (PendingAddComponent.ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+		{
+			if (NetDriver->DebugCtx != nullptr)
+			{
+				NetDriver->DebugCtx->OnDebugComponentUpdateReceived(PendingAddComponent.EntityId);
+			}
+			continue;
+		}
+
 		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PendingAddComponent.EntityId);
 		if (Channel == nullptr)
 		{
@@ -219,6 +230,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
@@ -286,6 +298,20 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+		}
+		return;
+	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
+		if (NetDriver->DebugCtx != nullptr)
+		{
+			if (bInCriticalSection)
+			{
+				PendingAddComponents.AddUnique(
+					PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
+			}
+			else
+			{
+				NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
+			}
 		}
 		return;
 	}
@@ -866,6 +892,12 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 		{
 			Sender->SendServerEndpointReadyUpdate(EntityId);
 		}
+	}
+
+	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
+		&& Op.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+	{
+		NetDriver->DebugCtx->OnDebugComponentAuthLost(Op.entity_id);
 	}
 }
 
@@ -1640,6 +1672,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"),
 			   EntityId, ComponentId);
@@ -1682,6 +1715,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		HandleRPC(ComponentUpdateOp);
+		return;
+	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
+		if (NetDriver->DebugCtx != nullptr)
+		{
+			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
+		}
 		return;
 	}
 

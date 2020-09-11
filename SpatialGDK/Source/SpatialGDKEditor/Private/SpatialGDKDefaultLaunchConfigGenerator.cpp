@@ -7,6 +7,7 @@
 #include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Editor.h"
 #include "ISettingsModule.h"
@@ -94,7 +95,7 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 } // anonymous namespace
 
-uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
+uint32 GetWorkerCountFromWorldSettings(const UWorld& World, bool bForceNonEditorSettings)
 {
 	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
 	if (WorldSettings == nullptr)
@@ -109,7 +110,8 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World)
 		return 1;
 	}
 
-	return WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
+	return USpatialStatics::GetSpatialMultiWorkerClass(&World, bForceNonEditorSettings)
+		->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
 		->GetMinimumRequiredWorkerCount();
 }
 

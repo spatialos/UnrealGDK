@@ -90,6 +90,7 @@ const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 const Worker_ComponentId SPAWN_DATA_COMPONENT_ID = 9999;
 const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
+const Worker_ComponentId GDK_DEBUG_COMPONENT_ID	= 9995;
 const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
@@ -108,6 +109,7 @@ const Worker_ComponentId TOMBSTONE_COMPONENT_ID = 9982;
 const Worker_ComponentId DORMANT_COMPONENT_ID = 9981;
 const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
 const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
+const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
 
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
