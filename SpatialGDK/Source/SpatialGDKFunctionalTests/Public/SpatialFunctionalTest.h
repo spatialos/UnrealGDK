@@ -190,9 +190,10 @@ public:
 			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
+	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers "
-								"must declare the same delegation at the same time."))
+			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+	// clang-format on
 	void DelegateTagToWorker(FName Tag, int32 WorkerId);
 
 	UFUNCTION(
