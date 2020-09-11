@@ -98,7 +98,7 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 				EventTracer->ComponentUpdate(*Op);
 			}
 			StaticComponentView->OnComponentUpdate(Op->op.component_update);
-			Receiver->OnComponentUpdate(Op->op.component_update);
+			Receiver->OnComponentUpdate(*Op);
 			break;
 
 		// Commands

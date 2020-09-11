@@ -27,10 +27,7 @@ void SpatialSpanIdStore::ComponentAdd(const Worker_Op& Op)
 
 	for (uint32 FieldId : UpdatedFieldIds)
 	{
-		FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
-		EntityComponentFieldIdUpdateSpanId& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
-		SpawnIdRef.SpanId = Op.span_id;
-		SpawnIdRef.UpdateTime = FDateTime::Now();
+		WriteSpanId(Id, FieldId, Op.span_id);
 	}
 }
 
@@ -54,20 +51,21 @@ TArray<SpatialSpanIdStore::FieldSpanIdUpdate> SpatialSpanIdStore::ComponentUpdat
 	TArray<FieldSpanIdUpdate> FieldCollisions;
 	for (uint32 FieldId : UpdatedFieldIds)
 	{
-		FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
-
-		EntityComponentFieldIdUpdateSpanId* SpawnIdRef = SpanIdMap.Find(FieldId);
-		if (SpawnIdRef != nullptr)
+		FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
+		if (SpanIdMap != nullptr)
 		{
-			FieldCollisions.Add({ FieldId, SpawnIdRef->SpanId });
-		}
-		else
-		{
-			SpawnIdRef = &SpanIdMap.Add(FieldId);
+			EntityComponentFieldIdUpdateSpanId* SpawnIdRef = SpanIdMap->Find(FieldId);
+			if (SpawnIdRef != nullptr)
+			{
+				FieldSpanIdUpdate Update;
+				Update.FieldId = FieldId;
+				Update.NewSpanId = Op.span_id;
+				Update.OldSpanId = SpawnIdRef->SpanId;
+				FieldCollisions.Add(Update);
+			}
 		}
 
-		SpawnIdRef->SpanId = Op.span_id;
-		SpawnIdRef->UpdateTime = FDateTime::Now();
+		WriteSpanId(Id, FieldId, Op.span_id);
 	}
 
 	return FieldCollisions;

@@ -27,7 +27,7 @@ public:
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
 	virtual void OnAuthorityChange(const Worker_Op& Op) override;
 
-	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
+	virtual void OnComponentUpdate(const Worker_Op& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.

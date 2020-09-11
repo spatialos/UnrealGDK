@@ -19,6 +19,7 @@ public:
 	struct FieldSpanIdUpdate
 	{
 		uint32 FieldId;
+		worker::c::Trace_SpanId NewSpanId;
 		worker::c::Trace_SpanId OldSpanId;
 	};
 
