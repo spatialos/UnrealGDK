@@ -191,7 +191,8 @@ public:
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers "
+								"must declare the same delegation at the same time."))
 	void DelegateTagToWorker(FName Tag, int32 WorkerId);
 
 	UFUNCTION(
