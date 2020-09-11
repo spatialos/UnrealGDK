@@ -5,9 +5,12 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/SpatialDebugger.h"
 
+#if WITH_EDITOR
+bool ASpatialWorldSettings::bDisableMultiWorker = false;
+#endif // WITH_EDITOR
+
 ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, bDisableMultiWorker(false)
 	, MultiWorkerSettingsClass(nullptr)
 	, EditorMultiWorkerSettingsOverride(nullptr)
 {
@@ -24,13 +27,7 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 		FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
 		MultiWorkerSettingsClass = MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
 		checkf(MultiWorkerSettingsClass != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
-		UE_LOG(LogTemp, Warning, TEXT("Using class: %s"), *OverrideMultiWorkerSettingsClass);
 		return GetValidWorkerSettings();
-	}
-	else if (!IsMultiWorkerEnabled())
-	{
-		// If multi worker is disabled, use the single worker behaviour.
-		return USpatialMultiWorkerSettings::StaticClass();
 	}
 	else if (bForceNonEditorSettings && MultiWorkerSettingsClass != nullptr)
 	{
@@ -41,6 +38,11 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 	{
 		// If bForceNonEditorSettings is set and no multi worker settings class is set always return a valid class (use single worker
 		// behaviour).
+		return USpatialMultiWorkerSettings::StaticClass();
+	}
+	else if (!IsMultiWorkerEnabled())
+	{
+		// If multi worker is disabled in editor, use the single worker behaviour.
 		return USpatialMultiWorkerSettings::StaticClass();
 	}
 #if WITH_EDITOR
@@ -94,7 +96,7 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 	}
 }
 
-void ASpatialWorldSettings::SetMutliWorkerEditor(const bool bDisable)
+void ASpatialWorldSettings::OverrideMultiWorker(const bool bDisable)
 {
 	bDisableMultiWorker = bDisable;
 }
@@ -111,8 +113,12 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 		return true;
 	}
 #if WITH_EDITOR
-	return !bDisableMultiWorker;
+	else if (bDisableMultiWorker)
+	{
+		// If editor for Multi Worker Settings is set then disable multi-worker.
+		return false;
+	}
 #endif // WITH_EDITOR
-
 	return true;
 }
+

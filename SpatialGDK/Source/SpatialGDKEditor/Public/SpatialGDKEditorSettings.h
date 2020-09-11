@@ -658,7 +658,7 @@ public:
 	FORCEINLINE bool IsSpatialDebuggerEditorEnabled() const { return bSpatialDebuggerEditorEnabled; }
 
 	void SetMultiWorkerEditor(const bool IsDisabled);
-	void OverrideMultiWorkerEditor() const;
+	void OverrideMultiWorker() const;
 	FORCEINLINE bool IsDisabledMultiWorkerEditor() const { return bDisableMultiWorker; }
 
 	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);

@@ -16,6 +16,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "SpatialGDKEditorSettings"
@@ -257,20 +258,17 @@ void USpatialGDKEditorSettings::SetSpatialDebuggerEditorEnabled(bool IsEnabled)
 
 void USpatialGDKEditorSettings::SetMultiWorkerEditor(bool IsDisabled)
 {
+	UE_LOG(LogTemp, Warning, TEXT("SetMultiWorkerEditor: %d"), IsDisabled);
 	bDisableMultiWorker = IsDisabled;
 
-	OverrideMultiWorkerEditor();
+	OverrideMultiWorker();
 
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::OverrideMultiWorkerEditor() const
+void USpatialGDKEditorSettings::OverrideMultiWorker() const
 {
-	const UWorld* World = GEditor->GetEditorWorldContext().World();
-	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
-	{
-		WorldSettings->SetMutliWorkerEditor(bDisableMultiWorker);
-	}
+	ASpatialWorldSettings::OverrideMultiWorker(bDisableMultiWorker);
 }
 
 void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
