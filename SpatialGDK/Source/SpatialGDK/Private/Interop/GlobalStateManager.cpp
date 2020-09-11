@@ -401,7 +401,6 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
-#pragma optimize("", on)
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
