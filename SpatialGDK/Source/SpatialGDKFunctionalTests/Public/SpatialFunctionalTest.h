@@ -187,18 +187,18 @@ public:
 	void RemoveInterestOnTag(FName Tag);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
+			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers "
+								"must declare the same delegation at the same time."))
 	void DelegateTagToWorker(FName Tag, int32 WorkerId);
 
 	UFUNCTION(
 		BlueprintCallable, Category = "Spatial Functional Test",
 		meta = (ToolTip = "Removed the forced authority delegation. All server workers must declare the same delegation at the same time."))
 	void RemoveTagDelegation(FName Tag);
-
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))

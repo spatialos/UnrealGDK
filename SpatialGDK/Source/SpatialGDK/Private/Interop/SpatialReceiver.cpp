@@ -894,8 +894,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 		}
 	}
 
-	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-		&& ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE && ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 	{
 		NetDriver->DebugCtx->OnDebugComponentAuthLost(EntityId);
 	}
