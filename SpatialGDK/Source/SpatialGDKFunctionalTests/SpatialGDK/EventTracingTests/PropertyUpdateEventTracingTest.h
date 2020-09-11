@@ -16,5 +16,8 @@ public:
 	APropertyUpdateEventTracingTest();
 
 private:
+
+	FName PropertyUpdateEventName = "unreal_gdk.property_update";
+
 	virtual void FinishEventTraceTest() override;
 };

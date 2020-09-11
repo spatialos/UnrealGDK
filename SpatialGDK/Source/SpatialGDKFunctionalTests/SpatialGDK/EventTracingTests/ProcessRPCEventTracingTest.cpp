@@ -10,7 +10,6 @@ AProcessRPCEventTracingTest::AProcessRPCEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
 
-	StartTestEventName = ProcessRPCEventName;
 	FilterEventNames = { ProcessRPCEventName, ReceiveOpEventName };
 	WorkerDefinition = FWorkerDefinition::Server(1);
 }

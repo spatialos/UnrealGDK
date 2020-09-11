@@ -8,9 +8,8 @@
 APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 {
 	Author = "Matthew Sandford";
-	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
+	Description = TEXT("Test checking the property update trace events have appropriate causes");
 
-	StartTestEventName = PropertyUpdateEventName;
 	FilterEventNames = { PropertyUpdateEventName, ReceiveOpEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
@@ -40,7 +39,7 @@ void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 	}
 
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
-	AssertTrue(bSuccess, FString::Printf(TEXT("Process RPC trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
+	AssertTrue(bSuccess, FString::Printf(TEXT("Process property update events have the expected causes. Events Tested: %d, Events Failed: %d"),
 										 EventsTested, EventsFailed));
 
 	FinishStep();

@@ -31,16 +31,13 @@ public:
 	virtual void BeginPlay() override;
 
 protected:
-	FName ProcessRPCEventName = "unreal_gdk.process_rpc";
-	FName PropertyUpdateEventName = "unreal_gdk.property_update";
-	FName MergeComponentFieldUpdateEventName = "unreal_gdk.merge_component_field_update";
+
 	FName ReceiveOpEventName = "worker.receive_op";
 
 	FWorkerDefinition WorkerDefinition;
-	FName StartTestEventName;
 	TArray<FName> FilterEventNames;
 
-	float TestTime = 10.0f;
+	float TestTime = 20.0f;
 	TMap<FString, FName> TraceEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
 

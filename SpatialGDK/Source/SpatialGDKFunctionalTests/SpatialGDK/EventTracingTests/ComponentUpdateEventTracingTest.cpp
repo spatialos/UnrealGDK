@@ -1,20 +1,20 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "MergeComponentFieldEventTracingTest.h"
+#include "ComponentUpdateEventTracingTest.h"
 #include "Engine/World.h"
 
 #include "SpatialFunctionalTestFlowController.h"
 
-AMergeComponentFieldEventTracingTest::AMergeComponentFieldEventTracingTest()
+AComponentUpdateEventTracingTest::AComponentUpdateEventTracingTest()
 {
 	Author = "Matthew Sandford";
-	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
+	Description = TEXT("Test checking the command Response trace events have appropriate causes");
 
-	FilterEventNames = { MergeComponentFieldUpdateEventName, ReceiveOpEventName };
+	FilterEventNames = { ComponentUpdateEventName, ReceiveOpEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
-void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
+void AComponentUpdateEventTracingTest::FinishEventTraceTest()
 {
 	Super::FinishEventTraceTest();
 
@@ -25,7 +25,7 @@ void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
 		const FString SpanIdString = Pair.Key;
 		const FName EventName = Pair.Value;
 
-		if (EventName != MergeComponentFieldUpdateEventName)
+		if (EventName != ComponentUpdateEventName)
 		{
 			continue;
 		}
@@ -39,9 +39,8 @@ void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
 	}
 
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
-	AssertTrue(bSuccess,
-			   FString::Printf(TEXT("Merge component field trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
-							   EventsTested, EventsFailed));
+	AssertTrue(bSuccess, FString::Printf(TEXT(" Component update trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
+										 EventsTested, EventsFailed));
 
 	FinishStep();
 }

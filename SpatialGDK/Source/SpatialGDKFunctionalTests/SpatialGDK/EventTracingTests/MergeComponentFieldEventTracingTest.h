@@ -16,5 +16,8 @@ public:
 	AMergeComponentFieldEventTracingTest();
 
 private:
+
+	FName MergeComponentFieldUpdateEventName = "unreal_gdk.merge_component_field_update";
+
 	virtual void FinishEventTraceTest() override;
 };
