@@ -7,7 +7,6 @@
 #include "Utils/SpatialStatics.h"
 #include "HandoverCube.generated.h"
 
-
 UCLASS()
 class AHandoverCube : public AReplicatedTestActorBase
 {

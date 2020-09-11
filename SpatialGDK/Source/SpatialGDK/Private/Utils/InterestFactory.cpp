@@ -357,6 +357,11 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 		UserQuery.Constraint.AndConstraint.Add(UserConstraint);
 		UserQuery.Constraint.AndConstraint.Add(LevelConstraint);
 
+		// Make sure that the Entity is not marked as bHidden
+		QueryConstraint VisibilityConstraint;
+		VisibilityConstraint = CreateActorVisibilityConstraint();
+		UserQuery.Constraint.AndConstraint.Add(VisibilityConstraint);
+
 		// We enforce result type even for user defined queries. Here we are assuming what a user wants from their defined
 		// queries are for their players to check out more actors than they normally would, so use the client non auth result type,
 		// which includes all components required for a client to see non-authoritative actors.
@@ -458,6 +463,11 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 			NewQuery.Constraint.AndConstraint.Add(LevelConstraint);
 		}
 
+		// Make sure that the Entity is not marked as bHidden
+		QueryConstraint VisibilityConstraint;
+		VisibilityConstraint = CreateActorVisibilityConstraint();
+		NewQuery.Constraint.AndConstraint.Add(VisibilityConstraint);
+
 		NewQuery.Frequency = CheckoutRadiusConstraintFrequencyPair.Frequency;
 		NewQuery.ResultComponentIds = ClientNonAuthInterestResultType;
 
@@ -553,6 +563,14 @@ QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 	}
 
 	return AlwaysRelevantConstraint;
+}
+
+QueryConstraint InterestFactory::CreateActorVisibilityConstraint() const
+{
+	QueryConstraint ActorVisibilityConstraint;
+	ActorVisibilityConstraint.ComponentConstraint = SpatialConstants::VISIBLE_COMPONENT_ID;
+
+	return ActorVisibilityConstraint;
 }
 
 QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) const
