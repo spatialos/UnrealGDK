@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enabled the `bUseSpatialView` property by default and added the `--OverrideUseSpatialView` flag.
 - Added facilities to manipulate worker interest and Actor authority in SpatialFunctionalTest.
 - Allow specifying the locator port via `?locatorPort=` URL option when performing client travel.
-- You can now disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Multi-Worker Disable` from the drop option from the `Start Deployment` button on the toolbar to use a single worker strategy in the editor.
+- You can now disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Multi-Worker Disable` from the drop option from the `Start Deployment` button on the toolbar to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
 
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
