@@ -64,7 +64,7 @@ void AEventTracingTest::WaitForTestToEnd()
 
 void AEventTracingTest::FinishEventTraceTest()
 {
-	FinishStep(); 
+	FinishStep();
 }
 
 void AEventTracingTest::GatherData()
@@ -124,6 +124,8 @@ void AEventTracingTest::GatherData()
 	}
 
 	Stream = nullptr;
+
+	FinishStep();
 }
 
 bool AEventTracingTest::CheckEventTraceCause(FString SpanIdString, TArray<FName> CauseEventNames, int MinimumCauses /*= 1*/)
