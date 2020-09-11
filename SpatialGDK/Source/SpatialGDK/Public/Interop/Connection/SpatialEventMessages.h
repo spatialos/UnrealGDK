@@ -91,8 +91,8 @@ struct FEventRemoveEntity : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() int64 EntityId= -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 // Tagged with cause
@@ -112,8 +112,8 @@ struct FEventCreateEntitySuccess : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() int64 EntityId= -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 USTRUCT()
@@ -132,8 +132,8 @@ struct FEventAuthorityIntentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() uint32 NewWorkerId{ 0xFFFFFFFF };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() uint32 NewWorkerId = 0xFFFFFFFF;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 // Tagged with cause
@@ -154,7 +154,7 @@ struct FEventAuthorityLossImminent : public FEventMessage
 	}
 
 	UPROPERTY() TEnumAsByte<ENetRole> Role{ 0 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 // Tagged with cause - could
@@ -174,8 +174,8 @@ struct FEventRetireEntityRequest : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() int64 EntityId= -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 USTRUCT()
@@ -194,8 +194,8 @@ struct FEventSendRPC : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
+	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() const UFunction* Function= nullptr;
 };
 
 // Tagged with cause
@@ -215,8 +215,8 @@ struct FEventRPCQueued : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
+	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() const UFunction* Function= nullptr;
 };
 
 // Tagged with cause
@@ -248,8 +248,8 @@ struct FEventRPCProcessed : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
+	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() const UFunction* Function= nullptr;
 };
 
 USTRUCT()
@@ -269,9 +269,9 @@ struct FEventComponentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const AActor* Actor{ nullptr };
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() uint32 ComponentId{ 0 };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() uint32 ComponentId = 0;
 };
 
 // Tagged with cause
@@ -308,11 +308,11 @@ struct FEventCommandResponse : public FEventMessage
 	}
 
 	UPROPERTY() FString Command;
-	UPROPERTY() const AActor* Actor{ nullptr };
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
-	UPROPERTY() int64 RequestID{ -1 };
-	UPROPERTY() bool bSuccess{ false };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() const UFunction* Function= nullptr;
+	UPROPERTY() int64 RequestID= -1;
+	UPROPERTY() bool bSuccess = false;
 };
 
 // Tagged with cause
@@ -344,11 +344,11 @@ struct FEventCommandRequest : public FEventMessage
 	}
 
 	UPROPERTY() FString Command;
-	UPROPERTY() const AActor* Actor{ nullptr };
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
-	UPROPERTY() int32 TraceId{ -1 };
-	UPROPERTY() int64 RequestID{ -1 };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() const UObject* TargetObject= nullptr;
+	UPROPERTY() const UFunction* Function= nullptr;
+	UPROPERTY() int32 TraceId= -1;
+	UPROPERTY() int64 RequestID= -1;
 };
 
 USTRUCT()
@@ -367,8 +367,8 @@ struct FEventMergeComponentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() uint32 ComponentId{ 0 };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() uint32 ComponentId = 0;
 };
 
 USTRUCT()
@@ -388,9 +388,9 @@ struct FEventMergeComponentFieldUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() uint32 ComponentId{ 0 };
-	UPROPERTY() uint32 FieldId{ 0 };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() uint32 ComponentId = 0;
+	UPROPERTY() uint32 FieldId = 0;
 };
 
 USTRUCT()
@@ -410,8 +410,8 @@ struct FEventPropertyUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() uint32 ComponentId{ 0 };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() uint32 ComponentId = 0;
 	UPROPERTY() FString PropertyName;
 };
 

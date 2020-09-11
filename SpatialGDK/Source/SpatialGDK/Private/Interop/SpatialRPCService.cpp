@@ -251,19 +251,21 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.EntityId = It.Key.EntityId;
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
 		UpdateToSend.Update.schema_type = It.Value.Update;
-		if (It.Value.SpanIds.Num() > 1)
+
+		if (EventTracer != nullptr)
 		{
-			if (EventTracer != nullptr)
+			if (It.Value.SpanIds.Num() > 1)
 			{
 				UpdateToSend.SpanId = EventTracer->TraceEvent(
 					FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
 			}
+			else if (It.Value.SpanIds.Num() == 1)
+			{
+				// No need to chain causes here
+				UpdateToSend.SpanId = It.Value.SpanIds[0];
+			}
 		}
-		else if (It.Value.SpanIds.Num() == 1)
-		{
-			// No need to chain causes here
-			UpdateToSend.SpanId = It.Value.SpanIds[0];
-		}
+
 #if TRACE_LIB_ACTIVE
 		TraceKey Trace = InvalidTraceKey;
 		PendingTraces.RemoveAndCopyValue(It.Key, Trace);

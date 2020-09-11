@@ -19,6 +19,12 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 {
 	Clear();
 
+	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
+	if (bEventTracerEnabled)
+	{
+		EventTracer->DropOldSpanIds();
+	}
+
 	for (OpList& Ops : OpLists)
 	{
 		const uint32 Count = Ops.Count;
@@ -255,10 +261,6 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 void ViewDelta::ProcessOp(Worker_Op& Op)
 {
 	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
-	if (bEventTracerEnabled)
-	{
-		EventTracer->DropOldUpdates();
-	}
 
 	switch (static_cast<Worker_OpType>(Op.op_type))
 	{

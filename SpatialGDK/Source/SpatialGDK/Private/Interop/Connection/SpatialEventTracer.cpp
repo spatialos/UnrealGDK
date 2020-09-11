@@ -267,7 +267,7 @@ void SpatialEventTracer::DropSpanId(const EntityComponentId& Id, const uint32 Fi
 	SpanIdStore.DropSpanId(Id, FieldId);
 }
 
-void SpatialEventTracer::DropOldUpdates()
+void SpatialEventTracer::DropOldSpanIds()
 {
 	SpanIdStore.DropOldSpanIds();
 }

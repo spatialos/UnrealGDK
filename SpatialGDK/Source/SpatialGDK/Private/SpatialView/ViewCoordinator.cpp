@@ -63,9 +63,9 @@ Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> 
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis)
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
-	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis });
+	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
 

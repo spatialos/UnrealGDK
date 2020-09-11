@@ -71,7 +71,7 @@ Worker_RequestId USpatialViewWorkerConnection::SendDeleteEntityRequest(Worker_En
 																	   const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendDeleteEntityRequest(EntityId);
+	return Coordinator->SendDeleteEntityRequest(EntityId, {}, SpanId);
 }
 
 void USpatialViewWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,

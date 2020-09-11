@@ -60,7 +60,7 @@ public:
 	void ComponentAdd(const Worker_Op& Op);
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
-	void DropOldUpdates();
+	void DropOldSpanIds();
 
 	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 	void DropSpanIds(const EntityComponentId& EntityComponentId);
