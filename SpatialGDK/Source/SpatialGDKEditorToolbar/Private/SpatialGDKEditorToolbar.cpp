@@ -754,11 +754,11 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 {
 	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
 	{
-		// If Spatial networking is enabled then initialise the editor debbugging facilities.
+		// If Spatial networking is enabled then initialize the editor debugging facilities.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-			Settings->OverrideMultiWorker();
+			Settings->OverrideMultiWorkerWorldSettings();
 
 			InitialiseSpatialDebuggerEditor(World);
 		}
@@ -1130,7 +1130,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bDisableMultiWorker))
 		{
 			// Update multi-worker settings
-			Settings->OverrideMultiWorker();
+			Settings->OverrideMultiWorkerWorldSettings();
 			// Update worker boundaries in editor
 			if (SpatialDebugger.IsValid())
 			{

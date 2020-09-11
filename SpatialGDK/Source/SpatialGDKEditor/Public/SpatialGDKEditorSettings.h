@@ -367,7 +367,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable spatial debugger in editor"))
 	bool bSpatialDebuggerEditorEnabled;
 
-	/** Show worker boundaries in the editor. */
+	/** Override multi worker load balancing strategy and use single worker in the editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Disable multi-worker in editor"))
 	bool bDisableMultiWorker;
 
@@ -658,7 +658,7 @@ public:
 	FORCEINLINE bool IsSpatialDebuggerEditorEnabled() const { return bSpatialDebuggerEditorEnabled; }
 
 	void SetMultiWorkerEditor(const bool IsDisabled);
-	void OverrideMultiWorker() const;
+	void OverrideMultiWorkerWorldSettings() const;
 	FORCEINLINE bool IsDisabledMultiWorkerEditor() const { return bDisableMultiWorker; }
 
 	void SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled);
