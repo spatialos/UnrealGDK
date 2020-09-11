@@ -894,10 +894,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 		}
 	}
 
-	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-		&& Op.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
+		&& ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 	{
-		NetDriver->DebugCtx->OnDebugComponentAuthLost(Op.entity_id);
+		NetDriver->DebugCtx->OnDebugComponentAuthLost(EntityId);
 	}
 }
 
@@ -1719,7 +1719,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
 		{
-			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
+			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(EntityId);
 		}
 		return;
 	}

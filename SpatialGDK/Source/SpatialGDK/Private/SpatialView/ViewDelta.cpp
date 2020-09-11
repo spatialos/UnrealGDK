@@ -10,6 +10,11 @@
 
 namespace SpatialGDK
 {
+	ViewDelta::ViewDelta()
+		: EventTracer(nullptr)
+	{
+	}
+
 ViewDelta::ViewDelta(SpatialEventTracer* InEventTracer)
 	: EventTracer(InEventTracer)
 {
