@@ -741,8 +741,8 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 
 void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
-	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SetMultiWorkerEditor(!SpatialGDKEditorSettings->bDisableMultiWorker);
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->SetMultiWorkerEditor(!SpatialGDKSettings->bDisableMultiWorker);
 
 	if (SpatialDebugger.IsValid())
 	{
@@ -757,9 +757,6 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 		// If Spatial networking is enabled then initialize the editor debugging facilities.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
-			const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-			Settings->OverrideMultiWorkerWorldSettings();
-
 			InitialiseSpatialDebuggerEditor(World);
 		}
 	}
@@ -1127,11 +1124,14 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				SpatialDebugger->EditorSpatialToggleDebugger(Settings->bSpatialDebuggerEditorEnabled);
 			}
 		}
-		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bDisableMultiWorker))
+	}
+	if (USpatialGDKSettings* Settings = Cast<USpatialGDKSettings>(ObjectBeingModified))
+	{
+		FName PropertyName = PropertyChangedEvent.Property != nullptr ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+		FString PropertyNameStr = PropertyName.ToString();
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bDisableMultiWorker))
 		{
 			// Update multi-worker settings
-			Settings->OverrideMultiWorkerWorldSettings();
-			// Update worker boundaries in editor
 			if (SpatialDebugger.IsValid())
 			{
 				SpatialDebugger->EditorRefreshWorkerRegions();
@@ -1481,8 +1481,8 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 
 bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEditorDisabled() const
 {
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKEditorSettings->bDisableMultiWorker;
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->bDisableMultiWorker;
 }
 
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const

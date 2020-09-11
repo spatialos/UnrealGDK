@@ -72,18 +72,12 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	static void EditorRefreshSpatialDebugger();
-	static void OverrideMultiWorker(const bool bDisable);
 #endif // WITH_EDITOR
 
 	/** Is multi-worker enabled in the editor*/
 	bool IsMultiWorkerEnabled() const;
 
 private:
-#if WITH_EDITOR
-	/** Editor override for multi worker*/
-	static bool bDisableMultiWorker;
-#endif // WITH_EDITOR
-
 	/** Specify the load balancing strategy to be used for multiple workers */
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;

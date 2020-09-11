@@ -49,7 +49,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)
-	, bDisableMultiWorker(false)
 	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnExitEditor)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
@@ -253,20 +252,6 @@ void USpatialGDKEditorSettings::SetSpatialDebuggerEditorEnabled(bool IsEnabled)
 {
 	bSpatialDebuggerEditorEnabled = IsEnabled;
 	SaveConfig();
-}
-
-void USpatialGDKEditorSettings::SetMultiWorkerEditor(bool IsDisabled)
-{
-	bDisableMultiWorker = IsDisabled;
-
-	OverrideMultiWorkerWorldSettings();
-
-	SaveConfig();
-}
-
-void USpatialGDKEditorSettings::OverrideMultiWorkerWorldSettings() const
-{
-	ASpatialWorldSettings::OverrideMultiWorker(bDisableMultiWorker);
 }
 
 void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)

@@ -107,6 +107,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, bDisableMultiWorker(false) 
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -279,5 +280,12 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+#if WITH_EDITOR
+void USpatialGDKSettings::SetMultiWorkerEditor(bool IsDisabled)
+{
+	bDisableMultiWorker = IsDisabled;
+}
+#endif // WITH_EDITOR
 
 #undef LOCTEXT_NAMESPACE

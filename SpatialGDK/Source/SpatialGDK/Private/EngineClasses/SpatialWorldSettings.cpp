@@ -5,10 +5,6 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/SpatialDebugger.h"
 
-#if WITH_EDITOR
-bool ASpatialWorldSettings::bDisableMultiWorker = false;
-#endif // WITH_EDITOR
-
 ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, MultiWorkerSettingsClass(nullptr)
@@ -95,11 +91,6 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 		FoundActor->EditorRefreshWorkerRegions();
 	}
 }
-
-void ASpatialWorldSettings::OverrideMultiWorker(const bool bDisable)
-{
-	bDisableMultiWorker = bDisable;
-}
 #endif // WITH_EDITOR
 
 bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
@@ -113,7 +104,7 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 		return true;
 	}
 #if WITH_EDITOR
-	else if (bDisableMultiWorker)
+	else if (SpatialGDKSettings->IsDisabledMultiWorkerEditor())
 	{
 		// If editor for Multi Worker Settings is set then disable multi-worker.
 		return false;

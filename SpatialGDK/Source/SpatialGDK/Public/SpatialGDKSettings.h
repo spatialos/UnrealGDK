@@ -248,12 +248,23 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
+#if WITH_EDITOR
+	/** Override multi worker load balancing strategy and use single worker in the editor. */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Disable multi-worker in editor"))
+	bool bDisableMultiWorker;
+#endif // WITH_EDITOR
+
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
 
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
+
+	#if WITH_EDITOR
+	void SetMultiWorkerEditor(const bool IsDisabled);
+	FORCEINLINE bool IsDisabledMultiWorkerEditor() const { return bDisableMultiWorker; }
+	#endif // WITH_EDITOR
 
 private:
 #if WITH_EDITOR
