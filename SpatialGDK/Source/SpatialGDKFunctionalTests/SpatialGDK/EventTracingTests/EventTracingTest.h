@@ -15,11 +15,6 @@ struct Trace_Item;
 } // namespace c
 } // namespace worker
 
-namespace SpatialGDK
-{
-class SpatialEventTracer;
-} // namespace SpatialGDK
-
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AEventTracingTest : public ASpatialFunctionalTest
 {
@@ -38,6 +33,7 @@ protected:
 	TArray<FName> FilterEventNames;
 
 	float TestTime = 20.0f;
+
 	TMap<FString, FName> TraceEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
 
@@ -49,8 +45,5 @@ private:
 	FDateTime TestStartTime;
 
 	void WaitForTestToEnd();
-
-	void TraceCallback(void* UserData, const Trace_Item* Item);
-
-	SpatialGDK::SpatialEventTracer* GetEventTracer() const;
+	bool TryGatherData();
 };

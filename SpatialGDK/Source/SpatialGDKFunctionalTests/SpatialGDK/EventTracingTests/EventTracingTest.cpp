@@ -28,15 +28,22 @@ void AEventTracingTest::BeginPlay()
 	TestStartTime = FDateTime::Now();
 
 	{
-		AddStep(TEXT("StartEventTracingTest"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
+		AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
 			WaitForTestToEnd();
 		});
+	}
+	
+	{
+		AddStep(
+			TEXT("GatherData"), WorkerDefinition, nullptr, [this]() {
+				GatherData();
+			},
+			nullptr);
 	}
 
 	{
 		AddStep(
-			TEXT("StartEventTracingTest"), WorkerDefinition, nullptr,
-			[this]() {
+			TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr, [this]() {
 				FinishEventTraceTest();
 			},
 			nullptr);
@@ -55,7 +62,15 @@ void AEventTracingTest::WaitForTestToEnd()
 
 void AEventTracingTest::FinishEventTraceTest()
 {
-	SpatialEventTracer* EventTracer = GetEventTracer();
+	FinishStep();
+}
+
+void AEventTracingTest::GatherData()
+{
+	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
+	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
+	SpatialEventTracer* EventTracer = ConnectionManager->GetEventTracer();
+
 	FString FilePath = EventTracer->GetFilePath();
 
 	struct StreamDeleter
@@ -83,8 +98,8 @@ void AEventTracingTest::FinishEventTraceTest()
 			if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
 			{
 				const Trace_Event& Event = Item->item.event;
-
 				FName EventName = FName(FString(Event.type));
+
 				FString SpanIdString = SpatialEventTracer::SpanIdToString(Event.span_id);
 				if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
 				{
@@ -127,12 +142,4 @@ bool AEventTracingTest::CheckEventTraceCause(FString SpanIdString, TArray<FName>
 	}
 
 	return true;
-}
-
-SpatialEventTracer* AEventTracingTest::GetEventTracer() const
-{
-	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
-	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
-	SpatialEventTracer* EventTracer = ConnectionManager->GetEventTracer();
-	return EventTracer;
 }

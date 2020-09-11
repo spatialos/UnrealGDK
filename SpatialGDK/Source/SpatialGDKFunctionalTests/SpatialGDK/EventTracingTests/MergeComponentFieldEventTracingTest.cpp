@@ -16,8 +16,6 @@ AMergeComponentFieldEventTracingTest::AMergeComponentFieldEventTracingTest()
 
 void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
 {
-	Super::FinishEventTraceTest();
-
 	int EventsTested = 0;
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)
