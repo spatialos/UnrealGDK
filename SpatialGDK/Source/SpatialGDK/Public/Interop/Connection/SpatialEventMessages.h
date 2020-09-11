@@ -30,9 +30,11 @@ struct FEventMessage
 	}
 
 	const char* GetType() const { return Type; }
+	const char* GetMessage() const { return Message; }
 
-private:
+protected:
 	const char* Type = "Null";
+	const char* Message = "";
 };
 
 USTRUCT()
@@ -44,13 +46,12 @@ struct FEventGenericMessage : public FEventMessage
 		: FEventMessage("generic_message")
 	{
 	}
-	FEventGenericMessage(const FString& Message)
+	FEventGenericMessage(const FString& InMessage)
 		: FEventMessage(GDK_EVENT_NAMESPACE "generic_message")
-		, Message(Message)
 	{
+		auto MessageSrc = StringCast<ANSICHAR>(*InMessage);
+		Message = MessageSrc.Get();
 	}
-
-	UPROPERTY() FString Message;
 };
 
 // Tagged with cause
