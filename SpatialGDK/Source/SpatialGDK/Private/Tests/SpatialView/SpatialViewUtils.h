@@ -32,27 +32,18 @@ inline void AddAuthorityToView(EntityView& View, const Worker_EntityId EntityId,
 	View[EntityId].Authority.Push(ComponentId);
 }
 
-inline void PopulateViewDeltaWithComponentAdded(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
-												const Worker_ComponentId ComponentId)
+inline void PopulateViewDeltaWithComponentAdded(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId, ComponentData Data)
 {
 	EntityComponentOpListBuilder OpListBuilder;
-	OpListBuilder.AddComponent(EntityId, ComponentData{ ComponentId });
-	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
-}
-
-inline void PopulateViewDeltaWithComponentAddedWithValue(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
-														 const Worker_ComponentId ComponentId, const double Value)
-{
-	EntityComponentOpListBuilder OpListBuilder;
-	OpListBuilder.AddComponent(EntityId, CreateTestComponentData(ComponentId, Value));
+	OpListBuilder.AddComponent(EntityId, MoveTemp(Data));
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
 }
 
 inline void PopulateViewDeltaWithComponentUpdated(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
-												  const Worker_ComponentId ComponentId, const double Value)
+												  ComponentUpdate Update)
 {
 	EntityComponentOpListBuilder OpListBuilder;
-	OpListBuilder.UpdateComponent(EntityId, CreateTestComponentUpdate(ComponentId, Value));
+	OpListBuilder.UpdateComponent(EntityId, MoveTemp(Update));
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
 }
 
