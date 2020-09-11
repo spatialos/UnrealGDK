@@ -26,7 +26,6 @@ public:
 	virtual void BeginPlay() override;
 
 protected:
-
 	FName ReceiveOpEventName = "worker.receive_op";
 
 	FWorkerDefinition WorkerDefinition;
@@ -45,5 +44,5 @@ private:
 	FDateTime TestStartTime;
 
 	void WaitForTestToEnd();
-	bool TryGatherData();
+	void GatherData();
 };

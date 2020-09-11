@@ -32,10 +32,11 @@ void AEventTracingTest::BeginPlay()
 			WaitForTestToEnd();
 		});
 	}
-	
+
 	{
 		AddStep(
-			TEXT("GatherData"), WorkerDefinition, nullptr, [this]() {
+			TEXT("GatherData"), WorkerDefinition, nullptr,
+			[this]() {
 				GatherData();
 			},
 			nullptr);
@@ -43,7 +44,8 @@ void AEventTracingTest::BeginPlay()
 
 	{
 		AddStep(
-			TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr, [this]() {
+			TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr,
+			[this]() {
 				FinishEventTraceTest();
 			},
 			nullptr);
@@ -62,7 +64,7 @@ void AEventTracingTest::WaitForTestToEnd()
 
 void AEventTracingTest::FinishEventTraceTest()
 {
-	FinishStep();
+	FinishStep(); 
 }
 
 void AEventTracingTest::GatherData()
