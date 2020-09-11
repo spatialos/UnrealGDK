@@ -1642,7 +1642,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"),
-			EntityId, ComponentId);
+			   EntityId, ComponentId);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 #if WITH_EDITOR
@@ -1688,7 +1688,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	if (ComponentId < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is a reserved spatial system component"),
-			ComponentUpdateOp.entity_id, ComponentId);
+			   ComponentUpdateOp.entity_id, ComponentId);
 		return;
 	}
 
@@ -1696,8 +1696,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(EntityId))
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."),
-			EntityId, ComponentId);
+			   TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), EntityId,
+			   ComponentId);
 		return;
 	}
 
@@ -1764,7 +1764,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find target object for update"), EntityId,
-			ComponentId);
+			   ComponentId);
 		return;
 	}
 
@@ -1781,7 +1781,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 		if (!NetDriver->IsServer())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."),
-				ComponentId, ComponentId);
+				   ComponentId, ComponentId);
 			return;
 		}
 
@@ -1792,7 +1792,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a "
 					"result of gaining authority)"),
-			  EntityId, ComponentId);
+			   EntityId, ComponentId);
 	}
 
 	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { Op.span_id });
