@@ -121,4 +121,3 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 #endif // WITH_EDITOR
 	return true;
 }
-

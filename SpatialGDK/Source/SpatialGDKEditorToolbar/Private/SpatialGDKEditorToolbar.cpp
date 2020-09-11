@@ -759,7 +759,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 		{
 			const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 			Settings->OverrideMultiWorker();
-			
+
 			InitialiseSpatialDebuggerEditor(World);
 		}
 	}

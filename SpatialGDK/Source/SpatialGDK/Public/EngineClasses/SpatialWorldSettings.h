@@ -79,7 +79,6 @@ public:
 	bool IsMultiWorkerEnabled() const;
 
 private:
-
 #if WITH_EDITOR
 	/** Editor override for multi worker*/
 	static bool bDisableMultiWorker;
