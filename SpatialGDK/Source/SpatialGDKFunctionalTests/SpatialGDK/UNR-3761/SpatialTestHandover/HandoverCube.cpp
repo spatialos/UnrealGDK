@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "HandoverCube.h"
-#include "Utils/SpatialStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Utils/SpatialStatics.h"
 
 AHandoverCube::AHandoverCube()
 {
