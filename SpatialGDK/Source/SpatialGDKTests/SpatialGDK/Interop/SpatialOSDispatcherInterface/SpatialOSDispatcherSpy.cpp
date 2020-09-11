@@ -21,7 +21,7 @@ void SpatialOSDispatcherSpy::DropQueuedRemoveComponentOpsForEntity(Worker_Entity
 
 void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_Op& Op) {}
 
-void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}
+void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_Op& Op) {}
 
 // This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 // SpatialRPCService::ExtractRPCsForEntity.
