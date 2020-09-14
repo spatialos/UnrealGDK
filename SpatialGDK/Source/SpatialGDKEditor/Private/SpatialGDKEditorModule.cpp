@@ -24,11 +24,11 @@
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
 
-#include "SpatialFunctionalTest.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
 #include "IAutomationControllerModule.h"
+#include "SpatialFunctionalTest.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 
@@ -81,7 +81,8 @@ void FSpatialGDKEditorModule::ShutdownModule()
 
 void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
-	bool bUseStandardRuntime = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
+	bool bUseStandardRuntime =
+		GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandardRuntime, OnSnapshotTaken);
 }
