@@ -41,6 +41,10 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
 		}
 	}
+	else
+	{
+		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
+	}
 }
 
 SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId)
