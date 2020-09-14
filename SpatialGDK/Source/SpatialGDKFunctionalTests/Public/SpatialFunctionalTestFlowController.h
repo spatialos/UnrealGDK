@@ -52,7 +52,7 @@ public:
 	FWorkerDefinition WorkerDefinition;
 
 	// Prettier way to display type+id combo since it can be quite useful
-	const FString GetDisplayName();
+	const FString GetDisplayName() const;
 
 	// When Test is finished, this gets triggered. It's mostly important for when a Test was failed during runtime
 	void OnTestFinished();

@@ -102,7 +102,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 					Counter++;
 				}
 
-				SoftAssertInt(Counter, EComparisonMethod::Greater_Than, ExpectedDormancyActors,
+				SoftAssertInt(Counter, EComparisonMethod::Equal_To, ExpectedDormancyActors,
 							  TEXT("Number of TestDormancyActors in client world"));
 
 				FinishStep();

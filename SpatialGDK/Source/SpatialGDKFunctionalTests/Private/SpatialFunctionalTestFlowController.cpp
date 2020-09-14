@@ -35,6 +35,7 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bReadyToRegisterWithTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bIsReadyToRunTest);
+	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bHasAckFinishedTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, OwningTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
@@ -164,7 +165,7 @@ void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResul
 	}
 }
 
-const FString ASpatialFunctionalTestFlowController::GetDisplayName()
+const FString ASpatialFunctionalTestFlowController::GetDisplayName() const
 {
 	return FString::Printf(TEXT("[%s:%d]"),
 						   (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server ? TEXT("Server") : TEXT("Client")),
