@@ -12,7 +12,7 @@ ATestPrepareShutdownListener::ATestPrepareShutdownListener()
 bool ATestPrepareShutdownListener::RegisterCallback()
 {
 	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
-	if(!GameInstance)
+	if (GameInstance == nullptr)
 	{
 		return false;
 	}

@@ -2,12 +2,10 @@
 
 #include "SpatialTestShutdownPreparationTrigger.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "SpatialConstants.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialFunctionalTestLBDelegationInterface.h"
-#include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
 #include "TestPrepareShutdownListener.h"
-//#include "SpatialGDKEditorSettings.h"
 
 ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 {
@@ -20,7 +18,8 @@ ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 	// Being lazy here and constructing one request on all workers, even though it will only be used on server worker 1
 	LocalShutdownRequest = FHttpModule::Get().CreateRequest();
 	LocalShutdownRequest->SetVerb(TEXT("PUT"));
-	LocalShutdownRequest->SetURL(TEXT("http://localhost:5006/worker_flag/workers/UnrealWorker/flags/PrepareShutdown"));
+	LocalShutdownRequest->SetURL(TEXT("http://localhost:5006/worker_flag/workers/UnrealWorker/flags/")
+								 + SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG);
 	LocalShutdownRequest->SetContentAsString(TEXT(""));
 }
 

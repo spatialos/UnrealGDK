@@ -304,6 +304,8 @@ const FString URL_DISPLAY_NAME_OPTION = TEXT("displayname=");
 const FString URL_METADATA_OPTION = TEXT("metadata=");
 const FString URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION = TEXT("useExternalIpForBridge");
 
+const FString SHUTDOWN_PREPARATION_WORKER_FLAG = TEXT("PrepareShutdown");
+
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
 const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");

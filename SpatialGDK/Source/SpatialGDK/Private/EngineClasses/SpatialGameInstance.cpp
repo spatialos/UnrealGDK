@@ -18,6 +18,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -252,7 +253,7 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	if (FlagName.Equals(TEXT("PrepareShutdown"), ESearchCase::IgnoreCase))
+	if (FlagName.Equals(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, ESearchCase::IgnoreCase))
 	{
 		if (!bPreparingForShutdown)
 		{
