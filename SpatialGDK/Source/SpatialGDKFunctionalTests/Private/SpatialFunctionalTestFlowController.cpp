@@ -11,8 +11,6 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
-#pragma optimize("", off)
-
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -213,5 +211,3 @@ void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Impleme
 {
 	OwningTest->CrossServerNotifyStepFinished(this);
 }
-
-#pragma optimize("", on)
