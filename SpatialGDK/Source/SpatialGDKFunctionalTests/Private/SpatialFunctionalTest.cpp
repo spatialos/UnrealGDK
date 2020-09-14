@@ -695,7 +695,7 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenFunc& CppCallback)
 
 void ASpatialFunctionalTest::ClearSnapshot()
 {
-	SetSnapshotForMap(GetWorld(), FString() /* PathToSnapshot */ );
+	SetSnapshotForMap(GetWorld(), FString() /* PathToSnapshot */);
 }
 
 bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& PathToSnapshot)
