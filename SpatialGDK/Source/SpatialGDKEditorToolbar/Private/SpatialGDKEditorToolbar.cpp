@@ -113,7 +113,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
 
-			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetForceSnapshot());
+			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
 		}
 	});
 #endif
