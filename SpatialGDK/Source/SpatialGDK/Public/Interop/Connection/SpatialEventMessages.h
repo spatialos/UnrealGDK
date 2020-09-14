@@ -17,7 +17,6 @@ static_assert(sizeof(Worker_RequestId) == sizeof(int64), "RequestId assumed 64-b
 
 #define GDK_EVENT_NAMESPACE "unreal_gdk."
 
-// Tagged with cause - could
 USTRUCT()
 struct FEventMessage
 {
@@ -54,7 +53,6 @@ struct FEventGenericMessage : public FEventMessage
 	}
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCreateEntity : public FEventMessage
 {
@@ -75,7 +73,6 @@ struct FEventCreateEntity : public FEventMessage
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRemoveEntity : public FEventMessage
 {
@@ -96,7 +93,6 @@ struct FEventRemoveEntity : public FEventMessage
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCreateEntitySuccess : public FEventMessage
 {
@@ -137,7 +133,6 @@ struct FEventAuthorityIntentUpdate : public FEventMessage
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventAuthorityLossImminent : public FEventMessage
 {
@@ -158,7 +153,6 @@ struct FEventAuthorityLossImminent : public FEventMessage
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause - could
 USTRUCT()
 struct FEventRetireEntityRequest : public FEventMessage
 {
@@ -199,7 +193,6 @@ struct FEventSendRPC : public FEventMessage
 	UPROPERTY() const UFunction* Function = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRPCQueued : public FEventMessage
 {
@@ -220,7 +213,6 @@ struct FEventRPCQueued : public FEventMessage
 	UPROPERTY() const UFunction* Function = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRPCRetried : public FEventMessage
 {
@@ -232,7 +224,6 @@ struct FEventRPCRetried : public FEventMessage
 	}
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRPCProcessed : public FEventMessage
 {
@@ -275,7 +266,6 @@ struct FEventComponentUpdate : public FEventMessage
 	UPROPERTY() uint32 ComponentId = 0;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCommandResponse : public FEventMessage
 {
@@ -316,7 +306,6 @@ struct FEventCommandResponse : public FEventMessage
 	UPROPERTY() bool bSuccess = false;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCommandRequest : public FEventMessage
 {
