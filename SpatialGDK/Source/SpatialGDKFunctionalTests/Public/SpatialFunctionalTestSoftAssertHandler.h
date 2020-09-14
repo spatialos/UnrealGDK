@@ -46,7 +46,6 @@ public:
 	bool HasFails();
 
 private:
-
 	ASpatialFunctionalTest* OwnerTest;
 
 	FString GetComparisonMethodAsString(EComparisonMethod Operator);

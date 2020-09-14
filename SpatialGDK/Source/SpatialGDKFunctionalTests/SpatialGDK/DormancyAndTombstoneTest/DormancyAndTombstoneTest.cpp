@@ -43,7 +43,8 @@ void ADormancyAndTombstoneTest::BeginPlay()
 							  TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"));
 				Iter->TestIntProp = 1;
 			}
-			SoftAssertInt(Counter, EComparisonMethod::Equal_To, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
+			SoftAssertInt(Counter, EComparisonMethod::Equal_To, ExpectedDormancyActors,
+						  TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});

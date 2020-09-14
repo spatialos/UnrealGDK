@@ -95,15 +95,15 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 	else if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED && FinishTestTimerHandle.IsValid())
 	{
 		bool bAllAcknowledgedFinishedTest = true;
-		for(const auto* FlowController : FlowControllers)
+		for (const auto* FlowController : FlowControllers)
 		{
-			if(!FlowController->HasAckFinishedTest())
+			if (!FlowController->HasAckFinishedTest())
 			{
 				bAllAcknowledgedFinishedTest = false;
 				break;
 			}
 		}
-		if(bAllAcknowledgedFinishedTest)
+		if (bAllAcknowledgedFinishedTest)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
 			Super::FinishTest(CachedTestResult, CachedTestMessage);
@@ -183,7 +183,7 @@ void ASpatialFunctionalTest::StartTest()
 void ASpatialFunctionalTest::FinishStep()
 {
 	// We can only FinishStep if there are no SoftAssert fails.
-	if(SoftAssertHandler.HasFails())
+	if (SoftAssertHandler.HasFails())
 	{
 		return;
 	}
@@ -291,17 +291,20 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			CachedTestResult = TestResult;
 			CachedTestMessage = Message;
 
-			GetWorld()->GetTimerManager().SetTimer(FinishTestTimerHandle, [this](){
-				// If this timer trigger, then it means that something went wrong with one of the Workers. The
-				// expected behaviour is that the Super::FinishTest will be called from Tick().
-				Super::FinishTest(CachedTestResult, CachedTestMessage);
+			GetWorld()->GetTimerManager().SetTimer(
+				FinishTestTimerHandle,
+				[this]() {
+					// If this timer trigger, then it means that something went wrong with one of the Workers. The
+					// expected behaviour is that the Super::FinishTest will be called from Tick().
+					Super::FinishTest(CachedTestResult, CachedTestMessage);
 
-				FinishTestTimerHandle.Invalidate();
+					FinishTestTimerHandle.Invalidate();
 
-				// Clear cached values.
-				CachedTestResult = EFunctionalTestResult::Default;
-				CachedTestMessage.Empty();
-			}, 2.0f /* InRate */, false /* InbLoop */);
+					// Clear cached values.
+					CachedTestResult = EFunctionalTestResult::Default;
+					CachedTestMessage.Empty();
+				},
+				2.0f /* InRate */, false /* InbLoop */);
 		}
 	}
 	else

@@ -43,10 +43,13 @@ void ASpatialFunctionalTestFlowController::OnAuthorityGained()
 {
 	// Super hack
 	FTimerHandle Handle;
-	GetWorldTimerManager().SetTimer(Handle, [this](){
-		bReadyToRegisterWithTest = true;
-		OnReadyToRegisterWithTest();
-	}, 0.5f, false);
+	GetWorldTimerManager().SetTimer(
+		Handle,
+		[this]() {
+			bReadyToRegisterWithTest = true;
+			OnReadyToRegisterWithTest();
+		},
+		0.5f, false);
 }
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
@@ -171,7 +174,7 @@ const FString ASpatialFunctionalTestFlowController::GetDisplayName()
 void ASpatialFunctionalTestFlowController::OnTestFinished()
 {
 	StopStepInternal();
-	if(WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		bHasAckFinishedTest = true;
 	}

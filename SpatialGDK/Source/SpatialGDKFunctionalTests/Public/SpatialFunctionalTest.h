@@ -7,8 +7,8 @@
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
-#include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTestSoftAssertHandler.h"
+#include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
 namespace
@@ -210,7 +210,6 @@ public:
 	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
 	// negatives. These functions work in a way that they record the expected behaviour, and when we FinishStep / FinishTest
 	// it will let you know which of them passed and which failed.
-
 
 	void SoftAssertTrue(bool bCheckTrue, const FString& Msg);
 

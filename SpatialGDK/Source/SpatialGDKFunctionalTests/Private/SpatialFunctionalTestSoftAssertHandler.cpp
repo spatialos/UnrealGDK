@@ -1,18 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialFunctionalTestSoftAssertHandler.h"
+#include "../Public/SpatialFunctionalTestFlowController.h"
 #include "Logging/LogMacros.h"
 #include "Misc/AssertionMacros.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 #include "VisualLogger/VisualLogger.h"
-#include "../Public/SpatialFunctionalTestFlowController.h"
 
 SpatialFunctionalTestSoftAssertHandler::SpatialFunctionalTestSoftAssertHandler()
-	:NextOrder(0)
+	: NextOrder(0)
 {
 }
-
 
 void SpatialFunctionalTestSoftAssertHandler::SoftAssertTrue(bool bCheckTrue, const FString& Msg)
 {
@@ -61,7 +60,7 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertInt(int A, EComparisonMet
 
 FString SpatialFunctionalTestSoftAssertHandler::GetComparisonMethodAsString(EComparisonMethod Operator)
 {
-	switch(Operator)
+	switch (Operator)
 	{
 	case EComparisonMethod::Equal_To:
 		return TEXT("==");
@@ -82,7 +81,7 @@ FString SpatialFunctionalTestSoftAssertHandler::GetComparisonMethodAsString(ECom
 }
 
 void SpatialFunctionalTestSoftAssertHandler::SoftAssertFloat(float A, EComparisonMethod Operator, float B, const FString& Msg,
-											 const float EqualityTolerance /*= 0.0001f*/)
+															 const float EqualityTolerance /*= 0.0001f*/)
 {
 	bool bPassed = false;
 	switch (Operator)
@@ -109,9 +108,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertFloat(float A, ECompariso
 
 	FString ErrorMsg;
 
-	if(!bPassed)
+	if (!bPassed)
 	{
-		ErrorMsg = FString::Printf(TEXT("Expected %f %s %f (equality tolerance = %f)"), A, *GetComparisonMethodAsString(Operator), B, EqualityTolerance);
+		ErrorMsg = FString::Printf(TEXT("Expected %f %s %f (equality tolerance = %f)"), A, *GetComparisonMethodAsString(Operator), B,
+								   EqualityTolerance);
 	}
 
 	GenericSoftAssert(Msg, bPassed, ErrorMsg);
@@ -136,16 +136,18 @@ void SpatialFunctionalTestSoftAssertHandler::LogAndClearStepSoftAsserts()
 	TArray<FSpatialFunctionalTestSoftAssert> SoftAssertsOrdered;
 	SoftAssertsOrdered.Reserve(SoftAsserts.Num());
 
-	for(const auto& SoftAssertEntry : SoftAsserts)
+	for (const auto& SoftAssertEntry : SoftAsserts)
 	{
 		SoftAssertsOrdered.Add(SoftAssertEntry.Value);
 	}
 
-	SoftAssertsOrdered.Sort([](const FSpatialFunctionalTestSoftAssert& A, const FSpatialFunctionalTestSoftAssert& B) -> bool{ return A.Order < B.Order; } );
+	SoftAssertsOrdered.Sort([](const FSpatialFunctionalTestSoftAssert& A, const FSpatialFunctionalTestSoftAssert& B) -> bool {
+		return A.Order < B.Order;
+	});
 
 	const FString& WorkerName = OwnerTest->GetLocalFlowController()->GetDisplayName();
 
-	for(const auto& SoftAssert : SoftAssertsOrdered)
+	for (const auto& SoftAssert : SoftAssertsOrdered)
 	{
 		FString Msg;
 		if (SoftAssert.bPassed)
