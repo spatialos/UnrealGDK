@@ -219,7 +219,7 @@ struct FEventRPCRetried : public FEventMessage
 	GENERATED_BODY()
 
 	FEventRPCRetried()
-		: FEventMessage(GDK_EVENT_NAMESPACE "retire_rpc")
+		: FEventMessage(GDK_EVENT_NAMESPACE "retry_rpc")
 	{
 	}
 };
@@ -392,14 +392,16 @@ struct FEventPropertyUpdate : public FEventMessage
 		: FEventMessage("property_updated")
 	{
 	}
-	FEventPropertyUpdate(const int64 EntityId, uint32 ComponentId, const FString& PropertyName)
+	FEventPropertyUpdate(const AActor* Actor, const int64 EntityId, uint32 ComponentId, const FString& PropertyName)
 		: FEventMessage(GDK_EVENT_NAMESPACE "property_update")
+		, Actor(Actor)
 		, EntityId(EntityId)
 		, ComponentId(ComponentId)
 		, PropertyName(PropertyName)
 	{
 	}
 
+	UPROPERTY() const AActor* Actor = nullptr;
 	UPROPERTY() int64 EntityId = -1;
 	UPROPERTY() uint32 ComponentId = 0;
 	UPROPERTY() FString PropertyName;
