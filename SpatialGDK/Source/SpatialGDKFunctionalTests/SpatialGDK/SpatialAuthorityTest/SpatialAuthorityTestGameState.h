@@ -12,8 +12,8 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestGameState : public AGameStateBase
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ASpatialAuthorityTestGameState();
 
 	UPROPERTY()

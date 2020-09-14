@@ -34,6 +34,7 @@ struct DeleteEntityRequest
 	Worker_RequestId RequestId;
 	Worker_EntityId EntityId;
 	TOptional<uint32> TimeoutMillis;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct EntityQueryRequest

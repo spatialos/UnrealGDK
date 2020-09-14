@@ -10,7 +10,7 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTestReplicatedActor : public ASpatialAuthorityTestActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	ASpatialAuthorityTestReplicatedActor();
 };

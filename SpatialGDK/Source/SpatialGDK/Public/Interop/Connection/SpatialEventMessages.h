@@ -17,7 +17,6 @@ static_assert(sizeof(Worker_RequestId) == sizeof(int64), "RequestId assumed 64-b
 
 #define GDK_EVENT_NAMESPACE "unreal_gdk."
 
-// Tagged with cause - could
 USTRUCT()
 struct FEventMessage
 {
@@ -30,9 +29,11 @@ struct FEventMessage
 	}
 
 	const char* GetType() const { return Type; }
+	const char* GetMessage() const { return Message; }
 
-private:
+protected:
 	const char* Type = "Null";
+	const char* Message = "";
 };
 
 USTRUCT()
@@ -44,16 +45,14 @@ struct FEventGenericMessage : public FEventMessage
 		: FEventMessage("generic_message")
 	{
 	}
-	FEventGenericMessage(const FString& Message)
+	FEventGenericMessage(const FString& InMessage)
 		: FEventMessage(GDK_EVENT_NAMESPACE "generic_message")
-		, Message(Message)
 	{
+		auto MessageSrc = StringCast<ANSICHAR>(*InMessage);
+		Message = MessageSrc.Get();
 	}
-
-	UPROPERTY() FString Message;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCreateEntity : public FEventMessage
 {
@@ -74,7 +73,6 @@ struct FEventCreateEntity : public FEventMessage
 	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRemoveEntity : public FEventMessage
 {
@@ -91,11 +89,10 @@ struct FEventRemoveEntity : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCreateEntitySuccess : public FEventMessage
 {
@@ -112,8 +109,8 @@ struct FEventCreateEntitySuccess : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 USTRUCT()
@@ -132,11 +129,10 @@ struct FEventAuthorityIntentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() uint32 NewWorkerId{ 0xFFFFFFFF };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() uint32 NewWorkerId = 0xFFFFFFFF;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventAuthorityLossImminent : public FEventMessage
 {
@@ -154,10 +150,9 @@ struct FEventAuthorityLossImminent : public FEventMessage
 	}
 
 	UPROPERTY() TEnumAsByte<ENetRole> Role{ 0 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
-// Tagged with cause - could
 USTRUCT()
 struct FEventRetireEntityRequest : public FEventMessage
 {
@@ -174,8 +169,8 @@ struct FEventRetireEntityRequest : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() const AActor* Actor{ nullptr };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() const AActor* Actor = nullptr;
 };
 
 USTRUCT()
@@ -194,11 +189,10 @@ struct FEventSendRPC : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRPCQueued : public FEventMessage
 {
@@ -215,23 +209,21 @@ struct FEventRPCQueued : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRPCRetried : public FEventMessage
 {
 	GENERATED_BODY()
 
 	FEventRPCRetried()
-		: FEventMessage(GDK_EVENT_NAMESPACE "retire_rpc")
+		: FEventMessage(GDK_EVENT_NAMESPACE "retry_rpc")
 	{
 	}
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventRPCProcessed : public FEventMessage
 {
@@ -248,8 +240,8 @@ struct FEventRPCProcessed : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
 };
 
 USTRUCT()
@@ -269,12 +261,11 @@ struct FEventComponentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() const AActor* Actor{ nullptr };
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() uint32 ComponentId{ 0 };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() uint32 ComponentId = 0;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCommandResponse : public FEventMessage
 {
@@ -308,14 +299,13 @@ struct FEventCommandResponse : public FEventMessage
 	}
 
 	UPROPERTY() FString Command;
-	UPROPERTY() const AActor* Actor{ nullptr };
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
-	UPROPERTY() int64 RequestID{ -1 };
-	UPROPERTY() bool bSuccess{ false };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
+	UPROPERTY() int64 RequestID = -1;
+	UPROPERTY() bool bSuccess = false;
 };
 
-// Tagged with cause
 USTRUCT()
 struct FEventCommandRequest : public FEventMessage
 {
@@ -344,11 +334,11 @@ struct FEventCommandRequest : public FEventMessage
 	}
 
 	UPROPERTY() FString Command;
-	UPROPERTY() const AActor* Actor{ nullptr };
-	UPROPERTY() const UObject* TargetObject{ nullptr };
-	UPROPERTY() const UFunction* Function{ nullptr };
-	UPROPERTY() int32 TraceId{ -1 };
-	UPROPERTY() int64 RequestID{ -1 };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() const UObject* TargetObject = nullptr;
+	UPROPERTY() const UFunction* Function = nullptr;
+	UPROPERTY() int32 TraceId = -1;
+	UPROPERTY() int64 RequestID = -1;
 };
 
 USTRUCT()
@@ -367,8 +357,8 @@ struct FEventMergeComponentUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() uint32 ComponentId{ 0 };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() uint32 ComponentId = 0;
 };
 
 USTRUCT()
@@ -388,9 +378,9 @@ struct FEventMergeComponentFieldUpdate : public FEventMessage
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() uint32 ComponentId{ 0 };
-	UPROPERTY() uint32 FieldId{ 0 };
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() uint32 ComponentId = 0;
+	UPROPERTY() uint32 FieldId = 0;
 };
 
 USTRUCT()
@@ -402,16 +392,18 @@ struct FEventPropertyUpdate : public FEventMessage
 		: FEventMessage("property_updated")
 	{
 	}
-	FEventPropertyUpdate(const int64 EntityId, uint32 ComponentId, const FString& PropertyName)
+	FEventPropertyUpdate(const AActor* Actor, const int64 EntityId, uint32 ComponentId, const FString& PropertyName)
 		: FEventMessage(GDK_EVENT_NAMESPACE "property_update")
+		, Actor(Actor)
 		, EntityId(EntityId)
 		, ComponentId(ComponentId)
 		, PropertyName(PropertyName)
 	{
 	}
 
-	UPROPERTY() int64 EntityId{ -1 };
-	UPROPERTY() uint32 ComponentId{ 0 };
+	UPROPERTY() const AActor* Actor = nullptr;
+	UPROPERTY() int64 EntityId = -1;
+	UPROPERTY() uint32 ComponentId = 0;
 	UPROPERTY() FString PropertyName;
 };
 

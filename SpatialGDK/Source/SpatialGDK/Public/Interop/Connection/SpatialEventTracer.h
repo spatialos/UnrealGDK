@@ -62,7 +62,7 @@ public:
 	void ComponentAdd(const Worker_Op& Op);
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
-	void DropOldUpdates();
+	void DropOldSpanIds();
 
 	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
 	void DropSpanIds(const EntityComponentId& EntityComponentId);
@@ -98,6 +98,12 @@ private:
 
 	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
 									   const TArray<worker::c::Trace_SpanId>& Causes);
+};
+
+struct SpatialEventTracerGuard
+{
+	FCriticalSection CriticalSection;
+	SpatialEventTracer* EventTracer;
 };
 
 struct SpatialScopedActiveSpanId

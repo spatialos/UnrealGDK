@@ -33,9 +33,7 @@ call :MarkStartOfBlock "Unpack dependencies"
 	set LEGACY_FOLDER=%WORKER_SDK_DIR%\improbable\legacy\
 	set TRACE_HEADER="%LEGACY_FOLDER%trace.h"
 	set TEMP_HEADER="%LEGACY_FOLDER%temp.h"
-
-	cat %TRACE_HEADER% | sed -e "s|#include <improbable/c_trace.h>|#include <improbable/legacy/c_trace.h>|" > %TEMP_HEADER%
-	mv %TEMP_HEADER% %TRACE_HEADER%
+	sed -i "s|#include <improbable/c_trace.h>|#include <improbable/legacy/c_trace.h>|g" %TRACE_HEADER%
 
 call :MarkEndOfBlock "Unpack dependencies"
 

@@ -10,6 +10,11 @@
 
 namespace SpatialGDK
 {
+ViewDelta::ViewDelta()
+	: EventTracer(nullptr)
+{
+}
+
 ViewDelta::ViewDelta(SpatialEventTracer* InEventTracer)
 	: EventTracer(InEventTracer)
 {
@@ -18,6 +23,12 @@ ViewDelta::ViewDelta(SpatialEventTracer* InEventTracer)
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 {
 	Clear();
+
+	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
+	if (bEventTracerEnabled)
+	{
+		EventTracer->DropOldSpanIds();
+	}
 
 	for (OpList& Ops : OpLists)
 	{
@@ -255,10 +266,6 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 void ViewDelta::ProcessOp(Worker_Op& Op)
 {
 	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
-	if (bEventTracerEnabled)
-	{
-		EventTracer->DropOldUpdates();
-	}
 
 	switch (static_cast<Worker_OpType>(Op.op_type))
 	{

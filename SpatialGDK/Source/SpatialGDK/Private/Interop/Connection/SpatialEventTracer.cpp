@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
+#include "Misc/ScopeLock.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
 #include "UObject/UnrealType.h"
@@ -15,9 +16,13 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
+SpatialEventTracerGuard EventTracerGuard;
+
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
-	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
+	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
+
+	SpatialEventTracer* EventTracer = EventTracerGuard.EventTracer;
 	if (EventTracer == nullptr || !EventTracer->IsEnabled())
 	{
 		return;
@@ -139,7 +144,8 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	}
 
-	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, "", EventMessage.GetType(), nullptr };
+	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, EventMessage.GetMessage(), EventMessage.GetType(),
+							nullptr };
 	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
 		return {};
@@ -235,7 +241,8 @@ bool SpatialEventTracer::IsEnabled() const
 void SpatialEventTracer::Enable(const FString& FileName)
 {
 	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
+	EventTracerGuard.EventTracer = this;
+	parameters.user_data = &EventTracerGuard;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
@@ -264,6 +271,10 @@ void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* StreamT
 void SpatialEventTracer::Disable()
 {
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
+
+	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
+	EventTracerGuard.EventTracer = nullptr;
+
 	Trace_EventTracer_Disable(EventTracer);
 	bEnabled = false;
 	Stream = nullptr;
@@ -311,7 +322,7 @@ void SpatialEventTracer::DropSpanId(const EntityComponentId& Id, const uint32 Fi
 	SpanIdStore.DropSpanId(Id, FieldId);
 }
 
-void SpatialEventTracer::DropOldUpdates()
+void SpatialEventTracer::DropOldSpanIds()
 {
 	SpanIdStore.DropOldSpanIds();
 }

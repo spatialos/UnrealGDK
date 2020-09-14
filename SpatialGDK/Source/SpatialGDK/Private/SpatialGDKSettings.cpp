@@ -8,6 +8,7 @@
 
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
+#include "Utils/SpatialStatics.h"
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
@@ -124,7 +125,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
-	, bUseSpatialView(false)
+	, bUseSpatialView(true)
 	, bEnableCrossLayerActorSpawning(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
@@ -155,9 +156,13 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
-
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideUseSpatialView"), TEXT("Use SpatialView to manage communication with SpatialOS"),
+							 bUseSpatialView);
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
+		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR

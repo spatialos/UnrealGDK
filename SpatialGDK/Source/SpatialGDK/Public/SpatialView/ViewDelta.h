@@ -33,6 +33,7 @@ class SpatialEventTracer;
 class ViewDelta
 {
 public:
+	ViewDelta();
 	explicit ViewDelta(SpatialEventTracer* InEventTracer);
 
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
