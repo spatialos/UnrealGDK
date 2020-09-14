@@ -33,6 +33,8 @@
  *    - The spawned Character is destroyed.
  */
 
+const static float StepTimeLimit = 10.0f;
+
 AVisibilityTest::AVisibilityTest()
 	: Super()
 {
@@ -95,7 +97,7 @@ void AVisibilityTest::BeginPlay()
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 2 - Client 1 checks if it has correctly possessed the TestMovementCharacter.
@@ -113,7 +115,7 @@ void AVisibilityTest::BeginPlay()
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 4 - Server moves the TestMovementCharacter of Client 1 to a remote location, so that it does not see the
@@ -145,7 +147,7 @@ void AVisibilityTest::BeginPlay()
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 6 - Client 1 checks that it can no longer see the AReplicatedVisibilityTestActor.
@@ -157,7 +159,7 @@ void AVisibilityTest::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 7 - Server Set AReplicatedVisibilityTestActor to be hidden.
@@ -208,7 +210,7 @@ void AVisibilityTest::BeginPlay()
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 11 - Clients check that they can still not see the AReplicatedVisibilityTestActor
@@ -220,7 +222,7 @@ void AVisibilityTest::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 12 - Server Set AReplicatedVisibilityTestActor to not be hidden anymore.
