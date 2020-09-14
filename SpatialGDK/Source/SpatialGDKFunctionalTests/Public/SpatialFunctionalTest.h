@@ -251,6 +251,18 @@ protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
+	// # Built-in StepDefinitions for convenience
+
+	// Step Definition that will take a SpatialOS snapshot for the current map. This snapshot will become the
+	// default snapshot for the map it was taken with until you either clear it or the Automation Manager finishes
+	// running the tests.
+	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
+	FSpatialFunctionalTestStepDefinition TakeSnapshotStepDefinition;
+
+	// Step Definition that will clear the SpatialOS snapshot for the current map.
+	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
+	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
+
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
 	int NumRequiredClients = 2;

@@ -47,7 +47,30 @@ void ASpatialFunctionalTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// by default expect 1 server
+	// Setup built-in step definitions.
+	TakeSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	TakeSnapshotStepDefinition.StepName = TEXT("Take SpatialOS Snapshot");
+	TakeSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		TakeSnapshot([this](bool bSuccess) {
+			if (bSuccess)
+			{
+				FinishStep();
+			}
+			else
+			{
+				FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to take SpatialOS Snapshot."));
+			}
+		});
+	});
+
+	ClearSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	ClearSnapshotStepDefinition.StepName = TEXT("Clear SpatialOS Snapshot");
+	ClearSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		ClearSnapshot();
+		FinishStep();
+	});
+
+	// By default expect 1 server.
 	NumExpectedServers = 1;
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
