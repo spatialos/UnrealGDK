@@ -92,6 +92,12 @@ private:
 									   const TArray<worker::c::Trace_SpanId>& Causes);
 };
 
+struct SpatialEventTracerGuard
+{
+	FCriticalSection CriticalSection;
+	SpatialEventTracer* EventTracer;
+};
+
 struct SpatialScopedActiveSpanId
 {
 	SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);

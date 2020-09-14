@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
+#include "Misc/ScopeLock.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
 #include "UObject/UnrealType.h"
@@ -13,9 +14,13 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
+SpatialEventTracerGuard EventTracerGuard;
+
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
-	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
+	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
+
+	SpatialEventTracer* EventTracer = EventTracerGuard.EventTracer;
 	if (EventTracer == nullptr || !EventTracer->IsEnabled())
 	{
 		return;
@@ -191,7 +196,8 @@ bool SpatialEventTracer::IsEnabled() const
 void SpatialEventTracer::Enable(const FString& FileName)
 {
 	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
+	EventTracerGuard.EventTracer = this;
+	parameters.user_data = &EventTracerGuard;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
@@ -220,6 +226,10 @@ void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* StreamT
 void SpatialEventTracer::Disable()
 {
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
+
+	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
+	EventTracerGuard.EventTracer = nullptr;
+
 	Trace_EventTracer_Disable(EventTracer);
 	bEnabled = false;
 	Stream = nullptr;
