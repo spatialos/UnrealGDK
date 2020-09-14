@@ -7,6 +7,7 @@
 AReplicatedTestActorBase::AReplicatedTestActorBase()
 {
 	bReplicates = true;
+	SetReplicateMovement(true);
 
 	CubeComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CubeComponent"));
 	CubeComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")));
