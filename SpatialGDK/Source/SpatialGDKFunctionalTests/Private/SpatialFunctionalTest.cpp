@@ -21,9 +21,6 @@
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
-#include "TimerManager.h"
-
-#pragma optimize("", off)
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -543,7 +540,6 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 	}
 }
 
-#pragma optimize("", on)
 namespace
 {
 USpatialNetDriver* GetNetDriverAndCheckDebuggingEnabled(AActor* Actor)
@@ -697,7 +693,10 @@ void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenFunc& CppCallback)
 	}
 }
 
-void ASpatialFunctionalTest::ClearSnapshot() {}
+void ASpatialFunctionalTest::ClearSnapshot()
+{
+	SetSnapshotForMap(GetWorld(), FString() /* PathToSnapshot */ );
+}
 
 bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& PathToSnapshot)
 {
