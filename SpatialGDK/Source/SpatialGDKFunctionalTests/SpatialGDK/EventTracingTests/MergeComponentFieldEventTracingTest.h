@@ -16,6 +16,5 @@ public:
 	AMergeComponentFieldEventTracingTest();
 
 private:
-
 	virtual void FinishEventTraceTest() override;
 };
