@@ -2076,6 +2076,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 		// We received a response for some other command, ignore.
 		FEventCommandResponse EventCommandResponse;
 		EventCommandResponse.Actor = TargetActor;
+		EventCommandResponse.bSuccess = false;
 		EventTracer->TraceEvent(EventCommandResponse, { Op.span_id });
 		return;
 	}
@@ -2087,6 +2088,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	EventCommandResponse.Actor = TargetActor;
 	EventCommandResponse.TargetObject = ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr;
 	EventCommandResponse.Function = ReliableRPC->Function;
+	EventCommandResponse.bSuccess = StatusCode == WORKER_STATUS_CODE_SUCCESS;
 	EventTracer->TraceEvent(EventCommandResponse, { Op.span_id });
 
 	if (StatusCode != WORKER_STATUS_CODE_SUCCESS)
