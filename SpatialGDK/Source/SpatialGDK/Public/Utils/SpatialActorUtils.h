@@ -5,13 +5,17 @@
 #include "EngineClasses/SpatialNetConnection.h"
 
 #include "Components/SceneComponent.h"
-#include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/GameMode.h"
 #include "GameFramework/PlayerController.h"
 #include "Math/Vector.h"
+
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#include "GameplayDebuggerCategoryReplicator.h"
+#endif
 
 namespace SpatialGDK
 {
@@ -86,6 +90,31 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 
 	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
+}
+
+inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
+{
+	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameModeBase::StaticClass())
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+		|| InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
+#endif
+	)
+
+	{
+		return true;
+	}
+
+	return false;
+}
+
+inline bool ShouldActorHaveVisibleComponent(AActor* InActor)
+{
+	if (InActor->bAlwaysRelevant || !InActor->IsHidden() || DoesActorClassIgnoreVisibilityCheck(InActor))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 } // namespace SpatialGDK

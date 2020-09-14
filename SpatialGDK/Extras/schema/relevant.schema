@@ -8,3 +8,7 @@ component AlwaysRelevant {
 component Dormant {
     id = 9981;
 }
+
+component Visible {
+    id = 9970;
+}

@@ -27,8 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts.
 - Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target will be automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 - Add ability to specify `USpatialMultiWorkerSettings` class from command line. Specifying a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
+- You can now override the load balancing strategy in-editor so that it is different from the cloud. Set `Editor Multi Worker Settings Class` in the `World Settings` to specify the in-editor load balancing strategy. If it is not specified, the existing `Multi Worker Settings Class` will determine both the local and cloud load balancing strategy.
 - Added `BroadcastNetworkFailure` with type `OutdatedClient` on client schema hash mismatch with server. Add your own callback to `GEngine->NetworkFailureEvent` to add custom behaviour for outdated clients attempting to join.
 - You can now see the Spatial Debugger in-editor mode similar to the one you see in play mode. Select `Spatial Editor Debugger` from the drop option from the `Start Deployment` button on the toolbar to toggle the visibility of the worker boundaries on and off in-editor.
+- Enabled the `bUseSpatialView` property by default and added the `--OverrideUseSpatialView` flag.
+- Added facilities to manipulate worker interest and Actor authority in SpatialFunctionalTest.
+- Allow specifying the locator port via `?locatorPort=` URL option when performing client travel.
 
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
@@ -36,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Properly handle pairs of Add/Remove component in critical section. The issue manifested in the form of remnant actors which the worker should have lost interest in.
 - Made the DeploymentLauncher stop multiple deployments in parallel to improve performance when working with large numbers of deployments.
 - Fixed an issue where possessing a new pawn and immediately setting the owner of the old pawn to the controller could cause server RPCs from that pawn to be dropped.
+- Added support for the `bHidden` relevancy flag. Clients will not checkout Actors that have `bHidden` set to true (unless they are always relevant or the root component has collisions enabled).
 
 ## [`0.11.0`] - 2020-09-03
 

@@ -425,6 +425,28 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	return HandoverChanged;
 }
 
+void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
+{
+	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
+	if (SpatialGDK::DoesActorClassIgnoreVisibilityCheck(InActor))
+	{
+		return;
+	}
+
+	// Unreal applies the following rules (in order) in determining the relevant set of Actors for a player:
+	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
+	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
+	// not. Make sure that the Actor is also not always relevant.
+	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()) && !InActor->bAlwaysRelevant)
+	{
+		NetDriver->RefreshActorVisibility(InActor, false);
+	}
+	else
+	{
+		NetDriver->RefreshActorVisibility(InActor, true);
+	}
+}
+
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
@@ -554,6 +576,12 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			UpdateSpatialPosition();
 		}
+	}
+
+	if (Actor->GetIsHiddenDirty())
+	{
+		UpdateVisibleComponent(Actor);
+		Actor->SetIsHiddenDirty(false);
 	}
 
 	// Update the replicated property change list.

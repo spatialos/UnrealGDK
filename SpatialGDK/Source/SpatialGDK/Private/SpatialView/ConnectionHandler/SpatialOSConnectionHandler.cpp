@@ -2,6 +2,8 @@
 
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
+#include "Async/Async.h"
+
 namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection)
@@ -180,7 +182,10 @@ void SpatialOSConnectionHandler::ConnectionDeleter::operator()(Worker_Connection
 {
 	if (ConnectionToDelete != nullptr)
 	{
-		Worker_Connection_Destroy(ConnectionToDelete);
+		// TODO: UNR-4211 - this is a mitigation for the slow connection destruction code in pie.
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionToDelete]() {
+			Worker_Connection_Destroy(ConnectionToDelete);
+		});
 	}
 }
 

@@ -101,24 +101,26 @@ bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObj
 	const UWorld* World = WorldContextObject->GetWorld();
 	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
-		{
-			FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
-			FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
-			WorldSettings->MultiWorkerSettingsClass = MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
-			checkf(WorldSettings->MultiWorkerSettingsClass != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
-			WorldSettings->bEnableMultiWorker = true;
-		}
-		return WorldSettings->IsMultiWorkerEnabledInWorldSettings();
-	}
-	if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
-	{
-		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
+		return WorldSettings->IsMultiWorkerEnabled();
 	}
 	return false;
+}
+
+TSubclassOf<UAbstractSpatialMultiWorkerSettings> USpatialStatics::GetSpatialMultiWorkerClass(const UObject* WorldContextObject,
+																							 bool bForceNonEditorSettings)
+{
+	checkf(WorldContextObject != nullptr, TEXT("Called GetSpatialMultiWorkerClass with a nullptr WorldContextObject*"));
+
+	const UWorld* World = WorldContextObject->GetWorld();
+	checkf(World != nullptr, TEXT("Called GetSpatialMultiWorkerClass with a nullptr World*"));
+
+	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	{
+		return WorldSettings->GetMultiWorkerSettingsClass(bForceNonEditorSettings);
+	}
+	return USpatialMultiWorkerSettings::StaticClass();
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
@@ -133,7 +135,7 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 			}
 
 			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-				WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 			return MultiWorkerSettings->WorkerLayers.Num() > 1;
 		}
 	}

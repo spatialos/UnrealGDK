@@ -7,6 +7,7 @@
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
 #include "Schema/ComponentPresence.h"
+#include "Schema/DebugComponent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/MulticastRPCs.h"
@@ -108,6 +109,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::NetOwningClientWorker>(Op.data);
 		break;
+	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::DebugComponent>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -167,6 +171,9 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::NetOwningClientWorker>(Op.entity_id);
+		break;
+	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::DebugComponent>(Op.entity_id);
 		break;
 	default:
 		return;

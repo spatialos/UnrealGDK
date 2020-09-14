@@ -142,6 +142,8 @@ public:
 		{
 			LocatorHost = SpatialConstants::LOCATOR_HOST;
 		}
+
+		LocatorPort = SpatialConstants::LOCATOR_PORT;
 	}
 
 	bool TryLoadCommandLineArgs()
@@ -155,6 +157,7 @@ public:
 	}
 
 	FString LocatorHost;
+	int32 LocatorPort;
 	FString PlayerIdentityToken;
 	FString LoginToken;
 };
@@ -177,6 +180,8 @@ public:
 		{
 			LocatorHost = SpatialConstants::LOCATOR_HOST;
 		}
+
+		LocatorPort = SpatialConstants::LOCATOR_PORT;
 	}
 
 	bool TryLoadCommandLineArgs()

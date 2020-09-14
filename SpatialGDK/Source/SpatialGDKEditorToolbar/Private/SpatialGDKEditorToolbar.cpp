@@ -815,6 +815,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FString CloudLaunchConfig =
 				FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()),
 								FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+			if (Conf.bAutoNumEditorInstances)
+			{
+				Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
+			}
+
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
 		}
 	}
@@ -1264,7 +1269,7 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
 	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
 	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 

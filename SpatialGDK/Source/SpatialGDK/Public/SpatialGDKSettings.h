@@ -350,7 +350,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
 
-	/** Experimental feature to use SpatialView layer when communicating with the Worker */
+	/** Use SpatialView to manage communication with SpatialOS. */
 	UPROPERTY(Config)
 	bool bUseSpatialView;
 
