@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialFunctionalTestSoftAssertHandler.h"
-#include "../Public/SpatialFunctionalTestFlowController.h"
 #include "Logging/LogMacros.h"
 #include "Misc/AssertionMacros.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 #include "VisualLogger/VisualLogger.h"
 
