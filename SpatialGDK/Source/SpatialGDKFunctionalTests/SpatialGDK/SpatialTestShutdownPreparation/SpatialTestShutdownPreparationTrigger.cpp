@@ -7,6 +7,7 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "TestPrepareShutdownListener.h"
+//#include "SpatialGDKEditorSettings.h"
 
 ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 {
@@ -14,6 +15,13 @@ ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 	Description = TEXT("Trigger shutdown preparation via worker flags and make sure callbacks get called in C++ and Blueprints");
 	StepTimer = 0.0f;
 	LocalListener = nullptr;
+
+	// set up the request to set the worker flag in the standard runtime.
+	// Being lazy here and constructing one request on all workers, even though it will only be used on server worker 1
+	LocalShutdownRequest = FHttpModule::Get().CreateRequest();
+	LocalShutdownRequest->SetVerb(TEXT("PUT"));
+	LocalShutdownRequest->SetURL(TEXT("http://localhost:5006/worker_flag/workers/UnrealWorker/flags/PrepareShutdown"));
+	LocalShutdownRequest->SetContentAsString(TEXT(""));
 }
 
 void ASpatialTestShutdownPreparationTrigger::BeginPlay()
@@ -42,23 +50,31 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			FinishStep();
 		});
 
-		AddStep(TEXT("Server1_TriggerShutdownPreparation1"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			FString WorkerFlagSetArgs = TEXT("local worker-flag set UnrealWorker PrepareShutdown Yes --local_service_grpc_port 9876");
-
-			FString WorkerFlagSetResult;
-			FString StdErr;
-			int32 ExitCode;
-			FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *WorkerFlagSetArgs, &ExitCode, &WorkerFlagSetResult,
-										  &StdErr, *SpatialGDKServicesConstants::SpatialOSDirectory);
-
-			if (ExitCode != 0)
-			{
-				FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
-				return;
-			}
-
-			FinishStep();
-		});
+		AddStep(
+			TEXT("Server1_TriggerShutdownPreparation1"), FWorkerDefinition::Server(1), nullptr,
+			[this]() {
+				LocalShutdownRequest->SetContentAsString(
+					TEXT("ValueA")); // The value doesn't matter. It's just here to set something that we can change later, so we're sure we
+									 // trigger another notification from spatial
+				if (!LocalShutdownRequest->ProcessRequest())
+				{
+					FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to start the request to set the worker flag."));
+					return;
+				}
+			},
+			[this](float DeltaTime) {
+				switch (LocalShutdownRequest->GetStatus())
+				{
+				case EHttpRequestStatus::Processing:
+					break;
+				case EHttpRequestStatus::Succeeded:
+					FinishStep();
+					break;
+				default:
+					FinishTest(EFunctionalTestResult::Failed, TEXT("Request to set the worker flag failed or was never started."));
+					break;
+				}
+			});
 
 		AddStep(TEXT("AllServers_CheckEventHasTriggered"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 			// On servers, we expect the event to have been triggered
@@ -88,23 +104,29 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			}
 		});
 
-		AddStep(TEXT("Server1_TriggerShutdownPreparation2"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			FString WorkerFlagSetArgs = TEXT("local worker-flag set UnrealWorker PrepareShutdown Other --local_service_grpc_port 9876");
-
-			FString WorkerFlagSetResult;
-			FString StdErr;
-			int32 ExitCode;
-			FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *WorkerFlagSetArgs, &ExitCode, &WorkerFlagSetResult,
-										  &StdErr, *SpatialGDKServicesConstants::SpatialOSDirectory);
-
-			if (ExitCode != 0)
-			{
-				FinishTest(EFunctionalTestResult::Error, TEXT("Setting the worker flag failed"));
-				return;
-			}
-
-			FinishStep();
-		});
+		AddStep(
+			TEXT("Server1_TriggerShutdownPreparation2"), FWorkerDefinition::Server(1), nullptr,
+			[this]() {
+				LocalShutdownRequest->SetContentAsString(TEXT("ValueB")); // again, the value doesn't matter
+				if (!LocalShutdownRequest->ProcessRequest())
+				{
+					FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to start the request to set the worker flag."));
+					return;
+				}
+			},
+			[this](float DeltaTime) {
+				switch (LocalShutdownRequest->GetStatus())
+				{
+				case EHttpRequestStatus::Processing:
+					break;
+				case EHttpRequestStatus::Succeeded:
+					FinishStep();
+					break;
+				default:
+					FinishTest(EFunctionalTestResult::Failed, TEXT("Request to set the worker flag failed or was never started."));
+					break;
+				}
+			});
 
 		AddStep(TEXT("AllServers_CheckEventHasTriggeredOnce"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 			if (LocalListener->NativePrepareShutdownEventCount != 1 || LocalListener->BlueprintPrepareShutdownEventCount != 1)
