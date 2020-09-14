@@ -742,7 +742,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->SetMultiWorkerEditor(!SpatialGDKSettings->bDisableMultiWorker);
+	SpatialGDKSettings->SetMultiWorkerEditor(!SpatialGDKSettings->bEnableMultiWorker);
 
 	if (SpatialDebugger.IsValid())
 	{
@@ -1129,7 +1129,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	{
 		FName PropertyName = PropertyChangedEvent.Property != nullptr ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 		FString PropertyNameStr = PropertyName.ToString();
-		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bDisableMultiWorker))
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableMultiWorker))
 		{
 			// Update multi-worker settings
 			if (SpatialDebugger.IsValid())
@@ -1482,7 +1482,7 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEditorDisabled() const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	return SpatialGDKSettings->bDisableMultiWorker;
+	return !SpatialGDKSettings->bEnableMultiWorker;
 }
 
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const

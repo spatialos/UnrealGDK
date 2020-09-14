@@ -104,9 +104,9 @@ bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
 		return true;
 	}
 #if WITH_EDITOR
-	else if (SpatialGDKSettings->IsDisabledMultiWorkerEditor())
+	else if (!SpatialGDKSettings->IsMultiWorkerEditorEnabled())
 	{
-		// If editor for Multi Worker Settings is set then disable multi-worker.
+		// If  multi-worker is not enabled in editor then disable multi-worker.
 		return false;
 	}
 #endif // WITH_EDITOR

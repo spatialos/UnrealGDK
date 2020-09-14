@@ -107,7 +107,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bDisableMultiWorker(false) 
+	, bEnableMultiWorker(true)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -160,7 +160,7 @@ void USpatialGDKSettings::PostInitProperties()
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideUseSpatialView"), TEXT("Use SpatialView to manage communication with SpatialOS"),
 							 bUseSpatialView);
-  
+
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
@@ -282,9 +282,9 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 };
 
 #if WITH_EDITOR
-void USpatialGDKSettings::SetMultiWorkerEditor(bool IsDisabled)
+void USpatialGDKSettings::SetMultiWorkerEditor(bool IsEnabled)
 {
-	bDisableMultiWorker = IsDisabled;
+	bEnableMultiWorker = IsEnabled;
 }
 #endif // WITH_EDITOR
 
