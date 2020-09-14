@@ -107,7 +107,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bEnableMultiWorker(true)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
