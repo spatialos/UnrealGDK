@@ -8,6 +8,7 @@
 #include "FunctionalTest.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestStep.h"
+#include "SpatialFunctionalTestSoftAssertHandler.h"
 #include "SpatialFunctionalTest.generated.h"
 
 namespace
@@ -205,7 +206,20 @@ public:
 			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
 	void ClearTagDelegationAndInterest();
 
-	// void SoftAssertTrue(bool bCheckTrue, const FString& Msg);
+	// # Soft Assert Functions. Soft Asserts mimic the assert behaviour but without the immediate failure. Since when you're
+	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
+	// negatives. These functions work in a way that they record the expected behaviour, and when we FinishStep / FinishTest
+	// it will let you know which of them passed and which failed.
+
+
+	void SoftAssertTrue(bool bCheckTrue, const FString& Msg);
+
+	void SoftAssertFalse(bool bCheckFalse, const FString& Msg);
+
+	void SoftAssertInt(int A, EComparisonMethod Operator, int B, const FString& Msg);
+
+	void SoftAssertFloat(float A, EComparisonMethod Operator, float B, const FString& Msg, const float EqualityTolerance = 0.0001f);
+
 	// void SoftAssertEqual(bool bCheckTrue, const FString& Msg);
 
 protected:
@@ -231,7 +245,16 @@ private:
 	// Time current step has been running for, used if Step Definition has TimeLimit >= 0
 	float TimeRunningStep = 0.0f;
 
-	// Current Step Index, < 0 if not executing any, check consts at the top
+	// Cached test result while we wait all Workers to acknowledge they finished the test.
+	EFunctionalTestResult CachedTestResult;
+
+	// Cached test result message while we wait all Workers to acknowledge they finished the test.
+	FString CachedTestMessage;
+
+	// Handle for waiting for acknowledgment from all workers that the test is finished.
+	FTimerHandle FinishTestTimerHandle;
+
+	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
 
@@ -240,6 +263,9 @@ private:
 
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
+
+	// Holds all the SafeAssert calls / results for printing at the end of the step.
+	SpatialFunctionalTestSoftAssertHandler SoftAssertHandler;
 
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();

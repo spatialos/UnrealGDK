@@ -39,10 +39,11 @@ void ADormancyAndTombstoneTest::BeginPlay()
 			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				AssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"), this);
+				SoftAssertInt(Iter->NetDormancy, EComparisonMethod::Equal_To, DORM_Initial,
+							  TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"));
 				Iter->TestIntProp = 1;
 			}
-			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
+			SoftAssertInt(Counter, EComparisonMethod::Equal_To, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});
@@ -64,12 +65,11 @@ void ADormancyAndTombstoneTest::BeginPlay()
 						break;
 					}
 				}
-				if (Counter == ExpectedDormancyActors && bPassesChecks)
-				{
-					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
 
-					FinishStep();
-				}
+				SoftAssertInt(Counter, EComparisonMethod::Equal_To, ExpectedDormancyActors,
+							  TEXT("Number of TestDormancyActors in client world"));
+
+				FinishStep();
 			},
 			5.0f);
 	}
@@ -83,7 +83,8 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				Counter++;
 				Iter->Destroy();
 			}
-			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
+			SoftAssertInt(Counter, EComparisonMethod::Equal_To, ExpectedDormancyActors,
+						  TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});
@@ -99,11 +100,11 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				{
 					Counter++;
 				}
-				if (Counter == ExpectedDormancyActors)
-				{
-					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
-					FinishStep();
-				}
+
+				SoftAssertInt(Counter, EComparisonMethod::Greater_Than, ExpectedDormancyActors,
+							  TEXT("Number of TestDormancyActors in client world"));
+
+				FinishStep();
 			},
 			5.0f);
 	}

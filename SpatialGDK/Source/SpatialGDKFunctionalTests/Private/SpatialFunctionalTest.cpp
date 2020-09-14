@@ -16,6 +16,8 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
+#pragma optimize("", off)
+
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
 	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
@@ -40,6 +42,8 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 void ASpatialFunctionalTest::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SoftAssertHandler.SetOwnerTest(this);
 
 	// by default expect 1 server
 	NumExpectedServers = 1;
@@ -86,6 +90,26 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
 			}
+		}
+	}
+	else if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED && FinishTestTimerHandle.IsValid())
+	{
+		bool bAllAcknowledgedFinishedTest = true;
+		for(const auto* FlowController : FlowControllers)
+		{
+			if(!FlowController->HasAckFinishedTest())
+			{
+				bAllAcknowledgedFinishedTest = false;
+				break;
+			}
+		}
+		if(bAllAcknowledgedFinishedTest)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
+			Super::FinishTest(CachedTestResult, CachedTestMessage);
+			// Clear cached variables
+			CachedTestResult = EFunctionalTestResult::Default;
+			CachedTestMessage.Empty();
 		}
 	}
 }
@@ -158,6 +182,14 @@ void ASpatialFunctionalTest::StartTest()
 
 void ASpatialFunctionalTest::FinishStep()
 {
+	// We can only FinishStep if there are no SoftAssert fails.
+	if(SoftAssertHandler.HasFails())
+	{
+		return;
+	}
+
+	SoftAssertHandler.LogAndClearStepSoftAsserts();
+
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
@@ -256,7 +288,20 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 			OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
 
-			Super::FinishTest(TestResult, Message);
+			CachedTestResult = TestResult;
+			CachedTestMessage = Message;
+
+			GetWorld()->GetTimerManager().SetTimer(FinishTestTimerHandle, [this](){
+				// If this timer trigger, then it means that something went wrong with one of the Workers. The
+				// expected behaviour is that the Super::FinishTest will be called from Tick().
+				Super::FinishTest(CachedTestResult, CachedTestMessage);
+
+				FinishTestTimerHandle.Invalidate();
+
+				// Clear cached values.
+				CachedTestResult = EFunctionalTestResult::Default;
+				CachedTestMessage.Empty();
+			}, 2.0f /* InRate */, false /* InbLoop */);
 		}
 	}
 	else
@@ -346,6 +391,9 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 {
 	if (HasAuthority())
 	{
+		// Log SoftAsserts from previous step.
+		SoftAssertHandler.LogAndClearStepSoftAsserts();
+
 		CurrentStepIndex = StepIndex;
 
 		TimeRunningStep = 0.0f;
@@ -468,18 +516,15 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		// test finished
-		if (StartTime > 0)
+		SoftAssertHandler.LogAndClearStepSoftAsserts();
+		// if we ever started in first place
+		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
+		if (AuxLocalFlowController != nullptr)
 		{
-			// if we ever started in first place
-			ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
-			if (AuxLocalFlowController != nullptr)
+			AuxLocalFlowController->OnTestFinished();
+			if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
-				AuxLocalFlowController->OnTestFinished();
-				if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-				{
-					ClearTagDelegationAndInterest();
-				}
+				ClearTagDelegationAndInterest();
 			}
 		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest
@@ -651,3 +696,25 @@ void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
 		NetDriver->DebugCtx->Reset();
 	}
 }
+
+void ASpatialFunctionalTest::SoftAssertTrue(bool bCheckTrue, const FString& Msg)
+{
+	SoftAssertHandler.SoftAssertFalse(bCheckTrue, Msg);
+}
+
+void ASpatialFunctionalTest::SoftAssertFalse(bool bCheckFalse, const FString& Msg)
+{
+	SoftAssertHandler.SoftAssertFalse(bCheckFalse, Msg);
+}
+
+void ASpatialFunctionalTest::SoftAssertInt(int A, EComparisonMethod Operator, int B, const FString& Msg)
+{
+	SoftAssertHandler.SoftAssertInt(A, Operator, B, Msg);
+}
+
+void ASpatialFunctionalTest::SoftAssertFloat(float A, EComparisonMethod Operator, float B, const FString& Msg,
+											 const float EqualityTolerance /*= 0.0001f*/)
+{
+	SoftAssertHandler.SoftAssertFloat(A, Operator, B, Msg, EqualityTolerance);
+}
+#pragma optimize("", on)
