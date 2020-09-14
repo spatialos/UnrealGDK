@@ -62,9 +62,10 @@ public:
 	void ComponentUpdate(const Worker_Op& Op);
 	void DropOldSpanIds();
 
-	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
-	void DropSpanIds(const EntityComponentId& EntityComponentId);
-	void DropSpanId(const EntityComponentId& EntityComponentId, const uint32 FieldId);
+	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	worker::c::Trace_SpanId GetMostRecentSpanId(const EntityComponentId& Id);
+	void DropSpanIds(const EntityComponentId& Id);
+	void DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
 
 private:
 	bool bEnabled{ false };

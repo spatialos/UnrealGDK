@@ -36,6 +36,7 @@ public:
 	void DropOldSpanIds();
 
 	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	worker::c::Trace_SpanId GetMostRecentSpanId(const EntityComponentId& Id);
 
 private:
 	// Private Classes
@@ -48,7 +49,7 @@ private:
 
 	struct EntityComponentFieldIdUpdateSpanId
 	{
-		worker::c::Trace_SpanId SpanId;
+		worker::c::Trace_SpanId SpanId = worker::c::Trace_SpanId();
 		FDateTime UpdateTime;
 	};
 

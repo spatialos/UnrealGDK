@@ -1833,7 +1833,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 			   EntityId, ComponentId);
 	}
 
-	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { Op.span_id });
+	Trace_SpanId SpanId = EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId));
+	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { SpanId });
 }
 
 void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)

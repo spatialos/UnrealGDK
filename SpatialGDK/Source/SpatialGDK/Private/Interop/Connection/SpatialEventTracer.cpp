@@ -267,6 +267,11 @@ worker::c::Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& I
 	return SpanIdStore.GetSpanId(Id, FieldId);
 }
 
+worker::c::Trace_SpanId SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id)
+{
+	return SpanIdStore.GetMostRecentSpanId(Id);
+}
+
 void SpatialEventTracer::DropSpanIds(const EntityComponentId& Id)
 {
 	SpanIdStore.DropSpanIds(Id);
