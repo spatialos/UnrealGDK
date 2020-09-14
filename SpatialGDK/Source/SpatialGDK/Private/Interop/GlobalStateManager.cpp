@@ -393,6 +393,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	bool bAuthoritative = !Actor->GetIsReplicated();
 	// Replicated level Actors should only be initially authority if:
 	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
+	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
 	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
 	bAuthoritative |= (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 					  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);

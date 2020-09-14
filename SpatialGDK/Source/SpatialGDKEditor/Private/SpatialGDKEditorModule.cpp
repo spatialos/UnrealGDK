@@ -24,7 +24,7 @@
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
 
-#include "../../SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
+#include "SpatialFunctionalTest.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
@@ -81,9 +81,9 @@ void FSpatialGDKEditorModule::ShutdownModule()
 
 void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
-	bool bUseStandard = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
+	bool bUseStandardRuntime = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandard, OnSnapshotTaken);
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandardRuntime, OnSnapshotTaken);
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
@@ -281,7 +281,7 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 
 FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
 {
-	// By default, clear that it was loaded from taken snapshot.
+	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
 	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
 
 	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);

@@ -28,7 +28,7 @@ public:
 	/* Way to force a deployment to be launched with a specific snapshot. This is meant to be override-able only
 	 * at runtime, specifically for Functional Testing purposes.
 	 */
-	FString ForceUseSnapshotAtPath = "";
+	FString ForceUseSnapshotAtPath;
 
 private:
 	// Local deployment connection flow

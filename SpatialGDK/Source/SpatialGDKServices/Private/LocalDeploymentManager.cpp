@@ -807,21 +807,21 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 	bAutoDeploy = bInAutoDeploy;
 }
 
-void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandard,
+void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandardRuntime,
 																  FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 
 	HttpRequest->OnProcessRequestComplete().BindLambda(
-		[World, bUseStandard, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		[World, bUseStandardRuntime, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
 			if (!bSucceeded)
 			{
 				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
 					   *HttpRequest->GetURL(), *HttpResponse->GetContentAsString());
 				if (OnSnapshotTaken != nullptr)
 				{
-					OnSnapshotTaken(false, FString());
+					OnSnapshotTaken(false /* bSuccess */, FString() /* PathToSnapshot */);
 				}
 				return;
 			}
@@ -831,24 +831,28 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 			FTimerHandle TimerHandle;
 			World->GetTimerManager().SetTimer(
 				TimerHandle,
-				[bUseStandard, OnSnapshotTaken]() {
+				[bUseStandardRuntime, OnSnapshotTaken]() {
 					bool bSuccess = false;
 
 					FString NewestSnapshotFilePath;
 					FString SnapshotSearchDirectory;
 
-					if (bUseStandard)
+					// Standard Runtime places the snapshots in SpatialOS logs, while Compatibility Mode Runtime
+					// places them in AppData.
+					if (bUseStandardRuntime)
 					{
 						FSpatialGDKServicesModule& GDKServices =
 							FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 						FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
-						FString SpatialPath = FPaths::ProjectDir() + TEXT("../spatial/");
+						FString SpatialPath = SpatialGDKServicesConstants::SpatialOSDirectory;
 						SnapshotSearchDirectory =
 							SpatialPath + TEXT("logs/localdeployment/") + LocalDeploymentManager->GetLocalRunningDeploymentID();
 
 						IFileManager& FileManager = FFileManagerGeneric::Get();
 
+						// For Standard you need to check which is the latest .snapshot file that was added
+						// inside that running deployment folder.
 						TArray<FString> SnapshotFiles;
 
 						FileManager.FindFiles(SnapshotFiles, *SnapshotSearchDirectory, TEXT("snapshot"));
@@ -868,6 +872,7 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 					}
 					else
 					{
+						// Compatibility Mode will have the latest created snapshot name in 'latest' file.
 						FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
 						SnapshotSearchDirectory = FString::Printf(TEXT("%s/.improbable/local_snapshots"), *AppDataLocalPath);
 						FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/latest"), *SnapshotSearchDirectory);
@@ -892,10 +897,10 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 						OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
 					}
 				},
-				0.5f, false);
+				0.5f /* InRate */, false /* InbLoop */);
 		});
 
-	if (bUseStandard)
+	if (bUseStandardRuntime)
 	{
 		HttpRequest->SetURL(TEXT("http://localhost:5006/snapshot"));
 		HttpRequest->SetHeader("Content-Type", TEXT("application/json"));

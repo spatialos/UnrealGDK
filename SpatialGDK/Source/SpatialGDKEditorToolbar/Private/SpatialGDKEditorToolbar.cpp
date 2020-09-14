@@ -773,11 +773,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LaunchConfig;
-	/*if(!ForceSnapshot.IsEmpty()) // Allow forcing a specific snapshot temporarily
-	{
-		LaunchConfig = ForceSnapshot;
-	}
-	else*/
 	if (SpatialGDKEditorSettings->bGenerateDefaultLaunchConfig)
 	{
 		bool bRedeployRequired = false;
