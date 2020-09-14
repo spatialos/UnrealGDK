@@ -10,7 +10,7 @@ APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the property update trace events have appropriate causes");
 
-	FilterEventNames = { PropertyUpdateEventName, ReceiveOpEventName };
+	FilterEventNames = { PropertyUpdateEventName, ReceiveOpEventName, MergeComponentFieldUpdateEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
@@ -30,7 +30,7 @@ void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }))
+		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName, MergeComponentFieldUpdateEventName }))
 		{
 			EventsFailed++;
 		}

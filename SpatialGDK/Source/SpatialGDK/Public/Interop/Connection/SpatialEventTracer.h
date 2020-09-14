@@ -70,11 +70,11 @@ public:
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
-	const FString& GetFilePath() const { return FilePath; }
+	const FString& GetFolderPath() const { return FolderPath; }
 
 private:
 	FString WorkerId;
-	FString FilePath;
+	FString FolderPath;
 	bool bEnabled{ false };
 	bool bRecordRuntimeAndWorkerEvents{ false };
 	worker::c::Trace_EventTracer* EventTracer{ nullptr };

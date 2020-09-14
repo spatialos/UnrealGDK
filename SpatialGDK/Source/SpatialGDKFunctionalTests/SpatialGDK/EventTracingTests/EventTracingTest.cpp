@@ -75,8 +75,41 @@ void AEventTracingTest::GatherData()
 	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
 	SpatialEventTracer* EventTracer = ConnectionManager->GetEventTracer();
 
-	FString FilePath = EventTracer->GetFilePath();
+	FString EventsFolderPath = EventTracer->GetFolderPath();
 
+	IFileManager& FileManager = IFileManager::Get();
+
+	TArray<FString> Files;
+	FileManager.FindFiles(Files, *EventsFolderPath, *FString(".trace"));
+
+	struct FileCreationTime
+	{
+		FString FilePath;
+		FDateTime CreationTime;
+	};
+
+	TArray<FileCreationTime> FileCreationTimes;
+	for (const FString& File : Files)
+	{
+		FString FilePath = FPaths::Combine(EventsFolderPath, File);
+		FileCreationTimes.Add({ FilePath, FileManager.GetTimeStamp(*FilePath) });
+	}
+
+	FileCreationTimes.Sort([](const FileCreationTime& A, const FileCreationTime& B) {
+		return A.CreationTime > B.CreationTime;
+	});
+
+	if (FileCreationTimes.Num() >= 2)
+	{
+		GatherDataFromFile(FileCreationTimes[0].FilePath);
+		GatherDataFromFile(FileCreationTimes[1].FilePath);
+	}
+
+	FinishStep();
+}
+
+void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
+{
 	struct StreamDeleter
 	{
 		void operator()(Io_Stream* StreamToDestroy) const { Io_Stream_Destroy(StreamToDestroy); };
@@ -126,8 +159,6 @@ void AEventTracingTest::GatherData()
 	}
 
 	Stream = nullptr;
-
-	FinishStep();
 }
 
 bool AEventTracingTest::CheckEventTraceCause(FString SpanIdString, TArray<FName> CauseEventNames, int MinimumCauses /*= 1*/)

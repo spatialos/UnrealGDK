@@ -7,6 +7,8 @@
 
 #include "EventTracingTest.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogEventTracingTest, Log, All);
+
 namespace worker
 {
 namespace c
@@ -27,6 +29,7 @@ public:
 
 protected:
 	FName ReceiveOpEventName = "worker.receive_op";
+	FName MergeComponentFieldUpdateEventName = "unreal_gdk.merge_component_field_update";
 
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
@@ -45,4 +48,5 @@ private:
 
 	void WaitForTestToEnd();
 	void GatherData();
+	void GatherDataFromFile(const FString& FilePath);
 };

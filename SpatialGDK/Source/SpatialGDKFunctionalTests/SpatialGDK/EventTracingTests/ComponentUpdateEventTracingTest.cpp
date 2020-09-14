@@ -10,7 +10,7 @@ AComponentUpdateEventTracingTest::AComponentUpdateEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the command Response trace events have appropriate causes");
 
-	FilterEventNames = { ComponentUpdateEventName, ReceiveOpEventName };
+	FilterEventNames = { ComponentUpdateEventName, ReceiveOpEventName, MergeComponentFieldUpdateEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
@@ -30,7 +30,7 @@ void AComponentUpdateEventTracingTest::FinishEventTraceTest()
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }))
+		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName, MergeComponentFieldUpdateEventName }))
 		{
 			EventsFailed++;
 		}
