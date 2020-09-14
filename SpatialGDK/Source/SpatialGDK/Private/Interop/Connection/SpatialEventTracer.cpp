@@ -197,7 +197,6 @@ void SpatialEventTracer::Enable(const FString& FileName)
 {
 	Trace_EventTracer_Parameters parameters = {};
 	EventTracerGuard.EventTracer = this;
-	parameters.user_data = &EventTracerGuard;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);
