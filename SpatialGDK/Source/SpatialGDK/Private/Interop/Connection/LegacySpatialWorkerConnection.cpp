@@ -275,7 +275,6 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			uint32 ComponentCount = Message->Components.Num();
 #endif
 			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
-
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection, ComponentCount, ComponentData,
 													  Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr, nullptr);
 			break;
@@ -322,7 +321,6 @@ void ULegacySpatialWorkerConnection::ProcessOutgoingMessages()
 			FCommandResponse* Message = static_cast<FCommandResponse*>(OutgoingMessage.Get());
 
 			SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message->SpanId);
-
 			Worker_Connection_SendCommandResponse(WorkerConnection, Message->RequestId, &Message->Response);
 			break;
 		}

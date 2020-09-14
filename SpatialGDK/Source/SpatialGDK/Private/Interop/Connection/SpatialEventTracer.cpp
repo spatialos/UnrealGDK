@@ -167,15 +167,6 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 			Property->ExportTextItem(StringValue, Value, NULL, NULL, PPF_None);
 			AddTraceEventStringField(VariableName, StringValue);
 		}
-
-		// else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
-		// else if (UNumericProperty *NumericProperty = Cast<UNumericProperty>(Property))
-		// else if (UBoolProperty *BoolProperty = Cast<UBoolProperty>(Property))
-		// else if (UTextProperty *TextProperty = Cast<UTextProperty>(Property))
-		// else if (UArrayProperty *ArrayProperty = Cast<UArrayProperty>(Property))
-		// else if (USetProperty* SetProperty = Cast<USetProperty>(Property))
-		// else if (UMapProperty* MapProperty = Cast<UMapProperty>(Property))
-		// else if (UStructProperty *StructProperty = Cast<UStructProperty>(Property))
 	}
 
 	// TODO(EventTracer): implement and call AddTargetObjectInfoToEventData
