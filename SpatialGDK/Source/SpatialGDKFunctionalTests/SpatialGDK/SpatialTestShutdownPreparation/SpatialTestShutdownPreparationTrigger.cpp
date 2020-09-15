@@ -3,8 +3,6 @@
 #include "SpatialTestShutdownPreparationTrigger.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialConstants.h"
-#include "SpatialFunctionalTestFlowController.h"
-#include "SpatialFunctionalTestLBDelegationInterface.h"
 #include "TestPrepareShutdownListener.h"
 
 ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
