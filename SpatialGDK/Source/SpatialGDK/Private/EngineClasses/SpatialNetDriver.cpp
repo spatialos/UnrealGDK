@@ -2563,6 +2563,14 @@ void USpatialNetDriver::TryFinishStartup()
 		{
 			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
 
+#if WITH_EDITORONLY_DATA
+			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+			if (WorldSettings && WorldSettings->bEnableDebugInterface)
+			{
+				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(this);
+			}
+#endif
+
 			// We know at this point that we have all the information to set the worker's interest query.
 			Sender->UpdateServerWorkerEntityInterestAndPosition();
 
