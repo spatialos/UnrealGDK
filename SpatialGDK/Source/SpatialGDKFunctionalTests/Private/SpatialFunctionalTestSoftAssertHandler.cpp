@@ -10,7 +10,7 @@
 
 namespace
 {
-template<typename T>
+template <typename T>
 bool Compare(const T& A, EComparisonMethod Operator, const T& B)
 {
 	bool bPassed = false;
@@ -67,7 +67,7 @@ FString GetTransformAsString(const FTransform& Transform)
 	FVector S = Transform.GetScale3D();
 	return FString::Printf(TEXT("T(%f,%f,%f) | R(%f, %f, %f), S(%f, %f, %f)"), T.X, T.Y, T.Z, R.Pitch, R.Yaw, R.Roll, S.X, S.Y, S.Z);
 }
-}
+} // namespace
 
 SpatialFunctionalTestSoftAssertHandler::SpatialFunctionalTestSoftAssertHandler()
 	: NextOrder(0)
@@ -142,7 +142,7 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(int Value, int Expe
 
 void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(float Value, float Expected, const FString& Msg, float Tolerance)
 {
-	bool bPassed = FMath::Abs(Value-Expected) < Tolerance;
+	bool bPassed = FMath::Abs(Value - Expected) < Tolerance;
 	FString ErrorMsg;
 
 	if (!bPassed)
@@ -187,7 +187,8 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FVector& Valu
 
 	if (!bPassed)
 	{
-		ErrorMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(), Tolerance);
+		ErrorMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(),
+								   Tolerance);
 	}
 
 	GenericSoftAssert(Msg, bPassed, ErrorMsg);
@@ -201,7 +202,8 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FRotator& Val
 
 	if (!bPassed)
 	{
-		ErrorMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(), Tolerance);
+		ErrorMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(),
+								   Tolerance);
 	}
 
 	GenericSoftAssert(Msg, bPassed, ErrorMsg);
@@ -215,7 +217,8 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FTransform& V
 
 	if (!bPassed)
 	{
-		ErrorMsg = FString::Printf(TEXT("Received {%s} but was expecting {%s} (tolerance %f)"), *GetTransformAsString(Value), *GetTransformAsString(Expected), Tolerance);
+		ErrorMsg = FString::Printf(TEXT("Received {%s} but was expecting {%s} (tolerance %f)"), *GetTransformAsString(Value),
+								   *GetTransformAsString(Expected), Tolerance);
 	}
 
 	GenericSoftAssert(Msg, bPassed, ErrorMsg);
