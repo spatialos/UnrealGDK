@@ -6,8 +6,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
-#include "Kismet/GameplayStatics.h"
-#include "CubeWithReferences.h"
 #include "SpatialGDKSettings.h"
 
 /**

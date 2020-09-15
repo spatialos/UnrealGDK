@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
@@ -34,6 +35,7 @@
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
@@ -79,6 +81,7 @@ DEFINE_STAT(STAT_SpatialActorsChanged);
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, LoadBalanceStrategy(nullptr)
+	, DebugCtx(nullptr)
 	, LoadBalanceEnforcer(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
@@ -439,14 +442,10 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const UWorld* CurrentWorld = GetWorld();
 	check(CurrentWorld != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
-	check(WorldSettings != nullptr);
-
 	const bool bMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(CurrentWorld);
 
-	// If multi worker is disabled, the USpatialMultiWorkerSettings CDO will give us single worker behaviour.
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
-		bMultiWorkerEnabled ? *WorldSettings->MultiWorkerSettingsClass : USpatialMultiWorkerSettings::StaticClass();
+		USpatialStatics::GetSpatialMultiWorkerClass(CurrentWorld);
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
@@ -964,6 +963,8 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::Shutdown()
 {
+	USpatialNetDriverDebugContext::DisableDebugSpatialGDK(this);
+
 	if (!IsServer())
 	{
 		// Notify the server that we're disconnecting so it can clean up our actors.
@@ -1724,6 +1725,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugRelevantActors = false;
 	}
 
+	if (DebugCtx)
+	{
+		DebugCtx->TickServer();
+	}
+
 #if !UE_BUILD_SHIPPING
 	ConsiderListSize = FinalSortedCount;
 #endif
@@ -2428,6 +2434,48 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	}
 }
 
+void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
+{
+	check(IsServer());
+	check(Actor);
+
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on an actor without entity id. Actor's name: %s"),
+			   *Actor->GetName());
+		return;
+	}
+
+	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
+	if (!bHasAuthority)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on an actor without authority. Actor's name: %s "),
+			   *Actor->GetName());
+		return;
+	}
+
+	const bool bVisibilityComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
+
+	// If the Actor is Visible make sure it has the Visible component
+	if (bMakeVisible && !bVisibilityComponentExists)
+	{
+		Worker_AddComponentOp AddComponentOp{};
+		AddComponentOp.entity_id = EntityId;
+		AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
+		Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
+		StaticComponentView->OnAddComponent(AddComponentOp);
+	}
+	else if (!bMakeVisible && bVisibilityComponentExists)
+	{
+		Worker_RemoveComponentOp RemoveComponentOp{};
+		RemoveComponentOp.entity_id = EntityId;
+		RemoveComponentOp.component_id = SpatialConstants::VISIBLE_COMPONENT_ID;
+		Sender->SendRemoveComponents(EntityId, { SpatialConstants::VISIBLE_COMPONENT_ID });
+		StaticComponentView->OnRemoveComponent(RemoveComponentOp);
+	}
+}
+
 void USpatialNetDriver::AddPendingDormantChannel(USpatialActorChannel* Channel)
 {
 	PendingDormantChannels.Emplace(Channel);
@@ -2514,6 +2562,13 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 
 		if (bIsReadyToStart)
 		{
+#if WITH_EDITORONLY_DATA
+			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+			if (WorldSettings && WorldSettings->bEnableDebugInterface)
+			{
+				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(this);
+			}
+#endif
 			// We know at this point that we have all the information to set the worker's interest query.
 			Sender->UpdateServerWorkerEntityInterestAndPosition();
 

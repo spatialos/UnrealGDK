@@ -36,6 +36,7 @@ class USpatialConnectionManager;
 class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
+class USpatialNetDriverDebugContext;
 class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
@@ -114,6 +115,8 @@ public:
 
 	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
+	void RefreshActorVisibility(AActor* Actor, bool bMakeVisible);
+
 	void AddPendingDormantChannel(USpatialActorChannel* Channel);
 	void RemovePendingDormantChannel(USpatialActorChannel* Channel);
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
@@ -157,6 +160,8 @@ public:
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
+	UPROPERTY()
+	USpatialNetDriverDebugContext* DebugCtx;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;

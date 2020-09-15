@@ -573,14 +573,8 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 
 bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 {
-	// Check if multi worker is enabled.
-	UWorld* World = GetWorld();
-	check(World != nullptr);
-
-	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(World);
-	const bool bIsSpatialNetworkingEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-
-	return bIsMultiWorkerEnabled && bIsSpatialNetworkingEnabled;
+	// Check if spatial networking is enabled.
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
 void ASpatialDebugger::EditorInitialiseWorkerRegions()
@@ -590,11 +584,8 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	const UWorld* World = GetWorld();
 	check(World != nullptr);
 
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-	check(WorldSettings != nullptr);
-
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-		WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+		USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();
 	LoadBalanceStrategy->Init();

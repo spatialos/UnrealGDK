@@ -46,10 +46,12 @@ public:
 	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
-	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
+	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug);
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;
+
+	void AddExtraEntityInterestOnServer(Interest& OutInterest, const TArray<Worker_EntityId_Key>& Entities) const;
 
 private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
@@ -93,6 +95,7 @@ private:
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
 	QueryConstraint CreateAlwaysRelevantConstraint() const;
+	QueryConstraint CreateActorVisibilityConstraint() const;
 
 	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;

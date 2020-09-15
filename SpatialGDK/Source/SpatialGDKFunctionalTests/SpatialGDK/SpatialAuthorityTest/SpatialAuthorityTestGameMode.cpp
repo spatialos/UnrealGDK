@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialAuthorityTestGameMode.h"
 #include "SpatialAuthorityTestActorComponent.h"
 #include "SpatialAuthorityTestGameState.h"
