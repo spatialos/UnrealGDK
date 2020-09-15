@@ -18,7 +18,6 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 	GENERATED_BODY()
 
 public:
-
 	void SetEventTracer(SpatialGDK::SpatialEventTracer* InEventTracer);
 	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
 	virtual void FinishDestroy() override { Super::FinishDestroy(); }
@@ -40,6 +39,7 @@ public:
 
 protected:
 	SpatialGDK::SpatialEventTracer* EventTracer;
+
 private:
 	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
 	TArray<FString> ReturnValuePlaceholder;

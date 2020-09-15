@@ -11,11 +11,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSpanIdStore, Log, All);
 
 namespace SpatialGDK
 {
-
 class SpatialSpanIdCache
 {
 public:
-
 	void AddSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId);
 	bool DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
 	bool DropSpanIds(const EntityComponentId& Id);
@@ -25,7 +23,6 @@ public:
 	worker::c::Trace_SpanId GetMostRecentSpanId(const EntityComponentId& Id) const;
 
 protected:
-
 	struct EntityComponentFieldId
 	{
 		EntityComponentId EntityComponentId;
@@ -42,7 +39,6 @@ protected:
 	TMap<EntityComponentId, FieldIdMap> EntityComponentFieldSpanIds;
 
 private:
-
 	bool DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId);
 };
 
@@ -55,7 +51,6 @@ public:
 	void DropOldSpanIds();
 
 private:
-
 	// Private Members
 
 	const float DropFrequency = 5.0f;
@@ -69,7 +64,6 @@ private:
 class SpatialWorkerOpSpanIdCache : public SpatialSpanIdCache
 {
 public:
-
 	struct FieldSpanIdUpdate
 	{
 		uint32 FieldId;

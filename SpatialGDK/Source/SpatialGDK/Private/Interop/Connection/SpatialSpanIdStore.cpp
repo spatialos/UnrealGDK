@@ -10,7 +10,6 @@ DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-
 // ----- SpatialSpanIdCache -----
 
 void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
@@ -136,7 +135,7 @@ void SpatialTimedSpanIdCache::DropOldSpanIds()
 					if (NumDropped >= MaxSpanIdsToDrop)
 					{
 						UE_LOG(LogSpatialSpanIdStore, Log,
-							TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
+							   TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
 						bShouldBreak = true;
 						break;
 					}
