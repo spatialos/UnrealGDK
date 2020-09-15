@@ -437,7 +437,8 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
 	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
 	// not. Make sure that the Actor is also not always relevant.
-	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()) && !InActor->bAlwaysRelevant)
+	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled())
+		&& !InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
