@@ -7,7 +7,13 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
+#include "HAL/FileManagerGeneric.h"
+#include "HttpModule.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IHttpBase.h"
+#include "Interfaces/IHttpResponse.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -41,7 +47,30 @@ void ASpatialFunctionalTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// by default expect 1 server
+	// Setup built-in step definitions.
+	TakeSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	TakeSnapshotStepDefinition.StepName = TEXT("Take SpatialOS Snapshot");
+	TakeSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		TakeSnapshot([this](bool bSuccess) {
+			if (bSuccess)
+			{
+				FinishStep();
+			}
+			else
+			{
+				FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to take SpatialOS Snapshot."));
+			}
+		});
+	});
+
+	ClearSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	ClearSnapshotStepDefinition.StepName = TEXT("Clear SpatialOS Snapshot");
+	ClearSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		ClearSnapshot();
+		FinishStep();
+	});
+
+	// By default expect 1 server.
 	NumExpectedServers = 1;
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
@@ -650,4 +679,111 @@ void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
 	{
 		NetDriver->DebugCtx->Reset();
 	}
+}
+
+void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback)
+{
+	ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr)
+	{
+		UWorld* World = GetWorld();
+		SpatialGDKEditorModule->TakeSnapshot(World, [World, BlueprintCallback](bool bSuccess, const FString& PathToSnapshot) {
+			if (bSuccess)
+			{
+				bSuccess = SetSnapshotForMap(World, PathToSnapshot);
+			}
+			BlueprintCallback.ExecuteIfBound(bSuccess);
+		});
+	}
+}
+
+void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenFunc& CppCallback)
+{
+	ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr)
+	{
+		UWorld* World = GetWorld();
+		SpatialGDKEditorModule->TakeSnapshot(World, [World, CppCallback](bool bSuccess, const FString& PathToSnapshot) {
+			if (bSuccess)
+			{
+				bSuccess = SetSnapshotForMap(World, PathToSnapshot);
+			}
+			if (CppCallback != nullptr)
+			{
+				CppCallback(bSuccess);
+			}
+		});
+	}
+}
+
+void ASpatialFunctionalTest::ClearSnapshot()
+{
+	SetSnapshotForMap(GetWorld(), FString() /* PathToSnapshot */);
+}
+
+bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& PathToSnapshot)
+{
+	check(World != nullptr);
+
+	FString MapName = World->GetMapName();
+	MapName.RemoveFromStart(World->StreamingLevelsPrefix);
+
+	bool bSuccess = true;
+
+	if (PathToSnapshot.IsEmpty())
+	{
+		TakenSnapshots.Remove(MapName);
+	}
+	else
+	{
+		FString SnapshotFileName = FString::Printf(TEXT("functional_testing_%s.snapshot"), *MapName);
+		FString SnapshotSavePath = FPaths::ProjectDir() + TEXT("../spatial/snapshots/") + SnapshotFileName;
+		if (FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *PathToSnapshot, true, true) == 0)
+		{
+			TakenSnapshots.Add(MapName, SnapshotFileName);
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to copy snapshot file '%s' to '%s'"), *PathToSnapshot,
+				   *SnapshotSavePath);
+		}
+	}
+	return bSuccess;
+}
+
+TMap<FString, FString> ASpatialFunctionalTest::TakenSnapshots = TMap<FString, FString>();
+
+FString ASpatialFunctionalTest::GetTakenSnapshotPath(UWorld* World)
+{
+	if (World == nullptr)
+	{
+		return FString();
+	}
+	FString MapName = World->GetMapName();
+	MapName.RemoveFromStart(World->StreamingLevelsPrefix);
+	return TakenSnapshots.FindRef(MapName);
+}
+
+bool ASpatialFunctionalTest::bWasLoadedFromTakenSnapshot = false;
+
+void ASpatialFunctionalTest::SetLoadedFromTakenSnapshot()
+{
+	bWasLoadedFromTakenSnapshot = true;
+}
+
+void ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot()
+{
+	bWasLoadedFromTakenSnapshot = false;
+}
+
+bool ASpatialFunctionalTest::WasLoadedFromTakenSnapshot()
+{
+	return bWasLoadedFromTakenSnapshot;
+}
+
+void ASpatialFunctionalTest::ClearAllTakenSnapshots()
+{
+	bWasLoadedFromTakenSnapshot = false;
+	TakenSnapshots.Empty();
 }

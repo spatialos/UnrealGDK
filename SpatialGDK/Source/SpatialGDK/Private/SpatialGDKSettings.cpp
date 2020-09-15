@@ -160,7 +160,7 @@ void USpatialGDKSettings::PostInitProperties()
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideUseSpatialView"), TEXT("Use SpatialView to manage communication with SpatialOS"),
 							 bUseSpatialView);
-  
+
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
