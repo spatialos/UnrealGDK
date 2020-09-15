@@ -61,7 +61,7 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
-	// Should be called from the server with authority over this actor
+	// Should be called from the server with authority over this actor.
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
 	virtual void LogStep(ELogVerbosity::Type Verbosity, const FString& Message) override;
@@ -70,10 +70,10 @@ public:
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
 
-	// Starts being called after PrepareTest, until it returns true
+	// Starts being called after PrepareTest, until it returns true.
 	virtual bool IsReady_Implementation() override;
 
-	// Called once after IsReady is true
+	// Called once after IsReady is true.
 	virtual void StartTest() override;
 
 	// Ends the Test, can be called from any place.
@@ -85,7 +85,7 @@ public:
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController);
 
-	// # FlowController related APIs
+	// # FlowController related APIs.
 
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
@@ -98,13 +98,21 @@ public:
 	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
-	// Get the FlowController that is Local to this instance
+	// Get the FlowController that is Local to this instance.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
 
-	// # Step APIs
+	// Helper to get the local Worker Type.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	ESpatialFunctionalTestWorkerType GetLocalWorkerType();
 
-	// Add Steps for Blueprints
+	// Helper to get the local Worker Id.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	int GetLocalWorkerId();
+
+	// # Step APIs.
+
+	// Add Steps for Blueprints.
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (DisplayName = "Add Step", AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent",
@@ -113,7 +121,7 @@ public:
 	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent,
 						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	// Add Steps for Blueprints and C++
+	// Add Steps for Blueprints and C++.
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
@@ -127,7 +135,7 @@ public:
 	// clang-format on
 	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers);
 
-	// Add Steps for C++
+	// Add Steps for C++.
 	/**
 	 * Adds a Step to the Test. You can define if you want to run on Server, Client or All.
 	 * There's helpers in FWorkerDefinition to make it easier / more concise. If you want to make a FWorkerDefinition from scratch,
@@ -138,10 +146,10 @@ public:
 												  FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr,
 												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
-	// Start Running a Step
+	// Start Running a Step.
 	void StartStep(const int StepIndex);
 
-	// Terminate current Running Step (called once per FlowController executing it)
+	// Terminate current Running Step (called once per FlowController executing it).
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	virtual void FinishStep();
 
@@ -149,15 +157,15 @@ public:
 
 	int GetCurrentStepIndex() { return CurrentStepIndex; }
 
-	// Convenience function that goes over all FlowControllers and counts how many are Servers
+	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfServerWorkers();
 
-	// Convenience function that goes over all FlowControllers and counts how many are Clients
+	// Convenience function that goes over all FlowControllers and counts how many are Clients.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfClientWorkers();
 
-	// Convenience function that returns the Id used for executing steps on all Servers / Clients
+	// Convenience function that returns the Id used for executing steps on all Servers / Clients.
 	// clang-format off
 	UFUNCTION(BlueprintPure,
 		meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"),
@@ -213,7 +221,7 @@ public:
 			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
 	void ClearTagDelegationAndInterest();
 
-	// # Snapshot APIs
+	// # Snapshot APIs.
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 			  meta = (ToolTip = "Allows a Server Worker to request a SpatialOS snapshot to be taken. Keep in mind that this should be done at the last Step of your Test. Keep in mind that if you take a snapshot, you should eventually call ClearLoadedFromTakenSnapshot."))
