@@ -384,6 +384,25 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		}
 	}
 
+	// Also check the HandoverData
+	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
+	for (auto& PropertyPair : HandoverData)
+	{
+		GDK_PROPERTY(Property)* Property = PropertyPair.Value->Property;
+		if (Property->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
+		{
+			bShouldIncludeCoreTypes = true;
+		}
+
+		if (Property->IsA<GDK_PROPERTY(ArrayProperty)>())
+		{
+			if (GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property)->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
+			{
+				bShouldIncludeCoreTypes = true;
+			}
+		}
+	}
+
 	if (bShouldIncludeCoreTypes)
 	{
 		Writer.PrintNewLine();
