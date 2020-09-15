@@ -15,10 +15,10 @@ namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
 									 USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer)
-	: ExtractRPCCallback(ExtractRPCCallback)
+	: SpanIdCache(10.0f, 10.0f, 500)
+	, ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
-	, SpanIdCache(10.0f, 10.0f, 500)
 	, EventTracer(EventTracer)
 {
 }

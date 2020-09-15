@@ -29,13 +29,13 @@ protected:
 		uint32 FieldId;
 	};
 
-	struct EntityComponentFieldIdUpdateSpanId
+	struct EntityComponentFieldIdSpanIdUpdate
 	{
 		worker::c::Trace_SpanId SpanId = worker::c::Trace_SpanId();
 		FDateTime UpdateTime;
 	};
 
-	using FieldIdMap = TMap<uint32, EntityComponentFieldIdUpdateSpanId>;
+	using FieldIdMap = TMap<uint32, EntityComponentFieldIdSpanIdUpdate>;
 	TMap<EntityComponentId, FieldIdMap> EntityComponentFieldSpanIds;
 
 private:

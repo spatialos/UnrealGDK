@@ -15,7 +15,7 @@ using namespace worker::c;
 void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
 {
 	FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
-	EntityComponentFieldIdUpdateSpanId& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
+	EntityComponentFieldIdSpanIdUpdate& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
 	SpawnIdRef.SpanId = SpanId;
 	SpawnIdRef.UpdateTime = FDateTime::Now();
 }
@@ -56,7 +56,7 @@ Trace_SpanId SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const ui
 		return ReturnSpanId;
 	}
 
-	const EntityComponentFieldIdUpdateSpanId* UpdateSpanId = SpanIdMap->Find(FieldId);
+	const EntityComponentFieldIdSpanIdUpdate* UpdateSpanId = SpanIdMap->Find(FieldId);
 	if (UpdateSpanId == nullptr)
 	{
 		return ReturnSpanId;
@@ -73,10 +73,10 @@ Trace_SpanId SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id
 		return Trace_SpanId();
 	}
 
-	EntityComponentFieldIdUpdateSpanId MostRecent;
+	EntityComponentFieldIdSpanIdUpdate MostRecent;
 	for (const auto& Pair : *SpanIdMap)
 	{
-		const EntityComponentFieldIdUpdateSpanId& Data = Pair.Value;
+		const EntityComponentFieldIdSpanIdUpdate& Data = Pair.Value;
 		if (Data.UpdateTime > MostRecent.UpdateTime || Trace_SpanId_Equal(MostRecent.SpanId, Trace_SpanId()))
 		{
 			MostRecent = Data;
@@ -114,24 +114,24 @@ void SpatialTimedSpanIdCache::DropOldSpanIds()
 
 		FDateTime DropDateTime = FDateTime::Now() - FTimespan::FromSeconds(MinSpanIdLifetime);
 
-		TArray<EntityComponentFieldId> EntityComponentFieldIdsToDrop;
 		int32 NumDropped = 0;
 		bool bShouldBreak = false;
 
-		for (const auto& Pair : EntityComponentFieldSpanIds)
+		for (auto It = EntityComponentFieldSpanIds.CreateIterator(); It; ++It)
 		{
-			const EntityComponentId& Id = Pair.Key;
-			const FieldIdMap& Map = Pair.Value;
+			const EntityComponentId& Id = It.Key();
+			FieldIdMap& Map = It.Value();
 
-			for (const auto& UpdateSpanIdPair : Map)
+			for (auto FieldIdSpanIdPair = Map.CreateIterator(); FieldIdSpanIdPair; ++FieldIdSpanIdPair)
 			{
-				uint32 FieldId = UpdateSpanIdPair.Key;
-				const EntityComponentFieldIdUpdateSpanId& UpdateSpanId = UpdateSpanIdPair.Value;
+				uint32 FieldId = FieldIdSpanIdPair.Key();
+				const EntityComponentFieldIdSpanIdUpdate& SpanIdUpdate = FieldIdSpanIdPair.Value();
 
-				if (UpdateSpanId.UpdateTime < DropDateTime)
+				if (SpanIdUpdate.UpdateTime < DropDateTime)
 				{
-					EntityComponentFieldIdsToDrop.Add({ Id, FieldId });
+					FieldIdSpanIdPair.RemoveCurrent();
 					NumDropped++;
+
 					if (NumDropped >= MaxSpanIdsToDrop)
 					{
 						UE_LOG(LogSpatialSpanIdStore, Log,
@@ -148,12 +148,7 @@ void SpatialTimedSpanIdCache::DropOldSpanIds()
 			}
 		}
 
-		for (const EntityComponentFieldId& Id : EntityComponentFieldIdsToDrop)
-		{
-			DropSpanId(Id.EntityComponentId, Id.FieldId);
-		}
-
-		UE_LOG(LogSpatialSpanIdStore, Verbose, TEXT("Periodic SpanId drop dropped %d SpanIds."), EntityComponentFieldIdsToDrop.Num());
+		UE_LOG(LogSpatialSpanIdStore, Verbose, TEXT("Periodic SpanId drop dropped %d SpanIds."), NumDropped);
 
 		EntityComponentFieldSpanIds.Compact();
 	}
