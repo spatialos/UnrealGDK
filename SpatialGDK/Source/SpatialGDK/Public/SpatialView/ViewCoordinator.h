@@ -17,9 +17,9 @@ public:
 
 	// Moveable, not copyable.
 	ViewCoordinator(const ViewCoordinator&) = delete;
-	ViewCoordinator(ViewCoordinator&&) = delete;
+	ViewCoordinator(ViewCoordinator&&) = default;
 	ViewCoordinator& operator=(const ViewCoordinator&) = delete;
-	ViewCoordinator& operator=(ViewCoordinator&&) = delete;
+	ViewCoordinator& operator=(ViewCoordinator&&) = default;
 
 	void Advance();
 	const ViewDelta& GetViewDelta();
