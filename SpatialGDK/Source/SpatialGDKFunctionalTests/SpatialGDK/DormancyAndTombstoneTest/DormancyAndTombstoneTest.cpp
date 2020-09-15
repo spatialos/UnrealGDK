@@ -55,10 +55,9 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				int ExpectedDormancyActors = 1;
 				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 				{
-					Counter++;
-					if (Iter->TestIntProp != 0 || Iter->NetDormancy != DORM_Initial)
+					if (Iter->TestIntProp == 0 && Iter->NetDormancy == DORM_Initial)
 					{
-						break;
+						Counter++;
 					}
 				}
 
