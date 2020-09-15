@@ -4,7 +4,7 @@
 
 using namespace SpatialGDK;
 
-void USpatialWorkerConnection::SetEventTracer(SpatialGDK::SpatialEventTracer* EventTracerIn)
+void USpatialWorkerConnection::SetEventTracer(SpatialGDK::SpatialEventTracer* InEventTracer)
 {
-	EventTracer = EventTracerIn;
+	EventTracer = InEventTracer;
 }

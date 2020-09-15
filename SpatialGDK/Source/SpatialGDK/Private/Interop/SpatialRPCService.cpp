@@ -18,6 +18,7 @@ SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, cons
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
+	, SpanIdCache(10.0f, 10.0f, 500)
 	, EventTracer(EventTracer)
 {
 }
@@ -497,7 +498,11 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 		LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
 	}
 
+	SpanIdCache.DropOldSpanIds();
+
 	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
+	EntityComponentId Id(EntityId, RPCRingBufferUtils::GetRingBufferComponentId(Type));
+	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
 
 	uint64 LastProcessedRPCId = LastSeenRPCId;
 	if (Buffer.LastSentRPCId >= LastSeenRPCId)
@@ -516,6 +521,13 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 
 		for (uint64 RPCId = FirstRPCIdToRead; RPCId <= Buffer.LastSentRPCId; RPCId++)
 		{
+			if (EventTracer != nullptr)
+			{
+				Schema_FieldId FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
+				Trace_SpanId SpanId = EventTracer->GetSpanId(Id, FieldId);
+				SpanIdCache.AddSpanId(Id, FieldId, SpanId);
+			}
+
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{

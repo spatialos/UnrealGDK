@@ -27,7 +27,7 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
 	if (bEventTracerEnabled)
 	{
-		EventTracer->DropOldSpanIds();
+		EventTracer->ClearSpanIds();
 	}
 
 	for (OpList& Ops : OpLists)
