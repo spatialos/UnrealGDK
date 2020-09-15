@@ -9,6 +9,7 @@ ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 {
 	Author = "Tilman Schmidt";
 	Description = TEXT("Trigger shutdown preparation via worker flags and make sure callbacks get called in C++ and Blueprints");
+	TriggerEventWaitTime = 5.0f;
 	StepTimer = 0.0f;
 	LocalListener = nullptr;
 
@@ -94,7 +95,7 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			// The callback may take some time to be called on workers after being triggered. So we should wait a while before claiming that
 			// it hasn't been called on a client.
 			StepTimer += DeltaTime;
-			if (StepTimer > EventWaitTime)
+			if (StepTimer > TriggerEventWaitTime)
 			{
 				FinishStep();
 				StepTimer = 0.0f;
@@ -133,7 +134,7 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			}
 
 			StepTimer += DeltaTime;
-			if (StepTimer > EventWaitTime)
+			if (StepTimer > TriggerEventWaitTime)
 			{
 				FinishStep();
 				StepTimer = 0.0f;
@@ -152,7 +153,7 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 					// The callback may take some time to be called on workers after being triggered. So we should wait a while before
 					// claiming that it hasn't been called on a client.
 					StepTimer += DeltaTime;
-					if (StepTimer > EventWaitTime)
+					if (StepTimer > TriggerEventWaitTime)
 					{
 						FinishStep();
 						StepTimer = 0.0f;
