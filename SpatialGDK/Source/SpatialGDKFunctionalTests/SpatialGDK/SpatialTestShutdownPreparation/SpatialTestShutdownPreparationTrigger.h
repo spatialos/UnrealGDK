@@ -21,7 +21,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestShutdownPreparationTrigger : pub
 	TSubclassOf<ATestPrepareShutdownListener> PrepareShutdownListenerClass;
 
 	UPROPERTY(EditInstanceOnly, Category = "Test Settings")
-	float EventWaitTime;
+	float TriggerEventWaitTime;
 
 	float StepTimer;
 	ATestPrepareShutdownListener* LocalListener;
