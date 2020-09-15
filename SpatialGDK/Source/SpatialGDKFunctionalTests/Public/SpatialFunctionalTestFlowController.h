@@ -14,7 +14,7 @@ constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
 
 class ASpatialFunctionalTest;
 
-UCLASS()
+UCLASS(SpatialType = NotPersistent)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTestFlowController : public AActor
 {
 	GENERATED_BODY()

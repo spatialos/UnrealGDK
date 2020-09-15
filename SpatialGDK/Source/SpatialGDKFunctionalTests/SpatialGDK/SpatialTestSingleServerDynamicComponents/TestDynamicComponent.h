@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "CoreMinimal.h"
 #include "TestDynamicComponent.generated.h"
 
 /**
