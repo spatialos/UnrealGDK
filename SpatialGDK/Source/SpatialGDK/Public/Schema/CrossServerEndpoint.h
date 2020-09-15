@@ -11,7 +11,6 @@
 
 namespace SpatialGDK
 {
-
 struct CrossServerEndpoint : Component
 {
 	CrossServerEndpoint(const Worker_ComponentData& Data, ERPCType Type);
@@ -43,7 +42,8 @@ struct CrossServerEndpointSender : CrossServerEndpoint
 
 	CrossServerEndpointSender(const Worker_ComponentData& Data)
 		: CrossServerEndpoint(Data, ERPCType::CrossServerSender)
-	{}
+	{
+	}
 };
 
 struct CrossServerEndpointReceiver : CrossServerEndpoint
@@ -52,7 +52,8 @@ struct CrossServerEndpointReceiver : CrossServerEndpoint
 
 	CrossServerEndpointReceiver(const Worker_ComponentData& Data)
 		: CrossServerEndpoint(Data, ERPCType::CrossServerReceiver)
-	{}
+	{
+	}
 };
 
 struct CrossServerEndpointSenderACK : Component
@@ -65,20 +66,20 @@ struct CrossServerEndpointSenderACK : Component
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 
 	uint64_t RPCAck = 0;
-	TMap< Worker_EntityId, TArray<uint64>> DottedRPCACK;
+	TMap<Worker_EntityId, TArray<uint64>> DottedRPCACK;
+
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);
 };
-
 
 struct CrossServerEndpointReceiverACK : CrossServerEndpointACK
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID;
 
 	CrossServerEndpointReceiverACK(const Worker_ComponentData& Data)
-		:CrossServerEndpointACK(Data, ERPCType::CrossServerReceiver)
-	{}
+		: CrossServerEndpointACK(Data, ERPCType::CrossServerReceiver)
+	{
+	}
 };
-
 
 } // namespace SpatialGDK

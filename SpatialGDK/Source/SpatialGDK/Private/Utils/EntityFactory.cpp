@@ -85,11 +85,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	FString RoutingWorkerName = NetDriver->GetRoutingWorkerId();
 
-	check(SpatialSettings->CrossServerRPCImplementation != ECrossServerRPCImplementation::RoutingWorker
-		|| !RoutingWorkerName.IsEmpty());
+	check(SpatialSettings->CrossServerRPCImplementation != ECrossServerRPCImplementation::RoutingWorker || !RoutingWorkerName.IsEmpty());
 
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttributeOrSpecificWorker };
-	const WorkerRequirementSet RoutingWorkerRequirementSet = { {FString::Format(TEXT("workerId:{0}"), { *RoutingWorkerName })} };
+	const WorkerRequirementSet RoutingWorkerRequirementSet = { { FString::Format(TEXT("workerId:{0}"), { *RoutingWorkerName }) } };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))

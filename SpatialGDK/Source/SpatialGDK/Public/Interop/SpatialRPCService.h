@@ -19,7 +19,8 @@ class USpatialLatencyTracer;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
-DECLARE_DELEGATE_RetVal_FiveParams(bool, ExtractRPCDelegate, Worker_EntityId, const FUnrealObjectRef&, ERPCType, const SpatialGDK::RPCPayload&, uint32);
+DECLARE_DELEGATE_RetVal_FiveParams(bool, ExtractRPCDelegate, Worker_EntityId, const FUnrealObjectRef&, ERPCType,
+								   const SpatialGDK::RPCPayload&, uint32);
 
 namespace SpatialGDK
 {
@@ -62,7 +63,8 @@ public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
 					  USpatialLatencyTracer* SpatialLatencyTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType Type, RPCPayload Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType Type, RPCPayload Payload,
+						   bool bCreatedEntity);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -97,7 +99,8 @@ private:
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType Type, RPCPayload&& Payload,
+								   bool bCreatedEntity);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 	void ExtractCrossServerRPCsForType(Worker_EntityId EntityId, ERPCType Type);
@@ -111,7 +114,6 @@ private:
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 private:
-
 	TOptional<uint32_t> FindFreeSlotForCrossServerSender();
 
 	void CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId> const& ReceiversToIgnore);
@@ -132,7 +134,6 @@ private:
 
 	TMap<EntityComponentId, Schema_ComponentUpdate*> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
-
 
 	struct SentRPCEntry
 	{

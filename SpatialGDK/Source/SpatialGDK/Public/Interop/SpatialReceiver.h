@@ -78,7 +78,8 @@ public:
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint32 Slot) override;
+	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType,
+									  const SpatialGDK::RPCPayload& Payload, uint32 Slot) override;
 
 	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
 	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
@@ -154,7 +155,8 @@ private:
 
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
-	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef, SpatialGDK::RPCPayload InPayload, uint32 Slot);
+	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef,
+								   SpatialGDK::RPCPayload InPayload, uint32 Slot);
 
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 

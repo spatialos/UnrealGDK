@@ -76,7 +76,7 @@ void CrossServerEndpointSenderACK::CreateUpdate(Schema_ComponentUpdate* OutUpdat
 
 	Schema_AddUint64(Object, 1, RPCAck);
 
-	if(DottedRPCACK.Num() == 0)
+	if (DottedRPCACK.Num() == 0)
 	{
 		Schema_AddComponentUpdateClearedField(OutUpdate, 2);
 	}
@@ -88,7 +88,7 @@ void CrossServerEndpointSenderACK::CreateUpdate(Schema_ComponentUpdate* OutUpdat
 		Schema_AddEntityId(MapEntry, SCHEMA_MAP_KEY_FIELD_ID, ACKEntry.Key);
 		Schema_Object* ACKListObject = Schema_AddObject(MapEntry, SCHEMA_MAP_VALUE_FIELD_ID);
 
-		//Schema_AddUint64List(ACKListObject, 1, ACKEntry.Value.GetData(), ACKEntry.Value.Num());
+		// Schema_AddUint64List(ACKListObject, 1, ACKEntry.Value.GetData(), ACKEntry.Value.Num());
 
 		auto* buffer = Schema_AllocateBuffer(ACKListObject, ACKEntry.Value.Num() * sizeof(uint64));
 		FMemory::Memcpy(buffer, ACKEntry.Value.GetData(), ACKEntry.Value.Num() * sizeof(uint64));

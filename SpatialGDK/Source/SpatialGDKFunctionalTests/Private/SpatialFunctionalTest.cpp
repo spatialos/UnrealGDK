@@ -474,7 +474,8 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 	return nullptr;
 }
 
-void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(AActor* Sender, ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(AActor* Sender,
+																		  ASpatialFunctionalTestFlowController* FlowController)
 {
 	if (CurrentStepIndex < 0)
 	{

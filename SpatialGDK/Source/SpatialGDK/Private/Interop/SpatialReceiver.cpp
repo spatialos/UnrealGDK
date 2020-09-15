@@ -229,16 +229,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
 	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
-		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
-		{
-			
-		}
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox) {}
 		return;
 	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
-		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
-		{
-
-		}
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox) {}
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
@@ -860,8 +854,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
 					// we want to scrape the server endpoint for any server -> client RPCs that are waiting to be called.
-					const Worker_ComponentId ComponentToExtractFrom = [&Op] () -> Worker_ComponentId
-					{
+					const Worker_ComponentId ComponentToExtractFrom = [&Op]() -> Worker_ComponentId {
 						switch (Op.component_id)
 						{
 						case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
@@ -1735,8 +1728,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
-		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox
-			|| NetDriver->IsRoutingWorker())
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox || NetDriver->IsRoutingWorker())
 		{
 			UE_LOG(LogSpatialReceiver, Log, TEXT("DEBUG_CS %llu received update from %llu"), NetDriver->WorkerEntityId, Op.entity_id);
 			HandleRPC(Op);
@@ -1930,7 +1922,8 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 	const bool bIsServerRpc = Op.update.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	const bool bIsCrossServerRpc = Op.update.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
 	if ((bIsServerRpc && StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID))
-		|| (bIsCrossServerRpc && StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID)))
+		|| (bIsCrossServerRpc
+			&& StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID)))
 	{
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = PackageMap->GetObjectFromEntityId(Op.entity_id);
 		if (!ActorReceivingRPC.IsValid())
@@ -2164,9 +2157,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 	TSet<FUnrealObjectRef> MappedRefs;
 	RPCPayload PayloadCopy = PendingRPCParams.Payload;
 	{
-		// Scope FSpatialNetBitReader because there could be recursive calls when flushing the RPC service?? :/ maybe we should try to avoid that.
+		// Scope FSpatialNetBitReader because there could be recursive calls when flushing the RPC service?? :/ maybe we should try to avoid
+		// that.
 		FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs,
-			UnresolvedRefs);
+										   UnresolvedRefs);
 
 		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 		RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
@@ -2205,15 +2199,15 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			TargetObject->ProcessEvent(Function, Parms);
 
-			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr
-				&& RPCType != ERPCType::NetMulticast)
+			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::NetMulticast)
 			{
 				if (RPCType == ERPCType::CrossServerSender)
 				{
 					USpatialGDKSettings const* Settings = GetDefault<USpatialGDKSettings>();
 					if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
 					{
-						RPCService->WriteCrossServerACKFor(PendingRPCParams.ObjectRef.Entity, PendingRPCParams.SenderObjectRef.Entity, PendingRPCParams.SenderObjectRef.Offset, PendingRPCParams.Slot);
+						RPCService->WriteCrossServerACKFor(PendingRPCParams.ObjectRef.Entity, PendingRPCParams.SenderObjectRef.Entity,
+														   PendingRPCParams.SenderObjectRef.Offset, PendingRPCParams.Slot);
 					}
 					else
 					{
@@ -2461,7 +2455,8 @@ void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
 	IncomingRPCs.DropForEntity(EntityId);
 }
 
-void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef, SpatialGDK::RPCPayload InPayload, uint32 Slot)
+void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef,
+												 SpatialGDK::RPCPayload InPayload, uint32 Slot)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -2493,19 +2488,21 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	if (Type == ERPCType::CrossServerSender)
 	{
 		//--> for routing worker.
-		//Type = ERPCType::CrossServerReceiver;
+		// Type = ERPCType::CrossServerReceiver;
 	}
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderObjectRef, Type, MoveTemp(InPayload), Slot);
 }
 
-bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint32 Slot)
+bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType,
+											const SpatialGDK::RPCPayload& Payload, uint32 Slot)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 	{
 		if (NetDriver->IsRoutingWorker() && RPCType == ERPCType::CrossServerSender)
 		{
-			RPCService->PushRPC(Counterpart.Entity, FUnrealObjectRef(EntityId, Counterpart.Offset), ERPCType::CrossServerReceiver, Payload, false);
+			RPCService->PushRPC(Counterpart.Entity, FUnrealObjectRef(EntityId, Counterpart.Offset), ERPCType::CrossServerReceiver, Payload,
+								false);
 			RPCService->IncrementAckedRPCID(EntityId, RPCType);
 			Sender->FlushRPCService();
 			return true;

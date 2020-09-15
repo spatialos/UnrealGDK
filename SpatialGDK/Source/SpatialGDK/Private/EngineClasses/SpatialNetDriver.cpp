@@ -1577,7 +1577,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	if (Function->FunctionFlags & FUNC_NetCrossServer)
 	{
 		UProperty* SenderProp = nullptr;
-		for (auto It = TFieldIterator< UProperty >(Function); It; ++It)
+		for (auto It = TFieldIterator<UProperty>(Function); It; ++It)
 		{
 			if (It->GetPropertyFlags() & CPF_CrossServerSender)
 			{
@@ -1588,7 +1588,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		{
 			UObjectProperty* obj = Cast<UObjectProperty>(SenderProp);
 			check(obj != nullptr);
-			
+
 			SenderActor = Cast<AActor>(obj->GetObjectPropertyValue((uint8*)Parameters + obj->GetOffset_ForUFunction()));
 		}
 	}

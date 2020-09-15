@@ -218,7 +218,7 @@ void WriteAckForSenderToSchema(Schema_Object* SchemaObject, ERPCType Type, TArra
 	Schema_FieldId AckArrayFieldId = GetAckFieldId(Type) + 1;
 
 	Schema_ClearField(SchemaObject, AckArrayFieldId);
-	//Schema_AddUint64(SchemaObject, AckFieldId, Ack);
+	// Schema_AddUint64(SchemaObject, AckFieldId, Ack);
 	for (auto const& Ref : AckArray)
 	{
 		AddObjectRefToSchema(SchemaObject, AckArrayFieldId, Ref);

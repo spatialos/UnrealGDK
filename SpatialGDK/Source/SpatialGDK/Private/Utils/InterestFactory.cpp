@@ -148,10 +148,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// TODO UNR-3042 : Migrate the VirtualWorkerTranslationManager to use the checked-out worker components instead of making a query.
 
 	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = SchemaResultType
-	{
-		SpatialConstants::WORKER_COMPONENT_ID
-	};
+	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
@@ -167,47 +164,33 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
 	{
 		ServerQuery = Query();
-		ServerQuery.ResultComponentIds = SchemaResultType
-		{
-			SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID
-		};
-		
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID };
+
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID;
 		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
 		ServerQuery = Query();
-		ServerQuery.ResultComponentIds = SchemaResultType
-		{
-			SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID
-		};
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID };
 
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID;
 		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 	}
-	else if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker
-		&& bIsRoutingWorker)
+	else if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker && bIsRoutingWorker)
 	{
 		ServerQuery = Query();
-		ServerQuery.ResultComponentIds = SchemaResultType
-		{
-			SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
-			SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID
-		};
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+														   SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID };
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID;
 
 		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
 		ServerQuery = Query();
-		ServerQuery.ResultComponentIds = SchemaResultType
-		{
-			SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
-			SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID
-		};
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+														   SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID };
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
 
 		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 	}
-
 
 	return ServerInterest;
 }

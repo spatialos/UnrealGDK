@@ -125,8 +125,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload), 0);
-	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload), 0);
+	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderObjectRef, ParamsUnreliable.Type,
+						   MoveTemp(ParamsUnreliable.Payload), 0);
+	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload),
+						   0);
 
 	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
 	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));
@@ -143,8 +145,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
-	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload), 0);
-	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload), 0);
+	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderObjectRef, ParamsUnreliable.Type,
+						   MoveTemp(ParamsUnreliable.Payload), 0);
+	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload),
+						   0);
 
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));

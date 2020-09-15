@@ -45,12 +45,12 @@ enum Type
 UENUM()
 namespace ECrossServerRPCImplementation
 {
-	enum Type
-	{
-		SpatialCommand,
-		WorkerEntityMailbox,
-		RoutingWorker,
-	};
+enum Type
+{
+	SpatialCommand,
+	WorkerEntityMailbox,
+	RoutingWorker,
+};
 }
 
 USTRUCT(BlueprintType)

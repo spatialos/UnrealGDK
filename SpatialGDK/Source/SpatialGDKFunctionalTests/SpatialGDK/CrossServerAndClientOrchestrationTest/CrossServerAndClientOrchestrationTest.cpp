@@ -114,7 +114,8 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 	}
 }
 
-void ACrossServerAndClientOrchestrationTest::CrossServerSetTestValue_Implementation(AActor* Sender, ESpatialFunctionalTestWorkerType ControllerType,
+void ACrossServerAndClientOrchestrationTest::CrossServerSetTestValue_Implementation(AActor* Sender,
+																					ESpatialFunctionalTestWorkerType ControllerType,
 																					uint8 ChangedInstance)
 {
 	uint8 FlagIndex = ChangedInstance - 1;

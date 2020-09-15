@@ -12,3 +12,7 @@ type UnrealRPCPayload {
     bytes rpc_payload = 3;
     option<TracePayload> rpc_trace = 4;
 }
+
+type ACKList {
+    list<uint64> acks = 1;
+}
