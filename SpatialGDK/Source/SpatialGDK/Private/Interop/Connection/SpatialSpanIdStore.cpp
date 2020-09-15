@@ -10,68 +10,10 @@ DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-SpatialSpanIdStore::SpatialSpanIdStore()
-{
-	UpdateNextClearTime();
-}
 
-void SpatialSpanIdStore::ComponentAdd(const Worker_Op& Op)
-{
-	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
-	EntityComponentId Id(AddComponentOp.entity_id, AddComponentOp.data.component_id);
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(AddComponentOp.data.schema_type);
+// ----- SpatialSpanIdCache -----
 
-	TArray<uint32> UpdatedFieldIds;
-	UpdatedFieldIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdatedFieldIds.GetData());
-
-	for (uint32 FieldId : UpdatedFieldIds)
-	{
-		WriteSpanId(Id, FieldId, Op.span_id);
-	}
-}
-
-bool SpatialSpanIdStore::ComponentRemove(const Worker_Op& Op)
-{
-	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
-	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
-	return DropSpanIds(Id);
-}
-
-TArray<SpatialSpanIdStore::FieldSpanIdUpdate> SpatialSpanIdStore::ComponentUpdate(const Worker_Op& Op)
-{
-	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
-	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdateOp.update.schema_type);
-
-	TArray<uint32> UpdatedFieldIds;
-	UpdatedFieldIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdatedFieldIds.GetData());
-
-	TArray<FieldSpanIdUpdate> FieldCollisions;
-	for (uint32 FieldId : UpdatedFieldIds)
-	{
-		FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
-		if (SpanIdMap != nullptr)
-		{
-			EntityComponentFieldIdUpdateSpanId* SpawnIdRef = SpanIdMap->Find(FieldId);
-			if (SpawnIdRef != nullptr)
-			{
-				FieldSpanIdUpdate Update;
-				Update.FieldId = FieldId;
-				Update.NewSpanId = Op.span_id;
-				Update.OldSpanId = SpawnIdRef->SpanId;
-				FieldCollisions.Add(Update);
-			}
-		}
-
-		WriteSpanId(Id, FieldId, Op.span_id);
-	}
-
-	return FieldCollisions;
-}
-
-void SpatialSpanIdStore::WriteSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
+void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
 {
 	FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
 	EntityComponentFieldIdUpdateSpanId& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
@@ -79,17 +21,43 @@ void SpatialSpanIdStore::WriteSpanId(const EntityComponentId& Id, const uint32 F
 	SpawnIdRef.UpdateTime = FDateTime::Now();
 }
 
-Trace_SpanId SpatialSpanIdStore::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialSpanIdCache::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
+{
+	return DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
+}
+
+bool SpatialSpanIdCache::DropSpanIds(const EntityComponentId& Id)
+{
+	return EntityComponentFieldSpanIds.Remove(Id) > 0;
+}
+
+bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
+{
+	if (SpanIdMap == nullptr)
+	{
+		return false;
+	}
+
+	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
+	if (bDropped && SpanIdMap->Num() == 0)
+	{
+		EntityComponentFieldSpanIds.Remove(Id);
+	}
+
+	return bDropped;
+}
+
+Trace_SpanId SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId) const
 {
 	Trace_SpanId ReturnSpanId = Trace_SpanId();
 
-	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
+	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
 	{
 		return ReturnSpanId;
 	}
 
-	EntityComponentFieldIdUpdateSpanId* UpdateSpanId = SpanIdMap->Find(FieldId);
+	const EntityComponentFieldIdUpdateSpanId* UpdateSpanId = SpanIdMap->Find(FieldId);
 	if (UpdateSpanId == nullptr)
 	{
 		return ReturnSpanId;
@@ -98,9 +66,9 @@ Trace_SpanId SpatialSpanIdStore::GetSpanId(const EntityComponentId& Id, const ui
 	return UpdateSpanId->SpanId;
 }
 
-Trace_SpanId SpatialSpanIdStore::GetMostRecentSpanId(const EntityComponentId& Id)
+Trace_SpanId SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id) const
 {
-	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
+	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
 	{
 		return Trace_SpanId();
@@ -119,33 +87,27 @@ Trace_SpanId SpatialSpanIdStore::GetMostRecentSpanId(const EntityComponentId& Id
 	return MostRecent.SpanId;
 }
 
-bool SpatialSpanIdStore::DropSpanIds(const EntityComponentId& Id)
+void SpatialSpanIdCache::ClearSpanIds()
 {
-	return EntityComponentFieldSpanIds.Remove(Id) > 0;
+	EntityComponentFieldSpanIds.Empty();
 }
 
-bool SpatialSpanIdStore::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
+// ----- SpatialTimedSpanIdCache -----
+
+SpatialTimedSpanIdCache::SpatialTimedSpanIdCache()
 {
-	return DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
+	UpdateNextClearTime();
 }
 
-bool SpatialSpanIdStore::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
+SpatialTimedSpanIdCache::SpatialTimedSpanIdCache(float InDropFrequency, float InMinSpanIdLifetime, int32 InMaxSpanIdsToDrop)
+	: DropFrequency(InDropFrequency)
+	, MinSpanIdLifetime(InMinSpanIdLifetime)
+	, MaxSpanIdsToDrop(InMaxSpanIdsToDrop)
 {
-	if (SpanIdMap == nullptr)
-	{
-		return false;
-	}
-
-	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
-	if (bDropped && SpanIdMap->Num() == 0)
-	{
-		EntityComponentFieldSpanIds.Remove(Id);
-	}
-
-	return bDropped;
+	UpdateNextClearTime();
 }
 
-void SpatialSpanIdStore::DropOldSpanIds()
+void SpatialTimedSpanIdCache::DropOldSpanIds()
 {
 	if (NextClearTime < FDateTime::Now())
 	{
@@ -174,7 +136,7 @@ void SpatialSpanIdStore::DropOldSpanIds()
 					if (NumDropped >= MaxSpanIdsToDrop)
 					{
 						UE_LOG(LogSpatialSpanIdStore, Log,
-							   TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
+							TEXT("Too many SpanIds to drop in a single call. Will attempt to drop the rest later."));
 						bShouldBreak = true;
 						break;
 					}
@@ -198,7 +160,61 @@ void SpatialSpanIdStore::DropOldSpanIds()
 	}
 }
 
-void SpatialSpanIdStore::UpdateNextClearTime()
+void SpatialTimedSpanIdCache::UpdateNextClearTime()
 {
 	NextClearTime = FDateTime::Now() + FTimespan::FromSeconds(DropFrequency);
+}
+
+// ----- SpatialWorkerOpSpanIdCache -----
+
+void SpatialWorkerOpSpanIdCache::ComponentAdd(const Worker_Op& Op)
+{
+	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
+	EntityComponentId Id(AddComponentOp.entity_id, AddComponentOp.data.component_id);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(AddComponentOp.data.schema_type);
+
+	TArray<uint32> UpdatedFieldIds;
+	UpdatedFieldIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedFieldIds.GetData());
+
+	for (uint32 FieldId : UpdatedFieldIds)
+	{
+		AddSpanId(Id, FieldId, Op.span_id);
+	}
+}
+
+bool SpatialWorkerOpSpanIdCache::ComponentRemove(const Worker_Op& Op)
+{
+	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
+	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
+	return DropSpanIds(Id);
+}
+
+TArray<SpatialWorkerOpSpanIdCache::FieldSpanIdUpdate> SpatialWorkerOpSpanIdCache::ComponentUpdate(const Worker_Op& Op)
+{
+	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
+	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdateOp.update.schema_type);
+
+	TArray<uint32> UpdatedFieldIds;
+	UpdatedFieldIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedFieldIds.GetData());
+
+	TArray<FieldSpanIdUpdate> FieldCollisions;
+	for (uint32 FieldId : UpdatedFieldIds)
+	{
+		Trace_SpanId ExistingSpanId = GetSpanId(Id, FieldId);
+		if (!Trace_SpanId_Equal(ExistingSpanId, worker::c::Trace_SpanId()))
+		{
+			FieldSpanIdUpdate Update;
+			Update.FieldId = FieldId;
+			Update.NewSpanId = Op.span_id;
+			Update.OldSpanId = ExistingSpanId;
+			FieldCollisions.Add(Update);
+		}
+
+		AddSpanId(Id, FieldId, Op.span_id);
+	}
+
+	return FieldCollisions;
 }

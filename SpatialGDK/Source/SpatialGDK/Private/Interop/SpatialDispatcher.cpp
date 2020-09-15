@@ -40,7 +40,7 @@ void SpatialDispatcher::ProcessOps(const SpatialGDK::OpList& Ops)
 	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
 	if (bEventTracerEnabled)
 	{
-		EventTracer->DropOldSpanIds();
+		EventTracer->ClearSpanIds();
 	}
 
 	for (size_t i = 0; i < Ops.Count; ++i)

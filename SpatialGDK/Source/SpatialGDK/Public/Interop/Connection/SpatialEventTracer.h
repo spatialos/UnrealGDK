@@ -60,12 +60,10 @@ public:
 	void ComponentAdd(const Worker_Op& Op);
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
-	void DropOldSpanIds();
 
 	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId);
 	worker::c::Trace_SpanId GetMostRecentSpanId(const EntityComponentId& Id);
-	void DropSpanIds(const EntityComponentId& Id);
-	void DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	void ClearSpanIds();
 
 private:
 	bool bEnabled{ false };
@@ -82,7 +80,7 @@ private:
 
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
 
-	SpatialSpanIdStore SpanIdStore;
+	SpatialWorkerOpSpanIdCache SpanIdStore;
 
 	void Enable(const FString& FileName);
 	void Disable();

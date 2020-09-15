@@ -246,14 +246,14 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
 	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
 
-	TArray<SpatialSpanIdStore::FieldSpanIdUpdate> FieldSpanIdUpdates = SpanIdStore.ComponentUpdate(Op);
-	for (const SpatialSpanIdStore::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)
+	TArray<SpatialWorkerOpSpanIdCache::FieldSpanIdUpdate> FieldSpanIdUpdates = SpanIdStore.ComponentUpdate(Op);
+	for (const SpatialWorkerOpSpanIdCache::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)
 	{
 		uint32 FieldId = FieldSpanIdUpdate.FieldId;
 		TArray<Trace_SpanId> MergeCauses = { FieldSpanIdUpdate.NewSpanId, FieldSpanIdUpdate.OldSpanId };
 
 		TOptional<Trace_SpanId> NewSpanId = TraceEvent(FEventMergeComponentFieldUpdate(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
-		SpanIdStore.WriteSpanId(Id, FieldId, NewSpanId.GetValue());
+		SpanIdStore.AddSpanId(Id, FieldId, NewSpanId.GetValue());
 	}
 }
 
@@ -267,17 +267,7 @@ worker::c::Trace_SpanId SpatialEventTracer::GetMostRecentSpanId(const EntityComp
 	return SpanIdStore.GetMostRecentSpanId(Id);
 }
 
-void SpatialEventTracer::DropSpanIds(const EntityComponentId& Id)
+void SpatialEventTracer::ClearSpanIds()
 {
-	SpanIdStore.DropSpanIds(Id);
-}
-
-void SpatialEventTracer::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
-{
-	SpanIdStore.DropSpanId(Id, FieldId);
-}
-
-void SpatialEventTracer::DropOldSpanIds()
-{
-	SpanIdStore.DropOldSpanIds();
+	SpanIdStore.ClearSpanIds();
 }

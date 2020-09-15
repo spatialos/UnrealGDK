@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialSpanIdStore.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
@@ -89,6 +90,8 @@ public:
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	uint64 GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const;
+
+	SpatialTimedSpanIdCache SpanIdCache;
 
 private:
 	struct PendingRPCPayload
