@@ -51,7 +51,6 @@ void ADormancyAndTombstoneTest::BeginPlay()
 		AddStep(
 			TEXT("ClientCheckValue"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
-
 				int Counter = 0;
 				int ExpectedDormancyActors = 1;
 				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
