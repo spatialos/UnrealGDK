@@ -34,6 +34,9 @@ bool Compare(const T& A, EComparisonMethod Operator, const T& B)
 	case EComparisonMethod::Less_Than:
 		bPassed = A < B;
 		break;
+	default:
+		checkNoEntry();
+		break;
 	}
 	return bPassed;
 }
@@ -54,9 +57,11 @@ FString GetComparisonMethodAsString(EComparisonMethod Operator)
 		return TEXT(">");
 	case EComparisonMethod::Less_Than:
 		return TEXT("<");
+	default:
+		checkNoEntry();
+		break;
 	}
 
-	check(false);
 	return FString(); // For compilation.
 }
 

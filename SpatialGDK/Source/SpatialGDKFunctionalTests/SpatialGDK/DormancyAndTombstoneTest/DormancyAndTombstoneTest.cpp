@@ -51,7 +51,6 @@ void ADormancyAndTombstoneTest::BeginPlay()
 		AddStep(
 			TEXT("ClientCheckValue"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
-				bool bPassesChecks = true;
 
 				int Counter = 0;
 				int ExpectedDormancyActors = 1;
@@ -60,7 +59,6 @@ void ADormancyAndTombstoneTest::BeginPlay()
 					Counter++;
 					if (Iter->TestIntProp != 0 || Iter->NetDormancy != DORM_Initial)
 					{
-						bPassesChecks = false;
 						break;
 					}
 				}

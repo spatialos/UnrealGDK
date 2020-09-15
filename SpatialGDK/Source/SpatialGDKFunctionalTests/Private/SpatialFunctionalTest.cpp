@@ -22,6 +22,13 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
+namespace
+{
+// Maximum time that the test authority will wait after deciding to FinishTest in order for all the Workers
+// to have enough time to acknowledge it. If this time is exceeded, the test authority will force FinishTest.
+constexpr float FINISH_TEST_GRACE_PERIOD_DURATION = 2.0f;
+} // namespace
+
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
 	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
@@ -347,7 +354,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 					CachedTestResult = EFunctionalTestResult::Default;
 					CachedTestMessage.Empty();
 				},
-				2.0f /* InRate */, false /* InbLoop */);
+				FINISH_TEST_GRACE_PERIOD_DURATION, false /* InbLoop */);
 		}
 	}
 	else

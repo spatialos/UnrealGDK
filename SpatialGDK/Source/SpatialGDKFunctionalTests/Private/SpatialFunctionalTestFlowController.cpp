@@ -175,7 +175,7 @@ const FString ASpatialFunctionalTestFlowController::GetDisplayName() const
 void ASpatialFunctionalTestFlowController::OnTestFinished()
 {
 	StopStepInternal();
-	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+	if (HasAuthority())
 	{
 		bHasAckFinishedTest = true;
 	}

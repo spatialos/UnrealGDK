@@ -12,12 +12,8 @@ struct FSpatialFunctionalTestSoftAssert
 	FString Msg;
 	bool bPassed;
 	FString ErrorMsg;
-	uint32 Order;
+	uint32 Order; // Used to be able to the messages in the same order they occurred at the end.
 };
-
-namespace
-{
-} // namespace
 
 /* This class handles all the SoftAssert functionality used by the ASpatialFunctionalTest. Because of the way networked tests
  * work we can't simply assert when checking values since we need to wait for them to propagate through the network. This
