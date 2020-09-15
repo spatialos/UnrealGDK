@@ -314,7 +314,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
-	GameInstance->HandleOnConnected();
+	GameInstance->HandleOnConnected(*this);
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
