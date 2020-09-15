@@ -32,6 +32,46 @@ inline void AddAuthorityToView(EntityView& View, const Worker_EntityId EntityId,
 	View[EntityId].Authority.Push(ComponentId);
 }
 
+inline void PopulateViewDeltaWithComponentAdded(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId, ComponentData Data)
+{
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.AddComponent(EntityId, MoveTemp(Data));
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+}
+
+inline void PopulateViewDeltaWithComponentUpdated(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+												  ComponentUpdate Update)
+{
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.UpdateComponent(EntityId, MoveTemp(Update));
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+}
+
+inline void PopulateViewDeltaWithComponentRemoved(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+												  const Worker_ComponentId ComponentId)
+{
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.RemoveComponent(EntityId, ComponentId);
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+}
+
+inline void PopulateViewDeltaWithAuthorityChange(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+												 const Worker_ComponentId ComponentId, const Worker_Authority Authority)
+{
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.SetAuthority(EntityId, ComponentId, Authority);
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+}
+
+inline void PopulateViewDeltaWithAuthorityLostTemp(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+												   const Worker_ComponentId ComponentId)
+{
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.SetAuthority(EntityId, ComponentId, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+	OpListBuilder.SetAuthority(EntityId, ComponentId, WORKER_AUTHORITY_AUTHORITATIVE);
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+}
+
 inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 {
 	TArray<Worker_EntityId_Key> LhsKeys;
