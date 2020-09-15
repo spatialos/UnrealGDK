@@ -4,7 +4,7 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
-// TODO remove
+
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialCommonTypes.h"
 
