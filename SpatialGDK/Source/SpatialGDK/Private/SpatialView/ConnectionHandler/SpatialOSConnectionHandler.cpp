@@ -3,6 +3,7 @@
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
 #include "Async/Async.h"
+#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 namespace SpatialGDK
 {
