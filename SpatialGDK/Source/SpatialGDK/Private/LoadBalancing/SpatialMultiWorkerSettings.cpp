@@ -41,7 +41,7 @@ void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 {
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
-	
+
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass =
 		USpatialStatics::GetSpatialMultiWorkerClass(World);
 
