@@ -713,24 +713,3 @@ void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
 		NetDriver->DebugCtx->Reset();
 	}
 }
-
-void ASpatialFunctionalTest::SoftAssertTrue(bool bCheckTrue, const FString& Msg)
-{
-	SoftAssertHandler.SoftAssertFalse(bCheckTrue, Msg);
-}
-
-void ASpatialFunctionalTest::SoftAssertFalse(bool bCheckFalse, const FString& Msg)
-{
-	SoftAssertHandler.SoftAssertFalse(bCheckFalse, Msg);
-}
-
-void ASpatialFunctionalTest::SoftAssertInt(int A, EComparisonMethod Operator, int B, const FString& Msg)
-{
-	SoftAssertHandler.SoftAssertInt(A, Operator, B, Msg);
-}
-
-void ASpatialFunctionalTest::SoftAssertFloat(float A, EComparisonMethod Operator, float B, const FString& Msg,
-											 const float EqualityTolerance /*= 0.0001f*/)
-{
-	SoftAssertHandler.SoftAssertFloat(A, Operator, B, Msg, EqualityTolerance);
-}

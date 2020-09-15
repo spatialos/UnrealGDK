@@ -32,12 +32,28 @@ public:
 	void SetOwnerTest(ASpatialFunctionalTest* SpatialFunctionalTest) { OwnerTest = SpatialFunctionalTest; }
 
 	void SoftAssertTrue(bool bCheckTrue, const FString& Msg);
-
 	void SoftAssertFalse(bool bCheckFalse, const FString& Msg);
 
-	void SoftAssertInt(int A, EComparisonMethod Operator, int B, const FString& Msg);
+	void SoftAssertCompare(int A, EComparisonMethod Operator, int B, const FString& Msg);
+	void SoftAssertCompare(float A, EComparisonMethod Operator, float B, const FString& Msg);
 
-	void SoftAssertFloat(float A, EComparisonMethod Operator, float B, const FString& Msg, const float EqualityTolerance = 0.0001f);
+	void SoftAssertEqual(bool bValue, bool bExpected, const FString& Msg);
+	void SoftAssertEqual(int Value, int Expected, const FString& Msg);
+	void SoftAssertEqual(float Value, float Expected, const FString& Msg, float Tolerance);
+	void SoftAssertEqual(const FString& Value, const FString& Expected, const FString& Msg);
+	void SoftAssertEqual(const FName& Value, const FName& Expected, const FString& Msg);
+	void SoftAssertEqual(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance);
+	void SoftAssertEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance);
+	void SoftAssertEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance);
+
+	void SoftAssertNotEqual(bool bValue, bool bNotExpected, const FString& Msg);
+	void SoftAssertNotEqual(int Value, int NotExpected, const FString& Msg);
+	void SoftAssertNotEqual(float Value, float NotExpected, const FString& Msg);
+	void SoftAssertNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg);
+	void SoftAssertNotEqual(const FName& Value, const FName& NotExpected, const FString& Msg);
+	void SoftAssertNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg);
+	void SoftAssertNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg);
+	void SoftAssertNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg);
 
 	void GenericSoftAssert(const FString& Key, bool bPassed, const FString& ErrorMsg);
 
@@ -47,8 +63,6 @@ public:
 
 private:
 	ASpatialFunctionalTest* OwnerTest;
-
-	FString GetComparisonMethodAsString(EComparisonMethod Operator);
 
 	uint32 NextOrder;
 

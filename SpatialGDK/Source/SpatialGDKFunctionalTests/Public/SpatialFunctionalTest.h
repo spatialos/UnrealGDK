@@ -211,15 +211,67 @@ public:
 	// negatives. These functions work in a way that they record the expected behaviour, and when we FinishStep / FinishTest
 	// it will let you know which of them passed and which failed.
 
-	void SoftAssertTrue(bool bCheckTrue, const FString& Msg);
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void SoftAssertTrue(bool bCheckTrue, const FString& Msg) { SoftAssertHandler.SoftAssertTrue(bCheckTrue, Msg); }
 
-	void SoftAssertFalse(bool bCheckFalse, const FString& Msg);
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void SoftAssertFalse(bool bCheckFalse, const FString& Msg) { SoftAssertHandler.SoftAssertFalse(bCheckFalse, Msg); }
 
-	void SoftAssertInt(int A, EComparisonMethod Operator, int B, const FString& Msg);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Compare (Int)"), Category = "Spatial Functional Test")
+	void SoftAssertCompare_Int(int A, EComparisonMethod Operator, int B, const FString& Msg) { SoftAssertHandler.SoftAssertCompare(A, Operator, B, Msg); }
 
-	void SoftAssertFloat(float A, EComparisonMethod Operator, float B, const FString& Msg, const float EqualityTolerance = 0.0001f);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Compare (Float)"), Category = "Spatial Functional Test")
+	void SoftAssertCompare_Float(float A, EComparisonMethod Operator, float B, const FString& Msg) { SoftAssertHandler.SoftAssertCompare(A, Operator, B, Msg); }
 
-	// void SoftAssertEqual(bool bCheckTrue, const FString& Msg);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Bool)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Bool(bool bValue, bool bExpected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(bValue, bExpected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Int)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Int(int Value, int Expected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Float)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Float(float Value, float Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (String)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Name)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Vector)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Rotator)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Transform)"), Category = "Spatial Functional Test")
+	void SoftAssertEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Bool)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(bValue, bNotExpected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Int)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Int(int Value, int Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Float)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Float(float Value, float Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (String)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Name)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Vector)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Rotator)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Transform)"), Category = "Spatial Functional Test")
+	void SoftAssertNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	// clang-format on
 
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
