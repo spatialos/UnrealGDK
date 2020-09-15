@@ -113,7 +113,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
 
-			VerifyAndStartDeployment();
+			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
 		}
 	});
 #endif
@@ -750,7 +750,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
+void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot /* = ""*/)
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
@@ -829,7 +829,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	}
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
-	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
+	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion] {
@@ -1239,10 +1239,10 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-			UEditorEngine::TryStartSpatialDeployment.BindLambda([this] {
+			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](FString ForceSnapshot) {
 				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
-					VerifyAndStartDeployment();
+					VerifyAndStartDeployment(ForceSnapshot);
 				}
 			});
 		}
