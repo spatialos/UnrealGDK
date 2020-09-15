@@ -35,8 +35,6 @@ namespace SpatialGDK
 // Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure
 // there are necessary nullptr checks if that changes.
 
-typedef void Trace_Callback(void* user_data, const Trace_Item* item);
-
 class SPATIALGDK_API SpatialEventTracer
 {
 public:
@@ -73,7 +71,6 @@ public:
 	const FString& GetFolderPath() const { return FolderPath; }
 
 private:
-	FString WorkerId;
 	FString FolderPath;
 	bool bEnabled{ false };
 	bool bRecordRuntimeAndWorkerEvents{ false };

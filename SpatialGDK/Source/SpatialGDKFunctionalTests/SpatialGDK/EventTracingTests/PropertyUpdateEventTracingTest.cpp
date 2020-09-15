@@ -1,9 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "PropertyUpdateEventTracingTest.h"
-#include "Engine/World.h"
-
-#include "SpatialFunctionalTestFlowController.h"
 
 APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 {
@@ -20,7 +17,7 @@ void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)
 	{
-		const FString SpanIdString = Pair.Key;
+		const FString& SpanIdString = Pair.Key;
 		const FName EventName = Pair.Value;
 
 		if (EventName != PropertyUpdateEventName)

@@ -39,7 +39,7 @@ protected:
 	TMap<FString, FName> TraceEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
 
-	bool CheckEventTraceCause(FString SpanIdString, TArray<FName> CauseEventNames, int MinimumCauses = 1);
+	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1);
 
 	virtual void FinishEventTraceTest();
 

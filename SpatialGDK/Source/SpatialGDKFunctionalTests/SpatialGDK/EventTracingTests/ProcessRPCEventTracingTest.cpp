@@ -1,9 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "ProcessRPCEventTracingTest.h"
-#include "Engine/World.h"
-
-#include "SpatialFunctionalTestFlowController.h"
 
 AProcessRPCEventTracingTest::AProcessRPCEventTracingTest()
 {
@@ -20,7 +17,7 @@ void AProcessRPCEventTracingTest::FinishEventTraceTest()
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)
 	{
-		const FString SpanIdString = Pair.Key;
+		const FString& SpanIdString = Pair.Key;
 		const FName EventName = Pair.Value;
 
 		if (EventName != ProcessRPCEventName)

@@ -11,8 +11,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
-#define DEBUG_EVENT_TRACING
-
 using namespace SpatialGDK;
 using namespace worker::c;
 
@@ -91,7 +89,6 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 }
 
 SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
-	: WorkerId(WorkerId)
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
@@ -116,12 +113,10 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 	FString HexStr;
 	for (int i = 0; i < 16; i++)
 	{
-		{
-			char b[32];
-			unsigned int x = (unsigned char)SpanId.data[i];
-			sprintf(b, "%0x", x);
-			HexStr += ANSI_TO_TCHAR(b);
-		}
+		char b[32];
+		unsigned int x = (unsigned char)SpanId.data[i];
+		sprintf(b, "%0x", x);
+		HexStr += ANSI_TO_TCHAR(b);
 	}
 	return HexStr;
 }

@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EventTracingTest.h"
-#include "Engine/World.h"
 
 #include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
@@ -161,7 +160,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	Stream = nullptr;
 }
 
-bool AEventTracingTest::CheckEventTraceCause(FString SpanIdString, TArray<FName> CauseEventNames, int MinimumCauses /*= 1*/)
+bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses /*= 1*/)
 {
 	TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 	if (Causes == nullptr || Causes->Num() < MinimumCauses)

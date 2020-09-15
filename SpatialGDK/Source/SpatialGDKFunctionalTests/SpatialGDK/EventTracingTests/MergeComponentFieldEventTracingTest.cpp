@@ -1,14 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "MergeComponentFieldEventTracingTest.h"
-#include "Engine/World.h"
-
-#include "SpatialFunctionalTestFlowController.h"
 
 AMergeComponentFieldEventTracingTest::AMergeComponentFieldEventTracingTest()
 {
 	Author = "Matthew Sandford";
-	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
+	Description = TEXT("Test checking the merge component field trace events have appropriate causes");
 
 	FilterEventNames = { MergeComponentFieldUpdateEventName, ReceiveOpEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
@@ -20,7 +17,7 @@ void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)
 	{
-		const FString SpanIdString = Pair.Key;
+		const FString& SpanIdString = Pair.Key;
 		const FName EventName = Pair.Value;
 
 		if (EventName != MergeComponentFieldUpdateEventName)
@@ -30,7 +27,7 @@ void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }))
+		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }, 2))
 		{
 			EventsFailed++;
 		}
