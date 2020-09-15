@@ -80,10 +80,10 @@ public:
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
+	void CrossServerFinishTest(AActor* Sender, EFunctionalTestResult TestResult, const FString& Message);
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController);
+	void CrossServerNotifyStepFinished(AActor* Sender, ASpatialFunctionalTestFlowController* FlowController);
 
 	// # FlowController related APIs
 

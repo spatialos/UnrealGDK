@@ -129,6 +129,8 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
+	const FString& GetRoutingWorkerId();
+	bool IsRoutingWorker();
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

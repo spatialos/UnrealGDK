@@ -71,7 +71,7 @@ void ASpatialTestCrossServerRPC::BeginPlay()
 				}
 
 				ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
-				CrossServerRPCCube->CrossServerTestRPC(GetLocalFlowController()->GetWorkerDefinition().Id);
+				CrossServerRPCCube->CrossServerTestRPC(nullptr, GetLocalFlowController()->GetWorkerDefinition().Id);
 			}
 
 			FinishStep();

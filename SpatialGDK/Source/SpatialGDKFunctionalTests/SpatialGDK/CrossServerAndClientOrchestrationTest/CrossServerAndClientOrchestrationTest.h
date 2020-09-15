@@ -25,7 +25,7 @@ public:
 	TArray<bool> ClientWorkerSetValues;
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetTestValue(ESpatialFunctionalTestWorkerType ControllerType, uint8 ChangedInstance);
+	void CrossServerSetTestValue(AActor* Sender, ESpatialFunctionalTestWorkerType ControllerType, uint8 ChangedInstance);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 

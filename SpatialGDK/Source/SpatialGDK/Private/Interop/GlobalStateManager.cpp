@@ -78,8 +78,11 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+	if (!StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+	{
+		RoutingWorkerId = GetStringFromSchema(ComponentObject, 2);
+	}
 
 	TrySendWorkerReadyToBeginPlay();
 }
@@ -108,6 +111,12 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 	Schema_AddBool(UpdateObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		AddStringToSchema(UpdateObject, 2, RoutingWorkerId);
+	}
 
 	bHasSentReadyForVirtualWorkerAssignment = true;
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
@@ -227,6 +236,11 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 	bCanSpawnWithAuthority = true;
+
+	if (Schema_GetObjectCount(ComponentObject, 2) == 1)
+	{
+		RoutingWorkerId = GetStringFromSchema(ComponentObject, 2);
+	}
 }
 
 void UGlobalStateManager::SetDeploymentState()
@@ -288,7 +302,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
 		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
@@ -319,6 +333,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
 		// should be false.
 		bCanSpawnWithAuthority = !bCanBeginPlay;
+		RoutingWorkerId = NetDriver->Connection->GetWorkerId();
 		break;
 	}
 	default:
@@ -448,6 +463,8 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bCanBeginPlay));
+
+	AddStringToSchema(UpdateObject, 2, RoutingWorkerId);
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

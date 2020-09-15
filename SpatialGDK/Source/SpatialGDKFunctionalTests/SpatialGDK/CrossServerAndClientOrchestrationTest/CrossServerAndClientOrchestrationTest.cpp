@@ -38,7 +38,7 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 		AddStep(TEXT("Servers_SetupSetValue"), FWorkerDefinition::AllServers, nullptr, [this]() {
 			// Send CrossServer RPC to Test actor to set the flag for this server flow controller instance
 			ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-			CrossServerSetTestValue(FlowController->WorkerDefinition.Type, FlowController->WorkerDefinition.Id);
+			CrossServerSetTestValue(nullptr, FlowController->WorkerDefinition.Type, FlowController->WorkerDefinition.Id);
 			FinishStep();
 		});
 	}
@@ -114,7 +114,7 @@ void ACrossServerAndClientOrchestrationTest::BeginPlay()
 	}
 }
 
-void ACrossServerAndClientOrchestrationTest::CrossServerSetTestValue_Implementation(ESpatialFunctionalTestWorkerType ControllerType,
+void ACrossServerAndClientOrchestrationTest::CrossServerSetTestValue_Implementation(AActor* Sender, ESpatialFunctionalTestWorkerType ControllerType,
 																					uint8 ChangedInstance)
 {
 	uint8 FlagIndex = ChangedInstance - 1;

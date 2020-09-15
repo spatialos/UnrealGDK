@@ -36,7 +36,7 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnEntityQueryResponse, return;);
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)
+	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload, uint32 Slot)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnExtractIncomingRPC, return false;);
 	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCommandRequest, return;);
 	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op)

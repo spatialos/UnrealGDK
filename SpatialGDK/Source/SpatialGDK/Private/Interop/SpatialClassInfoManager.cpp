@@ -82,7 +82,7 @@ ERPCType GetRPCType(UFunction* RemoteFunction)
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
 	{
-		return ERPCType::CrossServer;
+		return ERPCType::CrossServerSender;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
 	{

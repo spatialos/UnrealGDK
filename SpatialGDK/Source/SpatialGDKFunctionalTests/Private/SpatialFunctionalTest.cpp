@@ -298,7 +298,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	}
 }
 
-void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
+void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(AActor* Sender, EFunctionalTestResult TestResult, const FString& Message)
 {
 	FinishTest(TestResult, Message);
 }
@@ -416,7 +416,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 					Msg.Append(TEXT(", "));
 				}
 
-				FlowController->CrossServerStartStep(CurrentStepIndex);
+				FlowController->CrossServerStartStep(nullptr, CurrentStepIndex);
 			}
 
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
@@ -474,7 +474,7 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 	return nullptr;
 }
 
-void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(AActor* Sender, ASpatialFunctionalTestFlowController* FlowController)
 {
 	if (CurrentStepIndex < 0)
 	{

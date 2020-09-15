@@ -52,6 +52,7 @@ public:
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash; }
+	FORCEINLINE const FString& GetRoutingWorkerId() const { return RoutingWorkerId; }
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
@@ -76,6 +77,8 @@ private:
 	bool bAcceptingPlayers;
 	int32 DeploymentSessionId = 0;
 	uint32 SchemaHash;
+
+	FString RoutingWorkerId;
 
 	// Startup Actor Manager Component
 	bool bHasSentReadyForVirtualWorkerAssignment;

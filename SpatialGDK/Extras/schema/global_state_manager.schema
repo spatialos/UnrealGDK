@@ -21,6 +21,7 @@ component DeploymentMap {
 component StartupActorManager {
     id = 9993;
     bool can_begin_play = 1;
+    string routing_worker = 2;
 }
 
 component GSMShutdown {

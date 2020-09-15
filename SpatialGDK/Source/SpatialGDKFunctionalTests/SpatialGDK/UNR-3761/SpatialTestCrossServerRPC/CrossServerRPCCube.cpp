@@ -17,7 +17,7 @@ void ACrossServerRPCCube::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ACrossServerRPCCube, ReceivedCrossServerRPCS);
 }
 
-void ACrossServerRPCCube::CrossServerTestRPC_Implementation(int SendingServerID)
+void ACrossServerRPCCube::CrossServerTestRPC_Implementation(AActor* Sender, int SendingServerID)
 {
 	ReceivedCrossServerRPCS.Add(SendingServerID);
 }

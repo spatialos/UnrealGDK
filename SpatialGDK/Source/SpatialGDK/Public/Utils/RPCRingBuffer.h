@@ -16,17 +16,29 @@ struct RPCRingBuffer
 	RPCRingBuffer(ERPCType InType);
 
 	const TOptional<RPCPayload>& GetRingBufferElement(uint64 RPCId) const { return RingBuffer[(RPCId - 1) % RingBuffer.Num()]; }
+	const TOptional<FUnrealObjectRef>& GetRingBufferCounterpart(uint64 RPCId) const { return Counterpart[(RPCId - 1) % RingBuffer.Num()]; }
 
 	ERPCType Type;
 	TArray<TOptional<RPCPayload>> RingBuffer;
+	TArray<TOptional<FUnrealObjectRef>> Counterpart;
 	uint64 LastSentRPCId = 0;
 };
 
 struct RPCRingBufferDescriptor
 {
-	uint32 GetRingBufferElementIndex(uint64 RPCId) const { return (RPCId - 1) % RingBufferSize; }
+	uint32 GetRingBufferElementIndex(ERPCType Type, uint64 RPCId) const
+	{
+		if (Type == ERPCType::CrossServerSender || Type == ERPCType::CrossServerReceiver)
+		{
+			return ((RPCId - 1) % RingBufferSize) * 2;
+		}
+		return (RPCId - 1) % RingBufferSize;
+	}
 
-	Schema_FieldId GetRingBufferElementFieldId(uint64 RPCId) const { return SchemaFieldStart + GetRingBufferElementIndex(RPCId); }
+	Schema_FieldId GetRingBufferElementFieldId(ERPCType Type, uint64 RPCId) const
+	{
+		return SchemaFieldStart + GetRingBufferElementIndex(Type, RPCId);
+	}
 
 	uint32 RingBufferSize;
 	Schema_FieldId SchemaFieldStart;
@@ -51,6 +63,7 @@ void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64&
 
 void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
 void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
+void WriteAckForSenderToSchema(Schema_Object* SchemaObject, ERPCType Type, TArray<FUnrealObjectRef> const& AckArray);
 
 void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId);
 

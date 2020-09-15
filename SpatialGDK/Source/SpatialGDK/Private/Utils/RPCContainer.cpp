@@ -87,17 +87,42 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 }
 } // namespace
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload)
+//FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef, ERPCType InType, RPCPayload&& InPayload)
+//	: ObjectRef(InTargetObjectRef)
+//	, SenderObjectRef(InSenderObjectRef)
+//	, Payload(MoveTemp(InPayload))
+//	, Timestamp(FDateTime::Now())
+//	, Type(InType)
+//{
+//}
+
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef, ERPCType InType, RPCPayload&& InPayload, uint32 InSlot)
 	: ObjectRef(InTargetObjectRef)
+	, SenderObjectRef(InSenderObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
+	, Slot(InSlot)
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, const FUnrealObjectRef& SenderObjectRef, ERPCType Type, RPCPayload&& Payload, uint32 Slot)
 {
-	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload) };
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObjectRef.Entity);
+
+	if (Type == ERPCType::CrossServerSender)
+	{
+		for (auto const& Entry : ArrayOfParams)
+		{
+			if (Entry.SenderObjectRef == SenderObjectRef)
+			{
+				// Already queued RPC, can happen while reading RPC over several frames.
+				return;
+			}
+		}
+	}
+
+	FPendingRPCParams Params{ TargetObjectRef, SenderObjectRef, Type, MoveTemp(Payload), Slot };
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
@@ -110,7 +135,6 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, E
 		}
 	}
 
-	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Params.Type).FindOrAdd(Params.ObjectRef.Entity);
 	ArrayOfParams.Push(MoveTemp(Params));
 }
 

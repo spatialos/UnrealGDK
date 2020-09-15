@@ -35,7 +35,7 @@ public:
 
 	// Locally triggers StepIndex Test Step to start
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerStartStep(int StepIndex);
+	void CrossServerStartStep(AActor* Sender, int StepIndex);
 
 	// Tells Test owner that the current Step is finished locally
 	void NotifyStepFinished();
@@ -63,7 +63,7 @@ public:
 	// Each server worker will assign local client ids, this function will be used by
 	// the Test owner server worker to guarantee they are all unique
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerSetWorkerId(int NewWorkerId);
+	void CrossServerSetWorkerId(AActor* Sender, int NewWorkerId);
 
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
@@ -95,7 +95,7 @@ private:
 	void ServerNotifyStepFinished();
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished();
+	void CrossServerNotifyStepFinished(AActor* Sender);
 
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);

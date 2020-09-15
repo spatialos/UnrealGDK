@@ -7,6 +7,7 @@
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
 #include "Schema/ComponentPresence.h"
+#include "Schema/CrossServerEndpoint.h"
 #include "Schema/DebugComponent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
@@ -112,6 +113,18 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::DebugComponent>(Op.data);
 		break;
+	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::CrossServerEndpointSender>(Op.data);
+		break;
+	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::CrossServerEndpointSenderACK>(Op.data);
+		break;
+	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::CrossServerEndpointReceiver>(Op.data);
+		break;
+	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::CrossServerEndpointReceiverACK>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -174,6 +187,18 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::DebugComponent>(Op.entity_id);
+		break;
+	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::CrossServerEndpointSender>(Op.entity_id);
+		break;
+	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::CrossServerEndpointSenderACK>(Op.entity_id);
+		break;
+	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::CrossServerEndpointReceiver>(Op.entity_id);
+		break;
+	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::CrossServerEndpointReceiverACK>(Op.entity_id);
 		break;
 	default:
 		return;

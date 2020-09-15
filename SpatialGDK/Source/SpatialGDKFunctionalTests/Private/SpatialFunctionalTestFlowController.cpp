@@ -60,7 +60,7 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	}
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(int NewWorkerId)
+void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(AActor* Sender, int NewWorkerId)
 {
 	WorkerDefinition.Id = NewWorkerId;
 }
@@ -92,7 +92,7 @@ void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementatio
 	bIsReadyToRunTest = true;
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(int StepIndex)
+void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(AActor* Sender, int StepIndex)
 {
 	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
@@ -110,7 +110,7 @@ void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 	{
 		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 		{
-			CrossServerNotifyStepFinished();
+			CrossServerNotifyStepFinished(nullptr);
 		}
 		else
 		{
@@ -199,15 +199,15 @@ void ASpatialFunctionalTestFlowController::ServerNotifyFinishTest_Implementation
 
 void ASpatialFunctionalTestFlowController::ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message)
 {
-	OwningTest->CrossServerFinishTest(TestResult, Message);
+	OwningTest->CrossServerFinishTest(nullptr, TestResult, Message);
 }
 
 void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation()
 {
-	OwningTest->CrossServerNotifyStepFinished(this);
+	OwningTest->CrossServerNotifyStepFinished(nullptr, this);
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Implementation()
+void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Implementation(AActor* Sender)
 {
-	OwningTest->CrossServerNotifyStepFinished(this);
+	OwningTest->CrossServerNotifyStepFinished(nullptr, this);
 }

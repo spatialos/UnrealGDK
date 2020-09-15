@@ -7,5 +7,5 @@
 void ACrossServerAndClientOrchestrationFlowController::ServerClientReadValueAck_Implementation()
 {
 	ACrossServerAndClientOrchestrationTest* Test = Cast<ACrossServerAndClientOrchestrationTest>(OwningTest);
-	Test->CrossServerSetTestValue(ESpatialFunctionalTestWorkerType::Client, WorkerDefinition.Id);
+	Test->CrossServerSetTestValue(nullptr, ESpatialFunctionalTestWorkerType::Client, WorkerDefinition.Id);
 }

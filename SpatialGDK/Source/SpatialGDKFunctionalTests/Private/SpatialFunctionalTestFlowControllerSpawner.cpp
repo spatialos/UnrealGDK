@@ -74,7 +74,7 @@ void SpatialFunctionalTestFlowControllerSpawner::AssignClientFlowControllerId(AS
 		  && ClientFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client
 		  && ClientFlowController->WorkerDefinition.Id == INVALID_FLOW_CONTROLLER_ID);
 
-	ClientFlowController->CrossServerSetWorkerId(NextClientControllerId++);
+	ClientFlowController->CrossServerSetWorkerId(nullptr, NextClientControllerId++);
 }
 
 uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* World) const

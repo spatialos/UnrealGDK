@@ -21,5 +21,5 @@ public:
 	TArray<int> ReceivedCrossServerRPCS;
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerTestRPC(int SendingServerID);
+	void CrossServerTestRPC(AActor* Sender, int SendingServerID);
 };
