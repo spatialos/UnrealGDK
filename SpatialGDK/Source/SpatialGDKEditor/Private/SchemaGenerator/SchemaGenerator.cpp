@@ -445,7 +445,6 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		Writer.Outdent().Print("}");
 	}
 
-	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
 		Writer.PrintNewLine();
