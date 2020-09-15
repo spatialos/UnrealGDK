@@ -16,7 +16,7 @@ ViewCoordinator::~ViewCoordinator()
 	FlushMessagesToSend();
 }
 
-OpList ViewCoordinator::Advance()
+void ViewCoordinator::Advance()
 {
 	ConnectionHandler->Advance();
 	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
@@ -24,7 +24,17 @@ OpList ViewCoordinator::Advance()
 	{
 		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
 	}
-	return GetOpListFromViewDelta(View.GenerateViewDelta());
+	View.AdvanceViewDelta();
+}
+
+const ViewDelta& ViewCoordinator::GetViewDelta()
+{
+	return View.GetViewDelta();
+}
+
+const EntityView& ViewCoordinator::GetView()
+{
+	return View.GetView();
 }
 
 void ViewCoordinator::FlushMessagesToSend()
