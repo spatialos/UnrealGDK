@@ -332,6 +332,18 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowContro
 	return LocalFlowController;
 }
 
+ESpatialFunctionalTestWorkerType ASpatialFunctionalTest::GetLocalWorkerType()
+{
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Type : ESpatialFunctionalTestWorkerType::Invalid;
+}
+
+int ASpatialFunctionalTest::GetLocalWorkerId()
+{
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : INVALID_FLOW_CONTROLLER_ID;
+}
+
 // Add Steps for Blueprints
 
 void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker,

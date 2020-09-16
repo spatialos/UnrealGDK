@@ -25,7 +25,8 @@ enum class ESpatialFunctionalTestWorkerType : uint8
 {
 	Server,
 	Client,
-	All // Special type that allows you to reference all the Servers and Clients
+	All, // Special type that allows you to reference all the Servers and Clients
+	Invalid = 0xff UMETA(Hidden)
 };
 
 USTRUCT(BlueprintType)
