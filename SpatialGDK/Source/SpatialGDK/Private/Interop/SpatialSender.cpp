@@ -305,6 +305,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
+				Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 				return;
 			}
 
@@ -513,9 +514,9 @@ void USpatialSender::FlushRPCService()
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update, Update.SpanId);
 		}
 
-		if (RPCs.Num())
+		if (RPCs.Num() && GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
 		{
-			Connection->MaybeFlush();
+			Connection->Flush();
 		}
 	}
 }
@@ -798,7 +799,10 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
 	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-	Connection->MaybeFlush();
+	if (GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
+	{
+		Connection->Flush();
+	}
 #if !UE_BUILD_SHIPPING
 	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING

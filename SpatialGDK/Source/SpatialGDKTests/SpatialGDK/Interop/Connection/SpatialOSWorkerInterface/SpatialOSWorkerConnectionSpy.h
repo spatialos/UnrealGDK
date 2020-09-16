@@ -6,6 +6,7 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/ViewDelta.h"
 #include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -22,16 +23,23 @@ class SpatialOSWorkerConnectionSpy : public SpatialOSWorkerInterface
 public:
 	SpatialOSWorkerConnectionSpy();
 
-	virtual TArray<SpatialGDK::OpList> GetOpList() override;
+	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() override;
+	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+													 const TOptional<worker::c::Trace_SpanId>& SpanId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
-	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
-	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
-	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+								  const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+									 const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+									 const TOptional<worker::c::Trace_SpanId>& SpanId) override;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) override;
-	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
-	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
+									 const TOptional<worker::c::Trace_SpanId>& SpanId) override;
+	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
+									const TOptional<worker::c::Trace_SpanId>& SpanId) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
 	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
@@ -47,4 +55,7 @@ private:
 	Worker_RequestId NextRequestId;
 
 	const Worker_EntityQuery* LastEntityQuery;
+
+	TArray<SpatialGDK::EntityDelta> PlaceholderEntityDeltas;
+	TArray<Worker_Op> PlaceholderWorkerMessages;
 };

@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
+#include "Containers/StringConv.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
@@ -41,6 +42,8 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/ViewDelta.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
@@ -59,10 +62,7 @@
 #include "SpatialGDKServicesModule.h"
 #endif
 
-using SpatialGDK::AppendAllOpsOfType;
 using SpatialGDK::ComponentFactory;
-using SpatialGDK::FindFirstOpOfType;
-using SpatialGDK::FindFirstOpOfTypeForComponent;
 using SpatialGDK::InterestFactory;
 using SpatialGDK::OpList;
 using SpatialGDK::RPCPayload;
@@ -314,7 +314,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
-	GameInstance->HandleOnConnected();
+	GameInstance->HandleOnConnected(*this);
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
@@ -407,7 +407,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			USpatialLatencyTracer::GetTracer(GetWorld()), ConnectionManager->GetEventTracer());
 	}
 
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags, ConnectionManager->GetEventTracer());
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), ConnectionManager->GetEventTracer());
 	Receiver->Init(this, &TimerManager, RPCService.Get(), ConnectionManager->GetEventTracer());
 	GlobalStateManager->Init(this);
@@ -442,7 +442,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const UWorld* CurrentWorld = GetWorld();
 	check(CurrentWorld != nullptr);
 
-	const bool bMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(CurrentWorld);
+	const bool bMultiWorkerEnabled = USpatialStatics::IsMultiWorkerEnabled();
 
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
 		USpatialStatics::GetSpatialMultiWorkerClass(CurrentWorld);
@@ -1639,7 +1639,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
-	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld());
+	const bool bIsMultiWorkerEnabled = USpatialStatics::IsMultiWorkerEnabled();
 
 	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
@@ -1749,21 +1749,22 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		TArray<OpList> OpLists = Connection->GetOpList();
-
-		// Servers will queue ops at startup until we've extracted necessary information from the op stream
-		if (!bIsReadyToStart)
+		Connection->Advance();
+		if (Connection->HasDisconnected())
 		{
-			HandleStartupOpQueueing(MoveTemp(OpLists));
+			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
 			return;
 		}
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			for (const OpList& Ops : OpLists)
-			{
-				Dispatcher->ProcessOps(Ops);
-			}
+			Dispatcher->ProcessOps(SpatialGDK::GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
+			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
+		}
+
+		if (!bIsReadyToStart)
+		{
+			TryFinishStartup();
 		}
 
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
@@ -1921,11 +1922,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		{
 			Sender->ProcessPositionUpdates();
 		}
-
-		if (Connection != nullptr)
-		{
-			Connection->MaybeFlush();
-		}
 #endif // WITH_SERVER_CODE
 	}
 
@@ -1943,12 +1939,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
-	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread || SpatialGDKSettings->bUseSpatialView)
+	if (Connection != nullptr)
 	{
-		if (Connection != nullptr)
-		{
-			Connection->ProcessOutgoingMessages();
-		}
+		Connection->Flush();
 	}
 
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
@@ -2549,19 +2542,27 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 		Delay, false);
 }
 
-void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpLists)
+void USpatialNetDriver::TryFinishStartup()
 {
-	if (InOpLists.Num() == 0)
-	{
-		return;
-	}
-
 	if (IsServer())
 	{
-		bIsReadyToStart = FindAndDispatchStartupOpsServer(InOpLists);
-
-		if (bIsReadyToStart)
+		if (!PackageMap->IsEntityPoolReady())
 		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
+		}
+		else if (!GlobalStateManager->IsReady())
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
+		}
+		else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+		{
+			GlobalStateManager->QueryTranslation();
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
+
 #if WITH_EDITORONLY_DATA
 			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 			if (WorldSettings && WorldSettings->bEnableDebugInterface)
@@ -2569,6 +2570,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(this);
 			}
 #endif
+
 			// We know at this point that we have all the information to set the worker's interest query.
 			Sender->UpdateServerWorkerEntityInterestAndPosition();
 
@@ -2577,194 +2579,15 @@ void USpatialNetDriver::HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpL
 			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
 			// to skip the startup ops that we've processed already.
 			GlobalStateManager->TriggerBeginPlay();
+
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
 		}
 	}
-	else
+	else if (bMapLoaded)
 	{
-		bIsReadyToStart = FindAndDispatchStartupOpsClient(InOpLists);
-	}
-
-	QueuedStartupOpLists.Append(MoveTemp(InOpLists));
-
-	if (!bIsReadyToStart)
-	{
-		return;
-	}
-
-	for (const OpList& Ops : QueuedStartupOpLists)
-	{
-		Dispatcher->ProcessOps(Ops);
-	}
-
-	// Sanity check that the dispatcher encountered, skipped, and removed
-	// all Ops we asked it to skip
-	check(Dispatcher->GetNumOpsToSkip() == 0);
-
-	QueuedStartupOpLists.Empty();
-}
-
-bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<OpList>& InOpLists)
-{
-	TArray<Worker_Op*> FoundOps;
-
-	AppendAllOpsOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, FoundOps);
-
-	// To correctly initialize the ServerWorkerEntity on each server during op queueing, we need to catch several ops here.
-	// Note that this will break if any other CreateEntity requests are issued during the startup flow.
-	{
-		Worker_Op* CreateEntityResponseOp = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE);
-
-		Worker_Op* AddComponentOp =
-			FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-
-		Worker_Op* AuthorityChangedOp =
-			FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-
-		if (CreateEntityResponseOp != nullptr)
-		{
-			FoundOps.Add(CreateEntityResponseOp);
-		}
-
-		if (AddComponentOp != nullptr)
-		{
-			FoundOps.Add(AddComponentOp);
-		}
-
-		if (AuthorityChangedOp != nullptr)
-		{
-			FoundOps.Add(AuthorityChangedOp);
-		}
-	}
-
-	// Search for entity id reservation response and process it.  The entity id reservation
-	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
-	// a new query will be sent, and we will process the new response here when it arrives.
-	if (!PackageMap->IsEntityPoolReady())
-	{
-		Worker_Op* EntityIdReservationResponseOp = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE);
-
-		if (EntityIdReservationResponseOp != nullptr)
-		{
-			FoundOps.Add(EntityIdReservationResponseOp);
-		}
-	}
-
-	// Search for StartupActorManager ops we need and process them
-	if (!GlobalStateManager->IsReady())
-	{
-		Worker_Op* AddComponentOp =
-			FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-
-		Worker_Op* AuthorityChangedOp =
-			FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-
-		Worker_Op* ComponentUpdateOp =
-			FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-
-		if (AddComponentOp != nullptr)
-		{
-			FoundOps.Add(AddComponentOp);
-		}
-
-		if (AuthorityChangedOp != nullptr)
-		{
-			FoundOps.Add(AuthorityChangedOp);
-		}
-
-		if (ComponentUpdateOp != nullptr)
-		{
-			FoundOps.Add(ComponentUpdateOp);
-		}
-	}
-
-	if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
-	{
-		Worker_Op* AddComponentOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT,
-																  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-
-		Worker_Op* AuthorityChangedOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE,
-																	  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-
-		Worker_Op* ComponentUpdateOp = FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE,
-																	 SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-
-		if (AddComponentOp != nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Processing Translation component add to bootstrap SpatialVirtualWorkerTranslator."));
-			FoundOps.Add(AddComponentOp);
-		}
-
-		if (AuthorityChangedOp != nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Log,
-				   TEXT("Processing Translation component authority change to bootstrap SpatialVirtualWorkerTranslator."));
-			FoundOps.Add(AuthorityChangedOp);
-		}
-
-		if (ComponentUpdateOp != nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Log,
-				   TEXT("Processing Translation component update to bootstrap SpatialVirtualWorkerTranslator."));
-			FoundOps.Add(ComponentUpdateOp);
-		}
-	}
-
-	SelectiveProcessOps(FoundOps);
-
-	if (!PackageMap->IsEntityPoolReady())
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
-		return false;
-	}
-	else if (!GlobalStateManager->IsReady())
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
-		return false;
-	}
-	else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
-	{
-		GlobalStateManager->QueryTranslation();
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
-		return false;
-	}
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
-	return true;
-}
-
-bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<OpList>& InOpLists)
-{
-	if (bMapLoaded)
-	{
-		return true;
-	}
-	else
-	{
-		// Search for the entity query response for the GlobalStateManager
-		Worker_Op* Op = FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE);
-
-		TArray<Worker_Op*> FoundOps;
-		if (Op != nullptr)
-		{
-			FoundOps.Add(Op);
-		}
-
-		SelectiveProcessOps(FoundOps);
-		return false;
-	}
-}
-
-void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
-{
-	// For each Op we've found, make a Worker_OpList that just contains that Op,
-	// and pass it to the dispatcher for processing. This allows us to avoid copying
-	// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
-	// The Op remains owned by the original OpList.  Finally, notify the dispatcher to skip
-	// these Ops when they are encountered later when we process the queued ops.
-	for (Worker_Op* FoundOp : FoundOps)
-	{
-		OpList Op = { FoundOp, 1, nullptr };
-		Dispatcher->ProcessOps(Op);
-		Dispatcher->MarkOpToSkip(FoundOp);
+		bIsReadyToStart = true;
+		Connection->SetStartupComplete();
 	}
 }
 

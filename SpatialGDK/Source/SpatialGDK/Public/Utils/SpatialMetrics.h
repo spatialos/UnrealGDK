@@ -46,7 +46,7 @@ public:
 
 	void TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize);
 
-	void HandleWorkerMetrics(Worker_Op* Op);
+	void HandleWorkerMetrics(const Worker_Op& Op);
 
 	// The user can bind their own delegate to handle worker metrics.
 	typedef TMap<FString, double> WorkerGaugeMetric;

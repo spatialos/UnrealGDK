@@ -8,22 +8,7 @@
 
 namespace SpatialGDK
 {
-class SpatialEventTracer;
-
-struct ViewDeltaLegacyOpListData : OpListData
-{
-	ViewDeltaLegacyOpListData(SpatialEventTracer* EventTracer)
-		: Delta(EventTracer)
-	{
-	}
-
-	TArray<Worker_Op> Ops;
-	// Used to store UTF8 disconnect string.
-	ViewDelta Delta;
-	TUniquePtr<char[]> DisconnectReason;
-};
-
 /** Creates an OpList from a ViewDelta. */
-OpList GetOpListFromViewDelta(ViewDelta Delta);
+TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas);
 
 } // namespace SpatialGDK

@@ -5,7 +5,6 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/OpList/OpList.h"
-#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 namespace SpatialGDK
 {
@@ -31,7 +30,7 @@ private:
 	TMap<int64, int64> InternalToUserRequestId;
 	FString WorkerId;
 	TArray<FString> WorkerAttributes;
-	SpatialEventTracer* EventTracer; // TODO: Figure out ownership constraints 
+	SpatialEventTracer* EventTracer; // TODO: Figure out ownership constraints
 };
 
 } // namespace SpatialGDK

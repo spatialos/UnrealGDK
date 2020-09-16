@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Interop/Connection/SpatialSpanIdStore.h"
+#include "Interop/Connection/SpatialSpanIdCache.h"
 #include "SpatialEventMessages.h"
 
 // TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in

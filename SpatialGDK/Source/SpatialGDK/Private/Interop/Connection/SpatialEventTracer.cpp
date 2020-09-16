@@ -16,12 +16,14 @@ using namespace worker::c;
 
 SpatialEventTracerGuard EventTracerGuard;
 
+
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
 
 	SpatialEventTracer* EventTracer = EventTracerGuard.EventTracer;
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	SpatialEventTracer* UserDataEventTracer = static_cast<SpatialEventTracer*>(UserData);
+	if (EventTracer == nullptr || !EventTracer->IsEnabled() || EventTracer != UserDataEventTracer)
 	{
 		return;
 	}
@@ -230,8 +232,11 @@ bool SpatialEventTracer::IsEnabled() const
 
 void SpatialEventTracer::Enable(const FString& FileName)
 {
+	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
+
 	Trace_EventTracer_Parameters parameters = {};
 	EventTracerGuard.EventTracer = this;
+	parameters.user_data = this;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
 	Trace_EventTracer_Enable(EventTracer);

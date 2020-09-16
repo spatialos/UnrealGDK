@@ -8,6 +8,8 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
 
+#include "Engine/EngineBaseTypes.h"
+
 #include "SpatialConnectionManager.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialConnectionManager, Log, All);

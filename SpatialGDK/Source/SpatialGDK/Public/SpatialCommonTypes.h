@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
+#include "Containers/Array.h"
+#include "Containers/Map.h"
+#include "HAL/Platform.h"
 #include <WorkerSDK/improbable/c_worker.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!

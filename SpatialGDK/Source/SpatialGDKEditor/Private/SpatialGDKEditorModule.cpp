@@ -28,6 +28,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
 #include "IAutomationControllerModule.h"
+#include "SpatialFunctionalTest.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 
@@ -56,6 +57,9 @@ void FSpatialGDKEditorModule::StartupModule()
 		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
 	AutomationController->OnTestsComplete().AddLambda([]() {
+		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
+		ASpatialFunctionalTest::ClearAllTakenSnapshots();
+
 #if ENGINE_MINOR_VERSION < 25
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
 #else
@@ -73,6 +77,14 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	{
 		UnregisterSettings();
 	}
+}
+
+void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
+{
+	bool bUseStandardRuntime =
+		GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandardRuntime, OnSnapshotTaken);
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
@@ -270,6 +282,9 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 
 FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
 {
+	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
+	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
+
 	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
@@ -316,6 +331,16 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 				for (; SpatialTestIt; ++SpatialTestIt)
 				{
 					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
+				}
+				{
+					FString SnapshotForMap = ASpatialFunctionalTest::GetTakenSnapshotPath(World);
+
+					if (!SnapshotForMap.IsEmpty())
+					{
+						PIESettingsOverride.ForceUseSnapshot = SnapshotForMap;
+						// Set that we're loading from taken snapshot.
+						ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
+					}
 				}
 				break;
 			default:

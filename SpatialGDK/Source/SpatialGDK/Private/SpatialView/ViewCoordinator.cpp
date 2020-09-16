@@ -17,7 +17,7 @@ ViewCoordinator::~ViewCoordinator()
 	FlushMessagesToSend();
 }
 
-OpList ViewCoordinator::Advance()
+void ViewCoordinator::Advance()
 {
 	ConnectionHandler->Advance();
 	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
@@ -25,7 +25,18 @@ OpList ViewCoordinator::Advance()
 	{
 		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
 	}
-	return GetOpListFromViewDelta(View.GenerateViewDelta());
+	View.AdvanceViewDelta();
+	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
+}
+
+const ViewDelta& ViewCoordinator::GetViewDelta()
+{
+	return View.GetViewDelta();
+}
+
+const EntityView& ViewCoordinator::GetView()
+{
+	return View.GetView();
 }
 
 void ViewCoordinator::FlushMessagesToSend()
@@ -63,7 +74,8 @@ Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> 
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis, const TOptional<worker::c::Trace_SpanId>& SpanId)
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis,
+														  const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
@@ -102,6 +114,41 @@ void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
 {
 	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
+}
+
+CallbackId ViewCoordinator::RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityLostCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityLostTempCallback(ComponentId, MoveTemp(Callback));
+}
+
+void ViewCoordinator::RemoveCallback(CallbackId Id)
+{
+	Dispatcher.RemoveCallback(Id);
 }
 
 const FString& ViewCoordinator::GetWorkerId() const
