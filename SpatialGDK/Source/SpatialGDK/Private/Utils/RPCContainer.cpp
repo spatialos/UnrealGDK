@@ -88,8 +88,8 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 } // namespace
 
 // FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef, ERPCType
-// InType, RPCPayload&& InPayload) 	: ObjectRef(InTargetObjectRef) 	, SenderObjectRef(InSenderObjectRef) 	, Payload(MoveTemp(InPayload)) 	,
-//Timestamp(FDateTime::Now()) 	, Type(InType)
+// InType, RPCPayload&& InPayload) 	: ObjectRef(InTargetObjectRef) 	, SenderObjectRef(InSenderObjectRef) 	, Payload(MoveTemp(InPayload)) ,
+// Timestamp(FDateTime::Now()) 	, Type(InType)
 //{
 //}
 
@@ -98,9 +98,9 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 	: ObjectRef(InTargetObjectRef)
 	, SenderObjectRef(InSenderObjectRef)
 	, Payload(MoveTemp(InPayload))
+	, Slot(InSlot)
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
-	, Slot(InSlot)
 {
 }
 

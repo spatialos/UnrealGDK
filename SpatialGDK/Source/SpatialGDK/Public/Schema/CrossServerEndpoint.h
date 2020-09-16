@@ -65,8 +65,8 @@ struct CrossServerEndpointSenderACK : Component
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 
-	uint64_t RPCAck = 0;
-	TMap<Worker_EntityId, TArray<uint64>> DottedRPCACK;
+	uint64 RPCAck = 0;
+	TMap<Worker_EntityId_Key, TArray<uint64>> DottedRPCACK;
 
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);

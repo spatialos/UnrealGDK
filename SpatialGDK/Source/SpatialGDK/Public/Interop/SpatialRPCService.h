@@ -116,7 +116,7 @@ private:
 private:
 	TOptional<uint32_t> FindFreeSlotForCrossServerSender();
 
-	void CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId> const& ReceiversToIgnore);
+	void CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId_Key> const& ReceiversToIgnore);
 
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
@@ -148,7 +148,7 @@ private:
 	TArray<SentRPCEntry> CrossServerMailbox;
 
 	// For receiver
-	TSet<Worker_EntityId> ACKComponentsToTrack;
+	TSet<Worker_EntityId_Key> ACKComponentsToTrack;
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);

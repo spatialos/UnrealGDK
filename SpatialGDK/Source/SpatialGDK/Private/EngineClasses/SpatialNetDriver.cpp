@@ -1576,21 +1576,21 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	AActor* SenderActor = nullptr;
 	if (Function->FunctionFlags & FUNC_NetCrossServer)
 	{
-		UProperty* SenderProp = nullptr;
-		for (auto It = TFieldIterator<UProperty>(Function); It; ++It)
-		{
-			if (It->GetPropertyFlags() & CPF_CrossServerSender)
-			{
-				SenderProp = *It;
-			}
-		}
-		if (SenderProp)
-		{
-			UObjectProperty* obj = Cast<UObjectProperty>(SenderProp);
-			check(obj != nullptr);
-
-			SenderActor = Cast<AActor>(obj->GetObjectPropertyValue((uint8*)Parameters + obj->GetOffset_ForUFunction()));
-		}
+		// UProperty* SenderProp = nullptr;
+		// for (auto It = TFieldIterator< UProperty >(Function); It; ++It)
+		//{
+		//	if (It->GetPropertyFlags() & CPF_CrossServerSender)
+		//	{
+		//		SenderProp = *It;
+		//	}
+		//}
+		// if (SenderProp)
+		//{
+		//	UObjectProperty* obj = Cast<UObjectProperty>(SenderProp);
+		//	check(obj != nullptr);
+		//
+		//	SenderActor = Cast<AActor>(obj->GetObjectPropertyValue((uint8*)Parameters + obj->GetOffset_ForUFunction()));
+		//}
 	}
 
 	FUnrealObjectRef SenderObjectRef;

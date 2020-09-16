@@ -64,7 +64,7 @@ void CrossServerEndpointSenderACK::ReadFromSchema(Schema_Object* SchemaObject)
 		uint32 ACKCount = Schema_GetUint64Count(ACKListObject, 1);
 		TArray<uint64> ACKList;
 		ACKList.SetNum(ACKCount);
-		Schema_GetUint64List(ACKListObject, 1, ACKList.GetData());
+		Schema_GetUint64List(ACKListObject, 1, reinterpret_cast<uint64_t*>(ACKList.GetData()));
 
 		DottedRPCACK.Add(Entity, MoveTemp(ACKList));
 	}
@@ -88,11 +88,7 @@ void CrossServerEndpointSenderACK::CreateUpdate(Schema_ComponentUpdate* OutUpdat
 		Schema_AddEntityId(MapEntry, SCHEMA_MAP_KEY_FIELD_ID, ACKEntry.Key);
 		Schema_Object* ACKListObject = Schema_AddObject(MapEntry, SCHEMA_MAP_VALUE_FIELD_ID);
 
-		// Schema_AddUint64List(ACKListObject, 1, ACKEntry.Value.GetData(), ACKEntry.Value.Num());
-
-		auto* buffer = Schema_AllocateBuffer(ACKListObject, ACKEntry.Value.Num() * sizeof(uint64));
-		FMemory::Memcpy(buffer, ACKEntry.Value.GetData(), ACKEntry.Value.Num() * sizeof(uint64));
-		Schema_AddUint64List(ACKListObject, 1, (uint64*)buffer, ACKEntry.Value.Num());
+		Schema_AddUint64List(ACKListObject, 1, reinterpret_cast<uint64_t const*>(ACKEntry.Value.GetData()), ACKEntry.Value.Num());
 	}
 }
 

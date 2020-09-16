@@ -806,7 +806,7 @@ void SpatialRPCService::ExtractCrossServerRPCsForType(Worker_EntityId SenderId, 
 	const RPCRingBuffer& Buffer = GetBufferFromView(SenderId, Type);
 
 	uint64 MinRPCId = 0;
-	TSet<Worker_EntityId> Receivers;
+	TSet<Worker_EntityId_Key> Receivers;
 	for (uint32 Slot = 0; Slot < RPCRingBufferUtils::GetRingBufferSize(Type); ++Slot)
 	{
 		const TOptional<RPCPayload>& Element = Buffer.RingBuffer[Slot];
@@ -862,9 +862,6 @@ void SpatialRPCService::WriteCrossServerACKFor(Worker_EntityId Receiver, Worker_
 
 	(*DottedACKList)[Slot] = RPCId;
 	ACKComponent->RPCAck++;
-
-	UE_LOG(LogSpatialRPCService, Log, TEXT("DEBUG_CS %llu ACKED RPC %i from %llu with count %i"), Receiver, RPCId, Sender,
-		   ACKComponent->RPCAck);
 
 	EntityComponentId Pair;
 	Pair.EntityId = Receiver;
@@ -926,9 +923,9 @@ TOptional<uint32_t> SpatialRPCService::FindFreeSlotForCrossServerSender()
 	return FreeSlot;
 }
 
-void SpatialRPCService::CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId> const& ReceiversToIgnore)
+void SpatialRPCService::CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId_Key> const& ReceiversToIgnore)
 {
-	for (TSet<Worker_EntityId>::TIterator Iterator = ACKComponentsToTrack.CreateIterator(); Iterator; ++Iterator)
+	for (TSet<Worker_EntityId_Key>::TIterator Iterator = ACKComponentsToTrack.CreateIterator(); Iterator; ++Iterator)
 	{
 		Worker_EntityId Receiver = *Iterator;
 		if (ReceiversToIgnore.Contains(Receiver))

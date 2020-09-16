@@ -1730,7 +1730,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
 		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox || NetDriver->IsRoutingWorker())
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("DEBUG_CS %llu received update from %llu"), NetDriver->WorkerEntityId, Op.entity_id);
 			HandleRPC(Op);
 			return;
 		}
@@ -2209,10 +2208,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 						RPCService->WriteCrossServerACKFor(PendingRPCParams.ObjectRef.Entity, PendingRPCParams.SenderObjectRef.Entity,
 														   PendingRPCParams.SenderObjectRef.Offset, PendingRPCParams.Slot);
 					}
-					else
-					{
-						RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
-					}
+					// if(Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+					//{
+					//	RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
+					//}
 				}
 				else
 				{
