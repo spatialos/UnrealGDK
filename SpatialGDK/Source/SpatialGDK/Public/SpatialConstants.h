@@ -90,7 +90,7 @@ const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 const Worker_ComponentId SPAWN_DATA_COMPONENT_ID = 9999;
 const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
-const Worker_ComponentId GDK_DEBUG_COMPONENT_ID	= 9995;
+const Worker_ComponentId GDK_DEBUG_COMPONENT_ID = 9995;
 const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
@@ -307,6 +307,8 @@ const FString URL_PLAYER_ID_OPTION = TEXT("playerid=");
 const FString URL_DISPLAY_NAME_OPTION = TEXT("displayname=");
 const FString URL_METADATA_OPTION = TEXT("metadata=");
 const FString URL_USE_EXTERNAL_IP_FOR_BRIDGE_OPTION = TEXT("useExternalIpForBridge");
+
+const FString SHUTDOWN_PREPARATION_WORKER_FLAG = TEXT("PrepareShutdown");
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 

@@ -281,6 +281,7 @@ public:
 	void SetNeedOwnerInterestUpdate(bool bInNeedOwnerInterestUpdate) { bNeedOwnerInterestUpdate = bInNeedOwnerInterestUpdate; }
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;

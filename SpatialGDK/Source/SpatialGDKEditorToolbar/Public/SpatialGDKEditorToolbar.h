@@ -67,7 +67,7 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
-	void VerifyAndStartDeployment();
+	void VerifyAndStartDeployment(FString ForceSnapshot = "");
 
 	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
@@ -79,9 +79,11 @@ private:
 	void DestroySpatialDebuggerEditor();
 	void InitialiseSpatialDebuggerEditor(UWorld* World);
 	bool IsSpatialDebuggerEditorEnabled() const;
+	bool IsMultiWorkerEnabled() const;
 	bool AllowWorkerBoundaries() const;
 	void ToggleSpatialDebuggerEditor();
 
+	void ToggleMultiworkerEditor();
 	bool StartNativeIsVisible() const;
 	bool StartNativeCanExecute() const;
 

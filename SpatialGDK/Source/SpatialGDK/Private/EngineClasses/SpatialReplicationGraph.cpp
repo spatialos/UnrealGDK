@@ -11,7 +11,7 @@ void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
 {
 	UReplicationGraph::InitForNetDriver(InNetDriver);
 
-	if (USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld()))
+	if (USpatialStatics::IsMultiWorkerEnabled())
 	{
 		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
 		{

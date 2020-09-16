@@ -9,9 +9,9 @@
 class UTestDynamicComponent;
 
 /**
-* A replicated, always relevant Actor used in SpatialTestSingleServerDynamicComponents to test dynamic components.
-* Contains 3 replicated dynamic components attached at various points in its lifecycle.
-*/
+ * A replicated, always relevant Actor used in SpatialTestSingleServerDynamicComponents to test dynamic components.
+ * Contains 3 replicated dynamic components attached at various points in its lifecycle.
+ */
 
 UCLASS()
 class ATestDynamicComponentActor : public AActor

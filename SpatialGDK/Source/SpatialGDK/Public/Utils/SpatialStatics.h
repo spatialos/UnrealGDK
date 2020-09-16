@@ -42,7 +42,7 @@ public:
 	 * Returns true if spatial networking and multi worker are enabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject);
+	static bool IsMultiWorkerEnabled();
 
 	/**
 	 * Returns the multi worker settings class.
