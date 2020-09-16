@@ -2203,29 +2203,36 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		}
 
 		// Get the RPC target Actor.
+		const ERPCType RPCType = PendingRPCParams.Type;
+		const Worker_EntityId EntityId = PendingRPCParams.ObjectRef.Entity;
 		AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
-		ERPCType RPCType = PendingRPCParams.Type;
 		bool bServerRPCType = (RPCType == ERPCType::ServerReliable || RPCType == ERPCType::ServerUnreliable);
 
 		if (Actor->Role == ROLE_SimulatedProxy && bServerRPCType)
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
+
+			if (EventTracer->IsEnabled())
+			{
+				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
+				RPCService->SpanIdCache.DropSpanIds(EntityComponentId(EntityId, ComponentId));
+			}
 		}
 		else
 		{
 			if (EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer)
 			{
-				Worker_EntityId EntityId = PendingRPCParams.ObjectRef.Entity;
 				uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
 				if (RPCId != 0)
 				{
-					Worker_ComponentId ComponentId =
-						bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+					Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 					RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
 					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
 
-					Trace_SpanId CauseSpanId = RPCService->SpanIdCache.GetSpanId(EntityComponentId(EntityId, ComponentId), FieldId);
+					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
+					Trace_SpanId CauseSpanId = RPCService->SpanIdCache.GetSpanId(Id, FieldId);
+					RPCService->SpanIdCache.DropSpanId(Id, FieldId);
 					EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), { CauseSpanId });
 				}
 			}
@@ -2235,7 +2242,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::CrossServer
 				&& RPCType != ERPCType::NetMulticast)
 			{
-				RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
+				RPCService->IncrementAckedRPCID(EntityId, RPCType);
 			}
 
 			ErrorInfo.ErrorCode = ERPCResult::Success;
@@ -2261,9 +2268,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	{
 		if (EventTracer->IsEnabled())
 		{
-			bool bServerRPCType = (Params.Type == ERPCType::ServerReliable || Params.Type == ERPCType::ServerUnreliable);
-			Worker_ComponentId ComponentId =
-				bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+			Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Params.Type);
+			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
+			RPCService->SpanIdCache.DropSpanIds(Id);
 		}
 		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
@@ -2275,9 +2282,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	{
 		if (EventTracer->IsEnabled())
 		{
-			bool bServerRPCType = (Params.Type == ERPCType::ServerReliable || Params.Type == ERPCType::ServerUnreliable);
-			Worker_ComponentId ComponentId =
-				bServerRPCType ? SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+			Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Params.Type);
+			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
+			RPCService->SpanIdCache.DropSpanId(Id, Params.Payload.Index);
 		}
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}

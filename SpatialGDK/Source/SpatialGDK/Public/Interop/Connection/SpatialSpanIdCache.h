@@ -42,23 +42,11 @@ private:
 	bool DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId);
 };
 
-class SpatialTimedSpanIdCache : public SpatialSpanIdCache
+class SpatialRPCSpanIdCache : public SpatialSpanIdCache
 {
 public:
-	SpatialTimedSpanIdCache();
-	SpatialTimedSpanIdCache(float InDropFrequency, float InMinSpanIdLifetime, int32 InMaxSpanIdsToDrop);
 
-	void DropOldSpanIds();
-
-private:
-	// Private Members
-
-	const float DropFrequency = 5.0f;
-	const float MinSpanIdLifetime = 10.0f;
-	const int32 MaxSpanIdsToDrop = 1000;
-	FDateTime NextClearTime;
-
-	void UpdateNextClearTime();
+	uint64 LastSeenRPCId;
 };
 
 class SpatialWorkerOpSpanIdCache : public SpatialSpanIdCache

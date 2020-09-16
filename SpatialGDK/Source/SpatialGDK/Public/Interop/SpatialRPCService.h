@@ -91,7 +91,7 @@ public:
 
 	uint64 GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const;
 
-	SpatialTimedSpanIdCache SpanIdCache;
+	SpatialRPCSpanIdCache SpanIdCache;
 
 private:
 	struct PendingRPCPayload
@@ -145,6 +145,8 @@ private:
 
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<PendingRPCPayload>> OverflowedRPCs;
+
+	void UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Type);
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);
