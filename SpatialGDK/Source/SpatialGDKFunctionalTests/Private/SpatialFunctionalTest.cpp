@@ -334,14 +334,14 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowContro
 
 ESpatialFunctionalTestWorkerType ASpatialFunctionalTest::GetLocalWorkerType()
 {
-	auto* AuxFlowController = GetLocalFlowController();
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
 	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Type : ESpatialFunctionalTestWorkerType::Invalid;
 }
 
 int ASpatialFunctionalTest::GetLocalWorkerId()
 {
-	auto* AuxFlowController = GetLocalFlowController();
-	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : -1;
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : INVALID_FLOW_CONTROLLER_ID;
 }
 
 // Add Steps for Blueprints
