@@ -9,8 +9,8 @@ constexpr bool bTargetBoolProperty = true;
 constexpr int32 TargetInt32Property = -1050;
 constexpr int64 TargetInt64Property = 8000000;
 constexpr float TargetFloatProperty = 1000.0f;
-constexpr wchar_t* TargetStringProperty = TEXT("Some String");
-constexpr wchar_t* TargetNameProperty = TEXT("Some String");
+const wchar_t* TargetStringProperty = TEXT("Some String");
+const wchar_t* TargetNameProperty = TEXT("Some String");
 
 TArray<int> GetTargetIntArrayProperty()
 {
