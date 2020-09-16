@@ -487,7 +487,7 @@ void SpatialRPCService::UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Typ
 		for (uint64 RPCId = FirstRPCIdToRead; RPCId <= Buffer.LastSentRPCId; RPCId++)
 		{
 			Schema_FieldId FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
-			Trace_SpanId SpanId  = EventTracer->GetSpanId(Id, FieldId);
+			Trace_SpanId SpanId = EventTracer->GetSpanId(Id, FieldId);
 			SpanIdCache.AddSpanId(Id, FieldId, SpanId);
 		}
 	}

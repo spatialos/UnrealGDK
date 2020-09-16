@@ -25,7 +25,6 @@ DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, E
 
 namespace SpatialGDK
 {
-
 enum class EPushRPCResult : uint8
 {
 	Success,

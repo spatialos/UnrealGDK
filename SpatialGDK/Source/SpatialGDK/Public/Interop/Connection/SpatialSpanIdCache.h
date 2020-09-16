@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 
-#include "Misc/DateTime.h"
 #include "Interop/EntityRPCType.h"
+#include "Misc/DateTime.h"
 #include "SpatialView/EntityComponentId.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSpanIdStore, Log, All);
