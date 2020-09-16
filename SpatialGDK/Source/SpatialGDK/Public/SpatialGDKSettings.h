@@ -248,14 +248,13 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
-	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
-	bool bEnableMultiWorker;
-
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
 
+	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	bool bEnableMultiWorker;
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
 
@@ -358,10 +357,6 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
-
-	/** Use SpatialView to manage communication with SpatialOS. */
-	UPROPERTY(Config)
-	bool bUseSpatialView;
 
 	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override

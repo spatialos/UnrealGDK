@@ -8,6 +8,7 @@
 #include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
+#include "Engine/Engine.h"
 
 #define WORKERCONNECTION_TEST(TestName) GDK_TEST(Core, SpatialWorkerConnection, TestName)
 
@@ -172,15 +173,13 @@ bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	for (const auto& Ops : Connection->GetOpList())
+	Connection->Advance();
+	for (const auto& Op : Connection->GetWorkerMessages())
 	{
-		for (uint32_t i = 0; i < Ops.Count; i++)
+		if (Op.op_type == ExpectedOpType)
 		{
-			if (Ops.Ops[i].op_type == ExpectedOpType)
-			{
-				bFoundOpOfExpectedType = true;
-				break;
-			}
+			bFoundOpOfExpectedType = true;
+			break;
 		}
 	}
 
