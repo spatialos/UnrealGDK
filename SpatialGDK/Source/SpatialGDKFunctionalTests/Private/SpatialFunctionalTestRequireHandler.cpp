@@ -97,7 +97,8 @@ void SpatialFunctionalTestRequireHandler::RequireCompare(int A, EComparisonMetho
 
 	if (!bPassed)
 	{
-		ErrorMsg = FString::Printf(TEXT("Expected %d %s %d"), A, *GetComparisonMethodAsString(Operator), B);
+		FString OperatorStr = GetComparisonMethodAsString(Operator);
+		ErrorMsg = FString::Printf(TEXT("Received %d %s %d but was expecting A %s B"), A, *OperatorStr, B, *OperatorStr);
 	}
 
 	GenericRequire(Msg, bPassed, ErrorMsg);
@@ -111,7 +112,8 @@ void SpatialFunctionalTestRequireHandler::RequireCompare(float A, EComparisonMet
 
 	if (!bPassed)
 	{
-		ErrorMsg = FString::Printf(TEXT("Expected %f %s %f"), A, *GetComparisonMethodAsString(Operator), B);
+		FString OperatorStr = GetComparisonMethodAsString(Operator);
+		ErrorMsg = FString::Printf(TEXT("Received %f %s %f but was expected A %s B"), A, *OperatorStr, B, *OperatorStr);
 	}
 
 	GenericRequire(Msg, bPassed, ErrorMsg);
@@ -147,7 +149,7 @@ void SpatialFunctionalTestRequireHandler::RequireEqual(int Value, int Expected, 
 
 void SpatialFunctionalTestRequireHandler::RequireEqual(float Value, float Expected, const FString& Msg, float Tolerance)
 {
-	bool bPassed = FMath::Abs(Value - Expected) < Tolerance;
+	bool bPassed = FMath::Abs(Value - Expected) <= Tolerance;
 	FString ErrorMsg;
 
 	if (!bPassed)
@@ -321,7 +323,7 @@ void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FRotator& Value,
 
 void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg)
 {
-	bool bPassed = Value.Equals(NotExpected);
+	bool bPassed = !Value.Equals(NotExpected);
 	FString ErrorMsg;
 
 	if (!bPassed)
