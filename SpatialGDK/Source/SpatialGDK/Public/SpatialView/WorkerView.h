@@ -16,7 +16,10 @@ public:
 
 	// Process queued op lists to create a new view delta.
 	// The view delta will exist until the next call to advance.
-	ViewDelta GenerateViewDelta();
+	void AdvanceViewDelta();
+
+	const ViewDelta& GetViewDelta() const;
+	const EntityView& GetView() const;
 
 	// Add an OpList to generate the next ViewDelta.
 	void EnqueueOpList(OpList Ops);
@@ -39,6 +42,7 @@ public:
 
 private:
 	EntityView View;
+	ViewDelta Delta;
 
 	TArray<OpList> QueuedOps;
 	TArray<OpList> OpenCriticalSectionOps;

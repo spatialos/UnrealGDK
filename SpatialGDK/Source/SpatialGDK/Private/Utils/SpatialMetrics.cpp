@@ -369,10 +369,10 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int Pa
 	Stat.TotalPayload += PayloadSize;
 }
 
-void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
+void USpatialMetrics::HandleWorkerMetrics(const Worker_Op& Op)
 {
-	int32 NumGaugeMetrics = Op->op.metrics.metrics.gauge_metric_count;
-	int32 NumHistogramMetrics = Op->op.metrics.metrics.histogram_metric_count;
+	int32 NumGaugeMetrics = Op.op.metrics.metrics.gauge_metric_count;
+	int32 NumHistogramMetrics = Op.op.metrics.metrics.histogram_metric_count;
 	if (NumGaugeMetrics > 0 || NumHistogramMetrics > 0) // We store these here so we can forward them with our metrics submission
 	{
 		FString StringTmp;
@@ -380,14 +380,14 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 
 		for (int32 i = 0; i < NumGaugeMetrics; i++)
 		{
-			const Worker_GaugeMetric& WorkerMetric = Op->op.metrics.metrics.gauge_metrics[i];
+			const Worker_GaugeMetric& WorkerMetric = Op.op.metrics.metrics.gauge_metrics[i];
 			StringTmp = WorkerMetric.key;
 			WorkerSDKGaugeMetrics.FindOrAdd(StringTmp) = WorkerMetric.value;
 		}
 
 		for (int32 i = 0; i < NumHistogramMetrics; i++)
 		{
-			const Worker_HistogramMetric& WorkerMetric = Op->op.metrics.metrics.histogram_metrics[i];
+			const Worker_HistogramMetric& WorkerMetric = Op.op.metrics.metrics.histogram_metrics[i];
 			StringTmp = WorkerMetric.key;
 			WorkerHistogramValues& HistogramMetrics = WorkerSDKHistogramMetrics.FindOrAdd(StringTmp);
 			HistogramMetrics.Sum = WorkerMetric.sum;

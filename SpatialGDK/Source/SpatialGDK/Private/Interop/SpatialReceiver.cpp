@@ -2331,12 +2331,11 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId En
 	}
 }
 
-void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
+void USpatialReceiver::OnDisconnect(uint8 StatusCode, const FString& Reason)
 {
 	if (GEngine != nullptr)
 	{
-		GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver,
-										 ENetworkFailure::FromDisconnectOpStatusCode(Op.connection_status_code), UTF8_TO_TCHAR(Op.reason));
+		GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(StatusCode), Reason);
 	}
 }
 
