@@ -21,18 +21,13 @@ class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialWorkerFlags;
 
-namespace SpatialGDK
-{
-class SpatialEventTracer;
-}
-
 class SPATIALGDK_API SpatialDispatcher
 {
 public:
 	using FCallbackId = uint32;
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
-			  USpatialWorkerFlags* InSpatialWorkerFlags, SpatialGDK::SpatialEventTracer* InEventTracer);
+			  USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 	// Each callback method returns a callback ID which is incremented for each registration.
@@ -81,6 +76,4 @@ private:
 	FCallbackId NextCallbackId;
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
-
-	SpatialGDK::SpatialEventTracer* EventTracer;
 };

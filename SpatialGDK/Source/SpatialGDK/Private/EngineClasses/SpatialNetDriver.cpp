@@ -407,7 +407,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			USpatialLatencyTracer::GetTracer(GetWorld()), ConnectionManager->GetEventTracer());
 	}
 
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags, ConnectionManager->GetEventTracer());
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), ConnectionManager->GetEventTracer());
 	Receiver->Init(this, &TimerManager, RPCService.Get(), ConnectionManager->GetEventTracer());
 	GlobalStateManager->Init(this);

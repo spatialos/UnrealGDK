@@ -2,7 +2,6 @@
 
 #include "Interop/SpatialDispatcher.h"
 
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
@@ -15,8 +14,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
 void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags,
-							 SpatialGDK::SpatialEventTracer* InEventTracer)
+							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
@@ -27,21 +25,12 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 	check(InSpatialMetrics != nullptr);
 	SpatialMetrics = InSpatialMetrics;
 	SpatialWorkerFlags = InSpatialWorkerFlags;
-
-	check(InEventTracer != nullptr);
-	EventTracer = InEventTracer;
 }
 
 void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
 	check(Receiver.IsValid());
 	check(StaticComponentView.IsValid());
-
-	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
-	if (bEventTracerEnabled)
-	{
-		EventTracer->ClearSpanIds();
-	}
 
 	for (const Worker_Op& Op : Ops)
 	{
@@ -70,25 +59,13 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			if (bEventTracerEnabled)
-			{
-				EventTracer->ComponentAdd(Op);
-			}
 			StaticComponentView->OnAddComponent(Op.op.add_component);
 			Receiver->OnAddComponent(Op.op.add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			if (bEventTracerEnabled)
-			{
-				EventTracer->ComponentRemove(Op);
-			}
 			Receiver->OnRemoveComponent(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			if (bEventTracerEnabled)
-			{
-				EventTracer->ComponentUpdate(Op);
-			}
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
 			Receiver->OnComponentUpdate(Op);
 			break;

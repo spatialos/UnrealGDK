@@ -393,8 +393,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->WorkerConnection->SetEventTracer(SpatialConnectionManager->EventTracer.Get());
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
