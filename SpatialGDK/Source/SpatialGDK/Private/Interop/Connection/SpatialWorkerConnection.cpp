@@ -31,7 +31,8 @@ void USpatialWorkerConnection::SetEventTracer(SpatialGDK::SpatialEventTracer* In
 void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
 	StartupComplete = false;
-	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler = MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, EventTracer);
+	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
+		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, EventTracer);
 	TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
 		MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
 			if (StartupComplete)
