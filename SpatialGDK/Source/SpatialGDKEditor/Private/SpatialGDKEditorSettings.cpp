@@ -47,6 +47,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
+	, bSpatialDebuggerEditorEnabled(false)
 	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnExitEditor)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")

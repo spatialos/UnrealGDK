@@ -299,6 +299,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
 								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
 								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleMultiWorkerEditor,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor),
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
+								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -484,6 +489,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	MenuBuilder.BeginSection("SpatialDebuggerEditorSettings");
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleMultiWorkerEditor);
 	}
 	MenuBuilder.EndSection();
 
@@ -733,11 +739,22 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	}
 }
 
+void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
+{
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->bEnableMultiWorker);
+
+	if (SpatialDebugger.IsValid())
+	{
+		SpatialDebugger->EditorRefreshWorkerRegions();
+	}
+}
+
 void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType MapChangeType)
 {
 	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
 	{
-		// If Spatial networking is enabled then initialise the SpatialDebugger.
+		// If Spatial networking is enabled then initialize the editor debugging facilities.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			InitialiseSpatialDebuggerEditor(World);
@@ -1108,6 +1125,19 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			}
 		}
 	}
+	if (USpatialGDKSettings* Settings = Cast<USpatialGDKSettings>(ObjectBeingModified))
+	{
+		FName PropertyName = PropertyChangedEvent.Property != nullptr ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+		FString PropertyNameStr = PropertyName.ToString();
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableMultiWorker))
+		{
+			// Update multi-worker settings
+			if (SpatialDebugger.IsValid())
+			{
+				SpatialDebugger->EditorRefreshWorkerRegions();
+			}
+		}
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShowCloudDeploymentDialog()
@@ -1447,6 +1477,12 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	return AllowWorkerBoundaries() && SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled;
+}
+
+bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled() const
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->bEnableMultiWorker;
 }
 
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const

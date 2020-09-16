@@ -2,12 +2,11 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 
 #include "EngineUtils.h"
-#include "SpatialGDKSettings.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialStatics.h"
 
 ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, bEnableMultiWorker(false)
 	, MultiWorkerSettingsClass(nullptr)
 	, EditorMultiWorkerSettingsOverride(nullptr)
 {
@@ -26,11 +25,6 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 		checkf(MultiWorkerSettingsClass != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
 		return GetValidWorkerSettings();
 	}
-	else if (!IsMultiWorkerEnabled())
-	{
-		// If multi worker is disabled, use the single worker behaviour.
-		return USpatialMultiWorkerSettings::StaticClass();
-	}
 	else if (bForceNonEditorSettings && MultiWorkerSettingsClass != nullptr)
 	{
 		// If bForceNonEditorSettings is set and the multi worker setting class is set use the multi worker settings.
@@ -40,6 +34,11 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 	{
 		// If bForceNonEditorSettings is set and no multi worker settings class is set always return a valid class (use single worker
 		// behaviour).
+		return USpatialMultiWorkerSettings::StaticClass();
+	}
+	else if (!USpatialStatics::IsMultiWorkerEnabled())
+	{
+		// If multi worker is disabled in editor, use the single worker behaviour.
 		return USpatialMultiWorkerSettings::StaticClass();
 	}
 #if WITH_EDITOR
@@ -75,8 +74,7 @@ void ASpatialWorldSettings::PostEditChangeProperty(FPropertyChangedEvent& Proper
 	{
 		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsOverride)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, EditorMultiWorkerSettingsOverride))
 		{
 			EditorRefreshSpatialDebugger();
 		}
@@ -94,21 +92,3 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 	}
 }
 #endif // WITH_EDITOR
-
-bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
-{
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	// Check if multi-worker settings class was overridden from the command line
-	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
-	{
-		// If command line override for Multi Worker Settings is set then enable multi-worker.
-		return true;
-	}
-	else if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
-	{
-		// If enable multi-worker was overridden from the command line then use the override.
-		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
-	}
-	return bEnableMultiWorker;
-}
