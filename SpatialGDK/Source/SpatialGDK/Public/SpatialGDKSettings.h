@@ -248,10 +248,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
-	UPROPERTY(Config)
-	bool bRunSpatialWorkerConnectionOnGameThread;
-
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
