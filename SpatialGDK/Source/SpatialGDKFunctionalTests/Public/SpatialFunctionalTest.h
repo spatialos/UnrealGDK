@@ -8,7 +8,7 @@
 #include "FunctionalTest.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
-#include "SpatialFunctionalTestSoftAssertHandler.h"
+#include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
@@ -216,71 +216,73 @@ public:
 			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
 	void ClearTagDelegationAndInterest();
 
-	// # Soft Assert Functions. Soft Asserts mimic the assert behaviour but without the immediate failure. Since when you're
+	// # Require Functions. Requires mimic the assert behaviour but without the immediate failure. Since when you're
 	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
 	// negatives. These functions work in a way that they record the expected behaviour, and when we FinishStep / FinishTest
-	// it will let you know which of them passed and which failed.
+	// it will let you know which of them passed and which failed. Keep in mind that failed requires will prevent FinishStep
+	// from moving forward, so this allows you to make tests in a simpler way without having to keep track if anything failed
+	// before calling FinishStep.
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void SoftAssertTrue(bool bCheckTrue, const FString& Msg) { SoftAssertHandler.SoftAssertTrue(bCheckTrue, Msg); }
+	void RequireTrue(bool bCheckTrue, const FString& Msg) { RequireHandler.RequireTrue(bCheckTrue, Msg); }
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void SoftAssertFalse(bool bCheckFalse, const FString& Msg) { SoftAssertHandler.SoftAssertFalse(bCheckFalse, Msg); }
+	void RequireFalse(bool bCheckFalse, const FString& Msg) { RequireHandler.RequireFalse(bCheckFalse, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Compare (Int)"), Category = "Spatial Functional Test")
-	void SoftAssertCompare_Int(int A, EComparisonMethod Operator, int B, const FString& Msg) { SoftAssertHandler.SoftAssertCompare(A, Operator, B, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Compare (Int)"), Category = "Spatial Functional Test")
+	void RequireCompare_Int(int A, EComparisonMethod Operator, int B, const FString& Msg) { RequireHandler.RequireCompare(A, Operator, B, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Compare (Float)"), Category = "Spatial Functional Test")
-	void SoftAssertCompare_Float(float A, EComparisonMethod Operator, float B, const FString& Msg) { SoftAssertHandler.SoftAssertCompare(A, Operator, B, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Compare (Float)"), Category = "Spatial Functional Test")
+	void RequireCompare_Float(float A, EComparisonMethod Operator, float B, const FString& Msg) { RequireHandler.RequireCompare(A, Operator, B, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Bool)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Bool(bool bValue, bool bExpected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(bValue, bExpected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Bool)"), Category = "Spatial Functional Test")
+	void RequireEqual_Bool(bool bValue, bool bExpected, const FString& Msg) { RequireHandler.RequireEqual(bValue, bExpected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Int)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Int(int Value, int Expected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Int)"), Category = "Spatial Functional Test")
+	void RequireEqual_Int(int Value, int Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Float)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Float(float Value, float Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Float)"), Category = "Spatial Functional Test")
+	void RequireEqual_Float(float Value, float Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (String)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (String)"), Category = "Spatial Functional Test")
+	void RequireEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Name)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Name)"), Category = "Spatial Functional Test")
+	void RequireEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Vector)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Vector)"), Category = "Spatial Functional Test")
+	void RequireEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Rotator)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Rotator)"), Category = "Spatial Functional Test")
+	void RequireEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Equal (Transform)"), Category = "Spatial Functional Test")
-	void SoftAssertEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { SoftAssertHandler.SoftAssertEqual(Value, Expected, Msg, Tolerance); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
+	void RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Bool)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(bValue, bNotExpected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Int)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Int(int Value, int Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Int)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Float)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Float(float Value, float Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Float)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (String)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (String)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Name)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Name)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Vector)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Vector)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Rotator)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Rotator)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Soft Assert Not Equal (Transform)"), Category = "Spatial Functional Test")
-	void SoftAssertNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { SoftAssertHandler.SoftAssertNotEqual(Value, Expected, Msg); }
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs
@@ -369,8 +371,8 @@ private:
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
 
-	// Holds all the SafeAssert calls / results for printing at the end of the step.
-	SpatialFunctionalTestSoftAssertHandler SoftAssertHandler;
+	// Holds all the Requires calls / results for printing at the end of the step.
+	SpatialFunctionalTestRequireHandler RequireHandler;
 
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();

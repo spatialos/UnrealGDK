@@ -39,10 +39,10 @@ void ADormancyAndTombstoneTest::BeginPlay()
 			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				SoftAssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"));
+				RequireEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"));
 				Iter->TestIntProp = 1;
 			}
-			SoftAssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
+			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});
@@ -61,7 +61,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 					}
 				}
 
-				SoftAssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
+				RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
 
 				FinishStep();
 			},
@@ -77,7 +77,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				Counter++;
 				Iter->Destroy();
 			}
-			SoftAssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
+			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});
@@ -94,7 +94,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 					Counter++;
 				}
 
-				SoftAssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
+				RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
 
 				FinishStep();
 			},

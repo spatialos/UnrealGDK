@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialFunctionalTestSoftAssertHandler.h"
+#include "SpatialFunctionalTestRequireHandler.h"
 #include "Logging/LogMacros.h"
 #include "Misc/AssertionMacros.h"
 #include "SpatialFunctionalTest.h"
@@ -74,22 +74,22 @@ FString GetTransformAsString(const FTransform& Transform)
 }
 } // namespace
 
-SpatialFunctionalTestSoftAssertHandler::SpatialFunctionalTestSoftAssertHandler()
+SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
 	: NextOrder(0)
 {
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertTrue(bool bCheckTrue, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireTrue(bool bCheckTrue, const FString& Msg)
 {
-	GenericSoftAssert(Msg, bCheckTrue, FString());
+	GenericRequire(Msg, bCheckTrue, FString());
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertFalse(bool bCheckFalse, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireFalse(bool bCheckFalse, const FString& Msg)
 {
-	GenericSoftAssert(Msg, !bCheckFalse, FString());
+	GenericRequire(Msg, !bCheckFalse, FString());
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertCompare(int A, EComparisonMethod Operator, int B, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireCompare(int A, EComparisonMethod Operator, int B, const FString& Msg)
 {
 	bool bPassed = Compare(A, Operator, B);
 
@@ -100,10 +100,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertCompare(int A, ECompariso
 		ErrorMsg = FString::Printf(TEXT("Expected %d %s %d"), A, *GetComparisonMethodAsString(Operator), B);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertCompare(float A, EComparisonMethod Operator, float B, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireCompare(float A, EComparisonMethod Operator, float B, const FString& Msg)
 {
 	bool bPassed = Compare(A, Operator, B);
 
@@ -114,10 +114,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertCompare(float A, ECompari
 		ErrorMsg = FString::Printf(TEXT("Expected %f %s %f"), A, *GetComparisonMethodAsString(Operator), B);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(bool bValue, bool bExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireEqual(bool bValue, bool bExpected, const FString& Msg)
 {
 	bool bPassed = bValue == bExpected;
 	FString ErrorMsg;
@@ -129,10 +129,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(bool bValue, bool b
 		ErrorMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *ValueStr, *ExpectedStr);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(int Value, int Expected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireEqual(int Value, int Expected, const FString& Msg)
 {
 	bool bPassed = Value == Expected;
 	FString ErrorMsg;
@@ -142,10 +142,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(int Value, int Expe
 		ErrorMsg = FString::Printf(TEXT("Received %d but was expecting %d"), Value, Expected);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(float Value, float Expected, const FString& Msg, float Tolerance)
+void SpatialFunctionalTestRequireHandler::RequireEqual(float Value, float Expected, const FString& Msg, float Tolerance)
 {
 	bool bPassed = FMath::Abs(Value - Expected) < Tolerance;
 	FString ErrorMsg;
@@ -155,10 +155,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(float Value, float 
 		ErrorMsg = FString::Printf(TEXT("Received %f but was expecting %f (tolerance %f)"), Value, Expected, Tolerance);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FString& Value, const FString& Expected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireEqual(const FString& Value, const FString& Expected, const FString& Msg)
 {
 	bool bPassed = Value == Expected;
 	FString ErrorMsg;
@@ -168,10 +168,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FString& Valu
 		ErrorMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *Value, *Expected);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FName& Value, const FName& Expected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireEqual(const FName& Value, const FName& Expected, const FString& Msg)
 {
 	bool bPassed = Value == Expected;
 	FString ErrorMsg;
@@ -181,11 +181,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FName& Value,
 		ErrorMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *Value.ToString(), *Expected.ToString());
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FVector& Value, const FVector& Expected, const FString& Msg,
-															 float Tolerance)
+void SpatialFunctionalTestRequireHandler::RequireEqual(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance)
 {
 	bool bPassed = Value.Equals(Expected, Tolerance);
 	FString ErrorMsg;
@@ -196,11 +195,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FVector& Valu
 								   Tolerance);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg,
-															 float Tolerance)
+void SpatialFunctionalTestRequireHandler::RequireEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance)
 {
 	bool bPassed = Value.Equals(Expected, Tolerance);
 	FString ErrorMsg;
@@ -211,11 +209,11 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FRotator& Val
 								   Tolerance);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg,
-															 float Tolerance)
+void SpatialFunctionalTestRequireHandler::RequireEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg,
+													   float Tolerance)
 {
 	bool bPassed = Value.Equals(Expected, Tolerance);
 	FString ErrorMsg;
@@ -226,10 +224,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertEqual(const FTransform& V
 								   *GetTransformAsString(Expected), Tolerance);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(bool bValue, bool bNotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(bool bValue, bool bNotExpected, const FString& Msg)
 {
 	bool bPassed = bValue != bNotExpected;
 	FString ErrorMsg;
@@ -240,10 +238,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(bool bValue, boo
 		ErrorMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *ValueStr);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(int Value, int NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(int Value, int NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
 	FString ErrorMsg;
@@ -253,10 +251,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(int Value, int N
 		ErrorMsg = FString::Printf(TEXT("Received %d but wasn't expecting it"), Value);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(float Value, float NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(float Value, float NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
 	FString ErrorMsg;
@@ -266,10 +264,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(float Value, flo
 		ErrorMsg = FString::Printf(TEXT("Received %f but wasn't expecting it"), Value);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
 	FString ErrorMsg;
@@ -279,10 +277,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FString& V
 		ErrorMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *Value);
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FName& Value, const FName& NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FName& Value, const FName& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
 	FString ErrorMsg;
@@ -292,10 +290,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FName& Val
 		ErrorMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *Value.ToString());
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
 	FString ErrorMsg;
@@ -305,10 +303,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FVector& V
 		ErrorMsg = FString::Printf(TEXT("Received (%s) but wasn't expecting it"), *Value.ToString());
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
 	FString ErrorMsg;
@@ -318,10 +316,10 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FRotator& 
 		ErrorMsg = FString::Printf(TEXT("Received (%s) but wasn't expecting it"), *Value.ToString());
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg)
+void SpatialFunctionalTestRequireHandler::RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value.Equals(NotExpected);
 	FString ErrorMsg;
@@ -331,65 +329,65 @@ void SpatialFunctionalTestSoftAssertHandler::SoftAssertNotEqual(const FTransform
 		ErrorMsg = FString::Printf(TEXT("Received {%s} but wasn't expecting it"), *GetTransformAsString(Value));
 	}
 
-	GenericSoftAssert(Msg, bPassed, ErrorMsg);
+	GenericRequire(Msg, bPassed, ErrorMsg);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::GenericSoftAssert(const FString& Msg, bool bPassed, const FString& ErrorMsg)
+void SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, bool bPassed, const FString& ErrorMsg)
 {
-	ensureMsgf(!Msg.IsEmpty(), TEXT("SoftAsserts cannot have an empty message"));
+	ensureMsgf(!Msg.IsEmpty(), TEXT("Requires cannot have an empty message"));
 
-	FSpatialFunctionalTestSoftAssert SoftAssert;
+	FSpatialFunctionalTestRequire SoftAssert;
 	SoftAssert.Msg = Msg;
 	SoftAssert.bPassed = bPassed;
 	SoftAssert.ErrorMsg = ErrorMsg;
 	SoftAssert.Order = NextOrder++;
 
-	SoftAsserts.Add(Msg, SoftAssert);
+	Requires.Add(Msg, SoftAssert);
 }
 
-void SpatialFunctionalTestSoftAssertHandler::LogAndClearStepSoftAsserts()
+void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 {
 	// Since it's a TMap, we need to order them for better readability.
-	TArray<FSpatialFunctionalTestSoftAssert> SoftAssertsOrdered;
-	SoftAssertsOrdered.Reserve(SoftAsserts.Num());
+	TArray<FSpatialFunctionalTestRequire> RequiresOrdered;
+	RequiresOrdered.Reserve(Requires.Num());
 
-	for (const auto& SoftAssertEntry : SoftAsserts)
+	for (const auto& RequireEntry : Requires)
 	{
-		SoftAssertsOrdered.Add(SoftAssertEntry.Value);
+		RequiresOrdered.Add(RequireEntry.Value);
 	}
 
-	SoftAssertsOrdered.Sort([](const FSpatialFunctionalTestSoftAssert& A, const FSpatialFunctionalTestSoftAssert& B) -> bool {
+	RequiresOrdered.Sort([](const FSpatialFunctionalTestRequire& A, const FSpatialFunctionalTestRequire& B) -> bool {
 		return A.Order < B.Order;
 	});
 
 	const FString& WorkerName = OwnerTest->GetLocalFlowController()->GetDisplayName();
 
-	for (const auto& SoftAssert : SoftAssertsOrdered)
+	for (const auto& Require : RequiresOrdered)
 	{
 		FString Msg;
-		if (SoftAssert.bPassed)
+		if (Require.bPassed)
 		{
-			Msg = FString::Printf(TEXT("%s [Passed] %s"), *WorkerName, *SoftAssert.Msg);
+			Msg = FString::Printf(TEXT("%s [Passed] %s"), *WorkerName, *Require.Msg);
 			UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
 		}
 		else
 		{
-			Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *SoftAssert.Msg, *SoftAssert.ErrorMsg);
+			Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.ErrorMsg);
 			UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
 			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
 		}
 	}
 
 	NextOrder = 0;
-	SoftAsserts.Empty();
+	Requires.Empty();
 }
 
-bool SpatialFunctionalTestSoftAssertHandler::HasFails()
+bool SpatialFunctionalTestRequireHandler::HasFails()
 {
-	for (const auto& SoftAssertEntry : SoftAsserts)
+	for (const auto& RequireEntry : Requires)
 	{
-		if (!SoftAssertEntry.Value.bPassed)
+		if (!RequireEntry.Value.bPassed)
 		{
 			return true;
 		}

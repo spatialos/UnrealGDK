@@ -77,7 +77,7 @@ void ASpatialFunctionalTest::BeginPlay()
 		FinishStep();
 	});
 
-	SoftAssertHandler.SetOwnerTest(this);
+	RequireHandler.SetOwnerTest(this);
 
 	// By default expect 1 server.
 	NumExpectedServers = 1;
@@ -217,12 +217,12 @@ void ASpatialFunctionalTest::StartTest()
 void ASpatialFunctionalTest::FinishStep()
 {
 	// We can only FinishStep if there are no SoftAssert fails.
-	if (SoftAssertHandler.HasFails())
+	if (RequireHandler.HasFails())
 	{
 		return;
 	}
 
-	SoftAssertHandler.LogAndClearStepSoftAsserts();
+	RequireHandler.LogAndClearStepRequires();
 
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
@@ -445,7 +445,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 	if (HasAuthority())
 	{
 		// Log SoftAsserts from previous step.
-		SoftAssertHandler.LogAndClearStepSoftAsserts();
+		RequireHandler.LogAndClearStepRequires();
 
 		CurrentStepIndex = StepIndex;
 
@@ -569,7 +569,7 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		SoftAssertHandler.LogAndClearStepSoftAsserts();
+		RequireHandler.LogAndClearStepRequires();
 		// if we ever started in first place
 		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
 		if (AuxLocalFlowController != nullptr)
