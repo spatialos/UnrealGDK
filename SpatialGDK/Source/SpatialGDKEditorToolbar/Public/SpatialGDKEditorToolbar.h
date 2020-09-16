@@ -79,7 +79,7 @@ private:
 	void DestroySpatialDebuggerEditor();
 	void InitialiseSpatialDebuggerEditor(UWorld* World);
 	bool IsSpatialDebuggerEditorEnabled() const;
-	bool IsMultiWorkerEditorDisabled() const;
+	bool IsMultiWorkerEnabled() const;
 	bool AllowWorkerBoundaries() const;
 	void ToggleSpatialDebuggerEditor();
 
