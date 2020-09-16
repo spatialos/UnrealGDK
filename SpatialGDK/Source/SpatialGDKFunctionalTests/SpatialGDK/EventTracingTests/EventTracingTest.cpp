@@ -28,29 +28,21 @@ void AEventTracingTest::BeginPlay()
 
 	TestStartTime = FDateTime::Now();
 
-	{
-		AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
-			WaitForTestToEnd();
-		});
-	}
-
-	{
-		AddStep(
-			TEXT("GatherData"), WorkerDefinition, nullptr,
-			[this]() {
-				GatherData();
-			},
-			nullptr);
-	}
-
-	{
-		AddStep(
-			TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr,
-			[this]() {
-				FinishEventTraceTest();
-			},
-			nullptr);
-	}
+	AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
+		WaitForTestToEnd();
+	});
+	AddStep(
+		TEXT("GatherData"), WorkerDefinition, nullptr,
+		[this]() {
+		GatherData();
+	},
+		nullptr);
+	AddStep(
+		TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr,
+		[this]() {
+		FinishEventTraceTest();
+	},
+		nullptr);
 }
 
 void AEventTracingTest::WaitForTestToEnd()

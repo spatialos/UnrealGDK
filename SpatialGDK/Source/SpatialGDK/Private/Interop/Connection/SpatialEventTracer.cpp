@@ -16,7 +16,6 @@ using namespace worker::c;
 
 SpatialEventTracerGuard EventTracerGuard;
 
-
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
