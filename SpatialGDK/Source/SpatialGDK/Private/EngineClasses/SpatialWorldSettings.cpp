@@ -4,6 +4,7 @@
 #include "EngineUtils.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialStatics.h"
 
 ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -36,7 +37,7 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 		// behaviour).
 		return USpatialMultiWorkerSettings::StaticClass();
 	}
-	else if (!IsMultiWorkerEnabled())
+	else if (!USpatialStatics::IsMultiWorkerEnabled())
 	{
 		// If multi worker is disabled in editor, use the single worker behaviour.
 		return USpatialMultiWorkerSettings::StaticClass();
@@ -92,23 +93,3 @@ void ASpatialWorldSettings::EditorRefreshSpatialDebugger()
 	}
 }
 #endif // WITH_EDITOR
-
-bool ASpatialWorldSettings::IsMultiWorkerEnabled() const
-{
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	// Check if multi-worker settings class was overridden from the command line
-	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
-	{
-		// If command line override for Multi Worker Settings is set then enable multi-worker.
-		return true;
-	}
-#if WITH_EDITOR
-	else if (!SpatialGDKSettings->IsMultiWorkerEditorEnabled())
-	{
-		// If  multi-worker is not enabled in editor then disable multi-worker.
-		return false;
-	}
-#endif // WITH_EDITOR
-	return true;
-}

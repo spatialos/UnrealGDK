@@ -742,7 +742,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->SetMultiWorkerEditor(!SpatialGDKSettings->bEnableMultiWorker);
+	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->bEnableMultiWorker);
 
 	if (SpatialDebugger.IsValid())
 	{

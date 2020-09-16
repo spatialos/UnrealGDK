@@ -74,9 +74,6 @@ public:
 	static void EditorRefreshSpatialDebugger();
 #endif // WITH_EDITOR
 
-	/** Is multi-worker enabled in the editor*/
-	bool IsMultiWorkerEnabled() const;
-
 private:
 	/** Specify the load balancing strategy to be used for multiple workers */
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
