@@ -104,12 +104,6 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World, bool bForceNonEditor
 		return 1;
 	}
 
-	const bool bIsMultiWorkerEnabled = USpatialStatics::IsSpatialMultiWorkerEnabled(&World);
-	if (!bIsMultiWorkerEnabled)
-	{
-		return 1;
-	}
-
 	return USpatialStatics::GetSpatialMultiWorkerClass(&World, bForceNonEditorSettings)
 		->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()
 		->GetMinimumRequiredWorkerCount();
