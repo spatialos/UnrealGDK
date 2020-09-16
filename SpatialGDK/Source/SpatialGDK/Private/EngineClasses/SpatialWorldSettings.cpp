@@ -2,7 +2,6 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 
 #include "EngineUtils.h"
-#include "SpatialGDKSettings.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialStatics.h"
 
