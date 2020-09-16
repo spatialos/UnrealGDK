@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/Connection/SpatialSpanIdStore.h"
+#include "Interop/Connection/SpatialSpanIdCache.h"
 
 #include "SpatialConstants.h"
 #include <WorkerSDK/improbable/c_trace.h>

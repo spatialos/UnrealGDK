@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialSpanIdStore.h"
+#include "Interop/Connection/SpatialSpanIdCache.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
