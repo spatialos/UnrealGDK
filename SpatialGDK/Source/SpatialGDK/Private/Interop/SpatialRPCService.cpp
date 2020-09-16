@@ -479,19 +479,20 @@ void SpatialRPCService::UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Typ
 	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
 	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
 
-	const uint64 LastSeenRPCId = SpanIdCache.LastSeenRPCId;
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+	const uint64 LastSeenRPCId = SpanIdCache.LastSeenRPCIds.Contains(EntityTypePair) ? SpanIdCache.LastSeenRPCIds[EntityTypePair] : 0;
 	if (Buffer.LastSentRPCId >= LastSeenRPCId)
 	{
 		uint64 FirstRPCIdToRead = LastSeenRPCId + 1;
 		for (uint64 RPCId = FirstRPCIdToRead; RPCId <= Buffer.LastSentRPCId; RPCId++)
 		{
 			Schema_FieldId FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
-			Trace_SpanId SpanId = EventTracer->GetSpanId(Id, FieldId);
+			Trace_SpanId SpanId  = EventTracer->GetSpanId(Id, FieldId);
 			SpanIdCache.AddSpanId(Id, FieldId, SpanId);
 		}
 	}
 
-	SpanIdCache.LastSeenRPCId = Buffer.LastSentRPCId;
+	SpanIdCache.LastSeenRPCIds.FindOrAdd(EntityTypePair) = Buffer.LastSentRPCId;
 }
 
 void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type)

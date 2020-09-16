@@ -6,6 +6,7 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialSpanIdCache.h"
+#include "Interop/EntityRPCType.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
@@ -24,27 +25,6 @@ DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, E
 
 namespace SpatialGDK
 {
-struct EntityRPCType
-{
-	EntityRPCType(Worker_EntityId EntityId, ERPCType Type)
-		: EntityId(EntityId)
-		, Type(Type)
-	{
-	}
-
-	Worker_EntityId EntityId;
-	ERPCType Type;
-
-	friend bool operator==(const EntityRPCType& Lhs, const EntityRPCType& Rhs)
-	{
-		return Lhs.EntityId == Rhs.EntityId && Lhs.Type == Rhs.Type;
-	}
-
-	friend uint32 GetTypeHash(EntityRPCType Value)
-	{
-		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.Type)));
-	}
-};
 
 enum class EPushRPCResult : uint8
 {
