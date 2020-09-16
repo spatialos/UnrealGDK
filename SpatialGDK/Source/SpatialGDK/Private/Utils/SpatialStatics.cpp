@@ -318,23 +318,3 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	check(LBStrategy != nullptr);
 	return LBStrategy->GetLocalLayerName();
 }
-
-//bool USpatialStatics::IsMultiWorkerEnabled() const
-//{
-//	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-//
-//	// Check if multi-worker settings class was overridden from the command line
-//	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
-//	{
-//		// If command line override for Multi Worker Settings is set then enable multi-worker.
-//		return true;
-//	}
-//#if WITH_EDITOR
-//	else if (!SpatialGDKSettings->IsMultiWorkerEditorEnabled())
-//	{
-//		// If  multi-worker is not enabled in editor then disable multi-worker.
-//		return false;
-//	}
-//#endif // WITH_EDITOR
-//	return true;
-//}
