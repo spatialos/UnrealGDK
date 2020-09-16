@@ -13,7 +13,6 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 
-#include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
