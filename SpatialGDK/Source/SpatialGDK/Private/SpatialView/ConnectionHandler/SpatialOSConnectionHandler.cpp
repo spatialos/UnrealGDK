@@ -4,6 +4,7 @@
 #include "improbable/c_trace.h"
 
 #include "Async/Async.h"
+#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 namespace SpatialGDK
 {

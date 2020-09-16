@@ -14,12 +14,21 @@ WorkerView::WorkerView(SpatialEventTracer* InEventTracer)
 {
 }
 
-ViewDelta WorkerView::GenerateViewDelta()
+void WorkerView::AdvanceViewDelta()
 {
-	ViewDelta Delta(EventTracer);
+	Delta.Clear();
 	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
 	QueuedOps.Empty();
+}
+
+const ViewDelta& WorkerView::GetViewDelta() const
+{
 	return Delta;
+}
+
+const EntityView& WorkerView::GetView() const
+{
+	return View;
 }
 
 void WorkerView::EnqueueOpList(OpList Ops)
@@ -86,8 +95,11 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
 	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
-	check(Component != nullptr);
-	Component->ApplyUpdate(Update);
+	// check(Component != nullptr);
+	if (Component != nullptr)
+	{
+		Component->ApplyUpdate(Update);
+	}
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
 }
 

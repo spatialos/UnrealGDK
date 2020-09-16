@@ -541,6 +541,11 @@ bool FDropRPCQueueTest::Update()
 			false);
 	}
 
+	if (!ensure(Data->TestWorld->NetDriver != nullptr))
+	{
+		Test->TestTrue("Did not create necessary net driver", false);
+	}
+
 	AActor* Actor = Data->Actor;
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Data->TestWorld->NetDriver);
 	Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);

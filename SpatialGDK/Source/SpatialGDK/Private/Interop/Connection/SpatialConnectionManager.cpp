@@ -2,8 +2,6 @@
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 
-#include "Interop/Connection/LegacySpatialWorkerConnection.h"
-#include "Interop/Connection/SpatialViewWorkerConnection.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
@@ -394,18 +392,9 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				if (Settings->bUseSpatialView)
-				{
-					SpatialConnectionManager->WorkerConnection = NewObject<USpatialViewWorkerConnection>();
-				}
-				else
-				{
-					SpatialConnectionManager->WorkerConnection = NewObject<ULegacySpatialWorkerConnection>();
-				}
-
-				SpatialConnectionManager->WorkerConnection->SetEventTracer(SpatialConnectionManager->EventTracer.Get());
-
+				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
+				SpatialConnectionManager->WorkerConnection->SetEventTracer(SpatialConnectionManager->EventTracer.Get());
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else

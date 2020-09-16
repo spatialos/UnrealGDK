@@ -67,7 +67,7 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
-	void VerifyAndStartDeployment();
+	void VerifyAndStartDeployment(FString ForceSnapshot = "");
 
 	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();

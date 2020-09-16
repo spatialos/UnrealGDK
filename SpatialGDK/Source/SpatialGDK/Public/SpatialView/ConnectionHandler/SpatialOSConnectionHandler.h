@@ -5,7 +5,6 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/OpList/OpList.h"
-#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 namespace SpatialGDK
 {

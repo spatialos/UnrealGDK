@@ -24,6 +24,12 @@ inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const 
 	return Data;
 }
 
+// Assumes the passed data has the TEST_DOUBLE_FIELD_ID field populated.
+inline double GetValueFromTestComponentData(Schema_ComponentData* Data)
+{
+	return Schema_GetDouble(Schema_GetComponentDataFields(Data), EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID);
+}
+
 inline ComponentUpdate CreateTestComponentUpdate(const Worker_ComponentId Id, const double Value)
 {
 	ComponentUpdate Update{ Id };

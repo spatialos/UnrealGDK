@@ -323,7 +323,7 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		}
 		break;
 	default:
-		checkNoEntry();
+		break;
 	}
 }
 
