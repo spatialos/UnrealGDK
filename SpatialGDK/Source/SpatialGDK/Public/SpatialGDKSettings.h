@@ -248,8 +248,16 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
+	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	bool bEnableMultiWorker;
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
+
+#if WITH_EDITOR
+	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
+#endif // WITH_EDITOR
 
 private:
 #if WITH_EDITOR
@@ -345,12 +353,6 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
-
-	/**
-	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
-	 * the map's config with a 1x1 grid.
-	 */
-	TOptional<bool> bOverrideMultiWorker;
 
 	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
