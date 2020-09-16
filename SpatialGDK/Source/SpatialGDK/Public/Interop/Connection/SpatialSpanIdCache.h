@@ -45,7 +45,6 @@ private:
 class SpatialRPCSpanIdCache : public SpatialSpanIdCache
 {
 public:
-
 	uint64 LastSeenRPCId;
 };
 
