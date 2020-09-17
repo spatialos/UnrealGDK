@@ -468,10 +468,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(SpatialConstants::LB_TAG_COMPONENT_ID, [](Worker_EntityId, const SpatialGDK::EntityViewElement&)
-	{
-		return true;
-	}, {});
+	SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(SpatialConstants::LB_TAG_COMPONENT_ID,
+																				 [](Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+																					 return true;
+																				 },
+																				 {});
 
 	LoadBalanceEnforcer =
 		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView, StaticComponentView, VirtualWorkerTranslator.Get());

@@ -16,8 +16,8 @@ class SpatialVirtualWorkerTranslator;
 class SPATIALGDK_API SpatialLoadBalanceEnforcer
 {
 public:
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialGDK::FSubView& InSubView,
-							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView,
+							   const SpatialGDK::FSubView& InSubView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 
 	static bool HandlesComponent(Worker_ComponentId ComponentId);
 
