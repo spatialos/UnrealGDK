@@ -150,9 +150,9 @@ public:
 	// Start Running a Step.
 	void StartStep(const int StepIndex);
 
-	// Terminate the current running step (called once per FlowController executing it) if you have no failing Soft Asserts.
-	// If you have failed Soft Asserts it will be ignored, making it easier for you to build tests without
-	// having to manually check that there's no failed Soft Asserts before finishing the step.
+	// Terminate the current running step (called once per FlowController executing it) if you have no failing Requires.
+	// If you have failed Requires it will be ignored, making it easier for you to build tests without
+	// having to manually check that there's no failed Requires before finishing the step.
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	virtual void FinishStep();
 

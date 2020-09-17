@@ -12,7 +12,7 @@ struct FSpatialFunctionalTestRequire
 	FString Msg;
 	bool bPassed;
 	FString ErrorMsg;
-	uint32 Order; // Used to be able to the messages in the same order they occurred at the end.
+	uint32 Order; // Used to be able to log the messages in the same order they occurred at the end.
 };
 
 /* This class handles all the Require functionality used by the ASpatialFunctionalTest. Because of the way networked tests

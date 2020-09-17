@@ -328,7 +328,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			GetWorld()->GetTimerManager().SetTimer(
 				FinishTestTimerHandle,
 				[this]() {
-					// If this timer trigger, then it means that something went wrong with one of the Workers. The
+					// If this timer triggers, then it means that something went wrong with one of the Workers. The
 					// expected behaviour is that the Super::FinishTest will be called from Tick(). Let's double check
 					// which failed to reply.
 					FString WorkersDidntAck;
