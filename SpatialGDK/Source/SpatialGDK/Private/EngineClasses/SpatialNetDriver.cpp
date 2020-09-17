@@ -42,6 +42,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "SpatialView/ViewDelta.h"
 #include "Utils/ComponentFactory.h"
@@ -467,8 +468,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
+	SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(SpatialConstants::LB_TAG_COMPONENT_ID,
+																				 [](Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+																					 return true;
+																				 },
+																				 {});
+
 	LoadBalanceEnforcer =
-		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView, StaticComponentView, VirtualWorkerTranslator.Get());
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
@@ -1775,9 +1782,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for (const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for (auto AclUpdate : LoadBalanceEnforcer->GetAndClearAclUpdates())
 			{
-				Sender->SetAclWriteAuthority(AclAssignmentRequest);
+				Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
 			}
 		}
 	}
