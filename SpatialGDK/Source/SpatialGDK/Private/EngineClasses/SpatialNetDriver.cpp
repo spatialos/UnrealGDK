@@ -1765,7 +1765,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			Dispatcher->ProcessOps(SpatialGDK::GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
+			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
@@ -1781,6 +1781,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
+			LoadBalanceEnforcer->Advance();
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
 			for (auto AclUpdate : LoadBalanceEnforcer->GetAndClearAclUpdates())
 			{
