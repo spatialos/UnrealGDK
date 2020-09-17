@@ -25,9 +25,13 @@ public:
 	TArray<SpatialGDK::EntityComponentUpdate> GetAndClearAclUpdates();
 
 	void MaybeCreateAclUpdate(const Worker_EntityId EntityId);
-	void CreateAclUpdate(const Worker_EntityId EntityId);
+
+	void TagQuery(SpatialGDK::Query& QueryToTag) const;
+	void TagEntity(TArray<FWorkerComponentData>& Components) const;
 
 private:
+	void CreateAclUpdate(const Worker_EntityId EntityId);
+
 	const PhysicalWorkerName WorkerId;
 	// todo: come back to removing
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
