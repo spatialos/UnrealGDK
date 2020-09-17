@@ -77,7 +77,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"), Category = "Grid Based Load Balancing")
 	float InterestBorder;
 
-// private:
+	// private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
