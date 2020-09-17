@@ -86,6 +86,16 @@ void SpatialLoadBalanceEnforcer::MaybeCreateAclUpdate(const Worker_EntityId Enti
 	}
 }
 
+void SpatialLoadBalanceEnforcer::TagQuery(Query& QueryToTag) const
+{
+	SubView->TagQuery(QueryToTag);
+}
+
+void SpatialLoadBalanceEnforcer::TagEntity(TArray<FWorkerComponentData>& Components) const
+{
+	SubView->TagEntity(Components);
+}
+
 void SpatialLoadBalanceEnforcer::CreateAclUpdate(const Worker_EntityId EntityId)
 {
 	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
