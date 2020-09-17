@@ -116,7 +116,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 		TagComponentId,
 		[CorrectValue, ValueComponentId](const Worker_EntityId&, const EntityViewElement& Element) {
 			const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ ValueComponentId });
-			if (GetValueFromSchemaComponentData(It->GetUnderlying()) == CorrectValue)
+			if (GetValueFromTestComponentData(It->GetUnderlying()) == CorrectValue)
 			{
 				return true;
 			}
