@@ -14,8 +14,10 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-SpatialEventTracerGuard EventTracerGuard;
-
+namespace
+{
+	SpatialEventTracerGuard EventTracerGuard;
+} // anonymous namespace
 
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
