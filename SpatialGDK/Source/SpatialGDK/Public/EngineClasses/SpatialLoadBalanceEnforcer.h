@@ -5,9 +5,9 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "SpatialCommonTypes.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-
-#include "CoreMinimal.h"
+#include "SpatialView/ComponentUpdate.h"
+#include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/SubView.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
@@ -16,39 +16,23 @@ class SpatialVirtualWorkerTranslator;
 class SPATIALGDK_API SpatialLoadBalanceEnforcer
 {
 public:
-	struct AclWriteAuthorityRequest
-	{
-		Worker_EntityId EntityId = 0;
-		PhysicalWorkerName OwningWorkerId;
-		WorkerRequirementSet ReadAcl;
-		WorkerRequirementSet ClientRequirementSet;
-		TArray<Worker_ComponentId> ComponentIds;
-	};
-
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView,
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialGDK::FSubView& InSubView,
 							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 
-	bool HandlesComponent(Worker_ComponentId ComponentId) const;
+	static bool HandlesComponent(Worker_ComponentId ComponentId);
 
-	void OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op);
-	void OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op);
-	void OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op);
-	void OnEntityRemoved(const Worker_RemoveEntityOp& Op);
-	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
+	void Advance();
+	TArray<SpatialGDK::EntityComponentUpdate> GetAndClearAclUpdates();
 
-	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
-	// Visible for testing
-	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
-
-	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
+	void MaybeCreateAclUpdate(const Worker_EntityId EntityId);
+	void CreateAclUpdate(const Worker_EntityId EntityId);
 
 private:
-	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
-	bool CanEnforce(Worker_EntityId EntityId) const;
-
 	const PhysicalWorkerName WorkerId;
+	// todo: come back to removing
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
+	const SpatialGDK::FSubView* SubView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;
+	TArray<SpatialGDK::EntityComponentUpdate> AclUpdates;
 };

@@ -180,6 +180,11 @@ const SpatialGDK::EntityView& USpatialWorkerConnection::GetView() const
 	return Coordinator->GetView();
 }
 
+SpatialGDK::ViewCoordinator& USpatialWorkerConnection::GetCoordinator() const
+{
+	return *Coordinator;
+}
+
 PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 {
 	check(Coordinator.IsValid());
