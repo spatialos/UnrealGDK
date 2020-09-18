@@ -93,9 +93,6 @@ void ASpatialFunctionalTest::BeginPlay()
 	{
 		SetupClientPlayerRegistrationFlow();
 	}
-
-
-
 }
 
 void ASpatialFunctionalTest::Tick(float DeltaSeconds)
@@ -375,7 +372,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 void ASpatialFunctionalTest::AddExpectedError(const FString& ExpectedErrorPattern, int NumOccurences /*= 1*/,
 											  bool bAllowPartialMatch /*= true*/)
 {
-	if(HasAuthority())
+	if (HasAuthority())
 	{
 		ExpectedErrors.Add({ ExpectedErrorPattern, NumOccurences, bAllowPartialMatch });
 	}
@@ -383,16 +380,16 @@ void ASpatialFunctionalTest::AddExpectedError(const FString& ExpectedErrorPatter
 
 void ASpatialFunctionalTest::SetupExpectedErrors()
 {
-	if(HasAuthority())
+	if (HasAuthority())
 	{
 		FAutomationTestBase* CurrentTest = FAutomationTestFramework::Get().GetCurrentTest();
 		check(CurrentTest != nullptr);
-		for(const auto& ExpectedError : ExpectedErrors)
+		for (const auto& ExpectedError : ExpectedErrors)
 		{
-			CurrentTest->AddExpectedError(ExpectedError.ErrorPattern,
-										  ExpectedError.bAllowPartialMatch ? EAutomationExpectedErrorFlags::Contains : EAutomationExpectedErrorFlags::Exact,
-										  ExpectedError.NumOccurences);
-			
+			CurrentTest->AddExpectedError(
+				ExpectedError.ErrorPattern,
+				ExpectedError.bAllowPartialMatch ? EAutomationExpectedErrorFlags::Contains : EAutomationExpectedErrorFlags::Exact,
+				ExpectedError.NumOccurences);
 		}
 	}
 }

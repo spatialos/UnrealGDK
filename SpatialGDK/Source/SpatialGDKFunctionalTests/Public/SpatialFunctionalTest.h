@@ -32,9 +32,10 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 
 class ULayeredLBStrategy;
 
-struct FSpatialFunctionalTestExpectedError {
-	FString ErrorPattern; // Log to try to match
-	int NumOccurences; // Number of times it has to occur, needs to be exact!
+struct FSpatialFunctionalTestExpectedError
+{
+	FString ErrorPattern;	 // Log to try to match
+	int NumOccurences;		 // Number of times it has to occur, needs to be exact!
 	bool bAllowPartialMatch; // If True it will compare with 'contains', if False it will compare with 'equal'.
 };
 
