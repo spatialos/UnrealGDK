@@ -46,6 +46,7 @@ protected:
 private:
 	FDateTime TestStartTime;
 
+	void StartTest();
 	void WaitForTestToEnd();
 	void GatherData();
 	void GatherDataFromFile(const FString& FilePath);

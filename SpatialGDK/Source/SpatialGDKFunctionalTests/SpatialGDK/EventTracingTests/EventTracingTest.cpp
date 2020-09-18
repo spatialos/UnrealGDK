@@ -26,7 +26,11 @@ void AEventTracingTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TestStartTime = FDateTime::Now();
+	AddStep(TEXT("StartTest"), WorkerDefinition, nullptr,
+		[this]() {
+			StartTest();
+		},
+		nullptr);
 
 	AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
 		WaitForTestToEnd();
@@ -43,6 +47,12 @@ void AEventTracingTest::BeginPlay()
 			FinishEventTraceTest();
 		},
 		nullptr);
+}
+
+void AEventTracingTest::StartTest()
+{
+	TestStartTime = FDateTime::Now();
+	FinishStep();
 }
 
 void AEventTracingTest::WaitForTestToEnd()
