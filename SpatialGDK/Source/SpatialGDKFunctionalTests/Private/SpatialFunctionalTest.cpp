@@ -216,7 +216,7 @@ void ASpatialFunctionalTest::StartTest()
 
 void ASpatialFunctionalTest::FinishStep()
 {
-	// We can only FinishStep if there are no SoftAssert fails.
+	// We can only FinishStep if there are no Require fails.
 	if (RequireHandler.HasFails())
 	{
 		return;
@@ -456,7 +456,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 {
 	if (HasAuthority())
 	{
-		// Log SoftAsserts from previous step.
+		// Log Requires from previous step.
 		RequireHandler.LogAndClearStepRequires();
 
 		CurrentStepIndex = StepIndex;

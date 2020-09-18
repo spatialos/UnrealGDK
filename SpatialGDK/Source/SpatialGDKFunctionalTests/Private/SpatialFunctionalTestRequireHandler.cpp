@@ -338,13 +338,13 @@ void SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, boo
 {
 	ensureMsgf(!Msg.IsEmpty(), TEXT("Requires cannot have an empty message"));
 
-	FSpatialFunctionalTestRequire SoftAssert;
-	SoftAssert.Msg = Msg;
-	SoftAssert.bPassed = bPassed;
-	SoftAssert.ErrorMsg = ErrorMsg;
-	SoftAssert.Order = NextOrder++;
+	FSpatialFunctionalTestRequire Require;
+	Require.Msg = Msg;
+	Require.bPassed = bPassed;
+	Require.ErrorMsg = ErrorMsg;
+	Require.Order = NextOrder++;
 
-	Requires.Add(Msg, SoftAssert);
+	Requires.Add(Msg, Require);
 }
 
 void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
