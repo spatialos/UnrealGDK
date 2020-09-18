@@ -275,7 +275,8 @@ public:
 	bool IsListening() const;
 
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
-	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object);
+	// NB : ObjectPtr might be a dangling pointer.
+	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* ObjectPtr, const TWeakObjectPtr<UObject>& ObjectWeakPtr);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 

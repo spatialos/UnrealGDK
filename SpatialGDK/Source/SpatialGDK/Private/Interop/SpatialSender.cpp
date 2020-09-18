@@ -220,7 +220,10 @@ void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, c
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			ComponentsToRemove.Add(SubobjectComponentId);
+			if (StaticComponentView->HasComponent(EntityId, SubobjectComponentId))
+			{
+				ComponentsToRemove.Add(SubobjectComponentId);
+			}
 		}
 	}
 
