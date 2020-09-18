@@ -35,6 +35,7 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bReadyToRegisterWithTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bIsReadyToRunTest);
+	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bHasAckFinishedTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, OwningTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
@@ -94,6 +95,9 @@ void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementatio
 
 void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(int StepIndex)
 {
+	// Since we're starting a step, we mark as not Ack that we've finished the test. This is needed
+	// for the cases when we run multiple times the same test without a map reload.
+	bHasAckFinishedTest = false;
 	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		StartStepInternal(StepIndex);
@@ -161,7 +165,7 @@ void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResul
 	}
 }
 
-const FString ASpatialFunctionalTestFlowController::GetDisplayName()
+const FString ASpatialFunctionalTestFlowController::GetDisplayName() const
 {
 	return FString::Printf(TEXT("[%s:%d]"),
 						   (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server ? TEXT("Server") : TEXT("Client")),
@@ -171,6 +175,14 @@ const FString ASpatialFunctionalTestFlowController::GetDisplayName()
 void ASpatialFunctionalTestFlowController::OnTestFinished()
 {
 	StopStepInternal();
+	if (HasAuthority())
+	{
+		bHasAckFinishedTest = true;
+	}
+	else
+	{
+		ServerAckFinishedTest();
+	}
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
@@ -200,6 +212,11 @@ void ASpatialFunctionalTestFlowController::ServerNotifyFinishTest_Implementation
 void ASpatialFunctionalTestFlowController::ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message)
 {
 	OwningTest->CrossServerFinishTest(TestResult, Message);
+}
+
+void ASpatialFunctionalTestFlowController::ServerAckFinishedTest_Implementation()
+{
+	bHasAckFinishedTest = true;
 }
 
 void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation()
