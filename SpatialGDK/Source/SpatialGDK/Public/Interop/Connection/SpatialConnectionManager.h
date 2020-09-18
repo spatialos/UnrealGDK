@@ -81,7 +81,6 @@ private:
 	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 private:
-
 	void CreateEventTracer(const FString& WorkerId);
 
 	UPROPERTY()
