@@ -97,19 +97,18 @@ USER_ID=$(id -u)
 # 3. PR_URL
 # 4. GITHUB_ORG
 
-# Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version
+# Run the C Sharp Release Tool for each candidate we want to prepare for the full release.
+prepfullrelease "UnrealGDK"               "${GDK_VERSION}-rc" "spatialos"
+prepfullrelease "UnrealGDKExampleProject" "${GDK_VERSION}-rc" "spatialos"
+prepfullrelease "UnrealGDKTestGyms"       "${GDK_VERSION}-rc" "spatialos"
+prepfullrelease "UnrealGDKEngineNetTest"  "${GDK_VERSION}-rc" "improbable"
+prepfullrelease "TestGymBuildKite"        "${GDK_VERSION}-rc" "improbable"
+
 for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
 do
    :
    # Once per ENGINE_VERSION do:
    prepfullrelease "UnrealEngine" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "$(buildkite-agent meta-data get UnrealEngine-${ENGINE_VERSION}-pr-url)" \
     "improbableio"
 done
-
-prepfullrelease "UnrealGDK"               "${GDK_VERSION}-rc" "spatialos"
-prepfullrelease "UnrealGDKExampleProject" "${GDK_VERSION}-rc" "spatialos"
-prepfullrelease "UnrealGDKTestGyms"       "${GDK_VERSION}-rc" "spatialos"
-prepfullrelease "UnrealGDKEngineNetTest"  "${GDK_VERSION}-rc" "improbable"
-prepfullrelease "TestGymBuildKite"        "${GDK_VERSION}-rc" "improbable"
