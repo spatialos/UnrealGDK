@@ -96,6 +96,19 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 		return false;
 	}
 
+	if (Other.HasDisconnected())
+	{
+		if (ConnectionStatusCode != Other.GetConnectionStatus())
+		{
+			return false;
+		}
+
+		if (ConnectionStatusMessage != Other.GetDisconnectReason())
+		{
+			return false;
+		}
+	}
+
 	SortEntityDeltas();
 	TArray<uint32> DeltaKeys;
 	EntityDeltas.GetKeys(DeltaKeys);
