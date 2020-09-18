@@ -71,19 +71,22 @@ void USpatialNetDriverDebugContext::Cleanup()
 
 void USpatialNetDriverDebugContext::Reset()
 {
-	TArray<Worker_EntityId_Key> EntityIds;
-	NetDriver->StaticComponentView->GetEntityIds(EntityIds);
-
-	for (auto Entity : EntityIds)
+	for (const auto& Entry : NetDriver->Connection->GetView())
 	{
-		if (NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::GDK_DEBUG_COMPONENT_ID))
+		const SpatialGDK::EntityViewElement& ViewElement = Entry.Value;
+		if (ViewElement.Authority.Contains(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+			&& ViewElement.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& Data) {
+				   return Data.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+			   }))
 		{
-			NetDriver->Sender->SendRemoveComponents(Entity, { SpatialConstants::GDK_DEBUG_COMPONENT_ID });
+			NetDriver->Sender->SendRemoveComponents(Entry.Key, { SpatialConstants::GDK_DEBUG_COMPONENT_ID });
 		}
 	}
+
 	SemanticInterest.Empty();
 	SemanticDelegations.Empty();
 	CachedInterestSet.Empty();
+	ActorDebugInfo.Empty();
 
 	NetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
 }
