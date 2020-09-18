@@ -41,8 +41,8 @@ namespace ReleaseTool
             [Value(0, MetaName = "version", HelpText = "The version that is being released.")]
             public string Version { get; set; }
 
-            [Option('u', "pull-request-url", HelpText = "The link to the release candidate branch to merge.",
-                Required = true)]
+            [Option('u', "pull-request-url", Default = "", HelpText = "The link to the release candidate branch to merge.",
+                Required = false)]
             public string PullRequestUrl { get; set; }
 
             [Option("source-branch", HelpText = "The source branch name from which we are cutting the candidate.", Required = true)]
@@ -53,6 +53,9 @@ namespace ReleaseTool
 
             [Option("release-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
             public string ReleaseBranch { get; set; }
+
+            [Option("git-repository-name", HelpText = "The Git repository that we are targeting.", Required = true)]
+            public string GitRepoName { get; set; }
 
             [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
             public string GithubOrgName { get; set; }
@@ -83,10 +86,43 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
-            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
+            var gitRepoName = options.GitRepoName;
             var gitHubClient = new GitHubClient(options);
-            var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
+            var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
+
+            if (options.PullRequestUrl == "")
+            {
+                Logger.Info("The passed PullRequestUrl was empty or missing. Trying to release without merging a PR.");
+
+                using (var gitClient = GitClient.FromRemote(repoUrl))
+                {
+                    // Create the release branch, since if there is no PR, the release branch did not exist previously
+                    gitClient.Fetch();
+                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
+                    gitClient.ForcePush(options.ReleaseBranch);
+                    gitClient.CheckoutLocalBranch(options.ReleaseBranch);
+                    var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, gitRepoName);
+
+                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
+                        string.Format(releaseAnnotationTemplate, release.HtmlUrl, gitRepoName), true);
+
+                    Logger.Info("Release Successful!");
+                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                    Logger.Info("Draft release: {0}", release.HtmlUrl);
+
+                    CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, gitRepoName, gitClient);
+                }
+
+                return 0;
+            }
+
+            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
+            if (gitRepoName != repoName)
+            {
+                Logger.Error($"Repository names given do not match. Repository name given: {gitRepoName}, PR URL repository name: {repoName}.");
+                return 1;
+            }
 
             // Check if the PR has been merged already.
             // If it has, log the PR URL and move on.

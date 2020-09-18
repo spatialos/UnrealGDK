@@ -153,9 +153,9 @@ namespace ReleaseTool
                     // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
                     if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
-                        gitClient.Fetch();
-                        gitClient.CheckoutRemoteBranch(options.SourceBranch);
-                        gitClient.ForcePush(options.ReleaseBranch);
+                        Logger.Info("The release branch {0} does not exist! Going ahead with the PR-less release process.", options.ReleaseBranch);
+                        Logger.Info("Release candidate head hash: {0}", gitClient.GetHeadCommit().Sha);
+                        return 0;
                     }
 
                     // 6. Opens a PR for merging the RC branch into the release branch.

@@ -7,8 +7,7 @@
 prepfullrelease () {
   local REPO_NAME="${1}"
   local CANDIDATE_BRANCH="${2}"
-  local PR_URL="${3}"
-  local GITHUB_ORG="${4}"
+  local GITHUB_ORG="${3}"
 
   echo "--- Preparing ${REPO_NAME} for the full release!"
 
@@ -21,7 +20,7 @@ prepfullrelease () {
         prepfullrelease "${GDK_VERSION}" \
         --candidate-branch="${CANDIDATE_BRANCH}" \
         --github-key-file="/var/github/github_token" \
-        --pull-request-url="${PR_URL}" \
+        --git-repository-name="${REPO_NAME}" \
         --github-organization="${GITHUB_ORG}"
 }
 
@@ -109,8 +108,8 @@ do
     "improbableio"
 done
 
-prepfullrelease "UnrealGDK"               "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"
-prepfullrelease "UnrealGDKExampleProject" "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDKExampleProject-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)" "spatialos"
-prepfullrelease "UnrealGDKTestGyms"       "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDKTestGyms-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"       "spatialos"
-prepfullrelease "UnrealGDKEngineNetTest"  "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"  "improbable"
-prepfullrelease "TestGymBuildKite"        "${GDK_VERSION}-rc" "$(buildkite-agent meta-data get TestGymBuildKite-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"        "improbable"
+prepfullrelease "UnrealGDK"               "${GDK_VERSION}-rc" "spatialos"
+prepfullrelease "UnrealGDKExampleProject" "${GDK_VERSION}-rc" "spatialos"
+prepfullrelease "UnrealGDKTestGyms"       "${GDK_VERSION}-rc" "spatialos"
+prepfullrelease "UnrealGDKEngineNetTest"  "${GDK_VERSION}-rc" "improbable"
+prepfullrelease "TestGymBuildKite"        "${GDK_VERSION}-rc" "improbable"

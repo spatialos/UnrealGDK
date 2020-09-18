@@ -27,6 +27,7 @@ release () {
         --release-branch="${RELEASE_BRANCH}" \
         --github-key-file="/var/github/github_token" \
         --pull-request-url="${PR_URL}" \
+        --git-repository-name="${REPO_NAME}" \
         --github-organization="${GITHUB_ORG}" \
         --engine-versions="${ENGINE_VERSIONS_LOCAL_VAR}"
 }
