@@ -14,23 +14,18 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-namespace
-{
-	SpatialEventTracerGuard EventTracerGuard;
-} // anonymous namespace
-
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
-	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
-
-	SpatialEventTracer* EventTracer = EventTracerGuard.EventTracer;
-	SpatialEventTracer* UserDataEventTracer = static_cast<SpatialEventTracer*>(UserData);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled() || EventTracer != UserDataEventTracer)
+	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
+	if (EventTracer == nullptr || !EventTracer->IsEnabled())
 	{
 		return;
 	}
 
-	if (!ensure(EventTracer->Stream.Get() != nullptr))
+	FScopeLock ScopeLock(&EventTracer->CriticalSection);
+
+	Io_Stream* Stream = EventTracer->Stream.Get();
+	if (!ensure(Stream != nullptr))
 	{
 		return;
 	}
@@ -39,7 +34,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
 	{
 		EventTracer->BytesWrittenToStream += ItemSize;
-		int Code = Trace_SerializeItemToStream(EventTracer->Stream.Get(), Item, ItemSize);
+		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
 		if (Code != 1)
 		{
 			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
@@ -194,10 +189,9 @@ bool SpatialEventTracer::IsEnabled() const
 
 void SpatialEventTracer::Enable(const FString& FileName)
 {
-	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
+	FScopeLock ScopeLock(&CriticalSection);
 
 	Trace_EventTracer_Parameters parameters = {};
-	EventTracerGuard.EventTracer = this;
 	parameters.user_data = this;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&parameters);
@@ -228,14 +222,13 @@ void SpatialEventTracer::Disable()
 {
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 
-	FScopeLock ScopeLock(&EventTracerGuard.CriticalSection);
-	EventTracerGuard.EventTracer = nullptr;
+	FScopeLock ScopeLock(&CriticalSection);
 
 	Trace_EventTracer_Disable(EventTracer);
+	Trace_EventTracer_Destroy(EventTracer);
+
 	bEnabled = false;
 	Stream = nullptr;
-
-	Trace_EventTracer_Destroy(EventTracer);
 }
 
 void SpatialEventTracer::ComponentAdd(const Worker_Op& Op)
