@@ -26,15 +26,15 @@ void AEventTracingTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddStep(TEXT("StartTest"), WorkerDefinition, nullptr,
+	AddStep(
+		TEXT("StartTest"), WorkerDefinition, nullptr,
 		[this]() {
 			StartTest();
 		},
 		nullptr);
-
 	AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
-		WaitForTestToEnd();
-	});
+			WaitForTestToEnd();
+		});
 	AddStep(
 		TEXT("GatherData"), WorkerDefinition, nullptr,
 		[this]() {
