@@ -32,6 +32,12 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 
 class ULayeredLBStrategy;
 
+struct FSpatialFunctionalTestExpectedError {
+	FString ErrorPattern; // Log to try to match
+	int NumOccurences; // Number of times it has to occur, needs to be exact!
+	bool bAllowPartialMatch; // If True it will compare with 'contains', if False it will compare with 'equal'.
+};
+
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
@@ -79,6 +85,11 @@ public:
 
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
+
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip = "Allows you to add expected error / warning log patterns so that the test doesn't fail in these situations. However, keep in mind that you need to set the exact number of occurences it should have, and the test will fail if they don't match!\n\nNote that if Allow Partial Match is 'False', the message needs to match exactly and if 'True' it will use a 'contains' comparison."))
+	// clang-format on
+	void AddExpectedError(const FString& ExpectedErrorPattern, int NumOccurences = 1, bool bAllowPartialMatch = true);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -372,6 +383,12 @@ private:
 	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
+
+	// Holds all expected errors for this test. The test will fail if the expected number of occurences don't match.
+	TArray<FSpatialFunctionalTestExpectedError> ExpectedErrors;
+
+	// At the start of the test will pass the messages to the FAutomationTestBase controlling this test.
+	void SetupExpectedErrors();
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
