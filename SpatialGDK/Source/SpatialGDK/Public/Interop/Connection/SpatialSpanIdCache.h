@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/EntityRPCType.h"
 #include "Misc/DateTime.h"
 #include "SpatialView/EntityComponentId.h"
 
@@ -45,7 +46,7 @@ private:
 class SpatialRPCSpanIdCache : public SpatialSpanIdCache
 {
 public:
-	uint64 LastSeenRPCId;
+	TMap<EntityRPCType, uint64> LastSeenRPCIds;
 };
 
 class SpatialWorkerOpSpanIdCache : public SpatialSpanIdCache

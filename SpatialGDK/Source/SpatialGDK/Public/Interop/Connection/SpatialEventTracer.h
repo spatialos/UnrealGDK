@@ -41,6 +41,8 @@ public:
 	SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
+	FCriticalSection CriticalSection;
+
 	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
@@ -94,12 +96,6 @@ private:
 
 	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
 									   const TArray<worker::c::Trace_SpanId>& Causes);
-};
-
-struct SpatialEventTracerGuard
-{
-	FCriticalSection CriticalSection;
-	SpatialEventTracer* EventTracer;
 };
 
 struct SpatialScopedActiveSpanId
