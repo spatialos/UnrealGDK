@@ -39,7 +39,15 @@ bool ComponentData::ApplyUpdate(const ComponentUpdate& Update)
 	check(Update.GetComponentId() == GetComponentId());
 	check(Update.GetUnderlying() != nullptr);
 
-	return Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
+	bool bSuccess = Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
+
+	if (!bSuccess)
+	{
+		FUTF8ToTCHAR conv(Schema_GetError(Schema_GetComponentDataFields(Data.Get())));
+		UE_LOG(LogTemp, Error, TEXT("ApplyUpdate : %s"), conv.Get());
+	}
+
+	return bSuccess;
 }
 
 Schema_Object* ComponentData::GetFields() const

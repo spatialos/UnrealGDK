@@ -720,27 +720,7 @@ Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComp
 	Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
-<<<<<<< HEAD
-<<<<<<< HEAD
-		if (!LastSeenRPCIds.Contains(EntityTypePair))
-		{
-			UE_LOG(LogSpatialRPCService, Warning,
-				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: %s"),
-				   EntityId, *SpatialConstants::RPCTypeToString(Type));
-			return;
-		}
-		LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
-=======
-		Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
-		if (ComponentUpdatePtr == nullptr)
-		{
-			ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Schema_CreateComponentUpdate());
-		}
-		return *ComponentUpdatePtr;
->>>>>>> Cross Server RPC Spike
-=======
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Schema_CreateComponentUpdate());
->>>>>>> Missing stuff
 	}
 	return *ComponentUpdatePtr;
 }

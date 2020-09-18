@@ -569,6 +569,10 @@ void USpatialSender::FlushRPCService()
 				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending ACK from %llu for entity %llu, RPCId : %llu"), NetDriver->WorkerEntityId,
 					   Update.EntityId, Comp->RPCAck);
 			}
+			if (!StaticComponentView->HasComponent(Update.EntityId, Update.Update.component_id))
+			{
+				continue;
+			}
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 			if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 			{

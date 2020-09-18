@@ -2189,7 +2189,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
 		ERPCType RPCType = PendingRPCParams.Type;
 
-		if (Actor->Role == ROLE_SimulatedProxy && (RPCType == ERPCType::ServerReliable || RPCType == ERPCType::ServerUnreliable))
+		if (Actor->Role == ROLE_SimulatedProxy
+			&& (RPCType == ERPCType::ServerReliable || RPCType == ERPCType::ServerUnreliable || RPCType == ERPCType::CrossServerSender))
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
