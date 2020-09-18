@@ -29,6 +29,8 @@ namespace ReleaseTool
         private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
             "in the repo `{1}` from `{2}` into `{3}`. " +
             "Your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline and resume the release.\n";
+        private const string branchAnnotationTemplate = "* Successfully created a [release candidate branch]({0}) " +
+            "in the repo `{1}`, and it will evantually become `{2}` (no pull request as the specified release branch did not exist for this repository).";
 
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
@@ -155,6 +157,9 @@ namespace ReleaseTool
                     {
                         Logger.Info("The release branch {0} does not exist! Going ahead with the PR-less release process.", options.ReleaseBranch);
                         Logger.Info("Release candidate head hash: {0}", gitClient.GetHeadCommit().Sha);
+                        var branchAnnotation = string.Format(branchAnnotationTemplate,
+                            $"https://github.com/{options.GithubOrgName}/{options.GitRepoName}/tree/{options.CandidateBranch}", options.GitRepoName, options.ReleaseBranch);
+                        BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", branchAnnotationTemplate, true);
                         return 0;
                     }
 

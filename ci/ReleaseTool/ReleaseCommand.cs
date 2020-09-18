@@ -99,6 +99,11 @@ namespace ReleaseTool
                 {
                     // Create the release branch, since if there is no PR, the release branch did not exist previously
                     gitClient.Fetch();
+                    if (gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
+                    {
+                        Logger.Error("The PullRequestUrl was empty or missing, but the release branch already existed, so a PR should have been necessary. This is an error.");
+                        return 1;
+                    }
                     gitClient.CheckoutRemoteBranch(options.SourceBranch);
                     gitClient.ForcePush(options.ReleaseBranch);
                     gitClient.CheckoutLocalBranch(options.ReleaseBranch);
