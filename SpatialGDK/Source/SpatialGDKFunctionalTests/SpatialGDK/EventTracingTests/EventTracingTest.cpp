@@ -33,8 +33,8 @@ void AEventTracingTest::BeginPlay()
 		},
 		nullptr);
 	AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
-			WaitForTestToEnd();
-		});
+		WaitForTestToEnd();
+	});
 	AddStep(
 		TEXT("GatherData"), WorkerDefinition, nullptr,
 		[this]() {
