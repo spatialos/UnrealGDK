@@ -210,19 +210,14 @@ public:
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Sets a Debug Tag to be delegated to a specific Server Worker, forcing the Authority to belong to it preventing the Load-Balancing Strategy to change it."))
 	// clang-format on
-	void DelegateTagToWorker(FName Tag, int32 WorkerId);
+	void AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId = 1);
 
-	UFUNCTION(
-		BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Removed the forced authority delegation. All server workers must declare the same delegation at the same time."))
-	void RemoveTagDelegation(FName Tag);
-
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
-	void ClearTagDelegationAndInterest();
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears delegation of a Debug Tag. If there's no delegation set, the Load-Balancing Strategy will decide which Server Worker should have Authority."))
+	// clang-format on
+	void AddStepClearTagDelegation(FName Tag);
 
 	// # Require Functions. Requires mimic the assert behaviour but without the immediate failure. Since when you're
 	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
@@ -330,6 +325,18 @@ protected:
 
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
+
+	// Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare
+	// the same delegation at the same time, so we highly recommend that you use the AddStepSetTagDelegation() instead.
+	void SetTagDelegation(FName Tag, int32 ServerWorkerId);
+
+	// Removed the forced authority delegation. All server workers must declare the same delegation at the same time,
+	// so we highly recommend that you use the AddStepClearTagDelegation() instead.
+	void ClearTagDelegation(FName Tag);
+
+	// Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer. Whenever a test
+	// finishes this will be called automatically.
+	void ClearTagDelegationAndInterest();
 
 	// # Built-in StepDefinitions for convenience
 
