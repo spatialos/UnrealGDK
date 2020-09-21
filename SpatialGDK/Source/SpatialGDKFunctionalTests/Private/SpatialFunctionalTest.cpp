@@ -189,7 +189,7 @@ void ASpatialFunctionalTest::PrepareTest()
 
 	Super::PrepareTest();
 
-	if(HasAuthority())
+	if (HasAuthority())
 	{
 		bPreparedTest = true;
 	}
@@ -618,7 +618,7 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 
 void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 {
-	if(bPreparedTest && !HasAuthority())
+	if (bPreparedTest && !HasAuthority())
 	{
 		PrepareTest();
 	}
