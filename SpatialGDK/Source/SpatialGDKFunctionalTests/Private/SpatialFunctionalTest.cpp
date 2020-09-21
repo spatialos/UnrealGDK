@@ -48,6 +48,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, bReadyToSpawnServerControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
+	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -182,6 +183,18 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 	}
 }
 
+void ASpatialFunctionalTest::PrepareTest()
+{
+	StepDefinitions.Empty();
+
+	Super::PrepareTest();
+
+	if(HasAuthority())
+	{
+		bPreparedTest = true;
+	}
+}
+
 bool ASpatialFunctionalTest::IsReady_Implementation()
 {
 	int NumRegisteredClients = 0;
@@ -277,6 +290,8 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
+			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
+
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
 				   *UEnum::GetValueAsString(TestResult), *Message);
 
@@ -598,6 +613,14 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 		}
 
 		DeleteActorsRegisteredForAutoDestroy();
+	}
+}
+
+void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
+{
+	if(bPreparedTest && !HasAuthority())
+	{
+		PrepareTest();
 	}
 }
 
