@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.985.0`] - 2020-09-21
+
 ### Breaking changes:
 - The condition for sending Spatial position updates has been changed, the two variables `PositionUpdateFrequency` and `PositionDistanceThreshold` have now been removed from the GDK settings. To update your project:
   1. Set the value of `PositionUpdateLowerThresholdCentimeters` to the value of `PositionDistanceThreshold` and  the value of `PositionUpdateLowerThresholdSeconds` to 60*(1/`PositionUpdateFrequency`). This will ensure that Actors send Spatial position updates as often as they did before this change.
