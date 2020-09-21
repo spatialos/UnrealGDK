@@ -254,16 +254,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			if (It.Value.SpanIds.Num() > 1)
-			{
-				UpdateToSend.SpanId = EventTracer->TraceEvent(
-					FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
-			}
-			else if (It.Value.SpanIds.Num() == 1)
-			{
-				// No need to chain causes here
-				UpdateToSend.SpanId = It.Value.SpanIds[0];
-			}
+			UpdateToSend.SpanId = EventTracer->TraceEvent(
+				FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
 		}
 
 #if TRACE_LIB_ACTIVE
@@ -492,7 +484,7 @@ void SpatialRPCService::UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Typ
 		}
 	}
 
-	SpanIdCache.LastSeenRPCIds.FindOrAdd(EntityTypePair) = Buffer.LastSentRPCId;
+	SpanIdCache.LastSeenRPCIds.Add(EntityTypePair, Buffer.LastSentRPCId);
 }
 
 void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type)
@@ -587,8 +579,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 uint64 SpatialRPCService::GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const
 {
 	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
-	const uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
-	if (LastAckedRPCId != nullptr)
+	if (const uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair))
 	{
 		return *LastAckedRPCId;
 	}
@@ -674,9 +665,7 @@ Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComp
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
-		PendingUpdate Update;
-		Update.Update = Schema_CreateComponentUpdate();
-		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Update);
+		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
 	if (SpanId != nullptr)
 	{
