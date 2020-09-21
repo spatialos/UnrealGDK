@@ -1180,11 +1180,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 						FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
 						if (SubobjectRef.IsValid())
 						{
-							//check if it is a dynamic subobject
-							if (ActorClassInfo.SubobjectInfo.Contains(SubobjectRef.Offset))
-							{
 								PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
-							}
 						}
 					}
 				}
