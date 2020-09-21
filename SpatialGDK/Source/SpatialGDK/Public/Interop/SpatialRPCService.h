@@ -118,7 +118,10 @@ private:
 
 	struct PendingUpdate
 	{
-		PendingUpdate(Schema_ComponentUpdate* InUpdate) : Update(InUpdate) {}
+		PendingUpdate(Schema_ComponentUpdate* InUpdate)
+			: Update(InUpdate)
+		{
+		}
 
 		Schema_ComponentUpdate* Update;
 		TArray<worker::c::Trace_SpanId> SpanIds;

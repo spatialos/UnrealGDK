@@ -2029,7 +2029,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 #endif
 
 	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-	EventTracer->TraceEvent(FEventCommandRequest("COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId),
+	EventTracer->TraceEvent(FEventCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId),
 							{ Op.span_id });
 }
 

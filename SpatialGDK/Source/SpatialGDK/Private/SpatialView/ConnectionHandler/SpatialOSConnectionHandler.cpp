@@ -141,6 +141,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 
 	for (auto& Request : Messages->EntityCommandRequests)
 	{
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Request.SpanId);
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		Worker_CommandRequest r = { nullptr, Request.Request.GetComponentId(), Request.Request.GetCommandIndex(),
 									MoveTemp(Request.Request).Release(), nullptr };
