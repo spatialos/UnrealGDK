@@ -1169,6 +1169,26 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking()
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
+		const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+				for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+				{
+					FNetworkGUID SubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
+					if (SubobjectNetGUID.IsValid())
+					{
+						FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
+						if (SubobjectRef.IsValid())
+						{
+							//check if it is a dynamic subobject
+							if (ActorClassInfo.SubobjectInfo.Contains(SubobjectRef.Offset))
+							{
+								PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
+							}
+						}
+					}
+				}
+			}
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
 		// to Actor Channel mapping for the DestroyActor to function correctly
 		PackageMap->RemoveEntityActor(EntityId);
@@ -1368,7 +1388,23 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 				   EntityId, Data.component_id, *Actor->GetPathName());
 			return;
 		}
-
+					
+		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectObjectRef(TargetObjectRef))
+		{
+			for (UObject* DynamicSubobject : Channel.CreateSubObjects)
+			{
+				FNetworkGUID DynamicSubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
+				if (DynamicSubobjectNetGUID.IsValid())
+				{
+					if (*SubobjectNetGUID == DynamicSubobjectNetGUID)
+					{
+						ApplyComponentData(Channel, *DynamicSubobject, Data);
+						return;
+					}
+				}
+			}
+		}
+				
 		// If we can't find this subobject, it's a dynamically attached object. Create it now.
 		TargetObject = NewObject<UObject>(Actor, ClassInfoManager->GetClassByComponentId(Data.component_id));
 
