@@ -104,7 +104,7 @@ namespace ReleaseTool
                         Logger.Error("The PullRequestUrl was empty or missing, but the release branch already existed, so a PR should have been necessary. This is an error.");
                         return 1;
                     }
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
+                    gitClient.CheckoutRemoteBranch(options.CandidateBranch);
                     gitClient.ForcePush(options.ReleaseBranch);
                     gitClient.Fetch();
                     gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
