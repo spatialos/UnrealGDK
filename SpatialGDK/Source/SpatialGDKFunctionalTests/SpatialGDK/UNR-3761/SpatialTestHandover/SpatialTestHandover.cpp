@@ -43,9 +43,9 @@ ASpatialTestHandover::ASpatialTestHandover()
 	TestLocations.Add(FVector(-500.0f, 500.0f, 50.0f));
 }
 
-void ASpatialTestHandover::BeginPlay()
+void ASpatialTestHandover::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// Step Definition to move the HandoverCube to the corresponding test location.
 	FSpatialFunctionalTestStepDefinition MoveCubeStepDefinition;

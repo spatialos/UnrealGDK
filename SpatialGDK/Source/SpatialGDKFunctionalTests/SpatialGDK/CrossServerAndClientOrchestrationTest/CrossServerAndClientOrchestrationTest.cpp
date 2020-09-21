@@ -26,9 +26,9 @@ ACrossServerAndClientOrchestrationTest::ACrossServerAndClientOrchestrationTest()
 	FlowControllerActorClass = ACrossServerAndClientOrchestrationFlowController::StaticClass();
 }
 
-void ACrossServerAndClientOrchestrationTest::BeginPlay()
+void ACrossServerAndClientOrchestrationTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	ClientWorkerSetValues.SetNum(GetNumRequiredClients());
 	ServerWorkerSetValues.SetNum(GetNumExpectedServers());

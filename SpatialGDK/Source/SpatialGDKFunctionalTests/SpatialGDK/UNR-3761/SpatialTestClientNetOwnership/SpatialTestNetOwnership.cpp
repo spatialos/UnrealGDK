@@ -41,9 +41,9 @@ ASpatialTestNetOwnership::ASpatialTestNetOwnership()
 	Description = TEXT("Test Net Ownership");
 }
 
-void ASpatialTestNetOwnership::BeginPlay()
+void ASpatialTestNetOwnership::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// Step definition for Client 1 to send a Server RPC
 	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;

@@ -17,7 +17,7 @@ class ASpatialTestSingleServerDynamicComponents : public ASpatialFunctionalTest
 public:
 	ASpatialTestSingleServerDynamicComponents();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
