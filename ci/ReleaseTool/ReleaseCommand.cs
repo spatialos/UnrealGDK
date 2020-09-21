@@ -101,23 +101,18 @@ namespace ReleaseTool
                     gitClient.Fetch();
                     if (gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
-                        Logger.Error("The PullRequestUrl was empty or missing, but the release branch already existed, so a PR should have been necessary. This is an error.");
-                        return 1;
+                        Logger.Error("The PullRequestUrl was empty or missing, but the release branch already exists, so presuming this step already ran.");
                     }
-                    gitClient.CheckoutRemoteBranch(options.CandidateBranch);
-                    gitClient.ForcePush(options.ReleaseBranch);
+                    else
+                    {
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
+                        gitClient.ForcePush(options.ReleaseBranch);
+                    }
+
                     gitClient.Fetch();
                     gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                    var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, gitRepoName);
 
-                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
-                        string.Format(releaseAnnotationTemplate, release.HtmlUrl, gitRepoName), true);
-
-                    Logger.Info("Release Successful!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
-                    Logger.Info("Draft release: {0}", release.HtmlUrl);
-
-                    CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, gitRepoName, gitClient);
+                    FinalizeRelease(gitHubClient, gitClient, gitHubRepo, gitRepoName, repoUrl);
                 }
 
                 return 0;
@@ -219,19 +214,12 @@ namespace ReleaseTool
 
                 Logger.Info($"{options.PullRequestUrl} had been merged.");
 
-                // This uploads the commit hashes of the merge into release.
-                // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
-                BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
-
-                // TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
-                // Delete candidate branch.
-                //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
-
                 using (var gitClient = GitClient.FromRemote(repoUrl))
                 {
                     // Create GitHub release in the repo
                     gitClient.Fetch();
                     gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                    FinalizeRelease(gitHubClient, gitClient, gitHubRepo, gitRepoName, repoUrl);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
@@ -246,11 +234,33 @@ namespace ReleaseTool
             }
             catch (Exception e)
             {
-                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e.Message);
+                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {e.Message}");
                 return 1;
             }
 
             return 0;
+        }
+
+        private void FinalizeRelease(GitHubClient gitHubClient, GitClient gitClient, Repository gitHubRepo, string gitRepoName, string repoUrl)
+        {
+            // This uploads the commit hashes of the merge into release.
+            // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
+            BuildkiteAgent.SetMetaData(options.ReleaseBranch, gitClient.GetHeadCommit().Sha);
+
+            // TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
+            // Delete candidate branch.
+            //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
+
+            var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, gitRepoName);
+
+            BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
+                string.Format(releaseAnnotationTemplate, release.HtmlUrl, gitRepoName), true);
+
+            Logger.Info("Release Successful!");
+            Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+            Logger.Info("Draft release: {0}", release.HtmlUrl);
+
+            CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, gitRepoName, gitClient);
         }
 
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
