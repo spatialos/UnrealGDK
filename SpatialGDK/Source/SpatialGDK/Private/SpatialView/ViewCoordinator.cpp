@@ -88,7 +88,8 @@ Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOpt
 }
 
 Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
-														   TOptional<uint32> TimeoutMillis, const TOptional<worker::c::Trace_SpanId>& SpanId)
+														   TOptional<uint32> TimeoutMillis,
+														   const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendEntityCommandRequest({ EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis, SpanId });
 	return NextRequestId++;

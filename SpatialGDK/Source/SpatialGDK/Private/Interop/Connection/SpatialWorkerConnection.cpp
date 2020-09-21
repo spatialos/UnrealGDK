@@ -117,14 +117,13 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWo
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-	const TOptional<worker::c::Trace_SpanId>& SpanId)
+															  const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendEntityCommandRequest(
-		EntityId, SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type), Request->component_id,
-											 Request->command_index),
-		{},
-		SpanId);
+	return Coordinator->SendEntityCommandRequest(EntityId,
+												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
+																			Request->component_id, Request->command_index),
+												 {}, SpanId);
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,

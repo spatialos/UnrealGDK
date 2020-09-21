@@ -50,7 +50,8 @@ DECLARE_CYCLE_STAT(TEXT("Sender FlushRetryRPCs"), STAT_SpatialSenderFlushRetryRP
 DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
-										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<worker::c::Trace_SpanId>& InSpanId)
+										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
+										   const TOptional<worker::c::Trace_SpanId>& InSpanId)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
@@ -758,8 +759,8 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 			   EntityId, CommandRequest.component_id, *Function->GetName());
-		Receiver->AddPendingReliableRPC(
-			RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0, SpanId));
+		Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index,
+																					Payload.PayloadData, 0, SpanId));
 	}
 	else
 	{
@@ -927,8 +928,8 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	}
 
 	Worker_CommandRequest CommandRequest = CreateRetryRPCCommandRequest(*RetryRPC, TargetObjectRef.Offset);
-	Worker_RequestId RequestId =
-		Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID, NewSpanId);
+	Worker_RequestId RequestId = Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest,
+																SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID, NewSpanId);
 
 	// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 	RetryRPC->Attempts++;
