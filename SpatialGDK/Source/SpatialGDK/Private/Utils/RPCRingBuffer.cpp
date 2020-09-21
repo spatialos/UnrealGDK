@@ -4,8 +4,6 @@
 
 #include "SpatialGDKSettings.h"
 
-#pragma optimize("", off)
-
 namespace SpatialGDK
 {
 RPCRingBuffer::RPCRingBuffer(ERPCType InType)
@@ -169,11 +167,19 @@ void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 		{
 			OutBuffer.RingBuffer[RingBufferIndex].Emplace(Schema_GetObject(SchemaObject, FieldId));
 		}
+		else
+		{
+			OutBuffer.RingBuffer[RingBufferIndex].Reset();
+		}
 		if (OutBuffer.Type == ERPCType::CrossServerSender || OutBuffer.Type == ERPCType::CrossServerReceiver)
 		{
 			if (Schema_GetObjectCount(SchemaObject, FieldId + 1) > 0)
 			{
 				OutBuffer.Counterpart[RingBufferIndex].Emplace(GetObjectRefFromSchema(SchemaObject, FieldId + 1));
+			}
+			else
+			{
+				OutBuffer.Counterpart[RingBufferIndex].Reset();
 			}
 		}
 	}

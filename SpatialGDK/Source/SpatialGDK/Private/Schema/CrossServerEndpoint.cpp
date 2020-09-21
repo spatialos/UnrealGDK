@@ -13,6 +13,20 @@ CrossServerEndpoint::CrossServerEndpoint(const Worker_ComponentData& Data, ERPCT
 void CrossServerEndpoint::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 {
 	ReadFromSchema(Schema_GetComponentUpdateFields(Update.schema_type));
+	uint32 ClearCount = Schema_GetComponentUpdateClearedFieldCount(Update.schema_type);
+	TArray<Schema_FieldId> ClearedFields;
+	ClearedFields.SetNum(ClearCount);
+	Schema_GetComponentUpdateClearedFieldList(Update.schema_type, ClearedFields.GetData());
+
+	for (auto Field : ClearedFields)
+	{
+		uint32 SlotIdx = (Field - 1);
+		if (SlotIdx % 2 == 0)
+		{
+			ReliableRPCBuffer.RingBuffer[SlotIdx / 2].Reset();
+			ReliableRPCBuffer.Counterpart[SlotIdx / 2].Reset();
+		}
+	}
 }
 
 void CrossServerEndpoint::ReadFromSchema(Schema_Object* SchemaObject)

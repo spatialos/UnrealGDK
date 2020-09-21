@@ -78,7 +78,8 @@ public:
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 	void CheckLocalTargets(Worker_EntityId LocalWorkerEntityId);
 	void HandleTimeout(SpatialOSWorkerInterface* Sender);
-	bool OnEntityRequestResponse(Worker_RequestId Request, bool bEntityExists);
+	bool OnEntityRequestResponse(Worker_EntityId LocalWorkerEntityId, Worker_RequestId Request, bool bEntityExists);
+	void OnEntityRemoved(Worker_EntityId LocalWorkerEntityId, Worker_EntityId Entity);
 
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
@@ -153,6 +154,7 @@ private:
 	// For sender
 	TMultiMap<Worker_EntityId_Key, SentRPCEntry> CrossServerMailbox;
 	TBitArray<FDefaultBitArrayAllocator> CrossServerOccupiedSlots;
+	TBitArray<FDefaultBitArrayAllocator> CrossServerSlotsToClear;
 
 	// For receiver
 	// Contains the number of available slots for acks for the given receiver.

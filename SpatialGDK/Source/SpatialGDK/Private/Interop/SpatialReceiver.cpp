@@ -350,6 +350,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
+	RPCService->OnEntityRemoved(NetDriver->WorkerEntityId, Op.entity_id);
 
 	if (NetDriver->IsServer())
 	{
@@ -2360,7 +2361,7 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 	else
 	{
-		if (RPCService->OnEntityRequestResponse(Op.request_id, Op.result_count > 0))
+		if (RPCService->OnEntityRequestResponse(NetDriver->WorkerEntityId, Op.request_id, Op.result_count > 0))
 		{
 			return;
 		}
