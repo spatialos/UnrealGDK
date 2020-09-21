@@ -368,7 +368,8 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	}
 }
 
-void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/, bool ExactMatch /*= false*/)
+void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
+												 bool ExactMatch /*= false*/)
 {
 	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, ExactMatch);
 }
