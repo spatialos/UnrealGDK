@@ -56,17 +56,28 @@ struct CrossServerEndpointReceiver : CrossServerEndpoint
 	}
 };
 
+struct ACKItem
+{
+	void ReadFromSchema(Schema_Object* SchemaObject);
+	void WriteToSchema(Schema_Object* SchemaObject);
+
+	Worker_EntityId Sender = SpatialConstants::INVALID_ENTITY_ID;
+	uint64 RPCId = 0;
+	uint64 SenderRevision = 0;
+};
+
 struct CrossServerEndpointSenderACK : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID;
 	CrossServerEndpointSenderACK(const Worker_ComponentData& Data);
 
-	void CreateUpdate(Schema_ComponentUpdate* OutUpdate);
+	// void CreateUpdate(Schema_ComponentUpdate* OutUpdate);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 
 	uint64 RPCAck = 0;
-	TMap<Worker_EntityId_Key, TArray<uint64>> DottedRPCACK;
+	// TMap<Worker_EntityId_Key, TArray<uint64>> DottedRPCACK;
+	TArray<TOptional<ACKItem>> ACKArray;
 
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);

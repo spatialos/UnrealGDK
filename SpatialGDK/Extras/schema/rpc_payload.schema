@@ -16,3 +16,9 @@ type UnrealRPCPayload {
 type ACKList {
     list<uint64> acks = 1;
 }
+
+type ACKItem {
+    EntityId sender = 1;
+    uint64 rpc_id = 2;
+    uint64 sender_revision = 3;
+}

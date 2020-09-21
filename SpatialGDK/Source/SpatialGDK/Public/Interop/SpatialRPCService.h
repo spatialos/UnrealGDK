@@ -11,6 +11,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "Containers/BitArray.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
 class SpatialOSWorkerInterface;
@@ -116,7 +118,9 @@ private:
 private:
 	TOptional<uint32_t> FindFreeSlotForCrossServerSender();
 
-	void CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId_Key> const& ReceiversToIgnore);
+	// void CleanupACKsFor(Worker_EntityId Sender, uint64 MinRPCId, TSet<Worker_EntityId_Key> const& ReceiversToIgnore);
+
+	void CleanupACKsFor(Worker_EntityId Sender);
 
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
@@ -137,18 +141,32 @@ private:
 
 	struct SentRPCEntry
 	{
+		bool operator==(SentRPCEntry const& iRHS) const { return FMemory::Memcmp(this, &iRHS, sizeof(SentRPCEntry)) == 0; }
+
 		uint64 RPCId;
-		uint64 MergedCrossServerACK;
 		uint64 Timestamp;
+		uint32 Slot;
 		Worker_EntityId Target;
 		TOptional<Worker_RequestId> EntityRequest;
 	};
 
 	// For sender
-	TArray<SentRPCEntry> CrossServerMailbox;
+	TMultiMap<Worker_EntityId_Key, SentRPCEntry> CrossServerMailbox;
+	TBitArray<FDefaultBitArrayAllocator> CrossServerOccupiedSlots;
 
 	// For receiver
-	TSet<Worker_EntityId_Key> ACKComponentsToTrack;
+	// Contains the number of available slots for acks for the given receiver.
+	TMap<Worker_EntityId_Key, uint32> ACKComponentsToTrack;
+
+	struct ACKSlot
+	{
+		bool operator==(ACKSlot const& iRHS) const { return Receiver == iRHS.Receiver && Slot == iRHS.Slot; }
+		Worker_EntityId Receiver;
+		int32 Slot;
+	};
+
+	// Map from sender to ack slots.
+	TMap<Worker_EntityId_Key, TArray<ACKSlot>> CrossServerACKMap;
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);
