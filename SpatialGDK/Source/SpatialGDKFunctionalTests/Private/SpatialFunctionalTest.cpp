@@ -688,7 +688,7 @@ ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
 
 void ASpatialFunctionalTest::AddDebugTag(AActor* Actor, FName Tag)
 {
-	if(Actor == nullptr)
+	if (Actor == nullptr)
 	{
 		return;
 	}
@@ -751,15 +751,16 @@ void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWork
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}
-	AddStep(FString::Printf(TEXT("Set Delegation of Tag '%s' to Server Worker %d"), *Tag.ToString(), ServerWorkerId), FWorkerDefinition::AllServers, nullptr, [this, Tag, ServerWorkerId] {
-		SetTagDelegation(Tag, ServerWorkerId);
-		FinishStep();
-	});
+	AddStep(FString::Printf(TEXT("Set Delegation of Tag '%s' to Server Worker %d"), *Tag.ToString(), ServerWorkerId),
+			FWorkerDefinition::AllServers, nullptr, [this, Tag, ServerWorkerId] {
+				SetTagDelegation(Tag, ServerWorkerId);
+				FinishStep();
+			});
 }
 
 void ASpatialFunctionalTest::AddStepClearTagDelegation(FName Tag)
 {
-	AddStep(FString::Printf(TEXT("Clear Delegation of Tag '%s'"), *Tag.ToString()), FWorkerDefinition::AllServers, nullptr, [this, Tag]{
+	AddStep(FString::Printf(TEXT("Clear Delegation of Tag '%s'"), *Tag.ToString()), FWorkerDefinition::AllServers, nullptr, [this, Tag] {
 		ClearTagDelegation(Tag);
 		FinishStep();
 	});
