@@ -107,7 +107,7 @@ namespace ReleaseTool
                     gitClient.CheckoutRemoteBranch(options.SourceBranch);
                     gitClient.ForcePush(options.ReleaseBranch);
                     gitClient.Fetch();
-                    gitClient.CheckoutLocalBranch(options.ReleaseBranch);
+                    gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, gitRepoName);
 
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
