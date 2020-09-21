@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTest.h"
 
+#include "AutomationBlueprintFunctionLibrary.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -211,8 +212,6 @@ void ASpatialFunctionalTest::StartTest()
 {
 	Super::StartTest();
 
-	SetupExpectedErrors();
-
 	StartStep(0);
 }
 
@@ -369,29 +368,9 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	}
 }
 
-void ASpatialFunctionalTest::AddExpectedError(const FString& ExpectedErrorPattern, int NumOccurences /*= 1*/,
-											  bool bAllowPartialMatch /*= true*/)
+void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/, bool ExactMatch /*= false*/)
 {
-	if (HasAuthority())
-	{
-		ExpectedErrors.Add({ ExpectedErrorPattern, NumOccurences, bAllowPartialMatch });
-	}
-}
-
-void ASpatialFunctionalTest::SetupExpectedErrors()
-{
-	if (HasAuthority())
-	{
-		FAutomationTestBase* CurrentTest = FAutomationTestFramework::Get().GetCurrentTest();
-		check(CurrentTest != nullptr);
-		for (const auto& ExpectedError : ExpectedErrors)
-		{
-			CurrentTest->AddExpectedError(
-				ExpectedError.ErrorPattern,
-				ExpectedError.bAllowPartialMatch ? EAutomationExpectedErrorFlags::Contains : EAutomationExpectedErrorFlags::Exact,
-				ExpectedError.NumOccurences);
-		}
-	}
+	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, ExactMatch);
 }
 
 void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)

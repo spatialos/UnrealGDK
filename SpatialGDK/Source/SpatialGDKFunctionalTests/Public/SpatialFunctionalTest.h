@@ -87,10 +87,11 @@ public:
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
 
-	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta=(ToolTip = "Allows you to add expected error / warning log patterns so that the test doesn't fail in these situations. However, keep in mind that you need to set the exact number of occurences it should have, and the test will fail if they don't match!\n\nNote that if Allow Partial Match is 'False', the message needs to match exactly and if 'True' it will use a 'contains' comparison."))
-	// clang-format on
-	void AddExpectedError(const FString& ExpectedErrorPattern, int NumOccurences = 1, bool bAllowPartialMatch = true);
+	// Add expected log errors in C++. This can only be called when setting up the steps in PrepareTest() or in
+	// the steps themselves. Keep in mind that if the expected number of occurrences aren't met, the test fails.
+	// The same pattern can only be added once, so make sure to execute only in the test Authority or in a step that
+	// is running only on one worker.
+	void AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences = 1, bool ExactMatch = false);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -384,12 +385,6 @@ private:
 	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
-
-	// Holds all expected errors for this test. The test will fail if the expected number of occurences don't match.
-	TArray<FSpatialFunctionalTestExpectedError> ExpectedErrors;
-
-	// At the start of the test will pass the messages to the FAutomationTestBase controlling this test.
-	void SetupExpectedErrors();
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
