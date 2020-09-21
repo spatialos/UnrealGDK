@@ -172,9 +172,6 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		}
 	}
 
-	// TODO(EventTracer): implement and call AddTargetObjectInfoToEventData
-	// TODO(EventTracer): implement and call AddComponentIdInfoToEventData
-
 	TraceEvent.data = EventData;
 	Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
 	Trace_EventData_Destroy(EventData);

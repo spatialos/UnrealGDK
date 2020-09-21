@@ -53,12 +53,14 @@ Trace_SpanId SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const ui
 	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
 	{
+		UE_LOG(LogSpatialSpanIdStore, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId, Id.ComponentId, FieldId);
 		return ReturnSpanId;
 	}
 
 	const EntityComponentFieldIdSpanIdUpdate* UpdateSpanId = SpanIdMap->Find(FieldId);
 	if (UpdateSpanId == nullptr)
 	{
+		UE_LOG(LogSpatialSpanIdStore, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId, Id.ComponentId, FieldId);
 		return ReturnSpanId;
 	}
 
