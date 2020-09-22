@@ -86,7 +86,6 @@ private:
 	void CreateEventTracer(const FString& WorkerId);
 
 private:
-
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
 
