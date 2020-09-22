@@ -16,7 +16,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
 namespace SpatialGDK
 {
-	SpatialEventTracer;
+SpatialEventTracer;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -25,7 +25,6 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 	GENERATED_BODY()
 
 public:
-
 	void SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer);
 	void DestroyConnection();
 

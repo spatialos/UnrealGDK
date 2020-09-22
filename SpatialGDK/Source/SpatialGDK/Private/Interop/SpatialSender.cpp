@@ -1081,7 +1081,8 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	return ComponentUpdate;
 }
 
-void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const worker::c::Trace_SpanId CauseSpanId)
+void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response,
+										 const worker::c::Trace_SpanId CauseSpanId)
 {
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
@@ -1092,7 +1093,8 @@ void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_Comm
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId, const worker::c::Trace_SpanId CauseSpanId)
+void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
+											  const worker::c::Trace_SpanId CauseSpanId)
 {
 	Worker_CommandResponse Response = {};
 	Response.component_id = ComponentId;
