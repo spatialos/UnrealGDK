@@ -156,7 +156,7 @@ namespace ReleaseTool
                         var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
                             .Select(version => $"{version.Trim()}")
                             .Select(BuildkiteAgent.GetMetadata)
-                            .Select(hash => $"UnrealEngine-{hash}")
+                            .Select(hash => $"{hash}")
                             .ToList();
 
                         UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
