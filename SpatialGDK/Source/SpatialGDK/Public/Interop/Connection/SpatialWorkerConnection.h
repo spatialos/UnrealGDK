@@ -4,7 +4,6 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
@@ -15,14 +14,19 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+namespace SpatialGDK
+{
+	SpatialEventTracer;
+} // namespace SpatialGDK
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
 
 public:
-	void SetEventTracer(SpatialGDK::SpatialEventTracer* InEventTracer);
-	void SetConnection(Worker_Connection* WorkerConnectionIn);
+
+	void SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer);
 	void DestroyConnection();
 
 	// UObject interface.
@@ -81,9 +85,6 @@ public:
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
-
-protected:
-	SpatialGDK::SpatialEventTracer* EventTracer;
 
 private:
 	static bool IsStartupComponent(Worker_ComponentId Id);

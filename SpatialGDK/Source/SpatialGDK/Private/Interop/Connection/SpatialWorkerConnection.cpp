@@ -23,12 +23,7 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 } // anonymous namespace
 
-void USpatialWorkerConnection::SetEventTracer(SpatialGDK::SpatialEventTracer* InEventTracer)
-{
-	EventTracer = InEventTracer;
-}
-
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer)
 {
 	StartupComplete = false;
 	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
