@@ -17,7 +17,7 @@ using namespace worker::c;
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		return;
 	}
