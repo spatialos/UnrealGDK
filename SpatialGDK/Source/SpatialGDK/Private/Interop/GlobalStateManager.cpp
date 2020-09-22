@@ -375,21 +375,31 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-void UGlobalStateManager::SetAllActorRolesBasedOnLBStrategy()
+void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 {
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated())
-			{
-				const bool bAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
-				Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
-				Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
-			}
-		}
+		return;
 	}
+
+	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
+		&& !Actor->bNetLoadOnNonAuthServer)
+	{
+		Actor->Destroy(true);
+		return;
+	}
+
+	// Non-replicated Actors should always be authoritative.
+	bool bAuthoritative = !Actor->GetIsReplicated();
+	// Replicated level Actors should only be initially authority if:
+	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
+	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
+	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
+	bAuthoritative |= (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+					  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+
+	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
+	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -405,9 +415,9 @@ void UGlobalStateManager::TriggerBeginPlay()
 	SetAcceptingPlayers(true);
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
-	if (bCanSpawnWithAuthority)
+	for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
 	{
-		SetAllActorRolesBasedOnLBStrategy();
+		HandleActorBasedOnLoadBalancer(*ActorIterator);
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();

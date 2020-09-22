@@ -6,6 +6,7 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/ViewDelta.h"
 #include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -22,7 +23,8 @@ class SpatialOSWorkerConnectionSpy : public SpatialOSWorkerInterface
 public:
 	SpatialOSWorkerConnectionSpy();
 
-	virtual TArray<SpatialGDK::OpList> GetOpList() override;
+	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() override;
+	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
@@ -47,4 +49,7 @@ private:
 	Worker_RequestId NextRequestId;
 
 	const Worker_EntityQuery* LastEntityQuery;
+
+	TArray<SpatialGDK::EntityDelta> PlaceholderEntityDeltas;
+	TArray<Worker_Op> PlaceholderWorkerMessages;
 };

@@ -47,6 +47,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
+	, bSpatialDebuggerEditorEnabled(false)
 	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnExitEditor)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
@@ -61,7 +62,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
 	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
-	, bPackageMobileCommandLineArgs(false)
+	, bPackageMobileCommandLineArgs(true)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {

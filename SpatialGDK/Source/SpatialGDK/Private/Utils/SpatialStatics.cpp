@@ -94,31 +94,39 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
-bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject)
+bool USpatialStatics::IsMultiWorkerEnabled()
 {
-	checkf(WorldContextObject != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr WorldContextObject*"));
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Check if multi-worker settings class was overridden from the command line
+	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
+	{
+		// If command line override for Multi Worker Settings is set then enable multi-worker.
+		return true;
+	}
+#if WITH_EDITOR
+	else if (!SpatialGDKSettings->IsMultiWorkerEditorEnabled())
+	{
+		// If  multi-worker is not enabled in editor then disable multi-worker.
+		return false;
+	}
+#endif // WITH_EDITOR
+	return true;
+}
+
+TSubclassOf<UAbstractSpatialMultiWorkerSettings> USpatialStatics::GetSpatialMultiWorkerClass(const UObject* WorldContextObject,
+																							 bool bForceNonEditorSettings)
+{
+	checkf(WorldContextObject != nullptr, TEXT("Called GetSpatialMultiWorkerClass with a nullptr WorldContextObject*"));
 
 	const UWorld* World = WorldContextObject->GetWorld();
-	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
+	checkf(World != nullptr, TEXT("Called GetSpatialMultiWorkerClass with a nullptr World*"));
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
-		{
-			FString OverrideMultiWorkerSettingsClass = SpatialGDKSettings->OverrideMultiWorkerSettingsClass.GetValue();
-			FSoftClassPath MultiWorkerSettingsSoftClassPath(OverrideMultiWorkerSettingsClass);
-			WorldSettings->MultiWorkerSettingsClass = MultiWorkerSettingsSoftClassPath.TryLoadClass<USpatialMultiWorkerSettings>();
-			checkf(WorldSettings->MultiWorkerSettingsClass != nullptr, TEXT("%s is not a valid class"), *OverrideMultiWorkerSettingsClass);
-			WorldSettings->bEnableMultiWorker = true;
-		}
-		return WorldSettings->IsMultiWorkerEnabledInWorldSettings();
+		return WorldSettings->GetMultiWorkerSettingsClass(bForceNonEditorSettings);
 	}
-	if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
-	{
-		return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
-	}
-	return false;
+	return USpatialMultiWorkerSettings::StaticClass();
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
@@ -127,13 +135,13 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			if (!IsSpatialMultiWorkerEnabled(World))
+			if (!IsMultiWorkerEnabled())
 			{
 				return false;
 			}
 
 			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-				WorldSettings->MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 			return MultiWorkerSettings->WorkerLayers.Num() > 1;
 		}
 	}
@@ -240,7 +248,7 @@ FString USpatialStatics::GetActorEntityIdAsString(const AActor* Actor)
 
 FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugString)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	if (!CanProcessActor(Actor) || !IsMultiWorkerEnabled())
 	{
 		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
 	}
@@ -257,7 +265,7 @@ FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugSt
 
 bool USpatialStatics::IsLocked(const AActor* Actor)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	if (!CanProcessActor(Actor) || !IsMultiWorkerEnabled())
 	{
 		return false;
 	}
@@ -267,7 +275,7 @@ bool USpatialStatics::IsLocked(const AActor* Actor)
 
 void USpatialStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	if (!CanProcessActor(Actor) || !IsMultiWorkerEnabled())
 	{
 		return;
 	}

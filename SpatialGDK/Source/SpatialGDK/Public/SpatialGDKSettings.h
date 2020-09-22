@@ -248,12 +248,16 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
-	UPROPERTY(Config)
-	bool bRunSpatialWorkerConnectionOnGameThread;
-
+	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	bool bEnableMultiWorker;
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
+
+#if WITH_EDITOR
+	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
+#endif // WITH_EDITOR
 
 private:
 #if WITH_EDITOR
@@ -350,16 +354,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
 
-	/** Experimental feature to use SpatialView layer when communicating with the Worker */
-	UPROPERTY(Config)
-	bool bUseSpatialView;
-
-	/**
-	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
-	 * the map's config with a 1x1 grid.
-	 */
-	TOptional<bool> bOverrideMultiWorker;
-
 	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the multi-worker settings class
@@ -367,10 +361,10 @@ public:
 	TOptional<FString> OverrideMultiWorkerSettingsClass;
 
 	/**
-	 * This will enable warning messages for ActorSpawning that could be legitimate but is likely to be an error.
+	 * This will allow Actors to be spawned on a layer different to the intended authoritative layer.
 	 */
 	UPROPERTY(Config)
-	bool bEnableMultiWorkerDebuggingWarnings;
+	bool bEnableCrossLayerActorSpawning;
 
 	// clang-format off
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay,

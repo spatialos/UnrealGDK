@@ -2,31 +2,68 @@
 
 #pragma once
 
-#include "Interop/Connection/OutgoingMessages.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/EntityView.h"
+#include "SpatialView/OpList/ExtractedOpList.h"
+#include "SpatialView/OpList/OpList.h"
+#include "SpatialView/ViewCoordinator.h"
 
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-UCLASS(abstract)
+UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
 
 public:
-	virtual void SetConnection(Worker_Connection* WorkerConnectionIn) PURE_VIRTUAL(USpatialWorkerConnection::SetConnection, return;);
-	virtual void FinishDestroy() override { Super::FinishDestroy(); }
-	virtual void DestroyConnection() PURE_VIRTUAL(USpatialWorkerConnection::DestroyConnection, return;);
+	void SetConnection(Worker_Connection* WorkerConnectionIn);
+	void DestroyConnection();
 
-	virtual PhysicalWorkerName GetWorkerId() const PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerId, return PhysicalWorkerName(););
-	virtual const TArray<FString>& GetWorkerAttributes() const
-		PURE_VIRTUAL(USpatialWorkerConnection::GetWorkerAttributes, return ReturnValuePlaceholder;);
+	// UObject interface.
+	virtual void FinishDestroy() override;
 
-	virtual void ProcessOutgoingMessages() PURE_VIRTUAL(USpatialWorkerConnection::ProcessOutgoingMessages, return;);
-	virtual void MaybeFlush() PURE_VIRTUAL(USpatialWorkerConnection::MaybeFlush, return;);
-	virtual void Flush() PURE_VIRTUAL(USpatialWorkerConnection::Flush, return;);
+	// Worker Connection Interface
+	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() override;
+	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
+
+	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
+	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData) override;
+	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) override;
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate) override;
+	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) override;
+	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response) override;
+	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message) override;
+	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
+	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
+	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
+	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
+
+	void Advance();
+	bool HasDisconnected() const;
+	Worker_ConnectionStatusCode GetConnectionStatus() const;
+	FString GetDisconnectReason() const;
+
+	const SpatialGDK::EntityView& GetView() const;
+
+	PhysicalWorkerName GetWorkerId() const;
+	const TArray<FString>& GetWorkerAttributes() const;
+
+	SpatialGDK::CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	void RemoveCallback(SpatialGDK::CallbackId Id);
+
+	void Flush();
+
+	void SetStartupComplete();
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
@@ -35,6 +72,8 @@ public:
 	FOnDequeueMessage OnDequeueMessage;
 
 private:
-	// Exists for the sake of having PURE_VIRTUAL functions returning a const ref.
-	TArray<FString> ReturnValuePlaceholder;
+	static bool IsStartupComponent(Worker_ComponentId Id);
+	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
+	bool StartupComplete = false;
+	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
 };

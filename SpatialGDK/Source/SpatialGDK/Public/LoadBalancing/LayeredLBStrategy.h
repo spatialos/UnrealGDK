@@ -62,6 +62,8 @@ public:
 	// Currently, this is just the default strategy.
 	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
 
+	UAbstractLBStrategy* GetLBStrategyForLayer(FName) const;
+
 	FName GetLocalLayerName() const;
 
 private:

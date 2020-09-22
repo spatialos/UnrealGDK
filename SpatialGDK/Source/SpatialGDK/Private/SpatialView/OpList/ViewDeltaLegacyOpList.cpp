@@ -6,10 +6,9 @@
 
 namespace SpatialGDK
 {
-OpList GetOpListFromViewDelta(ViewDelta Delta)
+TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 {
-	// The order of ops should be:
-	// Disconnect (we do not need to add further ops if disconnected).
+	// The order of ops per entity should be:
 	// Add entities
 	// Add components
 	// Authority lost (from lost and lost temporarily)
@@ -17,43 +16,17 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 	// Remove components
 	// Authority gained (from gained and lost temporarily)
 	// Entities Removed (can be reordered with authority gained)
-	//
-	// We can then order this by entity ID and surround the ops for each entity in a critical section.
-	//
-	// Worker messages can be placed anywhere.
 
-	auto OpData = MakeUnique<ViewDeltaLegacyOpListData>();
+	TArray<Worker_Op> Ops;
 
-	if (Delta.HasDisconnected())
-	{
-		Worker_Op Op = {};
-		Op.op_type = WORKER_OP_TYPE_DISCONNECT;
-		Op.op.disconnect.connection_status_code = Delta.GetConnectionStatus();
-
-		// Convert an FString to a char* that we can store.
-		const TCHAR* Reason = *Delta.GetDisconnectReason();
-		int32 SourceLength = TCString<TCHAR>::Strlen(Reason);
-		// Includes the null terminator.
-		int32 BufferSize = FTCHARToUTF8_Convert::ConvertedLength(Reason, SourceLength) + 1;
-		OpData->DisconnectReason = MakeUnique<char[]>(BufferSize);
-		FTCHARToUTF8_Convert::Convert(OpData->DisconnectReason.Get(), BufferSize, Reason, SourceLength + 1);
-
-		Op.op.disconnect.reason = OpData->DisconnectReason.Get();
-		OpData->Ops.Push(Op);
-
-		return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
-	}
-
-	TArray<Worker_Op>& Ops = OpData->Ops;
-
-	for (const EntityDelta& Entity : Delta.GetEntityDeltas())
+	for (const EntityDelta& Entity : Deltas)
 	{
 		Worker_Op StartCriticalSection = {};
 		StartCriticalSection.op_type = WORKER_OP_TYPE_CRITICAL_SECTION;
 		StartCriticalSection.op.critical_section.in_critical_section = 1;
 		Ops.Add(StartCriticalSection);
 
-		if (Entity.bAdded)
+		if (Entity.Type == EntityDelta::ADD)
 		{
 			Worker_Op Op = {};
 			Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
@@ -138,7 +111,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 			Ops.Push(Op);
 		}
 
-		if (Entity.bRemoved)
+		if (Entity.Type == EntityDelta::REMOVE)
 		{
 			Worker_Op Op = {};
 			Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
@@ -152,11 +125,7 @@ OpList GetOpListFromViewDelta(ViewDelta Delta)
 		Ops.Add(EndCriticalSection);
 	}
 
-	// Worker messages do not have ordering constraints so can just go at the end.
-	Ops.Append(Delta.GetWorkerMessages());
-
-	OpData->Delta = MoveTemp(Delta);
-	return { OpData->Ops.GetData(), static_cast<uint32>(OpData->Ops.Num()), MoveTemp(OpData) };
+	return Ops;
 }
 
 } // namespace SpatialGDK

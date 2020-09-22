@@ -2,8 +2,6 @@
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 
-#include "Interop/Connection/LegacySpatialWorkerConnection.h"
-#include "Interop/Connection/SpatialViewWorkerConnection.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
@@ -277,8 +275,8 @@ void USpatialConnectionManager::RequestDeploymentLoginTokens()
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(
-			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture =
+			Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
 	{
 		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
@@ -315,7 +313,7 @@ void USpatialConnectionManager::StartDevelopmentAuth(const FString& DevAuthToken
 	PITParams.use_insecure_connection = false;
 
 	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(
-			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &PITParams))
 	{
 		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
 	}
@@ -358,7 +356,7 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*InLocatorConfig->LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*InLocatorConfig->LocatorHost), InLocatorConfig->LocatorPort, &LocatorParams);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
@@ -386,14 +384,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				if (Settings->bUseSpatialView)
-				{
-					SpatialConnectionManager->WorkerConnection = NewObject<USpatialViewWorkerConnection>();
-				}
-				else
-				{
-					SpatialConnectionManager->WorkerConnection = NewObject<ULegacySpatialWorkerConnection>();
-				}
+				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
@@ -417,9 +408,9 @@ ESpatialConnectionType USpatialConnectionManager::GetConnectionType() const
 void USpatialConnectionManager::SetConnectionType(ESpatialConnectionType InConnectionType)
 {
 	// The locator config may not have been initialized
-	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()));
 
-		ConnectionType = InConnectionType;
+	ConnectionType = InConnectionType;
 }
 
 bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType)
@@ -468,6 +459,12 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorHostOverride);
 		}
 
+		int32 LocatorPortOverride = SpatialConstants::LOCATOR_PORT;
+		if (const TCHAR* LocatorPortOption = URL.GetOption(TEXT("locatorPort="), nullptr))
+		{
+			LocatorPortOverride = FCString::Atoi(LocatorPortOption);
+		}
+
 		if (URL.HasOption(TEXT("devauth")))
 		{
 			// Use devauth login flow.
@@ -476,6 +473,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			{
 				DevAuthConfig.LocatorHost = LocatorHostOverride;
 			}
+			DevAuthConfig.LocatorPort = LocatorPortOverride;
 			DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
 			DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
 			DevAuthConfig.PlayerId = URL.GetOption(*SpatialConstants::URL_PLAYER_ID_OPTION, *SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
@@ -491,6 +489,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			{
 				LocatorConfig.LocatorHost = LocatorHostOverride;
 			}
+			LocatorConfig.LocatorPort = LocatorPortOverride;
 			LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
 			LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
 			LocatorConfig.WorkerType = SpatialWorkerType;

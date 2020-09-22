@@ -5,6 +5,7 @@
 #include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "FileCache.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
@@ -58,6 +59,8 @@ public:
 
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
 
+	void SPATIALGDKSERVICES_API TakeSnapshot(UWorld* World, bool bUseStandard, FSpatialSnapshotTakenFunc OnSnapshotTaken);
+
 	void WorkerBuildConfigAsync();
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
@@ -65,6 +68,8 @@ public:
 
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
+
+	const FString& GetLocalRunningDeploymentID() { return LocalRunningDeploymentID; }
 
 private:
 	void StartUpWorkerConfigDirectoryWatcher();

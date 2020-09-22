@@ -5,14 +5,29 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
+#include "HAL/FileManagerGeneric.h"
+#include "HttpModule.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IHttpBase.h"
+#include "Interfaces/IHttpResponse.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+
+namespace
+{
+// Maximum time that the test authority will wait after deciding to FinishTest in order for all the Workers
+// to have enough time to acknowledge it. If this time is exceeded, the test authority will force FinishTest.
+constexpr float FINISH_TEST_GRACE_PERIOD_DURATION = 2.0f;
+} // namespace
 
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
@@ -39,7 +54,32 @@ void ASpatialFunctionalTest::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// by default expect 1 server
+	// Setup built-in step definitions.
+	TakeSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	TakeSnapshotStepDefinition.StepName = TEXT("Take SpatialOS Snapshot");
+	TakeSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		TakeSnapshot([this](bool bSuccess) {
+			if (bSuccess)
+			{
+				FinishStep();
+			}
+			else
+			{
+				FinishTest(EFunctionalTestResult::Failed, TEXT("Failed to take SpatialOS Snapshot."));
+			}
+		});
+	});
+
+	ClearSnapshotStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	ClearSnapshotStepDefinition.StepName = TEXT("Clear SpatialOS Snapshot");
+	ClearSnapshotStepDefinition.NativeStartEvent.BindLambda([this]() {
+		ClearSnapshot();
+		FinishStep();
+	});
+
+	RequireHandler.SetOwnerTest(this);
+
+	// By default expect 1 server.
 	NumExpectedServers = 1;
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
@@ -84,6 +124,26 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
 			}
+		}
+	}
+	else if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED && FinishTestTimerHandle.IsValid())
+	{
+		bool bAllAcknowledgedFinishedTest = true;
+		for (const auto* FlowController : FlowControllers)
+		{
+			if (!FlowController->HasAckFinishedTest())
+			{
+				bAllAcknowledgedFinishedTest = false;
+				break;
+			}
+		}
+		if (bAllAcknowledgedFinishedTest)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
+			Super::FinishTest(CachedTestResult, CachedTestMessage);
+			// Clear cached variables
+			CachedTestResult = EFunctionalTestResult::Default;
+			CachedTestMessage.Empty();
 		}
 	}
 }
@@ -156,6 +216,14 @@ void ASpatialFunctionalTest::StartTest()
 
 void ASpatialFunctionalTest::FinishStep()
 {
+	// We can only FinishStep if there are no Require fails.
+	if (RequireHandler.HasFails())
+	{
+		return;
+	}
+
+	RequireHandler.LogAndClearStepRequires();
+
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
@@ -200,132 +268,6 @@ int ASpatialFunctionalTest::GetNumberOfClientWorkers()
 		}
 	}
 	return Counter;
-}
-
-void ASpatialFunctionalTest::AddActorDelegation(AActor* Actor, int ServerWorkerId, bool bPersistOnTestFinished /*= false*/)
-{
-	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
-
-	if (DelegationInterface != nullptr)
-	{
-		bool bAddedDelegation = DelegationInterface->AddActorDelegation(Actor, ServerWorkerId, bPersistOnTestFinished);
-		ensureMsgf(bAddedDelegation, TEXT("Tried to delegate Actor %s to Server Worker %d but couldn't"), *GetNameSafe(Actor),
-				   ServerWorkerId);
-	}
-}
-
-void ASpatialFunctionalTest::RemoveActorDelegation(AActor* Actor)
-{
-	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
-
-	if (DelegationInterface != nullptr)
-	{
-		bool bRemovedDelegation = DelegationInterface->RemoveActorDelegation(Actor);
-		ensureMsgf(bRemovedDelegation, TEXT("Tried to remove Delegation from Actor %s but couldn't"), *GetNameSafe(Actor));
-	}
-}
-
-bool ASpatialFunctionalTest::HasActorDelegation(AActor* Actor, int& WorkerId, bool& bIsPersistent)
-{
-	WorkerId = 0;
-	bIsPersistent = 0;
-
-	ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
-
-	bool bHasDelegation = false;
-
-	if (DelegationInterface != nullptr)
-	{
-		VirtualWorkerId AuxWorkerId;
-
-		bHasDelegation = DelegationInterface->HasActorDelegation(Actor, AuxWorkerId, bIsPersistent);
-
-		WorkerId = AuxWorkerId;
-	}
-
-	return bHasDelegation;
-}
-
-void ASpatialFunctionalTest::AddActorInterest(int32 ServerWorkerId, AActor* Actor)
-{
-	ChangeActorInterest(ServerWorkerId, Actor, true);
-}
-
-void ASpatialFunctionalTest::RemoveActorInterest(int32 ServerWorkerId, AActor* Actor)
-{
-	ChangeActorInterest(ServerWorkerId, Actor, false);
-}
-
-void ASpatialFunctionalTest::ChangeActorInterest(int32 ServerWorkerId, AActor* Actor, bool bAddInterest)
-{
-	ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
-
-	if (AuxLocalFlowController == nullptr || AuxLocalFlowController->WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Server)
-	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Interest changes are only allowed from Server Workers, trying to do it from %s"),
-			   *AuxLocalFlowController->GetDisplayName());
-		return;
-	}
-
-	ensureMsgf(ServerWorkerId >= FWorkerDefinition::ALL_WORKERS_ID, TEXT("Invalid ServerWorkerId"));
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	if (ServerWorkerId < FWorkerDefinition::ALL_WORKERS_ID || SpatialNetDriver == nullptr || Actor == nullptr)
-	{
-		return;
-	}
-	if (ServerWorkerId > NumExpectedServers)
-	{
-		UE_LOG(LogSpatialGDKFunctionalTests, Log,
-			   TEXT("Trying to change interest on Server Worker %d and there's only %d; falling back to Server Worker 1"), ServerWorkerId,
-			   NumExpectedServers);
-		ServerWorkerId = 1;
-	}
-
-	Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
-
-	if (ServerWorkerId == FWorkerDefinition::ALL_WORKERS_ID)
-	{
-		for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				if (bAddInterest)
-				{
-					FlowController->AddEntityInterest(ActorEntityId);
-				}
-				else
-				{
-					FlowController->RemoveEntityInterest(ActorEntityId);
-				}
-			}
-		}
-	}
-	else
-	{
-		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Server, ServerWorkerId);
-		if (bAddInterest)
-		{
-			FlowController->AddEntityInterest(ActorEntityId);
-		}
-		else
-		{
-			FlowController->RemoveEntityInterest(ActorEntityId);
-		}
-	}
-}
-
-ISpatialFunctionalTestLBDelegationInterface* ASpatialFunctionalTest::GetDelegationInterface() const
-{
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	if (SpatialNetDriver)
-	{
-		ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
-		if (LayeredLBStrategy != nullptr)
-		{
-			return Cast<ISpatialFunctionalTestLBDelegationInterface>(LayeredLBStrategy->GetLBStrategyForVisualRendering());
-		}
-	}
-	return nullptr;
 }
 
 void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const FString& Message)
@@ -380,7 +322,39 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 			OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
 
-			Super::FinishTest(TestResult, Message);
+			CachedTestResult = TestResult;
+			CachedTestMessage = Message;
+
+			GetWorld()->GetTimerManager().SetTimer(
+				FinishTestTimerHandle,
+				[this]() {
+					// If this timer triggers, then it means that something went wrong with one of the Workers. The
+					// expected behaviour is that the Super::FinishTest will be called from Tick(). Let's double check
+					// which failed to reply.
+					FString WorkersDidntAck;
+					for (const auto* FlowController : FlowControllers)
+					{
+						if (!FlowController->HasAckFinishedTest())
+						{
+							WorkersDidntAck += FString::Printf(TEXT("%s, "), *(FlowController->GetDisplayName()));
+						}
+					}
+					if (!WorkersDidntAck.IsEmpty())
+					{
+						WorkersDidntAck.RemoveFromEnd(TEXT(", "));
+						UE_LOG(LogSpatialGDKFunctionalTests, Warning,
+							   TEXT("The following Workers failed to acknowledge FinishTest in time: %s"), *WorkersDidntAck);
+					}
+
+					Super::FinishTest(CachedTestResult, CachedTestMessage);
+
+					FinishTestTimerHandle.Invalidate();
+
+					// Clear cached values.
+					CachedTestResult = EFunctionalTestResult::Default;
+					CachedTestMessage.Empty();
+				},
+				FINISH_TEST_GRACE_PERIOD_DURATION, false /* InbLoop */);
 		}
 	}
 	else
@@ -427,6 +401,18 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowContro
 	return LocalFlowController;
 }
 
+ESpatialFunctionalTestWorkerType ASpatialFunctionalTest::GetLocalWorkerType()
+{
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Type : ESpatialFunctionalTestWorkerType::Invalid;
+}
+
+int ASpatialFunctionalTest::GetLocalWorkerId()
+{
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : INVALID_FLOW_CONTROLLER_ID;
+}
+
 // Add Steps for Blueprints
 
 void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker,
@@ -470,6 +456,9 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 {
 	if (HasAuthority())
 	{
+		// Log Requires from previous step.
+		RequireHandler.LogAndClearStepRequires();
+
 		CurrentStepIndex = StepIndex;
 
 		TimeRunningStep = 0.0f;
@@ -592,23 +581,15 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		// test finished
-		if (StartTime > 0)
+		RequireHandler.LogAndClearStepRequires();
+		// if we ever started in first place
+		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
+		if (AuxLocalFlowController != nullptr)
 		{
-			// if we ever started in first place
-			ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
-			if (AuxLocalFlowController != nullptr)
+			AuxLocalFlowController->OnTestFinished();
+			if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
-				AuxLocalFlowController->OnTestFinished();
-				if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-				{
-					ISpatialFunctionalTestLBDelegationInterface* DelegationInterface = GetDelegationInterface();
-
-					if (DelegationInterface != nullptr)
-					{
-						DelegationInterface->RemoveAllActorDelegations(GetWorld());
-					}
-				}
+				ClearTagDelegationAndInterest();
 			}
 		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest
@@ -661,4 +642,229 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
+}
+
+namespace
+{
+USpatialNetDriver* GetNetDriverAndCheckDebuggingEnabled(AActor* Actor)
+{
+	if (!ensureMsgf(Actor != nullptr, TEXT("Actor is null")))
+	{
+		return nullptr;
+	}
+
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver());
+	if (!ensureMsgf(NetDriver != nullptr, TEXT("Using SpatialFunctionalTest Debug facilities while the NetDriver is not Spatial")))
+	{
+		return nullptr;
+	}
+	if (!ensureMsgf(NetDriver->DebugCtx != nullptr,
+					TEXT("SpatialFunctionalTest Debug facilities are not enabled. Enable them in your map's world settings.")))
+	{
+		return nullptr;
+	}
+
+	return NetDriver;
+}
+} // namespace
+
+ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
+{
+	UWorld* World = GetWorld();
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (ensureMsgf(NetDriver != nullptr, TEXT("Trying to get a load balancing strategy while the NetDriver is not Spatial")))
+	{
+		if (NetDriver->DebugCtx != nullptr)
+		{
+			return Cast<ULayeredLBStrategy>(NetDriver->DebugCtx->DebugStrategy->GetWrappedStrategy());
+		}
+		else
+		{
+			return Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+		}
+	}
+	return nullptr;
+}
+
+void ASpatialFunctionalTest::AddDebugTag(AActor* Actor, FName Tag)
+{
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->AddActorTag(Actor, Tag);
+	}
+}
+
+void ASpatialFunctionalTest::RemoveDebugTag(AActor* Actor, FName Tag)
+{
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->RemoveActorTag(Actor, Tag);
+	}
+}
+
+void ASpatialFunctionalTest::AddInterestOnTag(FName Tag)
+{
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->AddInterestOnTag(Tag);
+	}
+}
+
+void ASpatialFunctionalTest::RemoveInterestOnTag(FName Tag)
+{
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->RemoveInterestOnTag(Tag);
+	}
+}
+
+void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->KeepActorOnLocalWorker(Actor);
+	}
+}
+
+void ASpatialFunctionalTest::DelegateTagToWorker(FName Tag, int32 WorkerId)
+{
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->DelegateTagToWorker(Tag, WorkerId);
+	}
+}
+
+void ASpatialFunctionalTest::RemoveTagDelegation(FName Tag)
+{
+	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
+	{
+		NetDriver->DebugCtx->RemoveTagDelegation(Tag);
+	}
+}
+
+void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
+{
+	UWorld* World = GetWorld();
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (NetDriver && NetDriver->DebugCtx)
+	{
+		NetDriver->DebugCtx->Reset();
+	}
+}
+
+void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback)
+{
+	ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr)
+	{
+		UWorld* World = GetWorld();
+		SpatialGDKEditorModule->TakeSnapshot(World, [World, BlueprintCallback](bool bSuccess, const FString& PathToSnapshot) {
+			if (bSuccess)
+			{
+				bSuccess = SetSnapshotForMap(World, PathToSnapshot);
+			}
+			BlueprintCallback.ExecuteIfBound(bSuccess);
+		});
+	}
+}
+
+void ASpatialFunctionalTest::TakeSnapshot(const FSnapshotTakenFunc& CppCallback)
+{
+	ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
+	if (SpatialGDKEditorModule != nullptr)
+	{
+		UWorld* World = GetWorld();
+		SpatialGDKEditorModule->TakeSnapshot(World, [World, CppCallback](bool bSuccess, const FString& PathToSnapshot) {
+			if (bSuccess)
+			{
+				bSuccess = SetSnapshotForMap(World, PathToSnapshot);
+			}
+			if (CppCallback != nullptr)
+			{
+				CppCallback(bSuccess);
+			}
+		});
+	}
+}
+
+void ASpatialFunctionalTest::ClearSnapshot()
+{
+	SetSnapshotForMap(GetWorld(), FString() /* PathToSnapshot */);
+}
+
+bool ASpatialFunctionalTest::SetSnapshotForMap(UWorld* World, const FString& PathToSnapshot)
+{
+	check(World != nullptr);
+
+	FString MapName = World->GetMapName();
+	MapName.RemoveFromStart(World->StreamingLevelsPrefix);
+
+	bool bSuccess = true;
+
+	if (PathToSnapshot.IsEmpty())
+	{
+		TakenSnapshots.Remove(MapName);
+	}
+	else
+	{
+		FString SnapshotFileName = FString::Printf(TEXT("functional_testing_%s.snapshot"), *MapName);
+		FString SnapshotSavePath = FPaths::ProjectDir() + TEXT("../spatial/snapshots/") + SnapshotFileName;
+		if (FFileManagerGeneric::Get().Copy(*SnapshotSavePath, *PathToSnapshot, true, true) == 0)
+		{
+			TakenSnapshots.Add(MapName, SnapshotFileName);
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Failed to copy snapshot file '%s' to '%s'"), *PathToSnapshot,
+				   *SnapshotSavePath);
+		}
+	}
+	return bSuccess;
+}
+
+TMap<FString, FString> ASpatialFunctionalTest::TakenSnapshots = TMap<FString, FString>();
+
+FString ASpatialFunctionalTest::GetTakenSnapshotPath(UWorld* World)
+{
+	if (World == nullptr)
+	{
+		return FString();
+	}
+	FString MapName = World->GetMapName();
+	MapName.RemoveFromStart(World->StreamingLevelsPrefix);
+	return TakenSnapshots.FindRef(MapName);
+}
+
+bool ASpatialFunctionalTest::bWasLoadedFromTakenSnapshot = false;
+
+void ASpatialFunctionalTest::SetLoadedFromTakenSnapshot()
+{
+	bWasLoadedFromTakenSnapshot = true;
+}
+
+void ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot()
+{
+	bWasLoadedFromTakenSnapshot = false;
+}
+
+bool ASpatialFunctionalTest::WasLoadedFromTakenSnapshot()
+{
+	return bWasLoadedFromTakenSnapshot;
+}
+
+void ASpatialFunctionalTest::ClearAllTakenSnapshots()
+{
+	bWasLoadedFromTakenSnapshot = false;
+	TakenSnapshots.Empty();
 }

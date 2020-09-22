@@ -22,6 +22,10 @@ if (-Not $?) {
 # copying the plugin into the project's folder bypasses the issue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
+# Unreal likes to save some settings outside of the project folders. Let's clean this up to make sure it doesn't cause issues when running the tests.
+$project_name = $(Get-ChildItem $test_repo_uproject_path).BaseName
+Remove-Item $env:LOCALAPPDATA\$project_name\Saved\Config -ErrorAction ignore -Recurse -Force
+
 # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
 # Has to be this ugly settings modification, because overriding it from the commandline will not pass on this information
 # to spawned Unreal editors (which we do as part of the tests)

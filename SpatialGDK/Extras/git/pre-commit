@@ -10,7 +10,7 @@ else
 fi
 
 # Hit 'em with that clang-format
-for FILE in $(git diff --cached --name-only); do
+for FILE in $(git diff --cached --name-only --diff-filter=d); do
   if [[ ( "${FILE}" == *.h ) || ( "${FILE}" == *.cpp ) ]]; then
     ${clang_command} --verbose -i "${FILE}"
   fi

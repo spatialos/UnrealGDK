@@ -2,12 +2,7 @@
 
 #pragma once
 
-#include "EngineUtils.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
-#include "SpatialGDKSettings.h"
-#include "Utils/LayerInfo.h"
-#include "Utils/SpatialDebugger.h"
-#include "Utils/SpatialStatics.h"
 
 #include "GameFramework/WorldSettings.h"
 #include "Templates/SubclassOf.h"
@@ -53,49 +48,41 @@ struct FMapTestingSettings
 UCLASS()
 class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 	friend class USpatialStatics;
 
-private:
-	/** Enable running different server worker types to split the simulation. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
-
 public:
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
+	/** If command line override -OverrideMultiWorkerSettingsClass is set then return the specified class from the command line.
+	 * Else if bForceNonEditorSettings is set, return the MultiWorkerSettingsClass.
+	 * Else if the EditorMultiWorkerSettingsOverride is set and we are in the Editor, return the EditorMultiWorkerSettings.
+	 * Else if multi-worker is disabled in the editor, return the single worker settings class
+	 * Else if the MultiWorkerSettingsClass is set return it.
+	 * Otherwise return the single worker settings class.  */
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
 #if WITH_EDITORONLY_DATA
 	/** Defines how Unreal Editor will run the Tests in this map, without changing current Settings. */
 	UPROPERTY(EditAnywhere, Category = "Testing")
 	FMapTestingSettings TestingSettings;
-#endif
 
-	// This function is used to expose the private bool property to SpatialStatics.
-	// You should call USpatialStatics::IsMultiWorkerEnabled to properly check whether multi-worker is enabled.
+	UPROPERTY(EditAnywhere, Category = "Testing")
+	bool bEnableDebugInterface = false;
+#endif
 
 #if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override
-	{
-		Super::PostEditChangeProperty(PropertyChangedEvent);
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	static void EditorRefreshSpatialDebugger();
+#endif // WITH_EDITOR
 
-		if (PropertyChangedEvent.Property != nullptr)
-		{
-			const FName PropertyName(PropertyChangedEvent.Property->GetFName());
-			if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, MultiWorkerSettingsClass)
-				|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialWorldSettings, bEnableMultiWorker))
-			{
-				// If the load balancing strategy has changed, refresh the worker boundaries in the editor
-				UWorld* World = GetWorld();
-				for (TActorIterator<ASpatialDebugger> It(World); It; ++It)
-				{
-					ASpatialDebugger* FoundActor = *It;
-					FoundActor->EditorRefreshWorkerRegions();
-				}
-			}
-		}
-	}
-#endif
+private:
+	/** Specify the load balancing strategy to be used for multiple workers */
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
-	bool IsMultiWorkerEnabledInWorldSettings() const { return bEnableMultiWorker && *MultiWorkerSettingsClass != nullptr; }
+	/** Editor override to specify a different load balancing strategy to run in-editor */
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
+
+	/** Gets MultiWorkerSettingsClass if set, otherwise returns a single worker behaviour. */
+	TSubclassOf<USpatialMultiWorkerSettings> GetValidWorkerSettings() const;
 };

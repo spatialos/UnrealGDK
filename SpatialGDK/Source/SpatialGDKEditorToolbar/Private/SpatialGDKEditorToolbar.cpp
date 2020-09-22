@@ -60,6 +60,7 @@ FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 	: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
 	, bSchemaBuildError(false)
 	, bStartingCloudDeployment(false)
+	, SpatialDebugger(nullptr)
 {
 }
 
@@ -112,7 +113,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
 
-			VerifyAndStartDeployment();
+			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
 		}
 	});
 #endif
@@ -298,6 +299,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor),
 								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries),
 								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().ToggleMultiWorkerEditor,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor),
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
+								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -483,6 +489,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateStartDropDownMenuConte
 	MenuBuilder.BeginSection("SpatialDebuggerEditorSettings");
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleSpatialDebuggerEditor);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().ToggleMultiWorkerEditor);
 	}
 	MenuBuilder.EndSection();
 
@@ -713,13 +720,13 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 		FTimespan Span = FDateTime::Now() - StartTime;
 
 		OnShowSuccessNotification(TEXT("Spatial service stopped!"));
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f seconds."), Span.GetTotalSeconds());
 	});
 }
 
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 {
-	if (IsValid(SpatialDebugger))
+	if (SpatialDebugger.IsValid())
 	{
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
@@ -732,11 +739,22 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	}
 }
 
+void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
+{
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->bEnableMultiWorker);
+
+	if (SpatialDebugger.IsValid())
+	{
+		SpatialDebugger->EditorRefreshWorkerRegions();
+	}
+}
+
 void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType MapChangeType)
 {
 	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
 	{
-		// If Spatial networking is enabled then initialise the SpatialDebugger.
+		// If Spatial networking is enabled then initialize the editor debugging facilities.
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			InitialiseSpatialDebuggerEditor(World);
@@ -749,7 +767,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
+void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot /* = ""*/)
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
@@ -814,6 +832,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FString CloudLaunchConfig =
 				FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()),
 								FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
+
 			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
 		}
 	}
@@ -823,7 +843,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	}
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
-	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
+	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion] {
@@ -1096,9 +1116,22 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bSpatialDebuggerEditorEnabled))
 		{
-			if (IsValid(SpatialDebugger))
+			if (SpatialDebugger.IsValid())
 			{
 				SpatialDebugger->EditorSpatialToggleDebugger(Settings->bSpatialDebuggerEditorEnabled);
+			}
+		}
+	}
+	if (USpatialGDKSettings* Settings = Cast<USpatialGDKSettings>(ObjectBeingModified))
+	{
+		FName PropertyName = PropertyChangedEvent.Property != nullptr ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+		FString PropertyNameStr = PropertyName.ToString();
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableMultiWorker))
+		{
+			// Update multi-worker settings
+			if (SpatialDebugger.IsValid())
+			{
+				SpatialDebugger->EditorRefreshWorkerRegions();
 			}
 		}
 	}
@@ -1233,10 +1266,10 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-			UEditorEngine::TryStartSpatialDeployment.BindLambda([this] {
+			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](FString ForceSnapshot) {
 				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
-					VerifyAndStartDeployment();
+					VerifyAndStartDeployment(ForceSnapshot);
 				}
 			});
 		}
@@ -1263,7 +1296,7 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
 	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
 	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
 
@@ -1414,7 +1447,7 @@ bool FSpatialGDKEditorToolbarModule::IsBuildClientWorkerEnabled() const
 
 void FSpatialGDKEditorToolbarModule::DestroySpatialDebuggerEditor()
 {
-	if (IsValid(SpatialDebugger))
+	if (SpatialDebugger.IsValid())
 	{
 		SpatialDebugger->Destroy();
 		SpatialDebugger = nullptr;
@@ -1443,9 +1476,15 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialDebuggerEditorEnabled() const
 	return AllowWorkerBoundaries() && SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled;
 }
 
+bool FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled() const
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->bEnableMultiWorker;
+}
+
 bool FSpatialGDKEditorToolbarModule::AllowWorkerBoundaries() const
 {
-	return IsValid(SpatialDebugger) && SpatialDebugger->EditorAllowWorkerBoundaries();
+	return SpatialDebugger.IsValid() && SpatialDebugger->EditorAllowWorkerBoundaries();
 }
 
 void FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker()

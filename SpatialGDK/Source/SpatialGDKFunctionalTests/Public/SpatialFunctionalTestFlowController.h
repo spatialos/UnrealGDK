@@ -14,7 +14,7 @@ constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
 
 class ASpatialFunctionalTest;
 
-UCLASS()
+UCLASS(SpatialType = NotPersistent)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTestFlowController : public AActor
 {
 	GENERATED_BODY()
@@ -52,7 +52,7 @@ public:
 	FWorkerDefinition WorkerDefinition;
 
 	// Prettier way to display type+id combo since it can be quite useful
-	const FString GetDisplayName();
+	const FString GetDisplayName() const;
 
 	// When Test is finished, this gets triggered. It's mostly important for when a Test was failed during runtime
 	void OnTestFinished();
@@ -68,13 +68,8 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
 
-	// # Interest APIs
-
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
-	void AddEntityInterest(const int64 ActorEntityId);
-
-	UFUNCTION(CrossServer, Reliable, BlueprintCallable, Category = "Spatial Functional Test")
-	void RemoveEntityInterest(const int64 ActorEntityId);
+	// Let's you know if the owning worker has acknowledged the FinishTest flow.
+	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
 
 private:
 	// Current Step being executed
@@ -85,6 +80,9 @@ private:
 
 	UPROPERTY(Replicated)
 	bool bIsReadyToRunTest;
+
+	UPROPERTY(Replicated)
+	bool bHasAckFinishedTest;
 
 	UFUNCTION()
 	void OnReadyToRegisterWithTest();
@@ -110,5 +108,6 @@ private:
 
 	void ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message);
 
-	void ChangeEntityInterest(int64 ActorEntityId, bool bAddInterest);
+	UFUNCTION(Server, Reliable)
+	void ServerAckFinishedTest();
 };

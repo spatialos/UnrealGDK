@@ -2,11 +2,13 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Utils/LayerInfo.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Misc/MessageDialog.h"
 
@@ -27,13 +29,28 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 		ValidateNoActorClassesDuplicatedAmongLayers();
 		ValidateAllLayersHaveUniqueNonemptyNames();
 		ValidateAllLayersHaveLoadBalancingStrategy();
+
+		EditorRefreshSpatialDebugger();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UAbstractSpatialMultiWorkerSettings, LockingPolicy))
 	{
 		ValidateLockingPolicyIsSet();
 	}
+}
+void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
+{
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
+	check(World != nullptr);
+
+	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass =
+		USpatialStatics::GetSpatialMultiWorkerClass(World);
+
+	if (VisibleMultiWorkerSettingsClass != nullptr && VisibleMultiWorkerSettingsClass == GetClass())
+	{
+		ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+	}
 };
-#endif
+#endif // WITH_EDITOR
 
 uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() const
 {

@@ -17,6 +17,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Interop/SpatialWorkerFlags.h"
+#include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -28,6 +30,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 USpatialGameInstance::USpatialGameInstance()
 	: Super()
 	, bIsSpatialNetDriverReady(false)
+	, bPreparingForShutdown(false)
 {
 }
 
@@ -225,7 +228,7 @@ void USpatialGameInstance::Init()
 	}
 }
 
-void USpatialGameInstance::HandleOnConnected()
+void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
@@ -238,21 +241,27 @@ void USpatialGameInstance::HandleOnConnected()
 #endif
 
 	OnSpatialConnected.Broadcast();
+
+	if (NetDriver.IsServer())
+	{
+		FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
+		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
+
+		NetDriver.SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+	}
 }
 
-void USpatialGameInstance::CleanupCachedLevelsAfterConnection()
+void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	// Cleanup any actors which were created during level load.
-	UWorld* World = GetWorld();
-	check(World != nullptr);
-	for (ULevel* Level : CachedLevelsForNetworkIntialize)
+	if (FlagName.Equals(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, ESearchCase::IgnoreCase))
 	{
-		if (World->ContainsLevel(Level))
+		if (!bPreparingForShutdown)
 		{
-			CleanupLevelInitializedNetworkActors(Level);
+			bPreparingForShutdown = true;
+			UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
+			OnPrepareShutdown.Broadcast();
 		}
 	}
-	CachedLevelsForNetworkIntialize.Empty();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
@@ -270,9 +279,13 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
-void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
+void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld) const
 {
-	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelInitializedNetworkActors: Level (%s) OwningWorld (%s) World (%s)"),
+		   *GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(OwningWorld));
+
+	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || OwningWorld->GetNetDriver() == nullptr
+		|| !Cast<USpatialNetDriver>(OwningWorld->GetNetDriver())->IsReady()
 		|| (OwningWorld->WorldType != EWorldType::PIE && OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
@@ -280,53 +293,8 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
-	if (bIsSpatialNetDriverReady)
+	for (AActor* Actor : LoadedLevel->Actors)
 	{
-		CleanupLevelInitializedNetworkActors(LoadedLevel);
-	}
-	else
-	{
-		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
-	}
-}
-
-void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel)
-{
-	bIsSpatialNetDriverReady = true;
-	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
-	{
-		AActor* Actor = LoadedLevel->Actors[ActorIndex];
-		if (Actor == nullptr)
-		{
-			continue;
-		}
-
-		if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()))
-		{
-			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
-			{
-				if (!Actor->bNetLoadOnNonAuthServer)
-				{
-					Actor->Destroy(true);
-				}
-				else
-				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("This worker %s is not the owner of startup actor %s, exchanging Roles"),
-						   *GetPathNameSafe(Actor));
-					ENetRole Temp = Actor->Role;
-					Actor->Role = Actor->RemoteRole;
-					Actor->RemoteRole = Temp;
-				}
-			}
-		}
-		else
-		{
-			if (Actor->GetIsReplicated())
-			{
-				// Always wait for authority to be delegated down from SpatialOS, if not using offloading
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
-		}
+		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
 }

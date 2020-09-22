@@ -3,7 +3,9 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Templates/Tuple.h"
 
@@ -186,3 +188,40 @@ UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegio
 	}
 	return VirtualWorkerToCell;
 }
+
+#if WITH_EDITOR
+void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property != nullptr)
+	{
+		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Rows)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Cols)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
+		{
+			const UWorld* World = GEditor->GetEditorWorldContext().World();
+			check(World != nullptr);
+
+			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+
+			for (const FLayerInfo WorkerLayer : MultiWorkerSettings->WorkerLayers)
+			{
+				if (WorkerLayer.Name == SpatialConstants::DefaultLayer)
+				{
+					const TSubclassOf<UAbstractLBStrategy> VisibleLoadBalanceStrategy = WorkerLayer.LoadBalanceStrategy;
+
+					if (VisibleLoadBalanceStrategy != nullptr && VisibleLoadBalanceStrategy == GetClass())
+					{
+						ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+#endif // WITH_EDITOR

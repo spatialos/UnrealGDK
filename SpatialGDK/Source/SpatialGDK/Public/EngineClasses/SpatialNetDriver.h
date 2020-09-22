@@ -36,6 +36,7 @@ class USpatialConnectionManager;
 class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
+class USpatialNetDriverDebugContext;
 class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
@@ -114,6 +115,8 @@ public:
 
 	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
+	void RefreshActorVisibility(AActor* Actor, bool bMakeVisible);
+
 	void AddPendingDormantChannel(USpatialActorChannel* Channel);
 	void RemovePendingDormantChannel(USpatialActorChannel* Channel);
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
@@ -157,6 +160,8 @@ public:
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
+	UPROPERTY()
+	USpatialNetDriverDebugContext* DebugCtx;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
@@ -203,7 +208,6 @@ private:
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
-	TArray<SpatialGDK::OpList> QueuedStartupOpLists;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
@@ -237,18 +241,12 @@ private:
 
 	void QueryGSMToLoadMap();
 
-	void HandleStartupOpQueueing(TArray<SpatialGDK::OpList> InOpLists);
-	bool FindAndDispatchStartupOpsServer(const TArray<SpatialGDK::OpList>& InOpLists);
-	bool FindAndDispatchStartupOpsClient(const TArray<SpatialGDK::OpList>& InOpLists);
-	void SelectiveProcessOps(TArray<Worker_Op*> FoundOps);
+	void TryFinishStartup();
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
-	UFUNCTION()
-	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
-
-	void OnActorSpawned(AActor* Actor);
+	void OnActorSpawned(AActor* Actor) const;
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 
@@ -301,4 +299,8 @@ private:
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
 	bool ClientCanSendPlayerSpawnRequests();
+
+	void ProcessOwnershipChanges();
+
+	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 };

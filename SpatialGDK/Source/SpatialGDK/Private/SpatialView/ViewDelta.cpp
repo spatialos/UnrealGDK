@@ -291,7 +291,7 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		ComponentChanges.Emplace(Op.op.component_update);
 		break;
 	default:
-		checkNoEntry();
+		break;
 	}
 }
 
@@ -364,7 +364,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 				AuthorityIt = std::find_if(AuthorityIt, AuthorityChangesEnd, DifferentEntity{ CurrentEntityId });
 
 				// Only add the entity delta if the entity previously existed in the view.
-				if (Delta.bRemoved)
+				if (Delta.Type == EntityDelta::REMOVE)
 				{
 					EntityDeltas.Push(Delta);
 				}
@@ -530,20 +530,21 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	const bool bAlreadyInView = *ViewElement != nullptr;
 	const bool bEntityAdded = It->bAdded;
 
-	// If the entity's presence has not changed then return.
+	// If the entity's presence has not changed then it's an update.
 	if (bEntityAdded == bAlreadyInView)
 	{
+		Delta.Type = EntityDelta::UPDATE;
 		return It + 1;
 	}
 
 	if (bEntityAdded)
 	{
-		Delta.bAdded = true;
+		Delta.Type = EntityDelta::ADD;
 		*ViewElement = &View.Emplace(EntityId, EntityViewElement{});
 	}
 	else
 	{
-		Delta.bRemoved = true;
+		Delta.Type = EntityDelta::REMOVE;
 
 		// Remove components.
 		const auto& Components = (*ViewElement)->Components;
