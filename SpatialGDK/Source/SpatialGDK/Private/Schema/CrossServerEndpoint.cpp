@@ -17,7 +17,7 @@ void CrossServerEndpoint::ApplyComponentUpdate(const Worker_ComponentUpdate& Upd
 	TArray<Schema_FieldId> ClearedFields;
 	ClearedFields.SetNum(ClearCount);
 	Schema_GetComponentUpdateClearedFieldList(Update.schema_type, ClearedFields.GetData());
-
+	
 	for (auto Field : ClearedFields)
 	{
 		uint32 SlotIdx = (Field - 1);

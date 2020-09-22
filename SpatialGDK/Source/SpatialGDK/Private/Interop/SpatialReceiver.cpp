@@ -2505,7 +2505,7 @@ bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnr
 			RPCService->PushRPC(Counterpart.Entity, FUnrealObjectRef(EntityId, Counterpart.Offset), ERPCType::CrossServerReceiver, Payload,
 								false);
 			RPCService->IncrementAckedRPCID(EntityId, RPCType);
-			Sender->FlushRPCService();
+			
 			return true;
 		}
 	}

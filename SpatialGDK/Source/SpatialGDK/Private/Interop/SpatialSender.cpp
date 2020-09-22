@@ -888,10 +888,10 @@ bool USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 
 		const EPushRPCResult Result = RPCService->PushRPC(SenderEntity, TargetObjectRef, RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
-		if (Result == EPushRPCResult::Success)
-		{
-			FlushRPCService();
-		}
+		//if (Result == EPushRPCResult::Success)
+		//{
+		//	FlushRPCService();
+		//}
 
 #if !UE_BUILD_SHIPPING
 		if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
@@ -998,10 +998,10 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 	const EPushRPCResult Result =
 		RPCService->PushRPC(TargetObjectRef.Entity, FUnrealObjectRef(), RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
-	if (Result == EPushRPCResult::Success)
-	{
-		FlushRPCService();
-	}
+	//if (Result == EPushRPCResult::Success)
+	//{
+	//	FlushRPCService();
+	//}
 
 #if !UE_BUILD_SHIPPING
 	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)

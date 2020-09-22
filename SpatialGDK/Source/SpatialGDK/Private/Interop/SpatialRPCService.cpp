@@ -124,13 +124,11 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, cons
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
 			uint32 Field = Descriptor.GetRingBufferElementFieldId(ERPCType::CrossServerSender, SlotIdx + 1);
 
-			Schema_ClearField(EndpointObject, Field);
 			Schema_Object* RPCObject = Schema_AddObject(EndpointObject, Field);
 			Payload.WriteToSchemaObject(RPCObject);
 
 			FUnrealObjectRef Target = Counterpart;
 			Target.Offset = NewRPCId;
-			Schema_ClearField(EndpointObject, Field + 1);
 			AddObjectRefToSchema(EndpointObject, Field + 1, Target);
 
 			Schema_ClearField(EndpointObject, Descriptor.LastSentRPCFieldId);
@@ -310,24 +308,22 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		if (UpdateToSend.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID)
 		{
 			CrossServerEndpointSender* Sender = View->GetComponentData<CrossServerEndpointSender>(UpdateToSend.EntityId);
-			uint64& SenderRevision = Sender->ReliableRPCBuffer.LastSentRPCId;
+			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::CrossServerSender);
 
+			uint64& SenderRevision = Sender->ReliableRPCBuffer.LastSentRPCId;
+			++SenderRevision;
 			for (int32 ToClear = CrossServerSlotsToClear.Find(true); ToClear >= 0; ToClear = CrossServerSlotsToClear.Find(true))
 			{
-				RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::CrossServerSender);
 				uint32 Field = Descriptor.GetRingBufferElementFieldId(ERPCType::CrossServerSender, ToClear + 1);
-
-				++SenderRevision;
-
-				Schema_ClearField(Schema_GetComponentUpdateFields(UpdateToSend.Update.schema_type), Descriptor.LastSentRPCFieldId);
-				Schema_AddUint64(Schema_GetComponentUpdateFields(UpdateToSend.Update.schema_type), Descriptor.LastSentRPCFieldId,
-								 SenderRevision);
 
 				Schema_AddComponentUpdateClearedField(UpdateToSend.Update.schema_type, Field);
 				Schema_AddComponentUpdateClearedField(UpdateToSend.Update.schema_type, Field + 1);
 
 				CrossServerSlotsToClear[ToClear] = false;
 			}
+			Schema_ClearField(Schema_GetComponentUpdateFields(UpdateToSend.Update.schema_type), Descriptor.LastSentRPCFieldId);
+			Schema_AddUint64(Schema_GetComponentUpdateFields(UpdateToSend.Update.schema_type), Descriptor.LastSentRPCFieldId,
+				SenderRevision);
 		}
 	}
 
