@@ -1833,7 +1833,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 			   EntityId, ComponentId);
 	}
 
-	Trace_SpanId SpanId = EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId));
+	Trace_SpanId SpanId;
+	if (!EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId), SpanId))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Channel->GetEntityId(),
+			ComponentId);
+	}
+
 	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { SpanId });
 }
 
@@ -2231,7 +2237,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
 
 					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
-					Trace_SpanId CauseSpanId = RPCService->SpanIdCache.GetSpanId(Id, FieldId);
+					Trace_SpanId CauseSpanId;
+					RPCService->SpanIdCache.GetSpanId(Id, FieldId, CauseSpanId);
 					RPCService->SpanIdCache.DropSpanId(Id, FieldId);
 					EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), { CauseSpanId });
 				}
