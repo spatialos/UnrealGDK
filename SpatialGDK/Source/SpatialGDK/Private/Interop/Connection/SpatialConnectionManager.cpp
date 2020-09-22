@@ -146,8 +146,6 @@ void USpatialConnectionManager::DestroyConnection()
 		WorkerConnection = nullptr;
 	}
 
-	EventTracer = nullptr;
-
 	bIsConnected = false;
 }
 
@@ -375,40 +373,44 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager, EventTracer = this->EventTracer] {
-		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-		Worker_ConnectionFuture_Destroy(ConnectionFuture);
+	AsyncTask(
+		ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager, EventTracer = this->EventTracer] {
+			Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+			Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracer] {
-			if (!WeakSpatialConnectionManager.IsValid())
-			{
-				// The game instance was destroyed before the connection finished, so just clean up the connection.
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				delete EventTracer;
-				return;
-			}
+			AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracer] {
+				if (!WeakSpatialConnectionManager.IsValid())
+				{
+					// The game instance was destroyed before the connection finished, so just clean up the connection.
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					delete EventTracer;
+					return;
+				}
 
-			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
+				USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
-			{
-				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+				if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+				{
+					const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+					SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection,
-																		  EventTracer);
-				SpatialConnectionManager->OnConnectionSuccess();
-			}
-			else
-			{
-				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
-				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, EventTracer);
+					SpatialConnectionManager->OnConnectionSuccess();
+				}
+				else
+				{
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					delete EventTracer;
+					SpatialConnectionManager->EventTracer = nullptr;
 
-				// TODO: Try to reconnect - UNR-576
-				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-			}
+					const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+					const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+
+					// TODO: Try to reconnect - UNR-576
+					SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+				}
+			});
 		});
-	});
 }
 
 ESpatialConnectionType USpatialConnectionManager::GetConnectionType() const
@@ -531,5 +533,5 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 
 void USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
 {
-	EventTracer =  new SpatialEventTracer(WorkerId);
+	EventTracer = new SpatialEventTracer(WorkerId);
 }

@@ -7,7 +7,6 @@
 
 namespace SpatialGDK
 {
-
 class SpatialEventTracer;
 
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
@@ -23,7 +22,6 @@ public:
 	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
 private:
-
 	struct WorkerConnectionState
 	{
 		WorkerConnectionState(Worker_Connection* InConnection, SpatialEventTracer* InEventTracer)
