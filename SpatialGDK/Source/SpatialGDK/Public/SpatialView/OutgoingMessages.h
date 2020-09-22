@@ -50,6 +50,7 @@ struct EntityCommandRequest
 	Worker_RequestId RequestId;
 	CommandRequest Request;
 	TOptional<uint32> TimeoutMillis;
+	TOptional<worker::c::Trace_SpanId> SpanId;
 };
 
 struct EntityCommandResponse

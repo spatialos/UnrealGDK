@@ -6,6 +6,8 @@
 #include "Interop/Connection/SpatialSpanIdCache.h"
 #include "SpatialEventMessages.h"
 
+// Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
+
 // TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in
 // .cpp file, when the LatencyTracer is enabled?)
 // TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off

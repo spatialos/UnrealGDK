@@ -4,7 +4,6 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
@@ -15,14 +14,18 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+namespace SpatialGDK
+{
+SpatialEventTracer;
+} // namespace SpatialGDK
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
 
 public:
-	void SetEventTracer(SpatialGDK::SpatialEventTracer* InEventTracer);
-	void SetConnection(Worker_Connection* WorkerConnectionIn);
+	void SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer);
 	void DestroyConnection();
 
 	// UObject interface.
@@ -43,7 +46,8 @@ public:
 									 const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
-	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId) override;
+	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
+												const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const TOptional<worker::c::Trace_SpanId>& SpanId = {}) override;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
@@ -80,9 +84,6 @@ public:
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
-
-protected:
-	SpatialGDK::SpatialEventTracer* EventTracer;
 
 private:
 	static bool IsStartupComponent(Worker_ComponentId Id);

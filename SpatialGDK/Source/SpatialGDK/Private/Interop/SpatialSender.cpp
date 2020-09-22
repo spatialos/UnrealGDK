@@ -50,7 +50,8 @@ DECLARE_CYCLE_STAT(TEXT("Sender FlushRetryRPCs"), STAT_SpatialSenderFlushRetryRP
 DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
-										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
+										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
+										   const TOptional<worker::c::Trace_SpanId>& InSpanId)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
@@ -58,6 +59,7 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 	, Payload(InPayload)
 	, Attempts(1)
 	, RetryIndex(InRetryIndex)
+	, SpanId(InSpanId)
 {
 }
 
@@ -743,16 +745,22 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
+	TOptional<Trace_SpanId> SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
+	}
+
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 	Worker_RequestId RequestId =
-		Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+		Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID, SpanId);
 
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 			   EntityId, CommandRequest.component_id, *Function->GetName());
-		Receiver->AddPendingReliableRPC(
-			RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
+		Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index,
+																					Payload.PayloadData, 0, SpanId));
 	}
 	else
 	{
@@ -912,9 +920,16 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 		return;
 	}
 
+	TOptional<Trace_SpanId> NewSpanId;
+	if (EventTracer != nullptr)
+	{
+		Trace_SpanId CauseSpanId = RetryRPC->SpanId.IsSet() ? RetryRPC->SpanId.GetValue() : Trace_SpanId();
+		NewSpanId = EventTracer->TraceEvent(FEventRPCRetried(), { CauseSpanId });
+	}
+
 	Worker_CommandRequest CommandRequest = CreateRetryRPCCommandRequest(*RetryRPC, TargetObjectRef.Offset);
-	Worker_RequestId RequestId =
-		Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+	Worker_RequestId RequestId = Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest,
+																SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID, NewSpanId);
 
 	// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 	RetryRPC->Attempts++;
@@ -994,8 +1009,6 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
-
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
 
 	// Try to send all pending RPCs unconditionally
@@ -1068,17 +1081,20 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	return ComponentUpdate;
 }
 
-void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
+void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response,
+										 const worker::c::Trace_SpanId CauseSpanId)
 {
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse, { CauseSpanId });
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
+void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
+											  const worker::c::Trace_SpanId CauseSpanId)
 {
 	Worker_CommandResponse Response = {};
 	Response.component_id = ComponentId;
@@ -1088,7 +1104,8 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse, { CauseSpanId });
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
