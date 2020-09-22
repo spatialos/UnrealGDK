@@ -78,7 +78,7 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 	FSubView SubView(TAG_COMPONENT_ID, NoFilter, &View, Dispatcher, NoRefreshCallbacks);
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
-	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, ComponentData{TAG_COMPONENT_ID});
+	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, ComponentData{ TAG_COMPONENT_ID });
 
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
@@ -122,7 +122,7 @@ SUBVIEW_TEST(
 	AddEntityToView(View, OTHER_TAGGED_ENTITY_ID);
 	AddComponentToView(View, OTHER_TAGGED_ENTITY_ID, CreateTestComponentData(VALUE_COMPONENT_ID, INCORRECT_VALUE));
 
-	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, ComponentData{TAG_COMPONENT_ID});
+	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, ComponentData{ TAG_COMPONENT_ID });
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	SubView.Advance(Delta);
 	FSubViewDelta SubDelta = SubView.GetViewDelta();
@@ -135,14 +135,15 @@ SUBVIEW_TEST(
 	}
 	TestEqual("The entity delta is for the correct entity ID", SubDelta.EntityDeltas[0].EntityId, TAGGED_ENTITY_ID);
 
-	PopulateViewDeltaWithComponentAdded(Delta, View, OTHER_TAGGED_ENTITY_ID, ComponentData{TAG_COMPONENT_ID});
+	PopulateViewDeltaWithComponentAdded(Delta, View, OTHER_TAGGED_ENTITY_ID, ComponentData{ TAG_COMPONENT_ID });
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	SubView.Advance(Delta);
 	SubDelta = SubView.GetViewDelta();
 
 	TestEqual("There are no entity deltas", SubDelta.EntityDeltas.Num(), 0);
 
-	PopulateViewDeltaWithComponentUpdated(Delta, View, OTHER_TAGGED_ENTITY_ID, CreateTestComponentUpdate(VALUE_COMPONENT_ID, CORRECT_VALUE));
+	PopulateViewDeltaWithComponentUpdated(Delta, View, OTHER_TAGGED_ENTITY_ID,
+										  CreateTestComponentUpdate(VALUE_COMPONENT_ID, CORRECT_VALUE));
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	SubView.Advance(Delta);
 	SubDelta = SubView.GetViewDelta();
@@ -174,7 +175,7 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 
 	AddEntityToView(View, TAGGED_ENTITY_ID);
 
-	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, ComponentData{TAG_COMPONENT_ID});
+	PopulateViewDeltaWithComponentAdded(Delta, View, TAGGED_ENTITY_ID, ComponentData{ TAG_COMPONENT_ID });
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 	SubView.Advance(Delta);
 	FSubViewDelta SubDelta = SubView.GetViewDelta();
