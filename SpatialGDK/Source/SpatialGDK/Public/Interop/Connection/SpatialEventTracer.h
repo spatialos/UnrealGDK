@@ -65,8 +65,8 @@ public:
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
 
-	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId);
-	worker::c::Trace_SpanId GetMostRecentSpanId(const EntityComponentId& Id);
+	bool GetSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId& CauseSpanId);
+	bool GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId);
 	void ClearSpanIds();
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);

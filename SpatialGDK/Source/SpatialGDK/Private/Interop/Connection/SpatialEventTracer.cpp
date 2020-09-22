@@ -145,8 +145,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 	auto MessageSrc = StringCast<ANSICHAR>(*EventMessage.GetMessage());
 	const ANSICHAR* Message = MessageSrc.Get();
 
-	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, Message, EventMessage.GetType(),
-							nullptr };
+	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, Message, EventMessage.GetType(), nullptr };
 	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
 		return {};
@@ -297,14 +296,25 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	}
 }
 
-worker::c::Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& CauseSpanId)
 {
-	return SpanIdStore.GetSpanId(Id, FieldId);
+	if (SpanIdStore.GetSpanId(Id, FieldId, CauseSpanId))
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId,
+			   Id.ComponentId, FieldId);
+		return false;
+	}
+	return true;
 }
 
-worker::c::Trace_SpanId SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id)
+bool SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId)
 {
-	return SpanIdStore.GetMostRecentSpanId(Id);
+	if (SpanIdStore.GetMostRecentSpanId(Id, CauseSpanId))
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId, Id.ComponentId);
+		return false;
+	}
+	return true;
 }
 
 void SpatialEventTracer::ClearSpanIds()

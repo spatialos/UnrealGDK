@@ -46,35 +46,35 @@ bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityC
 	return bDropped;
 }
 
-Trace_SpanId SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId) const
+bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId) const
 {
-	Trace_SpanId ReturnSpanId = Trace_SpanId();
-
 	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
 	{
-		UE_LOG(LogSpatialSpanIdStore, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId,
-			   Id.ComponentId, FieldId);
-		return ReturnSpanId;
+		return false;
 	}
 
 	const EntityComponentFieldIdSpanIdUpdate* UpdateSpanId = SpanIdMap->Find(FieldId);
 	if (UpdateSpanId == nullptr)
 	{
-		UE_LOG(LogSpatialSpanIdStore, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId,
-			   Id.ComponentId, FieldId);
-		return ReturnSpanId;
+		return false;
 	}
 
-	return UpdateSpanId->SpanId;
+	OutSpanId = UpdateSpanId->SpanId;
+	return true;
 }
 
-Trace_SpanId SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id) const
+bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId) const
 {
 	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
 	{
-		return Trace_SpanId();
+		return false;
+	}
+
+	if (SpanIdMap->Num() == 0)
+	{
+		return false;
 	}
 
 	EntityComponentFieldIdSpanIdUpdate MostRecent;
@@ -87,7 +87,8 @@ Trace_SpanId SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id
 		}
 	}
 
-	return MostRecent.SpanId;
+	OutSpanId = MostRecent.SpanId;
+	return true;
 }
 
 void SpatialSpanIdCache::ClearSpanIds()
@@ -133,8 +134,8 @@ TArray<SpatialWorkerOpSpanIdCache::FieldSpanIdUpdate> SpatialWorkerOpSpanIdCache
 	TArray<FieldSpanIdUpdate> FieldCollisions;
 	for (uint32 FieldId : UpdatedFieldIds)
 	{
-		Trace_SpanId ExistingSpanId = GetSpanId(Id, FieldId);
-		if (!Trace_SpanId_Equal(ExistingSpanId, worker::c::Trace_SpanId()))
+		Trace_SpanId ExistingSpanId;
+		if (GetSpanId(Id, FieldId, ExistingSpanId))
 		{
 			FieldSpanIdUpdate Update;
 			Update.FieldId = FieldId;
