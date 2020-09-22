@@ -61,7 +61,7 @@ public:
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
-	SpatialGDK::SpatialEventTracer* GetEventTracer() { return EventTracer.Get(); }
+	SpatialGDK::SpatialEventTracer* GetEventTracer() { return EventTracer; }
 
 	void RequestDeploymentLoginTokens();
 
@@ -94,5 +94,6 @@ private:
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
 
-	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
+	// We own this object until we pass it to the connection handler.
+	SpatialGDK::SpatialEventTracer* EventTracer;
 };

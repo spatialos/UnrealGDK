@@ -43,8 +43,6 @@ public:
 	SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
-	FCriticalSection CriticalSection;
-
 	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 

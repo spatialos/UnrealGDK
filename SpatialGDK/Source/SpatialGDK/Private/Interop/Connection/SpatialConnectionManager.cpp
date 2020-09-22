@@ -375,15 +375,16 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager, EventTracer = this->EventTracer] {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection] {
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracer] {
 			if (!WeakSpatialConnectionManager.IsValid())
 			{
 				// The game instance was destroyed before the connection finished, so just clean up the connection.
 				Worker_Connection_Destroy(NewCAPIWorkerConnection);
+				delete EventTracer;
 				return;
 			}
 
@@ -393,8 +394,9 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection,
-																		  SpatialConnectionManager->EventTracer.Get());
+																		  EventTracer);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
@@ -529,5 +531,5 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 
 void USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
 {
-	EventTracer = MakeUnique<SpatialEventTracer>(WorkerId);
+	EventTracer =  new SpatialEventTracer(WorkerId);
 }
