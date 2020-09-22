@@ -29,11 +29,11 @@ struct FEventMessage
 	}
 
 	const char* GetType() const { return Type; }
-	const char* GetMessage() const { return Message; }
+	const FString& GetMessage() const { return Message; }
 
 protected:
 	const char* Type = "Null";
-	const char* Message = "";
+	FString Message;
 };
 
 USTRUCT()
@@ -48,8 +48,7 @@ struct FEventGenericMessage : public FEventMessage
 	FEventGenericMessage(const FString& InMessage)
 		: FEventMessage(GDK_EVENT_NAMESPACE "generic_message")
 	{
-		auto MessageSrc = StringCast<ANSICHAR>(*InMessage);
-		Message = MessageSrc.Get();
+		Message = InMessage;
 	}
 };
 

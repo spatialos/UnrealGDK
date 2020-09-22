@@ -102,7 +102,10 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	}
 
-	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, EventMessage.GetMessage(), EventMessage.GetType(),
+	auto MessageSrc = StringCast<ANSICHAR>(*EventMessage.GetMessage());
+	const ANSICHAR* Message = MessageSrc.Get();
+
+	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, Message, EventMessage.GetType(),
 							nullptr };
 	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
