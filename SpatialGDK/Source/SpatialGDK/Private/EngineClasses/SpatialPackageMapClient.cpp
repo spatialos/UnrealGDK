@@ -234,7 +234,7 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(c
 
 FNetworkGUID* USpatialPackageMapClient::GetRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef)
 {
-	if(FNetworkGUID* NetGUID = RemovedDynamicSubobjectObjectRefs.Find(ObjectRef))
+	if (FNetworkGUID* NetGUID = RemovedDynamicSubobjectObjectRefs.Find(ObjectRef))
 	{
 		return NetGUID;
 	}

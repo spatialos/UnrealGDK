@@ -1169,22 +1169,21 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking()
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
-		const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-				for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+			for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+			{
+				FNetworkGUID SubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
+				if (SubobjectNetGUID.IsValid())
 				{
-					FNetworkGUID SubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
-					if (SubobjectNetGUID.IsValid())
+					FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
+					if (SubobjectRef.IsValid())
 					{
-						FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
-						if (SubobjectRef.IsValid())
-						{
-								PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
-						}
+						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
 					}
 				}
 			}
+		}
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
 		// to Actor Channel mapping for the DestroyActor to function correctly
 		PackageMap->RemoveEntityActor(EntityId);
@@ -1384,24 +1383,21 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 				   EntityId, Data.component_id, *Actor->GetPathName());
 			return;
 		}
-					
+
+		// If we can't find this subobject, it's a dynamically attached object. Check we created previously.
 		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectObjectRef(TargetObjectRef))
 		{
-			for (UObject* DynamicSubobject : Channel.CreateSubObjects)
+			if (UObject* DynamicSubobject = PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
 			{
-				FNetworkGUID DynamicSubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
-				if (DynamicSubobjectNetGUID.IsValid())
-				{
-					if (*SubobjectNetGUID == DynamicSubobjectNetGUID)
-					{
-						ApplyComponentData(Channel, *DynamicSubobject, Data);
-						return;
-					}
-				}
+				PackageMap->ResolveSubobject(DynamicSubobject, TargetObjectRef);
+				ApplyComponentData(Channel, *DynamicSubobject, Data);
+
+				OutObjectsToResolve.Add(ObjectPtrRefPair(DynamicSubobject, TargetObjectRef));
+				return;
 			}
 		}
-				
-		// If we can't find this subobject, it's a dynamically attached object. Create it now.
+
+		// If the dynamically attached object was not created before. Create it now.
 		TargetObject = NewObject<UObject>(Actor, ClassInfoManager->GetClassByComponentId(Data.component_id));
 
 		Actor->OnSubobjectCreatedFromReplication(TargetObject.Get());
