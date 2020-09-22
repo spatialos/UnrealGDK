@@ -7,7 +7,6 @@
 #include "SpatialView/OpList/OpList.h"
 
 #include "Containers/Array.h"
-#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {

@@ -52,7 +52,7 @@ public:
 	FWorkerDefinition WorkerDefinition;
 
 	// Prettier way to display type+id combo since it can be quite useful
-	const FString GetDisplayName();
+	const FString GetDisplayName() const;
 
 	// When Test is finished, this gets triggered. It's mostly important for when a Test was failed during runtime
 	void OnTestFinished();
@@ -68,6 +68,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
 
+	// Let's you know if the owning worker has acknowledged the FinishTest flow.
+	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
@@ -77,6 +80,9 @@ private:
 
 	UPROPERTY(Replicated)
 	bool bIsReadyToRunTest;
+
+	UPROPERTY(Replicated)
+	bool bHasAckFinishedTest;
 
 	UFUNCTION()
 	void OnReadyToRegisterWithTest();
@@ -101,4 +107,7 @@ private:
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 
 	void ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message);
+
+	UFUNCTION(Server, Reliable)
+	void ServerAckFinishedTest();
 };

@@ -26,7 +26,7 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 		StartCriticalSection.op.critical_section.in_critical_section = 1;
 		Ops.Add(StartCriticalSection);
 
-		if (Entity.bAdded)
+		if (Entity.Type == EntityDelta::ADD)
 		{
 			Worker_Op Op = {};
 			Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
@@ -111,7 +111,7 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 			Ops.Push(Op);
 		}
 
-		if (Entity.bRemoved)
+		if (Entity.Type == EntityDelta::REMOVE)
 		{
 			Worker_Op Op = {};
 			Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;

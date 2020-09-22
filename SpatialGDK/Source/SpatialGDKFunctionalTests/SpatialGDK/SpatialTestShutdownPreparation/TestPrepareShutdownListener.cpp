@@ -9,7 +9,7 @@ ATestPrepareShutdownListener::ATestPrepareShutdownListener()
 {
 }
 
-bool ATestPrepareShutdownListener::RegisterCallback()
+bool ATestPrepareShutdownListener::RegisterCallback_Implementation()
 {
 	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
 	if (GameInstance == nullptr)
@@ -17,12 +17,11 @@ bool ATestPrepareShutdownListener::RegisterCallback()
 		return false;
 	}
 
-	GameInstance->OnPrepareShutdown.AddDynamic(this, &ATestPrepareShutdownListener::OnPrepareShutdown);
+	GameInstance->OnPrepareShutdown.AddDynamic(this, &ATestPrepareShutdownListener::OnPrepareShutdownNative);
 	return true;
 }
 
-void ATestPrepareShutdownListener::OnPrepareShutdown_Implementation()
+void ATestPrepareShutdownListener::OnPrepareShutdownNative()
 {
-	UE_LOG(LogTemp, Log, TEXT("Prepare for shutdown!"));
 	NativePrepareShutdownEventCount++;
 }

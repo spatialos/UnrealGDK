@@ -7,7 +7,9 @@
 #include "TestPrepareShutdownListener.generated.h"
 
 /**
- * A replicated Actor with a Cube Mesh, used as a base for Actors used in tests.
+ * Non-replicated actor that listens for the shutdown preparation trigger in C++ and reacts to it by incrementing the native event count.
+ * Intended to be subclassed as a blueprint actor that listens to the event from blueprint logic as well, and increments the blueprint event
+ * count.
  */
 UCLASS()
 class ATestPrepareShutdownListener : public AActor
@@ -17,10 +19,11 @@ class ATestPrepareShutdownListener : public AActor
 public:
 	ATestPrepareShutdownListener();
 
+	UFUNCTION(BlueprintNativeEvent)
 	bool RegisterCallback();
 
-	UFUNCTION(BlueprintNativeEvent)
-	void OnPrepareShutdown();
+	UFUNCTION()
+	void OnPrepareShutdownNative();
 
 	int NativePrepareShutdownEventCount;
 
