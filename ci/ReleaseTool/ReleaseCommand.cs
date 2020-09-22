@@ -154,7 +154,7 @@ namespace ReleaseTool
                         Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
 
                         var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
-                            .Select(version => $"{version.Trim()}-release")
+                            .Select(version => $"{version.Trim()}")
                             .Select(BuildkiteAgent.GetMetadata)
                             .Select(hash => $"UnrealEngine-{hash}")
                             .ToList();
