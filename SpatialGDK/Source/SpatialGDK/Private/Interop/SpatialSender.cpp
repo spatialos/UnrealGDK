@@ -1009,8 +1009,6 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
-
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
 
 	// Try to send all pending RPCs unconditionally
@@ -1083,17 +1081,18 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	return ComponentUpdate;
 }
 
-void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
+void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const worker::c::Trace_SpanId CauseSpanId)
 {
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse, { CauseSpanId });
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
+void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId, const worker::c::Trace_SpanId CauseSpanId)
 {
 	Worker_CommandResponse Response = {};
 	Response.component_id = ComponentId;
@@ -1103,7 +1102,8 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	FEventCommandResponse EventCommandResponse;
 	EventCommandResponse.RequestID = RequestId;
 	EventCommandResponse.bSuccess = true;
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse, { CauseSpanId });
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
