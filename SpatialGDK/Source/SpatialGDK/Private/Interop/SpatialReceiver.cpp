@@ -1837,7 +1837,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	if (!EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId), SpanId))
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Channel->GetEntityId(),
-			ComponentId);
+			   ComponentId);
 	}
 
 	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { SpanId });

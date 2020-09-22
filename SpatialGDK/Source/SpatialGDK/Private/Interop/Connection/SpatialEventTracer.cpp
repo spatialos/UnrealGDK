@@ -261,7 +261,7 @@ bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 Fie
 	if (SpanIdStore.GetSpanId(Id, FieldId, CauseSpanId))
 	{
 		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId,
-			Id.ComponentId, FieldId);
+			   Id.ComponentId, FieldId);
 		return false;
 	}
 	return true;
@@ -271,8 +271,7 @@ bool SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id, worker
 {
 	if (SpanIdStore.GetMostRecentSpanId(Id, CauseSpanId))
 	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId,
-			Id.ComponentId);
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId, Id.ComponentId);
 		return false;
 	}
 	return true;

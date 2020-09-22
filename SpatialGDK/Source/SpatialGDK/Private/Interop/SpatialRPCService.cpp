@@ -482,7 +482,7 @@ void SpatialRPCService::UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Typ
 			if (!EventTracer->GetSpanId(Id, FieldId, SpanId))
 			{
 				UE_LOG(LogSpatialRPCService, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), EntityId,
-					Id.ComponentId, FieldId);
+					   Id.ComponentId, FieldId);
 			}
 			SpanIdCache.AddSpanId(Id, FieldId, SpanId);
 		}
