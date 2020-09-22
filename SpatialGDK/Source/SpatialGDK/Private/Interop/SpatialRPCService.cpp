@@ -170,13 +170,6 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (PendingRPCPayload& PendingPayload : OverflowedRPCArray)
 		{
-			if (EventTracer != nullptr)
-			{
-				TArray<Trace_SpanId> Causes =
-					PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
-				EventTracer->TraceEvent(FEventRPCRetried(), Causes);
-			}
-
 			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload.Payload), false);
 
 			switch (Result)
@@ -189,6 +182,12 @@ void SpatialRPCService::PushOverflowedRPCs()
 					   TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still "
 							"overflowed: %d, Entity: %lld, RPC type: %s"),
 					   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+				if (EventTracer != nullptr)
+				{
+					TArray<Trace_SpanId> Causes =
+						PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
+					PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(), Causes);
+				}
 				break;
 			case EPushRPCResult::DropOverflowed:
 				checkf(false, TEXT("Shouldn't be able to drop on overflow for RPC type that was previously queued."));

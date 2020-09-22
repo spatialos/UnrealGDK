@@ -30,7 +30,7 @@ private:
 	TMap<int64, int64> InternalToUserRequestId;
 	FString WorkerId;
 	TArray<FString> WorkerAttributes;
-	SpatialEventTracer* EventTracer; // TODO: Figure out ownership constraints
+	SpatialEventTracer* EventTracer;
 };
 
 } // namespace SpatialGDK
