@@ -206,7 +206,7 @@ public:
 	void RemoveInterestOnTag(FName Tag);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
+			  meta = (ToolTip = "Prevent the given actor from losing authority from this server worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	// clang-format off
@@ -218,6 +218,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears delegation of a Debug Tag. If there's no delegation set, the Load-Balancing Strategy will decide which Server Worker should have Authority."))
 	// clang-format on
 	void AddStepClearTagDelegation(FName Tag);
+
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears all Debug Tag delegations and extra interest. Note that this is called automatically when a test ends, so you use delegation / interest in the test you don't need to clear it manually at the end."))
+	// clang-format on
+	void AddStepClearTagDelegationAndInterest();
 
 	// # Require Functions. Requires mimic the assert behaviour but without the immediate failure. Since when you're
 	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
@@ -334,8 +339,9 @@ protected:
 	// so we highly recommend that you use the AddStepClearTagDelegation() instead.
 	void ClearTagDelegation(FName Tag);
 
-	// Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer. Whenever a test
-	// finishes this will be called automatically.
+	// Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer. All server workers must
+	// call it at the same time to guarantee consistency, so we again highly recommend you use AddStepClearTagDelegationAndInterest().
+	// Whenever a test finishes this will be called automatically.
 	void ClearTagDelegationAndInterest();
 
 	// # Built-in StepDefinitions for convenience

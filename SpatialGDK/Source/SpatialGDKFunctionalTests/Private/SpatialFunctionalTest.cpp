@@ -766,6 +766,14 @@ void ASpatialFunctionalTest::AddStepClearTagDelegation(FName Tag)
 	});
 }
 
+void ASpatialFunctionalTest::AddStepClearTagDelegationAndInterest()
+{
+	AddStep(TEXT("Clear Delegation of all Tags and extra Interest"), FWorkerDefinition::AllServers, nullptr, [this] {
+		ClearTagDelegationAndInterest();
+		FinishStep();
+	});
+}
+
 void ASpatialFunctionalTest::SetTagDelegation(FName Tag, int32 ServerWorkerId)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
