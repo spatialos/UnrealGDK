@@ -10,6 +10,8 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaUtils.h"
 
+#include "Kismet/KismetSystemLibrary.h"
+
 #include <sstream>
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
@@ -439,7 +441,7 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	{
 		if (!AddTrackingInfo(Actor, Target, Type, Key))
 		{
-			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s)"), *WorkerId, *TraceDesc);
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s) - %s - %s"), *WorkerId, *TraceDesc, *UKismetSystemLibrary::GetDisplayName(Actor), *Target);
 			return false;
 		}
 	}
@@ -499,12 +501,17 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 			if (const UFunction* Function = ActorClass->FindFunctionByName(*Target))
 			{
 				ActorFuncKey AFKey{ Actor, Function };
-				if (TrackingRPCs.Find(AFKey) == nullptr)
+				auto found = TrackingRPCs.Find(AFKey);
+				if (found == nullptr)
 				{
 					TrackingRPCs.Add(AFKey, Key);
+					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) added for trace %d"), *WorkerId, *Target, Key);
 					return true;
 				}
-				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc already exists for trace"), *WorkerId);
+				else
+				{
+					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) already exists for trace %d"), *WorkerId, *Target, Key);
+				}
 			}
 			break;
 		case ETraceType::Property:
