@@ -153,7 +153,7 @@ namespace ReleaseTool
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                         Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
 
-                        var releaseHashes = options.EngineVersions.Split(" ")
+                        var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
                             .Select(version => $"{version.Trim()}-release")
                             .Select(BuildkiteAgent.GetMetadata)
                             .Select(hash => $"UnrealEngine-{hash}")

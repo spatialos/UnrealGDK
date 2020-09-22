@@ -11,7 +11,7 @@ release () {
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
-  local RELEASE_ENGINE_BRANCHES_LOCAL_VAR=$(echo ${RELEASE_ENGINE_BRANCHES[*]// })
+  local RELEASE_ENGINE_BRANCHES_LOCAL_VAR="$(echo ${RELEASE_ENGINE_BRANCHES[*]// })"
 
   echo "--- Releasing ${REPO_NAME}: Merging ${CANDIDATE_BRANCH} into ${RELEASE_BRANCH} :package:"
 
@@ -26,10 +26,10 @@ release () {
         --candidate-branch="${CANDIDATE_BRANCH}" \
         --release-branch="${RELEASE_BRANCH}" \
         --github-key-file="/var/github/github_token" \
-        --pull-request-url=\""${PR_URL}"\" \
+        --pull-request-url="\"${PR_URL}\"" \
         --git-repository-name="${REPO_NAME}" \
         --github-organization="${GITHUB_ORG}" \
-        --engine-versions="${RELEASE_ENGINE_BRANCHES_LOCAL_VAR}"
+        --engine-versions="\"${RELEASE_ENGINE_BRANCHES_LOCAL_VAR}\""
 }
 
 set -e -u -o pipefail
