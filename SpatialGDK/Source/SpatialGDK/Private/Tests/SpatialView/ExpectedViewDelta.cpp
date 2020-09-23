@@ -98,19 +98,19 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 
 	// Calling GetConnectionStatus() when we are still connected will result in failing an assertion.
 	// Let's first check if both Deltas believe they are disconnected before checking the actual status code and reason.
-	if (Other.HasDisconnected() && ConnectionStatusCode == 0)
+	if (Other.HasConnectionStatusChanged() && ConnectionStatusCode == 0)
 	{
 		return false;
 	}
 
-	if (Other.HasDisconnected())
+	if (Other.HasConnectionStatusChanged())
 	{
-		if (ConnectionStatusCode != Other.GetConnectionStatus())
+		if (ConnectionStatusCode != Other.GetConnectionStatusChange())
 		{
 			return false;
 		}
 
-		if (ConnectionStatusMessage != Other.GetDisconnectReason())
+		if (ConnectionStatusMessage != Other.GetConnectionStatusChangeMessage())
 		{
 			return false;
 		}

@@ -159,19 +159,19 @@ void USpatialWorkerConnection::Advance()
 bool USpatialWorkerConnection::HasDisconnected() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().HasDisconnected();
+	return Coordinator->GetViewDelta().HasConnectionStatusChanged();
 }
 
 Worker_ConnectionStatusCode USpatialWorkerConnection::GetConnectionStatus() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetConnectionStatus();
+	return Coordinator->GetViewDelta().GetConnectionStatusChange();
 }
 
 FString USpatialWorkerConnection::GetDisconnectReason() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetDisconnectReason();
+	return Coordinator->GetViewDelta().GetConnectionStatusChangeMessage();
 }
 
 const SpatialGDK::EntityView& USpatialWorkerConnection::GetView() const
