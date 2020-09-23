@@ -183,7 +183,7 @@ void SpatialLoadBalanceEnforcer::CreateAclUpdate(const Worker_EntityId EntityId)
 
 		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
-	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
+	const FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
 
 	AclUpdates.Emplace(
 		EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
