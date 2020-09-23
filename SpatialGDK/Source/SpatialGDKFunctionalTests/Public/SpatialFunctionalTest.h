@@ -331,7 +331,7 @@ protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
-	// Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare
+	// Force Actors having the given tag to migrate and gain authority on the given worker. All server workers must declare
 	// the same delegation at the same time, so we highly recommend that you use the AddStepSetTagDelegation() instead.
 	void SetTagDelegation(FName Tag, int32 ServerWorkerId);
 
