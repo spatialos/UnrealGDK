@@ -166,8 +166,7 @@ void ASpatialDebugger::OnAuthorityGained()
 			{
 				FWorkerRegionInfo WorkerRegionInfo;
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				WorkerRegionInfo.WorkerName = 
-					*NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
+				WorkerRegionInfo.WorkerName = *NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
 				WorkerRegionInfo.Color = (WorkerRegionInfo.WorkerName == "")
 											 ? InvalidServerTintColor
 											 : SpatialGDK::GetColorForWorkerName(WorkerRegionInfo.WorkerName);
