@@ -5,6 +5,8 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
+#include <chrono>
+
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
@@ -15,8 +17,8 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 
 	CacheWorkerAttributes();
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();    
-	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
 		if (OpsProcessingThread == nullptr)
 		{
@@ -184,11 +186,38 @@ uint32 USpatialWorkerConnection::Run()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
 
+	auto CurrTime = std::chrono::steady_clock::now();
+	double IncomingTime, OutgoingTime;
+
+	bool bMessagesRemaining = false;
+	bool bOpsQueued = false;
+
 	while (KeepRunning)
 	{
 		ThreadWaitCondition->Wait();
+
+		std::chrono::steady_clock::time_point IncomingStart = std::chrono::steady_clock::now();
 		QueueLatestOpList();
+		std::chrono::steady_clock::time_point IncomingEnd = std::chrono::steady_clock::now();
 		ProcessOutgoingMessages();
+		std::chrono::steady_clock::time_point OutgoingEnd = std::chrono::steady_clock::now();
+
+		IncomingTime = std::chrono::duration_cast<std::chrono::microseconds>(IncomingEnd - IncomingStart).count() * 0.001;
+
+		OutgoingTime = std::chrono::duration_cast<std::chrono::microseconds>(OutgoingEnd - IncomingEnd).count() * 0.001;
+
+		auto NewTicks = std::chrono::steady_clock::now();
+		CurrTime = NewTicks;
+
+		if (IncomingTime > 0.1)
+		{
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Incoming time > 0.1ms : %f ms"), IncomingTime);
+		}
+
+		if (OutgoingTime > 0.1)
+		{
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Outgoing time > 0.1ms : %f ms"), OutgoingTime);
+		}
 	}
 
 	return 0;
@@ -223,7 +252,8 @@ void USpatialWorkerConnection::QueueLatestOpList()
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
 	bool bSentData = false;
-	while (!OutgoingMessagesQueue.IsEmpty())
+	std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
+	while (!OutgoingMessagesQueue.IsEmpty() && std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - Start).count() < 1000)
 	{
 		bSentData = true;
 
