@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+
+#include <valarray>
+
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
@@ -27,8 +30,6 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName&
 
 void SpatialLoadBalanceEnforcer::Advance()
 {
-	AclUpdates.Empty();
-
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{
@@ -75,7 +76,7 @@ TArray<EntityComponentUpdate> SpatialLoadBalanceEnforcer::GetAndClearAclUpdates(
 {
 	TArray<EntityComponentUpdate> Temp = MoveTemp(AclUpdates);
 	AclUpdates.Empty();
-	return Temp;
+	return MoveTemp(Temp);
 }
 
 void SpatialLoadBalanceEnforcer::MaybeCreateAclUpdate(const Worker_EntityId EntityId)
@@ -183,6 +184,7 @@ void SpatialLoadBalanceEnforcer::CreateAclUpdate(const Worker_EntityId EntityId)
 		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
+
 	AclUpdates.Emplace(
 		EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
 }
