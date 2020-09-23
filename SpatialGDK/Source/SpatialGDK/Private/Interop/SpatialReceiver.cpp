@@ -1169,6 +1169,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking()
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
+		PackageMap->ClearRemovedDynamicSubobjectObjectRefs();
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			for (UObject* DynamicSubobject : Channel->CreateSubObjects)
@@ -1177,7 +1178,9 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 				if (SubobjectNetGUID.IsValid())
 				{
 					FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
-					if (SubobjectRef.IsValid())
+					const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+					bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(SubobjectRef.Offset);
+					if (SubobjectRef.IsValid() && bIsDynamicSubobject)
 					{
 						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
 					}
@@ -1385,7 +1388,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 		}
 
 		// If we can't find this subobject, it's a dynamically attached object. Check we created previously.
-		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectObjectRef(TargetObjectRef))
+		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectNetGUID(TargetObjectRef))
 		{
 			if (UObject* DynamicSubobject = PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
 			{

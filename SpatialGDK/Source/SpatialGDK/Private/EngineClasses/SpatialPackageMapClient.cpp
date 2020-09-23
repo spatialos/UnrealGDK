@@ -246,6 +246,11 @@ void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnreal
 	RemovedDynamicSubobjectObjectRefs.Emplace(ObjectRef, NetGUID);
 }
 
+void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs()
+{
+	RemovedDynamicSubobjectObjectRefs.Empty();
+}
+
 TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId& EntityId)
 {
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
