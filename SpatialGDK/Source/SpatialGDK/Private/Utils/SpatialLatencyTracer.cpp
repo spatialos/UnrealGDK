@@ -193,7 +193,10 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 
 	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
 	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey);
+	if(TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey))
+	{
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Remove TrackRPC object %s tracekey %d"), *UKismetSystemLibrary::GetDisplayName(Obj), ReturnKey);
+	}
 	return ReturnKey;
 }
 
