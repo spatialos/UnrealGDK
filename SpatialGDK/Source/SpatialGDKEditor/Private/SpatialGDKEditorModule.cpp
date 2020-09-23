@@ -251,15 +251,15 @@ bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 uint32 GetPIEServerWorkers()
 {
 	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (EditorSettings->bGenerateDefaultLaunchConfig && EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
+	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
+	{
+		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
+	}
+	else
 	{
 		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 		check(EditorWorld);
 		return GetWorkerCountFromWorldSettings(*EditorWorld);
-	}
-	else
-	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
 	}
 }
 
