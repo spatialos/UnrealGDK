@@ -104,11 +104,11 @@ private:
 	FReceivedOpEventHandler ReceivedOpEventHandler;
 	Worker_RequestId NextRequestId;
 
-	FReserveEntityIdsRetryHandler ReserveEntityIdRetryHandler;
-	FCreateEntityRetryHandler CreateEntityRetryHandler;
-	FDeleteEntityRetryHandler DeleteEntityRetryHandler;
-	FEntityQueryRetryHandler EntityQueryRetryHandler;
-	FEntityCommandRetryHandler EntityCommandRetryHandler;
+	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> ReserveEntityIdRetryHandler;
+	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> CreateEntityRetryHandler;
+	TCommandRetryHandler<FDeleteEntityRetryHandlerImpl> DeleteEntityRetryHandler;
+	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> EntityQueryRetryHandler;
+	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> EntityCommandRetryHandler;
 };
 
 } // namespace SpatialGDK

@@ -8,15 +8,12 @@ namespace SpatialGDK
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer)
 	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
-<<<<<<< HEAD
 	, ReceivedOpEventHandler(MoveTemp(EventTracer))
-=======
 	, ReserveEntityIdRetryHandler(&View)
 	, CreateEntityRetryHandler(&View)
 	, DeleteEntityRetryHandler(&View)
 	, EntityQueryRetryHandler(&View)
 	, EntityCommandRetryHandler(&View)
->>>>>>> Plumbed it all in.
 {
 }
 
@@ -34,8 +31,20 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 	// Hold back open critical sections.
 	for (uint32 i = 0; i < OpListCount; ++i)
 	{
+		OpList Ops = ConnectionHandler->GetNextOpList();
 		CriticalSectionFilter.AddOpList(ConnectionHandler->GetNextOpList());
+		ReserveEntityIdRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		CreateEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		DeleteEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		EntityQueryRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		EntityCommandRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		View.EnqueueOpList(MoveTemp(Ops));
 	}
+	// Flush command retries.
+	FlushMessagesToSend();
+
+	View.AdvanceViewDelta();
+	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 
 	// Process ops.
 	TArray<OpList> OpLists = CriticalSectionFilter.GetReadyOpLists();
@@ -51,12 +60,6 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 	{
 		SubviewToAdvance->Advance(View.GetViewDelta());
 	}
-
-	ReserveEntityIdRetryHandler.ProcessOps(DeltaTimeS);
-	CreateEntityRetryHandler.ProcessOps(DeltaTimeS);
-	DeleteEntityRetryHandler.ProcessOps(DeltaTimeS);
-	EntityQueryRetryHandler.ProcessOps(DeltaTimeS);
-	EntityCommandRetryHandler.ProcessOps(DeltaTimeS);
 }
 
 const ViewDelta& ViewCoordinator::GetViewDelta() const
@@ -159,32 +162,32 @@ void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerN
 
 Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData)
 {
-	ReserveEntityIdRetryHandler.SendRequest(NextRequestId, NumberOfEntityIds, RetryData);
+	ReserveEntityIdRetryHandler.SendRequest(NextRequestId, NumberOfEntityIds, RetryData, View);
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
 														  FRetryData RetryData)
 {
-	CreateEntityRetryHandler.SendRequest(NextRequestId, { MoveTemp(EntityComponents), EntityId }, RetryData);
+	CreateEntityRetryHandler.SendRequest(NextRequestId, { MoveTemp(EntityComponents), EntityId }, RetryData, View);
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData)
 {
-	DeleteEntityRetryHandler.SendRequest(NextRequestId, EntityId, RetryData);
+	DeleteEntityRetryHandler.SendRequest(NextRequestId, EntityId, RetryData, View);
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData)
 {
-	EntityQueryRetryHandler.SendRequest(NextRequestId, MoveTemp(Query), RetryData);
+	EntityQueryRetryHandler.SendRequest(NextRequestId, MoveTemp(Query), RetryData, View);
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData)
 {
-	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request) }, RetryData);
+	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request) }, RetryData, View);
 	return NextRequestId++;
 }
 

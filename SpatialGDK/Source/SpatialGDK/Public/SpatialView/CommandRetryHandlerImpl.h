@@ -9,67 +9,67 @@
 
 namespace SpatialGDK
 {
-class FDeleteEntityRetryHandler : public TCommandRetryHandler<FDeleteEntityRetryHandler, Worker_EntityId>
+struct FDeleteEntityRetryHandlerImpl
 {
-public:
-	explicit FDeleteEntityRetryHandler(WorkerView* Worker)
-		: TCommandRetryHandler(Worker)
-	{
-	}
+	using CommandData = Worker_EntityId;
 
-private:
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE; }
 
-	static Worker_RequestId GetRequestId(const Worker_Op& Op)
+	static Worker_RequestId& GetRequestId(Worker_Op& Op)
 	{
-		check(Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE);
+		check(CanHandleOp(Op));
 		return Op.op.delete_entity_response.request_id;
 	}
 
-	static bool CanRetry(const Worker_Op& Op, FRetryData& RetryData)
+	static void UpdateRetries(const Worker_Op& Op, FRetryData& RetryData)
 	{
-		RetryData = RetryData.Advance();
-		return Op.op.delete_entity_response.status_code == WORKER_STATUS_CODE_TIMEOUT;
+		check(CanHandleOp(Op));
+		if (Op.op.delete_entity_response.status_code == WORKER_STATUS_CODE_TIMEOUT)
+		{
+			RetryData.RetryAndBackOff();
+		}
+		else
+		{
+			RetryData.StopRetries();
+		}
 	}
 
-	void SendCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId, uint32 TimeoutMillis)
+	static void SendCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId, uint32 TimeoutMillis, WorkerView& View)
 	{
-		Worker->SendDeleteEntityRequest(DeleteEntityRequest{ RequestId, EntityId, TimeoutMillis });
+		View.SendDeleteEntityRequest(DeleteEntityRequest{ RequestId, EntityId, TimeoutMillis });
 	}
-
-	friend TCommandRetryHandler<FDeleteEntityRetryHandler, Worker_EntityId>;
 };
 
-struct FCreateEntityData
+struct FCreateEntityRetryHandlerImpl
 {
-	TArray<ComponentData> Components;
-	TOptional<Worker_EntityId> EntityId;
-};
-
-class FCreateEntityRetryHandler : public TCommandRetryHandler<FCreateEntityRetryHandler, FCreateEntityData>
-{
-public:
-	explicit FCreateEntityRetryHandler(WorkerView* Worker)
-		: TCommandRetryHandler(Worker)
+	struct CommandData
 	{
-	}
+		TArray<ComponentData> Components;
+		TOptional<Worker_EntityId> EntityId;
+	};
 
-private:
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE; }
 
-	static Worker_RequestId GetRequestId(const Worker_Op& Op)
+	static Worker_RequestId& GetRequestId(Worker_Op& Op)
 	{
-		check(Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE);
+		check(CanHandleOp(Op));
 		return Op.op.create_entity_response.request_id;
 	}
 
-	static bool CanRetry(const Worker_Op& Op, FRetryData& RetryData)
+	static void UpdateRetries(const Worker_Op& Op, FRetryData& RetryData)
 	{
-		RetryData = RetryData.Advance();
-		return Op.op.create_entity_response.status_code == WORKER_STATUS_CODE_TIMEOUT;
+		check(CanHandleOp(Op));
+		if (Op.op.create_entity_response.status_code == WORKER_STATUS_CODE_TIMEOUT)
+		{
+			RetryData.RetryAndBackOff();
+		}
+		else
+		{
+			RetryData.StopRetries();
+		}
 	}
 
-	void SendCommandRequest(Worker_RequestId RequestId, const FCreateEntityData& Data, uint32 TimeoutMillis)
+	static void SendCommandRequest(Worker_RequestId RequestId, const CommandData& Data, uint32 TimeoutMillis, WorkerView& View)
 	{
 		TArray<ComponentData> ComponentsCopy;
 		ComponentsCopy.Reserve(Data.Components.Num());
@@ -77,132 +77,120 @@ private:
 			return Component.DeepCopy();
 		});
 
-		Worker->SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(ComponentsCopy), Data.EntityId, TimeoutMillis });
+		View.SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(ComponentsCopy), Data.EntityId, TimeoutMillis });
 	}
 
-	void SendCommandRequest(Worker_RequestId RequestId, FCreateEntityData&& Data, uint32 TimeoutMillis)
+	static void SendCommandRequest(Worker_RequestId RequestId, CommandData&& Data, uint32 TimeoutMillis, WorkerView& View)
 	{
-		Worker->SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(Data.Components), Data.EntityId, TimeoutMillis });
+		View.SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(Data.Components), Data.EntityId, TimeoutMillis });
 	}
-
-	friend TCommandRetryHandler<FCreateEntityRetryHandler, FCreateEntityData>;
 };
 
-class FReserveEntityIdsRetryHandler : public TCommandRetryHandler<FReserveEntityIdsRetryHandler, uint32>
+struct FReserveEntityIdsRetryHandlerImpl
 {
-public:
-	explicit FReserveEntityIdsRetryHandler(WorkerView* Worker)
-		: TCommandRetryHandler(Worker)
-	{
-	}
+	using CommandData = uint32;
 
-private:
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE; }
 
-	static Worker_RequestId GetRequestId(const Worker_Op& Op)
+	static Worker_RequestId& GetRequestId(Worker_Op& Op)
 	{
-		check(Op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE);
+		check(CanHandleOp(Op));
 		return Op.op.reserve_entity_ids_response.request_id;
 	}
 
-	static bool CanRetry(const Worker_Op& Op, FRetryData& RetryData)
+	static void UpdateRetries(const Worker_Op& Op, FRetryData& RetryData)
 	{
-		RetryData = RetryData.Advance();
-		return Op.op.reserve_entity_ids_response.status_code == WORKER_STATUS_CODE_TIMEOUT;
-	}
-
-	void SendCommandRequest(Worker_RequestId RequestId, uint32 NumberOfIds, uint32 TimeoutMillis)
-	{
-		Worker->SendReserveEntityIdsRequest(ReserveEntityIdsRequest{ RequestId, NumberOfIds, TimeoutMillis });
-	}
-
-	friend TCommandRetryHandler<FReserveEntityIdsRetryHandler, uint32>;
-};
-
-class FEntityQueryRetryHandler : public TCommandRetryHandler<FEntityQueryRetryHandler, EntityQuery>
-{
-public:
-	explicit FEntityQueryRetryHandler(WorkerView* Worker)
-		: TCommandRetryHandler(Worker)
-	{
-	}
-
-private:
-	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE; }
-
-	static Worker_RequestId GetRequestId(const Worker_Op& Op)
-	{
-		check(Op.op_type == WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE);
-		return Op.op.entity_query_response.request_id;
-	}
-
-	static bool CanRetry(const Worker_Op& Op, FRetryData& RetryData)
-	{
-		RetryData = RetryData.Advance();
-		return Op.op.entity_query_response.status_code == WORKER_STATUS_CODE_TIMEOUT;
-	}
-
-	void SendCommandRequest(Worker_RequestId RequestId, const EntityQuery& Query, uint32 TimeoutMillis)
-	{
-		Worker->SendEntityQueryRequest(EntityQueryRequest{ RequestId, EntityQuery(Query.GetWorkerQuery()), TimeoutMillis });
-	}
-
-	void SendCommandRequest(Worker_RequestId RequestId, EntityQuery&& Query, uint32 TimeoutMillis)
-	{
-		Worker->SendEntityQueryRequest(EntityQueryRequest{ RequestId, MoveTemp(Query), TimeoutMillis });
-	}
-
-	friend TCommandRetryHandler<FEntityQueryRetryHandler, EntityQuery>;
-};
-
-struct FEntityCommandData
-{
-	Worker_EntityId EntityId;
-	CommandRequest Request;
-};
-
-class FEntityCommandRetryHandler : public TCommandRetryHandler<FEntityCommandRetryHandler, FEntityCommandData>
-{
-public:
-	explicit FEntityCommandRetryHandler(WorkerView* Worker)
-		: TCommandRetryHandler(Worker)
-	{
-	}
-
-private:
-	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE; }
-
-	static Worker_RequestId GetRequestId(const Worker_Op& Op)
-	{
-		check(Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE);
-		return Op.op.command_response.request_id;
-	}
-
-	static bool CanRetry(const Worker_Op& Op, FRetryData& RetryData)
-	{
-		switch (static_cast<Worker_StatusCode>(Op.op.command_response.status_code))
+		check(CanHandleOp(Op));
+		if (Op.op.reserve_entity_ids_response.status_code == WORKER_STATUS_CODE_TIMEOUT)
 		{
-		case WORKER_STATUS_CODE_TIMEOUT:
-			RetryData = RetryData.Advance();
-			return true;
-		case WORKER_STATUS_CODE_AUTHORITY_LOST:
-			// Don't increase retry timer or reduce the number of retires.
-			return true;
-		default:
-			return false;
+			RetryData.RetryAndBackOff();
+		}
+		else
+		{
+			RetryData.StopRetries();
 		}
 	}
 
-	void SendCommandRequest(Worker_RequestId RequestId, const FEntityCommandData& Query, uint32 TimeoutMillis)
+	static void SendCommandRequest(Worker_RequestId RequestId, CommandData NumberOfIds, uint32 TimeoutMillis, WorkerView& View)
 	{
-		Worker->SendEntityCommandRequest(EntityCommandRequest{ Query.EntityId, RequestId, Query.Request.DeepCopy(), TimeoutMillis });
+		View.SendReserveEntityIdsRequest(ReserveEntityIdsRequest{ RequestId, NumberOfIds, TimeoutMillis });
+	}
+};
+
+struct FEntityQueryRetryHandlerImpl
+{
+	using CommandData = EntityQuery;
+
+	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE; }
+
+	static Worker_RequestId& GetRequestId(Worker_Op& Op)
+	{
+		check(CanHandleOp(Op));
+		return Op.op.entity_query_response.request_id;
 	}
 
-	void SendCommandRequest(Worker_RequestId RequestId, FEntityCommandData&& Query, uint32 TimeoutMillis)
+	static void UpdateRetries(const Worker_Op& Op, FRetryData& RetryData)
 	{
-		Worker->SendEntityCommandRequest(EntityCommandRequest{ Query.EntityId, RequestId, MoveTemp(Query.Request), TimeoutMillis });
+		check(CanHandleOp(Op));
+		if (Op.op.entity_query_response.status_code == WORKER_STATUS_CODE_TIMEOUT)
+		{
+			RetryData.RetryAndBackOff();
+		}
+		else
+		{
+			RetryData.StopRetries();
+		}
 	}
 
-	friend TCommandRetryHandler<FEntityCommandRetryHandler, FEntityCommandData>;
+	static void SendCommandRequest(Worker_RequestId RequestId, const CommandData& Query, uint32 TimeoutMillis, WorkerView& View)
+	{
+		View.SendEntityQueryRequest(EntityQueryRequest{ RequestId, EntityQuery(Query.GetWorkerQuery()), TimeoutMillis });
+	}
+
+	static void SendCommandRequest(Worker_RequestId RequestId, CommandData&& Query, uint32 TimeoutMillis, WorkerView& View)
+	{
+		View.SendEntityQueryRequest(EntityQueryRequest{ RequestId, MoveTemp(Query), TimeoutMillis });
+	}
+};
+
+struct FEntityCommandRetryHandlerImpl
+{
+	struct CommandData
+	{
+		Worker_EntityId EntityId;
+		CommandRequest Request;
+	};
+
+	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE; }
+
+	static Worker_RequestId& GetRequestId(Worker_Op& Op)
+	{
+		check(CanHandleOp(Op));
+		return Op.op.command_response.request_id;
+	}
+
+	static void UpdateRetries(const Worker_Op& Op, FRetryData& RetryData)
+	{
+		check(CanHandleOp(Op));
+		switch (static_cast<Worker_StatusCode>(Op.op.command_response.status_code))
+		{
+		case WORKER_STATUS_CODE_TIMEOUT:
+			RetryData.RetryAndBackOff();
+		case WORKER_STATUS_CODE_AUTHORITY_LOST:
+			RetryData.RetryWithoutBackOff();
+		default:
+			RetryData.StopRetries();
+		}
+	}
+
+	static void SendCommandRequest(Worker_RequestId RequestId, const CommandData& Query, uint32 TimeoutMillis, WorkerView& View)
+	{
+		View.SendEntityCommandRequest(EntityCommandRequest{ Query.EntityId, RequestId, Query.Request.DeepCopy(), TimeoutMillis });
+	}
+
+	static void SendCommandRequest(Worker_RequestId RequestId, CommandData&& Query, uint32 TimeoutMillis, WorkerView& View)
+	{
+		View.SendEntityCommandRequest(EntityCommandRequest{ Query.EntityId, RequestId, MoveTemp(Query.Request), TimeoutMillis });
+	}
 };
 } // namespace SpatialGDK
