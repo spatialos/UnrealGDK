@@ -152,6 +152,17 @@ bool USpatialLatencyTracer::EndLatencyTrace(UObject* WorldContextObject, const F
 	return false;
 }
 
+bool USpatialLatencyTracer::CancelLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayload)
+{
+#if TRACE_LIB_ACTIVE
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->CancelLatencyTrace_Internal(LatencyPayload);
+	}
+#endif
+	return false;
+}
+
 FSpatialLatencyPayload USpatialLatencyTracer::RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag)
 {
 #if TRACE_LIB_ACTIVE
@@ -488,6 +499,33 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 	TraceMap.Remove(Key);
 	RootTraces.Remove(Key);
 
+	return true;
+}
+
+bool USpatialLatencyTracer::CancelLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload)
+{
+	FScopeLock Lock(&Mutex);
+
+	// Create temp payload to resolve key
+	FSpatialLatencyPayload LocalLatencyPayload = LatencyPayload;
+	if (LocalLatencyPayload.Key == InvalidTraceKey)
+	{
+		ResolveKeyInLatencyPayload(LocalLatencyPayload);
+	}
+
+	const TraceKey Key = LocalLatencyPayload.Key;
+	TArray<ActorFuncKey> ToBeRemoved;
+	for (auto kv : TrackingRPCs)
+	{
+		if (kv.Value == Key)
+		{
+			ToBeRemoved.Emplace(kv.Key);
+		}
+	}
+	while (ToBeRemoved.Num())
+	{
+		TrackingRPCs.Remove(ToBeRemoved.Pop());
+	}
 	return true;
 }
 
