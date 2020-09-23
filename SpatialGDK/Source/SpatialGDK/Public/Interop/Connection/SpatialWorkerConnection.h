@@ -14,11 +14,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-namespace SpatialGDK
-{
-SpatialEventTracer;
-} // namespace SpatialGDK
-
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
 {
