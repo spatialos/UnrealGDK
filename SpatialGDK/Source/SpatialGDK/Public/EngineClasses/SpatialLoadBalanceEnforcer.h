@@ -13,7 +13,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
 class SpatialVirtualWorkerTranslator;
 
-class SPATIALGDK_API SpatialLoadBalanceEnforcer
+class SpatialLoadBalanceEnforcer
 {
 public:
 	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView,

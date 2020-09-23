@@ -475,7 +475,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 																				 {});
 
 	LoadBalanceEnforcer =
-		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView, StaticComponentView, VirtualWorkerTranslator.Get());
+		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, LBSubView, VirtualWorkerTranslator.Get());
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
@@ -1783,7 +1783,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			LoadBalanceEnforcer->Advance();
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for (auto AclUpdate : LoadBalanceEnforcer->GetAndClearAclUpdates())
+			auto Updates = LoadBalanceEnforcer->GetAndClearAclUpdates();
+			for (auto& AclUpdate : Updates)
 			{
 				Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
 			}
