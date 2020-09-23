@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 
+#include "Engine/EngineTypes.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 #include "UObject/UObjectGlobals.h"
@@ -25,7 +26,7 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Mesh);
 }
 
-void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale)
+void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale, const FString& WorkerName)
 {
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 
@@ -34,6 +35,23 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale);
+
+	WorkerText = NewObject<UTextRenderComponent>(this);
+
+	//WorkerText->SetRelativeLocation(FVector(-282.f, 100, 100.f));
+	FRotator NewRotation = FRotator(0, 270, 0);
+
+	FQuat QuatRotation = FQuat(NewRotation);
+	WorkerText->SetWorldRotation(QuatRotation);
+	WorkerText->SetTextRenderColor(FColor::White);
+	WorkerText->SetText((TEXT("Worker boundary %s"), WorkerName));
+	WorkerText->SetXScale(1.f);
+	WorkerText->SetYScale(1.f);
+	WorkerText->SetWorldSize(16);
+
+	FAttachmentTransformRules TextTransformRules(EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld, false);
+	WorkerText->AttachToComponent(this->GetRootComponent(), TextTransformRules);
+	WorkerText->RegisterComponent();
 }
 
 void AWorkerRegion::SetHeight(const float Height)

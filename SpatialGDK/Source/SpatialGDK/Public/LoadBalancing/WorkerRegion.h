@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "GameFramework/Actor.h"
 #include "Math/Box2D.h"
 #include "Math/Color.h"
@@ -17,13 +18,16 @@ class SPATIALGDK_API AWorkerRegion : public AActor
 public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
-	void Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale);
+	void Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale, const FString& WorkerName);
 
 	UPROPERTY()
 	UStaticMeshComponent* Mesh;
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialInstance;
+
+	UPROPERTY()
+	UTextRenderComponent* WorkerText;
 
 private:
 	void SetOpacity(const float Opacity);

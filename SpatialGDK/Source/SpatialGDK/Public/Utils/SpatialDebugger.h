@@ -46,6 +46,9 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FBox2D Extents;
+
+	UPROPERTY()
+	FString WorkerName;
 };
 
 /**

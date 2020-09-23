@@ -164,11 +164,13 @@ void ASpatialDebugger::OnAuthorityGained()
 			WorkerRegions.SetNum(LBStrategyRegions.Num());
 			for (int i = 0; i < LBStrategyRegions.Num(); i++)
 			{
-				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				const PhysicalWorkerName* WorkerName =
-					NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
 				FWorkerRegionInfo WorkerRegionInfo;
-				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
+				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				WorkerRegionInfo.WorkerName = 
+					*NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
+				WorkerRegionInfo.Color = (WorkerRegionInfo.WorkerName == "")
+											 ? InvalidServerTintColor
+											 : SpatialGDK::GetColorForWorkerName(WorkerRegionInfo.WorkerName);
 				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 				WorkerRegions[i] = WorkerRegionInfo;
 			}
@@ -196,7 +198,8 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents, WorkerRegionVerticalScale);
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents, WorkerRegionVerticalScale,
+						   WorkerRegionData.WorkerName);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -602,11 +605,10 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		{
 			const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
 			FWorkerRegionInfo WorkerRegionInfo;
+			WorkerRegionInfo.WorkerName = FString::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
 			// Generate our own unique worker name as we only need it to generate a unique colour
-			const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
-			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
+			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerRegionInfo.WorkerName);
 			WorkerRegionInfo.Extents = LBStrategyRegion.Value;
-
 			WorkerRegions[i] = WorkerRegionInfo;
 		}
 	}
