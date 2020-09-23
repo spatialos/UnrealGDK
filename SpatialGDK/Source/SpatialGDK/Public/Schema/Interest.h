@@ -325,19 +325,15 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	}
 
 	//option<int64> entity_id_constraint = 7;
-	if (Schema_GetObjectCount(QueryConstraintObject, 7) > 0)
+	if (Schema_GetInt64Count(QueryConstraintObject, 7) > 0)
 	{
-		Schema_Object* EntityIdConstraintObject = Schema_GetObject(QueryConstraintObject, 7);
-
-		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(EntityIdConstraintObject, 1);
+		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(QueryConstraintObject, 7);
 	}
 
 	// option<uint32> component_constraint = 8;
-	if (Schema_GetObjectCount(QueryConstraintObject, 8) > 0)
+	if (Schema_GetUint32Count(QueryConstraintObject, 8) > 0)
 	{
-		Schema_Object* ComponentConstraintObject = Schema_GetObject(QueryConstraintObject, 8);
-
-		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
+		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(QueryConstraintObject, 8);
 	}
 
 	// list<QueryConstraint> and_constraint = 9;
@@ -363,7 +359,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 
 inline QueryConstraint GetQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	return IndexQueryConstraintFromSchema(Object, Id, 1);
+	return IndexQueryConstraintFromSchema(Object, Id, 0);
 }
 
 inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
@@ -374,19 +370,19 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 
 	NewQuery.Constraint = GetQueryConstraintFromSchema(QueryObject, 1);
 
-	if (Schema_GetObjectCount(QueryObject, 2) > 0)
+	if (Schema_GetBoolCount(QueryObject, 2) > 0)
 	{
 		NewQuery.FullSnapshotResult = GetBoolFromSchema(QueryObject, 2);
 	}
 
-	uint32 ResultComponentIdCount = Schema_GetObjectCount(QueryObject, 3);
+	uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
 	NewQuery.ResultComponentIds.Reserve(ResultComponentIdCount);
 	for (uint32 ComponentIdIndex = 0; ComponentIdIndex < ResultComponentIdCount; ComponentIdIndex++)
 	{
 		NewQuery.ResultComponentIds.Add(Schema_IndexUint32(QueryObject, 3, ComponentIdIndex));
 	}
 
-	if (Schema_GetObjectCount(QueryObject, 4) > 0)
+	if (Schema_GetFloatCount(QueryObject, 4) > 0)
 	{
 		NewQuery.Frequency = Schema_GetFloat(QueryObject, 4);
 	}
