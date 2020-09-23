@@ -41,8 +41,8 @@ public:
 private:
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> QueuedOpLists;
-	FString WorkerId = "test_worker";
-	TArray<FString> Attributes{ "test" };
+	FString WorkerId = TEXT("test_worker");
+	TArray<FString> Attributes = { TEXT("test") };
 };
 
 VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN_returns_sub_view_which_passes_through_only_tagged_entity)
@@ -65,7 +65,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
 	ViewCoordinator Coordinator{ MoveTemp(Handler) };
-	auto& SubView = Coordinator.CreateUnfilteredSubView(TagComponentId);
+	auto& SubView = Coordinator.CreateSubView(TagComponentId, FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
 
 	Coordinator.Advance();
 	FSubViewDelta Delta = SubView.GetViewDelta();
@@ -180,7 +180,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 			[&EntityComplete](const Worker_EntityId&, const EntityViewElement&) {
 				return EntityComplete;
 			},
-			TArray<FDispatcherRefreshCallback>{}));
+			FSubView::NoDispatcherCallbacks));
 	}
 
 	Coordinator.Advance();

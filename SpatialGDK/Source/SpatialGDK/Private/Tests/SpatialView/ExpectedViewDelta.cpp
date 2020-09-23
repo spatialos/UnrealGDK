@@ -110,8 +110,8 @@ bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
 	EntityDeltas.GetKeys(DeltaKeys);
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
-		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
-		EntityDelta RhsEntityDelta = Other[i];
+		const ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
+		const EntityDelta& RhsEntityDelta = Other[i];
 		if (LhsEntityDelta.EntityId != RhsEntityDelta.EntityId)
 		{
 			return false;
