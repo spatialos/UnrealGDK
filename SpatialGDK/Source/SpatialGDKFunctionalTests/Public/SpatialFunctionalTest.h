@@ -335,7 +335,7 @@ protected:
 	// the same delegation at the same time, so we highly recommend that you use the AddStepSetTagDelegation() instead.
 	void SetTagDelegation(FName Tag, int32 ServerWorkerId);
 
-	// Removed the forced authority delegation. All server workers must declare the same delegation at the same time,
+	// Remove the forced authority delegation. All server workers must declare the same delegation at the same time,
 	// so we highly recommend that you use the AddStepClearTagDelegation() instead.
 	void ClearTagDelegation(FName Tag);
 
