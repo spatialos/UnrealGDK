@@ -193,9 +193,10 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 
 	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
 	TraceKey ReturnKey = InvalidTraceKey;
-	if(TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey))
+	if (TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey))
 	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Remove TrackRPC object %s tracekey %d"), *UKismetSystemLibrary::GetDisplayName(Obj), ReturnKey);
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Remove TrackRPC object %s tracekey %d"), *UKismetSystemLibrary::GetDisplayName(Obj),
+			   ReturnKey);
 	}
 	return ReturnKey;
 }
@@ -444,7 +445,8 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	{
 		if (!AddTrackingInfo(Actor, Target, Type, Key))
 		{
-			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s) - %s - %s"), *WorkerId, *TraceDesc, *UKismetSystemLibrary::GetDisplayName(Actor), *Target);
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s) - %s - %s"), *WorkerId,
+				   *TraceDesc, *UKismetSystemLibrary::GetDisplayName(Actor), *Target);
 			return false;
 		}
 	}
@@ -513,7 +515,8 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 				}
 				else
 				{
-					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) already exists for trace %d"), *WorkerId, *Target, Key);
+					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) already exists for trace %d"), *WorkerId, *Target,
+						   Key);
 				}
 			}
 			break;
