@@ -207,7 +207,8 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 	TraceKey ReturnKey = InvalidTraceKey;
 	if (TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey))
 	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Remove TrackRPC object %s entityid %s tracekey %d"), *UKismetSystemLibrary::GetDisplayName(Obj), *USpatialStatics::GetActorEntityIdAsString(Cast<AActor>(Obj)), ReturnKey);
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Remove TrackRPC object %s entityid %s tracekey %d"),
+			   *UKismetSystemLibrary::GetDisplayName(Obj), *USpatialStatics::GetActorEntityIdAsString(Cast<AActor>(Obj)), ReturnKey);
 	}
 	return ReturnKey;
 }
@@ -522,7 +523,8 @@ bool USpatialLatencyTracer::CancelLatencyTrace_Internal(const FSpatialLatencyPay
 			ToBeRemoved.Emplace(kv.Key);
 		}
 	}
-	UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Cancel trace with %d registered funcs .. id %d"), *WorkerId, ToBeRemoved.Num(), Key);
+	UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Cancel trace with %d registered funcs .. id %d"), *WorkerId, ToBeRemoved.Num(),
+		   Key);
 	while (ToBeRemoved.Num())
 	{
 		TrackingRPCs.Remove(ToBeRemoved.Pop());
@@ -549,12 +551,14 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 				if (found == nullptr)
 				{
 					TrackingRPCs.Add(AFKey, Key);
-					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) for entity - %s added for trace %d"), *WorkerId, *Target, *USpatialStatics::GetActorEntityIdAsString(Actor), Key);
+					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) for entity - %s added for trace %d"), *WorkerId,
+						   *Target, *USpatialStatics::GetActorEntityIdAsString(Actor), Key);
 					return true;
 				}
 				else
 				{
-					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) already ( entity - %s ) exists for trace %d"), *WorkerId, *Target, *USpatialStatics::GetActorEntityIdAsString(Actor), Key);
+					UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc (%s) already ( entity - %s ) exists for trace %d"),
+						   *WorkerId, *Target, *USpatialStatics::GetActorEntityIdAsString(Actor), Key);
 				}
 			}
 			break;
