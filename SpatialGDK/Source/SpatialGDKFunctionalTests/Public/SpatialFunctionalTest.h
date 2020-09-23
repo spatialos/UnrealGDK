@@ -210,7 +210,7 @@ public:
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Sets a Debug Tag to be delegated to a specific Server Worker, forcing the Authority to belong to it preventing the Load-Balancing Strategy to change it."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Sets a Debug Tag to be delegated to a specific Server Worker, forcing the Authority to belong to it preventing the Load-Balancing Strategy from changing it."))
 	// clang-format on
 	void AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId = 1);
 
