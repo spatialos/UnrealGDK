@@ -27,29 +27,32 @@ void AEventTracingTest::BeginPlay()
 	Super::BeginPlay();
 
 	AddStep(
-		TEXT("StartTest"), WorkerDefinition, nullptr,
+		TEXT("StartEventTracingTest"), WorkerDefinition, nullptr,
 		[this]() {
-			StartTest();
-		},
+		StartEventTracingTest();
+	},
 		nullptr);
+
 	AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
 		WaitForTestToEnd();
 	});
+
 	AddStep(
 		TEXT("GatherData"), WorkerDefinition, nullptr,
 		[this]() {
-			GatherData();
-		},
+		GatherData();
+	},
 		nullptr);
+
 	AddStep(
 		TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr,
 		[this]() {
-			FinishEventTraceTest();
-		},
+		FinishEventTraceTest();
+	},
 		nullptr);
 }
 
-void AEventTracingTest::StartTest()
+void AEventTracingTest::StartEventTracingTest()
 {
 	TestStartTime = FDateTime::Now();
 	FinishStep();
