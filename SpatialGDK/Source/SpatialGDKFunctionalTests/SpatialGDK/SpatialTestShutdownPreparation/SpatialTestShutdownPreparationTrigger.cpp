@@ -97,8 +97,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			StepTimer += DeltaTime;
 			if (StepTimer > TriggerEventWaitTime)
 			{
-				FinishStep();
 				StepTimer = 0.0f;
+				FinishStep();
 			}
 		});
 
@@ -136,8 +136,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			StepTimer += DeltaTime;
 			if (StepTimer > TriggerEventWaitTime)
 			{
-				FinishStep();
 				StepTimer = 0.0f;
+				FinishStep();
 			}
 		});
 
@@ -155,8 +155,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 					StepTimer += DeltaTime;
 					if (StepTimer > TriggerEventWaitTime)
 					{
-						FinishStep();
 						StepTimer = 0.0f;
+						FinishStep();
 					}
 				});
 	}
