@@ -75,6 +75,9 @@ public:
 	// run on all Workers (Server and Client).
 	virtual void PrepareTest() override;
 
+	// Lets you know if PrepareTest() has been called.
+	bool HasPreparedTest() { return bPreparedTest; }
+
 	// Starts being called after PrepareTest, until it returns true. This is only called on Authority.
 	virtual bool IsReady_Implementation() override;
 

@@ -192,6 +192,7 @@ void ASpatialFunctionalTest::PrepareTest()
 	if (HasAuthority())
 	{
 		bPreparedTest = true;
+		OnReplicated_bPreparedTest();
 	}
 }
 
@@ -291,6 +292,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
 			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
+			OnReplicated_bPreparedTest();
 
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
 				   *UEnum::GetValueAsString(TestResult), *Message);
@@ -618,9 +620,19 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 
 void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 {
-	if (bPreparedTest && !HasAuthority())
+	if (bPreparedTest)
 	{
-		PrepareTest();
+		if (!HasAuthority())
+		{
+			PrepareTest();
+		}
+
+		// Currently PrepareTest() happens before FlowControllers are registered,
+		// but that is most likely because of the bug that forces us to delay their registration.
+		if (LocalFlowController != nullptr)
+		{
+			LocalFlowController->SetReadyToRunTest(true);
+		}
 	}
 }
 
