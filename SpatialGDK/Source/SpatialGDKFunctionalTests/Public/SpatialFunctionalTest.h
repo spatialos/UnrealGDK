@@ -220,7 +220,7 @@ public:
 	void AddStepClearTagDelegation(FName Tag);
 
 	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears all Debug Tag delegations and extra interest. Note that this is called automatically when a test ends, so you use delegation / interest in the test you don't need to clear it manually at the end."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears all Debug Tag delegations and extra interest. Note that this is called automatically when a test ends, so if you use delegation / interest in the test, you don't need to clear it manually at the end."))
 	// clang-format on
 	void AddStepClearTagDelegationAndInterest();
 
