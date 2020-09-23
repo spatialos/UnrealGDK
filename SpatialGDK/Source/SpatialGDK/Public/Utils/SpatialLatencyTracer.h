@@ -123,9 +123,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool EndLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayLoad);
 
-	//Cancel a latency trace. In cross server latency tracing there a possibility that actors will migrate thus circumventing the network
-	//marshalling of the RPC call, this results in TrackingRPCs not being cleared of any register functions. It's necessary to manual
-	//cancel when this occurs.
+	// Cancel a latency trace. In cross server latency tracing there a possibility that actors will migrate thus circumventing the network
+	// marshalling of the RPC call, this results in TrackingRPCs not being cleared of any register functions. It's necessary to manual
+	// cancel when this occurs.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool CancelLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayload);
 
