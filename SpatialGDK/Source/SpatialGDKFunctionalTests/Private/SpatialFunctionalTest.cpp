@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTest.h"
 
+#include "AutomationBlueprintFunctionLibrary.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -365,6 +366,12 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			AuxLocalFlowController->NotifyFinishTest(TestResult, Message);
 		}
 	}
+}
+
+void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
+												 bool bExactMatch /*= false*/)
+{
+	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, bExactMatch);
 }
 
 void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
