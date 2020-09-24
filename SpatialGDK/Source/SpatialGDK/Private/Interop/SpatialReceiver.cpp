@@ -1387,7 +1387,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 			return;
 		}
 
-		// If we can't find this subobject, it's a dynamically attached object. Check we created previously.
+		// If we can't find this subobject, it's a dynamically attached object. Check if we created previously.
 		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectNetGUID(TargetObjectRef))
 		{
 			if (UObject* DynamicSubobject = PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
