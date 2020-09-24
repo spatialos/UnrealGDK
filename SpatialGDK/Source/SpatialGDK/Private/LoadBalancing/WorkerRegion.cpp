@@ -39,9 +39,9 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 
 	// Tile horizontally
 	int xCount = Extents.GetSize().X / 250;
-	const float C = 50; 
+	const float C = 50;
 	float D = C;
-	for (int xi = 0; xi < xCount-1; xi++)
+	for (int xi = 0; xi < xCount - 1; xi++)
 	{
 		D -= 100.f / xCount;
 	}
@@ -66,7 +66,7 @@ void AWorkerRegion::CreateWorkerTextAtPosition(const float& VerticalScale, const
 	FQuat QuatRotation = FQuat(NewRotation);
 	WorkerText->SetWorldRotation(QuatRotation);
 
-	//WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, (DEFAULT_WORKER_REGION_HEIGHT / 2.0) * VerticalScale));
+	// WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, (DEFAULT_WORKER_REGION_HEIGHT / 2.0) * VerticalScale));
 	WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, 0));
 
 	WorkerText->SetTextRenderColor(FColor::White);
