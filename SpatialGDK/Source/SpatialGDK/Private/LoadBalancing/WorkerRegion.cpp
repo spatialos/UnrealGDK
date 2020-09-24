@@ -35,25 +35,25 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 	Mesh->SetMaterial(0, MaterialInstance);
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
 	SetColor(Color);
-	SetPositionAndScale(Extents, VerticalScale);
+	SetPositionAndScale(Extents, VerticalScale,false, true);
 
+	// Create dynamic worker name text on boundary wall
 	WorkerText = NewObject<UTextRenderComponent>(this);
-
-	// WorkerText->SetRelativeLocation(FVector(-282.f, 100, 100.f));
 	FRotator NewRotation = FRotator(0, 270, 0);
-
 	FQuat QuatRotation = FQuat(NewRotation);
 	WorkerText->SetWorldRotation(QuatRotation);
+	// Using exactly 50 causes the text to flicker so used nearly 50 instead
+	WorkerText->SetRelativeLocation(FVector(0, 49.999, (DEFAULT_WORKER_REGION_HEIGHT / 2.0) * VerticalScale));
 	WorkerText->SetTextRenderColor(FColor::White);
 	WorkerText->SetText((TEXT("Worker boundary %s"), WorkerName));
 	WorkerText->SetXScale(1.f);
 	WorkerText->SetYScale(1.f);
 	WorkerText->SetWorldSize(16);
-
-	FAttachmentTransformRules TextTransformRules(EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld,
-												 false);
+	FAttachmentTransformRules TextTransformRules(EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld,											 false);
 	WorkerText->AttachToComponent(this->GetRootComponent(), TextTransformRules);
 	WorkerText->RegisterComponent();
+
+	SetPositionAndScale(Extents, VerticalScale,true,false);
 }
 
 void AWorkerRegion::SetHeight(const float Height)
@@ -67,7 +67,7 @@ void AWorkerRegion::SetOpacity(const float Opacity)
 	MaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 }
 
-void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale)
+void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)
 {
 	const FVector CurrentLocation = GetActorLocation();
 
@@ -81,8 +81,14 @@ void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float Verti
 	const float ScaleX = (MaxX - MinX) / 100;
 	const float ScaleY = (MaxY - MinY) / 100;
 
-	SetActorLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
-	SetActorScale3D(FVector(ScaleX, ScaleY, VerticalScale));
+	if (bSetPosition)
+	{
+		SetActorLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
+	}
+	if (bSetScale)
+	{
+		SetActorScale3D(FVector(ScaleX, ScaleY, VerticalScale));
+	}
 }
 
 void AWorkerRegion::SetColor(const FColor& Color)
