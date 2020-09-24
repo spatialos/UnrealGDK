@@ -202,7 +202,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		AddCoordinateToSchema(RelativeBoxConstraintObject, 1, Constraint.RelativeBoxConstraint->EdgeLength);
 	}
 
-	// option<int64> entity_id_constraint = 7;
+        // option<int64> entity_id_constraint = 7;
 	if (Constraint.EntityIdConstraint.IsSet())
 	{
 		Schema_AddInt64(QueryConstraintObject, 7, *Constraint.EntityIdConstraint);
