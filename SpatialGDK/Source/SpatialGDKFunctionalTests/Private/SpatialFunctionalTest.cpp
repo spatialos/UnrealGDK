@@ -369,9 +369,9 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 }
 
 void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
-												 bool ExactMatch /*= false*/)
+												 bool bExactMatch /*= false*/)
 {
-	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, ExactMatch);
+	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, bExactMatch);
 }
 
 void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)

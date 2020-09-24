@@ -84,7 +84,7 @@ public:
 	// the steps themselves. Keep in mind that if the expected number of occurrences aren't met, the test fails.
 	// The same pattern can only be added once, so make sure to execute only in the test Authority or in a step that
 	// is running only on one worker.
-	void AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences = 1, bool ExactMatch = false);
+	void AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences = 1, bool bExactMatch = false);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
