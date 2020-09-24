@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
-* Fixed a bug that prevented the Interest component from being initialized properly when provided with `Worker_ComponentData`.
 
 ### Breaking changes:
 - The condition for sending Spatial position updates has been changed, the two variables `PositionUpdateFrequency` and `PositionDistanceThreshold` have now been removed from the GDK settings. To update your project:
@@ -45,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where possessing a new pawn and immediately setting the owner of the old pawn to the controller could cause server RPCs from that pawn to be dropped.
 - Added support for the `bHidden` relevancy flag. Clients will not checkout Actors that have `bHidden` set to true (unless they are always relevant or the root component has collisions enabled).
 - Fixed an issue with deployments failing due to the incorrect number of workers when the launch config was specified, rather than automatically generated.
+- Fixed an issue that prevented the Interest component from being initialized properly when provided with `Worker_ComponentData`.
 
 ## [`0.11.0`] - 2020-09-03
 
