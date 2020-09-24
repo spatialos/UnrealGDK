@@ -17,8 +17,8 @@ const int32 MIN_HUE = 10;
 const int32 MAX_HUE = 350;
 const int32 MIN_SATURATION = 60;
 const int32 MAX_SATURATION = 100;
-const int32 MIN_LIGHTNESS = 25;
-const int32 MAX_LIGHTNESS = 60;
+const int32 MIN_LIGHTNESS = 20;
+const int32 MAX_LIGHTNESS = 70;
 
 int64 GenerateValueFromThresholds(int64 Hash, int32 Min, int32 Max)
 {
@@ -81,11 +81,11 @@ FColor HSLtoRGB(double Hue, double Saturation, double Lightness)
 	return FColor{ static_cast<uint8>(r), static_cast<uint8>(g), static_cast<uint8>(b) };
 }
 
-int64 DJBReverseHash(const PhysicalWorkerName& WorkerName)
+int64 DJBReverseHash(const FString& Input)
 {
-	const int32 StringLength = WorkerName.Len();
+	const int32 StringLength = Input.Len();
 	int64 Hash = 5381;
-	for (int32 i = StringLength - 1; i > 0; --i)
+	for (int32 i = StringLength - 1; i >= 0; --i)
 	{
 		// We're mimicking the Inspector logic which is in JS. In JavaScript,
 		// a number is stored as a 64-bit floating point number but the bit-wise
@@ -99,22 +99,22 @@ int64 DJBReverseHash(const PhysicalWorkerName& WorkerName)
 		uint64 BitShiftingScratchRegister;
 		std::memcpy(&BitShiftingScratchRegister, &Hash, sizeof(int64));
 		int32 BitShiftedHash = static_cast<int32>((BitShiftingScratchRegister << 5) & 0xFFFFFFFF);
-		Hash = BitShiftedHash + Hash + static_cast<int32>(WorkerName[i]);
+		Hash = BitShiftedHash + Hash + static_cast<int32>(Input[i]);
 	}
-	return FMath::Abs(Hash);
+	return Hash;
 }
 } // namespace
 
 FColor GetColorForWorkerName(const PhysicalWorkerName& WorkerName)
 {
-	int64 Hash = DJBReverseHash(WorkerName);
+	const int64 LightnessHash = FMath::Abs(DJBReverseHash("lightness: " + WorkerName));
+	const double Lightness = GenerateValueFromThresholds(LightnessHash, MIN_LIGHTNESS, MAX_LIGHTNESS);
 
-	const double Lightness = GenerateValueFromThresholds(Hash, MIN_LIGHTNESS, MAX_LIGHTNESS);
-	const double Saturation = GenerateValueFromThresholds(Hash, MIN_SATURATION, MAX_SATURATION);
-	// Provides additional color variance for potentially sequential hashes
-	auto abs = FMath::Abs((double)Hash / Saturation + Lightness);
-	Hash = FMath::FloorToInt(abs);
-	const double Hue = GenerateValueFromThresholds(Hash, MIN_HUE, MAX_HUE);
+	const int64 SaturationHash = FMath::Abs(DJBReverseHash("saturation: " + WorkerName));
+	const double Saturation = GenerateValueFromThresholds(SaturationHash, MIN_SATURATION, MAX_SATURATION);
+
+	const int64 HueHash = FMath::Abs(DJBReverseHash("hue: " + WorkerName));
+	const double Hue = GenerateValueFromThresholds(HueHash, MIN_HUE, MAX_HUE);
 
 	return SpatialGDK::HSLtoRGB(Hue, Saturation, Lightness);
 }
