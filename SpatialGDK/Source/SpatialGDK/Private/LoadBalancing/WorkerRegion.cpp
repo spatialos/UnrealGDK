@@ -35,25 +35,49 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 	Mesh->SetMaterial(0, MaterialInstance);
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
 	SetColor(Color);
-	SetPositionAndScale(Extents, VerticalScale,false, true);
+	SetPositionAndScale(Extents, VerticalScale, false, true);
 
+	// Tile horizontally
+	int xCount = Extents.GetSize().X / 250;
+	const float C = 50; 
+	float D = C;
+	for (int xi = 0; xi < xCount-1; xi++)
+	{
+		D -= 100.f / xCount;
+	}
+	// Using exactly 50 causes the text to flicker so used nearly 50 instead
+	const float A = 0;
+	for (int xi = 0; xi < xCount; xi++)
+	{
+		float B = xCount - 1;
+		float xPos = (xi - A) / (B - A) * (D - C) + C;
+		CreateWorkerTextAtPosition(VerticalScale, WorkerName, xPos, 49.999);
+	}
+
+	SetPositionAndScale(Extents, VerticalScale, true, false);
+}
+
+void AWorkerRegion::CreateWorkerTextAtPosition(const float& VerticalScale, const FString& WorkerName, const float& PositionX,
+											   const float& PositionY)
+{
 	// Create dynamic worker name text on boundary wall
 	WorkerText = NewObject<UTextRenderComponent>(this);
 	FRotator NewRotation = FRotator(0, 270, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
 	WorkerText->SetWorldRotation(QuatRotation);
-	// Using exactly 50 causes the text to flicker so used nearly 50 instead
-	WorkerText->SetRelativeLocation(FVector(0, 49.999, (DEFAULT_WORKER_REGION_HEIGHT / 2.0) * VerticalScale));
+
+	//WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, (DEFAULT_WORKER_REGION_HEIGHT / 2.0) * VerticalScale));
+	WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, 0));
+
 	WorkerText->SetTextRenderColor(FColor::White);
 	WorkerText->SetText((TEXT("Worker boundary %s"), WorkerName));
 	WorkerText->SetXScale(1.f);
 	WorkerText->SetYScale(1.f);
-	WorkerText->SetWorldSize(16);
-	FAttachmentTransformRules TextTransformRules(EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld,											 false);
+	WorkerText->SetWorldSize(10);
+	FAttachmentTransformRules TextTransformRules(EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepWorld,
+												 false);
 	WorkerText->AttachToComponent(this->GetRootComponent(), TextTransformRules);
 	WorkerText->RegisterComponent();
-
-	SetPositionAndScale(Extents, VerticalScale,true,false);
 }
 
 void AWorkerRegion::SetHeight(const float Height)
