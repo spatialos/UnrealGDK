@@ -8,13 +8,11 @@
 
 namespace SpatialGDK
 {
-SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer)
-	: Connection(Connection)
-	, EventTracer(EventTracer)
+SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TUniquePtr<SpatialEventTracer> EventTracer)
+	: EventTracer(MoveTemp(EventTracer))
+	,Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
 {
-	ConnectionState.Reset(new WorkerConnectionState(Connection, EventTracer));
-
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
 	for (uint32 i = 0; i < Attributes->attribute_count; ++i)
 	{
@@ -31,7 +29,7 @@ uint32 SpatialOSConnectionHandler::GetOpListCount()
 
 OpList SpatialOSConnectionHandler::GetNextOpList()
 {
-	OpList Ops = GetOpListFromConnection(Connection);
+	OpList Ops = GetOpListFromConnection(Connection.Get());
 	// Find responses and change their internal request IDs to match the request ID provided by the user.
 	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
@@ -74,24 +72,24 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	const Worker_CommandParameters CommandParams = { 0 /*allow_short_circuit*/ };
 	for (auto& Message : Messages->ComponentMessages)
 	{
-		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Message.SpanId);
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Message.SpanId);
 		switch (Message.GetType())
 		{
 		case OutgoingComponentMessage::ADD:
 		{
 			Worker_ComponentData Data = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr };
-			Worker_Connection_SendAddComponent(Connection, Message.EntityId, &Data, &UpdateParams);
+			Worker_Connection_SendAddComponent(Connection.Get(), Message.EntityId, &Data, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::UPDATE:
 		{
 			Worker_ComponentUpdate Update = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr };
-			Worker_Connection_SendComponentUpdate(Connection, Message.EntityId, &Update, &UpdateParams);
+			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:
 		{
-			Worker_Connection_SendRemoveComponent(Connection, Message.EntityId, Message.ComponentId, &UpdateParams);
+			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.ComponentId, &UpdateParams);
 			break;
 		}
 		default:
@@ -103,7 +101,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	for (auto& Request : Messages->ReserveEntityIdsRequests)
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendReserveEntityIdsRequest(Connection, Request.NumberOfEntityIds, Timeout);
+		const Worker_RequestId Id = Worker_Connection_SendReserveEntityIdsRequest(Connection.Get(), Request.NumberOfEntityIds, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -116,20 +114,20 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 			Components.Push(Worker_ComponentData{ nullptr, Component.GetComponentId(), MoveTemp(Component).Release(), nullptr });
 		}
 
-		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Request.SpanId);
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 
 		Worker_EntityId* EntityId = Request.EntityId.IsSet() ? &Request.EntityId.GetValue() : nullptr;
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		const Worker_RequestId Id =
-			Worker_Connection_SendCreateEntityRequest(Connection, Components.Num(), Components.GetData(), EntityId, Timeout);
+			Worker_Connection_SendCreateEntityRequest(Connection.Get(), Components.Num(), Components.GetData(), EntityId, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
 	for (auto& Request : Messages->DeleteEntityRequests)
 	{
-		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Request.SpanId);
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection, Request.EntityId, Timeout);
+		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -137,32 +135,32 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		Worker_EntityQuery Query = Request.Query.GetWorkerQuery();
-		const Worker_RequestId Id = Worker_Connection_SendEntityQueryRequest(Connection, &Query, Timeout);
+		const Worker_RequestId Id = Worker_Connection_SendEntityQueryRequest(Connection.Get(), &Query, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
 	for (auto& Request : Messages->EntityCommandRequests)
 	{
-		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Request.SpanId);
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		Worker_CommandRequest r = { nullptr, Request.Request.GetComponentId(), Request.Request.GetCommandIndex(),
 									MoveTemp(Request.Request).Release(), nullptr };
-		const Worker_RequestId Id = Worker_Connection_SendCommandRequest(Connection, Request.EntityId, &r, Timeout, &CommandParams);
+		const Worker_RequestId Id = Worker_Connection_SendCommandRequest(Connection.Get(), Request.EntityId, &r, Timeout, &CommandParams);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
 	for (auto& Response : Messages->EntityCommandResponses)
 	{
-		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Response.SpanId);
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Response.SpanId);
 		Worker_CommandResponse r = { nullptr, Response.Response.GetComponentId(), Response.Response.GetCommandIndex(),
 									 MoveTemp(Response.Response).Release(), nullptr };
-		Worker_Connection_SendCommandResponse(Connection, Response.RequestId, &r);
+		Worker_Connection_SendCommandResponse(Connection.Get(), Response.RequestId, &r);
 	}
 
 	for (auto& Failure : Messages->EntityCommandFailures)
 	{
-		SpatialScopedActiveSpanId SpanWrapper(EventTracer, Failure.SpanId);
-		Worker_Connection_SendCommandFailure(Connection, Failure.RequestId, TCHAR_TO_UTF8(*Failure.Message));
+		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Failure.SpanId);
+		Worker_Connection_SendCommandFailure(Connection.Get(), Failure.RequestId, TCHAR_TO_UTF8(*Failure.Message));
 	}
 
 	for (auto& Log : Messages->Logs)
@@ -170,15 +168,15 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		FTCHARToUTF8 LoggerName(*Log.LoggerName.ToString());
 		FTCHARToUTF8 LogString(*Log.Message);
 		Worker_LogMessage L = { static_cast<uint8>(Log.Level), LoggerName.Get(), LogString.Get() };
-		Worker_Connection_SendLogMessage(Connection, &L);
+		Worker_Connection_SendLogMessage(Connection.Get(), &L);
 	}
 
 	for (auto& Metrics : Messages->Metrics)
 	{
-		Metrics.SendToConnection(Connection);
+		Metrics.SendToConnection(Connection.Get());
 	}
 
-	Worker_Connection_Alpha_Flush(Connection);
+	Worker_Connection_Alpha_Flush(Connection.Get());
 }
 
 const FString& SpatialOSConnectionHandler::GetWorkerId() const
@@ -191,16 +189,17 @@ const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
 	return WorkerAttributes;
 }
 
-void SpatialOSConnectionHandler::WorkerConnectionStateDeleter::operator()(WorkerConnectionState* ConnectionState) const noexcept
+void SpatialOSConnectionHandler::WorkerConnectionDeleter::operator()(Worker_Connection* Connection) const noexcept
 {
-	if (ConnectionState != nullptr)
-	{
-		// TODO: UNR-4211 - this is a mitigation for the slow connection destruction code in pie.
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionState]() {
-			Worker_Connection_Destroy(ConnectionState->Connection);
-			ConnectionState->EventTracer = nullptr;
-		});
-	}
+	Worker_Connection_Destroy(Connection);
+}
+
+SpatialOSConnectionHandler::~SpatialOSConnectionHandler()
+{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [Connection = MoveTemp(Connection), EventTracer = MoveTemp(EventTracer)]() mutable {
+		Connection.Reset(nullptr);
+		EventTracer.Reset(nullptr);
+	});
 }
 
 } // namespace SpatialGDK

@@ -12,7 +12,8 @@ class SpatialEventTracer;
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
 {
 public:
-	explicit SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer);
+	explicit SpatialOSConnectionHandler(Worker_Connection* Connection, TUniquePtr<SpatialEventTracer> EventTracer);
+	~SpatialOSConnectionHandler();
 
 	virtual void Advance() override;
 	virtual uint32 GetOpListCount() override;
@@ -22,27 +23,15 @@ public:
 	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
 private:
-	struct WorkerConnectionState
+
+	struct WorkerConnectionDeleter
 	{
-		WorkerConnectionState(Worker_Connection* InConnection, SpatialEventTracer* InEventTracer)
-			: Connection(InConnection)
-			, EventTracer(InEventTracer)
-		{
-		}
-
-		Worker_Connection* Connection;
-		TUniquePtr<SpatialEventTracer> EventTracer;
+		void operator()(Worker_Connection* Connection) const noexcept;
 	};
+#
+	TUniquePtr<SpatialEventTracer> EventTracer;
+	TUniquePtr<Worker_Connection, WorkerConnectionDeleter> Connection;
 
-	struct WorkerConnectionStateDeleter
-	{
-		void operator()(WorkerConnectionState* WorkerConnectionState) const noexcept;
-	};
-
-	TUniquePtr<WorkerConnectionState, WorkerConnectionStateDeleter> ConnectionState;
-
-	Worker_Connection* Connection;
-	SpatialEventTracer* EventTracer;
 	TMap<int64, int64> InternalToUserRequestId;
 	FString WorkerId;
 	TArray<FString> WorkerAttributes;

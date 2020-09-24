@@ -71,7 +71,7 @@ public:
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -83,7 +83,7 @@ private:
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
-	void CreateEventTracer(const FString& WorkerId);
+	TUniquePtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
 private:
 	UPROPERTY()

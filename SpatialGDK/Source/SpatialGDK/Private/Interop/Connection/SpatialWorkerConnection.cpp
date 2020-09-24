@@ -23,11 +23,11 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 } // anonymous namespace
 
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn, TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer)
 {
 	StartupComplete = false;
 	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
-		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, EventTracer);
+		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, MoveTemp(EventTracer));
 	TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
 		MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
 			if (StartupComplete)
@@ -37,7 +37,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			ExtractStartupOps(Ops, ExtractedOps);
 			return false;
 		});
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), EventTracer);
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), EventTracer.Get());
 }
 
 void USpatialWorkerConnection::FinishDestroy()
