@@ -279,6 +279,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* SphereConstraintObject = Schema_GetObject(QueryConstraintObject, 1);
 
+		NewQueryConstraint.SphereConstraint = SphereConstraint{};
 		NewQueryConstraint.SphereConstraint->Center = GetCoordinateFromSchema(SphereConstraintObject, 1);
 		NewQueryConstraint.SphereConstraint->Radius = Schema_GetDouble(SphereConstraintObject, 2);
 	}
@@ -288,6 +289,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* CylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 2);
 
+		NewQueryConstraing.CylinderConstraint = CylinderConstraint{};
 		NewQueryConstraint.CylinderConstraint->Center = GetCoordinateFromSchema(CylinderConstraintObject, 1);
 		NewQueryConstraint.CylinderConstraint->Radius = Schema_GetDouble(CylinderConstraintObject, 2);
 	}
@@ -297,6 +299,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* BoxConstraintObject = Schema_GetObject(QueryConstraintObject, 3);
 
+		NewQueryConstraint.BoxConstraint = BoxConstraint{};
 		NewQueryConstraint.BoxConstraint->Center = GetCoordinateFromSchema(BoxConstraintObject, 1);
 		NewQueryConstraint.BoxConstraint->EdgeLength = GetCoordinateFromSchema(BoxConstraintObject, 2);
 	}
@@ -306,14 +309,16 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeSphereConstraintObject = Schema_GetObject(QueryConstraintObject, 4);
 
+		NewQueryConstraint.RelativeSphereConstraint = RelativeSphereConstraint{};
 		NewQueryConstraint.RelativeSphereConstraint->Radius = Schema_GetDouble(RelativeSphereConstraintObject, 1);
 	}
 
 	// option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
 	if (Schema_GetObjectCount(QueryConstraintObject, 5) > 0)
 	{
-		Schema_Object* RelativeCylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 5);
+		Schema_Object* RelativeCylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 5);	
 
+		NewQueryConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{};
 		NewQueryConstraint.RelativeCylinderConstraint->Radius = Schema_GetDouble(RelativeCylinderConstraintObject, 1);
 	}
 
@@ -322,6 +327,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeBoxConstraintObject = Schema_GetObject(QueryConstraintObject, 6);
 
+		NewQueryConstraint.RelativeBoxConstraint = RelativeBoxConstraint{};
 		NewQueryConstraint.RelativeBoxConstraint->EdgeLength = GetCoordinateFromSchema(RelativeBoxConstraintObject, 1);
 	}
 
