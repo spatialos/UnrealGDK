@@ -178,6 +178,17 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 	return nullptr;
 }
 
+FString USpatialLatencyTracer::GetTraceMetadata(UObject* WorldContextObject)
+{
+#ifdef TRACE_LIB_ACTIVE
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->TraceMetadata;
+	}
+#endif
+	return "";
+}
+
 #if TRACE_LIB_ACTIVE
 bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {
