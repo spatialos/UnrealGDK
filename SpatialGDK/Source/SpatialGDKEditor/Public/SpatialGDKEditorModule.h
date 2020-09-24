@@ -14,21 +14,21 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorModule, Log, All);
 class FSpatialGDKEditorModule : public ISpatialGDKEditorModule
 {
 public:
-
 	FSpatialGDKEditorModule();
 
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	virtual bool SupportsDynamicReloading() override
-	{
-		return true;
-	}
+	virtual bool SupportsDynamicReloading() override { return true; }
 
-	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const
-	{
-		return SpatialGDKEditorInstance;
-	}
+	TSharedPtr<FSpatialGDKEditor> GetSpatialGDKEditorInstance() const { return SpatialGDKEditorInstance; }
+
+	virtual void TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken) override;
+
+	/* Way to force a deployment to be launched with a specific snapshot. This is meant to be override-able only
+	 * at runtime, specifically for Functional Testing purposes.
+	 */
+	FString ForceUseSnapshotAtPath;
 
 private:
 	// Local deployment connection flow
@@ -51,6 +51,8 @@ private:
 	virtual bool ShouldPackageMobileCommandLineArgs() const override;
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
+
+	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const;
 
 private:
 	void RegisterSettings();

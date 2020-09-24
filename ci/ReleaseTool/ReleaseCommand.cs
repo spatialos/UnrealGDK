@@ -32,12 +32,8 @@ namespace ReleaseTool
 
         // Changelog file configuration
         private const string ChangeLogFilename = "CHANGELOG.md";
-        private const string CandidateCommitMessageTemplate = "{0}.";
+        private const string CandidateCommitMessageTemplate = "Update branch for GDK for Unreal {0}.";
         private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
-
-        // Names of the version files that live in the UnrealEngine repository.
-        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
-        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
         public class Options : GitHubClient.IGitHubOptions
@@ -87,7 +83,7 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
-            var (repoName, pullRequestId) = ExtractPullRequestInfo(options.PullRequestUrl);
+            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
             var gitHubClient = new GitHubClient(options);
             var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
@@ -99,54 +95,8 @@ namespace ReleaseTool
             {
                 Logger.Info("Candidate branch has already merged into release branch. No merge operation will be attempted.");
 
-                // Check if a PR has already been opened from release branch into source branch.
-                // If it has, log the PR URL and move on.
-                // This ensures the idempotence of the pipeline.
-                var githubOrg = options.GithubOrgName;
-                var branchFrom = $"{options.CandidateBranch}-cleanup";
-                var branchTo = options.SourceBranch;
-
-                if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
-                {
-                    try
-                    {
-                        using (var gitClient = GitClient.FromRemote(repoUrl))
-                        {
-                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                            gitClient.ForcePush(branchFrom);
-                        }
-                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                        branchFrom,
-                        branchTo,
-                        string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
-                        string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
-                    }
-                    catch (Octokit.ApiValidationException e)
-                    {
-                            // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
-                            if (e.ApiError.Errors.Count>0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
-                            {
-                                Logger.Info(e.ApiError.Errors[0].Message);
-                                Logger.Info("No PR will be created.");
-                                return 0;
-                            }
-
-                            throw;
-                    }
-                }
-
-                else
-                {
-                    Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
-                }
-
-                var prAnnotation = string.Format(prAnnotationTemplate,
-                    pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
-                BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
-
-                Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                Logger.Info("Successfully created PR from release branch into source branch.");
-                Logger.Info("Merge hash: {0}", pullRequest.MergeCommitSha);
+                // null for GitClient will let it create one if necessary
+                CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, repoName, null);
 
                 return 0;
             }
@@ -154,50 +104,33 @@ namespace ReleaseTool
             var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
             try
             {
-                // 1. Clones the source repo.
-                using (var gitClient = GitClient.FromRemote(remoteUrl))
+                // Only do something for the UnrealGDK, since the other repos should have been prepped by the PrepFullReleaseCommand.
+                if (repoName == "UnrealGDK")
                 {
-                    // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
-                    gitClient.CheckoutRemoteBranch(options.CandidateBranch);
-
-                    // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                    switch (repoName)
+                    // 1. Clones the source repo.
+                    using (var gitClient = GitClient.FromRemote(remoteUrl))
                     {
-                        case "UnrealEngine":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile);
-                            break;
-                        case "UnrealGDK":
-                            UpdateChangeLog(ChangeLogFilename, options, gitClient);
+                        // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
 
-                            var releaseHashes = options.EngineVersions.Split(" ")
-                                .Select(version => $"{version.Trim()}-release")
-                                .Select(BuildkiteAgent.GetMetadata)
-                                .Select(hash => $"UnrealEngine-{hash}")
-                                .ToList();
+                        // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+                        Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
 
-                            UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
-                            break;
-                        case "UnrealGDKExampleProject":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
-                        case "UnrealGDKTestGyms":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
-                        case "UnrealGDKEngineNetTest":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
-                        case "TestGymBuildKite":
-                            UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile);
-                            break;
+                        var releaseHashes = options.EngineVersions.Split(" ")
+                            .Select(version => $"{version.Trim()}-release")
+                            .Select(BuildkiteAgent.GetMetadata)
+                            .Select(hash => $"UnrealEngine-{hash}")
+                            .ToList();
+
+                        UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
+
+                        // 4. Commit changes and push them to a remote candidate branch.
+                        gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+                        gitClient.ForcePush(options.CandidateBranch);
                     }
-
-                    // 4. Commit changes and push them to a remote candidate branch.
-                    gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
-                    gitClient.ForcePush(options.CandidateBranch);
                 }
 
-                // Since we've pushed changes, we need to wait for all checks to pass before attempting to merge it.
+                // Since we've (maybe) pushed changes, we need to wait for all checks to pass before attempting to merge it.
                 var startTime = DateTime.Now;
                 while (true)
                 {
@@ -222,16 +155,17 @@ namespace ReleaseTool
                     // Merge into release
                     try
                     {
-                        mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge);
+                        mergeResult = gitHubClient.MergePullRequest(gitHubRepo, pullRequestId, PullRequestMergeMethod.Merge, $"Merging final GDK for Unreal {options.Version} release");
                     }
-                    catch (Octokit.PullRequestNotMergeableException e) {} // Will be covered by log below
+                    catch (Octokit.PullRequestNotMergeableException e) {
+                        Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {e.Message}");
+                    }
                     if (DateTime.Now.Subtract(startTime) > TimeSpan.FromHours(12))
                     {
                         throw new Exception($"Exceeded timeout waiting for PR to be mergeable: {options.PullRequestUrl}");
                     }
                     if (!mergeResult.Merged)
                     {
-                        Logger.Info($"Was unable to merge pull request at: {options.PullRequestUrl}. Received error: {mergeResult.Message}");
                         Logger.Info($"{options.PullRequestUrl} is not in a mergeable state, will query mergeability again in one minute.");
                         Thread.Sleep(TimeSpan.FromMinutes(1));
                     }
@@ -247,7 +181,7 @@ namespace ReleaseTool
                 // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
                 BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
 
-                //TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
+                // TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
                 // Delete candidate branch.
                 //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
 
@@ -264,95 +198,17 @@ namespace ReleaseTool
                     Logger.Info("Release Successful!");
                     Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
                     Logger.Info("Draft release: {0}", release.HtmlUrl);
+
+                    CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, repoName, gitClient);
                 }
-
-                // Check if a PR has already been opened from release branch into source branch.
-                // If it has, log the PR URL and move on.
-                // This ensures the idempotence of the pipeline.
-                var githubOrg = options.GithubOrgName;
-                var branchFrom = $"{options.CandidateBranch}-cleanup";
-                var branchTo = options.SourceBranch;
-
-                if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
-                {
-                    try
-                    {
-                        using (var gitClient = GitClient.FromRemote(repoUrl))
-                        {
-                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                            gitClient.ForcePush(branchFrom);
-                        }
-                        pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                        branchFrom,
-                        branchTo,
-                        string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
-                        string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
-                    }
-                    catch (Octokit.ApiValidationException e)
-                    {
-                        // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
-                        if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
-                        {
-                            Logger.Info(e.ApiError.Errors[0].Message);
-                            Logger.Info("No PR will be created.");
-                            return 0;
-                        }
-
-                        throw;
-                    }
-                }
-
-                else
-                {
-                    Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
-                }
-
-                var prAnnotation = string.Format(prAnnotationTemplate,
-                    pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
-                BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
-
-                Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
             }
             catch (Exception e)
             {
-                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e);
+                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e.Message);
                 return 1;
             }
 
             return 0;
-        }
-        internal static void UpdateChangeLog(string ChangeLogFilePath, Options options, GitClient gitClient)
-        {
-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-            {
-                if (File.Exists(ChangeLogFilePath))
-                {
-                    Logger.Info("Updating {0}...", ChangeLogFilePath);
-                    var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
-                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
-                        DateTime.Now);
-                    var releaseIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - "));
-                    // If we already have a changelog entry for this release, replace it.
-                    if (releaseIndex != -1)
-                    {
-                        changelog[releaseIndex] = releaseHeading;
-                    }
-                    else
-                    {
-                        // Add the new release heading under the "## Unreleased" one.
-                        // Assuming that this is the first heading.
-                        var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
-                        changelog.InsertRange(unreleasedIndex + 1, new[]
-                        {
-                            string.Empty,
-                            releaseHeading
-                        });
-                    }
-                    File.WriteAllLines(ChangeLogFilePath, changelog);
-                    gitClient.StageFile(ChangeLogFilePath);
-                }
-            }
         }
 
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
@@ -361,6 +217,7 @@ namespace ReleaseTool
 
             var engineVersion = options.SourceBranch.Trim();
 
+            string tag = options.Version; // Default tag, only changed for Engine versions currently
             string name;
             string releaseBody;
 
@@ -380,7 +237,7 @@ Release notes 将同时提供中英文。要浏览中文版本，向下滚动页
 
 # English version
 
-**Unreal GDK version {options.Version} is go!**
+**Unreal GDK version {options.Version} has been released!**
 
 ## Release Notes
 
@@ -389,7 +246,7 @@ Release notes 将同时提供中英文。要浏览中文版本，向下滚动页
 ## Upgrading
 
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
-* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 
 Follow **[these](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date)** steps to upgrade your GDK, Engine fork and Example Project to the latest release.
 
@@ -416,12 +273,13 @@ Happy developing,
 ";
                     break;
                 case "UnrealEngine":
+                    tag = $"{engineVersion}-{options.Version}";
                     name = $"{engineVersion}-{options.Version}";
                     releaseBody =
-$@"Unreal GDK version {options.Version} is go!
+$@"Unreal GDK version {options.Version} has been released!
 
-* This Engine version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
-* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* This Engine version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 
 Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 
@@ -433,12 +291,12 @@ Happy developing!<br>
 GDK team";
                     break;
                 case "UnrealGDKTestGyms":
-                    name = $"{options.Version}";
+                    name = $"Unreal GDK Test Gyms {options.Version}";
                     releaseBody =
-$@"Unreal GDK version {options.Version} is go!
+$@"Unreal GDK version {options.Version} has been released!
 
-* This UnrealGDKTestGyms version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
-* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* This UnrealGDKTestGyms version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 
 Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
@@ -451,13 +309,13 @@ Happy developing!<br>
 GDK team";
                     break;
                 case "UnrealGDKEngineNetTest":
-                    name = $"{options.Version}";
+                    name = $"Unreal GDK EngineNetTest {options.Version}";
                     releaseBody =
-$@"Unreal GDK version {options.Version} is go!
+$@"Unreal GDK version {options.Version} has been released!
 
-* This UnrealGDKEngineNetTest version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
-* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases).
-* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* This UnrealGDKEngineNetTest version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 
 Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
@@ -470,13 +328,13 @@ Happy developing!<br>
 GDK team";
                     break;
                 case "TestGymBuildKite":
-                    name = $"{options.Version}";
+                    name = $"Unreal GDK TestGymBuildKite {options.Version}";
                     releaseBody =
-$@"Unreal GDK version {options.Version} is go!
+$@"Unreal GDK version {options.Version} has been released!
 
-* This TestGymBuildKite version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
-* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases).
-* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases).
+* This TestGymBuildKite version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 
 Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
@@ -489,11 +347,11 @@ Happy developing!<br>
 GDK team";
                     break;
                 case "UnrealGDKExampleProject":
-                    name = $"{options.Version}";
+                    name = $"Unreal GDK Example Project {options.Version}";
                     releaseBody =
-$@"Unreal GDK version {options.Version} is go!
+$@"Unreal GDK version {options.Version} has been released!
 
-* This UnrealGDKExampleProject version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases).
+* This UnrealGDKExampleProject version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 
 Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
@@ -509,60 +367,65 @@ GDK team";
                     throw new ArgumentException("Unsupported repository.", nameof(repoName));
             }
 
-            return gitHubClient.CreateDraftRelease(gitHubRepo, options.Version, releaseBody, name, headCommit);
+            return gitHubClient.CreateDraftRelease(gitHubRepo, tag, releaseBody, name, headCommit);
         }
 
-        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string relativeFilePath)
+        private void CreatePRFromReleaseToSource(GitHubClient gitHubClient, Repository gitHubRepo, string repoUrl, string repoName, GitClient gitClient)
         {
-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-            {
-                Logger.Info("Updating contents of version file '{0}' to '{1}'...", relativeFilePath, fileContents);
+            // Check if a PR has already been opened from release branch into source branch.
+            // If it has, log the PR URL and move on.
+            // This ensures the idempotence of the pipeline.
+            var githubOrg = options.GithubOrgName;
+            var branchFrom = $"{options.CandidateBranch}-cleanup";
+            var branchTo = options.SourceBranch;
 
-                if (!File.Exists(relativeFilePath))
+            if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
+            {
+                try
                 {
-                    throw new InvalidOperationException("Could not update the version file as the file " +
-                        $"'{relativeFilePath}' does not exist.");
+                    if (gitClient == null)
+                    {
+                        using (gitClient = GitClient.FromRemote(repoUrl))
+                        {
+                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                            gitClient.ForcePush(branchFrom);
+                        }
+                    }
+                    else
+                    {
+                        gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                        gitClient.ForcePush(branchFrom);
+                    }
+                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                    branchFrom,
+                    branchTo,
+                    string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
+                    string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
                 }
+                catch (Octokit.ApiValidationException e)
+                {
+                    // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
+                    if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
+                    {
+                        Logger.Info(e.ApiError.Errors[0].Message);
+                        Logger.Info("No PR will be created.");
+                        return;
+                    }
 
-                File.WriteAllText(relativeFilePath, $"{fileContents}");
-
-                gitClient.StageFile(relativeFilePath);
+                    throw;
+                }
             }
-        }
-
-        private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
-        {
-            var heading = $"{new string('#', level)} {startTitle ?? string.Empty}";
-
-            return markdownLine.StartsWith(heading);
-        }
-
-        private static (string, int) ExtractPullRequestInfo(string pullRequestUrl)
-        {
-            const string regexString = "github\\.com\\/.*\\/(.*)\\/pull\\/([0-9]*)";
-
-            var match = Regex.Match(pullRequestUrl, regexString);
-
-            if (!match.Success)
+            else
             {
-                throw new ArgumentException($"Malformed pull request url: {pullRequestUrl}");
+                Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
             }
 
-            if (match.Groups.Count < 3)
-            {
-                throw new ArgumentException($"Malformed pull request url: {pullRequestUrl}");
-            }
+            var prAnnotation = string.Format(prAnnotationTemplate,
+                pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
+            BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
 
-            var repoName = match.Groups[1].Value;
-            var pullRequestIdStr = match.Groups[2].Value;
-
-            if (!int.TryParse(pullRequestIdStr, out int pullRequestId))
-            {
-                throw new Exception(
-                    $"Parsing pull request URL failed. Expected number for pull request id, received: {pullRequestIdStr}");
-            }
-
-            return (repoName, pullRequestId);
+            Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+            Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
         }
 
         private static string GetReleaseNotesFromChangeLog()

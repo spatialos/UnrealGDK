@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "SpatialView/MessagesToSend.h"
-#include "SpatialView/ViewDelta.h"
-#include "SpatialView/OpList/OpList.h"
 #include "Containers/Set.h"
+#include "SpatialView/MessagesToSend.h"
+#include "SpatialView/OpList/OpList.h"
+#include "SpatialView/ViewDelta.h"
 
 namespace SpatialGDK
 {
-
 class WorkerView
 {
 public:
@@ -17,7 +16,10 @@ public:
 
 	// Process queued op lists to create a new view delta.
 	// The view delta will exist until the next call to advance.
-	ViewDelta GenerateViewDelta();
+	void AdvanceViewDelta();
+
+	const ViewDelta& GetViewDelta() const;
+	const EntityView& GetView() const;
 
 	// Add an OpList to generate the next ViewDelta.
 	void EnqueueOpList(OpList Ops);
@@ -39,11 +41,13 @@ public:
 	void SendLogMessage(LogMessage Log);
 
 private:
+	EntityView View;
+	ViewDelta Delta;
+
 	TArray<OpList> QueuedOps;
 	TArray<OpList> OpenCriticalSectionOps;
 
 	TUniquePtr<MessagesToSend> LocalChanges;
-	TSet<EntityComponentId> AddedComponents;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

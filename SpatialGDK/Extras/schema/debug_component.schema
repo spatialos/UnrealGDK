@@ -1,0 +1,8 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component DebugComponent {
+     id = 9995;
+     option<uint32> worker_id_delegation = 1;
+     string actor_tags = 2;
+}

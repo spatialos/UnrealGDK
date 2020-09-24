@@ -16,18 +16,18 @@ DECLARE_DYNAMIC_DELEGATE(FStepStartDelegate);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FStepTickDelegate, float, DeltaTime);
 
 // C++ Delegates
-DECLARE_DELEGATE_RetVal_OneParam(bool, FNativeStepIsReadyDelegate, ASpatialFunctionalTest*);
-DECLARE_DELEGATE_OneParam(FNativeStepStartDelegate, ASpatialFunctionalTest*);
-DECLARE_DELEGATE_TwoParams(FNativeStepTickDelegate, ASpatialFunctionalTest*, float /*DeltaTime*/);
+DECLARE_DELEGATE_RetVal(bool, FNativeStepIsReadyDelegate);
+DECLARE_DELEGATE(FNativeStepStartDelegate);
+DECLARE_DELEGATE_OneParam(FNativeStepTickDelegate, float /*DeltaTime*/);
 
 UENUM()
 enum class ESpatialFunctionalTestWorkerType : uint8
 {
 	Server,
 	Client,
-	All		// Special type that allows you to reference all the Servers and Clients
+	All, // Special type that allows you to reference all the Servers and Clients
+	Invalid = 0xff UMETA(Hidden)
 };
-
 
 USTRUCT(BlueprintType)
 struct FWorkerDefinition
@@ -35,7 +35,7 @@ struct FWorkerDefinition
 	GENERATED_BODY()
 
 	// Type of Worker, usually Server or Client.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spatial Functional Test")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test")
 	ESpatialFunctionalTestWorkerType Type = ESpatialFunctionalTestWorkerType::Server;
 
 	// Ids of Workers start from 1.
@@ -60,15 +60,9 @@ struct FWorkerDefinition
 	// Helper for Client Worker Definition
 	static FWorkerDefinition Client(int ClientId);
 
-	bool operator == (const FWorkerDefinition& Other)
-	{
-		return Type == Other.Type && Id == Other.Id;
-	};
+	bool operator==(const FWorkerDefinition& Other) { return Type == Other.Type && Id == Other.Id; };
 
-	bool operator != (const FWorkerDefinition& Other)
-	{
-		return Type != Other.Type || Id != Other.Id;
-	};
+	bool operator!=(const FWorkerDefinition& Other) { return Type != Other.Type || Id != Other.Id; };
 };
 
 USTRUCT(BlueprintType, meta = (HasNativeMake = ""))
@@ -129,9 +123,8 @@ public:
 
 	bool HasReadyEvent();
 
-	ASpatialFunctionalTest* Owner;
 	bool bIsRunning;
 	bool bIsReady;
-	
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 };

@@ -4,11 +4,9 @@
 
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/OpList/OpList.h"
-#include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 namespace SpatialGDK
 {
-
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
 {
 public:
@@ -33,4 +31,4 @@ private:
 	TArray<FString> WorkerAttributes;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

@@ -9,19 +9,20 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
-SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
-	SpatialOSDispatcherInterface* InReceiver,
-	SpatialOSWorkerInterface* InConnection,
-	SpatialVirtualWorkerTranslator* InTranslator)
+SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
+																			   SpatialOSWorkerInterface* InConnection,
+																			   SpatialVirtualWorkerTranslator* InTranslator)
 	: Receiver(InReceiver)
 	, Connection(InConnection)
 	, Translator(InTranslator)
 	, bWorkerEntityQueryInFlight(false)
-{}
+{
+}
 
 void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"), NumVirtualWorkers);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"),
+		   NumVirtualWorkers);
 
 	// Currently, this should only be called once on startup. In the future we may allow for more
 	// flexibility.
@@ -39,7 +40,8 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 
 	if (!bAuthoritative)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Lost authority over the translation mapping. This is not supported."));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
+			   TEXT("Lost authority over the translation mapping. This is not supported."));
 		return;
 	}
 
@@ -85,7 +87,8 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 				// The translator should only acknowledge workers that are ready to begin play. This means we can make
 				// guarantees based on where non-GSM-authoritative servers canBeginPlay=true as an AddComponent
 				// or ComponentUpdate op. This affects how startup Actors are treated in a zoned environment.
-				const bool bWorkerIsReadyToBeginPlay = SpatialGDK::GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
+				const bool bWorkerIsReadyToBeginPlay =
+					SpatialGDK::GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 				if (!bWorkerIsReadyToBeginPlay)
 				{
 					continue;
@@ -97,7 +100,8 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 				{
 					// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 					// workers, this will need to process UnassignWorker before processing AssignWorker.
-					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID), Entity.entity_id);
+					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID),
+								 Entity.entity_id);
 				}
 			}
 		}
@@ -131,7 +135,8 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 
 	if (bWorkerEntityQueryInFlight)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Trying to query for worker entities while a previous query is still in flight!"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("Trying to query for worker entities while a previous query is still in flight!"));
 		return;
 	}
 
@@ -169,7 +174,8 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Could not find ServerWorker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("Could not find ServerWorker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
@@ -184,7 +190,8 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Waiting for all virtual workers to be assigned before publishing translation update."));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Waiting for all virtual workers to be assigned before publishing translation update."));
 		QueryForServerWorkerEntities();
 	}
 }

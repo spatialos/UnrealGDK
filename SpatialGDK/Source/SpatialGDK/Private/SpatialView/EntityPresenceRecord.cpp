@@ -2,7 +2,6 @@
 
 namespace SpatialGDK
 {
-
 void EntityPresenceRecord::AddEntity(Worker_EntityId EntityId)
 {
 	if (EntitiesRemoved.RemoveSingleSwap(EntityId) == 0)
@@ -35,4 +34,4 @@ const TArray<Worker_EntityId>& EntityPresenceRecord::GetEntitiesRemoved() const
 	return EntitiesRemoved;
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

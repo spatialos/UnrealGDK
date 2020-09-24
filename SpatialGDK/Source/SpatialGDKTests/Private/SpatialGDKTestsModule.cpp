@@ -17,8 +17,6 @@ void FSpatialGDKTestsModule::StartupModule()
 	InitializeSpatialFlagEarlyValues();
 }
 
-void FSpatialGDKTestsModule::ShutdownModule()
-{
-}
+void FSpatialGDKTestsModule::ShutdownModule() {}
 
 #undef LOCTEXT_NAMESPACE

@@ -1,31 +1,38 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/WorkerView.h"
+
+#include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/SplitOpList.h"
 
 namespace SpatialGDK
 {
-
 WorkerView::WorkerView()
-: LocalChanges(MakeUnique<MessagesToSend>())
+	: LocalChanges(MakeUnique<MessagesToSend>())
 {
 }
 
-ViewDelta WorkerView::GenerateViewDelta()
+void WorkerView::AdvanceViewDelta()
 {
-	ViewDelta Delta;
-	for (auto& Ops : QueuedOps)
-	{
-		Delta.AddOpList(MoveTemp(Ops), AddedComponents);
-	}
+	Delta.Clear();
+	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
 	QueuedOps.Empty();
+}
+
+const ViewDelta& WorkerView::GetViewDelta() const
+{
 	return Delta;
+}
+
+const EntityView& WorkerView::GetView() const
+{
+	return View;
 }
 
 void WorkerView::EnqueueOpList(OpList Ops)
 {
-	//Ensure that we only process closed critical sections.
+	// Ensure that we only process closed critical sections.
 	// Scan backwards looking for critical sections ops.
 	for (uint32 i = Ops.Count; i > 0; --i)
 	{
@@ -78,18 +85,29 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 
 void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
 {
-	AddedComponents.Add(EntityComponentId{ EntityId, Data.GetComponentId() });
+	EntityViewElement& Element = View.FindChecked(EntityId);
+	Element.Components.Emplace(Data.DeepCopy());
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data));
 }
 
 void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
 {
+	EntityViewElement& Element = View.FindChecked(EntityId);
+	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
+	// check(Component != nullptr);
+	if (Component != nullptr)
+	{
+		Component->ApplyUpdate(Update);
+	}
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update));
 }
 
 void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	AddedComponents.Remove(EntityComponentId{ EntityId, ComponentId });
+	EntityViewElement& Element = View.FindChecked(EntityId);
+	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ ComponentId });
+	check(Component != nullptr);
+	Element.Components.RemoveAtSwap(Component - Element.Components.GetData());
 	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);
 }
 
@@ -138,4 +156,4 @@ void WorkerView::SendLogMessage(LogMessage Log)
 	LocalChanges->Logs.Add(MoveTemp(Log));
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

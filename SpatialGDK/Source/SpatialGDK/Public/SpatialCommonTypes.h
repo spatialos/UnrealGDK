@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
+#include "Containers/Array.h"
+#include "Containers/Map.h"
+#include "HAL/Platform.h"
 #include <WorkerSDK/improbable/c_worker.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!
@@ -26,18 +27,22 @@ using FChannelObjectPair = TPair<TWeakObjectPtr<class USpatialActorChannel>, TWe
 using FObjectReferencesMap = TMap<int32, struct FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRPCForRetry>>;
 
-using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;
+using FObjectToRepStateMap = TMap<struct FUnrealObjectRef, TSet<FChannelObjectPair>>;
 
-template<typename T>
+template <typename T>
 struct FTrackableWorkerType : public T
 {
 	FTrackableWorkerType() = default;
 
 	FTrackableWorkerType(const T& Update)
-		: T(Update) {}
+		: T(Update)
+	{
+	}
 
 	FTrackableWorkerType(T&& Update)
-		: T(MoveTemp(Update)) {}
+		: T(MoveTemp(Update))
+	{
+	}
 
 #if TRACE_LIB_ACTIVE
 	TraceKey Trace{ InvalidTraceKey };

@@ -6,8 +6,7 @@
 
 #include "CoreMinimal.h"
 
-#define LOCALDEPLOYMENT_TEST(TestName) \
-	GDK_TEST(Services, LocalDeployment, TestName)
+#define LOCALDEPLOYMENT_TEST(TestName) GDK_TEST(Services, LocalDeployment, TestName)
 
 LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
 {
@@ -25,7 +24,7 @@ LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_de
 	// Cleanup
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
-    return true;
+	return true;
 }
 
 LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deployment_not_running)
@@ -42,5 +41,5 @@ LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deplo
 
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckDeploymentState(this, EDeploymentState::IsNotRunning));
-    return true;
+	return true;
 }

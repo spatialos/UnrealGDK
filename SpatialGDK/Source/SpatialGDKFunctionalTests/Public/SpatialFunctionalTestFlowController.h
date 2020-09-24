@@ -9,21 +9,20 @@
 
 namespace
 {
-	constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
+constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
 }
 
 class ASpatialFunctionalTest;
 
-UCLASS()
+UCLASS(SpatialType = NotPersistent)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTestFlowController : public AActor
 {
 	GENERATED_BODY()
 
 public:
-
 	ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void OnAuthorityGained() override;
 
@@ -31,7 +30,7 @@ public:
 
 	// Convenience function to know if this FlowController is locally owned
 	bool IsLocalController() const;
-	
+
 	// # Testing APIs
 
 	// Locally triggers StepIndex Test Step to start
@@ -41,9 +40,9 @@ public:
 	// Tells Test owner that the current Step is finished locally
 	void NotifyStepFinished();
 
-	// Tell the Test owner that we want to end the Test 
+	// Tell the Test owner that we want to end the Test
 	void NotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
-	
+
 	UPROPERTY(Replicated)
 	ASpatialFunctionalTest* OwningTest;
 
@@ -53,7 +52,7 @@ public:
 	FWorkerDefinition WorkerDefinition;
 
 	// Prettier way to display type+id combo since it can be quite useful
-	const FString GetDisplayName();
+	const FString GetDisplayName() const;
 
 	// When Test is finished, this gets triggered. It's mostly important for when a Test was failed during runtime
 	void OnTestFinished();
@@ -69,6 +68,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
 
+	// Let's you know if the owning worker has acknowledged the FinishTest flow.
+	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
@@ -78,6 +80,9 @@ private:
 
 	UPROPERTY(Replicated)
 	bool bIsReadyToRunTest;
+
+	UPROPERTY(Replicated)
+	bool bHasAckFinishedTest;
 
 	UFUNCTION()
 	void OnReadyToRegisterWithTest();
@@ -89,18 +94,20 @@ private:
 	void ClientStartStep(int StepIndex);
 
 	void StartStepInternal(const int StepIndex);
-	
+
 	void StopStepInternal();
 
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyStepFinished();
-
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerNotifyStepFinished();
 
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
-	
+
 	void ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message);
+
+	UFUNCTION(Server, Reliable)
+	void ServerAckFinishedTest();
 };
