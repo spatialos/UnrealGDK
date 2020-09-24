@@ -289,7 +289,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* CylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 2);
 
-		NewQueryConstraing.CylinderConstraint = CylinderConstraint{};
+		NewQueryConstraint.CylinderConstraint = CylinderConstraint{};
 		NewQueryConstraint.CylinderConstraint->Center = GetCoordinateFromSchema(CylinderConstraintObject, 1);
 		NewQueryConstraint.CylinderConstraint->Radius = Schema_GetDouble(CylinderConstraintObject, 2);
 	}
