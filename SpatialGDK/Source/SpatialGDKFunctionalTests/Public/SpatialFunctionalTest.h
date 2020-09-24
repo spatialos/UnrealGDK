@@ -8,6 +8,7 @@
 #include "FunctionalTest.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
+#include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
 #include "SpatialFunctionalTest.generated.h"
 
@@ -61,7 +62,7 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
-	// Should be called from the server with authority over this actor
+	// Should be called from the server with authority over this actor.
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
 	virtual void LogStep(ELogVerbosity::Type Verbosity, const FString& Message) override;
@@ -70,10 +71,10 @@ public:
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
 
-	// Starts being called after PrepareTest, until it returns true
+	// Starts being called after PrepareTest, until it returns true.
 	virtual bool IsReady_Implementation() override;
 
-	// Called once after IsReady is true
+	// Called once after IsReady is true.
 	virtual void StartTest() override;
 
 	// Ends the Test, can be called from any place.
@@ -85,7 +86,7 @@ public:
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController);
 
-	// # FlowController related APIs
+	// # FlowController related APIs.
 
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
@@ -98,13 +99,21 @@ public:
 	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
-	// Get the FlowController that is Local to this instance
+	// Get the FlowController that is Local to this instance.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
 
-	// # Step APIs
+	// Helper to get the local Worker Type.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	ESpatialFunctionalTestWorkerType GetLocalWorkerType();
 
-	// Add Steps for Blueprints
+	// Helper to get the local Worker Id.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	int GetLocalWorkerId();
+
+	// # Step APIs.
+
+	// Add Steps for Blueprints.
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (DisplayName = "Add Step", AutoCreateRefTerm = "IsReadyEvent,StartEvent,TickEvent",
@@ -113,7 +122,7 @@ public:
 	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent,
 						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
 
-	// Add Steps for Blueprints and C++
+	// Add Steps for Blueprints and C++.
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
@@ -127,7 +136,7 @@ public:
 	// clang-format on
 	void AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition, const TArray<FWorkerDefinition>& Workers);
 
-	// Add Steps for C++
+	// Add Steps for C++.
 	/**
 	 * Adds a Step to the Test. You can define if you want to run on Server, Client or All.
 	 * There's helpers in FWorkerDefinition to make it easier / more concise. If you want to make a FWorkerDefinition from scratch,
@@ -138,10 +147,12 @@ public:
 												  FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr,
 												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
 
-	// Start Running a Step
+	// Start Running a Step.
 	void StartStep(const int StepIndex);
 
-	// Terminate current Running Step (called once per FlowController executing it)
+	// Terminate the current running step (called once per FlowController executing it) if you have no failing Requires.
+	// If you have failed Requires it will be ignored, making it easier for you to build tests without
+	// having to manually check that there's no failed Requires before finishing the step.
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	virtual void FinishStep();
 
@@ -149,15 +160,15 @@ public:
 
 	int GetCurrentStepIndex() { return CurrentStepIndex; }
 
-	// Convenience function that goes over all FlowControllers and counts how many are Servers
+	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfServerWorkers();
 
-	// Convenience function that goes over all FlowControllers and counts how many are Clients
+	// Convenience function that goes over all FlowControllers and counts how many are Clients.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetNumberOfClientWorkers();
 
-	// Convenience function that returns the Id used for executing steps on all Servers / Clients
+	// Convenience function that returns the Id used for executing steps on all Servers / Clients.
 	// clang-format off
 	UFUNCTION(BlueprintPure,
 		meta = (ToolTip = "Returns the Id (0) that represents all Workers (ie Server / Client), useful for when you want to have a Server / Client Step run on all of them"),
@@ -195,25 +206,94 @@ public:
 	void RemoveInterestOnTag(FName Tag);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
+			  meta = (ToolTip = "Prevent the given actor from losing authority from this server worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Sets a Debug Tag to be delegated to a specific Server Worker, forcing the Authority to belong to it preventing the Load-Balancing Strategy from changing it."))
 	// clang-format on
-	void DelegateTagToWorker(FName Tag, int32 WorkerId);
+	void AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId = 1);
 
-	UFUNCTION(
-		BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Removed the forced authority delegation. All server workers must declare the same delegation at the same time."))
-	void RemoveTagDelegation(FName Tag);
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears delegation of a Debug Tag. If there's no delegation set, the Load-Balancing Strategy will decide which Server Worker should have Authority."))
+	// clang-format on
+	void AddStepClearTagDelegation(FName Tag);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
-	void ClearTagDelegationAndInterest();
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears all Debug Tag delegations and extra interest. Note that this is called automatically when a test ends, so if you use delegation / interest in the test, you don't need to clear it manually at the end."))
+	// clang-format on
+	void AddStepClearTagDelegationAndInterest();
 
-	// # Snapshot APIs
+	// # Require Functions. Requires mimic the assert behaviour but without the immediate failure. Since when you're
+	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
+	// negatives. These functions work in a way that they record the expected behaviour, and when we FinishStep / FinishTest
+	// it will let you know which of them passed and which failed. Keep in mind that failed requires will prevent FinishStep
+	// from moving forward, so this allows you to make tests in a simpler way without having to keep track if anything failed
+	// before calling FinishStep.
+
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void RequireTrue(bool bCheckTrue, const FString& Msg) { RequireHandler.RequireTrue(bCheckTrue, Msg); }
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	void RequireFalse(bool bCheckFalse, const FString& Msg) { RequireHandler.RequireFalse(bCheckFalse, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Compare (Int)"), Category = "Spatial Functional Test")
+	void RequireCompare_Int(int A, EComparisonMethod Operator, int B, const FString& Msg) { RequireHandler.RequireCompare(A, Operator, B, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Compare (Float)"), Category = "Spatial Functional Test")
+	void RequireCompare_Float(float A, EComparisonMethod Operator, float B, const FString& Msg) { RequireHandler.RequireCompare(A, Operator, B, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Bool)"), Category = "Spatial Functional Test")
+	void RequireEqual_Bool(bool bValue, bool bExpected, const FString& Msg) { RequireHandler.RequireEqual(bValue, bExpected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Int)"), Category = "Spatial Functional Test")
+	void RequireEqual_Int(int Value, int Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Float)"), Category = "Spatial Functional Test")
+	void RequireEqual_Float(float Value, float Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (String)"), Category = "Spatial Functional Test")
+	void RequireEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Name)"), Category = "Spatial Functional Test")
+	void RequireEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Vector)"), Category = "Spatial Functional Test")
+	void RequireEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Rotator)"), Category = "Spatial Functional Test")
+	void RequireEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
+	void RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Int)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Float)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (String)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Name)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Vector)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Rotator)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
+	void RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	// clang-format on
+
+	// # Snapshot APIs.
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
 			  meta = (ToolTip = "Allows a Server Worker to request a SpatialOS snapshot to be taken. Keep in mind that this should be done at the last Step of your Test. Keep in mind that if you take a snapshot, you should eventually call ClearLoadedFromTakenSnapshot."))
@@ -251,6 +331,19 @@ protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
+	// Force Actors having the given tag to migrate and gain authority on the given worker. All server workers must declare
+	// the same delegation at the same time, so we highly recommend that you use the AddStepSetTagDelegation() instead.
+	void SetTagDelegation(FName Tag, int32 ServerWorkerId);
+
+	// Remove the forced authority delegation. All server workers must declare the same delegation at the same time,
+	// so we highly recommend that you use the AddStepClearTagDelegation() instead.
+	void ClearTagDelegation(FName Tag);
+
+	// Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer. All server workers must
+	// call it at the same time to guarantee consistency, so we again highly recommend you use AddStepClearTagDelegationAndInterest().
+	// Whenever a test finishes this will be called automatically.
+	void ClearTagDelegationAndInterest();
+
 	// # Built-in StepDefinitions for convenience
 
 	// Step Definition that will take a SpatialOS snapshot for the current map. This snapshot will become the
@@ -280,6 +373,15 @@ private:
 	// Time current step has been running for, used if Step Definition has TimeLimit >= 0.
 	float TimeRunningStep = 0.0f;
 
+	// Cached test result while we wait all Workers to acknowledge they finished the test.
+	EFunctionalTestResult CachedTestResult;
+
+	// Cached test result message while we wait all Workers to acknowledge they finished the test.
+	FString CachedTestMessage;
+
+	// Handle for waiting for acknowledgment from all workers that the test is finished.
+	FTimerHandle FinishTestTimerHandle;
+
 	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
@@ -289,6 +391,9 @@ private:
 
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
+
+	// Holds all the Requires calls / results for printing at the end of the step.
+	SpatialFunctionalTestRequireHandler RequireHandler;
 
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();

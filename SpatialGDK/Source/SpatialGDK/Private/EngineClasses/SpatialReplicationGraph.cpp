@@ -51,6 +51,8 @@ void USpatialReplicationGraph::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 	if (NewOwner != nullptr)
 	{
+		GlobalActorReplicationInfoMap.Get(NewOwner);
+		GlobalActorReplicationInfoMap.Get(Actor);
 		GlobalActorReplicationInfoMap.AddDependentActor(NewOwner, Actor);
 	}
 }

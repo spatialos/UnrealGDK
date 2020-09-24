@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added facilities to manipulate worker interest and Actor authority in SpatialFunctionalTest.
 - Allow specifying the locator port via `?locatorPort=` URL option when performing client travel.
 - You can now enable/disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Enable Multi-Worker` from the drop option from the `Start Deployment` button on the toolbar to use the multi-worker strategy or de-select to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
+- Enabled packaging the command line arguments when building a mobile client by default.
 
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
@@ -42,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Made the DeploymentLauncher stop multiple deployments in parallel to improve performance when working with large numbers of deployments.
 - Fixed an issue where possessing a new pawn and immediately setting the owner of the old pawn to the controller could cause server RPCs from that pawn to be dropped.
 - Added support for the `bHidden` relevancy flag. Clients will not checkout Actors that have `bHidden` set to true (unless they are always relevant or the root component has collisions enabled).
+- Fixed an issue with deployments failing due to the incorrect number of workers when the launch config was specified, rather than automatically generated.
 
 ## [`0.11.0`] - 2020-09-03
 
