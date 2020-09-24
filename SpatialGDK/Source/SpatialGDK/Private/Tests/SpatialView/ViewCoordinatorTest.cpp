@@ -71,7 +71,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity should pass through to the sub view delta.
-	if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+	if (Delta.EntityDeltas.Num() != 1)
 	{
 		// test already failed
 		return true;
@@ -128,7 +129,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity with the correct value should pass through to the sub view delta.
-	if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+	if (Delta.EntityDeltas.Num() != 1)
 	{
 		return true;
 	}
@@ -138,7 +140,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 	Delta = SubView.GetViewDelta();
 
 	// The value on the other entity should have updated, so we should see an add for the second entity.
-	if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+	if (Delta.EntityDeltas.Num() != 1)
 	{
 		return true;
 	}
@@ -206,7 +209,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 		for (FSubView* SubView : SubViews)
 		{
 			Delta = SubView->GetViewDelta();
-			if (!TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1))
+			TestEqual("There is one entity delta", Delta.EntityDeltas.Num(), 1);
+			if (Delta.EntityDeltas.Num() != 1)
 			{
 				// test has already failed
 				return true;

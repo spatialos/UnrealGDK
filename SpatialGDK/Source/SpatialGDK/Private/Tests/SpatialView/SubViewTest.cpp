@@ -46,7 +46,8 @@ SUBVIEW_TEST(GIVEN_Query_WHEN_Query_Tagged_THEN_Query_Is_Tagged)
 
 	SubView.TagQuery(QueryToTag);
 
-	if (!TestNotEqual("Constraint is now an AND", QueryToTag.Constraint.AndConstraint.Num(), 0))
+	TestNotEqual("Constraint is now an AND", QueryToTag.Constraint.AndConstraint.Num(), 0);
+	if (QueryToTag.Constraint.AndConstraint.Num() == 0)
 	{
 		return true;
 	}
@@ -80,7 +81,8 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 	FSubViewDelta SubDelta = SubView.GetViewDelta();
 
 	// The tagged entity should pass through to the sub view delta.
-	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1);
+	if (SubDelta.EntityDeltas.Num() != 1)
 	{
 		// early out so we don't crash - test has already failed
 		return true;
@@ -128,7 +130,8 @@ SUBVIEW_TEST(
 	FSubViewDelta SubDelta = SubView.GetViewDelta();
 
 	// The tagged entity should pass through to the sub view delta.
-	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1);
+	if (SubDelta.EntityDeltas.Num() != 1)
 	{
 		// early out so we don't crash - test has already failed
 		return true;
@@ -147,7 +150,8 @@ SUBVIEW_TEST(
 	SubView.Advance(Delta);
 	SubDelta = SubView.GetViewDelta();
 
-	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1);
+	if (SubDelta.EntityDeltas.Num() != 1)
 	{
 		// early out so we don't crash - test has already failed
 		return true;
@@ -189,7 +193,8 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 	SubView.Advance(Delta);
 	SubDelta = SubView.GetViewDelta();
 
-	if (!TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1))
+	TestEqual("There is one entity delta", SubDelta.EntityDeltas.Num(), 1);
+	if (SubDelta.EntityDeltas.Num() != 1)
 	{
 		// early out so we don't crash - test has already failed
 		return true;
