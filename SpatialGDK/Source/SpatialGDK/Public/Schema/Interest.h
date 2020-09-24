@@ -316,7 +316,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	// option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
 	if (Schema_GetObjectCount(QueryConstraintObject, 5) > 0)
 	{
-		Schema_Object* RelativeCylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 5);	
+		Schema_Object* RelativeCylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 5);
 
 		NewQueryConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{};
 		NewQueryConstraint.RelativeCylinderConstraint->Radius = Schema_GetDouble(RelativeCylinderConstraintObject, 1);
