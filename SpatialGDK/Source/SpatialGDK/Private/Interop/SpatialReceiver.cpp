@@ -1834,7 +1834,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	}
 
 	Trace_SpanId SpanId;
-	EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId), SpanId));
+	EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId), SpanId);
 	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { SpanId });
 }
 
