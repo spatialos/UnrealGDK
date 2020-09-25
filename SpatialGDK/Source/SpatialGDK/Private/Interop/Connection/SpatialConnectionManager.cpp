@@ -369,46 +369,48 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	FinishConnecting(ConnectionFuture, MoveTemp(NewEventTracer));
 }
 
-void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer)
+void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture,
+												 TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer)
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
-	AsyncTask(
-		ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager, EventTracing = MoveTemp(NewEventTracer)] () mutable {
-			Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-			Worker_ConnectionFuture_Destroy(ConnectionFuture);
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
+															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
+		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-			AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)] () mutable {
-				if (!WeakSpatialConnectionManager.IsValid())
-				{
-					// The game instance was destroyed before the connection finished, so just clean up the connection.
-					Worker_Connection_Destroy(NewCAPIWorkerConnection);
-					return;
-				}
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
+											  EventTracing = MoveTemp(EventTracing)]() mutable {
+			if (!WeakSpatialConnectionManager.IsValid())
+			{
+				// The game instance was destroyed before the connection finished, so just clean up the connection.
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
+				return;
+			}
 
-				USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
+			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-				if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
-				{
-					const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-					SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+			{
+				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 
-					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing));
-					SpatialConnectionManager->OnConnectionSuccess();
-				}
-				else
-				{
-					Worker_Connection_Destroy(NewCAPIWorkerConnection);
-					SpatialConnectionManager->EventTracer = nullptr;
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing));
+				SpatialConnectionManager->OnConnectionSuccess();
+			}
+			else
+			{
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
+				SpatialConnectionManager->EventTracer = nullptr;
 
-					const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
-					const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
 
-					// TODO: Try to reconnect - UNR-576
-					SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-				}
-			});
+				// TODO: Try to reconnect - UNR-576
+				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+			}
 		});
+	});
 }
 
 ESpatialConnectionType USpatialConnectionManager::GetConnectionType() const

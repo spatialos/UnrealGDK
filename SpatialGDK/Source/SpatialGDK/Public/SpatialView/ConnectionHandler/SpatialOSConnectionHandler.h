@@ -23,7 +23,6 @@ public:
 	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
 private:
-
 	struct WorkerConnectionDeleter
 	{
 		void operator()(Worker_Connection* Connection) const noexcept;

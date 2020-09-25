@@ -10,7 +10,7 @@ namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TUniquePtr<SpatialEventTracer> EventTracer)
 	: EventTracer(MoveTemp(EventTracer))
-	,Connection(Connection)
+	, Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
@@ -196,10 +196,11 @@ void SpatialOSConnectionHandler::WorkerConnectionDeleter::operator()(Worker_Conn
 
 SpatialOSConnectionHandler::~SpatialOSConnectionHandler()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [Connection = MoveTemp(Connection), EventTracer = MoveTemp(EventTracer)]() mutable {
-		Connection.Reset(nullptr);
-		EventTracer.Reset(nullptr);
-	});
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
+			  [Connection = MoveTemp(Connection), EventTracer = MoveTemp(EventTracer)]() mutable {
+				  Connection.Reset(nullptr);
+				  EventTracer.Reset(nullptr);
+			  });
 }
 
 } // namespace SpatialGDK
