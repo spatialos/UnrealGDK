@@ -34,5 +34,6 @@ private:
 	void SetHeight(const float Height);
 	void SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale);
 	void SetColor(const FColor& Color);
-	void CreateWorkerTextAtPosition(const float& VerticalScale, const FString& WorkerName, const float& PositionX, const float& PositionY);
+	void CreateWorkerTextAtPosition(const float& VerticalScale, const FString& WorkerName, const float& PositionX, const float& PositionY,
+									const float& PositionZ);
 };
