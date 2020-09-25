@@ -190,7 +190,9 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, EntityPoolInitialReservationCount))
 	{
 		if (EntityPoolInitialReservationCount > 10000)
+		{
 			EntityPoolInitialReservationCount = 10000;
+		}
 	}
 }
 
