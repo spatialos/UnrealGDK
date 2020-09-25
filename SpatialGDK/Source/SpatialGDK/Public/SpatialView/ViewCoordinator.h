@@ -17,7 +17,7 @@ public:
 
 	~ViewCoordinator();
 
-	// Non-copyable.
+	// Movable, Non-copyable.
 	ViewCoordinator(const ViewCoordinator&) = delete;
 	ViewCoordinator(ViewCoordinator&&) = default;
 	ViewCoordinator& operator=(const ViewCoordinator&) = delete;
