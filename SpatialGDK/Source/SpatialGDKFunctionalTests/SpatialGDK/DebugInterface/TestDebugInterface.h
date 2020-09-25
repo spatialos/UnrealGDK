@@ -14,7 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ATestDebugInterface : public ASpatialFunctio
 public:
 	ATestDebugInterface();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 protected:
 	bool WaitToSeeActors(UClass* ActorClass, int32 NumActors);

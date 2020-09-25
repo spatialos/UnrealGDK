@@ -15,7 +15,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestShutdownPreparationTrigger : pub
 
 	ASpatialTestShutdownPreparationTrigger();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	UPROPERTY(EditInstanceOnly, Category = "Test Settings")
 	TSubclassOf<ATestPrepareShutdownListener> PrepareShutdownListenerClass;

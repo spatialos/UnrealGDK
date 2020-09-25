@@ -56,9 +56,9 @@ int AVisibilityTest::GetNumberOfVisibilityTestActors()
 	return Counter;
 }
 
-void AVisibilityTest::BeginPlay()
+void AVisibilityTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("VisibilityTestServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
