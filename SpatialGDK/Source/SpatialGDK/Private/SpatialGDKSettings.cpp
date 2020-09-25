@@ -187,6 +187,11 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	{
 		UpdateServicesRegionFile();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, EntityPoolInitialReservationCount))
+	{
+		if (EntityPoolInitialReservationCount > 10000)
+			EntityPoolInitialReservationCount = 10000;
+	}
 }
 
 bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property) * InProperty) const
