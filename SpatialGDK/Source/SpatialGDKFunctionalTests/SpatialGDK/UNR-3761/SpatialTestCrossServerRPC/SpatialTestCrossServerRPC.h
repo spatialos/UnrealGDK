@@ -14,5 +14,5 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestCrossServerRPC : public ASpatial
 public:
 	ASpatialTestCrossServerRPC();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 };

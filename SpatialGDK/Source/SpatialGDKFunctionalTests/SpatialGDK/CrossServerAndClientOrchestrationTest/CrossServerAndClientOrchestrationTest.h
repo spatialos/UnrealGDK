@@ -17,7 +17,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAndClientOrchestrationTest : pub
 public:
 	ACrossServerAndClientOrchestrationTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	UPROPERTY(Replicated)
 	TArray<bool> ServerWorkerSetValues;
