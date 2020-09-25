@@ -27,8 +27,7 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 }
 
 void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, UFont* TextFont, const FColor& Color, const FBox2D& Extents,
-						 const float VerticalScale,
-						 const FString& WorkerName)
+						 const float VerticalScale, const FString& WorkerName)
 {
 	MaterialBoundaryInstance = UMaterialInstanceDynamic::Create(BoundaryMaterial, nullptr);
 	// TODO: create this statically in editor as will not change?
@@ -36,13 +35,11 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
-	
+
 	Mesh->SetMaterial(0, MaterialBoundaryInstance);
 
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale, false, true);
-
-
 
 	// Tile horizontally
 	int xCount = Extents.GetSize().X / 250;
@@ -69,17 +66,15 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 	}
 
 	SetPositionAndScale(Extents, VerticalScale, true, false);
-	
 }
 
 void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float& VerticalScale,
-											   const FString& WorkerName,
-											   const float& PositionX,
-											   const float& PositionY, const float& PositionZ)
+											   const FString& WorkerName, const float& PositionX, const float& PositionY,
+											   const float& PositionZ)
 {
 	// Create dynamic worker name text on boundary wall
 	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
-	//WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
+	// WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
 	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, 270, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
@@ -106,7 +101,6 @@ void AWorkerRegion::SetOpacity(const float Opacity)
 {
 	MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 	MaterialTextInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
-
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)

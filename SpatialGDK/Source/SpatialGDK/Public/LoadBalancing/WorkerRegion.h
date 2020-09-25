@@ -19,8 +19,7 @@ public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
 	void Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, UFont* TextFont, const FColor& Color, const FBox2D& Extents,
-			  const float VerticalScale,
-			  const FString& WorkerName);
+			  const float VerticalScale, const FString& WorkerName);
 
 	UPROPERTY()
 	UStaticMeshComponent* Mesh;
@@ -31,14 +30,11 @@ public:
 	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialTextInstance;
 
-
 private:
 	void SetOpacity(const float Opacity);
 	void SetHeight(const float Height);
 	void SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale);
 	void SetColor(const FColor& Color);
 	void CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float& VerticalScale, const FString& WorkerName,
-									const float& PositionX,
-									const float& PositionY,
-									const float& PositionZ);
+									const float& PositionX, const float& PositionY, const float& PositionZ);
 };

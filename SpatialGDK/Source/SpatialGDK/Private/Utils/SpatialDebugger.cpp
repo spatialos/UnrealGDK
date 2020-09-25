@@ -36,12 +36,13 @@ namespace
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
 // TODO: make these parameter of the spatial debugger
-//const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/ImprobableFont.ImprobableFont"); // Improbable font
-//const FString DEFAULT_WORKER_TEXT_MATERIAL =
+// const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/ImprobableFont.ImprobableFont"); // Improbable font
+// const FString DEFAULT_WORKER_TEXT_MATERIAL =
 //	TEXT("/Engine/EngineMaterials/DefaultTextMaterialOpaque.DefaultTextMaterialOpaque"); // Default material
-const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Working material
+const FString DEFAULT_WORKER_TEXT_MATERIAL =
+	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive");		  // Working material
 const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/Engine/EngineFonts/RobotoDistanceField.RobotoDistanceField"); // Default font
-}
+} // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -219,8 +220,7 @@ void ASpatialDebugger::CreateWorkerRegions()
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, TextFont, WorkerRegionData.Color, WorkerRegionData.Extents,
-						   WorkerRegionVerticalScale,
-						   WorkerRegionData.WorkerName);
+						   WorkerRegionVerticalScale, WorkerRegionData.WorkerName);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
