@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTest.h"
 
+#include "AutomationBlueprintFunctionLibrary.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -48,6 +49,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, bReadyToSpawnServerControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
+	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -182,6 +184,19 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 	}
 }
 
+void ASpatialFunctionalTest::PrepareTest()
+{
+	StepDefinitions.Empty();
+
+	Super::PrepareTest();
+
+	if (HasAuthority())
+	{
+		bPreparedTest = true;
+		OnReplicated_bPreparedTest();
+	}
+}
+
 bool ASpatialFunctionalTest::IsReady_Implementation()
 {
 	int NumRegisteredClients = 0;
@@ -277,6 +292,9 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
+			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
+			OnReplicated_bPreparedTest();
+
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
 				   *UEnum::GetValueAsString(TestResult), *Message);
 
@@ -365,6 +383,12 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			AuxLocalFlowController->NotifyFinishTest(TestResult, Message);
 		}
 	}
+}
+
+void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
+												 bool bExactMatch /*= false*/)
+{
+	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, bExactMatch);
 }
 
 void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
@@ -598,6 +622,24 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 		}
 
 		DeleteActorsRegisteredForAutoDestroy();
+	}
+}
+
+void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
+{
+	if (bPreparedTest)
+	{
+		if (!HasAuthority())
+		{
+			PrepareTest();
+		}
+
+		// Currently PrepareTest() happens before FlowControllers are registered,
+		// but that is most likely because of the bug that forces us to delay their registration.
+		if (LocalFlowController != nullptr)
+		{
+			LocalFlowController->SetReadyToRunTest(true);
+		}
 	}
 }
 

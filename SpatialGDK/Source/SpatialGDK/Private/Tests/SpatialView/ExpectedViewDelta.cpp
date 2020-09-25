@@ -105,6 +105,21 @@ bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
 		return false;
 	}
 
+	// We need to check if a disconnect op has been processed during the last tick.
+	// First call HasConnectionStatusChanged() before comparing the values stored.
+	if (Other.HasConnectionStatusChanged())
+	{
+		if (ConnectionStatusCode != Other.GetConnectionStatusChange())
+		{
+			return false;
+		}
+
+		if (ConnectionStatusMessage != Other.GetConnectionStatusChangeMessage())
+		{
+			return false;
+		}
+	}
+
 	SortEntityDeltas();
 	TArray<uint32> DeltaKeys;
 	EntityDeltas.GetKeys(DeltaKeys);

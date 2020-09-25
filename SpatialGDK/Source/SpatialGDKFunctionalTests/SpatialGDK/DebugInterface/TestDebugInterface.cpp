@@ -47,9 +47,9 @@ bool ATestDebugInterface::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
 	return true;
 }
 
-void ATestDebugInterface::BeginPlay()
+void ATestDebugInterface::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	AddStep(TEXT("SetupStep"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 		UWorld* World = GetWorld();

@@ -144,20 +144,20 @@ const TArray<Worker_Op>& ViewDelta::GetWorkerMessages() const
 	return WorkerMessages;
 }
 
-bool ViewDelta::HasDisconnected() const
+bool ViewDelta::HasConnectionStatusChanged() const
 {
 	return ConnectionStatusCode != 0;
 }
 
-Worker_ConnectionStatusCode ViewDelta::GetConnectionStatus() const
+Worker_ConnectionStatusCode ViewDelta::GetConnectionStatusChange() const
 {
-	check(HasDisconnected());
+	check(HasConnectionStatusChanged());
 	return static_cast<Worker_ConnectionStatusCode>(ConnectionStatusCode);
 }
 
-FString ViewDelta::GetDisconnectReason() const
+FString ViewDelta::GetConnectionStatusChangeMessage() const
 {
-	check(HasDisconnected());
+	check(HasConnectionStatusChanged());
 	return ConnectionStatusMessage;
 }
 

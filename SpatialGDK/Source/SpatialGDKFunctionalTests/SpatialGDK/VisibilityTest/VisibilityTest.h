@@ -17,7 +17,7 @@ class SPATIALGDKFUNCTIONALTESTS_API AVisibilityTest : public ASpatialFunctionalT
 public:
 	AVisibilityTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	int GetNumberOfVisibilityTestActors();
 

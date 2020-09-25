@@ -71,14 +71,27 @@ public:
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
 
-	// Starts being called after PrepareTest, until it returns true.
+	// Called at the beginning of the test, use it to setup your steps. Contrary to AFunctionalTest, this will
+	// run on all Workers (Server and Client).
+	virtual void PrepareTest() override;
+
+	// Lets you know if PrepareTest() has been called.
+	bool HasPreparedTest() const { return bPreparedTest; }
+
+	// Starts being called after PrepareTest, until it returns true. This is only called on Authority.
 	virtual bool IsReady_Implementation() override;
 
-	// Called once after IsReady is true.
+	// Called once after IsReady is true. This is only called on Authority.
 	virtual void StartTest() override;
 
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
+
+	// Add expected log errors in C++. This can only be called when setting up the steps in PrepareTest() or in
+	// the steps themselves. Keep in mind that if the expected number of occurrences aren't met, the test fails.
+	// The same pattern can only be added once, so make sure to execute only in the test Authority or in a step that
+	// is running only on one worker.
+	void AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences = 1, bool bExactMatch = false);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -388,6 +401,12 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
+
+	UPROPERTY(ReplicatedUsing = OnReplicated_bPreparedTest, Transient)
+	bool bPreparedTest = false;
+
+	UFUNCTION()
+	void OnReplicated_bPreparedTest();
 
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;

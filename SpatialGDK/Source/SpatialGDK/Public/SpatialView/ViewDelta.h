@@ -48,9 +48,9 @@ public:
 	const TArray<EntityDelta>& GetEntityDeltas() const;
 	const TArray<Worker_Op>& GetWorkerMessages() const;
 
-	bool HasDisconnected() const;
-	Worker_ConnectionStatusCode GetConnectionStatus() const;
-	FString GetDisconnectReason() const;
+	bool HasConnectionStatusChanged() const;
+	Worker_ConnectionStatusCode GetConnectionStatusChange() const;
+	FString GetConnectionStatusChangeMessage() const;
 
 private:
 	struct ReceivedComponentChange

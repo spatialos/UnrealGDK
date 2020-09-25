@@ -41,9 +41,12 @@ ASpatialTestNetOwnership::ASpatialTestNetOwnership()
 	Description = TEXT("Test Net Ownership");
 }
 
-void ASpatialTestNetOwnership::BeginPlay()
+void ASpatialTestNetOwnership::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
+
+	AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube_0. Function ServerIncreaseRPCCount will not be processed."),
+						1, true);
 
 	// Step definition for Client 1 to send a Server RPC
 	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;

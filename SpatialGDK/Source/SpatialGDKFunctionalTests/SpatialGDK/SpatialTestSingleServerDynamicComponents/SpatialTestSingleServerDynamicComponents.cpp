@@ -40,9 +40,9 @@ void ASpatialTestSingleServerDynamicComponents::GetLifetimeReplicatedProps(TArra
 	DOREPLIFETIME(ASpatialTestSingleServerDynamicComponents, TestActor);
 }
 
-void ASpatialTestSingleServerDynamicComponents::BeginPlay()
+void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// The Server spawns the TestActor and immediately after it creates and attaches the OnSpawnComponent.
 	AddStep(TEXT("SpatialTestSingleServerDynamicComponentsServerSpawnTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
