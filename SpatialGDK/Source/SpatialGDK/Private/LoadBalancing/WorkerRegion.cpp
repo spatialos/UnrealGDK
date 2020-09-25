@@ -40,7 +40,7 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 	// Tile horizontally
 	int xCount = Extents.GetSize().X / 250;
 	// Tile vertically
-	int zCount = (int)VerticalScale;// * 2; // Add the x2 for denser vertical tiling
+	int zCount = (int)VerticalScale; // * 2; // Add the x2 for denser vertical tiling
 	const float C = 50;
 	float D = C;
 	for (int xi = 0; xi < xCount - 1; xi++)
@@ -48,7 +48,7 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 		D -= 100.f / xCount;
 	}
 	const float A = 0;
-	float zDiff = 100.f / zCount; //VerticalScale;
+	float zDiff = 100.f / zCount; // VerticalScale;
 	for (int xi = 0; xi < xCount; xi++)
 	{
 		float B = xCount - 1;
