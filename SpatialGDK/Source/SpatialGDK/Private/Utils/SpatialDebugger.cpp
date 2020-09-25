@@ -284,7 +284,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		if (Actor->IsA<APlayerController>())
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
-			LocalPlayerController->InputComponent->BindKey(EKeys::F8, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+			LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 		}
 	}
 }

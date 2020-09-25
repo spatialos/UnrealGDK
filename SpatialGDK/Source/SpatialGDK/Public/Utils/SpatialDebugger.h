@@ -82,7 +82,7 @@ public:
 	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
 	bool IsEnabled();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input,
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
 	FKey ConfigUIKey;
 
