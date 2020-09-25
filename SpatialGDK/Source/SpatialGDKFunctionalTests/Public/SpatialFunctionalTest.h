@@ -71,10 +71,17 @@ public:
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
 
-	// Starts being called after PrepareTest, until it returns true.
+	// Called at the beginning of the test, use it to setup your steps. Contrary to AFunctionalTest, this will
+	// run on all Workers (Server and Client).
+	virtual void PrepareTest() override;
+
+	// Lets you know if PrepareTest() has been called.
+	bool HasPreparedTest() const { return bPreparedTest; }
+
+	// Starts being called after PrepareTest, until it returns true. This is only called on Authority.
 	virtual bool IsReady_Implementation() override;
 
-	// Called once after IsReady is true.
+	// Called once after IsReady is true. This is only called on Authority.
 	virtual void StartTest() override;
 
 	// Ends the Test, can be called from any place.
@@ -394,6 +401,12 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
+
+	UPROPERTY(ReplicatedUsing = OnReplicated_bPreparedTest, Transient)
+	bool bPreparedTest = false;
+
+	UFUNCTION()
+	void OnReplicated_bPreparedTest();
 
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;

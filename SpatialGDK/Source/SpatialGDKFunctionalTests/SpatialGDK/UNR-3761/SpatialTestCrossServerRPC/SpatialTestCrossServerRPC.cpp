@@ -27,9 +27,9 @@ ASpatialTestCrossServerRPC::ASpatialTestCrossServerRPC()
 	Description = TEXT("Test CrossServer RPCs");
 }
 
-void ASpatialTestCrossServerRPC::BeginPlay()
+void ASpatialTestCrossServerRPC::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	TArray<FVector> CubesLocations;
 	CubesLocations.Add(FVector(250.0f, 250.0f, 75.0f));
