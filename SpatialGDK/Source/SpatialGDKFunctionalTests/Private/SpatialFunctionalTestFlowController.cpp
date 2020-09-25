@@ -75,22 +75,15 @@ void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 
 	OwningTest->RegisterFlowController(this);
 
-	if (IsLocalController())
+	if (OwningTest->HasPreparedTest())
 	{
-		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-		{
-			bIsReadyToRunTest = true;
-		}
-		else
-		{
-			ServerSetReadyToRunTest();
-		}
+		SetReadyToRunTest(true);
 	}
 }
 
-void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementation()
+void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementation(bool bIsReady)
 {
-	bIsReadyToRunTest = true;
+	bIsReadyToRunTest = bIsReady;
 }
 
 void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(int StepIndex)
@@ -182,6 +175,26 @@ void ASpatialFunctionalTestFlowController::OnTestFinished()
 	else
 	{
 		ServerAckFinishedTest();
+	}
+	SetReadyToRunTest(false);
+}
+
+void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
+{
+	if (bIsReady == bIsReadyToRunTest)
+	{
+		return;
+	}
+	if (IsLocalController())
+	{
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+		{
+			bIsReadyToRunTest = bIsReady;
+		}
+		else
+		{
+			ServerSetReadyToRunTest(bIsReady);
+		}
 	}
 }
 

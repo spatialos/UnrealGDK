@@ -12,5 +12,5 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialSnapshotDummyTest : public ASpatialF
 public:
 	ASpatialSnapshotDummyTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 };

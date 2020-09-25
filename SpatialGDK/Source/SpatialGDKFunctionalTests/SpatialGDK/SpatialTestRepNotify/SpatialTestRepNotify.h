@@ -14,7 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRepNotify : public ASpatialFunct
 public:
 	ASpatialTestRepNotify();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

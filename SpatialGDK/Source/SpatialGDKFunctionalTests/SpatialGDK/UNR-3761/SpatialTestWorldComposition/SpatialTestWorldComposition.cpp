@@ -57,9 +57,9 @@ ASpatialTestWorldComposition::ASpatialTestWorldComposition()
 	SetNumRequiredClients(1);
 }
 
-void ASpatialTestWorldComposition::BeginPlay()
+void ASpatialTestWorldComposition::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// Step definition for Client 1 to move its Pawn and check if the levels loaded correctly.
 	FSpatialFunctionalTestStepDefinition ClientCheckLocationStepDefinition;
