@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialDebuggerConfigUI.h"
 
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
@@ -48,6 +49,17 @@ struct FWorkerRegionInfo
 	FBox2D Extents;
 };
 
+UENUM()
+namespace EActorTagDrawMode
+{
+enum Type
+{
+	None,
+	LocalPlayer,
+	All
+};
+}
+
 /**
  * Visualise spatial information at runtime and in the editor
  */
@@ -67,6 +79,13 @@ public:
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
 
+	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
+	bool IsEnabled();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input,
+			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
+	FKey ConfigUIKey;
+
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
 	int PlayerPanelStartX = 64;
@@ -77,6 +96,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
 	float MaxRange = 100.0f * 100.0f; // 100m
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which actor tags to show"))
+	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Show server authority for every entity in range"))
@@ -133,6 +155,12 @@ public:
 
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
+
+	UFUNCTION()
+	void OnToggleConfigUI();
+
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void SetShowWorkerRegions(bool bNewShow);
 
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
@@ -197,4 +225,6 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
+
+	USpatialDebuggerConfigUI* ConfigUIWidget;
 };

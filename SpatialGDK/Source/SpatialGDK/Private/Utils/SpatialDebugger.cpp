@@ -35,7 +35,9 @@ namespace
 {
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
-}
+const FString DEFAULT_CONFIG_UI_WIDGET_CLASS =
+	TEXT("/SpatialGDK/SpatialDebugger/WBP_SpatialDebuggerConfigMenu.WBP_SpatialDebuggerConfigMenu_C");
+} // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -282,7 +284,66 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		if (Actor->IsA<APlayerController>())
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
+			LocalPlayerController->InputComponent->BindKey(EKeys::F8, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 		}
+	}
+}
+
+void ASpatialDebugger::OnToggleConfigUI()
+{
+	FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
+	UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
+	if (ConfigUIClass == nullptr)
+	{
+		return;
+	}
+
+	if (!LocalPlayerController.IsValid())
+	{
+		return;
+	}
+
+	if (ConfigUIWidget == nullptr)
+	{
+		ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
+	}
+
+	if (!ConfigUIWidget->IsInViewport())
+	{
+		ConfigUIWidget->AddToViewport();
+
+		// TODO This is clobbering whatever input mode the player controller had set before we enabled our UI.
+		// Need to investigate if the state can be stored before changing it.
+		FInputModeGameAndUI InputModeSettings;
+		InputModeSettings.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputModeSettings.SetWidgetToFocus(ConfigUIWidget->TakeWidget());
+
+		LocalPlayerController->SetInputMode(InputModeSettings);
+		LocalPlayerController->bShowMouseCursor = true;
+	}
+	else
+	{
+		ConfigUIWidget->RemoveFromParent();
+
+		FInputModeGameOnly InputModeSettings;
+		LocalPlayerController->SetInputMode(InputModeSettings);
+		LocalPlayerController->bShowMouseCursor = false;
+	}
+}
+
+void ASpatialDebugger::SetShowWorkerRegions(bool bNewShow)
+{
+	if (bNewShow != bShowWorkerRegions)
+	{
+		if (bNewShow)
+		{
+			CreateWorkerRegions();
+		}
+		else
+		{
+			DestroyWorkerRegions();
+		}
+		bShowWorkerRegions = bNewShow;
 	}
 }
 
@@ -453,48 +514,60 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 #endif
 
-	DrawDebugLocalPlayer(Canvas);
+	// Don't draw tags while the UI is open, since they will otherwise draw on top of the UI and obscure it.
+	if (ConfigUIWidget && ConfigUIWidget->IsInViewport())
+	{
+		return;
+	}
+
+	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
+	{
+		DrawDebugLocalPlayer(Canvas);
+	}
 
 	FVector PlayerLocation = FVector::ZeroVector;
 
-	if (LocalPawn.IsValid())
+	if (ActorTagDrawMode == EActorTagDrawMode::All)
 	{
-		PlayerLocation = LocalPawn->GetActorLocation();
-	}
-
-	for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
-	{
-		const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
-		const Worker_EntityId EntityId = EntityActorPair.Key;
-
-		if (Actor != nullptr)
+		if (LocalPawn.IsValid())
 		{
-			FVector ActorLocation = Actor->GetActorLocation();
+			PlayerLocation = LocalPawn->GetActorLocation();
+		}
 
-			if (ActorLocation.IsZero())
+		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+		{
+			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
+			const Worker_EntityId EntityId = EntityActorPair.Key;
+
+			if (Actor != nullptr)
 			{
-				continue;
-			}
+				FVector ActorLocation = Actor->GetActorLocation();
 
-			if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
-			{
-				continue;
-			}
+				if (ActorLocation.IsZero())
+				{
+					continue;
+				}
 
-			FVector2D ScreenLocation = FVector2D::ZeroVector;
-			if (LocalPlayerController.IsValid())
-			{
-				SCOPE_CYCLE_COUNTER(STAT_Projection);
-				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset,
-													   ScreenLocation, false);
-			}
+				if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
+				{
+					continue;
+				}
 
-			if (ScreenLocation.IsZero())
-			{
-				continue;
-			}
+				FVector2D ScreenLocation = FVector2D::ZeroVector;
+				if (LocalPlayerController.IsValid())
+				{
+					SCOPE_CYCLE_COUNTER(STAT_Projection);
+					UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset,
+														   ScreenLocation, false);
+				}
 
-			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
+				if (ScreenLocation.IsZero())
+				{
+					continue;
+				}
+
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
+			}
 		}
 	}
 }
@@ -540,6 +613,11 @@ void ASpatialDebugger::SpatialToggleDebugger()
 			CreateWorkerRegions();
 		}
 	}
+}
+
+bool ASpatialDebugger::IsEnabled()
+{
+	return DrawDebugDelegateHandle.IsValid();
 }
 
 #if WITH_EDITOR
