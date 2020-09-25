@@ -688,6 +688,11 @@ ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
 
 void ASpatialFunctionalTest::AddDebugTag(AActor* Actor, FName Tag)
 {
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
 		NetDriver->DebugCtx->AddActorTag(Actor, Tag);
@@ -736,15 +741,48 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 	}
 }
 
-void ASpatialFunctionalTest::DelegateTagToWorker(FName Tag, int32 WorkerId)
+void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
+{
+	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
+	{
+		return;
+	}
+	if (ServerWorkerId >= GetNumExpectedServers())
+	{
+		ServerWorkerId = 1; // Support for single worker environments.
+	}
+	AddStep(FString::Printf(TEXT("Set Delegation of Tag '%s' to Server Worker %d"), *Tag.ToString(), ServerWorkerId),
+			FWorkerDefinition::AllServers, nullptr, [this, Tag, ServerWorkerId] {
+				SetTagDelegation(Tag, ServerWorkerId);
+				FinishStep();
+			});
+}
+
+void ASpatialFunctionalTest::AddStepClearTagDelegation(FName Tag)
+{
+	AddStep(FString::Printf(TEXT("Clear Delegation of Tag '%s'"), *Tag.ToString()), FWorkerDefinition::AllServers, nullptr, [this, Tag] {
+		ClearTagDelegation(Tag);
+		FinishStep();
+	});
+}
+
+void ASpatialFunctionalTest::AddStepClearTagDelegationAndInterest()
+{
+	AddStep(TEXT("Clear Delegation of all Tags and extra Interest"), FWorkerDefinition::AllServers, nullptr, [this] {
+		ClearTagDelegationAndInterest();
+		FinishStep();
+	});
+}
+
+void ASpatialFunctionalTest::SetTagDelegation(FName Tag, int32 ServerWorkerId)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
-		NetDriver->DebugCtx->DelegateTagToWorker(Tag, WorkerId);
+		NetDriver->DebugCtx->DelegateTagToWorker(Tag, ServerWorkerId);
 	}
 }
 
-void ASpatialFunctionalTest::RemoveTagDelegation(FName Tag)
+void ASpatialFunctionalTest::ClearTagDelegation(FName Tag)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
