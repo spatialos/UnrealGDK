@@ -18,22 +18,27 @@ class SPATIALGDK_API AWorkerRegion : public AActor
 public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
-	void Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale, const FString& WorkerName);
+	void Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, UFont* TextFont, const FColor& Color, const FBox2D& Extents,
+			  const float VerticalScale,
+			  const FString& WorkerName);
 
 	UPROPERTY()
 	UStaticMeshComponent* Mesh;
 
 	UPROPERTY()
-	UMaterialInstanceDynamic* MaterialInstance;
+	UMaterialInstanceDynamic* MaterialBoundaryInstance;
 
 	UPROPERTY()
-	UTextRenderComponent* WorkerText;
+	UMaterialInstanceDynamic* MaterialTextInstance;
+
 
 private:
 	void SetOpacity(const float Opacity);
 	void SetHeight(const float Height);
 	void SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale);
 	void SetColor(const FColor& Color);
-	void CreateWorkerTextAtPosition(const float& VerticalScale, const FString& WorkerName, const float& PositionX, const float& PositionY,
+	void CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float& VerticalScale, const FString& WorkerName,
+									const float& PositionX,
+									const float& PositionY,
 									const float& PositionZ);
 };

@@ -26,16 +26,23 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Mesh);
 }
 
-void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale,
+void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, UFont* TextFont, const FColor& Color, const FBox2D& Extents,
+						 const float VerticalScale,
 						 const FString& WorkerName)
 {
-	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
+	MaterialBoundaryInstance = UMaterialInstanceDynamic::Create(BoundaryMaterial, nullptr);
+	// TODO: create this statically in editor as will not change?
+	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr);
 
-	MaterialInstance = UMaterialInstanceDynamic::Create(Material, nullptr);
-	Mesh->SetMaterial(0, MaterialInstance);
+	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
+	
+	Mesh->SetMaterial(0, MaterialBoundaryInstance);
+
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale, false, true);
+
+
 
 	// Tile horizontally
 	int xCount = Extents.GetSize().X / 250;
@@ -57,25 +64,27 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 		{
 			// Using exactly 50 causes the text to flicker so used nearly 50 instead
 			float zPosition = (zi * zDiff) - ((zCount * zDiff) / 2.f);
-			CreateWorkerTextAtPosition(VerticalScale, WorkerName, xPos, 49.999, zPosition);
+			CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerName, xPos, 49.999, zPosition);
 		}
 	}
 
 	SetPositionAndScale(Extents, VerticalScale, true, false);
+	
 }
 
-void AWorkerRegion::CreateWorkerTextAtPosition(const float& VerticalScale, const FString& WorkerName, const float& PositionX,
+void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float& VerticalScale,
+											   const FString& WorkerName,
+											   const float& PositionX,
 											   const float& PositionY, const float& PositionZ)
 {
 	// Create dynamic worker name text on boundary wall
-	WorkerText = NewObject<UTextRenderComponent>(this);
+	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
+	//WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
+	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, 270, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
 	WorkerText->SetWorldRotation(QuatRotation);
-
-	// WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, (DEFAULT_WORKER_REGION_HEIGHT / 2.0) * VerticalScale));
 	WorkerText->SetRelativeLocation(FVector(PositionX, PositionY, PositionZ));
-
 	WorkerText->SetTextRenderColor(FColor::White);
 	WorkerText->SetText((TEXT("Worker boundary %s"), WorkerName));
 	WorkerText->SetXScale(1.f);
@@ -95,7 +104,9 @@ void AWorkerRegion::SetHeight(const float Height)
 
 void AWorkerRegion::SetOpacity(const float Opacity)
 {
-	MaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	MaterialTextInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)
@@ -124,5 +135,5 @@ void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float Verti
 
 void AWorkerRegion::SetColor(const FColor& Color)
 {
-	MaterialInstance->SetVectorParameterValue(WORKER_REGION_MATERIAL_COLOR_PARAM, Color);
+	MaterialBoundaryInstance->SetVectorParameterValue(WORKER_REGION_MATERIAL_COLOR_PARAM, Color);
 }

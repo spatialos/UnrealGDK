@@ -35,6 +35,12 @@ namespace
 {
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+// TODO: make these parameter of the spatial debugger
+//const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/ImprobableFont.ImprobableFont"); // Improbable font
+//const FString DEFAULT_WORKER_TEXT_MATERIAL =
+//	TEXT("/Engine/EngineMaterials/DefaultTextMaterialOpaque.DefaultTextMaterialOpaque"); // Default material
+const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Working material
+const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/Engine/EngineFonts/RobotoDistanceField.RobotoDistanceField"); // Default font
 }
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -187,6 +193,21 @@ void ASpatialDebugger::CreateWorkerRegions()
 		return;
 	}
 
+	UMaterial* WorkerTextMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_TEXT_MATERIAL);
+	if (WorkerTextMaterial == nullptr)
+	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker text was not rendered. Could not find default material: %s"),
+			   *DEFAULT_WORKER_TEXT_MATERIAL);
+	}
+
+	UObject* obj_ptr = StaticLoadObject(UFont::StaticClass(), nullptr, *DEFAULT_WORKER_TEXT_FONT);
+	if (obj_ptr == nullptr)
+	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"),
+			   *DEFAULT_WORKER_TEXT_MATERIAL);
+	}
+	UFont* TextFont = Cast<UFont>(obj_ptr);
+
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
@@ -197,7 +218,8 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents, WorkerRegionVerticalScale,
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, TextFont, WorkerRegionData.Color, WorkerRegionData.Extents,
+						   WorkerRegionVerticalScale,
 						   WorkerRegionData.WorkerName);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
