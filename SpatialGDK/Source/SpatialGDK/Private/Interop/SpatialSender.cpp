@@ -616,7 +616,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
-	NetDriver->LoadBalanceEnforcer->MaybeCreateAclUpdate(EntityId);
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)

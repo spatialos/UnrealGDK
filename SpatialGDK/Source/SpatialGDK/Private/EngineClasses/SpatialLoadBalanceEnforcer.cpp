@@ -2,14 +2,13 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 
-#include <valarray>
-
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
@@ -18,11 +17,13 @@ using namespace SpatialGDK;
 
 SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId,
 													   const USpatialStaticComponentView* InStaticComponentView, const FSubView& InSubView,
-													   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+													   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
+													   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender)
 	: WorkerId(InWorkerId)
 	, StaticComponentView(InStaticComponentView)
 	, SubView(&InSubView)
 	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
+	, UpdateSender(MoveTemp(InUpdateSender))
 {
 	check(InStaticComponentView != nullptr);
 	check(InVirtualWorkerTranslator != nullptr);
@@ -41,7 +42,7 @@ void SpatialLoadBalanceEnforcer::Advance()
 			{
 				if (HandlesComponent(Change.ComponentId))
 				{
-					CreateAclUpdate(Delta.EntityId);
+					RefreshAcl(Delta.EntityId);
 				}
 			}
 
@@ -49,21 +50,38 @@ void SpatialLoadBalanceEnforcer::Advance()
 			{
 				if (HandlesComponent(Change.ComponentId))
 				{
-					CreateAclUpdate(Delta.EntityId);
+					RefreshAcl(Delta.EntityId);
+				}
+			}
+
+			for (const ComponentChange& Change : Delta.ComponentsAdded)
+			{
+				if (HandlesComponent(Change.ComponentId))
+				{
+					RefreshAcl(Delta.EntityId);
+				}
+			}
+
+			for (const ComponentChange& Change : Delta.ComponentsRemoved)
+			{
+				if (HandlesComponent(Change.ComponentId))
+				{
+					RefreshAcl(Delta.EntityId);
 				}
 			}
 		}
 		break;
 		case EntityDelta::ADD:
 		{
-			CreateAclUpdate(Delta.EntityId);
+			RefreshAcl(Delta.EntityId);
 		}
 		break;
 		case EntityDelta::REMOVE:
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 		{
-			CreateAclUpdate(Delta.EntityId);
+			RefreshAcl(Delta.EntityId);
+			break;
 		}
 		break;
 		default:
@@ -72,32 +90,15 @@ void SpatialLoadBalanceEnforcer::Advance()
 	}
 }
 
-TArray<EntityComponentUpdate> SpatialLoadBalanceEnforcer::GetAndClearAclUpdates()
-{
-	TArray<EntityComponentUpdate> Temp = MoveTemp(AclUpdates);
-	AclUpdates.Empty();
-	return MoveTemp(Temp);
-}
-
-void SpatialLoadBalanceEnforcer::MaybeCreateAclUpdate(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId)
 {
 	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		CreateAclUpdate(EntityId);
+		RefreshAcl(EntityId);
 	}
 }
 
-void SpatialLoadBalanceEnforcer::TagQuery(Query& QueryToTag) const
-{
-	SubView->TagQuery(QueryToTag);
-}
-
-void SpatialLoadBalanceEnforcer::TagEntity(TArray<FWorkerComponentData>& Components) const
-{
-	SubView->TagEntity(Components);
-}
-
-void SpatialLoadBalanceEnforcer::CreateAclUpdate(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 {
 	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	const PhysicalWorkerName* OwningWorkerId =
@@ -185,8 +186,7 @@ void SpatialLoadBalanceEnforcer::CreateAclUpdate(const Worker_EntityId EntityId)
 	}
 	const FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
 
-	AclUpdates.Emplace(
-		EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
+	UpdateSender(EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
 }
 
 bool SpatialLoadBalanceEnforcer::HandlesComponent(Worker_ComponentId ComponentId)

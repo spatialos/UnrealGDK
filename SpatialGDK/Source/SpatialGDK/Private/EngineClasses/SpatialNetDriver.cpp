@@ -42,6 +42,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "SpatialView/ViewDelta.h"
@@ -474,8 +475,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 																				 },
 																				 {});
 
-	LoadBalanceEnforcer =
-		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, LBSubView, VirtualWorkerTranslator.Get());
+	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [&](SpatialGDK::EntityComponentUpdate AclUpdate) {
+		Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
+	};
+	LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, LBSubView,
+																 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
@@ -1769,6 +1773,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
+		if (LoadBalanceEnforcer.IsValid())
+		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
+			LoadBalanceEnforcer->Advance();
+		}
+
 		if (!bIsReadyToStart)
 		{
 			TryFinishStartup();
@@ -1777,17 +1787,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
-		}
-
-		if (LoadBalanceEnforcer.IsValid())
-		{
-			LoadBalanceEnforcer->Advance();
-			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			auto Updates = LoadBalanceEnforcer->GetAndClearAclUpdates();
-			for (auto& AclUpdate : Updates)
-			{
-				Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
-			}
 		}
 	}
 }
