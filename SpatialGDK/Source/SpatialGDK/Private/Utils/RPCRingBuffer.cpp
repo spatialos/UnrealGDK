@@ -10,6 +10,10 @@ RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 	: Type(InType)
 {
 	RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(Type));
+	if (InType == ERPCType::CrossServerReceiver || InType == ERPCType::CrossServerSender)
+	{
+		Counterpart.SetNum(RPCRingBufferUtils::GetRingBufferSize(Type));
+	}
 }
 
 namespace RPCRingBufferUtils
@@ -26,6 +30,10 @@ Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 		return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	case ERPCType::NetMulticast:
 		return SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
+	case ERPCType::CrossServerSender:
+		return SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID;
+	case ERPCType::CrossServerReceiver:
+		return SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
 	default:
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;
@@ -60,6 +68,11 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 		Descriptor.SchemaFieldStart = 1 + MaxRingBufferSize + 1;
 		Descriptor.LastSentRPCFieldId = 1 + MaxRingBufferSize + 1 + MaxRingBufferSize;
 		break;
+	case ERPCType::CrossServerSender:
+	case ERPCType::CrossServerReceiver:
+		Descriptor.SchemaFieldStart = 1;
+		Descriptor.LastSentRPCFieldId = 1 + 2 * MaxRingBufferSize;
+		break;
 	default:
 		checkNoEntry();
 		break;
@@ -83,6 +96,10 @@ Worker_ComponentId GetAckComponentId(ERPCType Type)
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
 		return SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+	case ERPCType::CrossServerSender:
+		return SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID;
+	case ERPCType::CrossServerReceiver:
+		return SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID;
 	default:
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;
@@ -103,6 +120,9 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	case ERPCType::ClientUnreliable:
 	case ERPCType::ServerUnreliable:
 		return 1 + 2 * (MaxRingBufferSize + 1) + 1;
+	case ERPCType::CrossServerSender:
+	case ERPCType::CrossServerReceiver:
+		return 1;
 	default:
 		checkNoEntry();
 		return 0;
@@ -127,6 +147,9 @@ bool ShouldQueueOverflowed(ERPCType Type)
 	case ERPCType::ServerUnreliable:
 	case ERPCType::NetMulticast:
 		return false;
+	case ERPCType::CrossServerSender:
+	case ERPCType::CrossServerReceiver:
+		return false;
 	default:
 		checkNoEntry();
 		return false;
@@ -139,10 +162,17 @@ void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 
 	for (uint32 RingBufferIndex = 0; RingBufferIndex < Descriptor.RingBufferSize; RingBufferIndex++)
 	{
-		Schema_FieldId FieldId = Descriptor.SchemaFieldStart + RingBufferIndex;
+		Schema_FieldId FieldId = Descriptor.GetRingBufferElementFieldId(OutBuffer.Type, RingBufferIndex + 1);
 		if (Schema_GetObjectCount(SchemaObject, FieldId) > 0)
 		{
 			OutBuffer.RingBuffer[RingBufferIndex].Emplace(Schema_GetObject(SchemaObject, FieldId));
+		}
+		if (OutBuffer.Type == ERPCType::CrossServerSender || OutBuffer.Type == ERPCType::CrossServerReceiver)
+		{
+			if (Schema_GetObjectCount(SchemaObject, FieldId + 1) > 0)
+			{
+				OutBuffer.Counterpart[RingBufferIndex].Emplace(GetObjectRefFromSchema(SchemaObject, FieldId + 1));
+			}
 		}
 	}
 
@@ -166,7 +196,7 @@ void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, 
 {
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
 
-	Schema_Object* RPCObject = Schema_AddObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(RPCId));
+	Schema_Object* RPCObject = Schema_AddObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(Type, RPCId));
 	Payload.WriteToSchemaObject(RPCObject);
 
 	Schema_ClearField(SchemaObject, Descriptor.LastSentRPCFieldId);
@@ -179,6 +209,18 @@ void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack)
 
 	Schema_ClearField(SchemaObject, AckFieldId);
 	Schema_AddUint64(SchemaObject, AckFieldId, Ack);
+}
+
+void WriteAckForSenderToSchema(Schema_Object* SchemaObject, ERPCType Type, TArray<FUnrealObjectRef> const& AckArray)
+{
+	Schema_FieldId AckArrayFieldId = GetAckFieldId(Type) + 1;
+
+	Schema_ClearField(SchemaObject, AckArrayFieldId);
+	// Schema_AddUint64(SchemaObject, AckFieldId, Ack);
+	for (auto const& Ref : AckArray)
+	{
+		AddObjectRefToSchema(SchemaObject, AckArrayFieldId, Ref);
+	}
 }
 
 void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId)

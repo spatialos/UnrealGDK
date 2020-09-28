@@ -4,6 +4,7 @@
 
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
+#include "Schema/CrossServerEndpoint.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -18,9 +19,13 @@ SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, cons
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
 {
+	// CrossServerMailbox.SetNumZeroed(RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender));
+	CrossServerOccupiedSlots.Init(false, RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender));
+	CrossServerSlotsToClear.Init(false, RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender));
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType Type, RPCPayload Payload,
+										  bool bCreatedEntity)
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
@@ -34,7 +39,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	}
 	else
 	{
-		Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), bCreatedEntity);
+		Result = PushRPCInternal(EntityId, Counterpart, Type, MoveTemp(Payload), bCreatedEntity);
 
 		if (Result == EPushRPCResult::QueueOverflowed)
 		{
@@ -49,7 +54,8 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	return Result;
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType Type,
+												  RPCPayload&& Payload, bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
@@ -78,13 +84,16 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 		}
 		else
 		{
-			// We shouldn't have authority over the component that has the acks.
-			if (View->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
+			// Ignore these while the routing worker can be anyone.
+			if (Type != ERPCType::CrossServerSender && Type != ERPCType::CrossServerReceiver)
 			{
-				return EPushRPCResult::HasAckAuthority;
+				// We shouldn't have authority over the component that has the acks.
+				if (View->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
+				{
+					return EPushRPCResult::HasAckAuthority;
+				}
+				LastAckedRPCId = GetAckFromView(EntityId, Type);
 			}
-
-			LastAckedRPCId = GetAckFromView(EntityId, Type);
 		}
 	}
 	else
@@ -100,12 +109,91 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 		LastAckedRPCId = 0;
 	}
 
-	uint64 NewRPCId = LastSentRPCIds.FindRef(EntityType) + 1;
-
-	// Check capacity.
-	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
+	EPushRPCResult Result = EPushRPCResult::Success;
+	uint64 NewRPCId;
+	if (Type == ERPCType::CrossServerSender)
 	{
-		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
+		TOptional<uint32> Slot = FindFreeSlotForCrossServerSender();
+		if (Slot)
+		{
+			CrossServerEndpointSender* SenderComp = View->GetComponentData<CrossServerEndpointSender>(EntityId);
+			NewRPCId = SenderComp->ReliableRPCBuffer.LastSentRPCId++;
+
+			int32 SlotIdx = Slot.GetValue();
+
+			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
+			uint32 Field = Descriptor.GetRingBufferElementFieldId(ERPCType::CrossServerSender, SlotIdx + 1);
+
+			Schema_Object* RPCObject = Schema_AddObject(EndpointObject, Field);
+			Payload.WriteToSchemaObject(RPCObject);
+
+			FUnrealObjectRef Target = Counterpart;
+			Target.Offset = NewRPCId;
+			AddObjectRefToSchema(EndpointObject, Field + 1, Target);
+
+			Schema_ClearField(EndpointObject, Descriptor.LastSentRPCFieldId);
+			Schema_AddUint64(EndpointObject, Descriptor.LastSentRPCFieldId, SenderComp->ReliableRPCBuffer.LastSentRPCId);
+
+			CrossServerEndpointSender* Sender = View->GetComponentData<CrossServerEndpointSender>(EntityId);
+			if (ensure(Sender != nullptr))
+			{
+				RPCRingBuffer& Buffer = Sender->ReliableRPCBuffer;
+				Buffer.RingBuffer[SlotIdx].Emplace(Payload);
+				Buffer.Counterpart[SlotIdx].Emplace(Target);
+
+				SentRPCEntry Entry;
+				Entry.RPCId = NewRPCId;
+				Entry.Target = Target.Entity;
+				Entry.Timestamp = FPlatformTime::Cycles64();
+				Entry.Slot = SlotIdx;
+
+				CrossServerMailbox.Add(Target.Entity, Entry);
+				CrossServerOccupiedSlots[SlotIdx] = true;
+				CrossServerSlotsToClear[SlotIdx] = false;
+			}
+			else
+			{
+				Result = EPushRPCResult::EntityBeingCreated;
+			}
+		}
+		else
+		{
+			// Overflowed
+			if (RPCRingBufferUtils::ShouldQueueOverflowed(Type))
+			{
+				Result = EPushRPCResult::QueueOverflowed;
+			}
+			else
+			{
+				Result = EPushRPCResult::DropOverflowed;
+			}
+		}
+	}
+	else
+	{
+		NewRPCId = LastSentRPCIds.FindRef(EntityType) + 1;
+		// Check capacity.
+		if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
+		{
+			RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
+		}
+		else
+		{
+			// Overflowed
+			if (RPCRingBufferUtils::ShouldQueueOverflowed(Type))
+			{
+				return EPushRPCResult::QueueOverflowed;
+			}
+			else
+			{
+				return EPushRPCResult::DropOverflowed;
+			}
+		}
+	}
+
+	if (Result == EPushRPCResult::Success)
+	{
+		LastSentRPCIds.Add(EntityType, NewRPCId);
 
 #if TRACE_LIB_ACTIVE
 		if (SpatialLatencyTracer != nullptr && Payload.Trace != InvalidTraceKey)
@@ -121,23 +209,9 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			}
 		}
 #endif
-
-		LastSentRPCIds.Add(EntityType, NewRPCId);
-	}
-	else
-	{
-		// Overflowed
-		if (RPCRingBufferUtils::ShouldQueueOverflowed(Type))
-		{
-			return EPushRPCResult::QueueOverflowed;
-		}
-		else
-		{
-			return EPushRPCResult::DropOverflowed;
-		}
 	}
 
-	return EPushRPCResult::Success;
+	return Result;
 }
 
 void SpatialRPCService::PushOverflowedRPCs()
@@ -152,7 +226,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 		bool bShouldDrop = false;
 		for (RPCPayload& Payload : OverflowedRPCArray)
 		{
-			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
+			const EPushRPCResult Result = PushRPCInternal(EntityId, FUnrealObjectRef(), Type, MoveTemp(Payload), false);
 
 			switch (Result)
 			{
@@ -231,6 +305,26 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		PendingTraces.RemoveAndCopyValue(It.Key, Trace);
 		UpdateToSend.Update.Trace = Trace;
 #endif
+		if (UpdateToSend.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID)
+		{
+			CrossServerEndpointSender* Sender = View->GetComponentData<CrossServerEndpointSender>(UpdateToSend.EntityId);
+			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::CrossServerSender);
+
+			uint64& SenderRevision = Sender->ReliableRPCBuffer.LastSentRPCId;
+			++SenderRevision;
+			for (int32 ToClear = CrossServerSlotsToClear.Find(true); ToClear >= 0; ToClear = CrossServerSlotsToClear.Find(true))
+			{
+				uint32 Field = Descriptor.GetRingBufferElementFieldId(ERPCType::CrossServerSender, ToClear + 1);
+
+				Schema_AddComponentUpdateClearedField(UpdateToSend.Update.schema_type, Field);
+				Schema_AddComponentUpdateClearedField(UpdateToSend.Update.schema_type, Field + 1);
+
+				CrossServerSlotsToClear[ToClear] = false;
+			}
+			Schema_ClearField(Schema_GetComponentUpdateFields(UpdateToSend.Update.schema_type), Descriptor.LastSentRPCFieldId);
+			Schema_AddUint64(Schema_GetComponentUpdateFields(UpdateToSend.Update.schema_type), Descriptor.LastSentRPCFieldId,
+							 SenderRevision);
+		}
 	}
 
 	PendingComponentUpdatesToSend.Empty();
@@ -308,6 +402,12 @@ void SpatialRPCService::ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_Co
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		ExtractRPCsForType(EntityId, ERPCType::NetMulticast);
 		break;
+	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+		ExtractCrossServerRPCsForType(EntityId, ERPCType::CrossServerSender);
+		break;
+	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+		ExtractRPCsForType(EntityId, ERPCType::CrossServerReceiver);
+		break;
 	default:
 		checkNoEntry();
 		break;
@@ -382,6 +482,58 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 
 		break;
 	}
+	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+	{
+		break;
+	}
+	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
+	{
+		TSet<Worker_EntityId_Key> SenderToCheck;
+		const CrossServerEndpointSenderACK* Endpoint = View->GetComponentData<CrossServerEndpointSenderACK>(EntityId);
+		if (ensure(Endpoint != nullptr))
+		{
+			uint32 numAcks = 0;
+			for (int32 SlotIdx = 0; SlotIdx < Endpoint->ACKArray.Num(); ++SlotIdx)
+			{
+				const TOptional<ACKItem>& ACK = Endpoint->ACKArray[SlotIdx];
+				if (ACK)
+				{
+					ACKSlot NewSlot;
+					NewSlot.Receiver = EntityId;
+					NewSlot.Slot = SlotIdx;
+					TArray<ACKSlot>& Slots = CrossServerACKMap.FindOrAdd(ACK.GetValue().Sender);
+					Slots.Add(NewSlot);
+					SenderToCheck.Add(ACK.GetValue().Sender);
+					numAcks++;
+				}
+			}
+			if (numAcks > 0)
+			{
+				ACKComponentsToTrack.Add(EntityId, RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender) - numAcks);
+			}
+		}
+		// for (const auto& Entry : CrossServerMailbox)
+		{
+			if (CrossServerMailbox.Find(EntityId))
+			{
+				bShouldCheckSentRPCForLocalTarget = true;
+			}
+		}
+		for (auto Sender : SenderToCheck)
+		{
+			CleanupACKsFor(Sender);
+		}
+		// Should also try to cleanup ACKS after migration if we were on a real scenario
+		break;
+	}
+	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+	{
+		break;
+	}
+	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+	{
+		break;
+	}
 	default:
 		checkNoEntry();
 		break;
@@ -422,6 +574,38 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::NetMulticast));
 		break;
 	}
+	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+	{
+		break;
+	}
+	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
+	{
+		ACKComponentsToTrack.Remove(EntityId);
+		for (auto Iterator = CrossServerACKMap.CreateIterator(); Iterator; ++Iterator)
+		{
+			TArray<ACKSlot>& Slots = Iterator->Value;
+			for (auto SlotIterator = Slots.CreateIterator(); SlotIterator; ++SlotIterator)
+			{
+				if (SlotIterator->Receiver == EntityId)
+				{
+					SlotIterator.RemoveCurrent();
+				}
+			}
+			if (Slots.Num() == 0)
+			{
+				Iterator.RemoveCurrent();
+			}
+		}
+		break;
+	}
+	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+	{
+		break;
+	}
+	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+	{
+		break;
+	}
 	default:
 		checkNoEntry();
 		break;
@@ -435,25 +619,10 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 
 	if (Type == ERPCType::NetMulticast)
 	{
-		if (!LastSeenMulticastRPCIds.Contains(EntityId))
-		{
-			UE_LOG(LogSpatialRPCService, Warning,
-				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: "
-						"Multicast"),
-				   EntityId);
-			return;
-		}
 		LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
 	}
 	else
 	{
-		if (!LastSeenRPCIds.Contains(EntityTypePair))
-		{
-			UE_LOG(LogSpatialRPCService, Warning,
-				   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: %s"),
-				   EntityId, *SpatialConstants::RPCTypeToString(Type));
-			return;
-		}
 		LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
 	}
 
@@ -479,7 +648,20 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				const bool bKeepExtracting = ExtractRPCCallback.Execute(EntityId, Type, Element.GetValue());
+				FUnrealObjectRef Counterpart;
+				if (Buffer.Type == ERPCType::CrossServerSender)
+				{
+					Worker_EntityId TargetId = SpatialConstants::INVALID_ENTITY_ID;
+					const TOptional<FUnrealObjectRef>& Target = Buffer.GetRingBufferCounterpart(RPCId);
+					if (Target.IsSet())
+					{
+						TargetId = Target.GetValue().Entity;
+					}
+					Counterpart.Entity = TargetId;
+					Counterpart.Offset = RPCId;
+				}
+				const bool bKeepExtracting =
+					ExtractRPCCallback.Execute(EntityId, Counterpart, Type, Element.GetValue(), &Element - Buffer.RingBuffer.GetData());
 				if (!bKeepExtracting)
 				{
 					break;
@@ -558,6 +740,10 @@ uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, ERPCType Type
 		return View->GetComponentData<ServerEndpoint>(EntityId)->ReliableRPCAck;
 	case ERPCType::ServerUnreliable:
 		return View->GetComponentData<ServerEndpoint>(EntityId)->UnreliableRPCAck;
+	case ERPCType::CrossServerSender:
+		return View->GetComponentData<CrossServerEndpointSenderACK>(EntityId)->RPCAck;
+	case ERPCType::CrossServerReceiver:
+		return View->GetComponentData<CrossServerEndpointReceiverACK>(EntityId)->RPCAck;
 	}
 
 	checkNoEntry();
@@ -568,13 +754,13 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 {
 	switch (Type)
 	{
-	// Server sends Client RPCs, so ClientReliable & ClientUnreliable buffers live on ServerEndpoint.
+		// Server sends Client RPCs, so ClientReliable & ClientUnreliable buffers live on ServerEndpoint.
 	case ERPCType::ClientReliable:
 		return View->GetComponentData<ServerEndpoint>(EntityId)->ReliableRPCBuffer;
 	case ERPCType::ClientUnreliable:
 		return View->GetComponentData<ServerEndpoint>(EntityId)->UnreliableRPCBuffer;
 
-	// Client sends Server RPCs, so ServerReliable & ServerUnreliable buffers live on ClientEndpoint.
+		// Client sends Server RPCs, so ServerReliable & ServerUnreliable buffers live on ClientEndpoint.
 	case ERPCType::ServerReliable:
 		return View->GetComponentData<ClientEndpoint>(EntityId)->ReliableRPCBuffer;
 	case ERPCType::ServerUnreliable:
@@ -582,6 +768,10 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 
 	case ERPCType::NetMulticast:
 		return View->GetComponentData<MulticastRPCs>(EntityId)->MulticastRPCBuffer;
+	case ERPCType::CrossServerSender:
+		return View->GetComponentData<CrossServerEndpointSender>(EntityId)->ReliableRPCBuffer;
+	case ERPCType::CrossServerReceiver:
+		return View->GetComponentData<CrossServerEndpointReceiver>(EntityId)->ReliableRPCBuffer;
 	}
 
 	checkNoEntry();
@@ -654,5 +844,313 @@ void SpatialRPCService::ProcessResultToLatencyTrace(const EPushRPCResult Result,
 	}
 }
 #endif // TRACE_LIB_ACTIVE
+
+void SpatialRPCService::ExtractCrossServerRPCsForType(Worker_EntityId SenderId, ERPCType Type)
+{
+	// First, try to free ACK slots.
+	CleanupACKsFor(SenderId);
+
+	const RPCRingBuffer& Buffer = GetBufferFromView(SenderId, Type);
+
+	for (uint32 Slot = 0; Slot < RPCRingBufferUtils::GetRingBufferSize(Type); ++Slot)
+	{
+		const TOptional<RPCPayload>& Element = Buffer.RingBuffer[Slot];
+		if (Element.IsSet())
+		{
+			Worker_EntityId TargetId = SpatialConstants::INVALID_ENTITY_ID;
+			const TOptional<FUnrealObjectRef>& Target = Buffer.Counterpart[Slot];
+			if (Target.IsSet())
+			{
+				TargetId = Target.GetValue().Entity;
+
+				uint64 RPCId = Target.GetValue().Offset;
+
+				if (View->HasAuthority(TargetId, SpatialConstants::POSITION_COMPONENT_ID))
+				{
+					CrossServerEndpointSenderACK* ACKComponent = View->GetComponentData<CrossServerEndpointSenderACK>(TargetId);
+					bool alreadyAcked = ACKComponent->ACKArray.ContainsByPredicate([&](const TOptional<ACKItem>& Entry) {
+						if (Entry)
+						{
+							const ACKItem& ACK = Entry.GetValue();
+							return ACK.RPCId == RPCId && ACK.Sender == SenderId;
+						}
+						return false;
+					});
+					uint32* AvailableACKSlots = ACKComponentsToTrack.Find(TargetId);
+					if (!alreadyAcked && (AvailableACKSlots == nullptr || *AvailableACKSlots != 0))
+					{
+						FUnrealObjectRef Counterpart(SenderId, RPCId);
+						const bool bKeepExtracting =
+							ExtractRPCCallback.Execute(TargetId, Counterpart, Type, Element.GetValue(), Buffer.LastSentRPCId);
+						if (!bKeepExtracting)
+						{
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void SpatialRPCService::WriteCrossServerACKFor(Worker_EntityId Receiver, Worker_EntityId Sender, uint64 RPCId, uint32 Slot)
+{
+	const uint32 BufferSize = RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender);
+	uint32& AvailableACKSlots = ACKComponentsToTrack.FindOrAdd(Receiver, BufferSize);
+
+	check(AvailableACKSlots > 0);
+
+	CrossServerEndpointSenderACK* ACKComponent = View->GetComponentData<CrossServerEndpointSenderACK>(Receiver);
+
+	uint32 SlotIdx = 0;
+	for (; SlotIdx < BufferSize; ++SlotIdx)
+	{
+		if (!ACKComponent->ACKArray[SlotIdx])
+		{
+			break;
+		}
+	}
+	--AvailableACKSlots;
+
+	ACKItem ACK;
+	ACK.RPCId = RPCId;
+	ACK.Sender = Sender;
+	ACK.SenderRevision = Slot;
+	ACKComponent->ACKArray[SlotIdx].Emplace(ACK);
+
+	ACKComponent->RPCAck++;
+
+	EntityComponentId Pair;
+	Pair.EntityId = Receiver;
+	Pair.ComponentId = RPCRingBufferUtils::GetAckComponentId(ERPCType::CrossServerSender);
+
+	Schema_ComponentUpdate* Update = GetOrCreateComponentUpdate(Pair);
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update);
+	Schema_AddUint64(UpdateObject, 1, ACKComponent->RPCAck);
+	Schema_Object* NewEntry = Schema_AddObject(UpdateObject, 2 + SlotIdx);
+	ACK.WriteToSchema(NewEntry);
+
+	TArray<ACKSlot>& SlotsForSender = CrossServerACKMap.FindOrAdd(Sender);
+
+	ACKSlot OccupiedSlot;
+	OccupiedSlot.Receiver = Receiver;
+	OccupiedSlot.Slot = SlotIdx;
+
+	SlotsForSender.Add(OccupiedSlot);
+
+	if (View->HasAuthority(Sender, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID))
+	{
+		UpdateMergedACKs(Sender, Receiver);
+		CleanupACKsFor(Sender);
+	}
+}
+
+void SpatialRPCService::UpdateMergedACKs(Worker_EntityId WorkerId, Worker_EntityId RemoteReceiver)
+{
+	CrossServerEndpointSender* Sender = View->GetComponentData<CrossServerEndpointSender>(WorkerId);
+	uint64& SenderRevision = Sender->ReliableRPCBuffer.LastSentRPCId;
+	CrossServerEndpointSenderACK* ACKComponent = View->GetComponentData<CrossServerEndpointSenderACK>(RemoteReceiver);
+	EntityComponentId Pair;
+	Pair.EntityId = WorkerId;
+	Pair.ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(ERPCType::CrossServerSender);
+
+	TArray<SentRPCEntry*> RPCs;
+	CrossServerMailbox.MultiFindPointer(RemoteReceiver, RPCs);
+
+	for (int32 SlotIdx = 0; SlotIdx < ACKComponent->ACKArray.Num(); ++SlotIdx)
+	{
+		if (ACKComponent->ACKArray[SlotIdx])
+		{
+			const ACKItem& ACK = ACKComponent->ACKArray[SlotIdx].GetValue();
+			if (ACK.Sender == WorkerId)
+			{
+				for (auto Iterator = RPCs.CreateIterator(); Iterator; ++Iterator)
+				{
+					SentRPCEntry const& SentRPC = *(*Iterator);
+					if (ACK.RPCId == SentRPC.RPCId)
+					{
+						Sender->ReliableRPCBuffer.RingBuffer[SentRPC.Slot].Reset();
+						Sender->ReliableRPCBuffer.Counterpart[SentRPC.Slot].Reset();
+
+						CrossServerOccupiedSlots[SentRPC.Slot] = false;
+						CrossServerSlotsToClear[SentRPC.Slot] = true;
+						CrossServerMailbox.Remove(RemoteReceiver, SentRPC);
+						Iterator.RemoveCurrent();
+
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+TOptional<uint32_t> SpatialRPCService::FindFreeSlotForCrossServerSender()
+{
+	int32 freeSlot = CrossServerOccupiedSlots.Find(false);
+	if (freeSlot >= 0)
+	{
+		return freeSlot;
+	}
+
+	return {};
+}
+
+void SpatialRPCService::CleanupACKsFor(Worker_EntityId Sender)
+{
+	uint64 SenderRevision = View->GetComponentData<CrossServerEndpointSender>(Sender)->ReliableRPCBuffer.LastSentRPCId;
+
+	TArray<ACKSlot>* SlotsForSender = CrossServerACKMap.Find(Sender);
+
+	if (SlotsForSender != nullptr)
+	{
+		TMap<uint64, ACKSlot> ACKSToClear;
+		for (const ACKSlot& Slot : *SlotsForSender)
+		{
+			if (CrossServerEndpointSenderACK* ACKEndpoint = View->GetComponentData<CrossServerEndpointSenderACK>(Slot.Receiver))
+			{
+				ACKItem& ACK = ACKEndpoint->ACKArray[Slot.Slot].GetValue();
+				if (SenderRevision > ACK.SenderRevision)
+				{
+					ACKSToClear.Add(ACK.RPCId, Slot);
+				}
+			}
+		}
+
+		if (ACKSToClear.Num() == 0)
+		{
+			return;
+		}
+
+		const RPCRingBuffer& Buffer = GetBufferFromView(Sender, ERPCType::CrossServerSender);
+
+		for (uint32 Slot = 0; Slot < RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender); ++Slot)
+		{
+			const TOptional<RPCPayload>& Element = Buffer.RingBuffer[Slot];
+			if (Element.IsSet())
+			{
+				const TOptional<FUnrealObjectRef>& Counterpart = Buffer.Counterpart[Slot];
+				ACKSToClear.Remove(Counterpart.GetValue().Offset);
+			}
+		}
+
+		EntityComponentId Pair;
+		Pair.ComponentId = RPCRingBufferUtils::GetAckComponentId(ERPCType::CrossServerSender);
+
+		for (auto const& SlotToClear : ACKSToClear)
+		{
+			Pair.EntityId = SlotToClear.Value.Receiver;
+			uint32 SlotIdx = SlotToClear.Value.Slot;
+			CrossServerEndpointSenderACK* ACKEndpoint = View->GetComponentData<CrossServerEndpointSenderACK>(Pair.EntityId);
+			ACKEndpoint->ACKArray[SlotIdx].Reset();
+
+			Schema_ComponentUpdate* Update = GetOrCreateComponentUpdate(Pair);
+			Schema_AddComponentUpdateClearedField(Update, 2 + SlotIdx);
+
+			SlotsForSender->RemoveSingle(SlotToClear.Value);
+			uint32& FreeSlots = ACKComponentsToTrack.FindChecked(Pair.EntityId);
+			FreeSlots++;
+
+			if (SlotsForSender->Num() == 0)
+			{
+				CrossServerACKMap.Remove(Sender);
+			}
+			if (FreeSlots == RPCRingBufferUtils::GetRingBufferSize(ERPCType::CrossServerSender))
+			{
+				ACKComponentsToTrack.Remove(Pair.EntityId);
+			}
+		}
+	}
+}
+
+void SpatialRPCService::CheckLocalTargets(Worker_EntityId LocalWorkerEntityId)
+{
+	if (bShouldCheckSentRPCForLocalTarget)
+	{
+		bShouldCheckSentRPCForLocalTarget = false;
+		ExtractCrossServerRPCsForType(LocalWorkerEntityId, ERPCType::CrossServerSender);
+	}
+}
+} // namespace SpatialGDK
+
+// 9/10 sur l'echelle du goret.
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
+
+namespace SpatialGDK
+{
+void SpatialRPCService::HandleTimeout(SpatialOSWorkerInterface* Worker)
+{
+	uint64 Now = FPlatformTime::Cycles64();
+	uint64 CutoffTime = Now - (0.5 / FPlatformTime::GetSecondsPerCycle64());
+	// Consider timeouts.
+	for (auto& EntryPair : CrossServerMailbox)
+	{
+		SentRPCEntry& Entry = EntryPair.Value;
+		// RPC is in flight and overdue.
+		if (Entry.Timestamp < CutoffTime)
+		{
+			if (!Entry.EntityRequest)
+			{
+				Worker_EntityQuery query;
+				query.constraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+				query.constraint.constraint.entity_id_constraint.entity_id = Entry.Target;
+				// Count should be used, but will be deprecated ?? WOuld that be a reason to keep it ?
+				query.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+				query.snapshot_result_type_component_id_count = 1;
+				Worker_ComponentId componentResults[] = { SpatialConstants::POSITION_COMPONENT_ID };
+				query.snapshot_result_type_component_ids = componentResults;
+				Entry.EntityRequest = Worker->SendEntityQueryRequest(&query);
+			}
+		}
+	}
+}
+
+bool SpatialRPCService::OnEntityRequestResponse(Worker_EntityId LocalWorkerEntityId, Worker_RequestId Request, bool bEntityExists)
+{
+	CrossServerEndpointSender* Sender = View->GetComponentData<CrossServerEndpointSender>(LocalWorkerEntityId);
+	for (auto Iterator = CrossServerMailbox.CreateIterator(); Iterator; ++Iterator)
+	{
+		SentRPCEntry& Entry = Iterator->Value;
+		if (Entry.EntityRequest && Entry.EntityRequest.GetValue() == Request)
+		{
+			Entry.EntityRequest.Reset();
+			if (bEntityExists)
+			{
+				// Extend timeout
+				Entry.Timestamp = FPlatformTime::Cycles64();
+			}
+			else
+			{
+				// Clear slot
+				CrossServerOccupiedSlots[Entry.Slot] = false;
+				CrossServerSlotsToClear[Entry.Slot] = true;
+
+				Sender->ReliableRPCBuffer.RingBuffer[Entry.Slot].Reset();
+				Sender->ReliableRPCBuffer.Counterpart[Entry.Slot].Reset();
+
+				Iterator.RemoveCurrent();
+			}
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void SpatialRPCService::OnEntityRemoved(Worker_EntityId LocalWorkerEntityId, Worker_EntityId RemoteReceiver)
+{
+	CrossServerEndpointSender* Sender = View->GetComponentData<CrossServerEndpointSender>(LocalWorkerEntityId);
+	TArray<SentRPCEntry*> RPCs;
+	CrossServerMailbox.MultiFindPointer(RemoteReceiver, RPCs);
+	for (auto SentRPC : RPCs)
+	{
+		CrossServerOccupiedSlots[SentRPC->Slot] = false;
+		CrossServerSlotsToClear[SentRPC->Slot] = true;
+
+		Sender->ReliableRPCBuffer.RingBuffer[SentRPC->Slot].Reset();
+		Sender->ReliableRPCBuffer.Counterpart[SentRPC->Slot].Reset();
+	}
+	CrossServerMailbox.Remove(RemoteReceiver);
+}
 
 } // namespace SpatialGDK

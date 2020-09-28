@@ -64,12 +64,12 @@ void ASpatialMetricsDisplay::Destroyed()
 	}
 }
 
-bool ASpatialMetricsDisplay::ServerUpdateWorkerStats_Validate(const float Time, const FWorkerStats& OneWorkerStats)
+bool ASpatialMetricsDisplay::ServerUpdateWorkerStats_Validate(AActor* Sender, const float Time, const FWorkerStats& OneWorkerStats)
 {
 	return true;
 }
 
-void ASpatialMetricsDisplay::ServerUpdateWorkerStats_Implementation(const float Time, const FWorkerStats& OneWorkerStats)
+void ASpatialMetricsDisplay::ServerUpdateWorkerStats_Implementation(AActor* Sender, const float Time, const FWorkerStats& OneWorkerStats)
 {
 	int32 StatsIndex = WorkerStats.Find(OneWorkerStats);
 
@@ -254,7 +254,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	}
 #endif // USE_SERVER_PERF_COUNTERS
 
-	ServerUpdateWorkerStats(SpatialNetDriver->GetElapsedTime(), Stats);
+	ServerUpdateWorkerStats(nullptr, SpatialNetDriver->GetElapsedTime(), Stats);
 
 #endif // !UE_BUILD_SHIPPING
 }

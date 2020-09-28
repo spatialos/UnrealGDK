@@ -20,6 +20,7 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ComponentPresence.h"
+#include "Schema/CrossServerEndpoint.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -253,6 +254,8 @@ void USpatialSender::CreateServerWorkerEntity()
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
 	WriteAclMap ComponentWriteAcl;
@@ -262,19 +265,28 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	{
+		ComponentWriteAcl.Add(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, WorkerIdPermission);
+	}
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	{
+		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
+	}
 	check(NetDriver != nullptr);
 
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
-	Components.Add(
-		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
-			.CreateInterestData());
+	Components.Add(NetDriver->InterestFactory
+					   ->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/,
+													NetDriver->IsRoutingWorker() /*bIsRoutingWorker*/)
+					   .CreateInterestData());
 
 	// GDK known entities completeness tags
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -282,6 +294,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
 	// Presence component. Must be calculated after all other components have been added.
+
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
@@ -412,6 +425,48 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
 }
 
+void USpatialSender::UpdateServerWorkerVisibility()
+{
+	if (NetDriver->WorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		// No worker entity to update.
+		return;
+	}
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
+
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	{
+		ComponentWriteAcl.Add(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, WorkerIdPermission);
+	}
+	WorkerRequirementSet AnyServerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
+
+	SpatialGDK::EntityAcl EntityACL(
+		AnyServerRequirementSet,
+		ComponentWriteAcl); //= StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(NetDriver->WorkerEntityId);
+
+	EntityACL.ReadAcl = AnyServerRequirementSet;
+
+	FWorkerComponentUpdate Update = EntityACL.CreateEntityAclUpdate();
+	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
+
+	// if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	//{
+	//	TArray<FWorkerComponentData> Components;
+	//	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
+	//
+	//	SendAddComponents(NetDriver->WorkerEntityId, Components);
+	//}
+}
+
 void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
@@ -424,7 +479,9 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
-		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+		NetDriver->InterestFactory
+			->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/,
+										 NetDriver->IsRoutingWorker() /*bIsRoutingWorker*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
@@ -500,11 +557,49 @@ void USpatialSender::FlushRPCService()
 	if (RPCService != nullptr)
 	{
 		RPCService->PushOverflowedRPCs();
+		RPCService->HandleTimeout(Connection);
+
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
 		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+
 		for (SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
+			if (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
+			{
+				CrossServerEndpointSenderACK* Comp = StaticComponentView->GetComponentData<CrossServerEndpointSenderACK>(Update.EntityId);
+
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending ACK from %llu for entity %llu, RPCId : %llu"), NetDriver->WorkerEntityId,
+					   Update.EntityId, Comp->RPCAck);
+			}
+			if (!StaticComponentView->HasComponent(Update.EntityId, Update.Update.component_id))
+			{
+				continue;
+			}
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
+			if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+			{
+				if (NetDriver->IsRoutingWorker())
+				{
+					if (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID
+						|| (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID
+							&& StaticComponentView->HasAuthority(Update.EntityId,
+																 SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID))
+						|| (Update.Update.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID
+							&& StaticComponentView->HasAuthority(Update.EntityId,
+																 SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID))
+						|| (Update.Update.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID
+							&& StaticComponentView->HasAuthority(Update.EntityId,
+																 SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID)))
+					{
+						Worker_ComponentUpdateOp LoopbackUpdate;
+						LoopbackUpdate.update = Update.Update;
+						LoopbackUpdate.entity_id = Update.EntityId;
+						StaticComponentView->OnComponentUpdate(LoopbackUpdate);
+						Receiver->OnComponentUpdate(LoopbackUpdate);
+					}
+				}
+			}
 		}
 
 		if (RPCs.Num() && GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
@@ -625,7 +720,6 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
-
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
 	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
@@ -644,6 +738,22 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 		{
 			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
 			continue;
+		}
+
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			FString RoutingWorkerName = NetDriver->GetRoutingWorkerId();
+			check(!RoutingWorkerName.IsEmpty());
+
+			const WorkerAttributeSet RoutingWorkerRequirementSet = { FString::Format(TEXT("workerId:{0}"), { *RoutingWorkerName }) };
+			// Skip routing worker components.
+			if (ComponentId == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID
+				|| ComponentId == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID)
+			{
+				NewAcl->ComponentWriteAcl.Add(ComponentId, { RoutingWorkerRequirementSet });
+				continue;
+			}
 		}
 
 		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
@@ -684,10 +794,17 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	bool bUseRPCRingBuffer = GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer();
 
-	if (RPCInfo.Type == ERPCType::CrossServer)
+	if (RPCInfo.Type == ERPCType::CrossServerSender)
 	{
-		SendCrossServerRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		if (SendCrossServerRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef, Params.SenderObjectRef))
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		}
+		else
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+		}
+		// return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
 
 	if (bUseRPCRingBuffer && RPCService != nullptr)
@@ -724,35 +841,108 @@ void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* F
 #endif // !UE_BUILD_SHIPPING
 }
 
-void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-										USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+bool USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+										USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
+										const FUnrealObjectRef& SenderObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
-
-	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
-	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
-
-	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	Worker_RequestId RequestId =
-		Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
-
-	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::SpatialCommand)
 	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
-			   EntityId, CommandRequest.component_id, *Function->GetName());
-		Receiver->AddPendingReliableRPC(
-			RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
-	}
-	else
-	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"), EntityId,
-			   CommandRequest.component_id, *Function->GetName());
-	}
+		Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
+
+		Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
+
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+		Worker_RequestId RequestId =
+			Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
+		{
+			UE_LOG(LogSpatialSender, Verbose,
+				   TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"), EntityId,
+				   CommandRequest.component_id, *Function->GetName());
+			Receiver->AddPendingReliableRPC(
+				RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
+				   EntityId, CommandRequest.component_id, *Function->GetName());
+		}
 #if !UE_BUILD_SHIPPING
-	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
+
+		return true;
+	}
+
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker
+		|| Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	{
+		Worker_EntityId SenderEntity = Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker
+										   ? SenderObjectRef.Entity
+										   : NetDriver->WorkerEntityId;
+
+		const EPushRPCResult Result = RPCService->PushRPC(SenderEntity, TargetObjectRef, RPCInfo.Type, Payload, Channel->bCreatedEntity);
+
+		// if (Result == EPushRPCResult::Success)
+		//{
+		//	FlushRPCService();
+		//}
+
+#if !UE_BUILD_SHIPPING
+		if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
+		{
+			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+		}
+#endif // !UE_BUILD_SHIPPING
+
+		switch (Result)
+		{
+		case EPushRPCResult::QueueOverflowed:
+			UE_LOG(LogSpatialSender, Log,
+				   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, "
+						"function: %s"),
+				   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			return true;
+		case EPushRPCResult::DropOverflowed:
+			UE_LOG(LogSpatialSender, Log,
+				   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, "
+						"function: %s"),
+				   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			return true;
+		case EPushRPCResult::HasAckAuthority:
+			UE_LOG(
+				LogSpatialSender, Warning,
+				TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be "
+					 "sent. Actor: %s, entity: %lld, function: %s"),
+				*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			return true;
+		case EPushRPCResult::NoRingBufferAuthority:
+			// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
+			UE_LOG(
+				LogSpatialSender, Log,
+				TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer "
+					 "component. Actor: %s, entity: %lld, function: %s"),
+				*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			return true;
+		case EPushRPCResult::EntityBeingCreated:
+			UE_LOG(
+				LogSpatialSender, Log,
+				TEXT(
+					"USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be "
+					"queued. Actor: %s, entity: %lld, function: %s"),
+				*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			return false;
+		default:
+			return true;
+		}
+	}
+
+	return false;
 }
 
 FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload,
@@ -805,12 +995,13 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	const EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity);
+	const EPushRPCResult Result =
+		RPCService->PushRPC(TargetObjectRef.Entity, FUnrealObjectRef(), RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
-	if (Result == EPushRPCResult::Success)
-	{
-		FlushRPCService();
-	}
+	// if (Result == EPushRPCResult::Success)
+	//{
+	//	FlushRPCService();
+	//}
 
 #if !UE_BUILD_SHIPPING
 	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
@@ -970,7 +1161,8 @@ void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
+void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef,
+											   SpatialGDK::RPCPayload&& InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -984,7 +1176,7 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
+	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderObjectRef, RPCInfo.Type, MoveTemp(InPayload), 0);
 
 	// Try to send all pending RPCs unconditionally
 	OutgoingRPCs.ProcessRPCs();

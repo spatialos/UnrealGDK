@@ -101,7 +101,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug)
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug, bool bIsRoutingWorker)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -158,6 +158,37 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 		ServerQuery = Query();
 		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::GDK_DEBUG_COMPONENT_ID };
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+	}
+
+	if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	{
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID };
+
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID };
+
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+	}
+	else if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker && bIsRoutingWorker)
+	{
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+														   SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID;
+
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+														   SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
+
 		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 	}
 

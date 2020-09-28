@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialOSDispatcherInterface.h"
 #include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
 #include "TimerManager.h"
@@ -79,8 +80,9 @@ public:
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
+	bool SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
+							const FUnrealObjectRef& SenderObjectRef);
 	FRPCErrorInfo SendLegacyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
@@ -118,7 +120,8 @@ public:
 	void UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
-	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef,
+								   SpatialGDK::RPCPayload&& InPayload);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushRPCService();
@@ -132,6 +135,7 @@ public:
 	void CreateServerWorkerEntity();
 	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounte);
 	void UpdateServerWorkerEntityInterestAndPosition();
+	void UpdateServerWorkerVisibility();
 
 	void ClearPendingRPCs(const Worker_EntityId EntityId);
 

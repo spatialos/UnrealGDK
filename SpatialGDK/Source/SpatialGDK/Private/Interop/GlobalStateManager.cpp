@@ -78,7 +78,6 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
 	TrySendWorkerReadyToBeginPlay();
@@ -288,7 +287,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
 		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)

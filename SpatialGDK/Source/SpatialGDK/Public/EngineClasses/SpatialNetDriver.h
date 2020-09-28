@@ -81,6 +81,9 @@ public:
 	virtual void Shutdown() override;
 	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
+
+	virtual void PushCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender(AActor* Sender) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
@@ -129,6 +132,7 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
+	const FString& GetRoutingWorkerId();
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -223,6 +227,7 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+	FString RoutingWorkerId;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.

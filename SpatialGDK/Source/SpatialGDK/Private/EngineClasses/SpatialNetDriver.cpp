@@ -1541,6 +1541,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 
 #endif // WITH_SERVER_CODE
 
+thread_local TArray<AActor*> GSenderStack;
+
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
@@ -1573,7 +1575,36 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Parameters);
 
-	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
+	AActor* SenderActor = nullptr;
+	if (Function->FunctionFlags & FUNC_NetCrossServer)
+	{
+		// if (GSenderStack.Num() == 0)
+		//{
+		//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT(""));
+		//}
+		// UProperty* SenderProp = nullptr;
+		// for (auto It = TFieldIterator< UProperty >(Function); It; ++It)
+		//{
+		//	if (It->GetPropertyFlags() & CPF_CrossServerSender)
+		//	{
+		//		SenderProp = *It;
+		//	}
+		//}
+		// if (SenderProp)
+		//{
+		//	UObjectProperty* obj = Cast<UObjectProperty>(SenderProp);
+		//	check(obj != nullptr);
+		//
+		//	SenderActor = Cast<AActor>(obj->GetObjectPropertyValue((uint8*)Parameters + obj->GetOffset_ForUFunction()));
+		//}
+	}
+
+	FUnrealObjectRef SenderObjectRef;
+	if (SenderActor)
+	{
+		SenderObjectRef = PackageMap->GetUnrealObjectRefFromObject(SenderActor);
+	}
+	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, SenderObjectRef, MoveTemp(Payload));
 }
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
@@ -2589,6 +2620,11 @@ void USpatialNetDriver::TryFinishStartup()
 		bIsReadyToStart = true;
 		Connection->SetStartupComplete();
 	}
+
+	if (bIsReadyToStart)
+	{
+		Sender->UpdateServerWorkerVisibility();
+	}
 }
 
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
@@ -2650,4 +2686,21 @@ void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 	VirtualWorkerTranslationManager =
 		MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
+}
+
+const FString& USpatialNetDriver::GetRoutingWorkerId()
+{
+	return RoutingWorkerId;
+}
+
+void USpatialNetDriver::PushCrossServerRPCSender(AActor* Sender)
+{
+	GSenderStack.Add(Sender);
+}
+
+void USpatialNetDriver::PopCrossServerRPCSender(AActor* Sender)
+{
+	check(GSenderStack.Num() > 0);
+	check(GSenderStack.Last() == Sender);
+	GSenderStack.Pop();
 }

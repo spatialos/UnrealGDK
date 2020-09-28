@@ -23,7 +23,8 @@ enum class ERPCType : uint8
 	ServerReliable,
 	ServerUnreliable,
 	NetMulticast,
-	CrossServer
+	CrossServerSender,
+	CrossServerReceiver,
 };
 
 enum ESchemaComponentType : int32
@@ -57,8 +58,10 @@ inline FString RPCTypeToString(ERPCType RPCType)
 		return TEXT("Server, Unreliable");
 	case ERPCType::NetMulticast:
 		return TEXT("Multicast");
-	case ERPCType::CrossServer:
-		return TEXT("CrossServer");
+	case ERPCType::CrossServerSender:
+		return TEXT("CrossServerSender");
+	case ERPCType::CrossServerReceiver:
+		return TEXT("CrossServerReceiver");
 	}
 
 	checkNoEntry();
@@ -95,6 +98,7 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
 const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
@@ -110,6 +114,11 @@ const Worker_ComponentId DORMANT_COMPONENT_ID = 9981;
 const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
 const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
 const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
+
+const Worker_ComponentId CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID = 9960;
+const Worker_ComponentId CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID = 9961;
+const Worker_ComponentId CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID = 9962;
+const Worker_ComponentId CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID = 9963;
 
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
@@ -365,6 +374,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 	TArray<Worker_ComponentId>{ // RPCs from clients
 								CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
 
+								// Cross server endpoint
+								CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+
 								// Heartbeat
 								HEARTBEAT_COMPONENT_ID
 	};
@@ -373,7 +385,7 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
-	case ERPCType::CrossServer:
+	case ERPCType::CrossServerSender:
 	{
 		return SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 	}
