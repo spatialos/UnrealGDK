@@ -180,7 +180,7 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 
 FString USpatialLatencyTracer::GetTraceMetadata(UObject* WorldContextObject)
 {
-#ifdef TRACE_LIB_ACTIVE
+#if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
 		return Tracer->TraceMetadata;
