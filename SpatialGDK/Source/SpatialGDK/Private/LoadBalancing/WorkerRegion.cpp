@@ -41,136 +41,74 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale, false, true);
 
-	bool bTileX = false; // true for W and E, false for N and S
-
-	// West wall
-	const float TextYaw = 0; // 180 (N), 270 (E), 0 (S), 90 (W)
-	//const int my_array[] = { 5, 6, 7, 8 };
-	float xPos = -49.999; // 49.999 (N), 0 (E), -49.999 (S), 0 (W)
-	float yPos = 0; // 0 (N), 49.999 (E), 0 (S), -49.999 (W)
-	const float C = 50;	 // 25 (N), 50 (E), 50(S), 25 (W);
-	//float zPosition = 0; 
-	//CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerName, xPos, yPos, zPosition, TextYaw);
-
 	// North wall
-	TileWallWithWorkerText(false, Extents, VerticalScale, 25, 49.999f, 0.f, TextMaterial, TextFont, WorkerName, 180);
+	// Note: using an offset of 50 causes the text to flicker so used just less than 50 instead
+	TileWallWithWorkerText(false, Extents, VerticalScale, 0, 49.999f, TextMaterial, TextFont, WorkerName, 180);
 	// East wall
-	TileWallWithWorkerText(true, Extents, VerticalScale, 50, 0.f, 49.999, TextMaterial, TextFont, WorkerName, 270);
+	TileWallWithWorkerText(true, Extents, VerticalScale, 50, 49.999, TextMaterial, TextFont, WorkerName, 270);
 	// South wall
-	TileWallWithWorkerText(false, Extents, VerticalScale, 50, -49.999f, 0, TextMaterial, TextFont, WorkerName, 0);
+	TileWallWithWorkerText(false, Extents, VerticalScale, 50, -49.999f, TextMaterial, TextFont, WorkerName, 0);
 	// West wall
-	TileWallWithWorkerText(true, Extents, VerticalScale, 25, 0.0f, -49.999f, TextMaterial, TextFont, WorkerName, 90);
-	
-
-	// // Tile horizontally
-	//int xCount = Extents.GetSize().X / 250;
-	//int yCount = Extents.GetSize().Y / 250;
-	//// Tile vertically
-	//int zCount = (int)VerticalScale * 2; // Add the x2 for denser vertical tiling - remove for sparser
-
-	//float D = C;
-	//for (int xi = 0; xi < xCount - 1; xi++)
-	//{
-	//	D -= 100.f / xCount;
-	//}
-	//const float A = 0;
-	//float zDiff = 100.f / zCount; // VerticalScale;
-	//for (int xi = 0; xi < xCount; xi++)
-	//{
-	//	float B = xCount - 1;
-	//	if (bTileX)
-	//	{
-	//		// Tile on x-axis
-	//		xPos = (xi - A) / (B - A) * (D - C) + C;
-	//	}
-	//	else
-	//	{
-	//		// Tile on y-axis
-	//		yPos = (xi - A) / (B - A) * (D - C) + C;
-	//	}
-	//	for (int zi = 0; zi < zCount; zi++)
-	//	{
-	//		// Using exactly 50 causes the text to flicker so used nearly 50 instead
-	//		float zPosition = (zi * zDiff) - ((zCount * zDiff) / 2.f);
-	//		CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerName, xPos, yPos, zPosition, TextYaw);
-	//	}
-	//}
-
-	// East wall
-	//const float TextYaw = 270;
-	//// Tile horizontally
-	//int xCount = Extents.GetSize().X / 250;
-	//// Tile vertically
-	//int zCount = (int)VerticalScale; // * 2; // Add the x2 for denser vertical tiling
-	//const float C = 50;
-	//float D = C;
-	//for (int xi = 0; xi < xCount - 1; xi++)
-	//{
-	//	D -= 100.f / xCount;
-	//}
-	//const float A = 0;
-	//float zDiff = 100.f / zCount; // VerticalScale;
-	//for (int xi = 0; xi < xCount; xi++)
-	//{
-	//	float B = xCount - 1;
-	//	float xPos = (xi - A) / (B - A) * (D - C) + C;
-	//	for (int zi = 0; zi < zCount; zi++)
-	//	{
-	//		// Using exactly 50 causes the text to flicker so used nearly 50 instead
-	//		float zPosition = (zi * zDiff) - ((zCount * zDiff) / 2.f);
-	//		CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerName, xPos, 49.999, zPosition, TextYaw);
-	//	}
-	//}
+	TileWallWithWorkerText(true, Extents, VerticalScale, 25, -49.999f, TextMaterial, TextFont, WorkerName, 90);
 
 	SetPositionAndScale(Extents, VerticalScale, true, false);
 }
 
-void AWorkerRegion::TileWallWithWorkerText(bool bTileX, const FBox2D& Extents, const float VerticalScale, float C, float xPos,
-										   float yPos,
-							UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerName, float TextYaw)
+void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float TileOffset, float CentreOffset,
+										   UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerName, const float Yaw)
 {
-	int tCount = 0;
-	// Tile horizontally
-	if (bTileX)
+	int HorizontalTileCount = 0;
+	
+	if (bTileXAxis)
 	{
-		tCount = Extents.GetSize().X / 250;
+		// Tile on x-axis
+		HorizontalTileCount = Extents.GetSize().X / 250;
 	}
 	else
 	{
-		tCount = Extents.GetSize().Y / 250;
+		// Tile on y-axis
+		HorizontalTileCount = Extents.GetSize().Y / 250;
 	}
-	// Tile vertically
-	int zCount = (int)VerticalScale * 2; // Add the x2 for denser vertical tiling - remove for sparser
 
-	float D = C;
-	for (int ti = 0; ti < tCount - 1; ti++)
+	// TODO : make density a parameter
+	int VerticalTileCount = (int)VerticalScale;// * 2; // Add the x2 for denser vertical tiling - remove for sparser
+
+	float FinalTileOffset = TileOffset;
+	for (int i = 0; i < HorizontalTileCount - 1; i++)
 	{
-		D -= 100.f / tCount;
+		FinalTileOffset -= 100.f / HorizontalTileCount;
 	}
-	const float A = 0;
-	float zDiff = 100.f / zCount; // VerticalScale;
-	for (int xi = 0; xi < tCount; xi++)
+
+	//const float A = 0;
+	float SpacingZ = 100.f / VerticalTileCount; // VerticalScale;
+	float PositionX = 0;
+	float PositionY = 0;
+	// Tile horizontally
+	for (int i = 0; i < HorizontalTileCount; i++)
 	{
-		float B = tCount - 1;
-		if (bTileX)
+		//float B = HorizontalTileCount - 1;
+		float Position = i / (float)(HorizontalTileCount - 1) * (FinalTileOffset - TileOffset) + TileOffset;
+		if (bTileXAxis)
 		{
 			// Tile on x-axis
-			xPos = (xi - A) / (B - A) * (D - C) + C;
+			PositionX = Position;
+			PositionY = CentreOffset;
 		}
 		else
 		{
 			// Tile on y-axis
-			yPos = (xi - A) / (B - A) * (D - C) + C;
+			PositionX = CentreOffset;
+			PositionY = Position;
 		}
-		for (int zi = 0; zi < zCount; zi++)
+
+		// Tile vertically
+		for (int zi = 0; zi < VerticalTileCount; zi++)
 		{
-			// Using exactly 50 causes the text to flicker so used nearly 50 instead
-			float zPosition = (zi * zDiff) - ((zCount * zDiff) / 2.f);
-			CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerName, xPos, yPos, zPosition, TextYaw);
+			float PositionZ = (zi * SpacingZ) - ((VerticalTileCount * SpacingZ) / 2.f);
+			CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerName, PositionX, PositionY, PositionZ, Yaw);
 		}
 	}
 }
-
 
 void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float& VerticalScale,
 											   const FString& WorkerName, const float& PositionX, const float& PositionY,
