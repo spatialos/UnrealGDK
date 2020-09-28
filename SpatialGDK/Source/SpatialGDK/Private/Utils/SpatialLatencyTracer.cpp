@@ -186,7 +186,7 @@ FString USpatialLatencyTracer::GetTraceMetadata(UObject* WorldContextObject)
 		return Tracer->TraceMetadata;
 	}
 #endif
-	return "";
+	return TEXT("");
 }
 
 #if TRACE_LIB_ACTIVE
