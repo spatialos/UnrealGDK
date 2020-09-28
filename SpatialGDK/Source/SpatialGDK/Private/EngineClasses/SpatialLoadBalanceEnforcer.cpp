@@ -69,13 +69,13 @@ void SpatialLoadBalanceEnforcer::Advance()
 					RefreshAcl(Delta.EntityId);
 				}
 			}
+			break;
 		}
-		break;
 		case EntityDelta::ADD:
 		{
 			RefreshAcl(Delta.EntityId);
+			break;
 		}
-		break;
 		case EntityDelta::REMOVE:
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
@@ -83,7 +83,6 @@ void SpatialLoadBalanceEnforcer::Advance()
 			RefreshAcl(Delta.EntityId);
 			break;
 		}
-		break;
 		default:
 			break;
 		}
@@ -101,11 +100,13 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_Entity
 void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 {
 	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	const PhysicalWorkerName* OwningWorkerId =
+
+	check(VirtualWorkerTranslator != nullptr);
+	const PhysicalWorkerName* DestinationWorkerId =
 		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 
-	check(OwningWorkerId != nullptr);
-	if (OwningWorkerId == nullptr)
+	check(DestinationWorkerId != nullptr);
+	if (DestinationWorkerId == nullptr)
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
 			   TEXT("Couldn't find mapped worker for entity %lld. This shouldn't happen! Virtual worker ID: %d"), EntityId,
@@ -113,41 +114,25 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 		return;
 	}
 
-	if (*OwningWorkerId == WorkerId && StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+	if (*DestinationWorkerId == WorkerId && StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		UE_LOG(
-			LogSpatialLoadBalanceEnforcer, Verbose,
-			TEXT("No need to process newly authoritative entity because this worker is already authoritative. Entity: %lld. Worker: %s."),
-			EntityId, *WorkerId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose,
+			   TEXT("No need to process entity because this worker is already authoritative. Entity: %lld. Worker: %s."), EntityId,
+			   *WorkerId);
 		return;
 	}
 
-	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<NetOwningClientWorker>(EntityId);
+	UpdateSender(ConstructAclUpdate(EntityId, DestinationWorkerId));
+}
 
+EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worker_EntityId EntityId,
+																	 const PhysicalWorkerName* DestinationWorkerId) const
+{
+	EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<NetOwningClientWorker>(EntityId);
 	const ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 
-	if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-			   TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld. This should not happen - "
-					"investigate if you see this."),
-			   EntityId);
-		return;
-	}
-
-	check(VirtualWorkerTranslator != nullptr);
-	const PhysicalWorkerName* DestinationWorkerId =
-		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-	if (DestinationWorkerId == nullptr)
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-			   TEXT("This worker is not assigned a virtual worker. This shouldn't happen! Worker: %s"), *WorkerId);
-		return;
-	}
-
 	TArray<Worker_ComponentId> ComponentIds;
-
-	EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 	Acl->ComponentWriteAcl.GetKeys(ComponentIds);
 
 	// Ensure that every component ID in ComponentPresence is set in the write ACL.
@@ -157,36 +142,33 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 	}
 
 	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
-	PhysicalWorkerName PossessingClientId =
+	const PhysicalWorkerName PossessingClientId =
 		NetOwningClientWorkerComponent->WorkerId.IsSet() ? NetOwningClientWorkerComponent->WorkerId.GetValue() : FString();
 
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), **OwningWorkerId);
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
 
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
-
-	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	NewAcl->ReadAcl = Acl->ReadAcl;
 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
 			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
+			Acl->ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
 			continue;
 		}
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
+			Acl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
 			continue;
 		}
 
-		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+		Acl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
-	const FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
 
-	UpdateSender(EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
+	const FWorkerComponentUpdate Update = Acl->CreateEntityAclUpdate();
+	return EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) };
 }
 
 bool SpatialLoadBalanceEnforcer::HandlesComponent(Worker_ComponentId ComponentId)
