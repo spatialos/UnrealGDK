@@ -54,11 +54,12 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 	SetPositionAndScale(Extents, VerticalScale, true, false);
 }
 
-void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float TileOffset, float CentreOffset,
-										   UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerName, const float Yaw)
+void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float TileOffset,
+										   float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerName,
+										   const float Yaw)
 {
 	int HorizontalTileCount = 0;
-	
+
 	if (bTileXAxis)
 	{
 		// Tile on x-axis
@@ -71,7 +72,7 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 	}
 
 	// TODO : make density a parameter
-	int VerticalTileCount = (int)VerticalScale;// * 2; // Add the x2 for denser vertical tiling - remove for sparser
+	int VerticalTileCount = (int)VerticalScale; // * 2; // Add the x2 for denser vertical tiling - remove for sparser
 
 	float FinalTileOffset = TileOffset;
 	for (int i = 0; i < HorizontalTileCount - 1; i++)
@@ -79,14 +80,14 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 		FinalTileOffset -= 100.f / HorizontalTileCount;
 	}
 
-	//const float A = 0;
+	// const float A = 0;
 	float SpacingZ = 100.f / VerticalTileCount; // VerticalScale;
 	float PositionX = 0;
 	float PositionY = 0;
 	// Tile horizontally
 	for (int i = 0; i < HorizontalTileCount; i++)
 	{
-		//float B = HorizontalTileCount - 1;
+		// float B = HorizontalTileCount - 1;
 		float Position = i / (float)(HorizontalTileCount - 1) * (FinalTileOffset - TileOffset) + TileOffset;
 		if (bTileXAxis)
 		{
