@@ -245,6 +245,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
+	/** Enable/Disable logging to Spatial */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Disable Log to Spatial"))
+	bool SpatialLogging;
+
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 

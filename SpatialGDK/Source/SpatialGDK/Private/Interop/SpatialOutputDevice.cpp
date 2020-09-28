@@ -14,6 +14,9 @@ FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnectio
 	const TCHAR* CommandLine = FCommandLine::Get();
 	bLogToSpatial = !FParse::Param(CommandLine, TEXT("NoLogToSpatial"));
 
+	// Check if logging to spatial is disabled in the GUI
+	bLogToSpatialBox = !GetDefault<USpatialGDKSettings>()->SpatialLogging;
+
 	FOutputDeviceRedirector::Get()->AddOutputDevice(this);
 }
 
@@ -30,7 +33,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 		return;
 	}
 
-	if (bLogToSpatial && Connection != nullptr)
+	if (bLogToSpatialBox && bLogToSpatial && Connection != nullptr)
 	{
 #if WITH_EDITOR
 		if (GPlayInEditorID != PIEIndex)
