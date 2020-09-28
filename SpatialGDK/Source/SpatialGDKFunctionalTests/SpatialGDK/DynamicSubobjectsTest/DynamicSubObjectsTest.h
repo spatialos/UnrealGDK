@@ -17,7 +17,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ADynamicSubobjectsTest : public ASpatialFunc
 public:
 	ADynamicSubobjectsTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
 	APawn* ClientOneDefaultPawn;

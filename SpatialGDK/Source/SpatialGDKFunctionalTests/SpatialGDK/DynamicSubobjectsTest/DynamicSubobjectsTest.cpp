@@ -44,9 +44,10 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
 }
 
-void ADynamicSubobjectsTest::BeginPlay()
+void ADynamicSubobjectsTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
+
 	const int DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
@@ -142,7 +143,7 @@ void ADynamicSubobjectsTest::BeginPlay()
 		}
 
 		{ // Step 5 - Server increases AReplicatedGASTestActor's TestIntProperty to enable checking if the client is out of interest later.
-			AddStep(TEXT("DynamicSubobjectsTestServerIncreasesTestIntPropertyValue"), FWorkerDefinition::Server(1), nullptr, [this, i]() {
+			AddStep(TEXT("DynamicSubobjectsTestServerIncreasesIntValue"), FWorkerDefinition::Server(1), nullptr, [this, i]() {
 				TArray<AActor*> FoundActors;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedGASTestActor::StaticClass(), FoundActors);
 				if (FoundActors.Num() == 1)
@@ -159,7 +160,7 @@ void ADynamicSubobjectsTest::BeginPlay()
 
 		{ // Step 6 - Client 1 checks it can no longer see the AReplicatedDynamicSubobjectsTestActor
 			AddStep(
-				TEXT("DynamicSubobjectsTestClientCheckIfTestIntPropertyValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
+				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this, i](float DeltaTime) {
 					TArray<AActor*> FoundActors;
 					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedGASTestActor::StaticClass(), FoundActors);
@@ -208,7 +209,7 @@ void ADynamicSubobjectsTest::BeginPlay()
 
 		{ // Step 9 - Client 1 checks it can see the AReplicatedDynamicSubobjectsTestActor
 			AddStep(
-				TEXT("DynamicSubobjectsTestClientCheckIfTestIntPropertyValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
+				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this, i](float DeltaTime) {
 					TArray<AActor*> FoundActors;
 					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedGASTestActor::StaticClass(), FoundActors);
