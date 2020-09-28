@@ -11,9 +11,11 @@ namespace
 {
 const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
 const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
+const float DEFAULT_WORKER_TEXT_EMISSIVE = 0.2f;
 const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
 const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
 const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
+const FName WORKER_TEXT_MATERIAL_EMMISIVE_PARAM = TEXT("Emissive");
 const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
 } // namespace
 
@@ -34,7 +36,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr);
 
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
-	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
+	SetOpacityAndEmissive(DEFAULT_WORKER_REGION_OPACITY, DEFAULT_WORKER_TEXT_EMISSIVE);
 
 	Mesh->SetMaterial(0, MaterialBoundaryInstance);
 
@@ -117,7 +119,7 @@ void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* T
 {
 	// Create dynamic worker name text on boundary wall
 	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
-	// WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
+	//WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
 	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, Yaw, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
@@ -140,10 +142,12 @@ void AWorkerRegion::SetHeight(const float Height)
 	SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, Height));
 }
 
-void AWorkerRegion::SetOpacity(const float Opacity)
+void AWorkerRegion::SetOpacityAndEmissive(const float Opacity, const float Emissive)
 {
 	MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 	MaterialTextInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	MaterialTextInstance->SetScalarParameterValue(WORKER_TEXT_MATERIAL_EMMISIVE_PARAM, Emissive);
+	
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)

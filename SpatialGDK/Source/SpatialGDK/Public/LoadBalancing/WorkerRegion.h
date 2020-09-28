@@ -31,7 +31,7 @@ public:
 	UMaterialInstanceDynamic* MaterialTextInstance;
 
 private:
-	void SetOpacity(const float Opacity);
+	void SetOpacityAndEmissive(const float Opacity, const float Emissive);
 	void SetHeight(const float Height);
 	void SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale);
 	void SetColor(const FColor& Color);
