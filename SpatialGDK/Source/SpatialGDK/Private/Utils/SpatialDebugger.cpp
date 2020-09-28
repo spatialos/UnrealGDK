@@ -285,13 +285,17 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
 
-			FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
-			UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
-			if (ConfigUIClass) {
-				ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
-				ConfigUIWidget->SetSpatialDebugger(this);
-				LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+			if (ConfigUIWidget == nullptr)
+			{
+				FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
+				UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
+				if (ConfigUIClass)
+				{
+					ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
+					ConfigUIWidget->SetSpatialDebugger(this);
+				}
 			}
+			LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 		}
 	}
 }
@@ -510,7 +514,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 #endif
 
 	// Don't draw tags while the UI is open, since they will otherwise draw on top of the UI and obscure it.
-	if (ConfigUIWidget && ConfigUIWidget->IsInViewport())
+	if (IsValid(ConfigUIWidget) && ConfigUIWidget->IsInViewport())
 	{
 		return;
 	}
