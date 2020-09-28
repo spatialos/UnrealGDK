@@ -90,21 +90,6 @@ void ExpectedViewDelta::SortEntityDeltas()
 
 bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
-	return CompareDeltas(Other.GetEntityDeltas());
-}
-
-bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
-{
-	return CompareDeltas(Other.EntityDeltas);
-}
-
-bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
-{
-	if (EntityDeltas.Num() != Other.Num())
-	{
-		return false;
-	}
-
 	// We need to check if a disconnect op has been processed during the last tick.
 	// First call HasConnectionStatusChanged() before comparing the values stored.
 	if (Other.HasConnectionStatusChanged())
@@ -118,6 +103,21 @@ bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
 		{
 			return false;
 		}
+	}
+
+	return CompareDeltas(Other.GetEntityDeltas());
+}
+
+bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
+{
+	return CompareDeltas(Other.EntityDeltas);
+}
+
+bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
+{
+	if (EntityDeltas.Num() != Other.Num())
+	{
+		return false;
 	}
 
 	SortEntityDeltas();
