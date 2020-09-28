@@ -65,6 +65,7 @@ void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
 	}
 }
 
+void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	View.SendAddComponent(EntityId, MoveTemp(Data), SpanId);
 }
