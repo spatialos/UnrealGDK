@@ -45,6 +45,7 @@
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
@@ -469,11 +470,8 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(SpatialConstants::LB_TAG_COMPONENT_ID,
-																				 [](Worker_EntityId, const SpatialGDK::EntityViewElement&) {
-																					 return true;
-																				 },
-																				 {});
+	SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [&](SpatialGDK::EntityComponentUpdate AclUpdate) {
 		Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));

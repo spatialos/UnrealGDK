@@ -3,6 +3,8 @@
 #pragma once
 
 #include "Interop/SpatialStaticComponentView.h"
+#include "Schema/ComponentPresence.h"
+#include "Schema/NetOwningClientWorker.h"
 #include "SpatialCommonTypes.h"
 
 #include "SpatialView/EntityComponentTypes.h"
@@ -45,6 +47,8 @@ public:
 
 private:
 	void RefreshAcl(const Worker_EntityId EntityId);
+	SpatialGDK::EntityComponentUpdate ConstructAclUpdate(const Worker_EntityId EntityId,
+														 const PhysicalWorkerName* DestinationWorkerId) const;
 
 	const PhysicalWorkerName WorkerId;
 	// todo: come back to removing
