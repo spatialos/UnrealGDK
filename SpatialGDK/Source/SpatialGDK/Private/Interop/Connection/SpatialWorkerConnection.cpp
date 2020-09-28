@@ -23,7 +23,8 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 } // anonymous namespace
 
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn, TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn,
+											 TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer)
 {
 	EventTracer = SharedEventTracer.Get();
 	StartupComplete = false;
