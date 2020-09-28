@@ -289,10 +289,21 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			{
 				FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
 				UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
-				if (ConfigUIClass)
+				if (ConfigUIClass != nullptr)
 				{
 					ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
-					ConfigUIWidget->SetSpatialDebugger(this);
+					if (ConfigUIWidget == nullptr)
+					{
+						UE_LOG(LogSpatialDebugger, Error, TEXT("Couldn't create config UI widget."));
+					}
+					else
+					{
+						ConfigUIWidget->SetSpatialDebugger(this);
+					}
+				}
+				else
+				{
+					UE_LOG(LogSpatialDebugger, Error, TEXT("Couldn't load config UI widget class (%s)."), *DEFAULT_CONFIG_UI_WIDGET_CLASS);
 				}
 			}
 			LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
@@ -330,7 +341,7 @@ void ASpatialDebugger::OnToggleConfigUI()
 	}
 }
 
-void ASpatialDebugger::SetShowWorkerRegions(bool bNewShow)
+void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 {
 	if (bNewShow != bShowWorkerRegions)
 	{

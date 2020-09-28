@@ -58,7 +58,7 @@ enum Type
 	LocalPlayer,
 	All
 };
-}
+} // namespace EActorTagDrawMode
 
 /**
  * Visualise spatial information at runtime and in the editor
@@ -84,7 +84,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
-	FKey ConfigUIKey;
+	FKey ConfigUIKey = EKeys::F9;
 
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
@@ -97,7 +97,7 @@ public:
 			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
 	float MaxRange = 100.0f * 100.0f; // 100m
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which actor tags to show"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which Actor tags to show"))
 	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
@@ -160,7 +160,7 @@ public:
 	void OnToggleConfigUI();
 
 	UFUNCTION(BlueprintCallable, Category = Visualization)
-	void SetShowWorkerRegions(bool bNewShow);
+	void SetShowWorkerRegions(const bool bNewShow);
 
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;

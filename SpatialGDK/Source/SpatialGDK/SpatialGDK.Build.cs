@@ -43,7 +43,6 @@ public class SpatialGDK : ModuleRules
                 "ReplicationGraph",
                 "Sockets",
                 "Slate",
-                "SlateCore",
                 "UMG"
             });
 

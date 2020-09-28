@@ -4,6 +4,7 @@
 
 #include "Blueprint/UserWidget.h"
 #include "CoreMinimal.h"
+
 #include "SpatialDebuggerConfigUI.generated.h"
 
 class ASpatialDebugger;
