@@ -22,9 +22,9 @@ ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 	LocalShutdownRequest->SetContentAsString(TEXT(""));
 }
 
-void ASpatialTestShutdownPreparationTrigger::BeginPlay()
+void ASpatialTestShutdownPreparationTrigger::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 	{ // Step 1 - Test print on all workers
 		AddStep(TEXT("AllWorkers_SetupListener"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 			UWorld* World = GetWorld();

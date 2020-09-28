@@ -71,14 +71,27 @@ public:
 
 	int GetNumRequiredClients() const { return NumRequiredClients; }
 
-	// Starts being called after PrepareTest, until it returns true.
+	// Called at the beginning of the test, use it to setup your steps. Contrary to AFunctionalTest, this will
+	// run on all Workers (Server and Client).
+	virtual void PrepareTest() override;
+
+	// Lets you know if PrepareTest() has been called.
+	bool HasPreparedTest() const { return bPreparedTest; }
+
+	// Starts being called after PrepareTest, until it returns true. This is only called on Authority.
 	virtual bool IsReady_Implementation() override;
 
-	// Called once after IsReady is true.
+	// Called once after IsReady is true. This is only called on Authority.
 	virtual void StartTest() override;
 
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
+
+	// Add expected log errors in C++. This can only be called when setting up the steps in PrepareTest() or in
+	// the steps themselves. Keep in mind that if the expected number of occurrences aren't met, the test fails.
+	// The same pattern can only be added once, so make sure to execute only in the test Authority or in a step that
+	// is running only on one worker.
+	void AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences = 1, bool bExactMatch = false);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -206,23 +219,23 @@ public:
 	void RemoveInterestOnTag(FName Tag);
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Prevent the given actor from losing authority from this worker."))
+			  meta = (ToolTip = "Prevent the given actor from losing authority from this server worker."))
 	void KeepActorOnCurrentWorker(AActor* Actor);
 
 	// clang-format off
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Force Actors having the given tag to migrate an gain authority on the given worker. All server workers must declare the same delegation at the same time."))
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Sets a Debug Tag to be delegated to a specific Server Worker, forcing the Authority to belong to it preventing the Load-Balancing Strategy from changing it."))
 	// clang-format on
-	void DelegateTagToWorker(FName Tag, int32 WorkerId);
+	void AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId = 1);
 
-	UFUNCTION(
-		BlueprintCallable, Category = "Spatial Functional Test",
-		meta = (ToolTip = "Removed the forced authority delegation. All server workers must declare the same delegation at the same time."))
-	void RemoveTagDelegation(FName Tag);
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears delegation of a Debug Tag. If there's no delegation set, the Load-Balancing Strategy will decide which Server Worker should have Authority."))
+	// clang-format on
+	void AddStepClearTagDelegation(FName Tag);
 
-	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test",
-			  meta = (ToolTip = "Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer."))
-	void ClearTagDelegationAndInterest();
+	// clang-format off
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test", meta = (ToolTip = "Clears all Debug Tag delegations and extra interest. Note that this is called automatically when a test ends, so if you use delegation / interest in the test, you don't need to clear it manually at the end."))
+	// clang-format on
+	void AddStepClearTagDelegationAndInterest();
 
 	// # Require Functions. Requires mimic the assert behaviour but without the immediate failure. Since when you're
 	// running networked tests you generally need to wait for state to be synced if you simply call asserts you'd get false
@@ -331,6 +344,19 @@ protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
+	// Force Actors having the given tag to migrate and gain authority on the given worker. All server workers must declare
+	// the same delegation at the same time, so we highly recommend that you use the AddStepSetTagDelegation() instead.
+	void SetTagDelegation(FName Tag, int32 ServerWorkerId);
+
+	// Remove the forced authority delegation. All server workers must declare the same delegation at the same time,
+	// so we highly recommend that you use the AddStepClearTagDelegation() instead.
+	void ClearTagDelegation(FName Tag);
+
+	// Remove all the actor tags, extra interest, and authority delegation, resetting the Debug layer. All server workers must
+	// call it at the same time to guarantee consistency, so we again highly recommend you use AddStepClearTagDelegationAndInterest().
+	// Whenever a test finishes this will be called automatically.
+	void ClearTagDelegationAndInterest();
+
 	// # Built-in StepDefinitions for convenience
 
 	// Step Definition that will take a SpatialOS snapshot for the current map. This snapshot will become the
@@ -375,6 +401,12 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
+
+	UPROPERTY(ReplicatedUsing = OnReplicated_bPreparedTest, Transient)
+	bool bPreparedTest = false;
+
+	UFUNCTION()
+	void OnReplicated_bPreparedTest();
 
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;

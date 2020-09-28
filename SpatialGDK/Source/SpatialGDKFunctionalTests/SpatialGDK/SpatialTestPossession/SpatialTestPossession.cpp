@@ -28,9 +28,9 @@ ASpatialTestPossession::ASpatialTestPossession()
 	Description = TEXT("Test Actor Possession");
 }
 
-void ASpatialTestPossession::BeginPlay()
+void ASpatialTestPossession::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	AddStep(TEXT("SpatialTestPossessionServerSetupStep"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
 		float YToSpawnAt = -60.0f;
