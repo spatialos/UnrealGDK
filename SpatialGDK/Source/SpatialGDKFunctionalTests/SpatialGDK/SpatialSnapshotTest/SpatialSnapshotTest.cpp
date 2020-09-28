@@ -55,9 +55,9 @@ ASpatialSnapshotTest::ASpatialSnapshotTest()
 	SetNumRequiredClients(1);
 }
 
-void ASpatialSnapshotTest::BeginPlay()
+void ASpatialSnapshotTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// First we need to know if we're launching from the default Snapshot or from a taken Snapshot.
 	bool bIsRunningFirstTime = !WasLoadedFromTakenSnapshot();
@@ -82,35 +82,13 @@ void ASpatialSnapshotTest::BeginPlay()
 
 		if (IsValid(Actor))
 		{
-			// @TODO improve when we have The Verify functions
-			if (!Actor->VerifyBool())
-			{
-				return;
-			}
-			if (!Actor->VerifyInt32())
-			{
-				return;
-			}
-			if (!Actor->VerifyInt64())
-			{
-				return;
-			}
-			if (!Actor->VerifyFloat())
-			{
-				return;
-			}
-			if (!Actor->VerifyString())
-			{
-				return;
-			}
-			if (!Actor->VerifyName())
-			{
-				return;
-			}
-			if (!Actor->VerifyIntArray())
-			{
-				return;
-			}
+			RequireTrue(Actor->VerifyBool(), TEXT("Bool Replication"));
+			RequireTrue(Actor->VerifyInt32(), TEXT("Int32 Replication"));
+			RequireTrue(Actor->VerifyInt64(), TEXT("Int64 Replication"));
+			RequireTrue(Actor->VerifyFloat(), TEXT("Float Replication"));
+			RequireTrue(Actor->VerifyString(), TEXT("String Replication"));
+			RequireTrue(Actor->VerifyName(), TEXT("Name Replication"));
+			RequireTrue(Actor->VerifyIntArray(), TEXT("Int Array Replication"));
 			FinishStep();
 		}
 	});
@@ -135,35 +113,13 @@ void ASpatialSnapshotTest::BeginPlay()
 
 		if (IsValid(GameMode))
 		{
-			// @TODO improve when we have The Verify functions
-			if (!GameMode->VerifyBool())
-			{
-				return;
-			}
-			if (!GameMode->VerifyInt32())
-			{
-				return;
-			}
-			if (!GameMode->VerifyInt64())
-			{
-				return;
-			}
-			if (!GameMode->VerifyFloat())
-			{
-				return;
-			}
-			if (!GameMode->VerifyString())
-			{
-				return;
-			}
-			if (!GameMode->VerifyName())
-			{
-				return;
-			}
-			if (!GameMode->VerifyIntArray())
-			{
-				return;
-			}
+			RequireTrue(GameMode->VerifyBool(), TEXT("Bool Replication"));
+			RequireTrue(GameMode->VerifyInt32(), TEXT("Int32 Replication"));
+			RequireTrue(GameMode->VerifyInt64(), TEXT("Int64 Replication"));
+			RequireTrue(GameMode->VerifyFloat(), TEXT("Float Replication"));
+			RequireTrue(GameMode->VerifyString(), TEXT("String Replication"));
+			RequireTrue(GameMode->VerifyName(), TEXT("Name Replication"));
+			RequireTrue(GameMode->VerifyIntArray(), TEXT("Int Array Replication"));
 			FinishStep();
 		}
 	});

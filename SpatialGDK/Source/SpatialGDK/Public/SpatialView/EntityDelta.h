@@ -110,8 +110,13 @@ private:
 struct EntityDelta
 {
 	Worker_EntityId EntityId;
-	bool bAdded;
-	bool bRemoved;
+	enum
+	{
+		UPDATE,
+		ADD,
+		REMOVE,
+		TEMPORARILY_REMOVED
+	} Type;
 	ComponentSpan<ComponentChange> ComponentsAdded;
 	ComponentSpan<ComponentChange> ComponentsRemoved;
 	ComponentSpan<ComponentChange> ComponentUpdates;

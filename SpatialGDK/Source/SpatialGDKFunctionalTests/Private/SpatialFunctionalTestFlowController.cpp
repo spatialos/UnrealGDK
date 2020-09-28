@@ -35,6 +35,7 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bReadyToRegisterWithTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bIsReadyToRunTest);
+	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bHasAckFinishedTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, OwningTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
@@ -58,6 +59,13 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	{
 		CurrentStep.Tick(DeltaSeconds);
 	}
+
+	// Did it stop now or before the Tick was called?
+	if (!CurrentStep.bIsRunning)
+	{
+		SetActorTickEnabled(false);
+		CurrentStep.Reset();
+	}
 }
 
 void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(int NewWorkerId)
@@ -74,26 +82,22 @@ void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 
 	OwningTest->RegisterFlowController(this);
 
-	if (IsLocalController())
+	if (OwningTest->HasPreparedTest())
 	{
-		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-		{
-			bIsReadyToRunTest = true;
-		}
-		else
-		{
-			ServerSetReadyToRunTest();
-		}
+		SetReadyToRunTest(true);
 	}
 }
 
-void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementation()
+void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementation(bool bIsReady)
 {
-	bIsReadyToRunTest = true;
+	bIsReadyToRunTest = bIsReady;
 }
 
 void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(int StepIndex)
 {
+	// Since we're starting a step, we mark as not Ack that we've finished the test. This is needed
+	// for the cases when we run multiple times the same test without a map reload.
+	bHasAckFinishedTest = false;
 	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		StartStepInternal(StepIndex);
@@ -161,7 +165,7 @@ void ASpatialFunctionalTestFlowController::NotifyFinishTest(EFunctionalTestResul
 	}
 }
 
-const FString ASpatialFunctionalTestFlowController::GetDisplayName()
+const FString ASpatialFunctionalTestFlowController::GetDisplayName() const
 {
 	return FString::Printf(TEXT("[%s:%d]"),
 						   (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server ? TEXT("Server") : TEXT("Client")),
@@ -171,6 +175,34 @@ const FString ASpatialFunctionalTestFlowController::GetDisplayName()
 void ASpatialFunctionalTestFlowController::OnTestFinished()
 {
 	StopStepInternal();
+	if (HasAuthority())
+	{
+		bHasAckFinishedTest = true;
+	}
+	else
+	{
+		ServerAckFinishedTest();
+	}
+	SetReadyToRunTest(false);
+}
+
+void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
+{
+	if (bIsReady == bIsReadyToRunTest)
+	{
+		return;
+	}
+	if (IsLocalController())
+	{
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+		{
+			bIsReadyToRunTest = bIsReady;
+		}
+		else
+		{
+			ServerSetReadyToRunTest(bIsReady);
+		}
+	}
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
@@ -188,8 +220,7 @@ void ASpatialFunctionalTestFlowController::StartStepInternal(const int StepIndex
 
 void ASpatialFunctionalTestFlowController::StopStepInternal()
 {
-	SetActorTickEnabled(false);
-	CurrentStep.Reset();
+	CurrentStep.bIsRunning = false;
 }
 
 void ASpatialFunctionalTestFlowController::ServerNotifyFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
@@ -200,6 +231,11 @@ void ASpatialFunctionalTestFlowController::ServerNotifyFinishTest_Implementation
 void ASpatialFunctionalTestFlowController::ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message)
 {
 	OwningTest->CrossServerFinishTest(TestResult, Message);
+}
+
+void ASpatialFunctionalTestFlowController::ServerAckFinishedTest_Implementation()
+{
+	bHasAckFinishedTest = true;
 }
 
 void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation()

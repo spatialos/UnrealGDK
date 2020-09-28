@@ -28,14 +28,19 @@ void ViewCoordinator::Advance()
 	}
 	View.AdvanceViewDelta();
 	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
+
+	for (const TUniquePtr<FSubView>& SubviewToAdvance : SubViews)
+	{
+		SubviewToAdvance->Advance(View.GetViewDelta());
+	}
 }
 
-const ViewDelta& ViewCoordinator::GetViewDelta()
+const ViewDelta& ViewCoordinator::GetViewDelta() const
 {
 	return View.GetViewDelta();
 }
 
-const EntityView& ViewCoordinator::GetView()
+const EntityView& ViewCoordinator::GetView() const
 {
 	return View.GetView();
 }
@@ -45,7 +50,21 @@ void ViewCoordinator::FlushMessagesToSend()
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
 }
 
-void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId)
+FSubView& ViewCoordinator::CreateSubView(Worker_ComponentId Tag, const FFilterPredicate& Filter,
+										 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+{
+	const int Index = SubViews.Emplace(MakeUnique<FSubView>(Tag, Filter, View.GetViewPtr(), Dispatcher, DispatcherRefreshCallbacks));
+	return *SubViews[Index];
+}
+
+void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
+{
+	for (const TUniquePtr<FSubView>& SubviewToRefresh : SubViews)
+	{
+		SubviewToRefresh->RefreshEntity(EntityId);
+	}
+}
+
 {
 	View.SendAddComponent(EntityId, MoveTemp(Data), SpanId);
 }
@@ -151,6 +170,24 @@ CallbackId ViewCoordinator::RegisterAuthorityLostTempCallback(Worker_ComponentId
 void ViewCoordinator::RemoveCallback(CallbackId Id)
 {
 	Dispatcher.RemoveCallback(Id);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateComponentExistenceRefreshCallback(
+	Worker_ComponentId ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate)
+{
+	return FSubView::CreateComponentExistenceRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateComponentChangedRefreshCallback(Worker_ComponentId ComponentId,
+																				  const FComponentChangeRefreshPredicate& RefreshPredicate)
+{
+	return FSubView::CreateComponentChangedRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback(Worker_ComponentId ComponentId,
+																				 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
+{
+	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

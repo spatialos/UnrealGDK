@@ -41,9 +41,9 @@ ASpatialTestTearOff::ASpatialTestTearOff()
 	ReplicatedTestActorBaseMoveLocationAfterTearOff = FVector(30.0f, -20.0f, 80.0f);
 }
 
-void ASpatialTestTearOff::BeginPlay()
+void ASpatialTestTearOff::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// Step definition for a 5 second timer
 	FSpatialFunctionalTestStepDefinition WorkerWaitForTimeStepDefinition;

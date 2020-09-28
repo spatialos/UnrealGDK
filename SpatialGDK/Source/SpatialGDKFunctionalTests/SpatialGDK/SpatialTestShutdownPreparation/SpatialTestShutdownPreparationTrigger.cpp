@@ -22,9 +22,9 @@ ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
 	LocalShutdownRequest->SetContentAsString(TEXT(""));
 }
 
-void ASpatialTestShutdownPreparationTrigger::BeginPlay()
+void ASpatialTestShutdownPreparationTrigger::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 	{ // Step 1 - Test print on all workers
 		AddStep(TEXT("AllWorkers_SetupListener"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 			UWorld* World = GetWorld();
@@ -97,8 +97,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			StepTimer += DeltaTime;
 			if (StepTimer > TriggerEventWaitTime)
 			{
-				FinishStep();
 				StepTimer = 0.0f;
+				FinishStep();
 			}
 		});
 
@@ -136,8 +136,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 			StepTimer += DeltaTime;
 			if (StepTimer > TriggerEventWaitTime)
 			{
-				FinishStep();
 				StepTimer = 0.0f;
+				FinishStep();
 			}
 		});
 
@@ -155,8 +155,8 @@ void ASpatialTestShutdownPreparationTrigger::BeginPlay()
 					StepTimer += DeltaTime;
 					if (StepTimer > TriggerEventWaitTime)
 					{
-						FinishStep();
 						StepTimer = 0.0f;
+						FinishStep();
 					}
 				});
 	}

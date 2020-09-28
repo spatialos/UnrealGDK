@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTest.h"
 
+#include "AutomationBlueprintFunctionLibrary.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -22,6 +23,13 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
+namespace
+{
+// Maximum time that the test authority will wait after deciding to FinishTest in order for all the Workers
+// to have enough time to acknowledge it. If this time is exceeded, the test authority will force FinishTest.
+constexpr float FINISH_TEST_GRACE_PERIOD_DURATION = 2.0f;
+} // namespace
+
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
 	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
@@ -41,6 +49,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, bReadyToSpawnServerControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
+	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -69,6 +78,8 @@ void ASpatialFunctionalTest::BeginPlay()
 		ClearSnapshot();
 		FinishStep();
 	});
+
+	RequireHandler.SetOwnerTest(this);
 
 	// By default expect 1 server.
 	NumExpectedServers = 1;
@@ -117,6 +128,26 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			}
 		}
 	}
+	else if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED && FinishTestTimerHandle.IsValid())
+	{
+		bool bAllAcknowledgedFinishedTest = true;
+		for (const auto* FlowController : FlowControllers)
+		{
+			if (!FlowController->HasAckFinishedTest())
+			{
+				bAllAcknowledgedFinishedTest = false;
+				break;
+			}
+		}
+		if (bAllAcknowledgedFinishedTest)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
+			Super::FinishTest(CachedTestResult, CachedTestMessage);
+			// Clear cached variables
+			CachedTestResult = EFunctionalTestResult::Default;
+			CachedTestMessage.Empty();
+		}
+	}
 }
 
 void ASpatialFunctionalTest::OnAuthorityGained()
@@ -150,6 +181,19 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 	if (Verbosity == ELogVerbosity::Error || Verbosity == ELogVerbosity::Fatal)
 	{
 		FinishTest(EFunctionalTestResult::Failed, TEXT("Failed assertions"));
+	}
+}
+
+void ASpatialFunctionalTest::PrepareTest()
+{
+	StepDefinitions.Empty();
+
+	Super::PrepareTest();
+
+	if (HasAuthority())
+	{
+		bPreparedTest = true;
+		OnReplicated_bPreparedTest();
 	}
 }
 
@@ -187,6 +231,14 @@ void ASpatialFunctionalTest::StartTest()
 
 void ASpatialFunctionalTest::FinishStep()
 {
+	// We can only FinishStep if there are no Require fails.
+	if (RequireHandler.HasFails())
+	{
+		return;
+	}
+
+	RequireHandler.LogAndClearStepRequires();
+
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
@@ -240,6 +292,9 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
+			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
+			OnReplicated_bPreparedTest();
+
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
 				   *UEnum::GetValueAsString(TestResult), *Message);
 
@@ -285,7 +340,39 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_FINISHED;
 			OnReplicated_CurrentStepIndex(); // need to call it in Authority manually
 
-			Super::FinishTest(TestResult, Message);
+			CachedTestResult = TestResult;
+			CachedTestMessage = Message;
+
+			GetWorld()->GetTimerManager().SetTimer(
+				FinishTestTimerHandle,
+				[this]() {
+					// If this timer triggers, then it means that something went wrong with one of the Workers. The
+					// expected behaviour is that the Super::FinishTest will be called from Tick(). Let's double check
+					// which failed to reply.
+					FString WorkersDidntAck;
+					for (const auto* FlowController : FlowControllers)
+					{
+						if (!FlowController->HasAckFinishedTest())
+						{
+							WorkersDidntAck += FString::Printf(TEXT("%s, "), *(FlowController->GetDisplayName()));
+						}
+					}
+					if (!WorkersDidntAck.IsEmpty())
+					{
+						WorkersDidntAck.RemoveFromEnd(TEXT(", "));
+						UE_LOG(LogSpatialGDKFunctionalTests, Warning,
+							   TEXT("The following Workers failed to acknowledge FinishTest in time: %s"), *WorkersDidntAck);
+					}
+
+					Super::FinishTest(CachedTestResult, CachedTestMessage);
+
+					FinishTestTimerHandle.Invalidate();
+
+					// Clear cached values.
+					CachedTestResult = EFunctionalTestResult::Default;
+					CachedTestMessage.Empty();
+				},
+				FINISH_TEST_GRACE_PERIOD_DURATION, false /* InbLoop */);
 		}
 	}
 	else
@@ -296,6 +383,12 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 			AuxLocalFlowController->NotifyFinishTest(TestResult, Message);
 		}
 	}
+}
+
+void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
+												 bool bExactMatch /*= false*/)
+{
+	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, bExactMatch);
 }
 
 void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
@@ -330,6 +423,18 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowContro
 {
 	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
 	return LocalFlowController;
+}
+
+ESpatialFunctionalTestWorkerType ASpatialFunctionalTest::GetLocalWorkerType()
+{
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Type : ESpatialFunctionalTestWorkerType::Invalid;
+}
+
+int ASpatialFunctionalTest::GetLocalWorkerId()
+{
+	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
+	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : INVALID_FLOW_CONTROLLER_ID;
 }
 
 // Add Steps for Blueprints
@@ -375,6 +480,9 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 {
 	if (HasAuthority())
 	{
+		// Log Requires from previous step.
+		RequireHandler.LogAndClearStepRequires();
+
 		CurrentStepIndex = StepIndex;
 
 		TimeRunningStep = 0.0f;
@@ -497,18 +605,15 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		// test finished
-		if (StartTime > 0)
+		RequireHandler.LogAndClearStepRequires();
+		// if we ever started in first place
+		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
+		if (AuxLocalFlowController != nullptr)
 		{
-			// if we ever started in first place
-			ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
-			if (AuxLocalFlowController != nullptr)
+			AuxLocalFlowController->OnTestFinished();
+			if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
-				AuxLocalFlowController->OnTestFinished();
-				if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-				{
-					ClearTagDelegationAndInterest();
-				}
+				ClearTagDelegationAndInterest();
 			}
 		}
 		if (!HasAuthority()) // Authority already does this on Super::FinishTest
@@ -517,6 +622,24 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 		}
 
 		DeleteActorsRegisteredForAutoDestroy();
+	}
+}
+
+void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
+{
+	if (bPreparedTest)
+	{
+		if (!HasAuthority())
+		{
+			PrepareTest();
+		}
+
+		// Currently PrepareTest() happens before FlowControllers are registered,
+		// but that is most likely because of the bug that forces us to delay their registration.
+		if (LocalFlowController != nullptr)
+		{
+			LocalFlowController->SetReadyToRunTest(true);
+		}
 	}
 }
 
@@ -607,6 +730,11 @@ ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
 
 void ASpatialFunctionalTest::AddDebugTag(AActor* Actor, FName Tag)
 {
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
 		NetDriver->DebugCtx->AddActorTag(Actor, Tag);
@@ -655,15 +783,48 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 	}
 }
 
-void ASpatialFunctionalTest::DelegateTagToWorker(FName Tag, int32 WorkerId)
+void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
+{
+	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
+	{
+		return;
+	}
+	if (ServerWorkerId >= GetNumExpectedServers())
+	{
+		ServerWorkerId = 1; // Support for single worker environments.
+	}
+	AddStep(FString::Printf(TEXT("Set Delegation of Tag '%s' to Server Worker %d"), *Tag.ToString(), ServerWorkerId),
+			FWorkerDefinition::AllServers, nullptr, [this, Tag, ServerWorkerId] {
+				SetTagDelegation(Tag, ServerWorkerId);
+				FinishStep();
+			});
+}
+
+void ASpatialFunctionalTest::AddStepClearTagDelegation(FName Tag)
+{
+	AddStep(FString::Printf(TEXT("Clear Delegation of Tag '%s'"), *Tag.ToString()), FWorkerDefinition::AllServers, nullptr, [this, Tag] {
+		ClearTagDelegation(Tag);
+		FinishStep();
+	});
+}
+
+void ASpatialFunctionalTest::AddStepClearTagDelegationAndInterest()
+{
+	AddStep(TEXT("Clear Delegation of all Tags and extra Interest"), FWorkerDefinition::AllServers, nullptr, [this] {
+		ClearTagDelegationAndInterest();
+		FinishStep();
+	});
+}
+
+void ASpatialFunctionalTest::SetTagDelegation(FName Tag, int32 ServerWorkerId)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
-		NetDriver->DebugCtx->DelegateTagToWorker(Tag, WorkerId);
+		NetDriver->DebugCtx->DelegateTagToWorker(Tag, ServerWorkerId);
 	}
 }
 
-void ASpatialFunctionalTest::RemoveTagDelegation(FName Tag)
+void ASpatialFunctionalTest::ClearTagDelegation(FName Tag)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{

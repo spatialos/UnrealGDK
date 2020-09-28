@@ -17,7 +17,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandover : public ASpatialFuncti
 public:
 	ASpatialTestHandover();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 private:
 	AHandoverCube* HandoverCube;
