@@ -8,7 +8,7 @@
 
 namespace SpatialGDK
 {
-SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TUniquePtr<SpatialEventTracer> EventTracer)
+SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TSharedPtr<SpatialEventTracer> EventTracer)
 	: EventTracer(MoveTemp(EventTracer))
 	, Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
@@ -189,9 +189,9 @@ const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
 	return WorkerAttributes;
 }
 
-void SpatialOSConnectionHandler::WorkerConnectionDeleter::operator()(Worker_Connection* Connection) const noexcept
+void SpatialOSConnectionHandler::WorkerConnectionDeleter::operator()(Worker_Connection* ConnectionToDestroy) const noexcept
 {
-	Worker_Connection_Destroy(Connection);
+	Worker_Connection_Destroy(ConnectionToDestroy);
 }
 
 SpatialOSConnectionHandler::~SpatialOSConnectionHandler()
@@ -199,7 +199,7 @@ SpatialOSConnectionHandler::~SpatialOSConnectionHandler()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
 			  [Connection = MoveTemp(Connection), EventTracer = MoveTemp(EventTracer)]() mutable {
 				  Connection.Reset(nullptr);
-				  EventTracer.Reset(nullptr);
+				  EventTracer.Reset();
 			  });
 }
 

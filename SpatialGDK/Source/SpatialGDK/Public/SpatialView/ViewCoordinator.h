@@ -14,7 +14,7 @@ class SpatialEventTracer;
 class ViewCoordinator
 {
 public:
-	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, SpatialEventTracer* EventTracer);
+	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer);
 
 	~ViewCoordinator();
 
@@ -61,6 +61,9 @@ private:
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
 	Worker_RequestId NextRequestId;
 	FDispatcher Dispatcher;
+
+	// Stored on ViewCoordinator to handle lifetime
+	TSharedPtr<SpatialEventTracer> EventTracer;
 };
 
 } // namespace SpatialGDK
