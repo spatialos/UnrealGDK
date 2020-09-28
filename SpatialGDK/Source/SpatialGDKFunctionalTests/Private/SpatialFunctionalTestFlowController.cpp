@@ -59,6 +59,13 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	{
 		CurrentStep.Tick(DeltaSeconds);
 	}
+
+	// Did it stop now or before the Tick was called?
+	if (!CurrentStep.bIsRunning)
+	{
+		SetActorTickEnabled(false);
+		CurrentStep.Reset();
+	}
 }
 
 void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(int NewWorkerId)
@@ -213,8 +220,7 @@ void ASpatialFunctionalTestFlowController::StartStepInternal(const int StepIndex
 
 void ASpatialFunctionalTestFlowController::StopStepInternal()
 {
-	SetActorTickEnabled(false);
-	CurrentStep.Reset();
+	CurrentStep.bIsRunning = false;
 }
 
 void ASpatialFunctionalTestFlowController::ServerNotifyFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
