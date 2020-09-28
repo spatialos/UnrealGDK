@@ -284,28 +284,23 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		if (Actor->IsA<APlayerController>())
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
-			LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+
+			FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
+			UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
+			if (ConfigUIClass) {
+				ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
+				ConfigUIWidget->SetSpatialDebugger(this);
+				LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+			}
 		}
 	}
 }
 
 void ASpatialDebugger::OnToggleConfigUI()
 {
-	FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
-	UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
-	if (ConfigUIClass == nullptr)
-	{
-		return;
-	}
-
-	if (!LocalPlayerController.IsValid())
-	{
-		return;
-	}
-
 	if (ConfigUIWidget == nullptr)
 	{
-		ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
+		return;
 	}
 
 	if (!ConfigUIWidget->IsInViewport())

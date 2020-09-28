@@ -1,15 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Utils/SpatialDebuggerConfigUI.h"
 #include "EngineClasses/SpatialNetDriver.h"
 
-void USpatialDebuggerConfigUI::NativeOnInitialized()
+void USpatialDebuggerConfigUI::SetSpatialDebugger_Implementation(ASpatialDebugger* InDebugger)
 {
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-	if (NetDriver)
-	{
-		SpatialDebugger = NetDriver->SpatialDebugger;
-	}
-
-	Super::NativeOnInitialized();
+	SpatialDebugger = InDebugger;
 }
