@@ -38,11 +38,11 @@ void SpatialLoadBalanceEnforcer::Advance()
 		{
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
-				bRefresh = ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update) || bRefresh;
+				bRefresh |= ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
-				bRefresh = ApplyComponentRefresh(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data) || bRefresh;
+				bRefresh |= ApplyComponentRefresh(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
 			}
 			break;
 		}
@@ -74,6 +74,7 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_Entity
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
 	if (Element.Authority.Contains(SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
+		// Our entity will be out of date during a short circuit. Refresh the state here before refreshing the ACL.
 		DataStore.Remove(EntityId);
 		PopulateDataStore(EntityId);
 		RefreshAcl(EntityId);
