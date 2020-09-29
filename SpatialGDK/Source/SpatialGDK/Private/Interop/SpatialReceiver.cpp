@@ -1181,7 +1181,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
 					{
-						//PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
+						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
 					}
 				}
 			}
