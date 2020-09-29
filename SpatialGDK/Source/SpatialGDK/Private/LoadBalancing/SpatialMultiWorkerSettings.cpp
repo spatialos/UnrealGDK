@@ -7,9 +7,9 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Utils/CommandLineArgs.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialStatics.h"
-#include "Utils/CommandLineArgs.h"
 
 #include "Misc/MessageDialog.h"
 
@@ -41,7 +41,11 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 
 void UAbstractSpatialMultiWorkerSettings::PostInitProperties()
 {
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
+	// Check command-line overrides of properties after config values
+	const TCHAR* CommandLine = FCommandLine::Get();
+	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
+
+	Super::PostInitProperties();
 }
 
 void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const

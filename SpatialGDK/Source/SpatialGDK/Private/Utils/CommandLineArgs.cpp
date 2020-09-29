@@ -20,10 +20,11 @@ void SpatialGDK::CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR*
 		}
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialCommandLineArgs, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
 }
 
-void SpatialGDK::CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<bool>& bOutValue)
+void SpatialGDK::CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
+												  TOptional<bool>& bOutValue)
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
 	if (FParse::Param(CommandLine, Parameter))
@@ -39,12 +40,12 @@ void SpatialGDK::CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, cons
 		}
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
-		bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
+	UE_LOG(LogSpatialCommandLineArgs, Log, TEXT("%s is %s."), PrettyName,
+		   bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
 }
 
 void SpatialGDK::CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
-	TOptional<FString>& StrOutValue)
+													TOptional<FString>& StrOutValue)
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
@@ -53,5 +54,5 @@ void SpatialGDK::CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, co
 		StrOutValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
+	UE_LOG(LogSpatialCommandLineArgs, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
 }
