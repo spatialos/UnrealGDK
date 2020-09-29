@@ -530,6 +530,7 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 
 void USpatialNetDriver::OnGSMQuerySuccess()
 {
+	StartupDebugString.Empty();
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
@@ -598,7 +599,7 @@ void USpatialNetDriver::RetryQueryGSM()
 	RetryTimerDelay = 0.1f;
 #endif
 
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
+	UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(
 		RetryTimer,
@@ -631,16 +632,15 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 	}
 	else if (!bNewAcceptingPlayers)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Log,
-			   TEXT("GlobalStateManager not accepting players. Usually caused by servers not registering themselves with the deployment "
-					"yet. Did you launch the correct number of servers?"));
+		StartupDebugString = FString(
+			TEXT("GlobalStateManager not accepting players. This is likely caused by waiting for all the required workers to connect"));
 		RetryQueryGSM();
 		return;
 	}
 	else if (QuerySessionId != SessionId)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId,
-			   SessionId);
+		StartupDebugString =
+			FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId, SessionId);
 		RetryQueryGSM();
 		return;
 	}
@@ -658,6 +658,7 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	UGlobalStateManager::QueryDelegate QueryDelegate;
 	QueryDelegate.BindUObject(this, &USpatialNetDriver::GSMQueryDelegateFunction);
 
+	StartupTimestamp = FPlatformTime::Cycles64();
 	// Begin querying the state of the GSM so we know the state of AcceptingPlayers and SessionId.
 	GlobalStateManager->QueryGSM(QueryDelegate);
 }
@@ -2562,18 +2563,31 @@ void USpatialNetDriver::TryFinishStartup()
 {
 	if (IsServer())
 	{
+		// Limit Log frequency.
+		bool bShouldLogStartup = [this]() {
+			const uint64 WatchdogTimer = 5.0 / FPlatformTime::GetSecondsPerCycle64();
+			const uint64 CurrentTime = FPlatformTime::Cycles64();
+			if (CurrentTime - StartupTimestamp > WatchdogTimer)
+			{
+				StartupTimestamp = CurrentTime;
+				return true;
+			}
+			return false;
+		}();
+
 		if (!PackageMap->IsEntityPoolReady())
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
 		}
 		else if (!GlobalStateManager->IsReady())
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready : %s"),
+					!StartupDebugString.IsEmpty() ? *StartupDebugString : TEXT("waiting for query"));
 		}
 		else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 		{
 			GlobalStateManager->QueryTranslation();
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
 		}
 		else
 		{

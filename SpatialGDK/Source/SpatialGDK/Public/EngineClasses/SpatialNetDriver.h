@@ -303,4 +303,6 @@ private:
 	void ProcessOwnershipChanges();
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
+	uint64 StartupTimestamp;
+	FString StartupDebugString;
 };
