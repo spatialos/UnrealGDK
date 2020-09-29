@@ -226,5 +226,5 @@ private:
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
 
-	USpatialDebuggerConfigUI* ConfigUIWidget;
+	TWeakObjectPtr<USpatialDebuggerConfigUI> ConfigUIWidget;
 };

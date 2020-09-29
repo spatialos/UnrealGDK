@@ -285,14 +285,14 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
 
-			if (ConfigUIWidget == nullptr)
+			if (!ConfigUIWidget.IsValid())
 			{
 				FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
 				UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
 				if (ConfigUIClass != nullptr)
 				{
 					ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
-					if (ConfigUIWidget == nullptr)
+					if (!ConfigUIWidget.IsValid())
 					{
 						UE_LOG(LogSpatialDebugger, Error, TEXT("Couldn't create config UI widget."));
 					}
@@ -313,7 +313,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 
 void ASpatialDebugger::OnToggleConfigUI()
 {
-	if (ConfigUIWidget == nullptr)
+	if (!ConfigUIWidget.IsValid())
 	{
 		return;
 	}
@@ -525,7 +525,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 #endif
 
 	// Don't draw tags while the UI is open, since they will otherwise draw on top of the UI and obscure it.
-	if (IsValid(ConfigUIWidget) && ConfigUIWidget->IsInViewport())
+	if (ConfigUIWidget.IsValid() && ConfigUIWidget->IsInViewport())
 	{
 		return;
 	}
