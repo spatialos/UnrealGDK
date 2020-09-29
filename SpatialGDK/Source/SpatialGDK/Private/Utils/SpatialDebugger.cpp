@@ -183,6 +183,7 @@ void ASpatialDebugger::OnAuthorityGained()
 			{
 				FWorkerRegionInfo WorkerRegionInfo;
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				WorkerRegionInfo.WorkerID = LBStrategyRegion.Key;
 				WorkerRegionInfo.WorkerName = *NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
 				WorkerRegionInfo.Color = (WorkerRegionInfo.WorkerName == "")
 											 ? InvalidServerTintColor
@@ -229,8 +230,10 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
+		FString WorkerInfo = FString::Printf(TEXT("Worker Name: %s <br>Virtual Worker ID: %d"),
+											 *WorkerRegionData.WorkerName, WorkerRegionData.WorkerID); // WorkerID
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, TextFont, WorkerRegionData.Color, WorkerRegionData.Extents,
-						   WorkerRegionVerticalScale, WorkerRegionData.WorkerName);
+						   WorkerRegionVerticalScale, WorkerInfo);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -636,6 +639,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		{
 			const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
 			FWorkerRegionInfo WorkerRegionInfo;
+			WorkerRegionInfo.WorkerID = i;
 			WorkerRegionInfo.WorkerName = FString::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
 			// Generate our own unique worker name as we only need it to generate a unique colour
 			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerRegionInfo.WorkerName);

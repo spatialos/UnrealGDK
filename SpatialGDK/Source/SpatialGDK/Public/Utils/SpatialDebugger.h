@@ -49,6 +49,9 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FString WorkerName;
+
+	UPROPERTY()
+	uint32 WorkerID;
 };
 
 /**
