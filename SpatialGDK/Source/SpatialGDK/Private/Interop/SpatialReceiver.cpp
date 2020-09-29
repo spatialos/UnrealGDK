@@ -1181,7 +1181,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
 					{
-						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
+						//PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
 					}
 				}
 			}
@@ -1376,7 +1376,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
-		if (!IsDynamicSubObject(Actor, TargetObjectRef.Offset))
+		if (!IsDynamicSubObject(Actor, Offset))
 		{
 			UE_LOG(LogSpatialReceiver, Verbose,
 				   TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: "

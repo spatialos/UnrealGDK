@@ -10,7 +10,8 @@
 #include <SpatialGDK\Public\SpatialGDKSettings.h>
 
 /**
- * This test tests if the dynamic Subobject of the AReplicatedDynamicSubobjectsTestActor is not duplicated in Client.
+ * Tests if the dynamic Subobject of the AReplicatedGASTestActor is not duplicated on Clients when leaving
+ * and re-entering interest.
  *
  * The test includes a single server and one client worker.
  * The flow is as follows:
@@ -19,12 +20,12 @@
  *true.
  *    - The Server spawns a TestMovementCharacter and makes Client 1 possess it.
  *  - Test:
- *    - Each worker tests if it can initially see the AReplicatedDynamicSubobjectsTestActor.
+ *    - Each worker tests if it can initially see the AReplicatedGASTestActor.
  *    - Repeat the following steps MaxDynamicallyAttachedSubobjectsPerClass + 1 times:
  *		- After ensuring possession happened, the Server moves Client 1's Character to a remote location, so it cannot see the
- *AReplicatedDynamicSubobjectsTestActor.
- *		- After ensuring movement replicated correctly, Client 1 checks it can no longer see the AReplicatedDynamicSubobjectsTestActor.
- *		- The Server moves the character of Client 1 back close to its spawn location, so that the AReplicatedDynamicSubobjectsTestActor is
+ *AReplicatedGASTestActor.
+ *		- After ensuring movement replicated correctly, Client 1 checks it can no longer see the AReplicatedGASTestActor.
+ *		- The Server moves the character of Client 1 back close to its spawn location, so that the AReplicatedGASTestActor is
  *in its interest area.
  *	  - If the "Too many dynamic sub objects" error does not appears in the log the test is successful.
  *  - Cleanup:
@@ -41,7 +42,7 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	Description = TEXT("Test Dynamic Subobjects Duplication in Client");
 
 	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
-	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f);
+	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
