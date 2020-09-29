@@ -247,7 +247,7 @@ public:
 
 	/** Enable/Disable logging to Spatial */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Disable Log to Spatial"))
-	bool SpatialLogging;
+	bool bDisableLoggingToSpatial;
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;

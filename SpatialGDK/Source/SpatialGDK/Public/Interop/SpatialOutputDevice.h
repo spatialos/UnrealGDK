@@ -30,5 +30,4 @@ protected:
 
 	int32 PIEIndex;
 	bool bLogToSpatial;
-	bool bLogToSpatialBox;
 };
