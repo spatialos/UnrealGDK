@@ -88,7 +88,7 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 			FinalTileOffset += 100.f / (float)HorizontalTileCount;
 		}
 	}
-	float SpacingZ = 100.f / (float)VerticalTileCount; 
+	float SpacingZ = 100.f / (float)VerticalTileCount;
 	float PositionX = 0;
 	float PositionY = 0;
 	// Tile horizontally
@@ -123,7 +123,7 @@ void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* T
 {
 	// Create dynamic worker name text on boundary wall
 	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
-	WorkerText->SetFont(TextFont); 
+	WorkerText->SetFont(TextFont);
 	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, Yaw, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
