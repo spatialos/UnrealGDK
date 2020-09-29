@@ -28,9 +28,11 @@ struct AuthorityIntent : Component
 	{
 	}
 
-	AuthorityIntent(const Worker_ComponentData& Data)
+	AuthorityIntent(const Worker_ComponentData& Data) : AuthorityIntent(Data.schema_type) {}
+
+	AuthorityIntent(Schema_ComponentData* Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
@@ -65,7 +67,12 @@ struct AuthorityIntent : Component
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		ApplyComponentUpdate(Update.schema_type);
+	}
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
 

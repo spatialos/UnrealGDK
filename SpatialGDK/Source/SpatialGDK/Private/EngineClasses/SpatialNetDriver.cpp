@@ -476,7 +476,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [&](SpatialGDK::EntityComponentUpdate AclUpdate) {
 		Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
 	};
-	LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, LBSubView,
+	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
 																 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
@@ -1771,12 +1771,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
-		if (LoadBalanceEnforcer.IsValid())
-		{
-			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			LoadBalanceEnforcer->Advance();
-		}
-
 		if (!bIsReadyToStart)
 		{
 			TryFinishStartup();
@@ -1785,6 +1779,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
+		}
+
+		if (LoadBalanceEnforcer.IsValid())
+		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
+			LoadBalanceEnforcer->Advance();
 		}
 	}
 }

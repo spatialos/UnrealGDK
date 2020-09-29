@@ -24,9 +24,12 @@ struct NetOwningClientWorker : Component
 	{
 	}
 
-	NetOwningClientWorker(const Worker_ComponentData& Data)
+	NetOwningClientWorker(const Worker_ComponentData& Data) : NetOwningClientWorker(Data.schema_type)
+	{}
+
+	NetOwningClientWorker(Schema_ComponentData* Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID) == 1)
 		{
 			WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID);
@@ -73,12 +76,17 @@ struct NetOwningClientWorker : Component
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		ApplyComponentUpdate(Update.schema_type);
+	}
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID) == 1)
 		{
 			WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID);
 		}
-		else if (Schema_IsComponentUpdateFieldCleared(Update.schema_type, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID))
+		else if (Schema_IsComponentUpdateFieldCleared(Update, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID))
 		{
 			WorkerId = TSchemaOption<PhysicalWorkerName>();
 		}

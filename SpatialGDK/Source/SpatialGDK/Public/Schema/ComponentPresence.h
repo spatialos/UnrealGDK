@@ -27,9 +27,12 @@ struct ComponentPresence : Component
 	{
 	}
 
-	ComponentPresence(const Worker_ComponentData& Data)
+	ComponentPresence(const Worker_ComponentData& Data) : ComponentPresence(Data.schema_type)
+	{}
+
+	ComponentPresence(Schema_ComponentData* Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		CopyListFromComponentObject(ComponentObject);
 	}
 
@@ -71,7 +74,12 @@ struct ComponentPresence : Component
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		ApplyComponentUpdate(Update.schema_type);
+	}
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		CopyListFromComponentObject(ComponentObject);
 	}
 

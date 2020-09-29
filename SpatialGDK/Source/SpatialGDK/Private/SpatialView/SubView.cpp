@@ -27,31 +27,6 @@ FSubView::FSubView(const Worker_ComponentId InTagComponentId, FFilterPredicate I
 	RegisterRefreshCallbacks(DispatcherRefreshCallbacks);
 }
 
-void FSubView::TagQuery(Query& QueryToTag) const
-{
-	QueryToTag.ResultComponentIds.Add(TagComponentId);
-
-	QueryConstraint TagConstraint;
-	TagConstraint.ComponentConstraint = TagComponentId;
-
-	if (QueryToTag.Constraint.AndConstraint.Num() != 0)
-	{
-		QueryToTag.Constraint.AndConstraint.Add(TagConstraint);
-		return;
-	}
-
-	QueryConstraint NewConstraint;
-	NewConstraint.AndConstraint.Add(QueryToTag.Constraint);
-	NewConstraint.AndConstraint.Add(TagConstraint);
-
-	QueryToTag.Constraint = NewConstraint;
-}
-
-void FSubView::TagEntity(TArray<FWorkerComponentData>& Components) const
-{
-	Components.Add(ComponentFactory::CreateEmptyComponentData(TagComponentId));
-}
-
 void FSubView::Advance(const ViewDelta& Delta)
 {
 	// Note: Complete entities will be a longer list than the others for the majority of iterations under
@@ -85,8 +60,13 @@ void FSubView::RefreshEntity(const Worker_EntityId EntityId)
 	}
 }
 
+const EntityView& FSubView::GetView() const
+{
+	return *View;
+}
+
 FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
-																			 const FComponentChangeRefreshPredicate& RefreshPredicate)
+                                                                             const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
