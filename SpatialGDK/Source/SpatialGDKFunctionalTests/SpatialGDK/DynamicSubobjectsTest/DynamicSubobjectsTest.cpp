@@ -40,8 +40,10 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	Author = "Evi";
 	Description = TEXT("Test Dynamic Subobjects Duplication in Client");
 
-	CharacterSpawnLocation = FVector(0.0f, 120.0f, 50.0f);
-	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
+	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
+	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f);
+
+	StepTimer = 0.0f;
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
@@ -133,7 +135,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 					if (IsValid(PlayerCharacter))
 					{
-						if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
+						if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 1.0f))
 						{
 							FinishStep();
 						}
@@ -167,9 +169,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 					if (FoundActors.Num() == 1)
 					{
 						TestActor = Cast<AReplicatedGASTestActor>(FoundActors[0]);
-						if (TestActor->TestIntProperty < i + 1)
+
+						RequireNotEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Check TestIntProperty didn't get replicated"));
+						StepTimer += DeltaTime;
+						if (StepTimer >= 0.5f)
 						{
 							FinishStep();
+							StepTimer = 0.0f; // reset for the next time
 						}
 					}
 				},
@@ -180,7 +186,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 				if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation))
 				{
-					if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+					if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 1.0f))
 					{
 						FinishStep();
 					}
@@ -198,7 +204,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 					if (IsValid(PlayerCharacter))
 					{
-						if (PlayerCharacter->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+						if (PlayerCharacter->GetActorLocation().Equals(CharacterSpawnLocation, 1.0f))
 						{
 							FinishStep();
 						}

@@ -31,4 +31,6 @@ public:
 
 	// A remote location where Client 1's Pawn will be moved in order to not see the AReplicatedVisibilityTestActor.
 	FVector CharacterRemoteLocation;
+
+	float StepTimer;
 };
