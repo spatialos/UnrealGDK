@@ -35,6 +35,8 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
+	virtual void PostInitProperties() override;
+
 	uint32 GetMinimumRequiredWorkerCount() const;
 
 	static FLayerInfo GetDefaultLayerInfo()
@@ -48,6 +50,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	bool bEnableHandover{ true };
 private:
 #if WITH_EDITOR
 	void ValidateFirstLayerIsDefaultLayer();

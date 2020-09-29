@@ -85,7 +85,4 @@ private:
 
 	/** Gets MultiWorkerSettingsClass if set, otherwise returns a single worker behaviour. */
 	TSubclassOf<USpatialMultiWorkerSettings> GetValidWorkerSettings() const;
-
-	/** Disables handover if Offloading is in use. */
-	bool bDisableHandoverIfOffloading;
 };

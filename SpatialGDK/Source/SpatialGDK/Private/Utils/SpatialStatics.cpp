@@ -54,10 +54,9 @@ bool USpatialStatics::IsHandoverEnabled(const UWorld* World)
 {
 	if (World != nullptr)
 	{
-		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
-		{
-			return !(WorldSettings->bDisableHandoverIfOffloading && IsSpatialOffloadingEnabled(World));
-		}
+		const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+			USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+		return MultiWorkerSettings->HandoverEnabled;
 	}
 
 	return true;

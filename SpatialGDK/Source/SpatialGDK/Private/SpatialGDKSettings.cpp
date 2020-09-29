@@ -9,6 +9,7 @@
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/SpatialStatics.h"
+#include "Utils/CommandLineArgs.h"
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
@@ -23,61 +24,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
 #define LOCTEXT_NAMESPACE "SpatialGDKSettings"
 
-namespace
-{
-void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
-{
-#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
-	if (FParse::Param(CommandLine, Parameter))
-	{
-		bOutValue = true;
-	}
-	else
-	{
-		TCHAR TempStr[16];
-		if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
-		{
-			bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
-		}
-	}
-#endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
-}
-
-void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<bool>& bOutValue)
-{
-#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
-	if (FParse::Param(CommandLine, Parameter))
-	{
-		bOutValue = true;
-	}
-	else
-	{
-		TCHAR TempStr[16];
-		if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
-		{
-			bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
-		}
-	}
-#endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
-		   bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
-}
-
-void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
-										TOptional<FString>& StrOutValue)
-{
-#if ALLOW_SPATIAL_CMDLINE_PARSING
-	FString TempStr;
-	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
-	{
-		StrOutValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
-	}
-#endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
-}
-} // namespace
-
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -90,7 +36,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedIncomingRPCRetryTime(1.0f)
@@ -135,7 +80,6 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
 							 bEnableCrossLayerActorSpawning);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);

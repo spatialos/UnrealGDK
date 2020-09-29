@@ -9,6 +9,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialStatics.h"
+#include "Utils/CommandLineArgs.h"
 
 #include "Misc/MessageDialog.h"
 
@@ -37,6 +38,12 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 		ValidateLockingPolicyIsSet();
 	}
 }
+
+void UAbstractSpatialMultiWorkerSettings::PostInitProperties()
+{
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
+}
+
 void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 {
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
