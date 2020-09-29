@@ -47,9 +47,9 @@ bool ATestDebugInterface::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
 	return true;
 }
 
-void ATestDebugInterface::BeginPlay()
+void ATestDebugInterface::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	AddStep(TEXT("SetupStep"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 		UWorld* World = GetWorld();
@@ -152,7 +152,7 @@ void ATestDebugInterface::BeginPlay()
 			switch (WorkerSubStep)
 			{
 			case 0:
-				DelegateTagToWorker(GetTestTag(), Workers[CurAuthWorker]);
+				SetTagDelegation(GetTestTag(), Workers[CurAuthWorker]);
 				++DelegationStep;
 				break;
 			case 1:
@@ -325,7 +325,7 @@ void ATestDebugInterface::BeginPlay()
 				}
 			}
 
-			RemoveTagDelegation(GetTestTag());
+			ClearTagDelegation(GetTestTag());
 			FinishStep();
 		},
 		nullptr, 5.0f);

@@ -22,6 +22,7 @@ public:
 
 	const ViewDelta& GetViewDelta() const;
 	const EntityView& GetView() const;
+	const EntityView* GetViewPtr() const;
 
 	// Add an OpList to generate the next ViewDelta.
 	void EnqueueOpList(OpList Ops);

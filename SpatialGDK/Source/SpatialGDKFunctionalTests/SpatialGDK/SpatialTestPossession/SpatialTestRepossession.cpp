@@ -23,9 +23,9 @@ ASpatialTestRepossession::ASpatialTestRepossession()
 	Description = TEXT("Test Actor Repossession");
 }
 
-void ASpatialTestRepossession::BeginPlay()
+void ASpatialTestRepossession::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	AddStep(TEXT("SpatialTestRepossessionServerSetupStep"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
 		ASpatialFunctionalTestFlowController* LocalFlowController = GetLocalFlowController();

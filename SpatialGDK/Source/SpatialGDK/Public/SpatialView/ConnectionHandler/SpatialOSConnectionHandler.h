@@ -12,7 +12,7 @@ class SpatialEventTracer;
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
 {
 public:
-	explicit SpatialOSConnectionHandler(Worker_Connection* Connection, TUniquePtr<SpatialEventTracer> EventTracer);
+	explicit SpatialOSConnectionHandler(Worker_Connection* Connection, TSharedPtr<SpatialEventTracer> EventTracer);
 	~SpatialOSConnectionHandler();
 
 	virtual void Advance() override;
@@ -25,10 +25,10 @@ public:
 private:
 	struct WorkerConnectionDeleter
 	{
-		void operator()(Worker_Connection* Connection) const noexcept;
+		void operator()(Worker_Connection* ConnectionToDestroy) const noexcept;
 	};
 #
-	TUniquePtr<SpatialEventTracer> EventTracer;
+	TSharedPtr<SpatialEventTracer> EventTracer;
 	TUniquePtr<Worker_Connection, WorkerConnectionDeleter> Connection;
 
 	TMap<int64, int64> InternalToUserRequestId;

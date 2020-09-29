@@ -404,12 +404,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	{
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 			ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView,
-			USpatialLatencyTracer::GetTracer(GetWorld()), ConnectionManager->GetEventTracer());
+			USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get(), ConnectionManager->GetEventTracer());
-	Receiver->Init(this, &TimerManager, RPCService.Get(), ConnectionManager->GetEventTracer());
+	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);

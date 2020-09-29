@@ -44,6 +44,94 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 	PopulateEntityDeltas(View);
 }
 
+void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
+						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
+{
+	SubDelta.EntityDeltas.Empty();
+
+	// No projection is applied to worker messages, as they are not entity specific.
+	SubDelta.WorkerMessages = &WorkerMessages;
+
+	// All arrays here are sorted by entity ID.
+	auto DeltaIt = EntityDeltas.CreateConstIterator();
+	auto CompleteIt = CompleteEntities.CreateConstIterator();
+	auto NewlyCompleteIt = NewlyCompleteEntities.CreateConstIterator();
+	auto NewlyIncompleteIt = NewlyIncompleteEntities.CreateConstIterator();
+	auto TemporarilyIncompleteIt = TemporarilyIncompleteEntities.CreateConstIterator();
+
+	for (;;)
+	{
+		const Worker_EntityId DeltaId = DeltaIt ? DeltaIt->EntityId : SENTINEL_ENTITY_ID;
+		const Worker_EntityId CompleteId = CompleteIt ? *CompleteIt : SENTINEL_ENTITY_ID;
+		const Worker_EntityId NewlyCompleteId = NewlyCompleteIt ? *NewlyCompleteIt : SENTINEL_ENTITY_ID;
+		const Worker_EntityId NewlyIncompleteId = NewlyIncompleteIt ? *NewlyIncompleteIt : SENTINEL_ENTITY_ID;
+		const Worker_EntityId TemporarilyIncompleteId = TemporarilyIncompleteIt ? *TemporarilyIncompleteIt : SENTINEL_ENTITY_ID;
+		const uint64 MinEntityId = FMath::Min3(FMath::Min(static_cast<uint64>(DeltaId), static_cast<uint64>(CompleteId)),
+											   FMath::Min(static_cast<uint64>(NewlyCompleteId), static_cast<uint64>(NewlyIncompleteId)),
+											   static_cast<uint64>(TemporarilyIncompleteId));
+		const Worker_EntityId CurrentEntityId = static_cast<Worker_EntityId>(MinEntityId);
+		// If no list has elements left to read then stop.
+		if (CurrentEntityId == SENTINEL_ENTITY_ID)
+		{
+			break;
+		}
+
+		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
+		// delta.
+		if (CompleteIt && DeltaIt && CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
+		{
+			EntityDelta CompleteDelta = *DeltaIt;
+			if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == CurrentEntityId)
+			{
+				// This is a delta for a complete entity which was also temporarily removed. Change its type to
+				// reflect that.
+				CompleteDelta.Type = EntityDelta::TEMPORARILY_REMOVED;
+				++TemporarilyIncompleteIt;
+			}
+			SubDelta.EntityDeltas.Emplace(CompleteDelta);
+		}
+		// Newly complete entities are represented as marker add entities with no state.
+		if (NewlyCompleteIt && NewlyCompleteId == CurrentEntityId)
+		{
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::ADD });
+			++NewlyCompleteIt;
+		}
+		// Newly incomplete entities are represented as marker remove entities with no state.
+		if (NewlyIncompleteIt && NewlyIncompleteId == CurrentEntityId)
+		{
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
+			++NewlyIncompleteIt;
+		}
+		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
+		// temporarily removed entities with no state.
+		if (TemporarilyIncompleteIt && TemporarilyIncompleteId == CurrentEntityId)
+		{
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
+			++TemporarilyIncompleteIt;
+		}
+
+		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
+		// as there can no longer be any intersection.
+		if (CompleteIt && CompleteId == CurrentEntityId)
+		{
+			++CompleteIt;
+			if (!CompleteIt)
+			{
+				DeltaIt.SetToEnd();
+			}
+		}
+		if (DeltaIt && DeltaId == CurrentEntityId)
+		{
+			++DeltaIt;
+			if (!DeltaIt)
+			{
+				CompleteIt.SetToEnd();
+			}
+		}
+	}
+}
+
 void ViewDelta::Clear()
 {
 	EntityChanges.Empty();
@@ -74,20 +162,20 @@ const TArray<Worker_Op>& ViewDelta::GetWorkerMessages() const
 	return WorkerMessages;
 }
 
-bool ViewDelta::HasDisconnected() const
+bool ViewDelta::HasConnectionStatusChanged() const
 {
 	return ConnectionStatusCode != 0;
 }
 
-Worker_ConnectionStatusCode ViewDelta::GetConnectionStatus() const
+Worker_ConnectionStatusCode ViewDelta::GetConnectionStatusChange() const
 {
-	check(HasDisconnected());
+	check(HasConnectionStatusChanged());
 	return static_cast<Worker_ConnectionStatusCode>(ConnectionStatusCode);
 }
 
-FString ViewDelta::GetDisconnectReason() const
+FString ViewDelta::GetConnectionStatusChangeMessage() const
 {
-	check(HasDisconnected());
+	check(HasConnectionStatusChanged());
 	return ConnectionStatusMessage;
 }
 
@@ -342,11 +430,6 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	Algo::StableSort(ComponentChanges, EntityComponentComparison{});
 	Algo::StableSort(AuthorityChanges, EntityComponentComparison{});
 	Algo::StableSort(EntityChanges, EntityComparison{});
-
-	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
-	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
-	// will be greater than all valid IDs.
-	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
 
 	// Add sentinel elements to the ends of the arrays.
 	// Prevents the need for bounds checks on the iterators.
