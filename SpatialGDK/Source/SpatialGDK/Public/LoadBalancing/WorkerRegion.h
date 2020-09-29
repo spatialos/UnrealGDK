@@ -28,7 +28,7 @@ public:
 	UMaterialInstanceDynamic* MaterialBoundaryInstance;
 
 	UPROPERTY()
-	//UMaterialInstanceDynamic* MaterialTextInstance;
+	// UMaterialInstanceDynamic* MaterialTextInstance;
 	UMaterial* MaterialTextInstance;
 
 private:
