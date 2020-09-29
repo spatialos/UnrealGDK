@@ -47,8 +47,7 @@ void ASpatialTestNetOwnership::PrepareTest()
 
 	if (HasAuthority())
 	{
-		AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube"),
-							1, false);
+		AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube"), 1, false);
 	}
 
 	// Step definition for Client 1 to send a Server RPC
