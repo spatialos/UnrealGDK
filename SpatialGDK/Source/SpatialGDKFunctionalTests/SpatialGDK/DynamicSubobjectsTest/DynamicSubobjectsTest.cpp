@@ -160,7 +160,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			});
 		}
 
-		{ // Step 6 - Client 1 checks it can no longer see the AReplicatedDynamicSubobjectsTestActor
+		{ // Step 6 - Client 1 checks it can no longer see the AReplicatedGASTestActor
 			AddStep(
 				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this, i](float DeltaTime) {
@@ -213,7 +213,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 				StepTimeLimit);
 		}
 
-		{ // Step 9 - Client 1 checks it can see the AReplicatedDynamicSubobjectsTestActor
+		{ // Step 9 - Client 1 checks it can see the AReplicatedGASTestActor
 			AddStep(
 				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this, i](float DeltaTime) {
