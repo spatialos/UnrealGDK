@@ -285,7 +285,7 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 
 	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
 	check(Strategy != nullptr);
-	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+	return Strategy->RequiresHandoverData();
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
