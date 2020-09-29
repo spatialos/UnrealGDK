@@ -190,28 +190,16 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		}
 	});
 
-	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
-	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
-
-		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
-		for (auto& ComponentId : NewComponentIds)
-		{
-			EntityACL->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
-		}
-
-		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
-	}
-
-	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
-	// authority, this component is used to inform the enforcer of the component IDs to add to the EntityACL.
+	// Update the ComponentPresence component with the new component IDs. This component is used to inform the enforcer
+	// of the component IDs to add to the EntityACL.
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+
+	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(Channel->GetEntityId());
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -615,7 +603,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
+	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
 	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
@@ -1037,24 +1025,6 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-}
-
-// Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
-// This function updates the authority of that component as the owning connection can change.
-void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
-{
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
-
-	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
-	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
-
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()),
-									 OwningClientOnly);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
-	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-
-	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
