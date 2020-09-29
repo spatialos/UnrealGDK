@@ -21,12 +21,15 @@ class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UAbstractSpatialMultiWorkerSettings() {}
+	UAbstractSpatialMultiWorkerSettings()
+		: bEnableHandover(true)
+	{}
 
 protected:
-	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy)
+	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy, bool bEnableHandover = true)
 		: WorkerLayers(InWorkerLayers)
 		, LockingPolicy(InLockingPolicy)
+		, bEnableHandover(bEnableHandover)
 	{
 	}
 
@@ -51,7 +54,7 @@ public:
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
-	bool bEnableHandover{ true };
+	bool bEnableHandover;
 private:
 #if WITH_EDITOR
 	void ValidateFirstLayerIsDefaultLayer();
