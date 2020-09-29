@@ -1644,7 +1644,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
 
-	bool bHandoverEnabled = bIsMultiWorkerEnabled && !USpatialStatics::IsSpatialOffloadingEnabled(GetWorld());
+	bool bHandoverEnabled = USpatialStatics::IsHandoverEnabled(GetWorld());
 	if (bHandoverEnabled)
 	{
 		MigrationHandler.EvaluateActorsToMigrate(LoadBalancingContext);

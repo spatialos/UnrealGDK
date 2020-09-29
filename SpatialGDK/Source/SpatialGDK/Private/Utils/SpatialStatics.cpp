@@ -50,6 +50,19 @@ bool USpatialStatics::IsSpatialNetworkingEnabled()
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
+bool USpatialStatics::IsHandoverEnabled(const UWorld* World)
+{
+	if (World != nullptr)
+	{
+		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+		{
+			return !(WorldSettings->bDisableHandoverIfOffloading && IsSpatialOffloadingEnabled(World));
+		}
+	}
+
+	return true;
+}
+
 FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())

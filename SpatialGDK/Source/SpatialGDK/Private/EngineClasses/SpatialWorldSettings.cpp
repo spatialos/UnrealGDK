@@ -9,6 +9,7 @@ ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectIni
 	: Super(ObjectInitializer)
 	, MultiWorkerSettingsClass(nullptr)
 	, EditorMultiWorkerSettingsOverride(nullptr)
+	, bDisableHandoverIfOffloading(false)
 {
 }
 
