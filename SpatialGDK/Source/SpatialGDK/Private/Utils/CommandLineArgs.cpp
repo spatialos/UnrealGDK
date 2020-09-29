@@ -54,5 +54,6 @@ void SpatialGDK::CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, co
 		StrOutValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialCommandLineArgs, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
+	UE_LOG(LogSpatialCommandLineArgs, Log, TEXT("%s is %s."), PrettyName,
+		   StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
 }

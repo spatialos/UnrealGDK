@@ -18,9 +18,11 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
@@ -285,7 +287,7 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 
 	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
 	check(Strategy != nullptr);
-	return Strategy->RequiresHandoverData();
+	return Strategy->RequiresHandoverData() && USpatialStatics::IsHandoverEnabled(NetDriver);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)

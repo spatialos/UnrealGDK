@@ -50,15 +50,26 @@ bool USpatialStatics::IsSpatialNetworkingEnabled()
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
-bool USpatialStatics::IsHandoverEnabled(const UWorld* World)
+bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 {
-	if (World != nullptr)
+	checkf(WorldContextObject != nullptr, TEXT("Called IsHandoverEnabled with a nullptr WorldContextObject*"));
+
+	const UWorld* World = WorldContextObject->GetWorld();
+	checkf(World != nullptr, TEXT("Called IsHandoverEnabled with a nullptr World*"));
+
+	if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
+		if (!IsMultiWorkerEnabled())
+		{
+			return false;
+		}
+
 		const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 			USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 		return MultiWorkerSettings->bEnableHandover;
 	}
 
+	UE_LOG(LogSpatial, Warning, TEXT("Calling IsHandoverEnabled without a valid World, returning true."));
 	return true;
 }
 
