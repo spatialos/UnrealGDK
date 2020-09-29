@@ -91,6 +91,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				}
 				else
 				{
+					UE_LOG(LogSpatialLoadBalancingHandler, Log, TEXT("Migrating actor %s (replicates %d) with NetOwner %s (replicates %d)"), *Actor->GetName(), Actor->GetIsReplicated() ? 1 : 0, *NetOwner->GetName(), NetOwner->GetIsReplicated() ? 1 : 0);
+
 					OutNetOwner = NetOwner;
 					OutWorkerId = NewAuthVirtualWorkerId;
 					return EvaluateActorResult::Migrate;
