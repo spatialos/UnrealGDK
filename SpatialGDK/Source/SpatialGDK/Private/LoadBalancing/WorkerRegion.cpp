@@ -119,7 +119,7 @@ void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* T
 {
 	// Create dynamic worker name text on boundary wall
 	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
-	//WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
+	WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
 	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, Yaw, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
@@ -147,7 +147,6 @@ void AWorkerRegion::SetOpacityAndEmissive(const float Opacity, const float Emiss
 	MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 	MaterialTextInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 	MaterialTextInstance->SetScalarParameterValue(WORKER_TEXT_MATERIAL_EMMISIVE_PARAM, Emissive);
-	
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)

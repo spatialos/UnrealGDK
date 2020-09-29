@@ -36,16 +36,20 @@ namespace
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
 // TODO: make these parameter of the spatial debugger
-const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/ImprobableFont.ImprobableFont"); // Improbable font
+//const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/ImprobableFont.ImprobableFont"); // Improbable font - Cabin 2016
+//const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/Muli-Regular_Font.Muli-Regular_Font"); // Improbable primary font - Muli regular 3019 - drag n drop install
+const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular 3019 - custom install
 // const FString DEFAULT_WORKER_TEXT_MATERIAL =
 //	TEXT("/Engine/EngineMaterials/DefaultTextMaterialOpaque.DefaultTextMaterialOpaque"); // Default opaque text material
-//const FString DEFAULT_WORKER_TEXT_MATERIAL =
-//	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive");		  // Working material - single sided - no shadows
 const FString DEFAULT_WORKER_TEXT_MATERIAL =
-	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent");		  // Test material - single sided
-//const FString DEFAULT_WORKER_TEXT_MATERIAL =
-//	TEXT("/Engine/EngineMaterials/DefaultTextMaterialTranslucent.DefaultTextMaterialTranslucent");			  // Default transparent text material - double sided - no visual difference with opaque
-//const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/Engine/EngineFonts/RobotoDistanceField.RobotoDistanceField"); // Default font
+	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive");		  // Working material - single sided
+//- no shadows
+//const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
+//	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Test material - single sided
+// const FString DEFAULT_WORKER_TEXT_MATERIAL =
+//	TEXT("/Engine/EngineMaterials/DefaultTextMaterialTranslucent.DefaultTextMaterialTranslucent");			  // Default transparent text
+//material - double sided - no visual difference with opaque const FString DEFAULT_WORKER_TEXT_FONT =
+// TEXT("/Engine/EngineFonts/RobotoDistanceField.RobotoDistanceField"); // Default font
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
