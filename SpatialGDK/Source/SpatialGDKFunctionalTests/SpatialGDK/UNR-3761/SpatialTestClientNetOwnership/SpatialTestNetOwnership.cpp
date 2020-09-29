@@ -45,12 +45,15 @@ void ASpatialTestNetOwnership::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube_0. Function ServerIncreaseRPCCount will not be processed."),
-						1, true);
+	if (HasAuthority())
+	{
+		AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube"),
+							1, false);
+	}
 
 	// Step definition for Client 1 to send a Server RPC
-	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;
-	ClientSendRPCStepDefinition.bIsNativeDefinition = true;
+	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition = FSpatialFunctionalTestStepDefinition(true);
+	ClientSendRPCStepDefinition.StepName = TEXT("SpatialTestNetOwnershipClientSendRPC");
 	ClientSendRPCStepDefinition.TimeLimit = 5.0f;
 	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this]() {
 		NetOwnershipCube->ServerIncreaseRPCCount();
