@@ -3,8 +3,8 @@
 #include "Tests/SpatialView/ExpectedViewDelta.h"
 
 #include "Algo/Compare.h"
-#include "ComponentTestUtils.h"
 #include "SpatialView/ViewDelta.h"
+#include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
 
 using namespace SpatialGDK;

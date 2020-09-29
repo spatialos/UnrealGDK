@@ -72,7 +72,7 @@ void SpatialLoadBalanceEnforcer::Advance()
 void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
-	if (Element.Authority.Contains(SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	if (Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::LB_TAG_COMPONENT_ID }))
 	{
 		// Our entity will be out of date during a short circuit. Refresh the state here before refreshing the ACL.
 		DataStore.Remove(EntityId);

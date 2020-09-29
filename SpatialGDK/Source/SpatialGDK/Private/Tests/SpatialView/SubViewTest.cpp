@@ -2,7 +2,7 @@
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/ViewCoordinator.h"
-#include "SpatialViewUtils.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/ComponentFactory.h"
 

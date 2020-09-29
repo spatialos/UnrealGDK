@@ -1,183 +1,237 @@
-// // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-//
-// #include "Tests/TestDefinitions.h"
-//
-// #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
-// #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-// #include "Interop/SpatialStaticComponentView.h"
-// #include "Schema/AuthorityIntent.h"
-// #include "SpatialGDKTests/SpatialGDK/LoadBalancing/AbstractLBStrategy/LBStrategyStub.h"
-// #include "Tests/TestingComponentViewHelpers.h"
-// #include "Tests/TestingSchemaHelpers.h"
-//
-// #include "CoreMinimal.h"
-//
-// #define LOADBALANCEENFORCER_TEST(TestName) GDK_TEST(Core, SpatialLoadBalanceEnforcer, TestName)
-//
-// // Test Globals
-// namespace
-// {
-// const PhysicalWorkerName ValidWorkerOne = TEXT("ValidWorkerOne");
-// const PhysicalWorkerName ValidWorkerTwo = TEXT("ValidWorkerTwo");
-//
-// constexpr VirtualWorkerId VirtualWorkerOne = 1;
-// constexpr VirtualWorkerId VirtualWorkerTwo = 2;
-//
-// constexpr Worker_EntityId EntityIdOne = 1;
-// constexpr Worker_EntityId EntityIdTwo = 2;
-//
-// constexpr Worker_ComponentId TestComponentIdOne = 123;
-// constexpr Worker_ComponentId TestComponentIdTwo = 456;
-//
-// void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const Worker_EntityId EntityId, VirtualWorkerId Id,
-// 									Worker_Authority AuthorityIntentAuthority)
-// {
-// 	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(
-// 		StaticComponentView, EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthorityIntentAuthority);
-//
-// 	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(
-// 		StaticComponentView, EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID, WORKER_AUTHORITY_AUTHORITATIVE);
-//
-// 	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(
-// 		StaticComponentView, EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthorityIntentAuthority);
-//
-// 	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(
-// 		StaticComponentView, EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthorityIntentAuthority);
-//
-// 	if (Id != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-// 	{
-// 		StaticComponentView.GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId = Id;
-// 	}
-// }
-//
-// TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
-// {
-// 	ULBStrategyStub* LoadBalanceStrategy = NewObject<ULBStrategyStub>();
-// 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator =
-// 		MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, ValidWorkerOne);
-//
-// 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
-//
-// 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, VirtualWorkerOne, ValidWorkerOne);
-// 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, VirtualWorkerTwo, ValidWorkerTwo);
-//
-// 	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(DataObject);
-//
-// 	return VirtualWorkerTranslator;
-// }
-//
-// } // anonymous namespace
-//
-// LOADBALANCEENFORCER_TEST(
-// 	GIVEN_a_static_component_view_with_no_data_WHEN_asking_load_balance_enforcer_for_acl_assignments_THEN_return_no_acl_assignment_requests)
-// {
-// 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
-//
-// 	// Here we simply create a static component view but do not add any data to it.
-// 	// This means that the load balance enforcer will not be able to find the virtual worker id associated with an entity and therefore fail
-// 	// to produce ACL requests.
-// 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-//
-// 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
-//
-// 	LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityIdOne);
-// 	LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityIdTwo);
-//
-// 	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
-//
-// 	bool bSuccess = ACLRequests.Num() == 0;
-//
-// 	// Now add components to the StaticComponentView and retry getting the ACL requests.
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdTwo, VirtualWorkerTwo, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-//
-// 	ACLRequests.Empty();
-// 	ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
-//
-// 	bSuccess &= ACLRequests.Num() == 0;
-//
-// 	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
-//
-// 	return true;
-// }
-//
-// LOADBALANCEENFORCER_TEST(
-// 	GIVEN_load_balance_enforcer_with_valid_mapping_WHEN_asked_for_acl_assignments_THEN_return_correct_acl_assignment_requests)
-// {
-// 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
-//
-// 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdTwo, VirtualWorkerTwo, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-//
-// 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
-//
-// 	LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityIdOne);
-// 	LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityIdTwo);
-//
-// 	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
-//
-// 	bool bSuccess = true;
-// 	if (ACLRequests.Num() == 2)
-// 	{
-// 		bSuccess &= ACLRequests[0].EntityId == EntityIdOne;
-// 		bSuccess &= ACLRequests[0].OwningWorkerId == ValidWorkerOne;
-// 		bSuccess &= ACLRequests[1].EntityId == EntityIdTwo;
-// 		bSuccess &= ACLRequests[1].OwningWorkerId == ValidWorkerTwo;
-// 	}
-// 	else
-// 	{
-// 		bSuccess = false;
-// 	}
-//
-// 	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
-//
-// 	return true;
-// }
-//
-// LOADBALANCEENFORCER_TEST(
-// 	GIVEN_load_balance_enforcer_with_valid_mapping_WHEN_queueing_two_acl_requests_for_the_same_entity_THEN_return_one_acl_assignment_request_for_that_entity)
-// {
-// 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
-//
-// 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-//
-// 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
-//
-// 	LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityIdOne);
-// 	LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityIdOne);
-//
-// 	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
-//
-// 	bool bSuccess = true;
-// 	if (ACLRequests.Num() == 1)
-// 	{
-// 		bSuccess &= ACLRequests[0].EntityId == EntityIdOne;
-// 		bSuccess &= ACLRequests[0].OwningWorkerId == ValidWorkerOne;
-// 	}
-// 	else
-// 	{
-// 		bSuccess = false;
-// 	}
-//
-// 	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
-//
-// 	return true;
-// }
-//
+﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "Tests/TestDefinitions.h"
+
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/SpatialStaticComponentView.h"
+#include "Schema/AuthorityIntent.h"
+#include "Tests/TestingSchemaHelpers.h"
+
+#include "CoreMinimal.h"
+
+#include "Schema/ClientEndpoint.h"
+#include "SpatialConstants.h"
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/EntityView.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
+#include "Utils/SchemaOption.h"
+
+#define LOADBALANCEENFORCER_TEST(TestName) GDK_TEST(Core, SpatialLoadBalanceEnforcer, TestName)
+
+// Test Globals
+namespace
+{
+const PhysicalWorkerName UnrealWorker = TEXT("UnrealWorker");
+const WorkerRequirementSet UnrealRequirementSet = WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ UnrealWorker } } };
+
+const PhysicalWorkerName ThisWorker = TEXT("ThisWorker");
+const PhysicalWorkerName OtherWorker = TEXT("OtherWorker");
+const PhysicalWorkerName ClientWorker = TEXT("ClientWorker");
+const PhysicalWorkerName OtherClientWorker = TEXT("OtherClientWorker");
+
+const WorkerRequirementSet ThisRequirementSet =
+	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *ThisWorker) } } };
+const WorkerRequirementSet OtherRequirementSet =
+	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *OtherWorker) } } };
+const WorkerRequirementSet ClientRequirementSet =
+	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *ClientWorker) } } };
+const WorkerRequirementSet OtherClientRequirementSet =
+	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *OtherClientWorker) } } };
+
+constexpr VirtualWorkerId ThisVirtualWorker = 1;
+constexpr VirtualWorkerId OtherVirtualWorker = 2;
+
+constexpr Worker_EntityId EntityIdOne = 1;
+constexpr Worker_EntityId EntityIdTwo = 2;
+
+constexpr Worker_ComponentId TestComponentIdOne = 123;
+constexpr Worker_ComponentId TestComponentIdTwo = 456;
+
+const TArray<Worker_ComponentId> NonAclLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+														SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+														SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+
+TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, ThisWorker);
+
+	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
+
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, ThisVirtualWorker, ThisWorker);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, OtherVirtualWorker, OtherWorker);
+
+	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(DataObject);
+
+	return VirtualWorkerTranslator;
+}
+
+SpatialGDK::ComponentData MakeComponentDataFromData(Worker_ComponentData Data)
+{
+	return SpatialGDK::ComponentData(SpatialGDK::OwningComponentDataPtr(Data.schema_type), Data.component_id);
+}
+
+// Adds an entity to the view with correct LB components. Also assigns the current authority to the passed worker,
+// and the auth intent to the passed virtual worker. The ACL is always assigned to "UnrealWorker".
+// Optionally pass a client name to designate the entity as net owned by that client.
+void AddLBEntityToView(
+	SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const WorkerRequirementSet AuthRequirementSet,
+	const VirtualWorkerId IntentWorkerId,
+	const SpatialGDK::TSchemaOption<PhysicalWorkerName> ClientWorkerName = SpatialGDK::TSchemaOption<PhysicalWorkerName>())
+{
+	AddEntityToView(View, EntityId);
+
+	const WorkerRequirementSet ReadAcl;
+	WriteAclMap WriteAcl;
+	WriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealRequirementSet);
+	WriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthRequirementSet);
+	WriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthRequirementSet);
+	WriteAcl.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthRequirementSet);
+
+	if (ClientWorkerName.IsSet())
+	{
+		const WorkerRequirementSet AuthClientRequirementSet =
+			WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ ClientWorkerName.GetValue() } } };
+		WriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, AuthClientRequirementSet);
+		WriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, AuthClientRequirementSet);
+	}
+
+	const TArray<Worker_ComponentId> PresentComponents = {
+		SpatialConstants::ENTITY_ACL_COMPONENT_ID,		   SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+		SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+		SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,	   SpatialConstants::HEARTBEAT_COMPONENT_ID
+	};
+
+	Worker_ComponentData ClientEndpoint = FWorkerComponentData();
+	ClientEndpoint.component_id = SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+	Worker_ComponentData HeartBeat = FWorkerComponentData();
+	HeartBeat.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+
+	Worker_ComponentData Tag = FWorkerComponentData();
+	Tag.component_id = SpatialConstants::LB_TAG_COMPONENT_ID;
+
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::EntityAcl(ReadAcl, WriteAcl).CreateEntityAclData()));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityIntent::CreateAuthorityIntentData(IntentWorkerId)));
+	AddComponentToView(View, EntityId,
+					   MakeComponentDataFromData(SpatialGDK::ComponentPresence::CreateComponentPresenceData(PresentComponents)));
+	AddComponentToView(View, EntityId,
+					   MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientWorkerName)));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(ClientEndpoint));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(HeartBeat));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(Tag));
+
+	AddAuthorityToView(View, EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+}
+
+WriteAclMap GetWriteAclMapFromUpdate(const SpatialGDK::EntityComponentUpdate& Update)
+{
+	WriteAclMap AclMap;
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.Update.GetUnderlying());
+	// This is never emptied, so does not need an additional check for cleared fields
+	uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
+	for (uint32 i = 0; i < KVPairCount; i++)
+	{
+		Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
+		uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
+		WorkerRequirementSet Value = SpatialGDK::GetWorkerRequirementSetFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+
+		AclMap.Add(Key, Value);
+	}
+
+	return AclMap;
+}
+
+bool AclMapDelegatesLBComponents(const WriteAclMap& AclMap, const WorkerRequirementSet DelegatedRequirementSet)
+{
+	for (Worker_ComponentId ComponentId : NonAclLBComponents)
+	{
+		const auto Entry = AclMap.Find(ComponentId);
+		if (Entry == nullptr)
+		{
+			return false;
+		}
+		if (*Entry != DelegatedRequirementSet)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+} // anonymous namespace
+
+LOADBALANCEENFORCER_TEST(GIVEN_a_view_with_no_data_WHEN_advance_load_balance_enforcer_THEN_return_no_acl_assignment_requests)
+{
+	SpatialGDK::FDispatcher Dispatcher;
+	SpatialGDK::EntityView View;
+	const TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+	SpatialGDK::FSubView SubView(SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, &View, Dispatcher,
+								 SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	bool bInvoked = false;
+
+	SpatialGDK::SpatialLoadBalanceEnforcer LoadBalanceEnforcer = SpatialGDK::SpatialLoadBalanceEnforcer(
+		ThisWorker, SubView, VirtualWorkerTranslator.Get(), [&bInvoked](SpatialGDK::EntityComponentUpdate) {
+			bInvoked = true;
+		});
+
+	// The view has no entities in it. We expect the enforcer not to produce any ACL requests.
+	LoadBalanceEnforcer.Advance();
+	TestTrue("LoadBalanceEnforcer did not try to send an ACL update", !bInvoked);
+
+	return true;
+}
+
+LOADBALANCEENFORCER_TEST(
+	GIVEN_load_balance_enforcer_with_valid_mapping_WHEN_asked_for_acl_assignments_THEN_return_correct_acl_assignment_requests)
+{
+	SpatialGDK::FDispatcher Dispatcher;
+	SpatialGDK::EntityView View;
+	const TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+	SpatialGDK::FSubView SubView(SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, &View, Dispatcher,
+								 SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	TArray<SpatialGDK::EntityComponentUpdate> Updates;
+
+	SpatialGDK::SpatialLoadBalanceEnforcer LoadBalanceEnforcer = SpatialGDK::SpatialLoadBalanceEnforcer(
+		ThisWorker, SubView, VirtualWorkerTranslator.Get(), [&Updates](SpatialGDK::EntityComponentUpdate Update) {
+			Updates.Add(MoveTemp(Update));
+		});
+
+	LoadBalanceEnforcer.Advance();
+
+	AddLBEntityToView(View, EntityIdOne, ThisRequirementSet, OtherVirtualWorker);
+
+	LoadBalanceEnforcer.ShortCircuitMaybeRefreshAcl(EntityIdOne);
+
+	bool bSuccess = true;
+	if (Updates.Num() == 1)
+	{
+		bSuccess &= Updates[0].EntityId == EntityIdOne;
+		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+		WriteAclMap AclMap = GetWriteAclMapFromUpdate(Updates[0]);
+		bSuccess &= AclMapDelegatesLBComponents(AclMap, OtherRequirementSet);
+	}
+	else
+	{
+		bSuccess = false;
+	}
+
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}
+
 // LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_balance_enforcer_THEN_queue_authority_request)
 // {
 // 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
 //
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_ComponentUpdateOp UpdateOp;
 // 	UpdateOp.entity_id = EntityIdOne;
@@ -191,7 +245,7 @@
 // 	if (ACLRequests.Num() == 1)
 // 	{
 // 		bSuccess &= ACLRequests[0].EntityId == EntityIdOne;
-// 		bSuccess &= ACLRequests[0].OwningWorkerId == ValidWorkerOne;
+// 		bSuccess &= ACLRequests[0].OwningWorkerId == ThisWorker;
 // 	}
 // 	else
 // 	{
@@ -211,10 +265,10 @@
 // 	// The important part of this test is that the worker does not already have authority over the AuthorityIntent component.
 // 	// In this case, we expect the load balance enforcer to create an ACL request.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp UpdateOp;
 // 	UpdateOp.entity_id = EntityIdOne;
@@ -229,7 +283,7 @@
 // 	if (ACLRequests.Num() == 1)
 // 	{
 // 		bSuccess &= ACLRequests[0].EntityId == EntityIdOne;
-// 		bSuccess &= ACLRequests[0].OwningWorkerId == ValidWorkerOne;
+// 		bSuccess &= ACLRequests[0].OwningWorkerId == ThisWorker;
 // 	}
 // 	else
 // 	{
@@ -249,10 +303,10 @@
 // 	// The important part of this test is that the worker does already have authority over the AuthorityIntent component.
 // 	// In this case, we expect the load balance enforcer not to create an ACL request.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp UpdateOp;
 // 	UpdateOp.entity_id = EntityIdOne;
@@ -276,10 +330,10 @@
 // 	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and
 // 	// assign authority.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp AuthOp;
 // 	AuthOp.entity_id = EntityIdOne;
@@ -312,10 +366,10 @@
 // 	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and
 // 	// assign authority.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp AuthOp;
 // 	AuthOp.entity_id = EntityIdOne;
@@ -349,10 +403,10 @@
 // 	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and
 // 	// assign authority.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp AuthOp;
 // 	AuthOp.entity_id = EntityIdOne;
@@ -387,10 +441,10 @@
 // 	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and
 // 	// assign authority.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp AuthOp;
 // 	AuthOp.entity_id = EntityIdOne;
@@ -423,10 +477,10 @@
 // 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
 //
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	TArray<Worker_ComponentId> PresentComponentIds{ TestComponentIdOne, TestComponentIdTwo };
 //
@@ -451,7 +505,7 @@
 // 	if (ACLRequests.Num() == 1)
 // 	{
 // 		bSuccess &= ACLRequests[0].EntityId == EntityIdOne;
-// 		bSuccess &= ACLRequests[0].OwningWorkerId == ValidWorkerOne;
+// 		bSuccess &= ACLRequests[0].OwningWorkerId == ThisWorker;
 // 		bSuccess &= ACLRequests[0].ComponentIds.Contains(TestComponentIdOne);
 // 		bSuccess &= ACLRequests[0].ComponentIds.Contains(TestComponentIdTwo);
 // 	}
@@ -472,10 +526,10 @@
 // 	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and
 // 	// assign authority.
 // 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+// 	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, ThisVirtualWorker, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 //
 // 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer =
-// 		MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+// 		MakeUnique<SpatialLoadBalanceEnforcer>(ThisWorker, StaticComponentView, VirtualWorkerTranslator.Get());
 //
 // 	Worker_AuthorityChangeOp AuthOp;
 // 	AuthOp.entity_id = EntityIdOne;

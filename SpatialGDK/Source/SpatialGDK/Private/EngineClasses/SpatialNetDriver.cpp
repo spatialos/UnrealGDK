@@ -1759,10 +1759,17 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 		Connection->Advance();
+
 		if (Connection->HasDisconnected())
 		{
 			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
 			return;
+		}
+
+		if (LoadBalanceEnforcer.IsValid())
+		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
+			LoadBalanceEnforcer->Advance();
 		}
 
 		{
@@ -1779,12 +1786,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
-		}
-
-		if (LoadBalanceEnforcer.IsValid())
-		{
-			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			LoadBalanceEnforcer->Advance();
 		}
 	}
 }
