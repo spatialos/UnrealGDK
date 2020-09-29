@@ -1178,9 +1178,8 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 				if (SubobjectNetGUID.IsValid())
 				{
 					FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
-					const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-					bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(SubobjectRef.Offset);
-					if (SubobjectRef.IsValid() && bIsDynamicSubobject)
+
+					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
 					{
 						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
 					}
@@ -1377,8 +1376,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
-		bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
-		if (!bIsDynamicSubobject)
+		if (!IsDynamicSubObject(Actor, TargetObjectRef.Offset))
 		{
 			UE_LOG(LogSpatialReceiver, Verbose,
 				   TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: "
@@ -1450,9 +1448,7 @@ void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Wo
 	}
 
 	// Check if this is a static subobject that's been destroyed by the receiver.
-	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
-	if (!bIsDynamicSubobject)
+	if (!IsDynamicSubObject(Actor, Offset))
 	{
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, "
@@ -3053,4 +3049,10 @@ void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
 	{
 		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
 	}
+}
+
+bool USpatialReceiver::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset)
+{
+	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	return  !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);
 }

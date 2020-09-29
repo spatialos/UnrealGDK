@@ -42,8 +42,6 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 
 	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f);
-
-	StepTimer = 0.0f;
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
@@ -51,6 +49,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 	Super::PrepareTest();
 
 	const int DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+	StepTimer = 0.0f;
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("DynamicSubobjectsTestSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
