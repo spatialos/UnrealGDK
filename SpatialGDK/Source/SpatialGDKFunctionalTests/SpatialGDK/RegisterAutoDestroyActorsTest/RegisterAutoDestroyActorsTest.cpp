@@ -102,8 +102,8 @@ void ARegisterAutoDestroyActorsTestPart2::PrepareTest()
 	Super::PrepareTest();
 	{
 		// Check nobody has characters
-		FSpatialFunctionalTestStepDefinition StepDefinition;
-		StepDefinition.bIsNativeDefinition = true;
+		FSpatialFunctionalTestStepDefinition StepDefinition = FSpatialFunctionalTestStepDefinition(true);
+		StepDefinition.StepName = TEXT("Check No Worker Has Characters");
 		StepDefinition.TimeLimit = 0.0f;
 		StepDefinition.NativeStartEvent.BindLambda([this]() {
 			UWorld* World = GetWorld();
