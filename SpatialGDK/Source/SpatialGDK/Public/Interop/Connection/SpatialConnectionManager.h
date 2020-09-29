@@ -46,6 +46,9 @@ public:
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
+	// We own this object until we pass it to the connection handler.
+	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
+
 	// TODO: UNR-2753
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
@@ -61,14 +64,14 @@ public:
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
-	SpatialGDK::SpatialEventTracer* GetEventTracer() { return EventTracer.Get(); }
+	SpatialGDK::SpatialEventTracer* GetEventTracer() { return EventTracer; }
 
 	void RequestDeploymentLoginTokens();
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -80,9 +83,9 @@ private:
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
-private:
-	void CreateEventTracer(const FString& WorkerId);
+	TUniquePtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
+private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
 
@@ -93,6 +96,4 @@ private:
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
-
-	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
 };

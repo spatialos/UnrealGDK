@@ -146,8 +146,6 @@ void USpatialConnectionManager::DestroyConnection()
 		WorkerConnection = nullptr;
 	}
 
-	EventTracer = nullptr;
-
 	bIsConnected = false;
 }
 
@@ -327,14 +325,14 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
-	CreateEventTracer(ReceptionistConfig.WorkerId);
+	TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer = CreateEventTracer(ReceptionistConfig.WorkerId);
 	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
 
 	Worker_ConnectionFuture* ConnectionFuture =
 		Worker_ConnectAsync(TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
 							TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
 
-	FinishConnecting(ConnectionFuture);
+	FinishConnecting(ConnectionFuture, MoveTemp(NewEventTracer));
 }
 
 void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig)
@@ -349,7 +347,7 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
-	CreateEventTracer(InLocatorConfig->WorkerId);
+	TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer = CreateEventTracer(InLocatorConfig->WorkerId);
 	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
@@ -368,18 +366,21 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
-	FinishConnecting(ConnectionFuture);
+	FinishConnecting(ConnectionFuture, MoveTemp(NewEventTracer));
 }
 
-void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
+void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture,
+												 TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer)
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
+															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection] {
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
+											  EventTracing = MoveTemp(EventTracing)]() mutable {
 			if (!WeakSpatialConnectionManager.IsValid())
 			{
 				// The game instance was destroyed before the connection finished, so just clean up the connection.
@@ -393,12 +394,15 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
-				SpatialConnectionManager->WorkerConnection->SetEventTracer(SpatialConnectionManager->EventTracer.Get());
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
+
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing));
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
 			{
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
+				SpatialConnectionManager->EventTracer = nullptr;
+
 				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
 
@@ -527,7 +531,9 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
-void USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
+TUniquePtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
 {
-	EventTracer = MakeUnique<SpatialEventTracer>(WorkerId);
+	TUniquePtr<SpatialGDK::SpatialEventTracer> NewEventTracer = MakeUnique<SpatialEventTracer>(WorkerId);
+	EventTracer = NewEventTracer.Get();
+	return NewEventTracer;
 }

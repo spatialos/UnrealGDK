@@ -2,7 +2,6 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include "Misc/ScopeLock.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
 #include "UObject/UnrealType.h"
@@ -17,12 +16,6 @@ using namespace worker::c;
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
-	{
-		return;
-	}
-
-	FScopeLock ScopeLock(&EventTracer->CriticalSection);
 
 	Io_Stream* Stream = EventTracer->Stream.Get();
 	if (!ensure(Stream != nullptr))
@@ -102,8 +95,10 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 	}
 
-	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, EventMessage.GetMessage(), EventMessage.GetType(),
-							nullptr };
+	auto MessageSrc = StringCast<ANSICHAR>(*EventMessage.GetMessage());
+	const ANSICHAR* Message = MessageSrc.Get();
+
+	Trace_Event TraceEvent{ CurrentSpanId, /* unix_timestamp_millis: ignored */ 0, Message, EventMessage.GetType(), nullptr };
 	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
 		return {};
@@ -172,9 +167,6 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(const FEventMessage& Even
 		}
 	}
 
-	// TODO(EventTracer): implement and call AddTargetObjectInfoToEventData
-	// TODO(EventTracer): implement and call AddComponentIdInfoToEventData
-
 	TraceEvent.data = EventData;
 	Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
 	Trace_EventData_Destroy(EventData);
@@ -189,8 +181,6 @@ bool SpatialEventTracer::IsEnabled() const
 
 void SpatialEventTracer::Enable(const FString& FileName)
 {
-	FScopeLock ScopeLock(&CriticalSection);
-
 	Trace_EventTracer_Parameters parameters = {};
 	parameters.user_data = this;
 	parameters.callback = &SpatialEventTracer::TraceCallback;
@@ -228,8 +218,6 @@ void SpatialEventTracer::Disable()
 {
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
 
-	FScopeLock ScopeLock(&CriticalSection);
-
 	Trace_EventTracer_Disable(EventTracer);
 	Trace_EventTracer_Destroy(EventTracer);
 
@@ -263,14 +251,25 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	}
 }
 
-worker::c::Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& CauseSpanId)
 {
-	return SpanIdStore.GetSpanId(Id, FieldId);
+	if (!SpanIdStore.GetSpanId(Id, FieldId, CauseSpanId))
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId,
+			   Id.ComponentId, FieldId);
+		return false;
+	}
+	return true;
 }
 
-worker::c::Trace_SpanId SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id)
+bool SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId)
 {
-	return SpanIdStore.GetMostRecentSpanId(Id);
+	if (!SpanIdStore.GetMostRecentSpanId(Id, CauseSpanId))
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId, Id.ComponentId);
+		return false;
+	}
+	return true;
 }
 
 void SpatialEventTracer::ClearSpanIds()

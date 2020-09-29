@@ -42,7 +42,7 @@ public:
 											 const TOptional<worker::c::Trace_SpanId>& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
-		const TOptional<worker::c::Trace_SpanId>& SpanId = {});
+											  const TOptional<worker::c::Trace_SpanId>& SpanId = {});
 	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<worker::c::Trace_SpanId>& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);

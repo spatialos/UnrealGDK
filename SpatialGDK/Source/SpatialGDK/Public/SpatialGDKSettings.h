@@ -374,7 +374,7 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * This will enable latency for the Unreal client/worker.
+	 * This will enable event tracing for the Unreal client/worker.
 	 */
 	UPROPERTY(Config)
 	bool bEventTracingEnabled;

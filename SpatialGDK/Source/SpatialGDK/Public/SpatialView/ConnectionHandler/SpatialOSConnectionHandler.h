@@ -2,16 +2,18 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/OpList/OpList.h"
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class SpatialOSConnectionHandler : public AbstractConnectionHandler
 {
 public:
-	explicit SpatialOSConnectionHandler(Worker_Connection* Connection, SpatialEventTracer* EventTracer);
+	explicit SpatialOSConnectionHandler(Worker_Connection* Connection, TUniquePtr<SpatialEventTracer> EventTracer);
+	~SpatialOSConnectionHandler();
 
 	virtual void Advance() override;
 	virtual uint32 GetOpListCount() override;
@@ -21,16 +23,17 @@ public:
 	virtual const TArray<FString>& GetWorkerAttributes() const override;
 
 private:
-	struct ConnectionDeleter
+	struct WorkerConnectionDeleter
 	{
 		void operator()(Worker_Connection* Connection) const noexcept;
 	};
+#
+	TUniquePtr<SpatialEventTracer> EventTracer;
+	TUniquePtr<Worker_Connection, WorkerConnectionDeleter> Connection;
 
-	TUniquePtr<Worker_Connection, ConnectionDeleter> Connection;
 	TMap<int64, int64> InternalToUserRequestId;
 	FString WorkerId;
 	TArray<FString> WorkerAttributes;
-	SpatialEventTracer* EventTracer; // TODO: Figure out ownership constraints
 };
 
 } // namespace SpatialGDK

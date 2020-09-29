@@ -20,8 +20,8 @@ public:
 	bool DropSpanIds(const EntityComponentId& Id);
 	void ClearSpanIds();
 
-	worker::c::Trace_SpanId GetSpanId(const EntityComponentId& Id, const uint32 FieldId) const;
-	worker::c::Trace_SpanId GetMostRecentSpanId(const EntityComponentId& Id) const;
+	bool GetSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId& OutSpanId) const;
+	bool GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& OutSpanId) const;
 
 protected:
 	struct EntityComponentFieldId

@@ -23,16 +23,11 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 } // anonymous namespace
 
-void USpatialWorkerConnection::SetEventTracer(SpatialGDK::SpatialEventTracer* InEventTracer)
-{
-	EventTracer = InEventTracer;
-}
-
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn, TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer)
 {
 	StartupComplete = false;
 	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
-		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, EventTracer);
+		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, MoveTemp(EventTracer));
 	TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
 		MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
 			if (StartupComplete)
@@ -42,7 +37,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			ExtractStartupOps(Ops, ExtractedOps);
 			return false;
 		});
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), EventTracer);
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), EventTracer.Get());
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -117,14 +112,13 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWo
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-	const TOptional<worker::c::Trace_SpanId>& SpanId)
+															  const TOptional<worker::c::Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendEntityCommandRequest(
-		EntityId, SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type), Request->component_id,
-											 Request->command_index),
-		{},
-		SpanId);
+	return Coordinator->SendEntityCommandRequest(EntityId,
+												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
+																			Request->component_id, Request->command_index),
+												 {}, SpanId);
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,

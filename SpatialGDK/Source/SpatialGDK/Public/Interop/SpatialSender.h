@@ -74,7 +74,8 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, SpatialGDK::SpatialEventTracer* InEventTracer);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
+			  SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
@@ -91,8 +92,9 @@ public:
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
-	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
+	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const worker::c::Trace_SpanId CauseSpanId);
+	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
+								  const worker::c::Trace_SpanId CauseSpanId);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
