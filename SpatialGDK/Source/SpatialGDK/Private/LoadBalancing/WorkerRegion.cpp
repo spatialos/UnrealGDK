@@ -33,7 +33,8 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 {
 	MaterialBoundaryInstance = UMaterialInstanceDynamic::Create(BoundaryMaterial, nullptr);
 	// TODO: create this statically in editor as will not change?
-	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr);
+	//MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr);
+	MaterialTextInstance = TextMaterial;
 
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 	SetOpacityAndEmissive(DEFAULT_WORKER_REGION_OPACITY, DEFAULT_WORKER_TEXT_EMISSIVE);
@@ -145,8 +146,8 @@ void AWorkerRegion::SetHeight(const float Height)
 void AWorkerRegion::SetOpacityAndEmissive(const float Opacity, const float Emissive)
 {
 	MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
-	MaterialTextInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
-	MaterialTextInstance->SetScalarParameterValue(WORKER_TEXT_MATERIAL_EMMISIVE_PARAM, Emissive);
+//	MaterialTextInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+//	MaterialTextInstance->SetScalarParameterValue(WORKER_TEXT_MATERIAL_EMMISIVE_PARAM, Emissive);
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)

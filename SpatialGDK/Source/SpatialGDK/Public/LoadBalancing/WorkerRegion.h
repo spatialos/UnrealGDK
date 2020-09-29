@@ -28,7 +28,8 @@ public:
 	UMaterialInstanceDynamic* MaterialBoundaryInstance;
 
 	UPROPERTY()
-	UMaterialInstanceDynamic* MaterialTextInstance;
+	//UMaterialInstanceDynamic* MaterialTextInstance;
+	UMaterial* MaterialTextInstance;
 
 private:
 	void SetOpacityAndEmissive(const float Opacity, const float Emissive);
