@@ -3,11 +3,11 @@
 #pragma once
 
 #include "Interop/SpatialStaticComponentView.h"
-#include "Schema/ComponentPresence.h"
-#include "SpatialCommonTypes.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/StandardLibrary.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
+#include "Schema/StandardLibrary.h"
+#include "SpatialCommonTypes.h"
 
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityDelta.h"
@@ -20,7 +20,6 @@ class SpatialVirtualWorkerTranslator;
 
 namespace SpatialGDK
 {
-
 struct LBComponents
 {
 	EntityAcl Acl;
@@ -49,8 +48,8 @@ struct LBComponents
 class SpatialLoadBalanceEnforcer
 {
 public:
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId,
-							   const FSubView& InSubView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const FSubView& InSubView,
+							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
 							   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender);
 
 	void Advance();
@@ -62,8 +61,7 @@ private:
 	bool ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
 	void RefreshAcl(const Worker_EntityId EntityId);
-	EntityComponentUpdate ConstructAclUpdate(const Worker_EntityId EntityId,
-                                                         const PhysicalWorkerName* DestinationWorkerId);
+	EntityComponentUpdate ConstructAclUpdate(const Worker_EntityId EntityId, const PhysicalWorkerName* DestinationWorkerId);
 
 	const PhysicalWorkerName WorkerId;
 	const FSubView* SubView;

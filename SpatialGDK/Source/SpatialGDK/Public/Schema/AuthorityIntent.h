@@ -28,7 +28,10 @@ struct AuthorityIntent : Component
 	{
 	}
 
-	AuthorityIntent(const Worker_ComponentData& Data) : AuthorityIntent(Data.schema_type) {}
+	AuthorityIntent(const Worker_ComponentData& Data)
+		: AuthorityIntent(Data.schema_type)
+	{
+	}
 
 	AuthorityIntent(Schema_ComponentData* Data)
 	{
@@ -65,10 +68,7 @@ struct AuthorityIntent : Component
 		return Update;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		ApplyComponentUpdate(Update.schema_type);
-	}
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
 
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{

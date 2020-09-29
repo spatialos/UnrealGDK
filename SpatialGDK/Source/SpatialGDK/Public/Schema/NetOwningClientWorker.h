@@ -24,8 +24,10 @@ struct NetOwningClientWorker : Component
 	{
 	}
 
-	NetOwningClientWorker(const Worker_ComponentData& Data) : NetOwningClientWorker(Data.schema_type)
-	{}
+	NetOwningClientWorker(const Worker_ComponentData& Data)
+		: NetOwningClientWorker(Data.schema_type)
+	{
+	}
 
 	NetOwningClientWorker(Schema_ComponentData* Data)
 	{
@@ -74,10 +76,7 @@ struct NetOwningClientWorker : Component
 		return Update;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		ApplyComponentUpdate(Update.schema_type);
-	}
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
 
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{

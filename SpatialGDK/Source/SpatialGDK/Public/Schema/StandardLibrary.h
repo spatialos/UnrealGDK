@@ -85,7 +85,10 @@ struct EntityAcl : Component
 	{
 	}
 
-	EntityAcl(const Worker_ComponentData& Data) : EntityAcl(Data.schema_type) {}
+	EntityAcl(const Worker_ComponentData& Data)
+		: EntityAcl(Data.schema_type)
+	{
+	}
 
 	EntityAcl(Schema_ComponentData* Data)
 	{

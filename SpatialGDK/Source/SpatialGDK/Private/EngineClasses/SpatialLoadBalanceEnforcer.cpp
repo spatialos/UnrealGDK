@@ -16,12 +16,12 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 namespace SpatialGDK
 {
 SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const FSubView& InSubView,
-                                                    const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
-                                                    TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender)
- : WorkerId(InWorkerId)
- , SubView(&InSubView)
- , VirtualWorkerTranslator(InVirtualWorkerTranslator)
- , UpdateSender(MoveTemp(InUpdateSender))
+													   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
+													   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender)
+	: WorkerId(InWorkerId)
+	, SubView(&InSubView)
+	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
+	, UpdateSender(MoveTemp(InUpdateSender))
 {
 	check(InVirtualWorkerTranslator != nullptr);
 }
@@ -35,17 +35,17 @@ void SpatialLoadBalanceEnforcer::Advance()
 		switch (Delta.Type)
 		{
 		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
-				for (const ComponentChange& Change : Delta.ComponentUpdates)
-				{
-					bRefresh = ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update) || bRefresh;
-				}
-				for (const ComponentChange& Change : Delta.ComponentsRefreshed)
-				{
-					bRefresh = ApplyComponentRefresh(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data) || bRefresh;
-				}
-				break;
+				bRefresh = ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update) || bRefresh;
 			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				bRefresh = ApplyComponentRefresh(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data) || bRefresh;
+			}
+			break;
+		}
 		case EntityDelta::ADD:
 			PopulateDataStore(Delta.EntityId);
 			bRefresh = true;
@@ -86,7 +86,7 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 
 	check(VirtualWorkerTranslator != nullptr);
 	const PhysicalWorkerName* DestinationWorkerId =
-        VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent.VirtualWorkerId);
+		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent.VirtualWorkerId);
 
 	check(DestinationWorkerId != nullptr);
 	if (DestinationWorkerId == nullptr)
@@ -98,7 +98,7 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 }
 
 EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worker_EntityId EntityId,
-                                                                     const PhysicalWorkerName* DestinationWorkerId)
+																	 const PhysicalWorkerName* DestinationWorkerId)
 {
 	LBComponents& Components = DataStore[EntityId];
 	EntityAcl& Acl = Components.Acl;
@@ -116,7 +116,7 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 
 	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
 	const PhysicalWorkerName PossessingClientId =
-        NetOwningClientWorkerComponent.WorkerId.IsSet() ? NetOwningClientWorkerComponent.WorkerId.GetValue() : FString();
+		NetOwningClientWorkerComponent.WorkerId.IsSet() ? NetOwningClientWorkerComponent.WorkerId.GetValue() : FString();
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
 
@@ -125,7 +125,7 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
-            || ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
 			Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
 			continue;
@@ -151,26 +151,26 @@ void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityI
 	{
 		switch (ComponentData.GetComponentId())
 		{
-			case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-				Components.Acl = EntityAcl(ComponentData.GetUnderlying());
-				break;
-			case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-				Components.Intent = AuthorityIntent(ComponentData.GetUnderlying());
-				break;
-			case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-				Components.Presence = ComponentPresence(ComponentData.GetUnderlying());
-				break;
-			case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-				Components.OwningClientWorker = NetOwningClientWorker(ComponentData.GetUnderlying());
-				break;
-			default:
-				break;
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+			Components.Acl = EntityAcl(ComponentData.GetUnderlying());
+			break;
+		case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+			Components.Intent = AuthorityIntent(ComponentData.GetUnderlying());
+			break;
+		case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+			Components.Presence = ComponentPresence(ComponentData.GetUnderlying());
+			break;
+		case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+			Components.OwningClientWorker = NetOwningClientWorker(ComponentData.GetUnderlying());
+			break;
+		default:
+			break;
 		}
 	}
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId EntityId,
-	const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
+bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													  Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
 	{
@@ -189,8 +189,8 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId Enti
 	return false;
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId EntityId,
-	const Worker_ComponentId ComponentId, Schema_ComponentData* Data)
+bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													   Schema_ComponentData* Data)
 {
 	switch (ComponentId)
 	{

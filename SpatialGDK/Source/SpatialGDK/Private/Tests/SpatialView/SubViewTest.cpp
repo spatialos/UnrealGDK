@@ -10,7 +10,6 @@
 
 namespace SpatialGDK
 {
-
 SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Contains_Entity)
 {
 	const Worker_EntityId TaggedEntityId = 2;
