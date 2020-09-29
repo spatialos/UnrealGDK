@@ -49,6 +49,7 @@ void ASpatialTestHandover::PrepareTest()
 
 	// Step Definition to move the HandoverCube to the corresponding test location.
 	FSpatialFunctionalTestStepDefinition MoveCubeStepDefinition;
+	MoveCubeStepDefinition.StepName = TEXT("SpatialTestHandoverMoveCube");
 	MoveCubeStepDefinition.bIsNativeDefinition = true;
 	MoveCubeStepDefinition.NativeStartEvent.BindLambda([this]() {
 		if (LocationIndex >= TestLocations.Num() || LocationIndex < 0)
@@ -67,6 +68,7 @@ void ASpatialTestHandover::PrepareTest()
 
 	// Step Definition to check if the correct server is authoritative over the HandoverCube.
 	FSpatialFunctionalTestStepDefinition CheckAuthorityStepDefinition;
+	CheckAuthorityStepDefinition.StepName = TEXT("SpatialTestHandoverCheckAuthority");
 	CheckAuthorityStepDefinition.bIsNativeDefinition = true;
 	CheckAuthorityStepDefinition.TimeLimit = 10.0f;
 	CheckAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
