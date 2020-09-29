@@ -46,23 +46,22 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 
 	// North wall
 	// Note: using an offset of 50 causes the text to flicker so used just less than 50 instead
-	TileWallWithWorkerText(false, Extents, VerticalScale, 0, 49.999f, TextMaterial, TextFont, WorkerInfo, 180);
+	TileWallWithWorkerText(false, Extents, VerticalScale, -50, 49.999f, TextMaterial, TextFont, WorkerInfo, 180);
 	// East wall
 	TileWallWithWorkerText(true, Extents, VerticalScale, 50, 49.999, TextMaterial, TextFont, WorkerInfo, 270);
 	// South wall
 	TileWallWithWorkerText(false, Extents, VerticalScale, 50, -49.999f, TextMaterial, TextFont, WorkerInfo, 0);
 	// West wall
-	TileWallWithWorkerText(true, Extents, VerticalScale, 25, -49.999f, TextMaterial, TextFont, WorkerInfo, 90);
+	TileWallWithWorkerText(true, Extents, VerticalScale, -50, -49.999f, TextMaterial, TextFont, WorkerInfo, 90);
 
 	SetPositionAndScale(Extents, VerticalScale, true, false);
 }
 
 void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float TileOffset,
-										   float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerInfo,
+										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerInfo,
 										   const float Yaw)
 {
 	int HorizontalTileCount = 0;
-
 	if (bTileXAxis)
 	{
 		// Tile on x-axis
@@ -80,18 +79,22 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 	float FinalTileOffset = TileOffset;
 	for (int i = 0; i < HorizontalTileCount - 1; i++)
 	{
-		FinalTileOffset -= 100.f / HorizontalTileCount;
+		if (TileOffset > 0)
+		{
+			FinalTileOffset -= 100.f / (float)HorizontalTileCount;
+		}
+		else
+		{
+			FinalTileOffset += 100.f / (float)HorizontalTileCount;
+		}
 	}
-
-	// const float A = 0;
-	float SpacingZ = 100.f / VerticalTileCount; // VerticalScale;
+	float SpacingZ = 100.f / (float)VerticalTileCount; 
 	float PositionX = 0;
 	float PositionY = 0;
 	// Tile horizontally
 	for (int i = 0; i < HorizontalTileCount; i++)
 	{
-		// float B = HorizontalTileCount - 1;
-		float Position = i / (float)(HorizontalTileCount - 1) * (FinalTileOffset - TileOffset) + TileOffset;
+		float Position = (i / (float)(HorizontalTileCount - 1) * (FinalTileOffset - TileOffset)) + TileOffset;
 		if (bTileXAxis)
 		{
 			// Tile on x-axis
@@ -114,13 +117,13 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 	}
 }
 
-void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float& VerticalScale,
-											   const FString& WorkerInfo, const float& PositionX, const float& PositionY,
-											   const float& PositionZ, const float& Yaw)
+void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float VerticalScale,
+											   const FString& WorkerInfo, const float PositionX, const float PositionY,
+											   const float PositionZ, const float Yaw)
 {
 	// Create dynamic worker name text on boundary wall
 	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
-	WorkerText->SetFont(TextFont); // Only works independantly of setting the material instance
+	WorkerText->SetFont(TextFont); 
 	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, Yaw, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
