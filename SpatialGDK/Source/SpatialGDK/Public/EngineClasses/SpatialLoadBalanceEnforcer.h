@@ -3,8 +3,10 @@
 #pragma once
 
 #include "Interop/SpatialStaticComponentView.h"
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 
 #include "SpatialView/EntityComponentTypes.h"
@@ -15,6 +17,16 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
 class SpatialVirtualWorkerTranslator;
+
+namespace SpatialGDK
+{
+struct LBComponents
+{
+	EntityAcl Acl;
+	AuthorityIntent Intent;
+	ComponentPresence Presence;
+	NetOwningClientWorker OwningClientWorker;
+};
 
 // The load balance enforcer is responsible for enforcing the authority defined in the authority intent component.
 //
@@ -36,25 +48,26 @@ class SpatialVirtualWorkerTranslator;
 class SpatialLoadBalanceEnforcer
 {
 public:
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView,
-							   const SpatialGDK::FSubView& InSubView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
-							   TUniqueFunction<void(SpatialGDK::EntityComponentUpdate)> InUpdateSender);
-
-	static bool HandlesComponent(Worker_ComponentId ComponentId);
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const FSubView& InSubView,
+							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
+							   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender);
 
 	void Advance();
 	void ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId);
 
 private:
+	void PopulateDataStore(const Worker_EntityId EntityId);
+	bool ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	bool ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+
 	void RefreshAcl(const Worker_EntityId EntityId);
-	SpatialGDK::EntityComponentUpdate ConstructAclUpdate(const Worker_EntityId EntityId,
-														 const PhysicalWorkerName* DestinationWorkerId) const;
+	EntityComponentUpdate ConstructAclUpdate(const Worker_EntityId EntityId, const PhysicalWorkerName* DestinationWorkerId);
 
 	const PhysicalWorkerName WorkerId;
-	// todo: come back to removing
-	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
-	const SpatialGDK::FSubView* SubView;
+	const FSubView* SubView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
-
-	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate)> UpdateSender;
+	TMap<Worker_EntityId, LBComponents> DataStore;
+	TUniqueFunction<void(EntityComponentUpdate)> UpdateSender;
 };
+
+} // namespace SpatialGDK

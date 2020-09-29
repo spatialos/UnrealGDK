@@ -13,19 +13,16 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
-using namespace SpatialGDK;
-
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId,
-													   const USpatialStaticComponentView* InStaticComponentView, const FSubView& InSubView,
+namespace SpatialGDK
+{
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const FSubView& InSubView,
 													   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
 													   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender)
 	: WorkerId(InWorkerId)
-	, StaticComponentView(InStaticComponentView)
 	, SubView(&InSubView)
 	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
 	, UpdateSender(MoveTemp(InUpdateSender))
 {
-	check(InStaticComponentView != nullptr);
 	check(InVirtualWorkerTranslator != nullptr);
 }
 
@@ -34,91 +31,66 @@ void SpatialLoadBalanceEnforcer::Advance()
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{
+		bool bRefresh = false;
 		switch (Delta.Type)
 		{
 		case EntityDelta::UPDATE:
 		{
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
-				if (HandlesComponent(Change.ComponentId))
-				{
-					RefreshAcl(Delta.EntityId);
-				}
+				bRefresh = ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update) || bRefresh;
 			}
-
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
-				if (HandlesComponent(Change.ComponentId))
-				{
-					RefreshAcl(Delta.EntityId);
-				}
-			}
-
-			for (const ComponentChange& Change : Delta.ComponentsAdded)
-			{
-				if (HandlesComponent(Change.ComponentId))
-				{
-					RefreshAcl(Delta.EntityId);
-				}
-			}
-
-			for (const ComponentChange& Change : Delta.ComponentsRemoved)
-			{
-				if (HandlesComponent(Change.ComponentId))
-				{
-					RefreshAcl(Delta.EntityId);
-				}
+				bRefresh = ApplyComponentRefresh(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data) || bRefresh;
 			}
 			break;
 		}
 		case EntityDelta::ADD:
-		{
-			RefreshAcl(Delta.EntityId);
+			PopulateDataStore(Delta.EntityId);
+			bRefresh = true;
 			break;
-		}
 		case EntityDelta::REMOVE:
+			DataStore.Remove(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
-		{
-			RefreshAcl(Delta.EntityId);
+			DataStore.Remove(Delta.EntityId);
+			PopulateDataStore(Delta.EntityId);
+			bRefresh = true;
 			break;
-		}
 		default:
 			break;
+		}
+
+		if (bRefresh)
+		{
+			RefreshAcl(Delta.EntityId);
 		}
 	}
 }
 
 void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId)
 {
-	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	const EntityViewElement& Element = SubView->GetView()[EntityId];
+	if (Element.Authority.Contains(SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
+		DataStore.Remove(EntityId);
+		PopulateDataStore(EntityId);
 		RefreshAcl(EntityId);
 	}
 }
 
 void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 {
-	const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	const AuthorityIntent& AuthorityIntentComponent = DataStore[EntityId].Intent;
 
 	check(VirtualWorkerTranslator != nullptr);
 	const PhysicalWorkerName* DestinationWorkerId =
-		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent.VirtualWorkerId);
 
 	check(DestinationWorkerId != nullptr);
 	if (DestinationWorkerId == nullptr)
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-			   TEXT("Couldn't find mapped worker for entity %lld. This shouldn't happen! Virtual worker ID: %d"), EntityId,
-			   AuthorityIntentComponent->VirtualWorkerId);
-		return;
-	}
-
-	if (*DestinationWorkerId == WorkerId && StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose,
-			   TEXT("No need to process entity because this worker is already authoritative. Entity: %lld. Worker: %s."), EntityId,
-			   *WorkerId);
 		return;
 	}
 
@@ -126,24 +98,25 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 }
 
 EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worker_EntityId EntityId,
-																	 const PhysicalWorkerName* DestinationWorkerId) const
+																	 const PhysicalWorkerName* DestinationWorkerId)
 {
-	EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	const NetOwningClientWorker* NetOwningClientWorkerComponent = StaticComponentView->GetComponentData<NetOwningClientWorker>(EntityId);
-	const ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	LBComponents& Components = DataStore[EntityId];
+	EntityAcl& Acl = Components.Acl;
+	const ComponentPresence& ComponentPresenceComponent = Components.Presence;
+	const NetOwningClientWorker& NetOwningClientWorkerComponent = Components.OwningClientWorker;
 
 	TArray<Worker_ComponentId> ComponentIds;
-	Acl->ComponentWriteAcl.GetKeys(ComponentIds);
+	Acl.ComponentWriteAcl.GetKeys(ComponentIds);
 
 	// Ensure that every component ID in ComponentPresence is set in the write ACL.
-	for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
+	for (const auto& RequiredComponentId : ComponentPresenceComponent.ComponentList)
 	{
 		ComponentIds.AddUnique(RequiredComponentId);
 	}
 
 	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
 	const PhysicalWorkerName PossessingClientId =
-		NetOwningClientWorkerComponent->WorkerId.IsSet() ? NetOwningClientWorkerComponent->WorkerId.GetValue() : FString();
+		NetOwningClientWorkerComponent.WorkerId.IsSet() ? NetOwningClientWorkerComponent.WorkerId.GetValue() : FString();
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
 
@@ -154,26 +127,88 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
 			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
-			Acl->ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
+			Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
 			continue;
 		}
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			Acl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
+			Acl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
 			continue;
 		}
 
-		Acl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+		Acl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
-	const FWorkerComponentUpdate Update = Acl->CreateEntityAclUpdate();
+	const FWorkerComponentUpdate Update = Acl.CreateEntityAclUpdate();
 	return EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) };
 }
 
-bool SpatialLoadBalanceEnforcer::HandlesComponent(Worker_ComponentId ComponentId)
+void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityId)
 {
-	return ComponentId == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID
-		   || ComponentId == SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID
-		   || ComponentId == SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
+	LBComponents& Components = DataStore.Emplace(EntityId, LBComponents{});
+	for (auto& ComponentData : SubView->GetView()[EntityId].Components)
+	{
+		switch (ComponentData.GetComponentId())
+		{
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+			Components.Acl = EntityAcl(ComponentData.GetUnderlying());
+			break;
+		case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+			Components.Intent = AuthorityIntent(ComponentData.GetUnderlying());
+			break;
+		case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+			Components.Presence = ComponentPresence(ComponentData.GetUnderlying());
+			break;
+		case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+			Components.OwningClientWorker = NetOwningClientWorker(ComponentData.GetUnderlying());
+			break;
+		default:
+			break;
+		}
+	}
 }
+
+bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													  Schema_ComponentUpdate* Update)
+{
+	switch (ComponentId)
+	{
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		DataStore[EntityId].Intent.ApplyComponentUpdate(Update);
+		return true;
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+		DataStore[EntityId].Presence.ApplyComponentUpdate(Update);
+		return true;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		DataStore[EntityId].OwningClientWorker.ApplyComponentUpdate(Update);
+		return true;
+	default:
+		break;
+	}
+	return false;
+}
+
+bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													   Schema_ComponentData* Data)
+{
+	switch (ComponentId)
+	{
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+		DataStore[EntityId].Acl = EntityAcl(Data);
+		break;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		DataStore[EntityId].Intent = AuthorityIntent(Data);
+		return true;
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+		DataStore[EntityId].Presence = ComponentPresence(Data);
+		return true;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		DataStore[EntityId].OwningClientWorker = NetOwningClientWorker(Data);
+		return true;
+	default:
+		break;
+	}
+	return false;
+}
+} // Namespace SpatialGDK
