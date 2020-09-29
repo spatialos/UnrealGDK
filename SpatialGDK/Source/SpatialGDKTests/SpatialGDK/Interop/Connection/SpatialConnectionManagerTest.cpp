@@ -365,3 +365,19 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URLAndExternalBridge)
 
 	return true;
 }
+
+CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_SetupConnectionConfigFromURL)
+{
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("\\");
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
+	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
+
+	// THEN
+	TestEqual("Success", bSuccess, false);
+	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
+
+	return  true;
+}

@@ -238,6 +238,10 @@ public:
 			{
 				SetupFromURL(URL);
 			}
+			else if (!bReceptionistPortParsed)
+			{
+				return false;
+			}
 		}
 		else
 		{
