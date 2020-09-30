@@ -125,20 +125,19 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
-		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
-			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		switch (ComponentId)
 		{
-			Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
-			continue;
+			case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+			case SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()):
+				Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
+				break;
+			case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+				Acl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
+				break;
+			default:
+				Acl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+				break;
 		}
-
-		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
-		{
-			Acl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
-			continue;
-		}
-
-		Acl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
 	const FWorkerComponentUpdate Update = Acl.CreateEntityAclUpdate();
