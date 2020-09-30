@@ -90,12 +90,6 @@ void ExpectedViewDelta::SortEntityDeltas()
 
 bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
-	TArray<EntityDelta> RhsEntityDeltas = Other.GetEntityDeltas();
-	if (EntityDeltas.Num() != RhsEntityDeltas.Num())
-	{
-		return false;
-	}
-
 	// We need to check if a disconnect op has been processed during the last tick.
 	// First call HasConnectionStatusChanged() before comparing the values stored.
 	if (Other.HasConnectionStatusChanged())
@@ -111,13 +105,28 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 		}
 	}
 
+	return CompareDeltas(Other.GetEntityDeltas());
+}
+
+bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
+{
+	return CompareDeltas(Other.EntityDeltas);
+}
+
+bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
+{
+	if (EntityDeltas.Num() != Other.Num())
+	{
+		return false;
+	}
+
 	SortEntityDeltas();
 	TArray<uint32> DeltaKeys;
 	EntityDeltas.GetKeys(DeltaKeys);
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
-		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
-		EntityDelta RhsEntityDelta = RhsEntityDeltas[i];
+		const ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
+		const EntityDelta& RhsEntityDelta = Other[i];
 		if (LhsEntityDelta.EntityId != RhsEntityDelta.EntityId)
 		{
 			return false;
