@@ -35,8 +35,6 @@ namespace
 {
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
-const FString DEFAULT_CONFIG_UI_WIDGET_CLASS =
-	TEXT("/SpatialGDK/SpatialDebugger/WBP_SpatialDebuggerConfigMenu.WBP_SpatialDebuggerConfigMenu_C");
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -287,8 +285,6 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 
 			if (!ConfigUIWidget.IsValid())
 			{
-				FSoftClassPath ConfigUIClassRef(DEFAULT_CONFIG_UI_WIDGET_CLASS);
-				UClass* ConfigUIClass = ConfigUIClassRef.TryLoadClass<UUserWidget>();
 				if (ConfigUIClass != nullptr)
 				{
 					ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
@@ -303,10 +299,14 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 				}
 				else
 				{
-					UE_LOG(LogSpatialDebugger, Error, TEXT("Couldn't load config UI widget class (%s)."), *DEFAULT_CONFIG_UI_WIDGET_CLASS);
+					UE_LOG(LogSpatialDebugger, Error, TEXT("No config UI asset set in the spatial debugger! The config UI will not work."));
 				}
 			}
-			LocalPlayerController->InputComponent->BindKey(ConfigUIKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+
+			if (ConfigUIWidget.IsValid())
+			{
+				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+			}
 		}
 	}
 }
@@ -345,14 +345,18 @@ void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 {
 	if (bNewShow != bShowWorkerRegions)
 	{
-		if (bNewShow)
+		if (IsEnabled())
 		{
-			CreateWorkerRegions();
+			if (bNewShow)
+			{
+				CreateWorkerRegions();
+			}
+			else
+			{
+				DestroyWorkerRegions();
+			}
 		}
-		else
-		{
-			DestroyWorkerRegions();
-		}
+		
 		bShowWorkerRegions = bNewShow;
 	}
 }

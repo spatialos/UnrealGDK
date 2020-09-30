@@ -82,9 +82,12 @@ public:
 	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
 	bool IsEnabled();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
 	FKey ConfigUIKey = EKeys::F9;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "Widget "))
+	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
 
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
