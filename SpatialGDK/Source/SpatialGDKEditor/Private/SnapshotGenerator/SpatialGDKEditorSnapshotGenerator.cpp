@@ -3,7 +3,12 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialSender.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/Interest.h"
 #include "Schema/SpawnData.h"
@@ -210,6 +215,125 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
+// Set up classes needed for Startup Actor creation
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection,
+							   USpatialClassInfoManager*& ClassInfoManager, UWorld* World)
+{
+	// COPIED FROM SPATIAL NET DRIVER - TODO: Refactor
+	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
+	// Copied from what the Engine does with UActorChannel
+	NetDriver = NewObject<USpatialNetDriver>();
+	FChannelDefinition SpatialChannelDefinition{};
+	SpatialChannelDefinition.ChannelName = NAME_Actor;
+	SpatialChannelDefinition.ClassName = FName(*USpatialActorChannel::StaticClass()->GetPathName());
+	SpatialChannelDefinition.ChannelClass = USpatialActorChannel::StaticClass();
+	SpatialChannelDefinition.bServerOpen = true;
+
+	NetDriver->ChannelDefinitions[CHTYPE_Actor] = SpatialChannelDefinition;
+	NetDriver->ChannelDefinitionMap[NAME_Actor] = SpatialChannelDefinition;
+	NetDriver->World = World;
+	ULayeredLBStrategy* LayeredStrategy = NewObject<ULayeredLBStrategy>(NetDriver);
+	LayeredStrategy->SetLayers(
+		USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>()->WorkerLayers);
+	NetDriver->LoadBalanceStrategy = LayeredStrategy;
+	NetDriver->PackageMap = NewObject<USpatialPackageMapClient>();
+	NetDriver->PackageMap->Initialize(NetConnection, MakeShared<FSpatialNetGUIDCache>(NetDriver));
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	ClassInfoManager->TryInit(NetDriver);
+	NetDriver->ClassInfoManager = ClassInfoManager;
+	NetDriver->InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, NetDriver->PackageMap);
+
+	NetConnection = NewObject<USpatialNetConnection>();
+	NetConnection->Driver = NetDriver;
+	NetConnection->State = USOCK_Closed;
+}
+
+bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId,
+						USpatialNetConnection* NetConnection, USpatialClassInfoManager* ClassInfoManager)
+{
+	UClass* ActorClass = Actor->GetClass();
+	USpatialNetDriver* SpatialNetDriver = CastChecked<USpatialNetDriver>(NetConnection->Driver);
+
+	uint32 BytesWritten;
+	SpatialGDK::EntityFactory EntityFactory(SpatialNetDriver, SpatialNetDriver->PackageMap, ClassInfoManager,
+											SpatialNetDriver->GetRPCService());
+	USpatialActorChannel* Channel =
+		(USpatialActorChannel*)NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
+	Channel->Actor = Actor;
+	SpatialGDK::FRPCsOnEntityCreationMap EmptyMap;
+	TArray<FWorkerComponentData> ComponentDatas = EntityFactory.CreateEntityComponents(Channel, EmptyMap, BytesWritten);
+	if (!ComponentDatas.ContainsByPredicate([](const FWorkerComponentData& Data) {
+			return Data.component_id == SpatialConstants::PERSISTENCE_COMPONENT_ID;
+		}))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Actor not persistent trying to be saved in the snapshot, skipping - Actor %s"), *Actor->GetPathName());
+		return false;
+	}
+
+	// TODO: LevelComponentData
+	// ComponentDatas.Add(SpatialNetDriver->Sender->CreateLevelComponentData(Actor));
+	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
+
+	Worker_Entity Entity;
+	Entity.entity_id = EntityId;
+
+	TArray<Worker_ComponentData> Data;
+	Data.Reserve(ComponentDatas.Num());
+	for (auto& Component : ComponentDatas)
+	{
+		Data.Emplace(Worker_ComponentData(Component)); // This will probably not fly with the tracking libraries
+	}
+
+	Entity.component_count = Data.Num();
+	Entity.components = Data.GetData();
+
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity);
+
+	return true;
+}
+
+void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConnection* NetConnection)
+{
+	// On clean up of the NetDriver due to garbage collection, either the ServerConnection or ClientConnections need to be not nullptr.
+	// However if the ServerConnection is set on creation, using the FObjectReplicator to create the initial state of the actor,
+	// the editor will crash. Therefore we set the ServerConnection after we are done using the NetDriver.
+	NetDriver->ServerConnection = NetConnection;
+}
+
+bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World, Worker_EntityId& CurrentEntityId)
+{
+	USpatialNetDriver* NetDriver = nullptr;
+	USpatialNetConnection* NetConnection = nullptr;
+	USpatialClassInfoManager* ClassInfoManager = nullptr;
+
+	SetupStartupActorCreation(NetDriver, NetConnection, ClassInfoManager, World);
+
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		AActor* Actor = *It;
+		UClass* ActorClass = Actor->GetClass();
+
+		// If Actor is critical to the level, skip
+		if (ActorClass->IsChildOf<AWorldSettings>() || ActorClass->IsChildOf<ALevelScriptActor>())
+		{
+			continue;
+		}
+
+		if (Actor->IsEditorOnly() || !ClassInfoManager->IsSupportedClass(ActorClass->GetPathName()) || !Actor->GetIsReplicated())
+		{
+			continue;
+		}
+
+		CreateStartupActor(OutputStream, Actor, CurrentEntityId, NetConnection, ClassInfoManager);
+
+		CurrentEntityId++;
+	}
+
+	// CleanupNetDriverAndConnection(NetDriver, NetConnection);
+
+	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
+}
+
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
 	FString DirectoryPath = FPaths::GetPath(SavePath);
@@ -276,6 +400,13 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	}
 
 	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
+	if (!CreateStartupActors(OutputStream, World, NextAvailableEntityID))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		return false;
+	}
+
 	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"),
