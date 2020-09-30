@@ -356,7 +356,7 @@ void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 				DestroyWorkerRegions();
 			}
 		}
-		
+
 		bShowWorkerRegions = bNewShow;
 	}
 }

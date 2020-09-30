@@ -84,9 +84,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
-	FKey ConfigUIKey = EKeys::F9;
+	FKey ConfigUIToggleKey = EKeys::F9;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "Widget "))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
 	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
 
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
