@@ -41,7 +41,7 @@ const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
 	"/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
 // const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
 //	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Partially transparent and
-//partially emmissive material - single sided
+// partially emmissive material - single sided
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
