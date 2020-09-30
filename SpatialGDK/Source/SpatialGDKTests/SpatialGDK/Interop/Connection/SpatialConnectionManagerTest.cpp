@@ -373,11 +373,10 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_SetupConnectionConfigFr
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
-	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("SomeWorkerType");
+	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("");
 
 	// THEN
 	TestEqual("Success", bSuccess, false);
-	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return  true;
 }
