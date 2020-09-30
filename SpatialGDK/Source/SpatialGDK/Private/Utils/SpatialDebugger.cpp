@@ -196,7 +196,7 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents, WorkerRegionVerticalScale);
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionOpacity, WorkerRegionData.Extents, WorkerRegionHeight, WorkerRegionVerticalScale);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
