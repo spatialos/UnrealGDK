@@ -91,7 +91,7 @@ namespace ReleaseTool
             var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
 
-            if (options.PullRequestUrl == "" || options.PullRequestUrl == "\"\"")
+            if (string.IsNullOrWhiteSpace(options.PullRequestUrl.Trim().Replace("\"","")))
             {
                 Logger.Info("The passed PullRequestUrl was empty or missing. Trying to release without merging a PR.");
 
