@@ -124,6 +124,8 @@ void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* T
 	// Create dynamic worker name text on boundary wall
 	UTextRenderComponent* WorkerText = NewObject<UTextRenderComponent>(this);
 	WorkerText->SetFont(TextFont);
+	WorkerText->SetHorizontalAlignment(EHTA_Center);
+	WorkerText->SetHorizSpacingAdjust(2.0);
 	WorkerText->SetTextMaterial(MaterialTextInstance);
 	FRotator NewRotation = FRotator(0, Yaw, 0);
 	FQuat QuatRotation = FQuat(NewRotation);
