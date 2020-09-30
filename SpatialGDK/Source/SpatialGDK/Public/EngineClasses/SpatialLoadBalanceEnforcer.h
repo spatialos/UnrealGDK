@@ -28,9 +28,7 @@ struct LBComponents
 	NetOwningClientWorker OwningClientWorker;
 };
 
-// The load balance enforcer is responsible for enforcing the authority defined in the authority intent component.
-//
-// Specifically, the load balance enforcer system running on a worker is responsible for updating the state of any ACL
+// The load balance enforcer system running on a worker is responsible for updating the state of any ACL
 // component delegated to that worker on any change to any of the load balancing (LB) components which have an effect on
 // the ACL.
 //
