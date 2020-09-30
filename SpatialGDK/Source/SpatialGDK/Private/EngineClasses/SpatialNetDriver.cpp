@@ -1770,6 +1770,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
 			LoadBalanceEnforcer->Advance();
+			if (Connection != nullptr)
+			{
+				Connection->Flush();
+			}
 		}
 
 		{
