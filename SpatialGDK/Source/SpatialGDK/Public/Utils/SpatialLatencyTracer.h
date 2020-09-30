@@ -130,6 +130,9 @@ public:
 	// Internal GDK usage, shouldn't be used by game code
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
 
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static FString GetTraceMetadata(UObject* WorldContextObject);
+
 #if TRACE_LIB_ACTIVE
 
 	bool IsValidKey(TraceKey Key);
