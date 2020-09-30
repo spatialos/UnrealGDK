@@ -37,10 +37,11 @@ const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
 const FString DEFAULT_WORKER_TEXT_FONT =
 	TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular - custom install
-const FString DEFAULT_WORKER_TEXT_MATERIAL =
-	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
+const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
+	"/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
 // const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
-//	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Partially transparent and partially emmissive material - single sided
+//	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Partially transparent and
+//partially emmissive material - single sided
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -219,8 +220,8 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		FString WorkerInfo = FString::Printf(TEXT("You are within virtual worker number %d<br>%s"), 
-											 WorkerRegionData.WorkerID, * WorkerRegionData.WorkerName); 
+		FString WorkerInfo =
+			FString::Printf(TEXT("You are within virtual worker number %d<br>%s"), WorkerRegionData.WorkerID, *WorkerRegionData.WorkerName);
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, TextFont, WorkerRegionData.Color, WorkerRegionData.Extents,
 						   WorkerRegionVerticalScale, WorkerInfo);
 		WorkerRegion->SetActorEnableCollision(false);
