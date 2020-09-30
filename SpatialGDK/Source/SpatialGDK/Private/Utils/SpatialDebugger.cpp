@@ -292,7 +292,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 					{
 						UE_LOG(LogSpatialDebugger, Error,
 							   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
-							   GetNameSafe(*ConfigUIWidget));
+							   *GetNameSafe(ConfigUIWidget.Get()));
 					}
 					else
 					{
