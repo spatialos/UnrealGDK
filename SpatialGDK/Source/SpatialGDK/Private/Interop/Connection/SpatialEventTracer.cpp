@@ -193,7 +193,7 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	// Open a local file
 	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
 	FString AbsLogPath;
-	if (FParse::Value(FCommandLine::Get(), TEXT("abslog="), AbsLogPath, false))
+	if (FParse::Value(FCommandLine::Get(), TEXT("eventLogPath="), AbsLogPath, false))
 	{
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
