@@ -110,8 +110,7 @@ public:
 			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
 	float WorkerRegionVerticalScale = 1.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
-			  meta = (ToolTip = "Opacity of the worker region cuboids"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Opacity of the worker region cuboids"))
 	float WorkerRegionOpacity = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))

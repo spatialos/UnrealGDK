@@ -23,7 +23,8 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Mesh);
 }
 
-void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale)
+void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const float Opacity, const FBox2D& Extents, const float Height,
+						 const float VerticalScale)
 {
 	SetHeight(Height);
 
