@@ -32,7 +32,7 @@ inline AActor* GetTopmostOwner(const AActor* Actor)
 		Owner = Owner->GetOwner();
 	}
 
-	return Itr;
+	return Itr == Actor ? nullptr : Itr;
 }
 
 inline AActor* GetHierarchyRoot(const AActor* Actor)
