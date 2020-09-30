@@ -66,7 +66,7 @@ private:
 	const PhysicalWorkerName WorkerId;
 	const FSubView* SubView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
-	TMap<Worker_EntityId, LBComponents> DataStore;
+	TMap<Worker_EntityId_Key, LBComponents> DataStore;
 	TUniqueFunction<void(EntityComponentUpdate)> UpdateSender;
 };
 
