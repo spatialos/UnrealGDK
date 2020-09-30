@@ -35,7 +35,7 @@ namespace
 {
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
-} // namespace
+} // anonymous namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -290,7 +290,9 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 					ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
 					if (!ConfigUIWidget.IsValid())
 					{
-						UE_LOG(LogSpatialDebugger, Error, TEXT("Couldn't create config UI widget."));
+						UE_LOG(LogSpatialDebugger, Error,
+							   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
+							   GetNameSafe(*ConfigUIWidget));
 					}
 					else
 					{
@@ -299,7 +301,8 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 				}
 				else
 				{
-					UE_LOG(LogSpatialDebugger, Error, TEXT("No config UI asset set in the spatial debugger! The config UI will not work."));
+					UE_LOG(LogSpatialDebugger, Error,
+						   TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
 				}
 			}
 
