@@ -369,7 +369,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URLAndExternalBridge)
 CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_SetupConnectionConfigFromURL)
 {
 	// GIVEN
-	FTemporaryCommandLine TemporaryCommandLine("\\");
+	FTemporaryCommandLine TemporaryCommandLine("");
 	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
 
 	// WHEN
