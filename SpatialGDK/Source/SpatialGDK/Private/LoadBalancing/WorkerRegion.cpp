@@ -7,6 +7,8 @@
 #include "UObject/ConstructorHelpers.h"
 #include "UObject/UObjectGlobals.h"
 
+#include "Logging/LogMacros.h"
+
 namespace
 {
 const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
@@ -46,12 +48,16 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, U
 
 	// North wall
 	// Note: using an offset of 50 causes the text to flicker so used just less than 50 instead
+	UE_LOG(LogTemp, Warning, TEXT("North wall"));
 	TileWallWithWorkerText(false, Extents, VerticalScale, -50, 49.999f, TextMaterial, TextFont, WorkerInfo, 180);
 	// East wall
+	UE_LOG(LogTemp, Warning, TEXT("East wall"));
 	TileWallWithWorkerText(true, Extents, VerticalScale, 50, 49.999, TextMaterial, TextFont, WorkerInfo, 270);
 	// South wall
+	UE_LOG(LogTemp, Warning, TEXT("South wall"));
 	TileWallWithWorkerText(false, Extents, VerticalScale, 50, -49.999f, TextMaterial, TextFont, WorkerInfo, 0);
 	// West wall
+	UE_LOG(LogTemp, Warning, TEXT("West wall"));
 	TileWallWithWorkerText(true, Extents, VerticalScale, -50, -49.999f, TextMaterial, TextFont, WorkerInfo, 90);
 
 	SetPositionAndScale(Extents, VerticalScale, true, false);
@@ -65,36 +71,53 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 	if (bTileXAxis)
 	{
 		// Tile on x-axis
-		HorizontalTileCount = Extents.GetSize().X / 250;
+		HorizontalTileCount = Extents.GetSize().X / 500;
+		UE_LOG(LogTemp, Warning, TEXT("Extents x %f"), Extents.GetSize().X);
 	}
 	else
 	{
 		// Tile on y-axis
-		HorizontalTileCount = Extents.GetSize().Y / 250;
+		HorizontalTileCount = Extents.GetSize().Y / 500;
+		UE_LOG(LogTemp, Warning, TEXT("Extents y %f"), Extents.GetSize().Y);
 	}
+	UE_LOG(LogTemp, Warning, TEXT("HorizontalTileCount %d"), HorizontalTileCount);
 
 	// TODO : make density a parameter
-	int VerticalTileCount = (int)VerticalScale; // * 2; // Add the x2 for denser vertical tiling - remove for sparser
-
-	float FinalTileOffset = TileOffset;
-	for (int i = 0; i < HorizontalTileCount - 1; i++)
+	int VerticalTileCount = (int)(VerticalScale * 0.5); // * 2; // Add the x2 for denser vertical tiling - 0.5 for sparser
+	
+	float FinalTileOffset = TileOffset*-1;
+	float TileDifference = 100.f / (float)HorizontalTileCount;
+	float StartTileOffset = TileOffset;
+	if (TileOffset > 0)
 	{
-		if (TileOffset > 0)
-		{
-			FinalTileOffset -= 100.f / (float)HorizontalTileCount;
-		}
-		else
-		{
-			FinalTileOffset += 100.f / (float)HorizontalTileCount;
-		}
+		StartTileOffset -= TileDifference / 2.0f;
 	}
+	else
+	{
+		StartTileOffset += TileDifference / 2.0f;
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("TileOffset %f"), TileOffset);
+	//UE_LOG(LogTemp, Warning, TEXT("StartTileOffset %f"), StartTileOffset);
+	//UE_LOG(LogTemp, Warning, TEXT("FinalTileOffset %f"), FinalTileOffset);
 	float SpacingZ = 100.f / (float)VerticalTileCount;
 	float PositionX = 0;
 	float PositionY = 0;
 	// Tile horizontally
 	for (int i = 0; i < HorizontalTileCount; i++)
 	{
-		float Position = (i / (float)(HorizontalTileCount - 1) * (FinalTileOffset - TileOffset)) + TileOffset;
+		//UE_LOG(LogTemp, Warning, TEXT("i %d"), i);
+
+		float Position = 0;
+
+		if (TileOffset > 0)
+		{
+			Position = StartTileOffset - i * TileDifference;
+		}
+		else
+		{
+			Position = StartTileOffset + i * TileDifference;
+		}
 		if (bTileXAxis)
 		{
 			// Tile on x-axis
@@ -112,6 +135,7 @@ void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& 
 		for (int zi = 0; zi < VerticalTileCount; zi++)
 		{
 			float PositionZ = (zi * SpacingZ) - ((VerticalTileCount * SpacingZ) / 2.f);
+			//UE_LOG(LogTemp, Warning, TEXT("Create at %f,%f,%f"), PositionX, PositionY, PositionZ);
 			CreateWorkerTextAtPosition(TextMaterial, TextFont, VerticalScale, WorkerInfo, PositionX, PositionY, PositionZ, Yaw);
 		}
 	}

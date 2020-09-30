@@ -39,6 +39,7 @@ private:
 	void TileWallWithWorkerText(const bool bTileX, const FBox2D& Extents, const float VerticalScale, const float TileOffset,
 								const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerName,
 								const float Yaw);
-	void CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float VerticalScale, const FString& WorkerName,
-									const float PositionX, const float PositionY, const float PositionZ, const float Yaw);
+	void CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float VerticalScale,
+									const FString& WorkerName,
+									float PositionX, float PositionY, const float PositionZ, const float Yaw);
 };
