@@ -23,18 +23,16 @@ inline AActor* GetTopmostOwner(const AActor* Actor)
 {
 	check(Actor != nullptr);
 
-	AActor* Owner = Actor->GetOwner();
-	if (Owner == nullptr || Owner->IsPendingKillPending())
-	{
-		return nullptr;
-	}
+	AActor* Itr = const_cast<AActor*>(Actor);
 
-	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
+	AActor* Owner = Actor->GetOwner();
+	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
 	{
+		Itr = Owner;
 		Owner = Owner->GetOwner();
 	}
 
-	return Owner;
+	return Itr;
 }
 
 inline AActor* GetHierarchyRoot(const AActor* Actor)
