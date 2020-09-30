@@ -219,8 +219,6 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
 	ClientQuery.Constraint.EntityIdConstraint = EntityId;
-	// Temp fix for invalid initial auth server checkout constraints - UNR-3683
-	// Using full snapshot ensures all components are available on checkout. Remove when root issue is resolved.
 	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
