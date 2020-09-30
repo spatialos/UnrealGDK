@@ -75,9 +75,6 @@ void ASpatialTestHandover::PrepareTest()
 
 				if (IsValid(HandoverCube) && IsValid(LoadBalancingStrategy))
 				{
-					// Reset the LocationIndex and the AuthorityChanges to allow multiple executions of the test.
-					//LocationIndex = 0;
-					//AuthorityChanges = 0;
 					FinishStep();
 				}
 			}
@@ -97,7 +94,7 @@ void ASpatialTestHandover::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestHandoverServer1MoveToServer2"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			if( MoveHandoverCube(Server2Position))
+			if (MoveHandoverCube(Server2Position))
 			{
 				FinishStep();
 			}
@@ -112,7 +109,6 @@ void ASpatialTestHandover::PrepareTest()
 			FinishStep();
 		},
 		StepTimeLimit);
-
 
 	// Server 2 acquires a lock on the HandoverCube.
 	AddStep(TEXT("SpatialTestHandoverServer2AcquireLock"), FWorkerDefinition::Server(2), nullptr, [this]() {
@@ -183,9 +179,10 @@ void ASpatialTestHandover::RequireHandoverCubeAuthorityAndPosition(int WorkerSho
 		return;
 	}
 
-	RequireEqual_Vector(HandoverCube->GetActorLocation(), ExpectedPosition, FString::Printf(TEXT("HandoverCube in %s"), *ExpectedPosition.ToCompactString()), 1.0f);
+	RequireEqual_Vector(HandoverCube->GetActorLocation(), ExpectedPosition,
+						FString::Printf(TEXT("HandoverCube in %s"), *ExpectedPosition.ToCompactString()), 1.0f);
 
-	if(WorkerShouldHaveAuthority == GetLocalWorkerId())
+	if (WorkerShouldHaveAuthority == GetLocalWorkerId())
 	{
 		RequireTrue(HandoverCube->HasAuthority(), TEXT("Has Authority"));
 	}
