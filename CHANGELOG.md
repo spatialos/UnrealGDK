@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where possessing a new pawn and immediately setting the owner of the old pawn to the controller could cause server RPCs from that pawn to be dropped.
 - Added support for the `bHidden` relevancy flag. Clients will not checkout Actors that have `bHidden` set to true (unless they are always relevant or the root component has collisions enabled).
 - Fixed an issue with deployments failing due to the incorrect number of workers when the launch config was specified, rather than automatically generated.
+- Replicated actors with non-replicated owners no longer consider the non-replicated owners for replication.
 
 ## [`0.11.0`] - 2020-09-03
 
