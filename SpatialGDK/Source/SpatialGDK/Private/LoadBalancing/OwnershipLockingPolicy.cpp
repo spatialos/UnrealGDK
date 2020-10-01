@@ -44,7 +44,7 @@ ActorLockToken UOwnershipLockingPolicy::AcquireLock(AActor* Actor, FString Debug
 			Actor->OnDestroyed.AddDynamic(this, &UOwnershipLockingPolicy::OnExplicitlyLockedActorDeleted);
 		}
 
-		AActor* OwnershipHierarchyRoot = SpatialGDK::GetTopmostOwner(Actor);
+		AActor* OwnershipHierarchyRoot = SpatialGDK::GetOutermostReplicatedOwner(Actor);
 		AddOwnershipHierarchyRootInformation(OwnershipHierarchyRoot, Actor);
 
 		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, OwnershipHierarchyRoot });
@@ -109,7 +109,7 @@ bool UOwnershipLockingPolicy::IsLocked(const AActor* Actor) const
 	}
 
 	// Is the hierarchy root of this Actor explicitly locked or on a locked hierarchy ownership path.
-	if (AActor* HierarchyRoot = SpatialGDK::GetTopmostOwner(Actor))
+	if (AActor* HierarchyRoot = SpatialGDK::GetOutermostReplicatedOwner(Actor))
 	{
 		return IsExplicitlyLocked(HierarchyRoot) || IsLockedHierarchyRoot(HierarchyRoot);
 	}
@@ -186,7 +186,7 @@ void UOwnershipLockingPolicy::OnOwnerUpdated(const AActor* Actor, const AActor* 
 	// recalculate ownership hierarchies of all explicitly locked Actors in that hierarchy.
 	else if (OldOwner != nullptr)
 	{
-		const AActor* OldHierarchyRoot = OldOwner->GetOwner() != nullptr ? SpatialGDK::GetTopmostOwner(OldOwner) : OldOwner;
+		const AActor* OldHierarchyRoot = OldOwner->GetOwner() != nullptr ? SpatialGDK::GetOutermostReplicatedOwner(OldOwner) : OldOwner;
 		if (IsLockedHierarchyRoot(OldHierarchyRoot))
 		{
 			RecalculateAllExplicitlyLockedActorsInThisHierarchy(OldHierarchyRoot);
@@ -239,7 +239,7 @@ void UOwnershipLockingPolicy::RecalculateLockedActorOwnershipHierarchyInformatio
 	RemoveOwnershipHierarchyRootInformation(OldHierarchyRoot, ExplicitlyLockedActor);
 
 	// For the new ownership path, update ownership path Actor mapping to explicitly locked Actors to include this Actor.
-	AActor* NewOwnershipHierarchyRoot = SpatialGDK::GetTopmostOwner(ExplicitlyLockedActor);
+	AActor* NewOwnershipHierarchyRoot = SpatialGDK::GetOutermostReplicatedOwner(ExplicitlyLockedActor);
 	ActorToLockingState.FindChecked(ExplicitlyLockedActor).HierarchyRoot = NewOwnershipHierarchyRoot;
 	AddOwnershipHierarchyRootInformation(NewOwnershipHierarchyRoot, ExplicitlyLockedActor);
 }
