@@ -531,12 +531,6 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 #endif
 
-	// Don't draw tags while the UI is open, since they will otherwise draw on top of the UI and obscure it.
-	if (ConfigUIWidget.IsValid() && ConfigUIWidget->IsInViewport())
-	{
-		return;
-	}
-
 	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
 	{
 		DrawDebugLocalPlayer(Canvas);
