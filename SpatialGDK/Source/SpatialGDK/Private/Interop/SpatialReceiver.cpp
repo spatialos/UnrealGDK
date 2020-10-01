@@ -227,13 +227,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
-    case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-    case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-    case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-    case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-    case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-    case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
@@ -1593,13 +1593,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 			   Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
-    case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-    case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-    case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-    case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-    case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-        return;
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		OnHeartbeatComponentUpdate(Op);
 		return;
