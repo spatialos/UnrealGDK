@@ -25,7 +25,7 @@
 namespace
 {
 const PhysicalWorkerName UnrealWorker = TEXT("UnrealWorker");
-const WorkerRequirementSet UnrealRequirementSet = WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ UnrealWorker } } };
+const WorkerRequirementSet UnrealRequirementSet = WorkerRequirementSet{ WorkerAttributeSet{ UnrealWorker } };
 
 const PhysicalWorkerName ThisWorker = TEXT("ThisWorker");
 const PhysicalWorkerName OtherWorker = TEXT("OtherWorker");
@@ -33,11 +33,11 @@ const PhysicalWorkerName ClientWorker = TEXT("ClientWorker");
 const PhysicalWorkerName OtherClientWorker = TEXT("OtherClientWorker");
 
 const WorkerRequirementSet ThisRequirementSet =
-	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *ThisWorker) } } };
+	WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *ThisWorker) } };
 const WorkerRequirementSet OtherRequirementSet =
-	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *OtherWorker) } } };
+	WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *OtherWorker) } };
 const WorkerRequirementSet OtherClientRequirementSet =
-	WorkerRequirementSet{ WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *OtherClientWorker) } } };
+	WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *OtherClientWorker) } };
 
 constexpr VirtualWorkerId ThisVirtualWorker = 1;
 constexpr VirtualWorkerId OtherVirtualWorker = 2;
@@ -102,8 +102,8 @@ void AddLBEntityToView(
 
 	if (ClientWorkerName.IsSet())
 	{
-		const WorkerRequirementSet AuthClientRequirementSet = WorkerRequirementSet{ WorkerRequirementSet{
-			WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *ClientWorkerName.GetValue()) } } };
+		const WorkerRequirementSet AuthClientRequirementSet =
+			WorkerRequirementSet{ WorkerAttributeSet{ FString::Printf(TEXT("workerId:%s"), *ClientWorkerName.GetValue()) } };
 		WriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, AuthClientRequirementSet);
 		WriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, AuthClientRequirementSet);
 	}
@@ -140,7 +140,7 @@ WriteAclMap GetWriteAclMapFromUpdate(const SpatialGDK::EntityComponentUpdate& Up
 }
 
 bool AclMapDelegatesComponents(const WriteAclMap& AclMap, const WorkerRequirementSet DelegatedRequirementSet,
-							   const TArray<Worker_ComponentId> DelegatedComponents)
+							   const TArray<Worker_ComponentId>& DelegatedComponents)
 {
 	for (Worker_ComponentId ComponentId : DelegatedComponents)
 	{
@@ -199,8 +199,6 @@ LOADBALANCEENFORCER_TEST(
 		ThisWorker, SubView, VirtualWorkerTranslator.Get(), [&Updates](SpatialGDK::EntityComponentUpdate Update) {
 			Updates.Add(MoveTemp(Update));
 		});
-
-	LoadBalanceEnforcer.Advance();
 
 	LoadBalanceEnforcer.ShortCircuitMaybeRefreshAcl(EntityIdOne);
 

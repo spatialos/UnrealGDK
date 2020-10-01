@@ -474,6 +474,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [&](SpatialGDK::EntityComponentUpdate AclUpdate) {
+		// We pass the component update function of the view coordinator rather than the connection. This
+		// is so any updates are written to the local view before being sent. This does mean the connection send
+		// is not fully async right now, but could be if we replaced this with a "send and flush", which would
+		// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
+		// we can make that optimisation.
 		Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
 	};
 	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
@@ -1770,10 +1775,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
 			LoadBalanceEnforcer->Advance();
-			if (Connection != nullptr)
-			{
-				Connection->Flush();
-			}
+			// Immediately flush. The messages to spatial created by the load balance enforcer in response
+			// to other workers should be looped back as quick as possible.
+			Connection->Flush();
 		}
 
 		{

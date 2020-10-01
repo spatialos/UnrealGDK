@@ -9,7 +9,8 @@
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
+#include "SpatialView/EntityDelta.h"
+#include "SpatialView/ViewDelta.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
@@ -89,13 +90,10 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 	const PhysicalWorkerName* DestinationWorkerId =
 		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent.VirtualWorkerId);
 
-	check(DestinationWorkerId != nullptr);
-	if (DestinationWorkerId == nullptr)
+	if (ensure(DestinationWorkerId))
 	{
-		return;
+		UpdateSender(ConstructAclUpdate(EntityId, DestinationWorkerId));
 	}
-
-	UpdateSender(ConstructAclUpdate(EntityId, DestinationWorkerId));
 }
 
 EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worker_EntityId EntityId,
@@ -128,7 +126,8 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 		switch (ComponentId)
 		{
 		case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		case SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()):
+		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+		case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 			Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
 			break;
 		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:

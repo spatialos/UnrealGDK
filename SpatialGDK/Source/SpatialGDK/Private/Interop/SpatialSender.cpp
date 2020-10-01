@@ -196,10 +196,10 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+	Connection->SendComponentUpdate(EntityId, &Update);
 
 	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(Channel->GetEntityId());
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)

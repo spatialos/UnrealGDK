@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -10,8 +9,6 @@
 #include "SpatialCommonTypes.h"
 
 #include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/EntityDelta.h"
-#include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
