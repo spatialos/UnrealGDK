@@ -35,6 +35,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
@@ -358,6 +359,87 @@ void USpatialNetDriver::InitializeSpatialOutputDevice()
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, LoggerName, PIEIndex);
 }
 
+void USpatialNetDriver::CreateAndInitializeStartupClasses()
+{
+	InitializeSpatialOutputDevice();
+
+	Dispatcher = MakeUnique<SpatialDispatcher>();
+	Sender = NewObject<USpatialSender>();
+	Receiver = NewObject<USpatialReceiver>();
+
+	// TODO: UNR-2452
+	// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
+	// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
+	// Why the destroyed USpatialNetDriver is referenced is unknown.
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+
+	GlobalStateManager = GameInstance->GetGlobalStateManager();
+	check(GlobalStateManager != nullptr);
+
+	StaticComponentView = GameInstance->GetStaticComponentView();
+	check(StaticComponentView != nullptr);
+
+	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
+	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
+
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+#if !UE_BUILD_SHIPPING
+	// If metrics display is enabled, spawn an Actor to replicate the information to each client
+	if (IsServer())
+	{
+		if (SpatialSettings->bEnableMetricsDisplay)
+		{
+			SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+		}
+
+		if (SpatialSettings->SpatialDebugger != nullptr)
+		{
+			SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+		}
+	}
+#endif
+	if (SpatialSettings->UseRPCRingBuffer())
+	{
+		RPCService =
+			MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC),
+													  StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()));
+	}
+
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, &TimerManager, RPCService.Get());
+	GlobalStateManager->Init(this);
+	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
+	PlayerSpawner->Init(this, &TimerManager);
+	PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
+	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
+	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
+
+	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
+	// Making sure the value is the same
+	USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	check(NewPackageMap == PackageMap);
+
+	PackageMap->Init(this, &TimerManager);
+	if (IsServer())
+	{
+		PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
+	}
+
+	// The interest factory depends on the package map, so is created last.
+	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
+
+	SpatialGDK::FSubView& WellKnownSubView =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
+												   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+	WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
+																		  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																		  *VirtualWorkerTranslator, *GlobalStateManager);
+}
+
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	InitializeSpatialOutputDevice();
@@ -433,6 +515,18 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	// The interest factory depends on the package map, so is created last.
 	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
+
+	if (!IsServer())
+	{
+		return;
+	}
+
+	SpatialGDK::FSubView& WellKnownSubView =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
+												   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+	WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
+																		  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																		  *VirtualWorkerTranslator, *GlobalStateManager);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -1786,6 +1880,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
+		if (WellKnownEntitySystem.IsValid())
+		{
+			WellKnownEntitySystem->Advance();
+		}
+
 		if (!bIsReadyToStart)
 		{
 			TryFinishStartup();
@@ -2656,13 +2755,4 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 		}
 	}
 	return FUnrealObjectRef::NULL_OBJECT_REF;
-}
-
-// This is only called if this worker has been selected by SpatialOS to be authoritative
-// for the TranslationManager, otherwise the manager will never be instantiated.
-void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
-{
-	VirtualWorkerTranslationManager =
-		MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
-	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
 }
