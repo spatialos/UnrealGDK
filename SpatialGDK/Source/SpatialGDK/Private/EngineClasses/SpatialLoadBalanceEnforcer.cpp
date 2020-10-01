@@ -109,7 +109,7 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 	Acl.ComponentWriteAcl.GetKeys(ComponentIds);
 
 	// Ensure that every component ID in ComponentPresence is set in the write ACL.
-	for (const auto& RequiredComponentId : ComponentPresenceComponent.ComponentList)
+	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
 	{
 		ComponentIds.AddUnique(RequiredComponentId);
 	}
@@ -122,7 +122,7 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
-	for (const Worker_ComponentId& ComponentId : ComponentIds)
+	for (const Worker_ComponentId ComponentId : ComponentIds)
 	{
 		switch (ComponentId)
 		{
@@ -147,21 +147,21 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityId)
 {
 	LBComponents& Components = DataStore.Emplace(EntityId, LBComponents{});
-	for (auto& ComponentData : SubView->GetView()[EntityId].Components)
+	for (const ComponentData& Data : SubView->GetView()[EntityId].Components)
 	{
-		switch (ComponentData.GetComponentId())
+		switch (Data.GetComponentId())
 		{
 		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-			Components.Acl = EntityAcl(ComponentData.GetUnderlying());
+			Components.Acl = EntityAcl(Data.GetUnderlying());
 			break;
 		case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-			Components.Intent = AuthorityIntent(ComponentData.GetUnderlying());
+			Components.Intent = AuthorityIntent(Data.GetUnderlying());
 			break;
 		case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-			Components.Presence = ComponentPresence(ComponentData.GetUnderlying());
+			Components.Presence = ComponentPresence(Data.GetUnderlying());
 			break;
 		case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-			Components.OwningClientWorker = NetOwningClientWorker(ComponentData.GetUnderlying());
+			Components.OwningClientWorker = NetOwningClientWorker(Data.GetUnderlying());
 			break;
 		default:
 			break;

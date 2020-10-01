@@ -470,7 +470,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
+	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [&](SpatialGDK::EntityComponentUpdate AclUpdate) {
