@@ -10,6 +10,7 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);

@@ -10,11 +10,12 @@
 
 #include "CoreMinimal.h"
 
-#include "Schema/ClientEndpoint.h"
 #include "SpatialConstants.h"
 #include "SpatialView/ComponentData.h"
+#include "SpatialView/Dispatcher.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Utils/SchemaOption.h"

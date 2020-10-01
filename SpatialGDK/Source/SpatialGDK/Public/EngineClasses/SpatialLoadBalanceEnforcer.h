@@ -5,10 +5,10 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 
 #include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/SubView.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
@@ -16,6 +16,8 @@ class SpatialVirtualWorkerTranslator;
 
 namespace SpatialGDK
 {
+class FSubView;
+
 struct LBComponents
 {
 	EntityAcl Acl;

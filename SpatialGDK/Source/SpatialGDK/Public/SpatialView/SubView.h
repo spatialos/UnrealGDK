@@ -4,7 +4,6 @@
 
 #include "Dispatcher.h"
 #include "EntityView.h"
-#include "Schema/Interest.h"
 #include "Templates/Function.h"
 
 using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
