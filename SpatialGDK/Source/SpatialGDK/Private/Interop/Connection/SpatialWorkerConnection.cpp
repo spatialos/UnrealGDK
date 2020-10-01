@@ -258,7 +258,8 @@ void USpatialWorkerConnection::SetStartupComplete()
 bool USpatialWorkerConnection::IsStartupComponent(Worker_ComponentId Id)
 {
 	return Id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID || Id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
-		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID || Id == SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
+		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID
+		   || Id == SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
 }
 
 void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList)

@@ -198,9 +198,10 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 
 	Query SelfQuery;
 	SelfQuery.Constraint.EntityIdConstraint = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
-	SelfQuery.ResultComponentIds = { SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	SelfQuery.ResultComponentIds = { SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
+									 SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	Interest SelfInterest;
-	SelfInterest.ComponentInterestMap.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, ComponentInterest{{SelfQuery}});
+	SelfInterest.ComponentInterestMap.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, ComponentInterest{ { SelfQuery } });
 
 	Components.Add(SelfInterest.CreateInterestData());
 
