@@ -341,7 +341,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (DisplayName = "Get Server Id Should Have Authority (Actor)"))
 	int GetServerIdShouldHaveAuthority(AActor* Actor);
 
-	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (DisplayName="Get Server Id Should Have Authority (Position)"))
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (DisplayName = "Get Server Id Should Have Authority (Position)"))
 	int GetServerIdShouldHaveAuthorityOnPosition(const FVector& Position, const TSubclassOf<AActor> Class);
 
 protected:

@@ -966,8 +966,7 @@ int ASpatialFunctionalTest::GetServerIdShouldHaveAuthority(AActor* Actor)
 	return SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 }
 
-int ASpatialFunctionalTest::GetServerIdShouldHaveAuthorityOnPosition(const FVector& Position,
-														   const TSubclassOf<AActor> Class)
+int ASpatialFunctionalTest::GetServerIdShouldHaveAuthorityOnPosition(const FVector& Position, const TSubclassOf<AActor> Class)
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 

@@ -123,7 +123,8 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	return ReturnedWorkerId;
 }
 
-VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const FVector& Position, const TSubclassOf<AActor> Class /*= AActor::StaticClass()*/) const
+VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const FVector& Position,
+														   const TSubclassOf<AActor> Class /*= AActor::StaticClass()*/) const
 {
 	if (!IsReady())
 	{

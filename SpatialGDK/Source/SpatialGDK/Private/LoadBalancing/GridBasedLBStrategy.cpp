@@ -129,8 +129,8 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const FVector& Posi
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Grid %d, worker %d for position %s"), i,
-				   VirtualWorkerIds[i], *Actor2DLocation.ToString());
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Grid %d, worker %d for position %s"), i, VirtualWorkerIds[i],
+				   *Actor2DLocation.ToString());
 			return VirtualWorkerIds[i];
 		}
 	}
