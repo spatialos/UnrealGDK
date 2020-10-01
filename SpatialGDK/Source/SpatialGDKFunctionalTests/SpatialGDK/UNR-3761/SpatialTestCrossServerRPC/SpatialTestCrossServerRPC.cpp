@@ -54,7 +54,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 
 	for (int i = 1; i <= 4; ++i)
 	{
-		FVector SpawnPosition = CubesLocations[i-1];
+		FVector SpawnPosition = CubesLocations[i - 1];
 		// Each server spawns a cube
 		AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(i), nullptr, [this, SpawnPosition]() {
 			ACrossServerRPCCube* TestCube =
@@ -63,7 +63,6 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 
 			FinishStep();
 		});
-
 	}
 
 	int NumCubes = CubesLocations.Num();
@@ -83,7 +82,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 			int LocalWorkerId = GetLocalWorkerId();
 			int NumCubesWithAuthority = 0;
 			int NumCubesShouldHaveAuthority = 0;
-			for(AActor* Cube : TestCubes)
+			for (AActor* Cube : TestCubes)
 			{
 				if (Cube->HasAuthority())
 				{
