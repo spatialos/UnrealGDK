@@ -55,6 +55,12 @@ VirtualWorkerId UDebugLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) co
 	return WrappedStrategy->WhoShouldHaveAuthority(Actor);
 }
 
+VirtualWorkerId UDebugLBStrategy::WhoShouldHaveAuthority(const FVector& Position,
+														 const TSubclassOf<AActor> Class /*= AActor::StaticClass()*/) const
+{
+	return WrappedStrategy->WhoShouldHaveAuthority(Position, Class);
+}
+
 SpatialGDK::QueryConstraint UDebugLBStrategy::GetWorkerInterestQueryConstraint() const
 {
 	check(WrappedStrategy);

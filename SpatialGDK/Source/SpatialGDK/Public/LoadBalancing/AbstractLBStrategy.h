@@ -49,6 +49,12 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const
 		PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
 
+		virtual VirtualWorkerId
+		WhoShouldHaveAuthority(const FVector& Position, const TSubclassOf<AActor> Class = AActor::StaticClass()) const
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
 		/**
 		 * Get the query constraints required by this worker based on the load balancing strategy used.
 		 */

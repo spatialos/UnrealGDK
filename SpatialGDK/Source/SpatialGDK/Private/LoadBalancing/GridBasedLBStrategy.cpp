@@ -109,22 +109,34 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 			   *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
+	return WhoShouldHaveAuthority(SpatialGDK::GetActorSpatialPosition(&Actor));
+}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const FVector& Position,
+															 const TSubclassOf<AActor> Class /*= AActor::StaticClass()*/) const
+{
+	if (!IsReady())
+	{
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Position %s."),
+			   *Position.ToCompactString());
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const FVector2D Actor2DLocation = FVector2D(Position);
 
 	check(VirtualWorkerIds.Num() == WorkerCells.Num());
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i,
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Grid %d, worker %d for position %s"), i,
 				   VirtualWorkerIds[i], *Actor2DLocation.ToString());
 			return VirtualWorkerIds[i];
 		}
 	}
 
-	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"),
-		   *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
+	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for position %s"),
+		   *Actor2DLocation.ToString());
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 

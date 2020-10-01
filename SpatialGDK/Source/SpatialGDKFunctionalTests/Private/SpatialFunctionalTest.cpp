@@ -948,3 +948,33 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 	bWasLoadedFromTakenSnapshot = false;
 	TakenSnapshots.Empty();
 }
+
+int ASpatialFunctionalTest::GetServerIdShouldHaveAuthority(AActor* Actor)
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+
+	if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
+	{
+		return 1;
+	}
+
+	if (Actor == nullptr)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	return SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+}
+
+int ASpatialFunctionalTest::GetServerIdShouldHaveAuthorityOnPosition(const FVector& Position,
+														   const TSubclassOf<AActor> Class)
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+
+	if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
+	{
+		return 1;
+	}
+
+	return SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(Position, Class);
+}

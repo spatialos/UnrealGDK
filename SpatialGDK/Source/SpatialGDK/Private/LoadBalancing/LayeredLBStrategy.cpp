@@ -123,6 +123,30 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	return ReturnedWorkerId;
 }
 
+VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const FVector& Position, const TSubclassOf<AActor> Class /*= AActor::StaticClass()*/) const
+{
+	if (!IsReady())
+	{
+		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy not ready to decide on authority for Position %s."),
+			   *Position.ToCompactString());
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const FName& LayerName = GetLayerNameForClass(Class);
+	if (!LayerNameToLBStrategy.Contains(LayerName))
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Class %s which is in Layer %s."),
+			   *Class->GetName(), *LayerName.ToString());
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(Position, Class);
+
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Class %s."), ReturnedWorkerId,
+		   *Class->GetName());
+	return ReturnedWorkerId;
+}
+
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint() const
 {
 	check(IsReady());

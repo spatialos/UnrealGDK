@@ -338,6 +338,12 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (DisplayName = "Get Server Id Should Have Authority (Actor)"))
+	int GetServerIdShouldHaveAuthority(AActor* Actor);
+
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (DisplayName="Get Server Id Should Have Authority (Position)"))
+	int GetServerIdShouldHaveAuthorityOnPosition(const FVector& Position, const TSubclassOf<AActor> Class);
+
 protected:
 	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
 
