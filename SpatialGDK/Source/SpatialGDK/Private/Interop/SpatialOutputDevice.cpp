@@ -27,18 +27,17 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 	if (bLogToSpatial && Connection != nullptr)
 	{
 #if WITH_EDITOR
-		if (GPlayInEditorID == PIEIndex)
+		if (GPlayInEditorID != PIEIndex)
 		{
-			Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), LoggerName, InData);
+			return;
 		}
 #else // !WITH_EDITOR
 		if (Verbosity > FilterLevel && Category != FName("LogSpatial"))
 		{
 			return;
 		}
-
-		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), LoggerName, InData);
 #endif
+		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), LoggerName, InData);
 	}
 }
 
