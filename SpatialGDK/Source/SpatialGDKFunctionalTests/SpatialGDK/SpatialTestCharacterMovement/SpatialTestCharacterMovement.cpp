@@ -46,9 +46,9 @@ void ASpatialTestCharacterMovement::OnOverlapBegin(AActor* OverlappedActor, AAct
 	}
 }
 
-void ASpatialTestCharacterMovement::BeginPlay()
+void ASpatialTestCharacterMovement::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// Universal setup step to create the TriggerBox and to set the helper variable
 	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {

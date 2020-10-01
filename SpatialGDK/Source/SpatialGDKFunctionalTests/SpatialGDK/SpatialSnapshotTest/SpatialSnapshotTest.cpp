@@ -55,9 +55,9 @@ ASpatialSnapshotTest::ASpatialSnapshotTest()
 	SetNumRequiredClients(1);
 }
 
-void ASpatialSnapshotTest::BeginPlay()
+void ASpatialSnapshotTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// First we need to know if we're launching from the default Snapshot or from a taken Snapshot.
 	bool bIsRunningFirstTime = !WasLoadedFromTakenSnapshot();
