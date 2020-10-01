@@ -227,6 +227,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
+    case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+    case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+    case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+    case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+    case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+    case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
@@ -236,11 +243,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
 		PendingAddActors.AddUnique(Op.entity_id);
-		return;
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
@@ -258,10 +260,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			RPCService->OnCheckoutMulticastRPCComponentOnEntity(Op.entity_id);
 		}
 		return;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		return;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		RemoveActor(Op.entity_id);
 		return;
@@ -275,8 +273,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
 		}
-		return;
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
@@ -1597,24 +1593,20 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 			   Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
-		return;
+    case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+    case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+    case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+    case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+    case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+        return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		OnHeartbeatComponentUpdate(Op);
-		return;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		return;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		return;
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
 		HandleRPCLegacy(Op);
-		return;
-	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		return;
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		return;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
