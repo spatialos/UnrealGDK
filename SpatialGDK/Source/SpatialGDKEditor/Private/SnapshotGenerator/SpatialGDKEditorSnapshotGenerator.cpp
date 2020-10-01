@@ -196,6 +196,15 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateVirtualWorkerTranslatorData());
 	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 
+	Query SelfQuery;
+	SelfQuery.Constraint.EntityIdConstraint = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
+	SelfQuery.ResultComponentIds = { SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
+									 SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	Interest SelfInterest;
+	SelfInterest.ComponentInterestMap.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, ComponentInterest{ { SelfQuery } });
+
+	Components.Add(SelfInterest.CreateInterestData());
+
 	// GDK known entities completeness tags
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));

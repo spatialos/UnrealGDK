@@ -356,7 +356,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
 								// Authority intent component to handle scattered hierarchies
-								AUTHORITY_INTENT_COMPONENT_ID
+								AUTHORITY_INTENT_COMPONENT_ID,
+
+								// Well known entity tag
+								SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
