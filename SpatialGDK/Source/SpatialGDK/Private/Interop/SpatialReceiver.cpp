@@ -1169,7 +1169,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking()
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
-		PackageMap->ClearRemovedDynamicSubobjectObjectRefs();
+		PackageMap->ClearRemovedDynamicSubobjectObjectRefs(EntityId);
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			for (UObject* DynamicSubobject : Channel->CreateSubObjects)

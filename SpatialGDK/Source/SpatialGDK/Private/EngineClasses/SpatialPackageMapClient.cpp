@@ -246,9 +246,19 @@ void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnreal
 	RemovedDynamicSubobjectObjectRefs.Emplace(ObjectRef, NetGUID);
 }
 
-void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs()
+void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId)
 {
-	RemovedDynamicSubobjectObjectRefs.Empty();
+	for (TMap<FUnrealObjectRef, FNetworkGUID>::TIterator dynamicSubobject(RemovedDynamicSubobjectObjectRefs); dynamicSubobject;
+		 ++dynamicSubobject)
+	{
+		UObject* Object = GetObjectFromNetGUID(dynamicSubobject->Value, true);
+		AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
+		Worker_EntityId SubObjectEntityId = GetEntityIdFromObject(Actor);
+		if (SubObjectEntityId == InEntityId)
+		{
+			RemovedDynamicSubobjectObjectRefs.Remove(dynamicSubobject->Key);
+		}
+	}
 }
 
 TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId& EntityId)
