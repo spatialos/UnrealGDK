@@ -377,6 +377,6 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_SetupConnectionConfigFr
 
 	// THEN
 	TestEqual("Success", bSuccess, false);
-
+	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
 	return  true;
 }
