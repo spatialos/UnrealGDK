@@ -24,21 +24,21 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 
 void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
-	// Log category LogSpatial ignores the verbosity check.
-	if (Verbosity > FilterLevel && Category != FName("LogSpatial"))
-	{
-		return;
-	}
-
 	if (bLogToSpatial && Connection != nullptr)
 	{
 #if WITH_EDITOR
-		if (GPlayInEditorID != PIEIndex)
+		if (GPlayInEditorID == PIEIndex)
+		{
+			Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), LoggerName, InData);
+		}
+#else // !WITH_EDITOR
+		if (Verbosity > FilterLevel && Category != FName("LogSpatial"))
 		{
 			return;
 		}
-#endif // WITH_EDITOR
+
 		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), LoggerName, InData);
+#endif
 	}
 }
 
