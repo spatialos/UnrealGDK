@@ -235,7 +235,6 @@ private:
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
 	void InitializeSpatialOutputDevice();
-	void CreateAndInitializeStartupClasses();
 	void CreateAndInitializeCoreClasses();
 	void CreateAndInitializeLoadBalancingClasses();
 

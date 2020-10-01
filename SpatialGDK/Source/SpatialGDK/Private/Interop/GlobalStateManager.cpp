@@ -504,10 +504,10 @@ void UGlobalStateManager::QueryTranslation()
 	}
 
 	// Build a constraint for the Virtual Worker Translation.
-	Worker_ComponentConstraint TranslationComponentConstraint{};
+	Worker_ComponentConstraint TranslationComponentConstraint;
 	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 
-	Worker_Constraint TranslationConstraint{};
+	Worker_Constraint TranslationConstraint;
 	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
 	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
 

@@ -185,6 +185,7 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
 	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
@@ -194,6 +195,14 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
 	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+
+	Query SelfQuery;
+	SelfQuery.Constraint.EntityIdConstraint = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
+	SelfQuery.ResultComponentIds = { SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	Interest SelfInterest;
+	SelfInterest.ComponentInterestMap.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, ComponentInterest{{SelfQuery}});
+
+	Components.Add(SelfInterest.CreateInterestData());
 
 	// GDK known entities completeness tags
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));

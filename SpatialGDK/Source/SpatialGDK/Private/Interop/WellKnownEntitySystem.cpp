@@ -11,10 +11,10 @@ WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& SubView, USpatialRe
 											 UGlobalStateManager& InGlobalStateManager)
 	: SubView(&SubView)
 	, Receiver(InReceiver)
-	, Connection(InConnection)
-	, NumberOfWorkers(InNumberOfWorkers)
 	, VirtualWorkerTranslator(&InVirtualWorkerTranslator)
 	, GlobalStateManager(&InGlobalStateManager)
+	, Connection(InConnection)
+	, NumberOfWorkers(InNumberOfWorkers)
 {
 }
 
