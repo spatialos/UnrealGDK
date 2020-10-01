@@ -94,6 +94,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bMapLoaded(false)
 	, SessionId(0)
 	, NextRPCIndex(0)
+	, StartupTimestamp(0)
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
@@ -530,7 +531,7 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 
 void USpatialNetDriver::OnGSMQuerySuccess()
 {
-	StartupDebugString.Empty();
+	StartupClientDebugString.Empty();
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
@@ -632,14 +633,14 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 	}
 	else if (!bNewAcceptingPlayers)
 	{
-		StartupDebugString = FString(
+		StartupClientDebugString = FString(
 			TEXT("GlobalStateManager not accepting players. This is likely caused by waiting for all the required workers to connect"));
 		RetryQueryGSM();
 		return;
 	}
 	else if (QuerySessionId != SessionId)
 	{
-		StartupDebugString =
+		StartupClientDebugString =
 			FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId, SessionId);
 		RetryQueryGSM();
 		return;
@@ -658,7 +659,6 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	UGlobalStateManager::QueryDelegate QueryDelegate;
 	QueryDelegate.BindUObject(this, &USpatialNetDriver::GSMQueryDelegateFunction);
 
-	StartupTimestamp = FPlatformTime::Cycles64();
 	// Begin querying the state of the GSM so we know the state of AcceptingPlayers and SessionId.
 	GlobalStateManager->QueryGSM(QueryDelegate);
 }
@@ -2561,33 +2561,35 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 
 void USpatialNetDriver::TryFinishStartup()
 {
+	// Limit Log frequency.
+	bool bShouldLogStartup = [this]() {
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+		const uint64 WatchdogTimer = Settings->StartupLogRate / FPlatformTime::GetSecondsPerCycle64();
+		const uint64 CurrentTime = FPlatformTime::Cycles64();
+		if (CurrentTime - StartupTimestamp > WatchdogTimer)
+		{
+			StartupTimestamp = CurrentTime;
+			return true;
+		}
+		return false;
+	}();
+
 	if (IsServer())
 	{
-		// Limit Log frequency.
-		bool bShouldLogStartup = [this]() {
-			const uint64 WatchdogTimer = 5.0 / FPlatformTime::GetSecondsPerCycle64();
-			const uint64 CurrentTime = FPlatformTime::Cycles64();
-			if (CurrentTime - StartupTimestamp > WatchdogTimer)
-			{
-				StartupTimestamp = CurrentTime;
-				return true;
-			}
-			return false;
-		}();
-
 		if (!PackageMap->IsEntityPoolReady())
 		{
 			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
 		}
 		else if (!GlobalStateManager->IsReady())
 		{
-			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready : %s"),
-					!StartupDebugString.IsEmpty() ? *StartupDebugString : TEXT("waiting for query"));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
+					TEXT("Waiting for the GSM to be ready (this includes waiting for the expected number of workers to be connected)"));
 		}
 		else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 		{
 			GlobalStateManager->QueryTranslation();
-			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
 		}
 		else
 		{
@@ -2614,10 +2616,18 @@ void USpatialNetDriver::TryFinishStartup()
 			Connection->SetStartupComplete();
 		}
 	}
-	else if (bMapLoaded)
+	else
 	{
-		bIsReadyToStart = true;
-		Connection->SetStartupComplete();
+		if (bMapLoaded)
+		{
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
+		}
+		else
+		{
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the deployment to be ready : %s"),
+					StartupClientDebugString.IsEmpty() ? TEXT("Waiting for connection.") : *StartupClientDebugString)
+		}
 	}
 }
 

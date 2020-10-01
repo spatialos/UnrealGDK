@@ -304,5 +304,5 @@ private:
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
-	FString StartupDebugString;
+	FString StartupClientDebugString;
 };
