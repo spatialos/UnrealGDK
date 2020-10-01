@@ -5,7 +5,6 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 
 #include "SpatialView/EntityComponentTypes.h"
