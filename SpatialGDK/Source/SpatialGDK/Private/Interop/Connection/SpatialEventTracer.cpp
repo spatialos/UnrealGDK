@@ -191,7 +191,14 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	// Open a local file
-	const FString FolderPath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
+	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
+	FString AbsLogPath;
+	if (FParse::Value(FCommandLine::Get(), TEXT("eventLogPath="), AbsLogPath, false))
+	{
+		EventTracePath = FPaths::GetPath(AbsLogPath);
+	}
+	const FString FolderPath = EventTracePath;
+
 	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *FDateTime::Now().ToString());
 	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
 
