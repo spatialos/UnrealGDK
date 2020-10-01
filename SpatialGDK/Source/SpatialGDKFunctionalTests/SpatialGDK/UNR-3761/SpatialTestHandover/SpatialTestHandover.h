@@ -29,7 +29,7 @@ private:
 
 	bool MoveHandoverCube(FVector Position);
 
-	// Position in Server1, where HandoverCube will be spawned
+	// Positions that belong to specific server according to 2x2 Grid LBS.
 	FVector Server1Position;
 	FVector Server2Position;
 	FVector Server3Position;
