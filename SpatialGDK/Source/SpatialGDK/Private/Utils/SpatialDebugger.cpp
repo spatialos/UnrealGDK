@@ -52,6 +52,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 
 	NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 
+	OnConfigUIClosed.BindDynamic(this, &ASpatialDebugger::DefaultOnConfigUIClosed);
+
 	// For GDK design reasons, this is the approach chosen to get a pointer
 	// on the net driver to the client ASpatialDebugger.  Various alternatives
 	// were considered and this is the best of a bad bunch.
@@ -337,7 +339,14 @@ void ASpatialDebugger::OnToggleConfigUI()
 	else
 	{
 		ConfigUIWidget->RemoveFromParent();
+		OnConfigUIClosed.ExecuteIfBound();
+	}
+}
 
+void ASpatialDebugger::DefaultOnConfigUIClosed()
+{
+	if (LocalPlayerController.IsValid())
+	{
 		FInputModeGameOnly InputModeSettings;
 		LocalPlayerController->SetInputMode(InputModeSettings);
 		LocalPlayerController->bShowMouseCursor = false;

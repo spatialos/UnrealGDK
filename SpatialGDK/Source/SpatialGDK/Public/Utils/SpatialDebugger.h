@@ -60,6 +60,8 @@ enum Type
 };
 } // namespace EActorTagDrawMode
 
+DECLARE_DYNAMIC_DELEGATE(FOnConfigUIClosedDelegate);
+
 /**
  * Visualise spatial information at runtime and in the editor
  */
@@ -88,6 +90,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
 	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
+
+	FOnConfigUIClosedDelegate OnConfigUIClosed;
 
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
@@ -162,6 +166,11 @@ public:
 	UFUNCTION()
 	void OnToggleConfigUI();
 
+private:
+	UFUNCTION()
+	void DefaultOnConfigUIClosed();
+
+public:
 	UFUNCTION(BlueprintCallable, Category = Visualization)
 	void SetShowWorkerRegions(const bool bNewShow);
 
