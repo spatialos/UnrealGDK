@@ -177,7 +177,7 @@ LOADBALANCEENFORCER_TEST(GIVEN_a_view_with_no_data_WHEN_advance_load_balance_enf
 
 	// The view has no entities in it. We expect the enforcer not to produce any ACL requests.
 	LoadBalanceEnforcer.Advance();
-	TestTrue("LoadBalanceEnforcer did not try to send an ACL update", !bInvoked);
+	TestFalse("LoadBalanceEnforcer did not try to send an ACL update", bInvoked);
 
 	return true;
 }

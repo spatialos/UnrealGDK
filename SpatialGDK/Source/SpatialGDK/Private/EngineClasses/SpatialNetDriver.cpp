@@ -473,7 +473,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [&](SpatialGDK::EntityComponentUpdate AclUpdate) {
+	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [this](SpatialGDK::EntityComponentUpdate AclUpdate) {
 		// We pass the component update function of the view coordinator rather than the connection. This
 		// is so any updates are written to the local view before being sent. This does mean the connection send
 		// is not fully async right now, but could be if we replaced this with a "send and flush", which would
