@@ -10,6 +10,7 @@
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -319,10 +320,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 				if (bEventTracerEnabled)
 				{
+					Worker_EntityId EntityId = Channel.GetEntityId();
+
 					Trace_SpanId SpanId;
-					EventTracer->GetSpanId(EntityComponentId(Channel.GetEntityId(), ComponentId), FieldId, SpanId);
+					EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId), FieldId, SpanId);
 					EventTracer->TraceEvent(
-						FEventPropertyUpdate(Channel.GetActor(), Channel.GetEntityId(), ComponentId, Cmd.Property->GetName()), { SpanId });
+						FSpatialTraceEventBuilder::PropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()), { SpanId });
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened

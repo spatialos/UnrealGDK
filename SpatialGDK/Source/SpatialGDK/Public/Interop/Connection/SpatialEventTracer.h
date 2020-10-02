@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/SpatialSpanIdCache.h"
 #include "SpatialEventMessages.h"
 
@@ -51,11 +52,7 @@ public:
 	// be registered with this SpanId) e.g. void TraceEvent(... SpatialScopedActiveSpanId&& SpanIdActivator) = delete;
 	// TODO(EventTracer): Communicate to others, that SpatialScopedActiveSpanId must be creating prior to calling worker send functions
 
-	template <class T>
-	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const TArray<worker::c::Trace_SpanId>& Causes = {})
-	{
-		return TraceEvent(EventMessage, T::StaticStruct(), Causes);
-	}
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent TraceEvent, const TArray<worker::c::Trace_SpanId>& Causes = {});
 
 	bool IsEnabled() const;
 
@@ -63,9 +60,11 @@ public:
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
 
-	bool GetSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId& CauseSpanId);
-	bool GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId);
-	void ClearSpanIds();
+	bool GetSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId& CauseSpanId, bool bRemove = true);
+	bool GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId, bool bRemove = true);
+
+	bool DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	bool DropSpanIds(const EntityComponentId& Id);
 
 private:
 	bool bEnabled{ false };
@@ -82,15 +81,12 @@ private:
 
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
 
-	SpatialWorkerOpSpanIdCache SpanIdStore;
+	SpatialSpanIdCache SpanIdStore;
 
 	void Enable(const FString& FileName);
 	void Disable();
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
-
-	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
-									   const TArray<worker::c::Trace_SpanId>& Causes);
 };
 
 struct SpatialScopedActiveSpanId

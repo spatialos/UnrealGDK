@@ -23,13 +23,6 @@ ViewDelta::ViewDelta(SpatialEventTracer* InEventTracer)
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 {
 	Clear();
-
-	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
-	if (bEventTracerEnabled)
-	{
-		EventTracer->ClearSpanIds();
-	}
-
 	for (OpList& Ops : OpLists)
 	{
 		const uint32 Count = Ops.Count;

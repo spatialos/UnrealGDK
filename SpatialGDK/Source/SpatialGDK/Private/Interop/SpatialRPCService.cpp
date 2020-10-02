@@ -3,6 +3,8 @@
 #include "Interop/SpatialRPCService.h"
 
 #include "Interop/SpatialStaticComponentView.h"
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
@@ -32,7 +34,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 	if (EventTracer != nullptr)
 	{
-		PendingPayload.SpanId = EventTracer->TraceEvent(FEventSendRPC(Target, Function));
+		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendRPC(Target, Function));
 	}
 
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
@@ -41,7 +43,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 		{
 			TArray<Trace_SpanId> Causes =
 				PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
-			PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(Target, Function), Causes);
+			PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), Causes);
 		}
 
 		// Already has queued RPCs of this type, queue until those are pushed.
@@ -186,7 +188,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 				{
 					TArray<Trace_SpanId> Causes =
 						PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
-					PendingPayload.SpanId = EventTracer->TraceEvent(FEventRPCQueued(), Causes);
+					PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), Causes);
 				}
 				break;
 			case EPushRPCResult::DropOverflowed:
@@ -253,8 +255,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			UpdateToSend.SpanId = EventTracer->TraceEvent(
-				FEventMergeComponentUpdate(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
+			//UpdateToSend.SpanId = EventTracer->TraceEvent(
+			//	CreateMergeComponentTraveEvent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
 		}
 
 #if TRACE_LIB_ACTIVE
@@ -459,38 +461,8 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 	}
 }
 
-void SpatialRPCService::UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Type)
-{
-	if (EventTracer == nullptr)
-	{
-		return;
-	}
-
-	EntityComponentId Id(EntityId, RPCRingBufferUtils::GetRingBufferComponentId(Type));
-	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
-	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
-
-	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
-	const uint64 LastSeenRPCId = SpanIdCache.LastSeenRPCIds.Contains(EntityTypePair) ? SpanIdCache.LastSeenRPCIds[EntityTypePair] : 0;
-	if (Buffer.LastSentRPCId >= LastSeenRPCId)
-	{
-		uint64 FirstRPCIdToRead = LastSeenRPCId + 1;
-		for (uint64 RPCId = FirstRPCIdToRead; RPCId <= Buffer.LastSentRPCId; RPCId++)
-		{
-			Schema_FieldId FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
-			Trace_SpanId SpanId;
-			EventTracer->GetSpanId(Id, FieldId, SpanId);
-			SpanIdCache.AddSpanId(Id, FieldId, SpanId);
-		}
-	}
-
-	SpanIdCache.LastSeenRPCIds.Add(EntityTypePair, Buffer.LastSentRPCId);
-}
-
 void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type)
 {
-	UpdateSpanIdCache(EntityId, Type);
-
 	uint64 LastSeenRPCId;
 	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
 
