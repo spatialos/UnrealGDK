@@ -66,7 +66,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
-	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer.Get();
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
@@ -243,10 +242,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		if (LoadBalanceEnforcer != nullptr)
-		{
-			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
-		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
@@ -342,11 +337,6 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
 
-	if (LoadBalanceEnforcer != nullptr)
-	{
-		LoadBalanceEnforcer->OnEntityRemoved(Op);
-	}
-
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 
 	if (NetDriver->IsServer())
@@ -408,11 +398,6 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 	{
 		// If this is a multi-cast RPC component, the RPC service should be informed to handle it.
 		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
-	}
-
-	if (LoadBalanceEnforcer != nullptr && LoadBalanceEnforcer->HandlesComponent(Op.component_id))
-	{
-		LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
 	}
 
 	if (bInCriticalSection)
@@ -545,11 +530,6 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	{
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 		return;
-	}
-
-	if (Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
-	{
-		LoadBalanceEnforcer->OnAclAuthorityChanged(Op);
 	}
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
@@ -1665,10 +1645,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		if (LoadBalanceEnforcer != nullptr)
-		{
-			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
-		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())

@@ -1,271 +1,214 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
 #include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialGDKSettings.h"
+#include "SpatialConstants.h"
+#include "SpatialView/EntityDelta.h"
+#include "SpatialView/SubView.h"
+#include "SpatialView/ViewDelta.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
-using namespace SpatialGDK;
-
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId,
-													   const USpatialStaticComponentView* InStaticComponentView,
-													   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
-	: WorkerId(InWorkerId)
-	, StaticComponentView(InStaticComponentView)
-	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
+namespace SpatialGDK
 {
-	check(InStaticComponentView != nullptr);
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const FSubView& InSubView,
+													   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
+													   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender)
+	: WorkerId(InWorkerId)
+	, SubView(&InSubView)
+	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
+	, UpdateSender(MoveTemp(InUpdateSender))
+{
 	check(InVirtualWorkerTranslator != nullptr);
 }
 
-void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op)
+void SpatialLoadBalanceEnforcer::Advance()
 {
-	check(HandlesComponent(Op.data.component_id));
-
-	MaybeQueueAclAssignmentRequest(Op.entity_id);
-}
-
-void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op)
-{
-	check(HandlesComponent(Op.update.component_id));
-
-	MaybeQueueAclAssignmentRequest(Op.entity_id);
-}
-
-void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op)
-{
-	check(HandlesComponent(Op.component_id));
-
-	if (AclAssignmentRequestIsQueued(Op.entity_id))
+	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
-			   TEXT("Component %d for entity %lld removed. Can no longer enforce the previous request for this entity."), Op.component_id,
-			   Op.entity_id);
-		AclWriteAuthAssignmentRequests.Remove(Op.entity_id);
+		bool bRefresh = false;
+		switch (Delta.Type)
+		{
+		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				bRefresh |= ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
+			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				bRefresh |= ApplyComponentRefresh(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+			}
+			break;
+		}
+		case EntityDelta::ADD:
+			PopulateDataStore(Delta.EntityId);
+			bRefresh = true;
+			break;
+		case EntityDelta::REMOVE:
+			DataStore.Remove(Delta.EntityId);
+			break;
+		case EntityDelta::TEMPORARILY_REMOVED:
+			DataStore.Remove(Delta.EntityId);
+			PopulateDataStore(Delta.EntityId);
+			bRefresh = true;
+			break;
+		default:
+			break;
+		}
+
+		if (bRefresh)
+		{
+			RefreshAcl(Delta.EntityId);
+		}
 	}
 }
 
-void SpatialLoadBalanceEnforcer::OnEntityRemoved(const Worker_RemoveEntityOp& Op)
+void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId)
 {
-	if (AclAssignmentRequestIsQueued(Op.entity_id))
+	const EntityViewElement& Element = SubView->GetView()[EntityId];
+	if (Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::LB_TAG_COMPONENT_ID }))
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Entity %lld removed. Can no longer enforce the previous request for this entity."),
-			   Op.entity_id);
-		AclWriteAuthAssignmentRequests.Remove(Op.entity_id);
+		// Our entity will be out of date during a short circuit. Refresh the state here before refreshing the ACL.
+		DataStore.Remove(EntityId);
+		PopulateDataStore(EntityId);
+		RefreshAcl(EntityId);
 	}
 }
 
-void SpatialLoadBalanceEnforcer::OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 {
-	// This class should only be informed of ACL authority changes.
-	check(AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+	const AuthorityIntent& AuthorityIntentComponent = DataStore[EntityId].Intent;
 
-	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+	check(VirtualWorkerTranslator != nullptr);
+	const PhysicalWorkerName* DestinationWorkerId =
+		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent.VirtualWorkerId);
+
+	if (ensure(DestinationWorkerId))
 	{
-		if (AclAssignmentRequestIsQueued(AuthOp.entity_id))
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
-				   TEXT("ACL authority lost for entity %lld. Can no longer enforce the previous request for this entity."),
-				   AuthOp.entity_id);
-			AclWriteAuthAssignmentRequests.Remove(AuthOp.entity_id);
-		}
-		return;
+		UpdateSender(ConstructAclUpdate(EntityId, DestinationWorkerId));
+	}
+}
+
+EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worker_EntityId EntityId,
+																	 const PhysicalWorkerName* DestinationWorkerId)
+{
+	LBComponents& Components = DataStore[EntityId];
+	EntityAcl& Acl = Components.Acl;
+	const ComponentPresence& ComponentPresenceComponent = Components.Presence;
+	const NetOwningClientWorker& NetOwningClientWorkerComponent = Components.OwningClientWorker;
+
+	TArray<Worker_ComponentId> ComponentIds;
+	Acl.ComponentWriteAcl.GetKeys(ComponentIds);
+
+	// Ensure that every component ID in ComponentPresence is set in the write ACL.
+	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
+	{
+		ComponentIds.AddUnique(RequiredComponentId);
 	}
 
-	MaybeQueueAclAssignmentRequest(AuthOp.entity_id);
-}
+	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
+	const PhysicalWorkerName PossessingClientId =
+		NetOwningClientWorkerComponent.WorkerId.IsSet() ? NetOwningClientWorkerComponent.WorkerId.GetValue() : FString();
 
-// MaybeQueueAclAssignmentRequest is called from three places.
-// 1) AuthorityIntent change - Intent is not authoritative on this worker - ACL is authoritative on this worker.
-//    (another worker changed the intent, but this worker is responsible for the ACL, so update it.)
-// 2) ACL change - Intent may be anything - ACL just became authoritative on this worker.
-//    (this worker just became responsible, so check to make sure intent and ACL agree.)
-// 3) AuthorityIntent change - Intent is authoritative on this worker but no longer assigned to this worker - ACL is authoritative on this
-// worker.
-//    (this worker had responsibility for both and is giving up authority.)
-// Queuing an ACL assignment request may not occur if the assignment is the same as before, or if the request is already queued,
-// or if we don't meet the predicate required to enforce the assignment.
-void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId)
-{
-	if (!CanEnforce(EntityId))
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
+
+	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
+
+	for (const Worker_ComponentId ComponentId : ComponentIds)
 	{
-		return;
+		switch (ComponentId)
+		{
+		case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+		case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+			Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
+			break;
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+			Acl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
+			break;
+		default:
+			Acl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+			break;
+		}
 	}
 
-	const SpatialGDK::AuthorityIntent* AuthorityIntentComponent =
-		StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-	const PhysicalWorkerName* OwningWorkerId =
-		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+	const FWorkerComponentUpdate Update = Acl.CreateEntityAclUpdate();
+	return EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) };
+}
 
-	check(OwningWorkerId != nullptr);
-	if (OwningWorkerId == nullptr)
+void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityId)
+{
+	LBComponents& Components = DataStore.Emplace(EntityId, LBComponents{});
+	for (const ComponentData& Data : SubView->GetView()[EntityId].Components)
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-			   TEXT("Couldn't find mapped worker for entity %lld. This shouldn't happen! Virtual worker ID: %d"), EntityId,
-			   AuthorityIntentComponent->VirtualWorkerId);
-		return;
+		switch (Data.GetComponentId())
+		{
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+			Components.Acl = EntityAcl(Data.GetUnderlying());
+			break;
+		case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+			Components.Intent = AuthorityIntent(Data.GetUnderlying());
+			break;
+		case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+			Components.Presence = ComponentPresence(Data.GetUnderlying());
+			break;
+		case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+			Components.OwningClientWorker = NetOwningClientWorker(Data.GetUnderlying());
+			break;
+		default:
+			break;
+		}
 	}
+}
 
-	if (*OwningWorkerId == WorkerId && StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													  Schema_ComponentUpdate* Update)
+{
+	switch (ComponentId)
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose,
-			   TEXT("No need to queue newly authoritative entity because this worker is already authoritative. Entity: %lld. Worker: %s."),
-			   EntityId, *WorkerId);
-		return;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		DataStore[EntityId].Intent.ApplyComponentUpdate(Update);
+		return true;
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+		DataStore[EntityId].Presence.ApplyComponentUpdate(Update);
+		return true;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		DataStore[EntityId].OwningClientWorker.ApplyComponentUpdate(Update);
+		return true;
+	default:
+		break;
 	}
+	return false;
+}
 
-	if (AclAssignmentRequestIsQueued(EntityId))
+bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													   Schema_ComponentData* Data)
+{
+	switch (ComponentId)
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose,
-			   TEXT("Avoiding queueing a duplicate ACL assignment request. Entity: %lld. Worker: %s."), EntityId, *WorkerId);
-		return;
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+		DataStore[EntityId].Acl = EntityAcl(Data);
+		break;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		DataStore[EntityId].Intent = AuthorityIntent(Data);
+		return true;
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+		DataStore[EntityId].Presence = ComponentPresence(Data);
+		return true;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		DataStore[EntityId].OwningClientWorker = NetOwningClientWorker(Data);
+		return true;
+	default:
+		break;
 	}
-
-	QueueAclAssignmentRequest(EntityId);
+	return false;
 }
-
-bool SpatialLoadBalanceEnforcer::AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const
-{
-	return AclWriteAuthAssignmentRequests.Contains(EntityId);
-}
-
-TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
-{
-	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> PendingRequests;
-
-	TArray<Worker_EntityId> CompletedRequests;
-	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
-
-	for (Worker_EntityId EntityId : AclWriteAuthAssignmentRequests)
-	{
-		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent =
-			StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-		if (AuthorityIntentComponent == nullptr)
-		{
-			// This happens if the authority intent component is removed in the same tick as a request is queued, but the request was not
-			// removed from the queue - shouldn't happen.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-				   TEXT("Cannot process entity as AuthIntent component has been removed since the request was queued. EntityId: %lld"),
-				   EntityId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		const SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerComponent =
-			StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-		if (NetOwningClientWorkerComponent == nullptr)
-		{
-			// This happens if the NetOwningClientWorker component is removed in the same tick as a request is queued, but the request was
-			// not removed from the queue - shouldn't happen.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-				   TEXT("Cannot process entity as NetOwningClientWorker component has been removed since the request was queued. EntityId: "
-						"%lld"),
-				   EntityId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		const SpatialGDK::ComponentPresence* ComponentPresenceComponent =
-			StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
-		if (ComponentPresenceComponent == nullptr)
-		{
-			// This happens if the ComponentPresence component is removed in the same tick as a request is queued, but the request was not
-			// removed from the queue - shouldn't happen.
-			UE_LOG(
-				LogSpatialLoadBalanceEnforcer, Error,
-				TEXT("Cannot process entity as ComponentPresence component has been removed since the request was queued. EntityId: %lld"),
-				EntityId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning,
-				   TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld. This should not happen - "
-						"investigate if you see this warning."),
-				   EntityId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		check(VirtualWorkerTranslator != nullptr);
-		const PhysicalWorkerName* DestinationWorkerId =
-			VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (DestinationWorkerId == nullptr)
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Error,
-				   TEXT("This worker is not assigned a virtual worker. This shouldn't happen! Worker: %s"), *WorkerId);
-			continue;
-		}
-
-		if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Log,
-				   TEXT("Failed to update the EntityACL to match the authority intent; this worker lost authority over the EntityACL since "
-						"the request was queued."
-						" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."),
-				   *WorkerId, EntityId, **DestinationWorkerId);
-			CompletedRequests.Add(EntityId);
-			continue;
-		}
-
-		TArray<Worker_ComponentId> ComponentIds;
-
-		EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-		Acl->ComponentWriteAcl.GetKeys(ComponentIds);
-
-		// Ensure that every component ID in ComponentPresence is set in the write ACL.
-		for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
-		{
-			ComponentIds.AddUnique(RequiredComponentId);
-		}
-
-		// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
-		PhysicalWorkerName PossessingClientId =
-			NetOwningClientWorkerComponent->WorkerId.IsSet() ? NetOwningClientWorkerComponent->WorkerId.GetValue() : FString();
-
-		PendingRequests.Push(
-			AclWriteAuthorityRequest{ EntityId, *DestinationWorkerId, Acl->ReadAcl, { { PossessingClientId } }, ComponentIds });
-
-		CompletedRequests.Add(EntityId);
-	}
-
-	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const Worker_EntityId& EntityId) {
-		return CompletedRequests.Contains(EntityId);
-	});
-
-	return PendingRequests;
-}
-
-void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
-{
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId,
-		   *WorkerId);
-	AclWriteAuthAssignmentRequests.Add(EntityId);
-}
-
-bool SpatialLoadBalanceEnforcer::CanEnforce(Worker_EntityId EntityId) const
-{
-	// We need to be able to see the ACL component
-	return StaticComponentView->HasComponent(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID)
-		   // and the authority intent component
-		   && StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-		   // and the component presence component
-		   && StaticComponentView->HasComponent(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID)
-		   // and we have to be able to write to the ACL component.
-		   && StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
-}
-
-bool SpatialLoadBalanceEnforcer::HandlesComponent(Worker_ComponentId ComponentId) const
-{
-	return ComponentId == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID
-		   || ComponentId == SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID
-		   || ComponentId == SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
-}
+} // Namespace SpatialGDK
