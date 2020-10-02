@@ -248,15 +248,15 @@ void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnreal
 
 void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId)
 {
-	for (TMap<FUnrealObjectRef, FNetworkGUID>::TIterator dynamicSubobject(RemovedDynamicSubobjectObjectRefs); dynamicSubobject;
-		 ++dynamicSubobject)
+	for (auto DynamicSubobjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubobjectIterator;
+		 ++DynamicSubobjectIterator)
 	{
-		UObject* Object = GetObjectFromNetGUID(dynamicSubobject->Value, true);
+		UObject* Object = GetObjectFromNetGUID(DynamicSubobjectIterator->Value, true);
 		AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
 		Worker_EntityId SubObjectEntityId = GetEntityIdFromObject(Actor);
 		if (SubObjectEntityId == InEntityId)
 		{
-			RemovedDynamicSubobjectObjectRefs.Remove(dynamicSubobject->Key);
+			DynamicSubobjectIterator.RemoveCurrent();
 		}
 	}
 }
