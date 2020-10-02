@@ -94,7 +94,7 @@ public:
 	int PlayerPanelStartX = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "Y location of player data panel"))
-	int PlayerPanelStartY = 128;
+	int PlayerPanelStartY = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
