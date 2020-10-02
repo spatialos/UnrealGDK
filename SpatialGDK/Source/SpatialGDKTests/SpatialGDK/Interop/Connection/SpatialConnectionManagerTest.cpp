@@ -366,7 +366,7 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URLAndExternalBridge)
 	return true;
 }
 
-CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_SetupConnectionConfigFromURL)
+CONNECTIONMANAGER_TEST(SetupFromCommandLine_Empty)
 {
 	// GIVEN
 	FTemporaryCommandLine TemporaryCommandLine("");
