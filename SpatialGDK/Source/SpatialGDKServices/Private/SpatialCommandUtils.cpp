@@ -60,7 +60,7 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
 bool SpatialCommandUtils::StartSpatialService(const FString& Version, const FString& RuntimeIP, bool bIsRunningInChina,
 											  const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
 {
-	FString Command = TEXT("service start");
+	FString Command = TEXT("service start --environment=testing");
 
 	if (bIsRunningInChina)
 	{

@@ -510,7 +510,8 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 {
-	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
+	//return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
+	return GlobalStateManager->GetAcceptingPlayers();
 }
 
 void USpatialNetDriver::OnGSMQuerySuccess()
@@ -622,13 +623,13 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 		RetryQueryGSM();
 		return;
 	}
-	else if (QuerySessionId != SessionId)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId,
-			   SessionId);
-		RetryQueryGSM();
-		return;
-	}
+	//else if (QuerySessionId != SessionId)
+	//{
+	//	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId,
+	//		   SessionId);
+	//	RetryQueryGSM();
+	//	return;
+	//}
 
 	OnGSMQuerySuccess();
 }
@@ -2574,6 +2575,17 @@ void USpatialNetDriver::TryFinishStartup()
 			// We know at this point that we have all the information to set the worker's interest query.
 			Sender->UpdateServerWorkerEntityInterestAndPosition();
 
+			if (World->GetName() == TEXT("Untitled"))
+			{
+				// JOSH: Now we inject the map loading code.
+				FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(this->World);
+				FString Error;
+				FURL DefaultURL;
+				GEngine->Browse(*WorldContext, DefaultURL, Error);
+				return;
+				// GEngine->LoadMap(*WorldContext, DefaultURL, NULL, Error);
+			}
+
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.
 			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
@@ -2582,6 +2594,7 @@ void USpatialNetDriver::TryFinishStartup()
 
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
+
 		}
 	}
 	else if (bMapLoaded)
