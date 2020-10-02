@@ -588,6 +588,18 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 }
 
+void GetReplicatedActorsInHierarchy(const AActor* Actor, TArray<const AActor*>& HierarchyActors)
+{
+	if (Actor->GetIsReplicated() && !HierarchyActors.Contains(Actor))
+	{
+		HierarchyActors.Add(Actor);
+	}
+	for (const AActor* Child : Actor->Children)
+	{
+		GetReplicatedActorsInHierarchy(Child, HierarchyActors);
+	}
+}
+
 void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 {
 	if (LocalPawn == nullptr || LocalPlayerController == nullptr || LocalPlayerState == nullptr)
@@ -595,18 +607,16 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 		return;
 	}
 
-	const TArray<TWeakObjectPtr<AActor>> LocalPlayerActors = { LocalPawn, LocalPlayerController, LocalPlayerState };
+	TArray<const AActor*> PlayerHierarchyActors = { LocalPlayerState.Get(), LocalPlayerController.Get(), LocalPawn.Get() };
+	GetReplicatedActorsInHierarchy(LocalPlayerController.Get(), PlayerHierarchyActors);
 
 	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
 
-	for (int32 i = 0; i < LocalPlayerActors.Num(); ++i)
+	for (int32 i = 0; i < PlayerHierarchyActors.Num(); ++i)
 	{
-		if (LocalPlayerActors[i].IsValid())
-		{
-			const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(LocalPlayerActors[i].Get());
-			DrawTag(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
-			ScreenLocation.Y -= PLAYER_TAG_VERTICAL_OFFSET;
-		}
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(PlayerHierarchyActors[i]);
+		DrawTag(Canvas, ScreenLocation, EntityId, PlayerHierarchyActors[i]->GetName());
+		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}
 }
 
