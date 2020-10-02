@@ -70,7 +70,6 @@ void AVisibilityTest::PrepareTest()
 				ClientOneSpawnedPawn =
 					GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator, FActorSpawnParameters());
 				RegisterAutoDestroyActor(ClientOneSpawnedPawn);
-				ClientOneSpawnedPawn->SetActorEnableCollision(true);
 
 				ClientOneDefaultPawn = PlayerController->GetPawn();
 
