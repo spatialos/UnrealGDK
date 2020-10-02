@@ -15,7 +15,6 @@ namespace SpatialGDK
 class SpatialSpanIdCache
 {
 public:
-
 	struct FieldSpanIdUpdate
 	{
 		uint32 FieldId;

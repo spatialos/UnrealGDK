@@ -16,8 +16,8 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -1954,14 +1954,17 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			 && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
+			{ Op.span_id });
 		return;
 	}
 	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(EntityId);
 		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, Op.span_id);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId),
+								{ Op.span_id });
 		return;
 	}
 #if WITH_EDITOR
@@ -1969,7 +1972,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
+								{ Op.span_id });
 		return;
 	}
 #endif // WITH_EDITOR
@@ -2031,7 +2035,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 #endif
 
 	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId),
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject,
+																			 Function, TraceId, RequestId),
 							{ Op.span_id });
 }
 
@@ -2052,7 +2057,9 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
+			{ Op.span_id });
 		return;
 	}
 
@@ -2086,7 +2093,9 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	PendingReliableRPCs.Remove(RequestId);
 
 	UObject* TargetObject = ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function, RequestId, WORKER_STATUS_CODE_SUCCESS), { Op.span_id });
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function, RequestId,
+																			  WORKER_STATUS_CODE_SUCCESS),
+							{ Op.span_id });
 
 	if (StatusCode != WORKER_STATUS_CODE_SUCCESS)
 	{

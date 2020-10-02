@@ -2,9 +2,9 @@
 
 #include "Interop/SpatialRPCService.h"
 
-#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
@@ -255,8 +255,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			//UpdateToSend.SpanId = EventTracer->TraceEvent(
-			//	CreateMergeComponentTraveEvent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
+			UpdateToSend.SpanId = EventTracer->TraceEvent(
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::MergeComponent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds));
 		}
 
 #if TRACE_LIB_ACTIVE

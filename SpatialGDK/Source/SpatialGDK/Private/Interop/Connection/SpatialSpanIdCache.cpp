@@ -96,7 +96,7 @@ bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityC
 	return bDropped;
 }
 
-bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId, bool bRemove/*= true*/)
+bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
 {
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
@@ -120,7 +120,7 @@ bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 Fie
 	return true;
 }
 
-bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId, bool bRemove/*= true*/)
+bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
 {
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)

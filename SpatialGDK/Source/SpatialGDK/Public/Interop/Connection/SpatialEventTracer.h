@@ -3,9 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/SpatialSpanIdCache.h"
-#include "SpatialEventMessages.h"
+#include "Interop/Connection/SpatialTraceEvent.h"
 
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 

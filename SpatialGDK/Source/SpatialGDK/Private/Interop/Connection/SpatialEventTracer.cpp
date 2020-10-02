@@ -194,12 +194,13 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 		uint32 FieldId = FieldSpanIdUpdate.FieldId;
 		TArray<Trace_SpanId> MergeCauses = { FieldSpanIdUpdate.NewSpanId, FieldSpanIdUpdate.OldSpanId };
 
-		TOptional<Trace_SpanId> NewSpanId = TraceEvent(FSpatialTraceEventBuilder::MergeComponentField(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
+		TOptional<Trace_SpanId> NewSpanId =
+			TraceEvent(FSpatialTraceEventBuilder::MergeComponentField(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
 		SpanIdStore.AddSpanId(Id, FieldId, NewSpanId.GetValue());
 	}
 }
 
-bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& CauseSpanId, bool bRemove/*= true*/)
+bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& CauseSpanId, bool bRemove /*= true*/)
 {
 	if (!SpanIdStore.GetSpanId(Id, FieldId, CauseSpanId, bRemove))
 	{
@@ -210,7 +211,7 @@ bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 Fie
 	return true;
 }
 
-bool SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId, bool bRemove/*= true*/)
+bool SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId, bool bRemove /*= true*/)
 {
 	if (!SpanIdStore.GetMostRecentSpanId(Id, CauseSpanId, bRemove))
 	{
