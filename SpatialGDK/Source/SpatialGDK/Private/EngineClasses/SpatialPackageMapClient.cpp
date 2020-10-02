@@ -251,10 +251,7 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 	for (auto DynamicSubobjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubobjectIterator;
 		 ++DynamicSubobjectIterator)
 	{
-		UObject* Object = GetObjectFromNetGUID(DynamicSubobjectIterator->Value, true);
-		AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
-		Worker_EntityId SubObjectEntityId = GetEntityIdFromObject(Actor);
-		if (SubObjectEntityId == InEntityId)
+		if (DynamicSubobjectIterator->Key.Entity == InEntityId)
 		{
 			DynamicSubobjectIterator.RemoveCurrent();
 		}
