@@ -473,14 +473,15 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender = [this](SpatialGDK::EntityComponentUpdate AclUpdate) {
-		// We pass the component update function of the view coordinator rather than the connection. This
-		// is so any updates are written to the local view before being sent. This does mean the connection send
-		// is not fully async right now, but could be if we replaced this with a "send and flush", which would
-		// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
-		// we can make that optimisation.
-		Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
-	};
+	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender =
+		[this](SpatialGDK::EntityComponentUpdate AclUpdate) {
+			// We pass the component update function of the view coordinator rather than the connection. This
+			// is so any updates are written to the local view before being sent. This does mean the connection send
+			// is not fully async right now, but could be if we replaced this with a "send and flush", which would
+			// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
+			// we can make that optimisation.
+			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
+		};
 	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
 																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
 
