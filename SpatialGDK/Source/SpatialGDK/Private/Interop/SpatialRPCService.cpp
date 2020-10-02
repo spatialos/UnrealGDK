@@ -255,8 +255,7 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			UpdateToSend.SpanId = EventTracer->TraceEvent(
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::MergeComponent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds));
+			UpdateToSend.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::MergeComponent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds));
 		}
 
 #if TRACE_LIB_ACTIVE
