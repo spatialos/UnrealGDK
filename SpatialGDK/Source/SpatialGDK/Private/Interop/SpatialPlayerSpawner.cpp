@@ -356,7 +356,8 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error,
-				   TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s (%s reference)"), *ClientWorkerId, bUnresolvedRef ? TEXT("Unresolved") : TEXT("Resolved"));
+				   TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s (%s reference)"),
+				   *ClientWorkerId, bUnresolvedRef ? TEXT("Unresolved") : TEXT("Resolved"));
 		}
 	}
 	else
