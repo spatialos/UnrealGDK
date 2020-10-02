@@ -1807,6 +1807,10 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 		return;
 	}
 
+	Trace_SpanId SpanId;
+	EventTracer->GetMostRecentSpanId(EntityComponentId(EntityId, ComponentId), SpanId, false);
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId), { SpanId });
+
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
 	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
@@ -1833,10 +1837,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 					"result of gaining authority)"),
 			   EntityId, ComponentId);
 	}
-
-	Trace_SpanId SpanId;
-	EventTracer->GetMostRecentSpanId(EntityComponentId(EntityId, ComponentId), SpanId, false);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId), { SpanId });
 }
 
 void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
