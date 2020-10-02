@@ -4,6 +4,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
 

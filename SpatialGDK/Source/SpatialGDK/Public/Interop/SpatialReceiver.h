@@ -231,8 +231,6 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	SpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-
 	FTimerManager* TimerManager;
 
 	SpatialGDK::SpatialRPCService* RPCService;
