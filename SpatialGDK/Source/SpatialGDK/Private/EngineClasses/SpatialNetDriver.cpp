@@ -440,9 +440,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		return;
 	}
 
-	SpatialGDK::FSubView& WellKnownSubView =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
-												   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+	SpatialGDK::FSubView& WellKnownSubView = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 	WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
 																		  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
 																		  *VirtualWorkerTranslator, *GlobalStateManager);

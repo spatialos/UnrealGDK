@@ -129,9 +129,7 @@ const Worker_ComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
 const Worker_ComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
-const Worker_ComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
-const Worker_ComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const Worker_ComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
+const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
@@ -359,7 +357,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								AUTHORITY_INTENT_COMPONENT_ID,
 
 								// Well known entity tag
-								SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
