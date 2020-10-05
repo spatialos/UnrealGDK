@@ -36,95 +36,25 @@ ASpatialTestHandover::ASpatialTestHandover()
 	Author = "Andrei";
 	Description = TEXT("Test Actor handover");
 
-	SpawnLocation = FVector(-500.0f, -500.0f, 50.0f);
-
-	TestLocations.Add(FVector(500.0f, -500.0f, 50.0f));
-	TestLocations.Add(FVector(500.0f, 500.0f, 50.0f));
-	TestLocations.Add(FVector(-500.0f, 500.0f, 50.0f));
+	Server1Position = FVector(-500.0f, -500.0f, 50.0f);
+	Server2Position = FVector(500.0f, -500.0f, 50.0f);
+	Server3Position = FVector(-500.0f, 500.0f, 50.0f);
+	Server4Position = FVector(500.0f, 500.0f, 50.0f);
 }
 
 void ASpatialTestHandover::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Step Definition to move the HandoverCube to the corresponding test location.
-	FSpatialFunctionalTestStepDefinition MoveCubeStepDefinition;
-	MoveCubeStepDefinition.bIsNativeDefinition = true;
-	MoveCubeStepDefinition.NativeStartEvent.BindLambda([this]() {
-		if (LocationIndex >= TestLocations.Num() || LocationIndex < 0)
-		{
-			return;
-		}
-
-		if (HandoverCube->HasAuthority())
-		{
-			HandoverCube->SetActorLocation(TestLocations[LocationIndex]);
-		}
-
-		++LocationIndex;
-		FinishStep();
-	});
-
-	// Step Definition to check if the correct server is authoritative over the HandoverCube.
-	FSpatialFunctionalTestStepDefinition CheckAuthorityStepDefinition;
-	CheckAuthorityStepDefinition.bIsNativeDefinition = true;
-	CheckAuthorityStepDefinition.TimeLimit = 10.0f;
-	CheckAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		// If we have no locking server, then the HandoverCube is expected to have changed authority.
-		if (HandoverCube->LockingServerID == 0)
-		{
-			// Early out if the HandoverCube did not change authority.
-			if (HandoverCube->AuthorityChanges != AuthorityChanges + 1)
-			{
-				return;
-			}
-		}
-		else
-		{
-			// If there is a locking server, then the HandoverCube should have not changed authority, therefore we early out if it has
-			// changed authority.
-			if (HandoverCube->AuthorityChanges != AuthorityChanges)
-			{
-				return;
-			}
-		}
-
-		// Update the number of expected AuthorityChanges the HandoverCube should have had so far.
-		if (HandoverCube->LockingServerID == 0)
-		{
-			++AuthorityChanges;
-		}
-
-		// If a Server Worker holds a lock over the HandoverCube, then it should have authority over it, if not, let the Load Balancer
-		// decide.
-		int ExpectedAuthoritativeServer =
-			HandoverCube->LockingServerID ? HandoverCube->LockingServerID : LoadBalancingStrategy->WhoShouldHaveAuthority(*HandoverCube);
-
-		// Make sure the correct Server has authority over the HandoverCube.
-		if (GetLocalFlowController()->WorkerDefinition.Id == ExpectedAuthoritativeServer)
-		{
-			if (HandoverCube->HasAuthority())
-			{
-				FinishStep();
-			}
-		}
-		else
-		{
-			// Also ensure that all other Servers are not authoritative over the HandoverCube.
-			if (!HandoverCube->HasAuthority())
-			{
-				FinishStep();
-			}
-		}
-	});
-
 	// Server 1 spawns the HandoverCube under its authority area.
 	AddStep(TEXT("SpatialTestHandoverServer1SpawnCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube = GetWorld()->SpawnActor<AHandoverCube>(SpawnLocation, FRotator::ZeroRotator, FActorSpawnParameters());
+		HandoverCube = GetWorld()->SpawnActor<AHandoverCube>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(HandoverCube);
 
 		FinishStep();
 	});
+
+	float StepTimeLimit = 10.0f;
 
 	// All servers set a reference to the HandoverCube and reset the LocationIndex and AuthorityCheckIndex.
 	AddStep(
@@ -145,23 +75,40 @@ void ASpatialTestHandover::PrepareTest()
 
 				if (IsValid(HandoverCube) && IsValid(LoadBalancingStrategy))
 				{
-					// Reset the LocationIndex and the AuthorityChanges to allow multiple executions of the test.
-					LocationIndex = 0;
-					AuthorityChanges = 0;
 					FinishStep();
 				}
 			}
 		},
-		5.0f);
+		StepTimeLimit);
 
 	// Check that Server 1 is authoritative over the HandoverCube.
-	AddStepFromDefinition(CheckAuthorityStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer1AuthorityAndPosition"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
 	// Move the HandoverCube to the next location, which is inside the authority area of Server 2.
-	AddStepFromDefinition(MoveCubeStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer1MoveToServer2"), FWorkerDefinition::Server(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (MoveHandoverCube(Server2Position))
+			{
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
 	// Check that Server 2 is authoritative over the HandoverCube.
-	AddStepFromDefinition(CheckAuthorityStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer2AuthorityAndPosition"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(2, Server2Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
 	// Server 2 acquires a lock on the HandoverCube.
 	AddStep(TEXT("SpatialTestHandoverServer2AcquireLock"), FWorkerDefinition::Server(2), nullptr, [this]() {
@@ -170,10 +117,24 @@ void ASpatialTestHandover::PrepareTest()
 	});
 
 	// Move the HandoverCube to the next location, which is inside the authority area of Server 4.
-	AddStepFromDefinition(MoveCubeStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer2MoveToServer4"), FWorkerDefinition::Server(2), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (MoveHandoverCube(Server4Position))
+			{
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
 	// Check that Server 2 is still  authoritative over the HandoverCube due to acquiring the lock earlier.
-	AddStepFromDefinition(CheckAuthorityStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer2AuthorityAndServer4Position"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(2, Server4Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
 	// Server 2 releases the lock on the HandoverCube.
 	AddStep(TEXT("SpatialTestHandoverServer2ReleaseLock"), FWorkerDefinition::Server(2), nullptr, [this]() {
@@ -182,11 +143,62 @@ void ASpatialTestHandover::PrepareTest()
 	});
 
 	// Check that Server 4 is now authoritative over the HandoverCube.
-	AddStepFromDefinition(CheckAuthorityStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer4AuthorityAndPosition"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(4, Server4Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
 	// Move the HandoverCube to the next location, which is inside the authority area of Server 3.
-	AddStepFromDefinition(MoveCubeStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer4MoveToServer3"), FWorkerDefinition::Server(4), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (MoveHandoverCube(Server3Position))
+			{
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
 	// Check that Server 3 is now authoritative over the HandoverCube.
-	AddStepFromDefinition(CheckAuthorityStepDefinition, FWorkerDefinition::AllServers);
+	AddStep(
+		TEXT("SpatialTestHandoverServer3AuthorityAndPosition"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
+			FinishStep();
+		},
+		StepTimeLimit);
+}
+
+void ASpatialTestHandover::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, FVector ExpectedPosition)
+{
+	if (!ensureMsgf(GetLocalWorkerType() == ESpatialFunctionalTestWorkerType::Server, TEXT("Should only be called in Servers")))
+	{
+		return;
+	}
+
+	RequireEqual_Vector(HandoverCube->GetActorLocation(), ExpectedPosition,
+						FString::Printf(TEXT("HandoverCube in %s"), *ExpectedPosition.ToCompactString()), 1.0f);
+
+	if (WorkerShouldHaveAuthority == GetLocalWorkerId())
+	{
+		RequireTrue(HandoverCube->HasAuthority(), TEXT("Has Authority"));
+	}
+	else
+	{
+		RequireFalse(HandoverCube->HasAuthority(), TEXT("Doesn't Have Authority"));
+	}
+}
+
+bool ASpatialTestHandover::MoveHandoverCube(FVector Position)
+{
+	if (HandoverCube->HasAuthority())
+	{
+		HandoverCube->SetActorLocation(Position);
+		return true;
+	}
+
+	return false;
 }
