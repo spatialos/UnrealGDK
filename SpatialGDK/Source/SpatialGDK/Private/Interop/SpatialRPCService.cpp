@@ -184,9 +184,8 @@ void SpatialRPCService::PushOverflowedRPCs()
 					   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
 				if (EventTracer != nullptr)
 				{
-					TArray<Trace_SpanId> Causes =
-						PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
-					PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), Causes);
+					Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
+					PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), CauseSpanId);
 				}
 				break;
 			case EPushRPCResult::DropOverflowed:
