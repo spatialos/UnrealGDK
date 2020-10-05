@@ -48,6 +48,9 @@ private:
 		FDateTime UpdateTime;
 	};
 
+	int32 CompactCounter;
+	int32 CompactFrequency = 100;
+
 	using FieldIdMap = TMap<uint32, EntityComponentFieldIdSpanIdUpdate>;
 	TMap<EntityComponentId, FieldIdMap> EntityComponentFieldSpanIds;
 
