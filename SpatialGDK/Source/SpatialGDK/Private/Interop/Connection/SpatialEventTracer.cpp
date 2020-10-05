@@ -120,7 +120,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent Spatia
 	{
 		const char* FrameCountStr = "FrameNum";
 		char TmpBuffer[64];
-		sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
+		FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
 		const char* TmpBufferPtr = TmpBuffer;
 		Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
 	}
