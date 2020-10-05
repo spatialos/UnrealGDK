@@ -105,6 +105,39 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent Spatia
 		return {};
 	}
 
+	bool causesValidIf = !!Causes.Num();
+	if (causesValidIf)
+	{
+		causesValidIf = false;
+		for (auto& c : Causes)
+		{
+			bool v = false;
+			for (int i = 0; i < 16; i++)
+			{
+				if (c.data[i] != 0x00)
+				{
+					causesValidIf = true;
+				}
+			}
+		}
+	}
+
+	if (strcmp(SpatialTraceEvent.Type, "unreal_gdk.send_rpc") != 0 && (!Causes.Num() || !causesValidIf))
+	{
+		return {};
+	}
+
+	if (!strcmp(SpatialTraceEvent.Type, "unreal_gdk.send_rpc"))
+	{
+		for (auto& D : SpatialTraceEvent.Data)
+		{
+			if (D.Key.Contains("Function") && !D.Value.Contains("OnInput"))
+			{
+				return {};
+			}
+		}
+	}
+
 	Trace_EventData* EventData = Trace_EventData_Create();
 
 	for (const auto& Pair : SpatialTraceEvent.Data)
@@ -120,7 +153,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent Spatia
 	{
 		const char* FrameCountStr = "FrameNum";
 		char TmpBuffer[64];
-		FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
+		FCStringAnsi::Snprintf(TmpBuffer, sizeof(TmpBuffer), "%" PRIu64, GFrameCounter);
 		const char* TmpBufferPtr = TmpBuffer;
 		Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
 	}
@@ -207,6 +240,7 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 
 		TOptional<Trace_SpanId> NewSpanId =
 			TraceEvent(FSpatialTraceEventBuilder::MergeComponentField(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
+
 		SpanIdStore.AddSpanId(Id, FieldId, NewSpanId.GetValue());
 	}
 }
