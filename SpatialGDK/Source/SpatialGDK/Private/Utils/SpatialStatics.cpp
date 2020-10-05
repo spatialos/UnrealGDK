@@ -69,8 +69,8 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 		if (!SpatialNetDriver->IsReady())
 		{
 			UE_LOG(LogSpatial, Error,
-				TEXT("Called IsHandoverEnabled before NotifyBeginPlay has been called is invalid. WorldContextObject: %s"),
-				*GetNameSafe(WorldContextObject));
+				   TEXT("Called IsHandoverEnabled before NotifyBeginPlay has been called is invalid. WorldContextObject: %s"),
+				   *GetNameSafe(WorldContextObject));
 			return true;
 		}
 
