@@ -488,6 +488,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 
 	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
+
 	uint64 LastProcessedRPCId = LastSeenRPCId;
 	if (Buffer.LastSentRPCId >= LastSeenRPCId)
 	{
