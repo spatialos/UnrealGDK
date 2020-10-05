@@ -93,6 +93,9 @@ struct ConfigureConnection
 #endif
 		}
 
+		Params.send_queue_capacity = 1024 * 1024; // 1mb send/recv buffers 
+		Params.receive_queue_capacity = 1024 * 1024;
+
 		Params.enable_dynamic_components = true;
 	}
 
