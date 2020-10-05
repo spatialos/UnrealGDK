@@ -32,8 +32,8 @@ struct Trace_Item;
 namespace SpatialGDK
 {
 // Note: SpatialEventTracer wraps Trace_EventTracer related functionality
-// It is constructed and owned by SpatialConnectionManager.
-// SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialConnectionManager.
+// It is owned by the connection handler and ViewCoordinator.
+// SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialWorkerConnection.
 // Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure
 // there are necessary nullptr checks if that changes.
 
