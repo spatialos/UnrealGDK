@@ -13,7 +13,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestPossession : public ASpatialFunc
 public:
 	ASpatialTestPossession();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	// To save original Pawns and possess them back at the end
 	TArray<TPair<AController*, APawn*>> OriginalPawns;

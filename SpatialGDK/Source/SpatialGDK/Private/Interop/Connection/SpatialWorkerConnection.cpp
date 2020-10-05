@@ -23,11 +23,13 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 } // anonymous namespace
 
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn,
+											 TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer)
 {
+	EventTracer = SharedEventTracer.Get();
 	StartupComplete = false;
 	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
-		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, EventTracer);
+		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, SharedEventTracer);
 	TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
 		MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
 			if (StartupComplete)
@@ -37,7 +39,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			ExtractStartupOps(Ops, ExtractedOps);
 			return false;
 		});
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), EventTracer);
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), SharedEventTracer);
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -171,25 +173,30 @@ void USpatialWorkerConnection::Advance()
 bool USpatialWorkerConnection::HasDisconnected() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().HasDisconnected();
+	return Coordinator->GetViewDelta().HasConnectionStatusChanged();
 }
 
 Worker_ConnectionStatusCode USpatialWorkerConnection::GetConnectionStatus() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetConnectionStatus();
+	return Coordinator->GetViewDelta().GetConnectionStatusChange();
 }
 
 FString USpatialWorkerConnection::GetDisconnectReason() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetDisconnectReason();
+	return Coordinator->GetViewDelta().GetConnectionStatusChangeMessage();
 }
 
 const SpatialGDK::EntityView& USpatialWorkerConnection::GetView() const
 {
 	check(Coordinator.IsValid());
 	return Coordinator->GetView();
+}
+
+SpatialGDK::ViewCoordinator& USpatialWorkerConnection::GetCoordinator() const
+{
+	return *Coordinator;
 }
 
 PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const

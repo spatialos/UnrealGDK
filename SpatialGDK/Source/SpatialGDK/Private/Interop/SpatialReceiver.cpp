@@ -17,6 +17,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -68,7 +69,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
-	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer.Get();
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 	EventTracer = InEventTracer;
@@ -190,7 +190,7 @@ void USpatialReceiver::OnAddEntity(const Worker_Op& Op)
 
 	TWeakObjectPtr<UObject> SpawnedObject = PackageMap->GetObjectFromEntityId(EntityId);
 	const AActor* Actor = SpawnedObject.IsValid() ? Cast<AActor>(SpawnedObject) : nullptr;
-	EventTracer->TraceEvent(FEventCreateEntity(EntityId, Actor), { Op.span_id });
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCreateEntity(Actor, EntityId), Op.span_id);
 }
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
@@ -206,6 +206,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
@@ -234,12 +236,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
+
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
+		return;
+	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
@@ -247,15 +253,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
 		PendingAddActors.AddUnique(Op.entity_id);
+
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		if (LoadBalanceEnforcer != nullptr)
-		{
-			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
-		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
@@ -265,6 +272,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			WorkerConnectionEntities.Add(Op.entity_id, WorkerData->WorkerId);
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
@@ -275,12 +284,18 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		RemoveActor(Op.entity_id);
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::DORMANT_COMPONENT_ID:
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
@@ -292,6 +307,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
@@ -299,6 +316,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
@@ -313,16 +332,20 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 				NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
 			}
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
 	if (Op.data.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
 	{
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
 	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(Op.data.component_id))
 	{
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
@@ -354,14 +377,9 @@ void USpatialReceiver::OnRemoveEntity(const Worker_Op& Op)
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
 
-	if (LoadBalanceEnforcer != nullptr)
-	{
-		LoadBalanceEnforcer->OnEntityRemoved(RemoveEntityOp);
-	}
-
 	TWeakObjectPtr<UObject> RemovedObject = PackageMap->GetObjectFromEntityId(EntityId);
 	const AActor* Actor = RemovedObject.IsValid() ? Cast<AActor>(RemovedObject) : nullptr;
-	EventTracer->TraceEvent(FEventRemoveEntity(EntityId, Actor), { Op.span_id });
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveRemoveEntity(Actor, EntityId), Op.span_id);
 
 	OnEntityRemovedDelegate.Broadcast(EntityId);
 
@@ -424,11 +442,6 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 	{
 		// If this is a multi-cast RPC component, the RPC service should be informed to handle it.
 		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
-	}
-
-	if (LoadBalanceEnforcer != nullptr && LoadBalanceEnforcer->HandlesComponent(Op.component_id))
-	{
-		LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
 	}
 
 	if (bInCriticalSection)
@@ -566,11 +579,6 @@ void USpatialReceiver::OnAuthorityChange(const Worker_Op& Op)
 	{
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 		return;
-	}
-
-	if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
-	{
-		LoadBalanceEnforcer->OnAclAuthorityChanged(AuthorityChangeOp);
 	}
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
@@ -803,7 +811,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 
 			if (Authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
-				EventTracer->TraceEvent(FEventAuthorityLossImminent(Actor->Role, Actor), { Op.span_id });
+				EventTracer->TraceEvent(FSpatialTraceEventBuilder::AuthorityLossImminent(Actor, Actor->Role), Op.span_id);
 			}
 		}
 
@@ -1217,6 +1225,23 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking()
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
+		PackageMap->ClearRemovedDynamicSubobjectObjectRefs(EntityId);
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+			{
+				FNetworkGUID SubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
+				if (SubobjectNetGUID.IsValid())
+				{
+					FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
+
+					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
+					{
+						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
+					}
+				}
+			}
+		}
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
 		// to Actor Channel mapping for the DestroyActor to function correctly
 		PackageMap->RemoveEntityActor(EntityId);
@@ -1407,8 +1432,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
-		bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
-		if (!bIsDynamicSubobject)
+		if (!IsDynamicSubObject(Actor, Offset))
 		{
 			UE_LOG(LogSpatialReceiver, Verbose,
 				   TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: "
@@ -1417,7 +1441,20 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 			return;
 		}
 
-		// If we can't find this subobject, it's a dynamically attached object. Create it now.
+		// If we can't find this subobject, it's a dynamically attached object. Check if we created previously.
+		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectNetGUID(TargetObjectRef))
+		{
+			if (UObject* DynamicSubobject = PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
+			{
+				PackageMap->ResolveSubobject(DynamicSubobject, TargetObjectRef);
+				ApplyComponentData(Channel, *DynamicSubobject, Data);
+
+				OutObjectsToResolve.Add(ObjectPtrRefPair(DynamicSubobject, TargetObjectRef));
+				return;
+			}
+		}
+
+		// If the dynamically attached object was not created before. Create it now.
 		TargetObject = NewObject<UObject>(Actor, ClassInfoManager->GetClassByComponentId(Data.component_id));
 
 		Actor->OnSubobjectCreatedFromReplication(TargetObject.Get());
@@ -1467,9 +1504,7 @@ void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Wo
 	}
 
 	// Check if this is a static subobject that's been destroyed by the receiver.
-	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
-	if (!bIsDynamicSubobject)
+	if (!IsDynamicSubObject(Actor, Offset))
 	{
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, "
@@ -1698,10 +1733,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		if (LoadBalanceEnforcer != nullptr)
-		{
-			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(ComponentUpdateOp);
-		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
@@ -1806,6 +1837,10 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 		return;
 	}
 
+	Trace_SpanId SpanId;
+	EventTracer->GetMostRecentSpanId(EntityComponentId(EntityId, ComponentId), SpanId, false);
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId), SpanId);
+
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
 	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
@@ -1832,15 +1867,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 					"result of gaining authority)"),
 			   EntityId, ComponentId);
 	}
-
-	Trace_SpanId SpanId;
-	if (!EventTracer->GetMostRecentSpanId(EntityComponentId(Channel->GetEntityId(), ComponentId), SpanId))
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Channel->GetEntityId(),
-			   ComponentId);
-	}
-
-	EventTracer->TraceEvent(FEventComponentUpdate(Channel->Actor, TargetObject, ComponentId), { SpanId });
 }
 
 void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
@@ -1951,21 +1977,23 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		&& CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
-		EventTracer->TraceEvent(FEventCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
-		EventTracer->TraceEvent(FEventCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(EntityId);
 		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, Op.span_id);
-		EventTracer->TraceEvent(FEventCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId),
+								Op.span_id);
 		return;
 	}
 #if WITH_EDITOR
@@ -1973,7 +2001,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
-		EventTracer->TraceEvent(FEventCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
+								Op.span_id);
 		return;
 	}
 #endif // WITH_EDITOR
@@ -2035,8 +2064,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 #endif
 
 	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-	EventTracer->TraceEvent(FEventCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, RequestId),
-							{ Op.span_id });
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject,
+																			 Function, TraceId, RequestId),
+							Op.span_id);
 }
 
 void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
@@ -2044,18 +2074,20 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
 	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
 	const Worker_ComponentId ComponentId = Repsonse.component_id;
+	const Worker_RequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
 	if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
-		EventTracer->TraceEvent(FEventCommandResponse(TEXT("SPAWN_PLAYER_COMMAND")), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
-		EventTracer->TraceEvent(FEventCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND")), { Op.span_id });
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 
@@ -2081,22 +2113,17 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	if (ReliableRPCPtr == nullptr)
 	{
 		// We received a response for some other command, ignore.
-		FEventCommandResponse EventCommandResponse;
-		EventCommandResponse.Actor = TargetActor;
-		EventCommandResponse.bSuccess = false;
-		EventTracer->TraceEvent(EventCommandResponse, { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TargetActor, RequestId, false), Op.span_id);
 		return;
 	}
 
 	TSharedRef<FReliableRPCForRetry> ReliableRPC = *ReliableRPCPtr;
 	PendingReliableRPCs.Remove(RequestId);
 
-	FEventCommandResponse EventCommandResponse;
-	EventCommandResponse.Actor = TargetActor;
-	EventCommandResponse.TargetObject = ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr;
-	EventCommandResponse.Function = ReliableRPC->Function;
-	EventCommandResponse.bSuccess = StatusCode == WORKER_STATUS_CODE_SUCCESS;
-	EventTracer->TraceEvent(EventCommandResponse, { Op.span_id });
+	UObject* TargetObject = ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr;
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function, RequestId,
+																			  WORKER_STATUS_CODE_SUCCESS),
+							Op.span_id);
 
 	if (StatusCode != WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -2222,7 +2249,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			if (EventTracer->IsEnabled())
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
-				RPCService->SpanIdCache.DropSpanIds(EntityComponentId(EntityId, ComponentId));
+				EventTracer->DropSpanIds(EntityComponentId(EntityId, ComponentId));
 			}
 		}
 		else
@@ -2238,9 +2265,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 
 					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
 					Trace_SpanId CauseSpanId;
-					RPCService->SpanIdCache.GetSpanId(Id, FieldId, CauseSpanId);
-					RPCService->SpanIdCache.DropSpanId(Id, FieldId);
-					EventTracer->TraceEvent(FEventRPCProcessed(TargetObject, Function), { CauseSpanId });
+					EventTracer->GetSpanId(Id, FieldId, CauseSpanId);
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::ProcessRPC(TargetObject, Function), CauseSpanId);
 				}
 			}
 
@@ -2277,7 +2303,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		{
 			Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Params.Type);
 			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
-			RPCService->SpanIdCache.DropSpanIds(Id);
+			EventTracer->DropSpanIds(Id);
 		}
 		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
@@ -2291,7 +2317,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		{
 			Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Params.Type);
 			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
-			RPCService->SpanIdCache.DropSpanId(Id, Params.Payload.Index);
+			EventTracer->DropSpanId(Id, Params.Payload.Index);
 		}
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
@@ -2379,7 +2405,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(CreateEntityResponseOp);
-		EventTracer->TraceEvent(FEventCreateEntitySuccess(EntityId, Channel->Actor), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCreateEntitySuccess(Channel->Actor, EntityId), Op.span_id);
 	}
 	else if (Channel.IsStale())
 	{
@@ -2393,11 +2419,11 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 		FString Message =
 			FString::Printf(TEXT("Stale Actor Channel - tried to delete entity before gaining authority. Actor - %s EntityId - %d"),
 							*Channel->Actor->GetName(), EntityId);
-		EventTracer->TraceEvent(FEventGenericMessage(Message), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::GenericMessage(Message), Op.span_id);
 	}
 	else
 	{
-		EventTracer->TraceEvent(FEventGenericMessage(TEXT("Create entity response unknown error")), { Op.span_id });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::GenericMessage(TEXT("Create entity response unknown error")), Op.span_id);
 	}
 }
 
@@ -3188,4 +3214,10 @@ void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
 	{
 		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
 	}
+}
+
+bool USpatialReceiver::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset)
+{
+	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	return !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);
 }

@@ -28,9 +28,9 @@ ASpatialTestRepNotify::ASpatialTestRepNotify()
 	Description = TEXT("Test RepNotify replication and shadow data");
 }
 
-void ASpatialTestRepNotify::BeginPlay()
+void ASpatialTestRepNotify::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// The Server sets some initial values to the replicated variables.
 	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables"), FWorkerDefinition::Server(1), nullptr, [this]() {

@@ -14,18 +14,13 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-namespace SpatialGDK
-{
-SpatialEventTracer;
-} // namespace SpatialGDK
-
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
 
 public:
-	void SetConnection(Worker_Connection* WorkerConnectionIn, SpatialGDK::SpatialEventTracer* EventTracer);
+	void SetConnection(Worker_Connection* WorkerConnectionIn, TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer);
 	void DestroyConnection();
 
 	// UObject interface.
@@ -63,6 +58,7 @@ public:
 	FString GetDisconnectReason() const;
 
 	const SpatialGDK::EntityView& GetView() const;
+	SpatialGDK::ViewCoordinator& GetCoordinator() const;
 
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
@@ -85,9 +81,12 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
 
+	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
+
 private:
 	static bool IsStartupComponent(Worker_ComponentId Id);
 	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
 	bool StartupComplete = false;
+	SpatialGDK::SpatialEventTracer* EventTracer;
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
 };

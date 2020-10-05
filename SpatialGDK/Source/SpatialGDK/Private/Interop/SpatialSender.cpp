@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -98,7 +99,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	TOptional<Trace_SpanId> SpanId;
-	SpanId = EventTracer->TraceEvent(FEventCreateEntity(Channel->GetEntityId(), Channel->Actor));
+	SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCreateEntity(Channel->Actor, Channel->GetEntityId()));
 
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId);
 
@@ -199,28 +200,16 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		}
 	});
 
-	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
-	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
-
-		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
-		for (auto& ComponentId : NewComponentIds)
-		{
-			EntityACL->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
-		}
-
-		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
-	}
-
-	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
-	// authority, this component is used to inform the enforcer of the component IDs to add to the EntityACL.
+	// Update the ComponentPresence component with the new component IDs. This component is used to inform the enforcer
+	// of the component IDs to add to the EntityACL.
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -623,48 +612,12 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FEventAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+	TOptional<Trace_SpanId> SpanId =
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::AuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
-	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
-	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
-}
-
-void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
-{
-	check(NetDriver);
-	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
-
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
-
-	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
-
-	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
-	NewAcl->ReadAcl = Request.ReadAcl;
-
-	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
-	{
-		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
-			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
-		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
-			continue;
-		}
-
-		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
-		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
-			continue;
-		}
-
-		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
-	}
-
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"),
-		   *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
-
-	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
-	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
+	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
@@ -748,7 +701,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	TOptional<Trace_SpanId> SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(FEventSendRPC(TargetObject, Function));
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendRPC(TargetObject, Function));
 	}
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
@@ -924,7 +877,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	if (EventTracer != nullptr)
 	{
 		Trace_SpanId CauseSpanId = RetryRPC->SpanId.IsSet() ? RetryRPC->SpanId.GetValue() : Trace_SpanId();
-		NewSpanId = EventTracer->TraceEvent(FEventRPCRetried(), { CauseSpanId });
+		NewSpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::RetryRPC(), CauseSpanId);
 	}
 
 	Worker_CommandRequest CommandRequest = CreateRetryRPCCommandRequest(*RetryRPC, TargetObjectRef.Offset);
@@ -1084,11 +1037,7 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response,
 										 const worker::c::Trace_SpanId CauseSpanId)
 {
-	FEventCommandResponse EventCommandResponse;
-	EventCommandResponse.RequestID = RequestId;
-	EventCommandResponse.bSuccess = true;
-
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse, { CauseSpanId });
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), CauseSpanId);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
@@ -1101,41 +1050,16 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.command_index = CommandIndex;
 	Response.schema_type = Schema_CreateCommandResponse();
 
-	FEventCommandResponse EventCommandResponse;
-	EventCommandResponse.RequestID = RequestId;
-	EventCommandResponse.bSuccess = true;
-
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse, { CauseSpanId });
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), CauseSpanId);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
-	FEventCommandResponse EventCommandResponse;
-	EventCommandResponse.RequestID = RequestId;
-	EventCommandResponse.bSuccess = false;
-	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(EventCommandResponse);
+	TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, false));
 
 	Connection->SendCommandFailure(RequestId, Message, SpanId);
-}
-
-// Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
-// This function updates the authority of that component as the owning connection can change.
-void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
-{
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
-
-	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
-	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
-
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()),
-									 OwningClientOnly);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
-	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-
-	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
@@ -1179,7 +1103,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 
-		TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FEventRetireEntityRequest(EntityId, Actor));
+		TOptional<Trace_SpanId> SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendRetireEntity(Actor, EntityId));
 		Worker_RequestId RequestID = Connection->SendDeleteEntityRequest(EntityId, SpanId);
 	}
 }

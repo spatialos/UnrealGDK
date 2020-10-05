@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Interop/Connection/SpatialSpanIdCache.h"
-#include "SpatialEventMessages.h"
+#include "Interop/Connection/SpatialTraceEvent.h"
 
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 
@@ -32,8 +32,8 @@ struct Trace_Item;
 namespace SpatialGDK
 {
 // Note: SpatialEventTracer wraps Trace_EventTracer related functionality
-// It is constructed and owned by SpatialConnectionManager.
-// SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialConnectionManager.
+// It is owned by the connection handler and ViewCoordinator.
+// SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialWorkerConnection.
 // Note(EventTracer): SpatialEventTracer is supposed to never be null in SpatialWorkerConnection, SpatialSender, SpatialReceiver. Make sure
 // there are necessary nullptr checks if that changes.
 
@@ -43,8 +43,6 @@ public:
 	SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
-	FCriticalSection CriticalSection;
-
 	const worker::c::Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	worker::c::Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
@@ -53,11 +51,10 @@ public:
 	// be registered with this SpanId) e.g. void TraceEvent(... SpatialScopedActiveSpanId&& SpanIdActivator) = delete;
 	// TODO(EventTracer): Communicate to others, that SpatialScopedActiveSpanId must be creating prior to calling worker send functions
 
-	template <class T>
-	TOptional<Trace_SpanId> TraceEvent(const T& EventMessage, const TArray<worker::c::Trace_SpanId>& Causes = {})
-	{
-		return TraceEvent(EventMessage, T::StaticStruct(), Causes);
-	}
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent);
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId Causes);
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TArray<worker::c::Trace_SpanId>& Causes);
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId* Causes, int32 NumCauses);
 
 	bool IsEnabled() const;
 
@@ -65,9 +62,11 @@ public:
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
 
-	bool GetSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId& CauseSpanId);
-	bool GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId);
-	void ClearSpanIds();
+	bool GetSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId& CauseSpanId, bool bRemove = true);
+	bool GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId, bool bRemove = true);
+
+	bool DropSpanId(const EntityComponentId& Id, const uint32 FieldId);
+	bool DropSpanIds(const EntityComponentId& Id);
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
@@ -89,15 +88,12 @@ private:
 
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
 
-	SpatialWorkerOpSpanIdCache SpanIdStore;
+	SpatialSpanIdCache SpanIdStore;
 
 	void Enable(const FString& FileName);
 	void Disable();
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
-
-	TOptional<Trace_SpanId> TraceEvent(const FEventMessage& EventMessage, const UStruct* Struct,
-									   const TArray<worker::c::Trace_SpanId>& Causes);
 };
 
 struct SpatialScopedActiveSpanId

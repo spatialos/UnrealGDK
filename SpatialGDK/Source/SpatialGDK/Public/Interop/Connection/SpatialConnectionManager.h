@@ -61,14 +61,13 @@ public:
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
-	SpatialGDK::SpatialEventTracer* GetEventTracer() { return EventTracer.Get(); }
 
 	void RequestDeploymentLoginTokens();
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TSharedPtr<SpatialGDK::SpatialEventTracer> NewEventTracer);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -80,9 +79,9 @@ private:
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
-private:
-	void CreateEventTracer(const FString& WorkerId);
+	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
+private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
 
@@ -93,6 +92,4 @@ private:
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
-
-	TUniquePtr<SpatialGDK::SpatialEventTracer> EventTracer;
 };

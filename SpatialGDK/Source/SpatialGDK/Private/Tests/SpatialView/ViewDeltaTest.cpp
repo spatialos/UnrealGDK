@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialViewUtils.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
@@ -12,6 +12,9 @@
 namespace SpatialGDK
 {
 const static Worker_EntityId TestEntityId = 1;
+const static Worker_EntityId OtherTestEntityId = 2;
+const static Worker_EntityId AnotherTestEntityId = 3;
+const static Worker_EntityId YetAnotherTestEntityId = 4;
 const static Worker_ComponentId TestComponentId = 1;
 const static double TestComponentValue = 20;
 const static double OtherTestComponentValue = 30;
@@ -394,6 +397,125 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_entity_THEN_empty_
 
 	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
 	TestTrue("Views are equal", CompareViews(InputView, ExpectedView));
+
+	return true;
+}
+
+// Projection Tests
+VIEWDELTA_TEST(GIVEN_view_delta_with_update_for_entity_complete_WHEN_project_THEN_contains_update)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedSubViewDelta.AddComponentUpdate(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_complete_entity_WHEN_project_THEN_contains_marker_add)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::ADD);
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_incomplete_entity_WHEN_project_THEN_contains_marker_remove)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId },
+				  TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::REMOVE);
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_empty_view_delta_with_temporarily_incomplete_entity_WHEN_project_THEN_contains_marker_temporary_remove)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{ TestEntityId });
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::TEMPORARILY_REMOVED);
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_arbitrary_delta_and_completeness_WHEN_project_THEN_subview_delta_correct)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+	AddEntityToView(View, OtherTestEntityId);
+	AddEntityToView(View, AnotherTestEntityId);
+	AddEntityToView(View, YetAnotherTestEntityId);
+	AddComponentToView(View, YetAnotherTestEntityId, CreateTestComponentData(TestComponentId, OtherTestComponentValue));
+
+	TArray<OpList> OpLists;
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+	OpLists.Push(MoveTemp(OpListBuilder).CreateOpList());
+	OpListBuilder = EntityComponentOpListBuilder{};
+	OpListBuilder.UpdateComponent(YetAnotherTestEntityId, CreateTestComponentUpdate(TestComponentId, TestComponentValue));
+	OpLists.Push(MoveTemp(OpListBuilder).CreateOpList());
+	Delta.SetFromOpList(MoveTemp(OpLists), View);
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId, YetAnotherTestEntityId },
+				  TArray<Worker_EntityId>{ OtherTestEntityId }, TArray<Worker_EntityId>{ AnotherTestEntityId }, TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedSubViewDelta.AddComponentUpdate(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+	ExpectedSubViewDelta.AddEntityDelta(OtherTestEntityId, ExpectedViewDelta::ADD);
+	ExpectedSubViewDelta.AddEntityDelta(AnotherTestEntityId, ExpectedViewDelta::REMOVE);
+	ExpectedSubViewDelta.AddEntityDelta(YetAnotherTestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedSubViewDelta.AddComponentUpdate(YetAnotherTestEntityId, CreateTestComponentUpdate(TestComponentId, TestComponentValue));
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
 
 	return true;
 }

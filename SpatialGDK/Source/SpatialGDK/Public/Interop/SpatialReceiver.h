@@ -237,8 +237,6 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	SpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-
 	FTimerManager* TimerManager;
 
 	SpatialGDK::SpatialRPCService* RPCService;
@@ -295,6 +293,7 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
+	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };

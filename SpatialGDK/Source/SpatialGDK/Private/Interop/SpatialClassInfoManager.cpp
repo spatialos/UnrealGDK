@@ -352,7 +352,7 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialClassInfoManager, Warning,
+		UE_LOG(LogSpatialClassInfoManager, Log,
 			   TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
 
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use
@@ -560,9 +560,14 @@ bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId Com
 	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
 }
 
+bool USpatialClassInfoManager::IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const
+{
+	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
+}
+
 bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
 {
-	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId) || IsEntityCompletenessComponent(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()

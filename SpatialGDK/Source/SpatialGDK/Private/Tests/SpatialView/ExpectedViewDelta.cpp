@@ -3,8 +3,8 @@
 #include "Tests/SpatialView/ExpectedViewDelta.h"
 
 #include "Algo/Compare.h"
-#include "ComponentTestUtils.h"
 #include "SpatialView/ViewDelta.h"
+#include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
 
 using namespace SpatialGDK;
@@ -90,8 +90,32 @@ void ExpectedViewDelta::SortEntityDeltas()
 
 bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
-	TArray<EntityDelta> RhsEntityDeltas = Other.GetEntityDeltas();
-	if (EntityDeltas.Num() != RhsEntityDeltas.Num())
+	// We need to check if a disconnect op has been processed during the last tick.
+	// First call HasConnectionStatusChanged() before comparing the values stored.
+	if (Other.HasConnectionStatusChanged())
+	{
+		if (ConnectionStatusCode != Other.GetConnectionStatusChange())
+		{
+			return false;
+		}
+
+		if (ConnectionStatusMessage != Other.GetConnectionStatusChangeMessage())
+		{
+			return false;
+		}
+	}
+
+	return CompareDeltas(Other.GetEntityDeltas());
+}
+
+bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
+{
+	return CompareDeltas(Other.EntityDeltas);
+}
+
+bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
+{
+	if (EntityDeltas.Num() != Other.Num())
 	{
 		return false;
 	}
@@ -101,8 +125,8 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 	EntityDeltas.GetKeys(DeltaKeys);
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
-		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
-		EntityDelta RhsEntityDelta = RhsEntityDeltas[i];
+		const ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
+		const EntityDelta& RhsEntityDelta = Other[i];
 		if (LhsEntityDelta.EntityId != RhsEntityDelta.EntityId)
 		{
 			return false;

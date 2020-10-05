@@ -36,12 +36,11 @@ namespace ReleaseTool
             [Value(0, MetaName = "version", HelpText = "The version that is being released.")]
             public string Version { get; set; }
 
-            [Option('u', "pull-request-url", HelpText = "The link to the release candidate branch to merge.",
-                Required = true)]
-            public string PullRequestUrl { get; set; }
-
             [Option("candidate-branch", HelpText = "The candidate branch name.", Required = true)]
             public string CandidateBranch { get; set; }
+
+            [Option("git-repository-name", HelpText = "The Git repository that we are targeting.", Required = true)]
+            public string GitRepoName { get; set; }
 
             [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
             public string GithubOrgName { get; set; }
@@ -67,8 +66,8 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
-            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
-            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
+            var gitRepoName = options.GitRepoName;
+            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
             try
             {
                 // 1. Clones the source repo.
@@ -80,7 +79,7 @@ namespace ReleaseTool
                     bool madeChanges = false;
 
                     // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                    switch (repoName)
+                    switch (gitRepoName)
                     {
                         case "UnrealEngine":
                             madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
@@ -110,17 +109,17 @@ namespace ReleaseTool
                         // 4. Commit changes and push them to a remote candidate branch.
                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                         gitClient.ForcePush(options.CandidateBranch);
-                        Logger.Info($"Updated branch '${options.CandidateBranch}' in preparation for the full release.");
+                        Logger.Info($"Updated branch '{options.CandidateBranch}' in preparation for the full release.");
                     }
                     else
                     {
-                        Logger.Info($"Tried to update branch '${options.CandidateBranch}' in preparation for the full release, but it was already up-to-date.");
+                        Logger.Info($"Tried to update branch '{options.CandidateBranch}' in preparation for the full release, but it was already up-to-date.");
                     }
                 }
             }
             catch (Exception e)
             {
-                Logger.Error(e, $"ERROR: Unable to update {options.CandidateBranch}. Error: {0}", e.Message);
+                Logger.Error(e, $"ERROR: Unable to update '{options.CandidateBranch}'. Error: {0}", e.Message);
                 return 1;
             }
 

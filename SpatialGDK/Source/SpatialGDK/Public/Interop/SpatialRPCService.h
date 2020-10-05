@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialSpanIdCache.h"
 #include "Interop/EntityRPCType.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
@@ -25,6 +23,8 @@ DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, E
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 enum class EPushRPCResult : uint8
 {
 	Success,
@@ -69,8 +69,6 @@ public:
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	uint64 GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const;
-
-	SpatialRPCSpanIdCache SpanIdCache;
 
 private:
 	struct PendingRPCPayload
@@ -129,8 +127,6 @@ private:
 
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<PendingRPCPayload>> OverflowedRPCs;
-
-	void UpdateSpanIdCache(Worker_EntityId EntityId, ERPCType Type);
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);

@@ -10,95 +10,7 @@ DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
 using namespace SpatialGDK;
 using namespace worker::c;
 
-// ----- SpatialSpanIdCache -----
-
-void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
-{
-	FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
-	EntityComponentFieldIdSpanIdUpdate& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
-	SpawnIdRef.SpanId = SpanId;
-	SpawnIdRef.UpdateTime = FDateTime::Now();
-}
-
-bool SpatialSpanIdCache::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
-{
-	return DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
-}
-
-bool SpatialSpanIdCache::DropSpanIds(const EntityComponentId& Id)
-{
-	return EntityComponentFieldSpanIds.Remove(Id) > 0;
-}
-
-bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
-{
-	if (SpanIdMap == nullptr)
-	{
-		return false;
-	}
-
-	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
-	if (bDropped && SpanIdMap->Num() == 0)
-	{
-		EntityComponentFieldSpanIds.Remove(Id);
-	}
-
-	return bDropped;
-}
-
-bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId) const
-{
-	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
-	if (SpanIdMap == nullptr)
-	{
-		return false;
-	}
-
-	const EntityComponentFieldIdSpanIdUpdate* UpdateSpanId = SpanIdMap->Find(FieldId);
-	if (UpdateSpanId == nullptr)
-	{
-		return false;
-	}
-
-	OutSpanId = UpdateSpanId->SpanId;
-	return true;
-}
-
-bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId) const
-{
-	const FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
-	if (SpanIdMap == nullptr)
-	{
-		return false;
-	}
-
-	if (SpanIdMap->Num() == 0)
-	{
-		return false;
-	}
-
-	EntityComponentFieldIdSpanIdUpdate MostRecent;
-	for (const auto& Pair : *SpanIdMap)
-	{
-		const EntityComponentFieldIdSpanIdUpdate& Data = Pair.Value;
-		if (Data.UpdateTime > MostRecent.UpdateTime || Trace_SpanId_Equal(MostRecent.SpanId, Trace_SpanId()))
-		{
-			MostRecent = Data;
-		}
-	}
-
-	OutSpanId = MostRecent.SpanId;
-	return true;
-}
-
-void SpatialSpanIdCache::ClearSpanIds()
-{
-	EntityComponentFieldSpanIds.Empty();
-}
-
-// ----- SpatialWorkerOpSpanIdCache -----
-
-void SpatialWorkerOpSpanIdCache::ComponentAdd(const Worker_Op& Op)
+void SpatialSpanIdCache::ComponentAdd(const Worker_Op& Op)
 {
 	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
 	EntityComponentId Id(AddComponentOp.entity_id, AddComponentOp.data.component_id);
@@ -114,14 +26,14 @@ void SpatialWorkerOpSpanIdCache::ComponentAdd(const Worker_Op& Op)
 	}
 }
 
-bool SpatialWorkerOpSpanIdCache::ComponentRemove(const Worker_Op& Op)
+bool SpatialSpanIdCache::ComponentRemove(const Worker_Op& Op)
 {
 	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
 	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
 	return DropSpanIds(Id);
 }
 
-TArray<SpatialWorkerOpSpanIdCache::FieldSpanIdUpdate> SpatialWorkerOpSpanIdCache::ComponentUpdate(const Worker_Op& Op)
+TArray<SpatialSpanIdCache::FieldSpanIdUpdate> SpatialSpanIdCache::ComponentUpdate(const Worker_Op& Op)
 {
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
 	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
@@ -148,4 +60,110 @@ TArray<SpatialWorkerOpSpanIdCache::FieldSpanIdUpdate> SpatialWorkerOpSpanIdCache
 	}
 
 	return FieldCollisions;
+}
+
+void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
+{
+	FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
+	EntityComponentFieldIdSpanIdUpdate& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
+	SpawnIdRef.SpanId = SpanId;
+	SpawnIdRef.UpdateTime = FDateTime::Now();
+}
+
+bool SpatialSpanIdCache::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
+{
+	int32 NumRemoved = DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
+	return NumRemoved > 0;
+}
+
+bool SpatialSpanIdCache::DropSpanIds(const EntityComponentId& Id)
+{
+	int32 NumRemoved = EntityComponentFieldSpanIds.Remove(Id) > 0;
+	EntityComponentFieldSpanIds.Compact();
+	return NumRemoved > 0;
+}
+
+bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
+{
+	if (SpanIdMap == nullptr)
+	{
+		return false;
+	}
+
+	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
+	if (bDropped)
+	{
+		CompactCounter++;
+		if (CompactCounter >= CompactFrequency)
+		{
+			CompactCounter = 0;
+			EntityComponentFieldSpanIds.Compact();
+		}
+
+		if (SpanIdMap->Num() == 0)
+		{
+			EntityComponentFieldSpanIds.Remove(Id);
+		}
+	}
+
+	return bDropped;
+}
+
+bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
+{
+	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
+	if (SpanIdMap == nullptr)
+	{
+		return false;
+	}
+
+	EntityComponentFieldIdSpanIdUpdate* UpdateSpanId = SpanIdMap->Find(FieldId);
+	if (UpdateSpanId == nullptr)
+	{
+		return false;
+	}
+
+	OutSpanId = UpdateSpanId->SpanId;
+
+	if (bRemove)
+	{
+		DropSpanIdInternal(SpanIdMap, Id, FieldId);
+	}
+
+	return true;
+}
+
+bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
+{
+	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
+	if (SpanIdMap == nullptr)
+	{
+		return false;
+	}
+
+	if (SpanIdMap->Num() == 0)
+	{
+		return false;
+	}
+
+	uint32 FieldId = 0;
+	EntityComponentFieldIdSpanIdUpdate MostRecent;
+	for (const auto& Pair : *SpanIdMap)
+	{
+		const EntityComponentFieldIdSpanIdUpdate& Data = Pair.Value;
+		if (Data.UpdateTime > MostRecent.UpdateTime || Trace_SpanId_Equal(MostRecent.SpanId, Trace_SpanId()))
+		{
+			FieldId = Pair.Key;
+			MostRecent = Data;
+		}
+	}
+
+	OutSpanId = MostRecent.SpanId;
+
+	if (bRemove)
+	{
+		DropSpanIdInternal(SpanIdMap, Id, FieldId);
+	}
+
+	return true;
 }
