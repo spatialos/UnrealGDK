@@ -400,6 +400,7 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
+		// Breakpoints triggered here are usually the result of running a test while an old SpatialOS deployment is still running from a previous test.
 		checkf(LocalFlowController == nullptr, TEXT("Already had LocalFlowController, this shouldn't happen"));
 		LocalFlowController = FlowController;
 	}
