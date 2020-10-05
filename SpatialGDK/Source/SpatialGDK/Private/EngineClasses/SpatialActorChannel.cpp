@@ -1315,11 +1315,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		FWorkerComponentUpdate Update = NetOwningClientWorkerData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Update the EntityACL component (if authoritative).
-		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
-		}
+		// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 
 		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
 

@@ -167,7 +167,7 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
-	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
+	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;

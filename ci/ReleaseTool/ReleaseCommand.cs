@@ -41,8 +41,8 @@ namespace ReleaseTool
             [Value(0, MetaName = "version", HelpText = "The version that is being released.")]
             public string Version { get; set; }
 
-            [Option('u', "pull-request-url", HelpText = "The link to the release candidate branch to merge.",
-                Required = true)]
+            [Option('u', "pull-request-url", Default = "", HelpText = "The link to the release candidate branch to merge.",
+                Required = false)]
             public string PullRequestUrl { get; set; }
 
             [Option("source-branch", HelpText = "The source branch name from which we are cutting the candidate.", Required = true)]
@@ -53,6 +53,9 @@ namespace ReleaseTool
 
             [Option("release-branch", HelpText = "The name of the branch into which we are merging the candidate.", Required = true)]
             public string ReleaseBranch { get; set; }
+
+            [Option("git-repository-name", HelpText = "The Git repository that we are targeting.", Required = true)]
+            public string GitRepoName { get; set; }
 
             [Option("github-organization", HelpText = "The Github Organization that contains the targeted repository.", Required = true)]
             public string GithubOrgName { get; set; }
@@ -83,10 +86,44 @@ namespace ReleaseTool
         public int Run()
         {
             Common.VerifySemanticVersioningFormat(options.Version);
-            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
+            var gitRepoName = options.GitRepoName;
             var gitHubClient = new GitHubClient(options);
-            var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
+            var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
             var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
+
+            if (string.IsNullOrWhiteSpace(options.PullRequestUrl.Trim().Replace("\"","")))
+            {
+                Logger.Info("The passed PullRequestUrl was empty or missing. Trying to release without merging a PR.");
+
+                using (var gitClient = GitClient.FromRemote(repoUrl))
+                {
+                    // Create the release branch, since if there is no PR, the release branch did not exist previously
+                    gitClient.Fetch();
+                    if (gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
+                    {
+                        Logger.Error("The PullRequestUrl was empty or missing, but the release branch already exists, so presuming this step already ran.");
+                    }
+                    else
+                    {
+                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
+                        gitClient.ForcePush(options.ReleaseBranch);
+                    }
+
+                    gitClient.Fetch();
+                    gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+
+                    FinalizeRelease(gitHubClient, gitClient, gitHubRepo, gitRepoName, repoUrl);
+                }
+
+                return 0;
+            }
+
+            var (repoName, pullRequestId) = Common.ExtractPullRequestInfo(options.PullRequestUrl);
+            if (gitRepoName != repoName)
+            {
+                Logger.Error($"Repository names given do not match. Repository name given: {gitRepoName}, PR URL repository name: {repoName}.");
+                return 1;
+            }
 
             // Check if the PR has been merged already.
             // If it has, log the PR URL and move on.
@@ -116,10 +153,10 @@ namespace ReleaseTool
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                         Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
 
-                        var releaseHashes = options.EngineVersions.Split(" ")
-                            .Select(version => $"{version.Trim()}-release")
+                        var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
+                            .Select(version => $"{version.Trim()}")
                             .Select(BuildkiteAgent.GetMetadata)
-                            .Select(hash => $"UnrealEngine-{hash}")
+                            .Select(hash => $"{hash}")
                             .ToList();
 
                         UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
@@ -177,19 +214,12 @@ namespace ReleaseTool
 
                 Logger.Info($"{options.PullRequestUrl} had been merged.");
 
-                // This uploads the commit hashes of the merge into release.
-                // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
-                BuildkiteAgent.SetMetaData(options.ReleaseBranch, mergeResult.Sha);
-
-                // TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
-                // Delete candidate branch.
-                //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
-
                 using (var gitClient = GitClient.FromRemote(repoUrl))
                 {
                     // Create GitHub release in the repo
                     gitClient.Fetch();
                     gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                    FinalizeRelease(gitHubClient, gitClient, gitHubRepo, gitRepoName, repoUrl);
                     var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
 
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
@@ -204,11 +234,33 @@ namespace ReleaseTool
             }
             catch (Exception e)
             {
-                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {0}", e.Message);
+                Logger.Error(e, $"ERROR: Unable to merge {options.CandidateBranch} into {options.ReleaseBranch} and/or clean up by merging {options.ReleaseBranch} into {options.SourceBranch}. Error: {e.Message}");
                 return 1;
             }
 
             return 0;
+        }
+
+        private void FinalizeRelease(GitHubClient gitHubClient, GitClient gitClient, Repository gitHubRepo, string gitRepoName, string repoUrl)
+        {
+            // This uploads the commit hashes of the merge into release.
+            // When run against UnrealGDK, the UnrealEngine hashes are used to update the unreal-engine.version file to include the UnrealEngine release commits.
+            BuildkiteAgent.SetMetaData(options.ReleaseBranch, gitClient.GetHeadCommit().Sha);
+
+            // TODO: UNR-3615 - Fix this so it does not throw Octokit.ApiValidationException: Reference does not exist.
+            // Delete candidate branch.
+            //gitHubClient.DeleteBranch(gitHubClient.GetRepositoryFromUrl(repoUrl), options.CandidateBranch);
+
+            var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, gitRepoName);
+
+            BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
+                string.Format(releaseAnnotationTemplate, release.HtmlUrl, gitRepoName), true);
+
+            Logger.Info("Release Successful!");
+            Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+            Logger.Info("Draft release: {0}", release.HtmlUrl);
+
+            CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, gitRepoName, gitClient);
         }
 
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
