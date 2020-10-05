@@ -287,4 +287,5 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
+	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 };
