@@ -42,7 +42,10 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
@@ -467,8 +470,20 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	LoadBalanceEnforcer =
-		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender =
+		[this](SpatialGDK::EntityComponentUpdate AclUpdate) {
+			// We pass the component update function of the view coordinator rather than the connection. This
+			// is so any updates are written to the local view before being sent. This does mean the connection send
+			// is not fully async right now, but could be if we replaced this with a "send and flush", which would
+			// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
+			// we can make that optimisation.
+			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
+		};
+	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
+																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
@@ -1751,15 +1766,25 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 		Connection->Advance();
+
 		if (Connection->HasDisconnected())
 		{
 			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
 			return;
 		}
 
+		if (LoadBalanceEnforcer.IsValid())
+		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
+			LoadBalanceEnforcer->Advance();
+			// Immediately flush. The messages to spatial created by the load balance enforcer in response
+			// to other workers should be looped back as quick as possible.
+			Connection->Flush();
+		}
+
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			Dispatcher->ProcessOps(SpatialGDK::GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
+			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
@@ -1771,15 +1796,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
-		}
-
-		if (LoadBalanceEnforcer.IsValid())
-		{
-			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for (const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
-			{
-				Sender->SetAclWriteAuthority(AclAssignmentRequest);
-			}
 		}
 	}
 }

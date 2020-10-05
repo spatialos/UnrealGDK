@@ -47,6 +47,7 @@ void ASpatialTestTearOff::PrepareTest()
 
 	// Step definition for a 5 second timer
 	FSpatialFunctionalTestStepDefinition WorkerWaitForTimeStepDefinition;
+	WorkerWaitForTimeStepDefinition.StepName = TEXT("SpatialTestTearOffUniversalWorkerWaitForTime");
 	WorkerWaitForTimeStepDefinition.bIsNativeDefinition = true;
 	WorkerWaitForTimeStepDefinition.TimeLimit = 15.0f;
 	WorkerWaitForTimeStepDefinition.NativeStartEvent.BindLambda([this]() {
