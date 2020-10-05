@@ -163,7 +163,7 @@ public:
 
 	static FSpatialTraceEvent AuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent")
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_intent_update")
 			.AddObject(Object)
 			.AddKeyValue(TEXT("NewWorkerId"), FString::FromInt(WorkerId))
 			.Get();

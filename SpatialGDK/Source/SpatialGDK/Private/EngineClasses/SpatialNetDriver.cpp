@@ -480,7 +480,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 			// is not fully async right now, but could be if we replaced this with a "send and flush", which would
 			// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
 			// we can make that optimisation.
-			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
+			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update), {});
 		};
 	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
 																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
