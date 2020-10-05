@@ -302,8 +302,7 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 	FUnrealObjectRef PlayerStartObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 	if (PlayerStart != nullptr)
 	{
-		const FNetworkGUID PlayerStartGuid = NetDriver->PackageMap->ResolveStablyNamedObject(PlayerStart);
-		PlayerStartObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(PlayerStartGuid);
+		PlayerStartObjectRef = FUnrealObjectRef::FromObjectPtr(PlayerStart, NetDriver->PackageMap);
 	}
 
 	// Create a request using the PlayerStart reference and by copying the data from the PlayerSpawn request from the client.
@@ -345,7 +344,7 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 	{
 		bool bUnresolvedRef = false;
 		AActor* PlayerStart = Cast<AActor>(FUnrealObjectRef::ToObjectPtr(PlayerStartRef, NetDriver->PackageMap, bUnresolvedRef));
-		bRequestHandledSuccessfully = PlayerStart != nullptr;
+		bRequestHandledSuccessfully = !bUnresolvedRef;
 
 		if (bRequestHandledSuccessfully)
 		{
