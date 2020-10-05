@@ -5,16 +5,16 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
-#include "SpatialTestExample.generated.h"
+#include "SpatialTestPropertyReplication.generated.h"
 
 class ATestExampleActor;
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestExample : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestPropertyReplication : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 public:
-	ASpatialTestExample();
+	ASpatialTestPropertyReplication();
 
 	virtual void PrepareTest() override;
 

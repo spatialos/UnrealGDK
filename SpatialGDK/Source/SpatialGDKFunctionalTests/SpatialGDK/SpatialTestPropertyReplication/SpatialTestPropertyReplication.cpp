@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestExample.h"
+#include "SpatialTestPropertyReplication.h"
 #include "Kismet/GameplayStatics.h"
 #include "TestExampleActor.h"
 
@@ -19,14 +19,14 @@
  *	- The spawned replicated Actor is destroyed.
  */
 
-ASpatialTestExample::ASpatialTestExample()
+ASpatialTestPropertyReplication::ASpatialTestPropertyReplication()
 	: Super()
 {
 	Author = "Ollie and Ben";
 	Description = TEXT("Example Test");
 }
 
-void ASpatialTestExample::PrepareTest()
+void ASpatialTestPropertyReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
