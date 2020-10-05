@@ -51,7 +51,10 @@ public:
 	// be registered with this SpanId) e.g. void TraceEvent(... SpatialScopedActiveSpanId&& SpanIdActivator) = delete;
 	// TODO(EventTracer): Communicate to others, that SpatialScopedActiveSpanId must be creating prior to calling worker send functions
 
-	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent TraceEvent, const TArray<worker::c::Trace_SpanId>& Causes = {});
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent);
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId Causes);
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TArray<worker::c::Trace_SpanId>& Causes);
+	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId* Causes, int32 NumCauses);
 
 	bool IsEnabled() const;
 

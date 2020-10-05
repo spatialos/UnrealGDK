@@ -73,14 +73,14 @@ void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 Fie
 bool SpatialSpanIdCache::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
 	int32 NumRemoved = DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
-	return NumRemoved;
+	return NumRemoved > 0;
 }
 
 bool SpatialSpanIdCache::DropSpanIds(const EntityComponentId& Id)
 {
 	int32 NumRemoved = EntityComponentFieldSpanIds.Remove(Id) > 0;
 	EntityComponentFieldSpanIds.Compact();
-	return NumRemoved;
+	return NumRemoved > 0;
 }
 
 bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
@@ -91,16 +91,19 @@ bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityC
 	}
 
 	bool bDropped = SpanIdMap->Remove(FieldId) > 0;
-	if (bDropped && SpanIdMap->Num() == 0)
+	if (bDropped)
 	{
-		EntityComponentFieldSpanIds.Remove(Id);
-	}
+		CompactCounter++;
+		if (CompactCounter >= CompactFrequency)
+		{
+			CompactCounter = 0;
+			EntityComponentFieldSpanIds.Compact();
+		}
 
-	CompactCounter++;
-	if (CompactCounter >= CompactFrequency)
-	{
-		CompactCounter = 0;
-		EntityComponentFieldSpanIds.Compact();
+		if (SpanIdMap->Num() == 0)
+		{
+			EntityComponentFieldSpanIds.Remove(Id);
+		}
 	}
 
 	return bDropped;

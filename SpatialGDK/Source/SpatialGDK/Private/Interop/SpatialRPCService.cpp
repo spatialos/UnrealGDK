@@ -9,7 +9,6 @@
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "WorkerSDK/improbable/c_trace.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
@@ -41,9 +40,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	{
 		if (EventTracer != nullptr)
 		{
-			TArray<Trace_SpanId> Causes =
-				PendingPayload.SpanId.IsSet() ? TArray<Trace_SpanId>{ PendingPayload.SpanId.GetValue() } : TArray<Trace_SpanId>{};
-			PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), Causes);
+			PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), PendingPayload.SpanId.GetValue());
 		}
 
 		// Already has queued RPCs of this type, queue until those are pushed.

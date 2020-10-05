@@ -877,7 +877,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	if (EventTracer != nullptr)
 	{
 		Trace_SpanId CauseSpanId = RetryRPC->SpanId.IsSet() ? RetryRPC->SpanId.GetValue() : Trace_SpanId();
-		NewSpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::RetryRPC(), { CauseSpanId });
+		NewSpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::RetryRPC(), CauseSpanId);
 	}
 
 	Worker_CommandRequest CommandRequest = CreateRetryRPCCommandRequest(*RetryRPC, TargetObjectRef.Offset);
@@ -1038,7 +1038,7 @@ void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_Comm
 										 const worker::c::Trace_SpanId CauseSpanId)
 {
 	TOptional<Trace_SpanId> SpanId =
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), { CauseSpanId });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), CauseSpanId);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
@@ -1052,7 +1052,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse();
 
 	TOptional<Trace_SpanId> SpanId =
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), { CauseSpanId });
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), CauseSpanId);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }

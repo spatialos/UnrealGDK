@@ -6,8 +6,6 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
-#include "UObject/Object.h"
-#include "UObject/UnrealType.h"
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -79,7 +77,23 @@ SpatialEventTracer::~SpatialEventTracer()
 		Disable();
 	}
 }
+
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent)
+{
+	return TraceEvent(SpatialTraceEvent, nullptr, 0);
+}
+
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId Causes)
+{
+	return TraceEvent(SpatialTraceEvent, &Causes, 1);
+}
+
 TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TArray<worker::c::Trace_SpanId>& Causes)
+{
+	return TraceEvent(SpatialTraceEvent, Causes.GetData(), Causes.Num());
+}
+
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId* Causes, int32 NumCauses)
 {
 	if (!IsEnabled())
 	{
@@ -87,9 +101,9 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent Spatia
 	}
 
 	Trace_SpanId CurrentSpanId;
-	if (Causes.Num() > 0)
+	if (NumCauses > 0)
 	{
-		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Causes.GetData(), Causes.Num());
+		CurrentSpanId = Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses);
 	}
 	else
 	{
@@ -203,10 +217,10 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	for (const SpatialSpanIdCache::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)
 	{
 		uint32 FieldId = FieldSpanIdUpdate.FieldId;
-		TArray<Trace_SpanId> MergeCauses = { FieldSpanIdUpdate.NewSpanId, FieldSpanIdUpdate.OldSpanId };
+		Trace_SpanId MergeCauses[2] = { FieldSpanIdUpdate.NewSpanId, FieldSpanIdUpdate.OldSpanId };
 
 		TOptional<Trace_SpanId> NewSpanId =
-			TraceEvent(FSpatialTraceEventBuilder::MergeComponentField(Id.EntityId, Id.ComponentId, FieldId), MergeCauses);
+			TraceEvent(FSpatialTraceEventBuilder::MergeComponentField(Id.EntityId, Id.ComponentId, FieldId), MergeCauses, 2);
 		SpanIdStore.AddSpanId(Id, FieldId, NewSpanId.GetValue());
 	}
 }
