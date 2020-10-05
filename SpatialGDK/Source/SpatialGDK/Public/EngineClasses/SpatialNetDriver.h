@@ -11,8 +11,8 @@
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "SpatialView/OpList/OpList.h"
-#include "Utils/BasicAwaiter.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/SpatialBasicAwaiter.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -156,7 +156,7 @@ public:
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
-	UBasicAwaiter* SpatialDebuggerReady;
+	USpatialBasicAwaiter* SpatialDebuggerReady;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 	UPROPERTY()

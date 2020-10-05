@@ -101,7 +101,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	// TODO: UNR-2375
 	bMaySendProperties = true;
 
-	SpatialDebuggerReady = NewObject<UBasicAwaiter>();
+	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 }
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)

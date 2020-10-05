@@ -6,14 +6,14 @@
 #include "Templates/SharedPointer.h"
 #include "UObject/Interface.h"
 
-#include "IAwaitable.generated.h"
+#include "ISpatialAwaitable.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAwaitable, Log, Log);
 
 DECLARE_DELEGATE_OneParam(FOnReady, const FString& /* ErrorMessage */);
 
 USTRUCT(BlueprintType)
-struct FDelegateHandleBPWrapper
+struct FSpatialAwaitableDelegateHandleBPWrapper
 {
 	GENERATED_BODY()
 
@@ -22,7 +22,7 @@ public:
 };
 
 UINTERFACE(MinimalAPI)
-class UAwaitable : public UInterface
+class USpatialAwaitable : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -30,7 +30,7 @@ class UAwaitable : public UInterface
 /**
  * Generic awaitable interface.
  */
-class SPATIALGDK_API IAwaitable
+class SPATIALGDK_API ISpatialAwaitable
 {
 	GENERATED_BODY()
 
@@ -38,6 +38,6 @@ public:
 	virtual FDelegateHandle Await(const FOnReady& OnReadyDelegate, const float Timeout) = 0;
 	virtual bool StopAwaiting(FDelegateHandle& Handle) = 0;
 
-	DECLARE_EVENT(IAwaitable, FOnResetEvent);
-	virtual FOnResetEvent& OnReset() = 0;
+	DECLARE_EVENT(ISpatialAwaitable, FSpatialAwaitableOnResetEvent);
+	virtual FSpatialAwaitableOnResetEvent& OnReset() = 0;
 };

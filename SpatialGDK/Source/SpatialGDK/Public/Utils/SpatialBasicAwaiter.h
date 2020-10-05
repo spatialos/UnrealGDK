@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
-#include "IAwaitable.h"
+#include "ISpatialAwaitable.h"
 #include "UObject/NoExportTypes.h"
 
-#include "BasicAwaiter.generated.h"
+#include "SpatialBasicAwaiter.generated.h"
 
-DECLARE_DERIVED_EVENT(UBasicAwaiter, IAwaitable::FOnResetEvent, FOnResetEvent);
+DECLARE_DERIVED_EVENT(USpatialBasicAwaiter, ISpatialAwaitable::FSpatialAwaitableOnResetEvent, FSpatialAwaitableOnResetEvent);
 
 /**
  * Object to await a single condition becoming true.
@@ -18,17 +18,17 @@ DECLARE_DERIVED_EVENT(UBasicAwaiter, IAwaitable::FOnResetEvent, FOnResetEvent);
  * object being ready for use by other objects.
  */
 UCLASS(Blueprintable, DefaultToInstanced)
-class SPATIALGDK_API UBasicAwaiter : public UObject, public IAwaitable
+class SPATIALGDK_API USpatialBasicAwaiter : public UObject, public ISpatialAwaitable
 {
 	GENERATED_BODY()
 
 public:
-	virtual ~UBasicAwaiter() {}
+	virtual ~USpatialBasicAwaiter() {}
 
 	/** IAwaitable Implementation */
 	virtual FDelegateHandle Await(const FOnReady& OnReadyDelegate, const float Timeout = 0.f) override;
 	virtual bool StopAwaiting(FDelegateHandle& Handle) override;
-	virtual FOnResetEvent& OnReset() override;
+	virtual FSpatialAwaitableOnResetEvent& OnReset() override;
 	/** End IAwaitable Implementation */
 
 	virtual void BeginDestroy() override;
@@ -42,7 +42,7 @@ public:
 	static const FString TIMEOUT_MESSAGE;
 
 protected:
-	DECLARE_EVENT_OneParam(UBasicAwaiter, FOnReadyEvent, const FString&);
+	DECLARE_EVENT_OneParam(USpatialBasicAwaiter, FOnReadyEvent, const FString&);
 
 	FOnReadyEvent OnReadyEvent;
 
@@ -50,7 +50,7 @@ private:
 	bool bIsReady;
 
 	void InvokeQueuedDelegates(const FString& ErrorStatus = FString{});
-	FOnResetEvent OnResetEvent;
+	FSpatialAwaitableOnResetEvent OnResetEvent;
 
 	TSet<FTimerHandle> TimeoutHandles;
 };

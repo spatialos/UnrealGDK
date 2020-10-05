@@ -1,20 +1,20 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "BasicAwaiter.h"
+#include "Utils/SpatialBasicAwaiter.h"
 
 #include "Engine/World.h"
 #include "TimerManager.h"
 
-const FString UBasicAwaiter::TIMEOUT_MESSAGE = FString{ TEXT("Timed out while waiting to become Ready!") };
+const FString USpatialBasicAwaiter::TIMEOUT_MESSAGE = FString{ TEXT("Timed out while waiting to become Ready!") };
 constexpr TCHAR DESTROYED_MESSAGE_TEMPLATE[] = TEXT("Awaiter '%s' was destroyed!");
 
-void UBasicAwaiter::BeginDestroy()
+void USpatialBasicAwaiter::BeginDestroy()
 {
 	InvokeQueuedDelegates(FString::Printf(DESTROYED_MESSAGE_TEMPLATE, *GetName()));
 	Super::BeginDestroy();
 }
 
-FDelegateHandle UBasicAwaiter::Await(const FOnReady& OnReadyDelegate, const float Timeout)
+FDelegateHandle USpatialBasicAwaiter::Await(const FOnReady& OnReadyDelegate, const float Timeout)
 {
 	if (bIsReady)
 	{
@@ -56,17 +56,17 @@ FDelegateHandle UBasicAwaiter::Await(const FOnReady& OnReadyDelegate, const floa
 	}
 }
 
-bool UBasicAwaiter::StopAwaiting(FDelegateHandle& Handle)
+bool USpatialBasicAwaiter::StopAwaiting(FDelegateHandle& Handle)
 {
 	return OnReadyEvent.Remove(Handle);
 }
 
-IAwaitable::FOnResetEvent& UBasicAwaiter::OnReset()
+ISpatialAwaitable::FSpatialAwaitableOnResetEvent& USpatialBasicAwaiter::OnReset()
 {
 	return OnResetEvent;
 }
 
-void UBasicAwaiter::Ready()
+void USpatialBasicAwaiter::Ready()
 {
 	// Early exit if already ready
 	if (bIsReady)
@@ -78,7 +78,7 @@ void UBasicAwaiter::Ready()
 	InvokeQueuedDelegates();
 }
 
-void UBasicAwaiter::Reset()
+void USpatialBasicAwaiter::Reset()
 {
 	if (!bIsReady)
 	{
@@ -90,7 +90,7 @@ void UBasicAwaiter::Reset()
 	OnResetEvent.Clear();
 }
 
-void UBasicAwaiter::InvokeQueuedDelegates(const FString& ErrorStatus /* = FString */)
+void USpatialBasicAwaiter::InvokeQueuedDelegates(const FString& ErrorStatus /* = FString */)
 {
 	OnReadyEvent.Broadcast(ErrorStatus);
 	OnReadyEvent.Clear();
