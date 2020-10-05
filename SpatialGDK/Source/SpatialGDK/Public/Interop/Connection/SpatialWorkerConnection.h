@@ -58,6 +58,7 @@ public:
 	FString GetDisconnectReason() const;
 
 	const SpatialGDK::EntityView& GetView() const;
+	SpatialGDK::ViewCoordinator& GetCoordinator() const;
 
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;

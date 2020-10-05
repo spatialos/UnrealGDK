@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ComponentTestUtils.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
 #include "SpatialView/ViewCoordinator.h"
+#include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/TestDefinitions.h"
 
 #define VIEWCOORDINATOR_TEST(TestName) GDK_TEST(Core, ViewCoordinator, TestName)

@@ -219,9 +219,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
 	ClientQuery.Constraint.EntityIdConstraint = EntityId;
-	// Temp fix for invalid initial auth server checkout constraints - UNR-3683
-	// Using full snapshot ensures all components are available on checkout. Remove when root issue is resolved.
-	ClientQuery.FullSnapshotResult = true;
+	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
 	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
@@ -229,7 +227,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
 	LoadBalanceQuery.ResultComponentIds =
 		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
