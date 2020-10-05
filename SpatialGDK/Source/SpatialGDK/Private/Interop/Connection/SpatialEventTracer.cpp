@@ -2,6 +2,8 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
+#include <inttypes.h>
+
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/Object.h"
@@ -112,6 +114,15 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent Spatia
 		auto ValueSrc = StringCast<ANSICHAR>(*Pair.Value);
 		const ANSICHAR* Value = ValueSrc.Get();
 		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
+	}
+
+	// Frame counter
+	{
+		const char* FrameCountStr = "FrameNum";
+		char TmpBuffer[64];
+		FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
+		const char* TmpBufferPtr = TmpBuffer;
+		Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
 	}
 
 	TraceEvent.data = EventData;
