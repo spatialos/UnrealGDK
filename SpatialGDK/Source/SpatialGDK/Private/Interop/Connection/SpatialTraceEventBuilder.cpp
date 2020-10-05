@@ -2,6 +2,8 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 
+#include "Utils/SpatialActorUtils.h"
+
 namespace SpatialGDK
 {
 FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType)
@@ -23,6 +25,7 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(const UObject* Ob
 		{
 			Key = TEXT("Actor");
 			AddKeyValue(TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
+			AddKeyValue(TEXT("ActorRoot"), GetNameSafe(SpatialGDK::GetHierarchyRoot(Actor)));
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
 	}
