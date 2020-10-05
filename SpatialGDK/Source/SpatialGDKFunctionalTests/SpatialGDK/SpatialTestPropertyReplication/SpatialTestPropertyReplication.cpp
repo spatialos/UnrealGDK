@@ -2,7 +2,7 @@
 
 #include "SpatialTestPropertyReplication.h"
 #include "Kismet/GameplayStatics.h"
-#include "TestExampleActor.h"
+#include "ReplicatedTestActor.h"
 
 /**
  * This test tests an Actor's replication.
@@ -30,9 +30,9 @@ void ASpatialTestPropertyReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Example Test Server spawns the TestExampleActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
+	AddStep(TEXT("Example Test Server spawns the ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor =
-			GetWorld()->SpawnActor<ATestExampleActor>(FVector(100.0f, 100.0f, 80.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(100.0f, 100.0f, 80.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(TestActor);
 
 		FinishStep();
@@ -41,12 +41,12 @@ void ASpatialTestPropertyReplication::PrepareTest()
 	AddStep(
 		TEXT("Example Test Clients check Actor replication"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			TArray<AActor*> FoundTestExampleActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestExampleActor::StaticClass(), FoundTestExampleActors);
+			TArray<AActor*> FoundReplicatedTestActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedTestActors);
 
-			if (FoundTestExampleActors.Num() == 1)
+			if (FoundReplicatedTestActors.Num() == 1)
 			{
-				TestActor = Cast<ATestExampleActor>(FoundTestExampleActors[0]);
+				TestActor = Cast<AReplicatedTestActor>(FoundReplicatedTestActors[0]);
 				if (IsValid(TestActor))
 				{
 					FinishStep();

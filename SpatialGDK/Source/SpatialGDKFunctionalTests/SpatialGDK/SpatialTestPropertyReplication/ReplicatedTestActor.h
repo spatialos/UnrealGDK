@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
-#include "TestExampleActor.generated.h"
+#include "ReplicatedTestActor.generated.h"
 
 UCLASS()
-class ATestExampleActor : public AReplicatedTestActorBase
+class AReplicatedTestActor : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
 
 public:
-	ATestExampleActor();
+	AReplicatedTestActor();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

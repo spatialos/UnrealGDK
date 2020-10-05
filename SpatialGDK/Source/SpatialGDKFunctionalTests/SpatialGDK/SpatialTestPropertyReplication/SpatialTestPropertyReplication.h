@@ -7,7 +7,7 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestPropertyReplication.generated.h"
 
-class ATestExampleActor;
+class AReplicatedTestActor;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestPropertyReplication : public ASpatialFunctionalTest
@@ -19,5 +19,5 @@ public:
 	virtual void PrepareTest() override;
 
 private:
-	ATestExampleActor* TestActor;
+	AReplicatedTestActor* TestActor;
 };
