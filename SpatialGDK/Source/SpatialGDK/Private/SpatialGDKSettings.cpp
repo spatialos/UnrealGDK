@@ -126,7 +126,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bEventTracingEnabled(false)
-	, MaxEventTracingFileSizeBytes(256*1024*1024) // 256mb
+	, MaxEventTracingFileSizeBytes(256 * 1024 * 1024) // 256mb
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
