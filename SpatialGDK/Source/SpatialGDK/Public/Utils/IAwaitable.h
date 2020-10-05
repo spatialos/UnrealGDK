@@ -28,7 +28,7 @@ class UAwaitable : public UInterface
 };
 
 /**
- *
+ * Generic awaitable interface.
  */
 class SPATIALGDK_API IAwaitable
 {
