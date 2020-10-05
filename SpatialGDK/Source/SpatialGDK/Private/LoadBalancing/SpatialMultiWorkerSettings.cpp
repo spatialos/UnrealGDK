@@ -39,15 +39,6 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 	}
 }
 
-void UAbstractSpatialMultiWorkerSettings::PostInitProperties()
-{
-	// Check command-line overrides of properties after config values
-	const TCHAR* CommandLine = FCommandLine::Get();
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
-
-	Super::PostInitProperties();
-}
-
 void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 {
 	const UWorld* World = GEditor->GetEditorWorldContext().World();

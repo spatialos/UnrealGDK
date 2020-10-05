@@ -22,14 +22,12 @@ class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UDataAsset
 
 public:
 	UAbstractSpatialMultiWorkerSettings()
-		: bEnableHandover(true)
 	{}
 
 protected:
-	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy, bool bEnableHandover = true)
+	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy)
 		: WorkerLayers(InWorkerLayers)
 		, LockingPolicy(InLockingPolicy)
-		, bEnableHandover(bEnableHandover)
 	{
 	}
 
@@ -37,8 +35,6 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
-
-	virtual void PostInitProperties() override;
 
 	uint32 GetMinimumRequiredWorkerCount() const;
 
@@ -52,9 +48,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
-
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
-	bool bEnableHandover;
 private:
 #if WITH_EDITOR
 	void ValidateFirstLayerIsDefaultLayer();
