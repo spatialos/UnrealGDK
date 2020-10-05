@@ -2,7 +2,9 @@
 
 #include "SpatialTestCrossServerRPC.h"
 #include "CrossServerRPCCube.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Kismet/GameplayStatics.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
 
 /**
@@ -37,41 +39,77 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 	CubesLocations.Add(FVector(-250.0f, -250.0f, 75.0f));
 	CubesLocations.Add(FVector(-250.0f, 250.0f, 75.0f));
 
+	AddStep(TEXT("EnsureSpatialOS"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+
+		if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
+		{
+			FinishTest(EFunctionalTestResult::Error, TEXT("Test requires SpatialOS enabled with Load-Balancing Strategy"));
+		}
+		else
+		{
+			FinishStep();
+		}
+	});
+
 	for (int i = 1; i <= 4; ++i)
 	{
+		FVector SpawnPosition = CubesLocations[i - 1];
 		// Each server spawns a cube
-		AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(i), nullptr, [this, i, CubesLocations]() {
+		AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(i), nullptr, [this, SpawnPosition]() {
 			ACrossServerRPCCube* TestCube =
-				GetWorld()->SpawnActor<ACrossServerRPCCube>(CubesLocations[i - 1], FRotator::ZeroRotator, FActorSpawnParameters());
+				GetWorld()->SpawnActor<ACrossServerRPCCube>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
 			RegisterAutoDestroyActor(TestCube);
 
 			FinishStep();
 		});
 	}
 
+	int NumCubes = CubesLocations.Num();
+
 	// Each server sends an RPC to all cubes that it is NOT authoritive over.
 	AddStep(
 		TEXT("ServerSendRPCs"), FWorkerDefinition::AllServers,
-		[this, CubesLocations]() {
+		[this, NumCubes]() -> bool {
 			// Make sure that all cubes were spawned and are visible to all servers before trying to send the RPCs.
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
-			return TestCubes.Num() == CubesLocations.Num();
+			UAbstractLBStrategy* LBStrategy = Cast<USpatialNetDriver>(GetNetDriver())->LoadBalanceStrategy;
+
+			// Since the servers are spawning the cubes in positions that don't belong to them
+			// we need to wait for all the authority changes to happen, and this can take a bit.
+			int LocalWorkerId = GetLocalWorkerId();
+			int NumCubesWithAuthority = 0;
+			int NumCubesShouldHaveAuthority = 0;
+			for (AActor* Cube : TestCubes)
+			{
+				if (Cube->HasAuthority())
+				{
+					NumCubesWithAuthority += 1;
+				}
+				if (LBStrategy->WhoShouldHaveAuthority(*Cube) == LocalWorkerId)
+				{
+					NumCubesShouldHaveAuthority += 1;
+				}
+			}
+
+			// So only when we have all cubes present and we only have authority over the one we should we can progress.
+			return TestCubes.Num() == NumCubes && NumCubesWithAuthority == 1 && NumCubesShouldHaveAuthority == 1;
 		},
 		[this]() {
 			TArray<AActor*> TestCubes;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
 
+			int LocalWorkerId = GetLocalWorkerId();
+
 			for (AActor* Cube : TestCubes)
 			{
-				if (Cube->HasAuthority())
+				if (!Cube->HasAuthority())
 				{
-					continue;
+					ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
+					CrossServerRPCCube->CrossServerTestRPC(LocalWorkerId);
 				}
-
-				ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
-				CrossServerRPCCube->CrossServerTestRPC(GetLocalFlowController()->GetWorkerDefinition().Id);
 			}
 
 			FinishStep();

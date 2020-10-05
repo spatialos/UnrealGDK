@@ -2,7 +2,7 @@
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/ViewCoordinator.h"
-#include "SpatialViewUtils.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/ComponentFactory.h"
 
@@ -10,57 +10,6 @@
 
 namespace SpatialGDK
 {
-SUBVIEW_TEST(GIVEN_Set_Of_Components_WHEN_Entity_Tagged_THEN_Components_Contains_Tag)
-{
-	const Worker_ComponentId TagComponentId = 1;
-	const Worker_ComponentId ValueComponentId = 2;
-
-	FDispatcher Dispatcher;
-	EntityView View;
-	const FSubView SubView(TagComponentId, FSubView::NoFilter, &View, Dispatcher, FSubView::NoDispatcherCallbacks);
-	TArray<FWorkerComponentData> Components{ ComponentFactory::CreateEmptyComponentData(ValueComponentId) };
-
-	SubView.TagEntity(Components);
-
-	TestTrue("Components contains tag component", Components.ContainsByPredicate([TagComponentId](const FWorkerComponentData& Data) {
-		return Data.component_id == TagComponentId;
-	}));
-
-	return true;
-}
-
-SUBVIEW_TEST(GIVEN_Query_WHEN_Query_Tagged_THEN_Query_Is_Tagged)
-{
-	const Worker_EntityId EntityId = 1;
-	const Worker_ComponentId TagComponentId = 1;
-	const Worker_ComponentId ValueComponentId = 2;
-
-	FDispatcher Dispatcher;
-	EntityView View;
-	FSubView SubView(TagComponentId, FSubView::NoFilter, &View, Dispatcher, FSubView::NoDispatcherCallbacks);
-	Query QueryToTag;
-	QueryConstraint Constraint;
-	Constraint.EntityIdConstraint = EntityId;
-	QueryToTag.Constraint = Constraint;
-	QueryToTag.ResultComponentIds = SchemaResultType{ ValueComponentId };
-
-	SubView.TagQuery(QueryToTag);
-
-	TestNotEqual("Constraint is now an AND", QueryToTag.Constraint.AndConstraint.Num(), 0);
-	if (QueryToTag.Constraint.AndConstraint.Num() == 0)
-	{
-		return true;
-	}
-	TArray<QueryConstraint>& AndConstraint = QueryToTag.Constraint.AndConstraint;
-	Worker_ComponentId TestConstraintId = AndConstraint[0].ComponentConstraint.IsSet() ? AndConstraint[0].ComponentConstraint.GetValue()
-																					   : AndConstraint[1].ComponentConstraint.GetValue();
-	TestEqual("Constraint contains tag component constraint", TestConstraintId, TagComponentId);
-
-	TestTrue("Result type contains tag", QueryToTag.ResultComponentIds.Contains(TagComponentId));
-
-	return true;
-}
-
 SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Contains_Entity)
 {
 	const Worker_EntityId TaggedEntityId = 2;
