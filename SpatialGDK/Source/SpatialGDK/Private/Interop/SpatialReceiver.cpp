@@ -206,6 +206,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
@@ -234,12 +236,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
+
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
+		return;
+	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
@@ -247,11 +253,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
 		PendingAddActors.AddUnique(Op.entity_id);
+
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
@@ -261,6 +272,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			WorkerConnectionEntities.Add(Op.entity_id, WorkerData->WorkerId);
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
@@ -271,12 +284,18 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		RemoveActor(Op.entity_id);
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::DORMANT_COMPONENT_ID:
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
@@ -288,6 +307,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
@@ -295,6 +316,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
@@ -309,16 +332,20 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 				NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
 			}
 		}
+		// Unhandled by EventTracer.
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
 	if (Op.data.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
 	{
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
 	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(Op.data.component_id))
 	{
+		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
