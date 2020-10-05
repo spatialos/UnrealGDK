@@ -5,32 +5,32 @@
 #include "ReplicatedTestActor.h"
 
 /**
- * This test tests an Actor's replication.
+ * This tests that an Actor can replicate a property across the network during play.
  * This test contains 1 Server and 2 Client workers.
  *
  * The flow is as follows:
  * - Setup:
- *	- The Server spawns a replicated Actor.
- * - Test:
- *	- The Clients check if the replicated Actor is visible for them.
- *  - The Server changes a replicated property of the Actor.
- *  - The Clients check that the property was correctly replicated.
+ *  - The Server spawns one ReplicatedTestActor.
+ *  - Test:
+ *  - Both Clients check that they can see exactly 1 ReplicatedTestActor.
+ *  - The Server changes the ReplicatedProperty of the ReplicatedTestActor from "0" to "99".
+ *  - Both Clients check that the ReplicatedProperty is now set to "99".
  * - Clean-up:
- *	- The spawned replicated Actor is destroyed.
+ *  - ReplicatedTestActor is destroyed using the RegisterAutoDestroyActor helper function.
  */
 
 ASpatialTestPropertyReplication::ASpatialTestPropertyReplication()
 	: Super()
 {
-	Author = "Ollie and Ben";
-	Description = TEXT("Example Test");
+	Author = "Ollie Balaam";
+	Description = TEXT("This tests that an Actor can replicate a property across the network during play.");
 }
 
 void ASpatialTestPropertyReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Example Test Server spawns the ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
+	AddStep(TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor =
 			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(100.0f, 100.0f, 80.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(TestActor);
@@ -39,7 +39,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 	});
 
 	AddStep(
-		TEXT("Example Test Clients check Actor replication"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("Both Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
 			TArray<AActor*> FoundReplicatedTestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedTestActors);
@@ -56,7 +56,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		5.0f);
 
 	AddStep(
-		TEXT("Example Test Server Modifies replicated property"), FWorkerDefinition::Server(1),
+		TEXT("The Server changes the ReplicatedProperty of the ReplicatedTestActor from 0 to 99"), FWorkerDefinition::Server(1),
 		[this]() -> bool {
 			return IsValid(TestActor);
 		},
@@ -67,7 +67,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		});
 
 	AddStep(
-		TEXT("Example Test Clients check modified property"), FWorkerDefinition::AllClients,
+		TEXT("Both Clients check that the ReplicatedProperty is now set to 99"), FWorkerDefinition::AllClients,
 		[this]() -> bool {
 			return IsValid(TestActor);
 		},
