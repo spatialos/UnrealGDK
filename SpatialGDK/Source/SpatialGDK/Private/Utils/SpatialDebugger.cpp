@@ -611,15 +611,19 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 		return;
 	}
 
-	TArray<const AActor*> PlayerHierarchyActors = { LocalPlayerState.Get(), LocalPlayerController.Get(), LocalPawn.Get() };
-	GetReplicatedActorsInHierarchy(LocalPlayerController.Get(), PlayerHierarchyActors);
+	TArray<const AActor*> ActorsToDisplay = { LocalPlayerState.Get(), LocalPlayerController.Get(), LocalPawn.Get() };
+
+	if (bShowPlayerHierarchy)
+	{
+		GetReplicatedActorsInHierarchy(LocalPlayerController.Get(), ActorsToDisplay);
+	}
 
 	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
 
-	for (int32 i = 0; i < PlayerHierarchyActors.Num(); ++i)
+	for (int32 i = 0; i < ActorsToDisplay.Num(); ++i)
 	{
-		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(PlayerHierarchyActors[i]);
-		DrawTag(Canvas, ScreenLocation, EntityId, PlayerHierarchyActors[i]->GetName());
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
+		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName());
 		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}
 }

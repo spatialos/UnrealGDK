@@ -108,6 +108,10 @@ public:
 	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (Tooltip = "Show all replicated Actors in the player controller's hierarchy, or just state/controller/pawn"))
+	bool bShowPlayerHierarchy = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Show server authority for every entity in range"))
 	bool bShowAuth = false;
 
