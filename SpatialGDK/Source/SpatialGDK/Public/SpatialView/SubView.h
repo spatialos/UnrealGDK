@@ -4,7 +4,6 @@
 
 #include "Dispatcher.h"
 #include "EntityView.h"
-#include "Schema/Interest.h"
 #include "Templates/Function.h"
 
 using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
@@ -39,12 +38,11 @@ public:
 	FSubView& operator=(const FSubView&) = delete;
 	FSubView& operator=(FSubView&&) = default;
 
-	void TagQuery(Query& QueryToTag) const;
-	void TagEntity(TArray<FWorkerComponentData>& Components) const;
-
 	void Advance(const ViewDelta& Delta);
 	const FSubViewDelta& GetViewDelta() const;
 	void RefreshEntity(const Worker_EntityId EntityId);
+
+	const EntityView& GetView() const;
 
 	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
 	// Takes an optional predicate argument to further filter what causes a refresh. Example: Only trigger
