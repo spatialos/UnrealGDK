@@ -131,6 +131,7 @@ bool FillWorkerConfigurationFromCurrentMap(FWorkerTypeLaunchSection& OutWorker, 
 bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription,
 						  const FWorkerTypeLaunchSection& InWorker)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (InLaunchConfigDescription != nullptr)
 	{
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = *InLaunchConfigDescription;
@@ -170,12 +171,20 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			WriteLoadbalancingSection(Writer, SpatialConstants::DefaultServerWorkerType, InWorker.NumEditorInstances,
 									  InWorker.bManualWorkerConnectionOnly);
 		}
+		if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			WriteLoadbalancingSection(Writer, SpatialConstants::RoutingWorkerType, 1, InWorker.bManualWorkerConnectionOnly);
+		}
 		Writer->WriteArrayEnd();
 		Writer->WriteObjectEnd();				  // Load balancing section end
 		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
 		if (InWorker.NumEditorInstances > 0)
 		{
 			WriteWorkerSection(Writer, SpatialConstants::DefaultServerWorkerType, InWorker);
+		}
+		if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			WriteWorkerSection(Writer, SpatialConstants::RoutingWorkerType, InWorker);
 		}
 		// Write the client worker section
 		FWorkerTypeLaunchSection ClientWorker;

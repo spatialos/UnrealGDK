@@ -192,6 +192,11 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return Coordinator->GetWorkerAttributes();
 }
 
+SpatialGDK::ViewCoordinator& USpatialWorkerConnection::GetCoordinator() const
+{
+	return *Coordinator;
+}
+
 SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(Worker_ComponentId ComponentId,
 																				SpatialGDK::FComponentValueCallback Callback)
 {

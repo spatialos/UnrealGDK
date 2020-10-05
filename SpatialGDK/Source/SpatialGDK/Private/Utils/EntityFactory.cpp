@@ -58,6 +58,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet,
 															 SpatialConstants::UnrealClientAttributeSet };
 
+	WorkerRequirementSet AllServersPermission = { SpatialConstants::UnrealServerAttributeSet,
+												  SpatialConstants::UnrealRoutingWorkerAttributeSet };
+
+	WorkerRequirementSet AllWorkersPermission = { SpatialConstants::UnrealServerAttributeSet,
+												  SpatialConstants::UnrealRoutingWorkerAttributeSet,
+												  SpatialConstants::UnrealClientAttributeSet };
+
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, OwningClientAttributeSet };
@@ -93,7 +100,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
-		ReadAcl = AnyServerRequirementSet;
+		ReadAcl = AllServersPermission;
 	}
 	else if (Actor->IsA<APlayerController>())
 	{
@@ -101,7 +108,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 	else
 	{
-		ReadAcl = AnyServerOrClientRequirementSet;
+		ReadAcl = AllWorkersPermission;
 	}
 
 	WriteAclMap ComponentWriteAcl;
@@ -431,6 +438,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_AUTH_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_NON_AUTH_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 
 	return ComponentDatas;
 }

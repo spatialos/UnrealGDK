@@ -283,10 +283,9 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory
-					   ->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/,
-													NetDriver->IsRoutingWorker() /*bIsRoutingWorker*/)
-					   .CreateInterestData());
+	Components.Add(
+		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+			.CreateInterestData());
 
 	// GDK known entities completeness tags
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -479,9 +478,7 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
-		NetDriver->InterestFactory
-			->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/,
-										 NetDriver->IsRoutingWorker() /*bIsRoutingWorker*/)
+		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
@@ -556,53 +553,33 @@ void USpatialSender::FlushRPCService()
 {
 	if (RPCService != nullptr)
 	{
-		RPCService->PushOverflowedRPCs();
-		RPCService->HandleTimeout(Connection);
-
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+		RPCService->PushOverflowedRPCs();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			RPCService->HandleTimeout(NetDriver->WorkerEntityId, Connection);
+		}
 
 		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
 
 		for (SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
-			if (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
-			{
-				CrossServerEndpointSenderACK* Comp = StaticComponentView->GetComponentData<CrossServerEndpointSenderACK>(Update.EntityId);
-
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending ACK from %llu for entity %llu, RPCId : %llu"), NetDriver->WorkerEntityId,
-					   Update.EntityId, Comp->RPCAck);
-			}
+			// if (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
+			//{
+			//	CrossServerEndpointSenderACK* Comp = StaticComponentView->GetComponentData<CrossServerEndpointSenderACK>(Update.EntityId);
+			//
+			//	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending ACK from %llu for entity %llu, RPCId : %llu"), NetDriver->WorkerEntityId,
+			//		   Update.EntityId, Comp->RPCAck);
+			//}
 			if (!StaticComponentView->HasComponent(Update.EntityId, Update.Update.component_id))
 			{
 				continue;
 			}
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
-			if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
-			{
-				if (NetDriver->IsRoutingWorker())
-				{
-					if (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID
-						|| (Update.Update.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID
-							&& StaticComponentView->HasAuthority(Update.EntityId,
-																 SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID))
-						|| (Update.Update.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID
-							&& StaticComponentView->HasAuthority(Update.EntityId,
-																 SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID))
-						|| (Update.Update.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID
-							&& StaticComponentView->HasAuthority(Update.EntityId,
-																 SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID)))
-					{
-						Worker_ComponentUpdateOp LoopbackUpdate;
-						LoopbackUpdate.update = Update.Update;
-						LoopbackUpdate.entity_id = Update.EntityId;
-						StaticComponentView->OnComponentUpdate(LoopbackUpdate);
-						Receiver->OnComponentUpdate(LoopbackUpdate);
-					}
-				}
-			}
 		}
 
-		if (RPCs.Num() && GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
+		if (RPCs.Num() && Settings->bWorkerFlushAfterOutgoingNetworkOp)
 		{
 			Connection->Flush();
 		}
@@ -882,9 +859,7 @@ bool USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker
 		|| Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
 	{
-		Worker_EntityId SenderEntity = Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker
-										   ? SenderObjectRef.Entity
-										   : NetDriver->WorkerEntityId;
+		Worker_EntityId SenderEntity = SenderObjectRef.Entity;
 
 		const EPushRPCResult Result = RPCService->PushRPC(SenderEntity, TargetObjectRef, RPCInfo.Type, Payload, Channel->bCreatedEntity);
 
@@ -909,10 +884,10 @@ bool USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 				   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 			return true;
 		case EPushRPCResult::DropOverflowed:
-			UE_LOG(LogSpatialSender, Log,
-				   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, "
-						"function: %s"),
-				   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			// UE_LOG(LogSpatialSender, Log,
+			//	   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, "
+			//			"function: %s"),
+			//	   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 			return true;
 		case EPushRPCResult::HasAckAuthority:
 			UE_LOG(

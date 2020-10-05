@@ -141,7 +141,8 @@ const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 const Worker_ComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
 const Worker_ComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
+const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2009;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -256,12 +257,15 @@ const FString INVALID_WORKER_NAME = TEXT("");
 
 static const FName DefaultLayer = FName(TEXT("DefaultLayer"));
 
+const FName RoutingWorkerType(TEXT("RoutingWorker"));
+
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ DefaultServerWorkerType.ToString() };
+const WorkerAttributeSet UnrealRoutingWorkerAttributeSet = TArray<FString>{ RoutingWorkerType.ToString() };
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ DefaultClientWorkerType.ToString() };
 
-const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
 const WorkerRequirementSet UnrealClientPermission{ { UnrealClientAttributeSet } };
-const WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet } };
+const WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet,
+													   UnrealRoutingWorkerAttributeSet } };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");

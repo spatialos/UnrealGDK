@@ -51,6 +51,11 @@ DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialCo
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet, );
 
+namespace SpatialGDK
+{
+struct SpatialRoutingSystem;
+}
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
@@ -134,6 +139,8 @@ public:
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 	const FString& GetRoutingWorkerId();
 
+	void QueryRoutingWorkerId();
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
@@ -166,6 +173,8 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
+
+	SpatialGDK::SpatialRoutingSystem* RoutingSystem = nullptr;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
@@ -228,6 +237,7 @@ private:
 
 	FString SnapshotToLoad;
 	FString RoutingWorkerId;
+	bool bRoutingWorkerQueryInFlight = false;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.

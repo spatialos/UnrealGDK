@@ -94,18 +94,18 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 //}
 
 FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const FUnrealObjectRef& InSenderObjectRef, ERPCType InType,
-									 RPCPayload&& InPayload, uint32 InSlot)
+									 RPCPayload&& InPayload, uint64 InSenderRev)
 	: ObjectRef(InTargetObjectRef)
 	, SenderObjectRef(InSenderObjectRef)
 	, Payload(MoveTemp(InPayload))
-	, Slot(InSlot)
+	, SenderRev(InSenderRev)
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
 {
 }
 
 void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, const FUnrealObjectRef& SenderObjectRef, ERPCType Type,
-									  RPCPayload&& Payload, uint32 Slot)
+									  RPCPayload&& Payload, uint64 SenderRev)
 {
 	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObjectRef.Entity);
 
@@ -121,7 +121,7 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, c
 		}
 	}
 
-	FPendingRPCParams Params{ TargetObjectRef, SenderObjectRef, Type, MoveTemp(Payload), Slot };
+	FPendingRPCParams Params{ TargetObjectRef, SenderObjectRef, Type, MoveTemp(Payload), SenderRev };
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -55,6 +55,8 @@ public:
 																			const FComponentChangeRefreshPredicate& RefreshPredicate);
 	static FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
 																		   const FAuthorityChangeRefreshPredicate& RefreshPredicate);
+
+	const EntityView* GetView() const { return View; };
 
 private:
 	void RegisterTagCallbacks(FDispatcher& Dispatcher);

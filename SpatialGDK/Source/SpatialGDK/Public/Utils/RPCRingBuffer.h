@@ -52,6 +52,7 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
 uint32 GetRingBufferSize(ERPCType Type);
 
 Worker_ComponentId GetAckComponentId(ERPCType Type);
+
 Schema_FieldId GetAckFieldId(ERPCType Type);
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();

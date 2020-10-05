@@ -274,6 +274,13 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 			AdditionalServerIndex++;
 		}
 
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			Function(SpatialConstants::RoutingWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
+		}
+
 		return true;
 	}
 

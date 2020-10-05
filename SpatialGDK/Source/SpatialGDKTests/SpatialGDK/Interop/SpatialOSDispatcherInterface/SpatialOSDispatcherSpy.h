@@ -32,7 +32,7 @@ public:
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType,
-									  const SpatialGDK::RPCPayload& Payload, uint32 Slot) override;
+									  const SpatialGDK::RPCPayload& Payload, uint64 SenderRev) override;
 
 	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
 	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;

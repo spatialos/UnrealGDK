@@ -350,7 +350,13 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
-	RPCService->OnEntityRemoved(NetDriver->WorkerEntityId, Op.entity_id);
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	{
+		RPCService->OnEntityRemoved(NetDriver->WorkerEntityId, Op.entity_id);
+	}
 
 	if (NetDriver->IsServer())
 	{
@@ -568,6 +574,9 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	// be correctly configured to process RPCs sent during Actor creation
 	if (Settings->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
+		const bool bIsWorkerMailboxRPC = Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox;
+		const bool bIsRoutingWorkerRPC = Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
+
 		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
 			|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 			|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID
@@ -576,14 +585,19 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 			|| Op.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID
 			|| Op.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID)
 		{
-			if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
-			{
-				if (Op.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID
-					|| Op.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID)
-				{
-					check(NetDriver->IsRoutingWorker());
-				}
-			}
+			// if (Op.component_id >= SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID
+			//	&& Op.component_id <= SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID)
+			//{
+			//	if (bIsWorkerMailboxRPC)
+			//	{
+			//		check(Op.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
+			//	}
+			//	if (bIsRoutingWorkerRPC)
+			//	{
+			//		check(Op.component_id == SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID
+			//			|| Op.component_id == SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID);
+			//	}
+			//}
 			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 		}
 	}
@@ -864,9 +878,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 							return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 							break;
-						case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
-							return SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
-							break;
+							// case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+							//	return SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
+							//	break;
 						}
 						return SpatialConstants::INVALID_COMPONENT_ID;
 					}();
@@ -1720,30 +1734,35 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		HandleRPC(Op);
+		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
 		{
 			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
 		}
+		return;
 	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
-		HandleRPC(Op);
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			HandleRPC(Op);
+		}
 		return;
 	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
-		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox || NetDriver->IsRoutingWorker())
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
 		{
 			HandleRPC(Op);
 			return;
 		}
-	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
-		if (NetDriver->IsRoutingWorker())
-		{
-			// TODO: ACK RPC on counterpart.
-		}
-		return;
 	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
-		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox
+			|| Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 		{
-			RPCService->UpdateMergedACKs(NetDriver->WorkerEntityId, Op.entity_id);
+			if (ensure(Op.update.component_id == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID))
+			{
+				RPCService->UpdateMergedACKs(Op.entity_id);
+			}
 		}
 		return;
 	}
@@ -2058,6 +2077,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 void USpatialReceiver::FlushRetryRPCs()
 {
 	RPCService->CheckLocalTargets(NetDriver->WorkerEntityId);
+	RPCService->InspectStaleEntities();
 	Sender->FlushRetryRPCs();
 }
 
@@ -2202,18 +2222,15 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::NetMulticast)
 			{
-				if (RPCType == ERPCType::CrossServerSender)
+				if (RPCType == ERPCType::CrossServerSender || RPCType == ERPCType::CrossServerReceiver)
 				{
 					USpatialGDKSettings const* Settings = GetDefault<USpatialGDKSettings>();
-					if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox)
+					if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::WorkerEntityMailbox
+						|| Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 					{
 						RPCService->WriteCrossServerACKFor(PendingRPCParams.ObjectRef.Entity, PendingRPCParams.SenderObjectRef.Entity,
-														   PendingRPCParams.SenderObjectRef.Offset, PendingRPCParams.Slot);
+														   PendingRPCParams.SenderObjectRef.Offset, PendingRPCParams.SenderRev, RPCType);
 					}
-					// if(Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
-					//{
-					//	RPCService->IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
-					//}
 				}
 				else
 				{
@@ -2486,31 +2503,24 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 
-	if (Type == ERPCType::CrossServerSender)
+	// Swap RPC types in order to use the right endpoints on the receiving side.
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 	{
-		//--> for routing worker.
-		// Type = ERPCType::CrossServerReceiver;
+		if (Type == ERPCType::CrossServerSender)
+		{
+			Type = ERPCType::CrossServerReceiver;
+		}
 	}
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderObjectRef, Type, MoveTemp(InPayload), Slot);
 }
 
 bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, const FUnrealObjectRef& Counterpart, ERPCType RPCType,
-											const SpatialGDK::RPCPayload& Payload, uint32 Slot)
+											const SpatialGDK::RPCPayload& Payload, uint64 SenderRev)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
-	{
-		if (NetDriver->IsRoutingWorker() && RPCType == ERPCType::CrossServerSender)
-		{
-			RPCService->PushRPC(Counterpart.Entity, FUnrealObjectRef(EntityId, Counterpart.Offset), ERPCType::CrossServerReceiver, Payload,
-								false);
-			RPCService->IncrementAckedRPCID(EntityId, RPCType);
 
-			return true;
-		}
-	}
-
-	ProcessOrQueueIncomingRPC(FUnrealObjectRef(EntityId, Payload.Offset), Counterpart, Payload, Slot);
+	ProcessOrQueueIncomingRPC(FUnrealObjectRef(EntityId, Payload.Offset), Counterpart, Payload, SenderRev);
 
 	return true;
 }

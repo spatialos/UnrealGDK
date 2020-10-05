@@ -345,7 +345,7 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	{
 		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
 		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
-		if (AckedRPCType == ERPCType::CrossServerSender)
+		if (AckedRPCType == ERPCType::CrossServerSender || AckedRPCType == ERPCType::CrossServerReceiver)
 		{
 			// Writer.Printf("map<EntityId, ACKList> {0}_dotted_rpc_ack = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
 			for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)

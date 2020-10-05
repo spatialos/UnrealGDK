@@ -131,7 +131,7 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Sending query for WorkerEntities"));
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose, TEXT("Sending query for WorkerEntities"));
 
 	if (bWorkerEntityQueryInFlight)
 	{
@@ -179,7 +179,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Processing ServerWorker Entity query response"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose, TEXT("Processing ServerWorker Entity query response"));
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 

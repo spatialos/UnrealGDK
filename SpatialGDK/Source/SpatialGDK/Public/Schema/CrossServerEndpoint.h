@@ -23,6 +23,16 @@ private:
 	void ReadFromSchema(Schema_Object* SchemaObject);
 };
 
+struct ACKItem
+{
+	void ReadFromSchema(Schema_Object* SchemaObject);
+	void WriteToSchema(Schema_Object* SchemaObject);
+
+	Worker_EntityId Sender = SpatialConstants::INVALID_ENTITY_ID;
+	uint64 RPCId = 0;
+	uint64 SenderRevision = 0;
+};
+
 struct CrossServerEndpointACK : Component
 {
 	CrossServerEndpointACK(const Worker_ComponentData& Data, ERPCType Type);
@@ -31,6 +41,7 @@ struct CrossServerEndpointACK : Component
 
 	ERPCType Type;
 	uint64 RPCAck = 0;
+	TArray<TOptional<ACKItem>> ACKArray;
 
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);
@@ -39,7 +50,6 @@ private:
 struct CrossServerEndpointSender : CrossServerEndpoint
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID;
-
 	CrossServerEndpointSender(const Worker_ComponentData& Data)
 		: CrossServerEndpoint(Data, ERPCType::CrossServerSender)
 	{
@@ -56,37 +66,18 @@ struct CrossServerEndpointReceiver : CrossServerEndpoint
 	}
 };
 
-struct ACKItem
-{
-	void ReadFromSchema(Schema_Object* SchemaObject);
-	void WriteToSchema(Schema_Object* SchemaObject);
-
-	Worker_EntityId Sender = SpatialConstants::INVALID_ENTITY_ID;
-	uint64 RPCId = 0;
-	uint64 SenderRevision = 0;
-};
-
-struct CrossServerEndpointSenderACK : Component
+struct CrossServerEndpointSenderACK : CrossServerEndpointACK
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID;
-	CrossServerEndpointSenderACK(const Worker_ComponentData& Data);
-
-	// void CreateUpdate(Schema_ComponentUpdate* OutUpdate);
-
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
-
-	uint64 RPCAck = 0;
-	// TMap<Worker_EntityId_Key, TArray<uint64>> DottedRPCACK;
-	TArray<TOptional<ACKItem>> ACKArray;
-
-private:
-	void ReadFromSchema(Schema_Object* SchemaObject);
+	CrossServerEndpointSenderACK(const Worker_ComponentData& Data)
+		: CrossServerEndpointACK(Data, ERPCType::CrossServerSender)
+	{
+	}
 };
 
 struct CrossServerEndpointReceiverACK : CrossServerEndpointACK
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID;
-
 	CrossServerEndpointReceiverACK(const Worker_ComponentData& Data)
 		: CrossServerEndpointACK(Data, ERPCType::CrossServerReceiver)
 	{

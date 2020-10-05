@@ -34,3 +34,7 @@ component ServerNonAuthGDKKnownEntityTag {
 component ClientGDKKnownEntityTag {
     id = 2008;
 }
+
+component RoutingWorkerEntityTag {
+    id = 2009;
+}

@@ -53,6 +53,8 @@ public:
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	SpatialGDK::ViewCoordinator& GetCoordinator() const;
+
 	SpatialGDK::CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
 	SpatialGDK::CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
 	SpatialGDK::CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
