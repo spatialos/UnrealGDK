@@ -17,5 +17,5 @@ public:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(Replicated)
-	int ExampleReplicatedProperty;
+	int TestReplicatedProperty;
 };

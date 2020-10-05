@@ -61,7 +61,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 			return IsValid(TestActor);
 		},
 		[this]() {
-			TestActor->ExampleReplicatedProperty = 99;
+			TestActor->TestReplicatedProperty = 99;
 
 			FinishStep();
 		});
@@ -73,7 +73,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			if (TestActor->ExampleReplicatedProperty == 99)
+			if (TestActor->TestReplicatedProperty == 99)
 			{
 				FinishStep();
 			}

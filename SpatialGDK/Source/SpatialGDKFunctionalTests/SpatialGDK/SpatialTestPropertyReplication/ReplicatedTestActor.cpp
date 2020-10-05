@@ -5,12 +5,12 @@
 
 AReplicatedTestActor::AReplicatedTestActor()
 {
-	ExampleReplicatedProperty = 0;
+	TestReplicatedProperty = 0;
 }
 
 void AReplicatedTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AReplicatedTestActor, ExampleReplicatedProperty);
+	DOREPLIFETIME(AReplicatedTestActor, TestReplicatedProperty);
 }
