@@ -375,6 +375,6 @@ public:
 	/**
 	 * Time in seconds, controls at which frequency logs related to startup are emitted.
 	 */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float StartupLogRate;
 };

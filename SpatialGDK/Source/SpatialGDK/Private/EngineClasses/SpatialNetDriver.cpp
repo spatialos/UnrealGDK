@@ -634,7 +634,7 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 	else if (!bNewAcceptingPlayers)
 	{
 		StartupClientDebugString = FString(
-			TEXT("GlobalStateManager not accepting players. This is likely caused by waiting for all the required workers to connect"));
+			TEXT("GlobalStateManager not accepting players. This is likely caused by waiting for all the required servers to connect"));
 		RetryQueryGSM();
 		return;
 	}
@@ -2584,7 +2584,7 @@ void USpatialNetDriver::TryFinishStartup()
 		else if (!GlobalStateManager->IsReady())
 		{
 			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
-					TEXT("Waiting for the GSM to be ready (this includes waiting for the expected number of workers to be connected)"));
+					TEXT("Waiting for the GSM to be ready (this includes waiting for the expected number of servers to be connected)"));
 		}
 		else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 		{
