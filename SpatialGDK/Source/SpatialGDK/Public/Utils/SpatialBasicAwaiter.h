@@ -25,11 +25,12 @@ class SPATIALGDK_API USpatialBasicAwaiter : public UObject, public ISpatialAwait
 public:
 	virtual ~USpatialBasicAwaiter() {}
 
-	/** IAwaitable Implementation */
+	/** ISpatialAwaitable Implementation */
+	// A Timeout value of 0 means the await should never time out.
 	virtual FDelegateHandle Await(const FOnReady& OnReadyDelegate, const float Timeout = 0.f) override;
 	virtual bool StopAwaiting(FDelegateHandle& Handle) override;
 	virtual FSpatialAwaitableOnResetEvent& OnReset() override;
-	/** End IAwaitable Implementation */
+	/** End ISpatialAwaitable Implementation */
 
 	virtual void BeginDestroy() override;
 
