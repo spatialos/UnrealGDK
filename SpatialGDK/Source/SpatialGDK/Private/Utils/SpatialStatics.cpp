@@ -50,6 +50,38 @@ bool USpatialStatics::IsSpatialNetworkingEnabled()
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
+bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		return false;
+	}
+
+	if (World->IsNetMode(NM_Client))
+	{
+		return false;
+	}
+
+	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+	{
+		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
+		if (!SpatialNetDriver->IsReady())
+		{
+			UE_LOG(LogSpatial, Error,
+				TEXT("Called IsHandoverEnabled before NotifyBeginPlay has been called is invalid. WorldContextObject: %s"),
+				*GetNameSafe(WorldContextObject));
+			return true;
+		}
+
+		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
+		{
+			return LBStrategy->RequiresHandoverData();
+		}
+	}
+	return true;
+}
+
 FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())

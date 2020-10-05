@@ -21,8 +21,7 @@ class SPATIALGDK_API UAbstractSpatialMultiWorkerSettings : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UAbstractSpatialMultiWorkerSettings()
-	{}
+	UAbstractSpatialMultiWorkerSettings() {}
 
 protected:
 	UAbstractSpatialMultiWorkerSettings(TArray<FLayerInfo> InWorkerLayers, TSubclassOf<UAbstractLockingPolicy> InLockingPolicy)
@@ -48,6 +47,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
+
 private:
 #if WITH_EDITOR
 	void ValidateFirstLayerIsDefaultLayer();

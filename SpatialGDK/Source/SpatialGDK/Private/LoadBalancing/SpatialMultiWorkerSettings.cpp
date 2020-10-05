@@ -7,7 +7,6 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
-#include "Utils/CommandLineArgs.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialStatics.h"
 
@@ -38,7 +37,6 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 		ValidateLockingPolicyIsSet();
 	}
 }
-
 void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 {
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
