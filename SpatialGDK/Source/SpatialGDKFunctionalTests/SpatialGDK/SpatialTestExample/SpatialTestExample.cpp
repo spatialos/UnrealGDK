@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestExample.h"
-#include "TestExampleActor.h"
 #include "Kismet/GameplayStatics.h"
+#include "TestExampleActor.h"
 
 /**
  * This test tests an Actor's replication.
@@ -20,7 +20,7 @@
  */
 
 ASpatialTestExample::ASpatialTestExample()
-	:Super()
+	: Super()
 {
 	Author = "Ollie and Ben";
 	Description = TEXT("Example Test");
@@ -30,16 +30,17 @@ void ASpatialTestExample::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Example Test Server spawns the TestExampleActor"), FWorkerDefinition::Server(1), nullptr, [this]()
-		{
-			TestActor = GetWorld()->SpawnActor<ATestExampleActor>(FVector(100.0f, 100.0f, 80.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-			RegisterAutoDestroyActor(TestActor);
+	AddStep(TEXT("Example Test Server spawns the TestExampleActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		TestActor =
+			GetWorld()->SpawnActor<ATestExampleActor>(FVector(100.0f, 100.0f, 80.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+		RegisterAutoDestroyActor(TestActor);
 
-			FinishStep();
-		});
+		FinishStep();
+	});
 
-	AddStep(TEXT("Example Test Clients check Actor replication"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime)
-		{
+	AddStep(
+		TEXT("Example Test Clients check Actor replication"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
 			TArray<AActor*> FoundTestExampleActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestExampleActor::StaticClass(), FoundTestExampleActors);
 
@@ -51,26 +52,31 @@ void ASpatialTestExample::PrepareTest()
 					FinishStep();
 				}
 			}
-		}, 5.0f);
+		},
+		5.0f);
 
-	AddStep(TEXT("Example Test Server Modifies replicated property"), FWorkerDefinition::Server(1), [this]()->bool
-		{
+	AddStep(
+		TEXT("Example Test Server Modifies replicated property"), FWorkerDefinition::Server(1),
+		[this]() -> bool {
 			return IsValid(TestActor);
-		}, [this]()
-		{
+		},
+		[this]() {
 			TestActor->ExampleReplicatedProperty = 99;
 
 			FinishStep();
 		});
 
-	AddStep(TEXT("Example Test Clients check modified property"), FWorkerDefinition::AllClients, [this]() -> bool
-	{
-		return IsValid(TestActor);
-	}, nullptr, [this](float DeltaTime)
-	{
-		if (TestActor->ExampleReplicatedProperty == 99)
-		{
-			FinishStep();
-		}
-	}, 5.0f);
+	AddStep(
+		TEXT("Example Test Clients check modified property"), FWorkerDefinition::AllClients,
+		[this]() -> bool {
+			return IsValid(TestActor);
+		},
+		nullptr,
+		[this](float DeltaTime) {
+			if (TestActor->ExampleReplicatedProperty == 99)
+			{
+				FinishStep();
+			}
+		},
+		5.0f);
 }

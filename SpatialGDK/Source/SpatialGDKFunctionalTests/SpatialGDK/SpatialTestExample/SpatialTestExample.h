@@ -16,7 +16,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestExample : public ASpatialFunctio
 public:
 	ASpatialTestExample();
 
-	virtual void PrepareTest()  override;
+	virtual void PrepareTest() override;
 
 private:
 	ATestExampleActor* TestActor;
