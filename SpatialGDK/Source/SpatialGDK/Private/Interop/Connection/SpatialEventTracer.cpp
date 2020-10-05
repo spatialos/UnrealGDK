@@ -93,7 +93,8 @@ TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent Spatia
 	return TraceEvent(SpatialTraceEvent, Causes.GetData(), Causes.Num());
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId* Causes, int32 NumCauses)
+TOptional<Trace_SpanId> SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId* Causes,
+													   int32 NumCauses)
 {
 	if (!IsEnabled())
 	{

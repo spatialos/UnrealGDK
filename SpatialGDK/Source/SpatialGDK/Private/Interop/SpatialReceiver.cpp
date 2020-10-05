@@ -1985,8 +1985,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-			Op.span_id);
+			FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
@@ -2088,8 +2087,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-			Op.span_id);
+			FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 
