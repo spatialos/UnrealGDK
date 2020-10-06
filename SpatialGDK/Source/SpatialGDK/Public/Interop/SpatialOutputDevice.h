@@ -17,6 +17,7 @@ public:
 
 	void AddRedirectCategory(const FName& Category);
 	void RemoveRedirectCategory(const FName& Category);
+	void SetVerbosityFilterLevel(ELogVerbosity::Type Verbosity);
 	void SetVerbosityLocalFilterLevel(ELogVerbosity::Type Verbosity);
 	void SetVerbosityCloudFilterLevel(ELogVerbosity::Type Verbosity);
 	void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category) override;
@@ -24,6 +25,7 @@ public:
 	static Worker_LogLevel ConvertLogLevelToSpatial(ELogVerbosity::Type Verbosity);
 
 protected:
+	ELogVerbosity::Type FilterLevel;
 	ELogVerbosity::Type LocalFilterLevel;
 	ELogVerbosity::Type CloudFilterLevel;
 	TSet<FName> CategoriesToRedirect;

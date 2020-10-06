@@ -6,7 +6,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName InLoggerName, int32 InPIEIndex)
-	: LocalFilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->LocalWorkerLogLevel.GetValue()))
+	: FilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->WorkerLogLevel.GetValue()))
+	, LocalFilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->LocalWorkerLogLevel.GetValue()))
 	, CloudFilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->CloudWorkerLogLevel.GetValue()))
 	, Connection(InConnection)
 	, LoggerName(InLoggerName)
@@ -52,6 +53,11 @@ void FSpatialOutputDevice::AddRedirectCategory(const FName& Category)
 void FSpatialOutputDevice::RemoveRedirectCategory(const FName& Category)
 {
 	CategoriesToRedirect.Remove(Category);
+}
+
+void FSpatialOutputDevice::SetVerbosityFilterLevel(ELogVerbosity::Type Verbosity)
+{
+	FilterLevel = Verbosity;
 }
 
 void FSpatialOutputDevice::SetVerbosityLocalFilterLevel(ELogVerbosity::Type Verbosity)

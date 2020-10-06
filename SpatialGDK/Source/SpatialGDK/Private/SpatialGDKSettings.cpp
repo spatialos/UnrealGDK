@@ -106,8 +106,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
-	, LocalWorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, CloudWorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) //deprecated
+	, LocalWorkerLogLevel(WorkerLogLevel)
+	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)

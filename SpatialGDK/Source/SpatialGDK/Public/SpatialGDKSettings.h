@@ -242,6 +242,10 @@ public:
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(config, meta = (DisplayName = "Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Local Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> LocalWorkerLogLevel;
 
