@@ -38,7 +38,9 @@ const FString DEFAULT_WORKER_REGION_MATERIAL =
 const FString DEFAULT_WORKER_TEXT_FONT =
 	TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular - custom install
 const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
-	"/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
+	"/SpatialGDK/SpatialDebugger/Materials/DynamicWorkerTextMaterial.DynamicWorkerTextMaterial"); // Fully emmissive material - single sided
+//const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
+//	"/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
 // const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
 //	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Partially transparent and
 // partially emmissive material - single sided
@@ -185,7 +187,7 @@ void ASpatialDebugger::OnAuthorityGained()
 	}
 }
 
-void ASpatialDebugger::CreateWorkerRegions()
+void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 {
 	UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
 	if (WorkerRegionMaterial == nullptr)
@@ -195,20 +197,19 @@ void ASpatialDebugger::CreateWorkerRegions()
 		return;
 	}
 
-	UMaterial* WorkerTextMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_TEXT_MATERIAL);
+	WorkerTextMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_TEXT_MATERIAL);
 	if (WorkerTextMaterial == nullptr)
 	{
 		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker text was not rendered. Could not find default material: %s"),
 			   *DEFAULT_WORKER_TEXT_MATERIAL);
 	}
 
-	UObject* obj_ptr = StaticLoadObject(UFont::StaticClass(), nullptr, *DEFAULT_WORKER_TEXT_FONT);
+	obj_ptr = StaticLoadObject(UFont::StaticClass(), nullptr, *DEFAULT_WORKER_TEXT_FONT);
 	if (obj_ptr == nullptr)
 	{
-		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"),
-			   *DEFAULT_WORKER_TEXT_MATERIAL);
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"), *DEFAULT_WORKER_TEXT_FONT);
 	}
-	UFont* TextFont = Cast<UFont>(obj_ptr);
+	WorkerInfoFont = Cast<UFont>(obj_ptr);
 
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;
@@ -222,8 +223,8 @@ void ASpatialDebugger::CreateWorkerRegions()
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
 		FString WorkerInfo =
 			FString::Printf(TEXT("You are within virtual worker number %d<br>%s"), WorkerRegionData.WorkerID, *WorkerRegionData.WorkerName);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, TextFont, WorkerRegionData.Color, WorkerRegionData.Extents,
-						   WorkerRegionVerticalScale, WorkerInfo);
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionData.Extents,
+						   WorkerRegionVerticalScale, WorkerInfo, bInEditor);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -243,7 +244,7 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 	if (NetDriver != nullptr && !NetDriver->IsServer() && DrawDebugDelegateHandle.IsValid() && bShowWorkerRegions)
 	{
 		DestroyWorkerRegions();
-		CreateWorkerRegions();
+		CreateWorkerRegions(false);
 	}
 }
 
@@ -564,7 +565,7 @@ void ASpatialDebugger::SpatialToggleDebugger()
 			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
 		if (bShowWorkerRegions)
 		{
-			CreateWorkerRegions();
+			CreateWorkerRegions(false);
 		}
 	}
 }
@@ -592,7 +593,7 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 	if (bShowWorkerRegions && EditorAllowWorkerBoundaries())
 	{
 		EditorInitialiseWorkerRegions();
-		CreateWorkerRegions();
+		CreateWorkerRegions(true);
 	}
 
 	EditorRefreshDisplay();

@@ -137,6 +137,15 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;
 
+	UPROPERTY()
+	UObject* obj_ptr;
+
+	UPROPERTY()
+	UFont* WorkerInfoFont;
+
+	UPROPERTY()
+	UMaterial* WorkerTextMaterial;
+
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
@@ -163,7 +172,7 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	void CreateWorkerRegions();
+	void CreateWorkerRegions(const bool bInEditor);
 	void DestroyWorkerRegions();
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
