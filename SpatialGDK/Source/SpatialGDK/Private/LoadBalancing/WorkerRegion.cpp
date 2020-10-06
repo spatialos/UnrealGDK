@@ -116,7 +116,8 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 }
 
 // void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float
-// TileOffset, 										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& InWorkerInfo, 										   const float Yaw)
+// TileOffset, 										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& InWorkerInfo,
+// const float Yaw)
 //{
 //	int HorizontalTileCount = 0;
 //	if (bTileXAxis)
