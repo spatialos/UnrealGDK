@@ -242,9 +242,9 @@ public:
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Deprecated!
-		Part of a settings change upgrade plan
-		https://improbableio.atlassian.net/browse/UNR-4348 */
-	UPROPERTY(config, meta = (DisplayName = "Worker Log Level"))
+	Upgraded into the two settings below for local/cloud configurations. 
+	Ticket for removal UNR-4348 */
+	UPROPERTY(config)
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
