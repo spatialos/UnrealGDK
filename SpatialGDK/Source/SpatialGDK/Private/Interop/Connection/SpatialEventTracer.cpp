@@ -72,7 +72,9 @@ SpatialEventTracer::~SpatialEventTracer()
 {
 	if (IsEnabled())
 	{
-		Disable();
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
+		Trace_EventTracer_Disable(EventTracer);
+		Trace_EventTracer_Destroy(EventTracer);
 	}
 }
 
@@ -186,17 +188,6 @@ void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* StreamT
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
-void SpatialEventTracer::Disable()
-{
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
-
-	Trace_EventTracer_Disable(EventTracer);
-	Trace_EventTracer_Destroy(EventTracer);
-
-	bEnabled = false;
-	Stream = nullptr;
-}
-
 void SpatialEventTracer::ComponentAdd(const Worker_Op& Op)
 {
 	SpanIdStore.ComponentAdd(Op);
@@ -210,7 +201,7 @@ void SpatialEventTracer::ComponentRemove(const Worker_Op& Op)
 void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 {
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
-	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
+	EntityComponentId Id = { ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id };
 
 	TArray<SpatialSpanIdCache::FieldSpanIdUpdate> FieldSpanIdUpdates = SpanIdStore.ComponentUpdate(Op);
 	for (const SpatialSpanIdCache::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)

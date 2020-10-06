@@ -62,7 +62,6 @@ public:
 	bool DropSpanIds(const EntityComponentId& Id);
 
 private:
-
 	struct StreamDeleter
 	{
 		void operator()(worker::c::Io_Stream* StreamToDestroy) const;
@@ -71,7 +70,6 @@ private:
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
 	void Enable(const FString& FileName);
-	void Disable();
 
 	SpatialSpanIdCache SpanIdStore;
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
