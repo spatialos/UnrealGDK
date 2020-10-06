@@ -241,7 +241,8 @@ public:
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	/** Deprecated!
+		Part of a settings change upgrade plan */
 	UPROPERTY(config, meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
