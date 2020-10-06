@@ -244,7 +244,7 @@ public:
 	/** Deprecated!
 		Part of a settings change upgrade plan
 		https://improbableio.atlassian.net/browse/UNR-4348 */
-	UPROPERTY(config, meta = (DisplayName = "Worker Log Level"))
+	UPROPERTY(config)
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
