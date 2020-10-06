@@ -81,7 +81,7 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 			if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 			{
 				if (const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-					USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>())
+						USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>())
 				{
 					bHandoverEnabled = MultiWorkerSettings->bHandoverEnabled;
 				}
