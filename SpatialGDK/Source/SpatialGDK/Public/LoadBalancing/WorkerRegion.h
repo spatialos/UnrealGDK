@@ -45,8 +45,13 @@ public:
 	UPROPERTY()
 	FString WorkerInfo;
 
+	UPROPERTY()
+	UTexture2D* WorkerBoundaryTexture;
+
 	UFUNCTION()
 	void DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height);
+
+
 
 private:
 	void SetOpacityAndEmissive(const float Opacity, const float Emissive);

@@ -14,8 +14,7 @@
 namespace
 {
 const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
-const float DEFAULT_WORKER_REGION_OPACITY = 1.0f;
-// 0.7f;
+const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
 const float DEFAULT_WORKER_TEXT_EMISSIVE = 0.2f;
 const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
 const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
@@ -37,43 +36,24 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial, UFont* InWorkerInfoFont, const FColor& Color,
 						 const FBox2D& Extents, const float VerticalScale, const FString& InWorkerInfo, const bool bInEditor)
 {
-	// Create canvas for dynamic worker text
-	// Create dynamic worker name text on boundary wall
-
-	// static boundary material
-	// MaterialTextInstance = TextMaterial;
 	MaterialBoundaryInstance = UMaterialInstanceDynamic::Create(BoundaryMaterial, nullptr);
 
 	if (!bInEditor)
 	{
 		// dynamic boundary material
-		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
+		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 512, 512);
 		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
-		// CanvasRenderTarget->UpdateResource();
 
-		// MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); // dynamic material
 		TextMaterial = InTextMaterial;
 		WorkerInfoFont = InWorkerInfoFont;
 		WorkerInfo = InWorkerInfo;
 	}
 
-	// MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); // dynamic material
-	////MaterialTextInstance = TextMaterial; // static material
-	// WorkerInfoFont = InWorkerInfoFont;
-	// WorkerInfo = InWorkerInfo;
-
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 	SetOpacityAndEmissive(DEFAULT_WORKER_REGION_OPACITY, DEFAULT_WORKER_TEXT_EMISSIVE);
 
-	// if (bInEditor)
-	//{
 	Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
-	//}
-	// else
-	//{
-	// Mesh->SetMaterial(0, MaterialTextInstance); // Within worker text
-	// MaterialTextInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
-	//}
+
 
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale, false, true);
@@ -102,22 +82,21 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 
 void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height)
 {
-	// Draw text
-	// Canvas->SetDrawColor(0, 0, 0, 0); // sets colour of text not background
-	// MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, DEFAULT_WORKER_REGION_OPACITY);
-	// MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, 1.0);
-	Canvas->K2_DrawMaterial(MaterialBoundaryInstance, FVector2D(0, 0), FVector2D(Width / 2.0, Height / 2.0), FVector2D(0, 0));
-	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 15, 15, 1.0, 1.0);
+	// Draw the worker border material to the canvas
+	Canvas->K2_DrawMaterial(MaterialBoundaryInstance, FVector2D(0, 0), FVector2D(Width, Height), FVector2D(0, 0));
+	// Draw the worker information to the canvas
+	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 0, 250, 1.0, 1.0);
 
-	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); // dynamic material
-	// MaterialTextInstance = UMaterialInstanceDynamic::Create(MaterialBoundaryInstance, nullptr); // dynamic material
-	Mesh->SetMaterial(0, MaterialTextInstance); // Within worker text
+	// Create a dynamic material and attach it to this mesh
+	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); 
+	Mesh->SetMaterial(0, MaterialTextInstance);
+	// Set the material parameter TP2D for the dynamic texture to use the canvas as input
 	MaterialTextInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
 }
 
 // void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float
-// TileOffset, 										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& InWorkerInfo,
-// const float Yaw)
+// TileOffset, 										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString&
+// InWorkerInfo, const float Yaw)
 //{
 //	int HorizontalTileCount = 0;
 //	if (bTileXAxis)

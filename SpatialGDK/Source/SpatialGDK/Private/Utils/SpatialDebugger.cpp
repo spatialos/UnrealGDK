@@ -222,7 +222,7 @@ void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
 		FString WorkerInfo =
-			FString::Printf(TEXT("You are within virtual worker number %d<br>%s"), WorkerRegionData.WorkerID, *WorkerRegionData.WorkerName);
+			FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.WorkerID, *WorkerRegionData.WorkerName);
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionData.Extents,
 						   WorkerRegionVerticalScale, WorkerInfo, bInEditor);
 		WorkerRegion->SetActorEnableCollision(false);
