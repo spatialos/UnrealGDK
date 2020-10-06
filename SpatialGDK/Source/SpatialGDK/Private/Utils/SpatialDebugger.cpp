@@ -39,7 +39,7 @@ const FString DEFAULT_WORKER_TEXT_FONT =
 	TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular - custom install
 const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
 	"/SpatialGDK/SpatialDebugger/Materials/DynamicWorkerTextMaterial.DynamicWorkerTextMaterial"); // Fully emmissive material - single sided
-//const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
+// const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
 //	"/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
 // const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
 //	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Partially transparent and

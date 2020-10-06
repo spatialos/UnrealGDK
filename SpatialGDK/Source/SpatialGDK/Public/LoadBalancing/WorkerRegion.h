@@ -31,7 +31,7 @@ public:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialTextInstance;
-	//UMaterial* MaterialTextInstance;
+	// UMaterial* MaterialTextInstance;
 
 	UPROPERTY()
 	UMaterial* TextMaterial;

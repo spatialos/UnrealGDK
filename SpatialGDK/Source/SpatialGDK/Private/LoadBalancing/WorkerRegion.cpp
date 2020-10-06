@@ -2,8 +2,8 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 
-#include "Engine/EngineTypes.h"
 #include "Engine/Canvas.h"
+#include "Engine/EngineTypes.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 #include "UObject/UObjectGlobals.h"
@@ -15,7 +15,7 @@ namespace
 {
 const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
 const float DEFAULT_WORKER_REGION_OPACITY = 1.0f;
-//0.7f;
+// 0.7f;
 const float DEFAULT_WORKER_TEXT_EMISSIVE = 0.2f;
 const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
 const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
@@ -40,12 +40,10 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	// Create canvas for dynamic worker text
 	// Create dynamic worker name text on boundary wall
 
-	
-	
-		// static boundary material
-		// MaterialTextInstance = TextMaterial;
-		MaterialBoundaryInstance = UMaterialInstanceDynamic::Create(BoundaryMaterial, nullptr);
-	
+	// static boundary material
+	// MaterialTextInstance = TextMaterial;
+	MaterialBoundaryInstance = UMaterialInstanceDynamic::Create(BoundaryMaterial, nullptr);
+
 	if (!bInEditor)
 	{
 		// dynamic boundary material
@@ -53,7 +51,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
 		// CanvasRenderTarget->UpdateResource();
 
-		//MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); // dynamic material
+		// MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); // dynamic material
 		TextMaterial = InTextMaterial;
 		WorkerInfoFont = InWorkerInfoFont;
 		WorkerInfo = InWorkerInfo;
@@ -67,14 +65,14 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 	SetOpacityAndEmissive(DEFAULT_WORKER_REGION_OPACITY, DEFAULT_WORKER_TEXT_EMISSIVE);
 
-	//if (bInEditor)
+	// if (bInEditor)
 	//{
-		Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
+	Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
 	//}
-	//else
+	// else
 	//{
-		//Mesh->SetMaterial(0, MaterialTextInstance); // Within worker text
-		//MaterialTextInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
+	// Mesh->SetMaterial(0, MaterialTextInstance); // Within worker text
+	// MaterialTextInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
 	//}
 
 	SetColor(Color);
@@ -99,29 +97,26 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	if (!bInEditor)
 	{
 		CanvasRenderTarget->UpdateResource();
-
 	}
 }
 
 void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height)
 {
-	
 	// Draw text
-	//Canvas->SetDrawColor(0, 0, 0, 0); // sets colour of text not background
-	//MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, DEFAULT_WORKER_REGION_OPACITY);
-	//MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, 1.0);
-	Canvas->K2_DrawMaterial(MaterialBoundaryInstance, FVector2D(0, 0), FVector2D(Width/2.0, Height/2.0), FVector2D(0, 0));
+	// Canvas->SetDrawColor(0, 0, 0, 0); // sets colour of text not background
+	// MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, DEFAULT_WORKER_REGION_OPACITY);
+	// MaterialBoundaryInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, 1.0);
+	Canvas->K2_DrawMaterial(MaterialBoundaryInstance, FVector2D(0, 0), FVector2D(Width / 2.0, Height / 2.0), FVector2D(0, 0));
 	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 15, 15, 1.0, 1.0);
 
 	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); // dynamic material
-	//MaterialTextInstance = UMaterialInstanceDynamic::Create(MaterialBoundaryInstance, nullptr); // dynamic material
-	Mesh->SetMaterial(0, MaterialTextInstance);										// Within worker text
+	// MaterialTextInstance = UMaterialInstanceDynamic::Create(MaterialBoundaryInstance, nullptr); // dynamic material
+	Mesh->SetMaterial(0, MaterialTextInstance); // Within worker text
 	MaterialTextInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
 }
 
-//void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float TileOffset,
-//										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& InWorkerInfo,
-//										   const float Yaw)
+// void AWorkerRegion::TileWallWithWorkerText(const bool bTileXAxis, const FBox2D& Extents, const float VerticalScale, const float
+// TileOffset, 										   const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& InWorkerInfo, 										   const float Yaw)
 //{
 //	int HorizontalTileCount = 0;
 //	if (bTileXAxis)
@@ -197,7 +192,7 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 //	}
 //}
 //
-//void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float VerticalScale,
+// void AWorkerRegion::CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float VerticalScale,
 //											   const FString& WorkerInfo, const float PositionX, const float PositionY,
 //											   const float PositionZ, const float Yaw)
 //{
