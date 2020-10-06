@@ -174,6 +174,8 @@ public:
 	void OnToggleConfigUI();
 
 private:
+	void SetupConfigUI(APlayerController* PC);
+
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
 

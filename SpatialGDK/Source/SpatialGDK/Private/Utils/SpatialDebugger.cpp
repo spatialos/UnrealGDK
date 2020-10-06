@@ -286,35 +286,44 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
 
-			if (!ConfigUIWidget.IsValid())
-			{
-				if (ConfigUIClass != nullptr)
-				{
-					ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
-					if (!ConfigUIWidget.IsValid())
-					{
-						UE_LOG(LogSpatialDebugger, Error,
-							   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
-							   *GetNameSafe(ConfigUIWidget.Get()));
-					}
-					else
-					{
-						ConfigUIWidget->SetSpatialDebugger(this);
-					}
-				}
-				else
-				{
-					UE_LOG(LogSpatialDebugger, Error,
-						   TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
-				}
-			}
-
-			if (ConfigUIWidget.IsValid())
-			{
-				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
-			}
+			SetupConfigUI(LocalPlayerController.Get());
 		}
 	}
+}
+
+void ASpatialDebugger::SetupConfigUI(APlayerController* PC)
+{
+	if (GetNetMode() != NM_Client)
+	{
+		return;
+	}
+
+	if (!ConfigUIWidget.IsValid())
+	{
+		if (ConfigUIClass != nullptr)
+		{
+			ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
+			if (!ConfigUIWidget.IsValid())
+			{
+				UE_LOG(LogSpatialDebugger, Error,
+					   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
+					   *GetNameSafe(ConfigUIWidget.Get()));
+				return;
+			}
+			else
+			{
+				ConfigUIWidget->SetSpatialDebugger(this);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialDebugger, Error,
+				   TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
+			return;
+		}
+	}
+
+	LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 }
 
 void ASpatialDebugger::OnToggleConfigUI()
