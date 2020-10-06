@@ -51,7 +51,7 @@ public:
 	static FSpatialTraceEvent PropertyUpdate(const UObject* Object, const Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 											 const FString& PropertyName)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "property_updated")
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "property_update")
 			.AddObject(Object)
 			.AddEntityId(EntityId)
 			.AddComponentId(ComponentId)
