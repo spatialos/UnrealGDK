@@ -336,6 +336,8 @@ void ASpatialDebugger::OnToggleConfigUI()
 
 		LocalPlayerController->SetInputMode(InputModeSettings);
 		LocalPlayerController->bShowMouseCursor = true;
+
+		ConfigUIWidget->OnShow();
 	}
 	else
 	{

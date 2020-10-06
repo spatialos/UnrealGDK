@@ -21,6 +21,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Debugger")
 	void SetSpatialDebugger(ASpatialDebugger* InDebugger);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Debugger")
+	void OnShow();
+
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Debugger")
 	ASpatialDebugger* SpatialDebugger;
