@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
 
 ### Bug fixes:
+- Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
 - No longer AddOwnerInterestToServer unless the owner is replicating, otherwise this warning fires erroneously: "Interest for Actor <ActorName> is out of date because owner <OwnerName> does not have an entity id."
 - Properly handle pairs of Add/Remove component in critical section. The issue manifested in the form of remnant actors which the worker should have lost interest in.
