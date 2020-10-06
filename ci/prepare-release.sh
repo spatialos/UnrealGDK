@@ -100,7 +100,7 @@ prepareRelease "UnrealGDK"                "$(buildkite-agent meta-data get gdk-s
 prepareRelease "UnrealGDKExampleProject"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
 prepareRelease "UnrealGDKTestGyms"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "spatialos"
 prepareRelease "UnrealGDKEngineNetTest"   "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "improbable"
-prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "improbable"
+prepareRelease "TestGymBuildKite"         "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${GDK_VERSION}"           "improbable"
 
 for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
 do

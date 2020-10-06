@@ -75,7 +75,6 @@ public:
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
@@ -115,7 +114,6 @@ public:
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();
 
-	void UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);

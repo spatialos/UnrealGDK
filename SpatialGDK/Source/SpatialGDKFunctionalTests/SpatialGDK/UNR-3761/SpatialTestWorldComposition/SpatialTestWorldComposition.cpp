@@ -62,8 +62,8 @@ void ASpatialTestWorldComposition::PrepareTest()
 	Super::PrepareTest();
 
 	// Step definition for Client 1 to move its Pawn and check if the levels loaded correctly.
-	FSpatialFunctionalTestStepDefinition ClientCheckLocationStepDefinition;
-	ClientCheckLocationStepDefinition.bIsNativeDefinition = true;
+	FSpatialFunctionalTestStepDefinition ClientCheckLocationStepDefinition(/*bIsNativeDefinition*/ true);
+	ClientCheckLocationStepDefinition.StepName = TEXT("SpatialTestWorldCompositionClientCheckLocation");
 	ClientCheckLocationStepDefinition.TimeLimit = 10.0f;
 	ClientCheckLocationStepDefinition.NativeStartEvent.BindLambda([this]() {
 		ClientOnePawn->SetActorLocation(TestStepsData[TestLocationIndex].Key);
