@@ -54,7 +54,6 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 
 	Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
 
-
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale, false, true);
 
@@ -88,7 +87,7 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 0, 250, 1.0, 1.0);
 
 	// Create a dynamic material and attach it to this mesh
-	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr); 
+	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr);
 	Mesh->SetMaterial(0, MaterialTextInstance);
 	// Set the material parameter TP2D for the dynamic texture to use the canvas as input
 	MaterialTextInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
