@@ -11,7 +11,7 @@
  * The flow is as follows:
  * - Setup:
  *  - The Server spawns one ReplicatedTestActor.
- *  - Test:
+ * - Test:
  *  - Both Clients check that they can see exactly 1 ReplicatedTestActor.
  *  - The Server changes the ReplicatedProperty of the ReplicatedTestActor from "0" to "99".
  *  - Both Clients check that the ReplicatedProperty is now set to "99".
