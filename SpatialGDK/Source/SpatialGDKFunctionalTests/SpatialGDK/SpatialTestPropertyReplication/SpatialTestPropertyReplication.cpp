@@ -44,13 +44,14 @@ void ASpatialTestPropertyReplication::PrepareTest()
 			TArray<AActor*> FoundReplicatedTestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedTestActors);
 
+			RequireEqual_Int(FoundReplicatedTestActors.Num(), 1,
+							 TEXT("The number of AReplicatedTestActor found in the world should equal 1."));
+
 			if (FoundReplicatedTestActors.Num() == 1)
 			{
 				TestActor = Cast<AReplicatedTestActor>(FoundReplicatedTestActors[0]);
-				if (IsValid(TestActor))
-				{
-					FinishStep();
-				}
+				RequireTrue(IsValid(TestActor), TEXT("The TestActor must be Valid (usable : non-null and not pending kill)."));
+				FinishStep();
 			}
 		},
 		5.0f);
@@ -73,10 +74,9 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			if (TestActor->TestReplicatedProperty == 99)
-			{
-				FinishStep();
-			}
+			RequireEqual_Int(TestActor->TestReplicatedProperty, 99,
+							 TEXT("The ReplicatedProperty should equal 99."));
+			FinishStep();
 		},
 		5.0f);
 }
