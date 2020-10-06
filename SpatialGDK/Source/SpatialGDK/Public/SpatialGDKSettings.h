@@ -242,8 +242,8 @@ public:
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Deprecated!
-		Part of a settings change upgrade plan
-		https://improbableio.atlassian.net/browse/UNR-4348 */
+	Upgraded into the two settings below for local/cloud configurations. 
+	Ticket for removal UNR-4348 */
 	UPROPERTY(config)
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
