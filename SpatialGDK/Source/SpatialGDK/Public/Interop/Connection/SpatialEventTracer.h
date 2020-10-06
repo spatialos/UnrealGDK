@@ -70,7 +70,6 @@ public:
 
 private:
 	bool bEnabled{ false };
-	bool bRecordRuntimeAndWorkerEvents{ false };
 	worker::c::Trace_EventTracer* EventTracer{ nullptr };
 
 	uint64 BytesWrittenToStream{ 0 };

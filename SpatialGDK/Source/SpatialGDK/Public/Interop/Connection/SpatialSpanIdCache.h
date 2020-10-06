@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Interop/EntityRPCType.h"
 #include "Misc/DateTime.h"
 #include "SpatialView/EntityComponentId.h"
 
@@ -24,8 +23,6 @@ public:
 
 	void ComponentAdd(const Worker_Op& Op);
 	bool ComponentRemove(const Worker_Op& Op);
-
-	// Returns a list of the field ids that already existed in the store
 	TArray<FieldSpanIdUpdate> ComponentUpdate(const Worker_Op& Op);
 
 	void AddSpanId(const EntityComponentId& Id, const uint32 FieldId, worker::c::Trace_SpanId SpanId);
