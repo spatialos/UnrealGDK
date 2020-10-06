@@ -242,7 +242,8 @@ public:
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Deprecated!
-		Part of a settings change upgrade plan */
+		Part of a settings change upgrade plan
+		https://improbableio.atlassian.net/browse/UNR-4348 */
 	UPROPERTY(config, meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
