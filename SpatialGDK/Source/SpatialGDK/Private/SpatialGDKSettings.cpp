@@ -106,7 +106,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
-	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) //deprecated https://improbableio.atlassian.net/browse/UNR-4348
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
 	, LocalWorkerLogLevel(WorkerLogLevel)
 	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
