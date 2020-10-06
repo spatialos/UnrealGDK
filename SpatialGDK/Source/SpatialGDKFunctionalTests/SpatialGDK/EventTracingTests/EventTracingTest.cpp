@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "SpatialFunctionalTestFlowController.h"
 
@@ -22,9 +23,9 @@ AEventTracingTest::AEventTracingTest()
 	SetNumRequiredClients(1);
 }
 
-void AEventTracingTest::BeginPlay()
+void AEventTracingTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	AddStep(
 		TEXT("StartEventTracingTest"), WorkerDefinition, nullptr,
@@ -77,7 +78,7 @@ void AEventTracingTest::GatherData()
 {
 	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
 	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
-	SpatialEventTracer* EventTracer = ConnectionManager->GetEventTracer();
+	SpatialEventTracer* EventTracer = ConnectionManager->GetWorkerConnection()->GetEventTracer();
 
 	FString EventsFolderPath = EventTracer->GetFolderPath();
 

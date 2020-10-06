@@ -210,7 +210,7 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	{
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
-	const FString FolderPath = EventTracePath;
+	FolderPath = EventTracePath;
 
 	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *FDateTime::Now().ToString());
 	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);

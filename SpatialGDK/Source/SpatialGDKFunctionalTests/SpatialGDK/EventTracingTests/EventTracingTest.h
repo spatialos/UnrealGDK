@@ -25,7 +25,7 @@ class SPATIALGDKFUNCTIONALTESTS_API AEventTracingTest : public ASpatialFunctiona
 public:
 	AEventTracingTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 protected:
 	FName ReceiveOpEventName = "worker.receive_op";
