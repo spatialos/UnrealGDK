@@ -7,9 +7,10 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
 
-using namespace SpatialGDK;
 using namespace worker::c;
 
+namespace SpatialGDK
+{
 void SpatialSpanIdCache::ComponentAdd(const Worker_Op& Op)
 {
 	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
@@ -167,3 +168,4 @@ bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_
 
 	return true;
 }
+} //namespace SpatialGDK

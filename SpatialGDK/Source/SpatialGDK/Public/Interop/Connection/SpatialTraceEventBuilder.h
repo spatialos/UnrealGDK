@@ -15,7 +15,7 @@ class FSpatialTraceEventBuilder
 {
 public:
 	FSpatialTraceEventBuilder(const char* InType);
-	FSpatialTraceEventBuilder(const char* InType, const FString& InMessage);
+	FSpatialTraceEventBuilder(const char* InType, FString InMessage);
 
 	// --- Builder Functions ---
 
@@ -30,23 +30,23 @@ public:
 	FSpatialTraceEventBuilder AddRequestID(const int64 RequestID);
 	FSpatialTraceEventBuilder AddNetRole(const ENetRole Role);
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
-	FSpatialTraceEvent Get() &&;
+	FSpatialTraceEvent GetEvent() &&;
 
 	// --- Static Functions ---
 
 	static FSpatialTraceEvent ProcessRPC(const UObject* Object, UFunction* Function)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc").AddObject(Object).AddFunction(Function).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc").AddObject(Object).AddFunction(Function).GetEvent();
 	}
 
 	static FSpatialTraceEvent SendRPC(const UObject* Object, UFunction* Function)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc").AddObject(Object).AddFunction(Function).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc").AddObject(Object).AddFunction(Function).GetEvent();
 	}
 
-	static FSpatialTraceEvent QueueRPC() { return FSpatialTraceEventBuilder("queue_rpc").Get(); }
+	static FSpatialTraceEvent QueueRPC() { return FSpatialTraceEventBuilder("queue_rpc").GetEvent(); }
 
-	static FSpatialTraceEvent RetryRPC() { return FSpatialTraceEventBuilder("retry_rpc").Get(); }
+	static FSpatialTraceEvent RetryRPC() { return FSpatialTraceEventBuilder("retry_rpc").GetEvent(); }
 
 	static FSpatialTraceEvent PropertyUpdate(const UObject* Object, const Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 											 const FString& PropertyName)
@@ -56,7 +56,7 @@ public:
 			.AddEntityId(EntityId)
 			.AddComponentId(ComponentId)
 			.AddKeyValue("PropertyName", PropertyName)
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent MergeComponentField(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
@@ -66,22 +66,22 @@ public:
 			.AddEntityId(EntityId)
 			.AddComponentId(ComponentId)
 			.AddFieldId(FieldId)
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent MergeComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component").AddEntityId(EntityId).AddComponentId(ComponentId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component").AddEntityId(EntityId).AddComponentId(ComponentId).GetEvent();
 	}
 
 	static FSpatialTraceEvent SendCommandRequest(const FString& Command, const int64 RequestID)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_command_request").AddCommand(Command).AddRequestID(RequestID).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_command_request").AddCommand(Command).AddRequestID(RequestID).GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCommandRequest(const FString& Command, const int64 RequestID)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_command_request").AddCommand(Command).AddRequestID(RequestID).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_command_request").AddCommand(Command).AddRequestID(RequestID).GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCommandRequest(const FString& Command, const UObject* Actor, const UObject* TargetObject,
@@ -94,7 +94,7 @@ public:
 			.AddFunction(Function)
 			.AddKeyValue(TEXT("TraceId"), FString::FromInt(TraceId))
 			.AddRequestID(RequestID)
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent SendCommandResponse(const int64 RequestID, const bool bSuccess)
@@ -102,12 +102,12 @@ public:
 		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_command_response")
 			.AddRequestID(RequestID)
 			.AddKeyValue(TEXT("Success"), BoolToString(bSuccess))
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCommandResponse(const FString& Command, const int64 RequestID)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_command_response").AddCommand(Command).AddRequestID(RequestID).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_command_response").AddCommand(Command).AddRequestID(RequestID).GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCommandResponse(const UObject* Actor, const int64 RequestID, const bool bSuccess)
@@ -116,7 +116,7 @@ public:
 			.AddObject(Actor)
 			.AddRequestID(RequestID)
 			.AddKeyValue(TEXT("Success"), BoolToString(bSuccess))
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCommandResponse(const UObject* Actor, const UObject* TargetObject, const UFunction* Function,
@@ -128,37 +128,37 @@ public:
 			.AddFunction(Function)
 			.AddRequestID(RequestID)
 			.AddKeyValue(TEXT("Success"), BoolToString(bSuccess))
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent SendRemoveEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_remove_entity").AddObject(Object).AddEntityId(EntityId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_remove_entity").AddObject(Object).AddEntityId(EntityId).GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveRemoveEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_remove_entity").AddObject(Object).AddEntityId(EntityId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_remove_entity").AddObject(Object).AddEntityId(EntityId).GetEvent();
 	}
 
 	static FSpatialTraceEvent SendCreateEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_create_entity").AddObject(Object).AddEntityId(EntityId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_create_entity").AddObject(Object).AddEntityId(EntityId).GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCreateEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_create_entity").AddObject(Object).AddEntityId(EntityId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_create_entity").AddObject(Object).AddEntityId(EntityId).GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCreateEntitySuccess(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_create_entity_success").AddObject(Object).AddEntityId(EntityId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_create_entity_success").AddObject(Object).AddEntityId(EntityId).GetEvent();
 	}
 
 	static FSpatialTraceEvent SendRetireEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_retire_entity").AddObject(Object).AddEntityId(EntityId).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_retire_entity").AddObject(Object).AddEntityId(EntityId).GetEvent();
 	}
 
 	static FSpatialTraceEvent AuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object)
@@ -166,12 +166,12 @@ public:
 		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_intent_update")
 			.AddObject(Object)
 			.AddKeyValue(TEXT("NewWorkerId"), FString::FromInt(WorkerId))
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent AuthorityLossImminent(const UObject* Object, const ENetRole Role)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent").AddObject(Object).AddNetRole(Role).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent").AddObject(Object).AddNetRole(Role).GetEvent();
 	}
 
 	static FSpatialTraceEvent ComponentUpdate(const UObject* Object, const UObject* TargetObject, const Worker_EntityId EntityId,
@@ -182,12 +182,12 @@ public:
 			.AddObject(TEXT("TargetObject"), TargetObject)
 			.AddEntityId(EntityId)
 			.AddComponentId(ComponentId)
-			.Get();
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent GenericMessage(FString Message)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "generic_message", MoveTemp(Message)).Get();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "generic_message", MoveTemp(Message)).GetEvent();
 	}
 
 	// --- Helpers ---

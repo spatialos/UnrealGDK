@@ -11,8 +11,8 @@ FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType)
 {
 }
 
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType, const FString& InMessage)
-	: SpatialTraceEvent(InType, InMessage)
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType, FString InMessage)
+	: SpatialTraceEvent(InType, MoveTemp(InMessage))
 {
 }
 
@@ -102,7 +102,7 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddKeyValue(FString Key, FS
 	return *this;
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::Get() &&
+FSpatialTraceEvent FSpatialTraceEventBuilder::GetEvent() &&
 {
 	return MoveTemp(SpatialTraceEvent);
 }

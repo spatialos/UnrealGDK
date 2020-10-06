@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Interop/Connection/SpatialSpanIdCache.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 
