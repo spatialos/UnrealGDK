@@ -6,8 +6,6 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
-#include <WorkerSDK/improbable/c_io.h>
-#include <WorkerSDK/improbable/c_trace.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "Misc/DateTime.h"
 #include "SpatialView/EntityComponentId.h"
 
@@ -45,7 +43,8 @@ private:
 		FDateTime UpdateTime;
 	};
 
-	int32 CompactCounter;
+	// Used to compact the internal map when enough removes have been executed.
+	int32 CompactCounter = 0;
 	int32 CompactFrequency = 100;
 
 	using FieldIdMap = TMap<uint32, EntityComponentFieldIdSpanIdUpdate>;

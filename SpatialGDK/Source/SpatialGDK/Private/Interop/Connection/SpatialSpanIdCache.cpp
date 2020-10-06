@@ -168,4 +168,4 @@ bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_
 
 	return true;
 }
-} //namespace SpatialGDK
+} // namespace SpatialGDK

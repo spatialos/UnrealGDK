@@ -5,6 +5,9 @@
 #include "Interop/Connection/SpatialSpanIdCache.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 
+#include <WorkerSDK/improbable/c_io.h>
+#include <WorkerSDK/improbable/c_trace.h>
+
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 
 // TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in
@@ -15,15 +18,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 // TODO - Individual RPC Calls (distinguishing between GDK and USER)
 // TODO - RPCs on newly created objects go through a different flow and need to be handled
-
-namespace worker
-{
-namespace c
-{
-struct Io_Stream;
-struct Trace_Item;
-} // namespace c
-} // namespace worker
 
 // Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
 // (see SpatialConnectionManager diff)
@@ -68,25 +62,24 @@ public:
 	bool DropSpanIds(const EntityComponentId& Id);
 
 private:
-	bool bEnabled{ false };
-	worker::c::Trace_EventTracer* EventTracer{ nullptr };
-
-	uint64 BytesWrittenToStream{ 0 };
-	uint64 MaxFileSize{ 0 };
 
 	struct StreamDeleter
 	{
 		void operator()(worker::c::Io_Stream* StreamToDestroy) const;
 	};
 
-	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
-
-	SpatialSpanIdCache SpanIdStore;
+	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
 	void Enable(const FString& FileName);
 	void Disable();
 
-	static void TraceCallback(void* UserData, const Trace_Item* Item);
+	SpatialSpanIdCache SpanIdStore;
+	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
+	worker::c::Trace_EventTracer* EventTracer = nullptr;
+
+	bool bEnabled = false;
+	uint64 BytesWrittenToStream = 0;
+	uint64 MaxFileSize = 0;
 };
 
 struct SpatialScopedActiveSpanId
@@ -100,7 +93,7 @@ struct SpatialScopedActiveSpanId
 	SpatialScopedActiveSpanId& operator=(SpatialScopedActiveSpanId&&) = delete;
 
 private:
-	TOptional<Trace_SpanId> CurrentSpanId;
+	const TOptional<Trace_SpanId>& CurrentSpanId;
 	worker::c::Trace_EventTracer* EventTracer;
 };
 
