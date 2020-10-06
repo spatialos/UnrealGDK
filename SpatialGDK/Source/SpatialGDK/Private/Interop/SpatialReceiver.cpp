@@ -1169,6 +1169,23 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking()
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
+		PackageMap->ClearRemovedDynamicSubobjectObjectRefs(EntityId);
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+			{
+				FNetworkGUID SubobjectNetGUID = PackageMap->GetNetGUIDFromObject(DynamicSubobject);
+				if (SubobjectNetGUID.IsValid())
+				{
+					FUnrealObjectRef SubobjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
+
+					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
+					{
+						PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
+					}
+				}
+			}
+		}
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
 		// to Actor Channel mapping for the DestroyActor to function correctly
 		PackageMap->RemoveEntityActor(EntityId);
@@ -1359,8 +1376,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
-		bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
-		if (!bIsDynamicSubobject)
+		if (!IsDynamicSubObject(Actor, Offset))
 		{
 			UE_LOG(LogSpatialReceiver, Verbose,
 				   TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: "
@@ -1369,7 +1385,20 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 			return;
 		}
 
-		// If we can't find this subobject, it's a dynamically attached object. Create it now.
+		// If we can't find this subobject, it's a dynamically attached object. Check if we created previously.
+		if (FNetworkGUID* SubobjectNetGUID = PackageMap->GetRemovedDynamicSubobjectNetGUID(TargetObjectRef))
+		{
+			if (UObject* DynamicSubobject = PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
+			{
+				PackageMap->ResolveSubobject(DynamicSubobject, TargetObjectRef);
+				ApplyComponentData(Channel, *DynamicSubobject, Data);
+
+				OutObjectsToResolve.Add(ObjectPtrRefPair(DynamicSubobject, TargetObjectRef));
+				return;
+			}
+		}
+
+		// If the dynamically attached object was not created before. Create it now.
 		TargetObject = NewObject<UObject>(Actor, ClassInfoManager->GetClassByComponentId(Data.component_id));
 
 		Actor->OnSubobjectCreatedFromReplication(TargetObject.Get());
@@ -1419,9 +1448,7 @@ void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Wo
 	}
 
 	// Check if this is a static subobject that's been destroyed by the receiver.
-	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
-	if (!bIsDynamicSubobject)
+	if (!IsDynamicSubObject(Actor, Offset))
 	{
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, "
@@ -3022,4 +3049,10 @@ void USpatialReceiver::HandleEntityDeletedAuthority(Worker_EntityId EntityId)
 	{
 		HandleDeferredEntityDeletion(EntitiesToRetireOnAuthorityGain[Index]);
 	}
+}
+
+bool USpatialReceiver::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset)
+{
+	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	return !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);
 }
