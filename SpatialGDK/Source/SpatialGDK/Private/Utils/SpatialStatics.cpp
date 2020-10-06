@@ -76,7 +76,18 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 
 		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
 		{
-			return LBStrategy->RequiresHandoverData();
+			// Also check settings
+			bool bHandoverEnabled = false; // Defaults to enabled
+			if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+			{
+				if (const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+					USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>())
+				{
+					bHandoverEnabled = MultiWorkerSettings->bHandoverEnabled;
+				}
+			}
+
+			return LBStrategy->RequiresHandoverData() && bHandoverEnabled;
 		}
 	}
 	return true;
