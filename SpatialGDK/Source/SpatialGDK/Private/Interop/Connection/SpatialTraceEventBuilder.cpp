@@ -16,83 +16,67 @@ FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType, FString
 {
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(const UObject* Object)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(FString Key, const UObject* Object)
 {
 	if (Object != nullptr)
 	{
-		FString Key = TEXT("Object");
 		if (const AActor* Actor = Cast<AActor>(Object))
 		{
-			Key = TEXT("Actor");
 			AddKeyValue(TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
-			AddKeyValue(TEXT("ActorRoot"), GetNameSafe(SpatialGDK::GetHierarchyRoot(Actor)));
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
 	}
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(const FString& Key, const UObject* Object)
-{
-	if (Object != nullptr)
-	{
-		if (const AActor* Actor = Cast<AActor>(Object))
-		{
-			AddKeyValue(TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
-		}
-		AddKeyValue(Key, Object->GetName());
-	}
-	return *this;
-}
-
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddFunction(const UFunction* Function)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddFunction(FString Key, const UFunction* Function)
 {
 	if (Function != nullptr)
 	{
-		AddKeyValue(TEXT("Function"), Function->GetName());
+		AddKeyValue(MoveTemp(Key), Function->GetName());
 	}
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddEntityId(const Worker_EntityId EntityId)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddEntityId(FString Key, const Worker_EntityId EntityId)
 {
-	AddKeyValue(TEXT("EntityId"), FString::FromInt(EntityId));
+	AddKeyValue(MoveTemp(Key), FString::FromInt(EntityId));
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddComponentId(const Worker_ComponentId ComponentId)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddComponentId(FString Key, const Worker_ComponentId ComponentId)
 {
-	AddKeyValue(TEXT("ComponentId"), FString::FromInt(ComponentId));
+	AddKeyValue(MoveTemp(Key), FString::FromInt(ComponentId));
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddFieldId(const uint32 FieldId)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddFieldId(FString Key, const uint32 FieldId)
 {
-	AddKeyValue(TEXT("FieldId"), FString::FromInt(FieldId));
+	AddKeyValue(MoveTemp(Key), FString::FromInt(FieldId));
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddNewWorkerId(const uint32 NewWorkerId)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddNewWorkerId(FString Key, const uint32 NewWorkerId)
 {
-	AddKeyValue(TEXT("NewWorkerId"), FString::FromInt(NewWorkerId));
+	AddKeyValue(MoveTemp(Key), FString::FromInt(NewWorkerId));
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddCommand(const FString& Command)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddCommand(FString Key, const FString& Command)
 {
-	AddKeyValue(TEXT("Command"), Command);
+	AddKeyValue(MoveTemp(Key), Command);
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddRequestID(const int64 RequestID)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddRequestID(FString Key, const int64 RequestID)
 {
-	AddKeyValue(TEXT("RequestID"), FString::FromInt(RequestID));
+	AddKeyValue(MoveTemp(Key), FString::FromInt(RequestID));
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddNetRole(const ENetRole Role)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddNetRole(FString Key, const ENetRole Role)
 {
-	AddKeyValue(TEXT("NetRole"), NetRoleToString(Role));
+	AddKeyValue(MoveTemp(Key), NetRoleToString(Role));
 	return *this;
 }
 
