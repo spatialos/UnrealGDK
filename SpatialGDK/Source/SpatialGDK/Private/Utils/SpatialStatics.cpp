@@ -55,12 +55,12 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 	const UWorld* World = WorldContextObject->GetWorld();
 	if (World == nullptr)
 	{
-		return false;
+		return true;
 	}
 
 	if (World->IsNetMode(NM_Client))
 	{
-		return false;
+		return true;
 	}
 
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
