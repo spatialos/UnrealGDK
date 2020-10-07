@@ -2,6 +2,8 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/SpatialActorUtils.h"
 
 namespace SpatialGDK
@@ -23,6 +25,13 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(FString Key, cons
 		if (const AActor* Actor = Cast<AActor>(Object))
 		{
 			AddKeyValue(TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
+		}
+		if (UWorld* World = Object->GetWorld())
+		{
+			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+			{
+				AddKeyValue(TEXT("NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
+			}
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
 	}
