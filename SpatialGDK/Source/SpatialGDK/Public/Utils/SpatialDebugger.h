@@ -174,7 +174,6 @@ public:
 	void OnToggleConfigUI();
 
 private:
-
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
 

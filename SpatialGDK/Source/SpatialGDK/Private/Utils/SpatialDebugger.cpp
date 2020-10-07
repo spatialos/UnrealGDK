@@ -304,8 +304,8 @@ void ASpatialDebugger::OnToggleConfigUI()
 			if (ConfigUIWidget == nullptr)
 			{
 				UE_LOG(LogSpatialDebugger, Error,
-					TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
-					*GetNameSafe(ConfigUIClass));
+					   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
+					   *GetNameSafe(ConfigUIClass));
 				return;
 			}
 			else
@@ -316,14 +316,12 @@ void ASpatialDebugger::OnToggleConfigUI()
 		else
 		{
 			UE_LOG(LogSpatialDebugger, Error,
-				TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
+				   TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
 			return;
 		}
 
 		ConfigUIWidget->AddToViewport();
 
-		// TODO This is clobbering whatever input mode the player controller had set before we enabled our UI.
-		// Need to investigate if the state can be stored before changing it.
 		FInputModeGameAndUI InputModeSettings;
 		InputModeSettings.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		InputModeSettings.SetWidgetToFocus(ConfigUIWidget->TakeWidget());
