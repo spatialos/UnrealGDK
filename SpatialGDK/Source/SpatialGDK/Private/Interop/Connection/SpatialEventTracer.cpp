@@ -9,9 +9,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
-using namespace SpatialGDK;
-using namespace worker::c;
-
+namespace SpatialGDK
+{
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
@@ -265,3 +264,4 @@ bool SpatialEventTracer::DropSpanIds(const EntityComponentId& Id)
 
 	return SpanIdStore.DropSpanIds(Id);
 }
+} // namespace SpatialGDK

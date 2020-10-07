@@ -7,8 +7,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
 
-using namespace worker::c;
-
 namespace SpatialGDK
 {
 void SpatialSpanIdCache::ComponentAdd(const Worker_Op& Op)
