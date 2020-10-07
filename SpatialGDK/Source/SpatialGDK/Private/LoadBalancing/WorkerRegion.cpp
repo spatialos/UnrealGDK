@@ -42,7 +42,7 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	}
 	else
 	{
-		// At runtime, setup the dynamic boundary material 
+		// At runtime, setup the dynamic boundary material
 		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
 		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
 
@@ -63,7 +63,7 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	}
 }
 
-// Render the dynamic boundary material with a translucent coloured background and worker information 
+// Render the dynamic boundary material with a translucent coloured background and worker information
 void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height)
 {
 	// Draw the worker background to the canvas
