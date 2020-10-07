@@ -286,28 +286,26 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
 
-			SetupConfigUI(LocalPlayerController.Get());
+			if (GetNetMode() == NM_Client)
+			{
+				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+			}
 		}
 	}
 }
 
-void ASpatialDebugger::SetupConfigUI(APlayerController* PC)
+void ASpatialDebugger::OnToggleConfigUI()
 {
-	if (GetNetMode() != NM_Client)
-	{
-		return;
-	}
-
-	if (!ConfigUIWidget.IsValid())
+	if (ConfigUIWidget == nullptr)
 	{
 		if (ConfigUIClass != nullptr)
 		{
 			ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
-			if (!ConfigUIWidget.IsValid())
+			if (ConfigUIWidget == nullptr)
 			{
 				UE_LOG(LogSpatialDebugger, Error,
-					   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
-					   *GetNameSafe(ConfigUIWidget.Get()));
+					TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
+					*GetNameSafe(ConfigUIClass));
 				return;
 			}
 			else
@@ -318,23 +316,10 @@ void ASpatialDebugger::SetupConfigUI(APlayerController* PC)
 		else
 		{
 			UE_LOG(LogSpatialDebugger, Error,
-				   TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
+				TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
 			return;
 		}
-	}
 
-	LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
-}
-
-void ASpatialDebugger::OnToggleConfigUI()
-{
-	if (!ConfigUIWidget.IsValid())
-	{
-		return;
-	}
-
-	if (!ConfigUIWidget->IsInViewport())
-	{
 		ConfigUIWidget->AddToViewport();
 
 		// TODO This is clobbering whatever input mode the player controller had set before we enabled our UI.
@@ -351,6 +336,7 @@ void ASpatialDebugger::OnToggleConfigUI()
 	else
 	{
 		ConfigUIWidget->RemoveFromParent();
+		ConfigUIWidget = nullptr;
 		OnConfigUIClosed.ExecuteIfBound();
 	}
 }

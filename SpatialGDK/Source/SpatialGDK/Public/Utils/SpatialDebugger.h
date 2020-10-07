@@ -174,7 +174,6 @@ public:
 	void OnToggleConfigUI();
 
 private:
-	void SetupConfigUI(APlayerController* PC);
 
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
@@ -247,5 +246,5 @@ private:
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
 
-	TWeakObjectPtr<USpatialDebuggerConfigUI> ConfigUIWidget;
+	USpatialDebuggerConfigUI* ConfigUIWidget;
 };
