@@ -234,9 +234,13 @@ public:
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, false /* UseEscape */);
 			const FURL URL(nullptr /* Base */, *URLAddress, TRAVEL_Absolute);
-			if (URL.Valid)
+			if (URL.Valid && !URLAddress.IsEmpty())
 			{
 				SetupFromURL(URL);
+			}
+			else if (!bReceptionistPortParsed)
+			{
+				return false;
 			}
 		}
 		else
