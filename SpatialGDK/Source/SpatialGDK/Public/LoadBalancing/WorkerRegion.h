@@ -20,7 +20,7 @@ class SPATIALGDK_API AWorkerRegion : public AActor
 public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
-	void Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, UFont* TextFont, const FColor& Color, const FBox2D& Extents, 
+	void Init(UMaterial* BoundaryMaterial, UMaterial* TextMaterial, UFont* TextFont, const FColor& Color, const FBox2D& Extents,
 			  const float VerticalScale, const FString& InWorkerInfo, const bool bInEditor);
 
 	UPROPERTY()

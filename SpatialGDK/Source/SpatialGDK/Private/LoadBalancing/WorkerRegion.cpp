@@ -29,15 +29,15 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	WorkerRootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, *WORKER_REGION_ACTOR_NAME);
-	//SetRootComponent(RootComponent);
+	// SetRootComponent(RootComponent);
 
 	Mesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "NorthWall");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeAsset(*CUBE_MESH_PATH);
 	Mesh->SetStaticMesh(CubeAsset.Object);
 	SetRootComponent(Mesh);
-	//static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(*PLANE_MESH_PATH);
-	//Mesh->SetStaticMesh(PlaneAsset.Object);
-	//Mesh->AttachTo(RootComponent);
+	// static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(*PLANE_MESH_PATH);
+	// Mesh->SetStaticMesh(PlaneAsset.Object);
+	// Mesh->AttachTo(RootComponent);
 }
 
 void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial, UFont* InWorkerInfoFont, const FColor& Color,
@@ -217,7 +217,8 @@ void AWorkerRegion::SetOpacityAndEmissive(const float Opacity, const float Emiss
 	//	MaterialTextInstance->SetScalarParameterValue(WORKER_TEXT_MATERIAL_EMMISIVE_PARAM, Emissive);
 }
 
-void AWorkerRegion::SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D& Extents, bool bXAxis, const float VerticalScale, bool bSetPosition, bool bSetScale)
+void AWorkerRegion::SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D& Extents, bool bXAxis, const float VerticalScale,
+										bool bSetPosition, bool bSetScale)
 {
 	const FVector CurrentLocation = GetActorLocation();
 
@@ -234,15 +235,15 @@ void AWorkerRegion::SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D
 	if (bSetPosition)
 	{
 		SetActorLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
-		//Wall->SetWorldLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
+		// Wall->SetWorldLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
 	}
-	if (bSetScale)// && bXAxis)
+	if (bSetScale) // && bXAxis)
 	{
 		SetActorScale3D(FVector(ScaleX, ScaleY, VerticalScale));
 		// Scale wall on x-axis
-		//Wall->SetWorldScale3D(FVector(ScaleX, VerticalScale, 1.0));
+		// Wall->SetWorldScale3D(FVector(ScaleX, VerticalScale, 1.0));
 	}
-	//else if (bSetScale)
+	// else if (bSetScale)
 	//{
 	//	// Scale wall on y-axis
 	//	Wall->SetWorldScale3D(FVector(ScaleY, VerticalScale, 1.0));
