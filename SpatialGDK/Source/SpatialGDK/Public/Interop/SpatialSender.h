@@ -94,8 +94,7 @@ public:
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const worker::c::Trace_SpanId CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
 								  const worker::c::Trace_SpanId CauseSpanId);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
-						   const worker::c::Trace_SpanId CauseSpanI);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const worker::c::Trace_SpanId CauseSpanI);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);

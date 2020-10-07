@@ -143,7 +143,6 @@ void SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const 
 	Trace_EventData_Destroy(EventData);
 }
 
-
 bool SpatialEventTracer::IsEnabled() const
 {
 	return bEnabled; // Trace_EventTracer_IsEnabled(EventTracer);

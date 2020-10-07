@@ -1059,8 +1059,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
-											  const worker::c::Trace_SpanId CauseSpanId)
+void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const worker::c::Trace_SpanId CauseSpanId)
 {
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, false), SpanId);
