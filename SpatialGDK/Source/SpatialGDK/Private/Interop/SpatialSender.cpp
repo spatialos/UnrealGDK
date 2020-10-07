@@ -198,6 +198,10 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+		if (GetDefault<USpatialGDKSettings>()->bUseSpatialView)
+		{
+			Connection->Flush();
+		}
 	}
 
 	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
@@ -1031,6 +1035,10 @@ void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityI
 	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
 	Connection->SendComponentUpdate(EntityId, &Update);
+	if (GetDefault<USpatialGDKSettings>()->bUseSpatialView)
+	{
+		Connection->Flush();
+	}
 }
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)

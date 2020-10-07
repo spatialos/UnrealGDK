@@ -1709,6 +1709,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				Sender->SetAclWriteAuthority(AclAssignmentRequest);
 			}
+			if (SpatialGDKSettings->bUseSpatialView)
+			{
+				Connection->Flush();
+			}
 		}
 	}
 }
