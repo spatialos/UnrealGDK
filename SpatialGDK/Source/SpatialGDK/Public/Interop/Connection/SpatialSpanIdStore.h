@@ -9,7 +9,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSpanIdStore, Log, All);
 
 namespace SpatialGDK
 {
-class SpatialSpanIdCache
+class SpatialSpanIdStore
 {
 public:
 	struct FieldSpanIdUpdate

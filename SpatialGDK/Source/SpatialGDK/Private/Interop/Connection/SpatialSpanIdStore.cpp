@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/Connection/SpatialSpanIdCache.h"
+#include "Interop/Connection/SpatialSpanIdStore.h"
 
 #include "SpatialConstants.h"
 #include <WorkerSDK/improbable/c_trace.h>
@@ -9,7 +9,7 @@ DEFINE_LOG_CATEGORY(LogSpatialSpanIdStore);
 
 namespace SpatialGDK
 {
-void SpatialSpanIdCache::ComponentAdd(const Worker_Op& Op)
+void SpatialSpanIdStore::ComponentAdd(const Worker_Op& Op)
 {
 	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
 	EntityComponentId Id(AddComponentOp.entity_id, AddComponentOp.data.component_id);
@@ -25,14 +25,14 @@ void SpatialSpanIdCache::ComponentAdd(const Worker_Op& Op)
 	}
 }
 
-bool SpatialSpanIdCache::ComponentRemove(const Worker_Op& Op)
+bool SpatialSpanIdStore::ComponentRemove(const Worker_Op& Op)
 {
 	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
 	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
 	return DropSpanIds(Id);
 }
 
-TArray<SpatialSpanIdCache::FieldSpanIdUpdate> SpatialSpanIdCache::ComponentUpdate(const Worker_Op& Op)
+TArray<SpatialSpanIdStore::FieldSpanIdUpdate> SpatialSpanIdStore::ComponentUpdate(const Worker_Op& Op)
 {
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
 	EntityComponentId Id(ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id);
@@ -61,7 +61,7 @@ TArray<SpatialSpanIdCache::FieldSpanIdUpdate> SpatialSpanIdCache::ComponentUpdat
 	return FieldCollisions;
 }
 
-void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
+void SpatialSpanIdStore::AddSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId SpanId)
 {
 	FieldIdMap& SpanIdMap = EntityComponentFieldSpanIds.FindOrAdd(Id);
 	EntityComponentFieldIdSpanIdUpdate& SpawnIdRef = SpanIdMap.FindOrAdd(FieldId);
@@ -69,20 +69,20 @@ void SpatialSpanIdCache::AddSpanId(const EntityComponentId& Id, const uint32 Fie
 	SpawnIdRef.UpdateTime = FDateTime::Now();
 }
 
-bool SpatialSpanIdCache::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialSpanIdStore::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
 {
 	int32 NumRemoved = DropSpanIdInternal(EntityComponentFieldSpanIds.Find(Id), Id, FieldId);
 	return NumRemoved > 0;
 }
 
-bool SpatialSpanIdCache::DropSpanIds(const EntityComponentId& Id)
+bool SpatialSpanIdStore::DropSpanIds(const EntityComponentId& Id)
 {
 	int32 NumRemoved = EntityComponentFieldSpanIds.Remove(Id) > 0;
 	EntityComponentFieldSpanIds.Compact();
 	return NumRemoved > 0;
 }
 
-bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
+bool SpatialSpanIdStore::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityComponentId& Id, const uint32 FieldId)
 {
 	if (SpanIdMap == nullptr)
 	{
@@ -108,7 +108,7 @@ bool SpatialSpanIdCache::DropSpanIdInternal(FieldIdMap* SpanIdMap, const EntityC
 	return bDropped;
 }
 
-bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
+bool SpatialSpanIdStore::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
 {
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
@@ -132,7 +132,7 @@ bool SpatialSpanIdCache::GetSpanId(const EntityComponentId& Id, const uint32 Fie
 	return true;
 }
 
-bool SpatialSpanIdCache::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
+bool SpatialSpanIdStore::GetMostRecentSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId, bool bRemove /*= true*/)
 {
 	FieldIdMap* SpanIdMap = EntityComponentFieldSpanIds.Find(Id);
 	if (SpanIdMap == nullptr)
