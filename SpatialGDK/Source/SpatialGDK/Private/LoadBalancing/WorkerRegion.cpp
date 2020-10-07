@@ -22,15 +22,22 @@ const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
 const FName WORKER_TEXT_MATERIAL_EMMISIVE_PARAM = TEXT("Emissive");
 const FName WORKER_TEXT_MATERIAL_TP2D_PARAM = TEXT("TP2D");
 const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
+const FString PLANE_MESH_PATH = TEXT("/Engine/BasicShapes/Plane.Plane");
 } // namespace
 
 AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	Mesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, *WORKER_REGION_ACTOR_NAME);
+	WorkerRootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, *WORKER_REGION_ACTOR_NAME);
+	//SetRootComponent(RootComponent);
+
+	Mesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "NorthWall");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeAsset(*CUBE_MESH_PATH);
 	Mesh->SetStaticMesh(CubeAsset.Object);
 	SetRootComponent(Mesh);
+	//static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(*PLANE_MESH_PATH);
+	//Mesh->SetStaticMesh(PlaneAsset.Object);
+	//Mesh->AttachTo(RootComponent);
 }
 
 void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial, UFont* InWorkerInfoFont, const FColor& Color,
@@ -41,7 +48,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	if (!bInEditor)
 	{
 		// dynamic boundary material
-		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 512, 512);
+		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
 		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
 
 		TextMaterial = InTextMaterial;
@@ -55,7 +62,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
 
 	SetColor(Color);
-	SetPositionAndScale(Extents, VerticalScale, false, true);
+	SetPositionAndScale(Mesh, Extents, true, VerticalScale, false, true);
 
 	//// North wall
 	//// Note: using an offset of 50 causes the text to flicker so used just less than 50 instead
@@ -71,7 +78,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	// UE_LOG(LogTemp, Warning, TEXT("West wall"));
 	// TileWallWithWorkerText(true, Extents, VerticalScale, -50, -49.999f, TextMaterial, TextFont, WorkerInfo, 90);
 
-	SetPositionAndScale(Extents, VerticalScale, true, false);
+	SetPositionAndScale(Mesh, Extents, true, VerticalScale, true, false);
 
 	if (!bInEditor)
 	{
@@ -84,7 +91,8 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 	// Draw the worker border material to the canvas
 	Canvas->K2_DrawMaterial(MaterialBoundaryInstance, FVector2D(0, 0), FVector2D(Width, Height), FVector2D(0, 0));
 	// Draw the worker information to the canvas
-	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 0, 250, 1.0, 1.0);
+	Canvas->SetDrawColor(FColor::White);
+	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 0, 0, 1.0, 1.0);
 
 	// Create a dynamic material and attach it to this mesh
 	MaterialTextInstance = UMaterialInstanceDynamic::Create(TextMaterial, nullptr);
@@ -209,7 +217,7 @@ void AWorkerRegion::SetOpacityAndEmissive(const float Opacity, const float Emiss
 	//	MaterialTextInstance->SetScalarParameterValue(WORKER_TEXT_MATERIAL_EMMISIVE_PARAM, Emissive);
 }
 
-void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale, bool bSetPosition, bool bSetScale)
+void AWorkerRegion::SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D& Extents, bool bXAxis, const float VerticalScale, bool bSetPosition, bool bSetScale)
 {
 	const FVector CurrentLocation = GetActorLocation();
 
@@ -226,11 +234,19 @@ void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float Verti
 	if (bSetPosition)
 	{
 		SetActorLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
+		//Wall->SetWorldLocation(FVector(CenterX, CenterY, CurrentLocation.Z));
 	}
-	if (bSetScale)
+	if (bSetScale)// && bXAxis)
 	{
 		SetActorScale3D(FVector(ScaleX, ScaleY, VerticalScale));
+		// Scale wall on x-axis
+		//Wall->SetWorldScale3D(FVector(ScaleX, VerticalScale, 1.0));
 	}
+	//else if (bSetScale)
+	//{
+	//	// Scale wall on y-axis
+	//	Wall->SetWorldScale3D(FVector(ScaleY, VerticalScale, 1.0));
+	//}
 }
 
 void AWorkerRegion::SetColor(const FColor& Color)
