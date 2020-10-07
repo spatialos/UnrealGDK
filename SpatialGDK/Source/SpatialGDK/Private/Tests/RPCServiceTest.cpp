@@ -5,6 +5,7 @@
 // Engine
 #include "Engine/Engine.h"
 #include "GameFramework/GameStateBase.h"
+#include "GameMapsSettings.h"
 #include "Misc/AutomationTest.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/TestActor.h"
@@ -602,6 +603,7 @@ bool FDropRPCQueueTest::Update()
 RPC_SERVICE_TEST(
 	GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_over_WHEN_we_process_the_rpc_THEN_return_DropEntireQueue_queue_command)
 {
+	UGameMapsSettings::SetGlobalDefaultGameMode(TEXT("/Script/Engine.GameModeBase"));
 	AutomationOpenMap("/Engine/Maps/Entry");
 
 	TSharedPtr<TestData> Data = MakeShared<TestData>();
