@@ -35,12 +35,18 @@ public:
 
 	static FSpatialTraceEvent ProcessRPC(const UObject* Object, UFunction* Function)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc").AddObject(TEXT("Object"), Object).AddFunction(TEXT("Function"), Function).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc")
+			.AddObject(TEXT("Object"), Object)
+			.AddFunction(TEXT("Function"), Function)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent SendRPC(const UObject* Object, UFunction* Function)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc").AddObject(TEXT("Object"), Object).AddFunction(TEXT("Function"), Function).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc")
+			.AddObject(TEXT("Object"), Object)
+			.AddFunction(TEXT("Function"), Function)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent QueueRPC() { return FSpatialTraceEventBuilder("queue_rpc").GetEvent(); }
@@ -78,7 +84,10 @@ public:
 
 	static FSpatialTraceEvent SendCommandRequest(const FString& Command, const int64 RequestID)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_command_request").AddCommand(TEXT("Command"), Command).AddRequestID(TEXT("RequestID"), RequestID).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_command_request")
+			.AddCommand(TEXT("Command"), Command)
+			.AddRequestID(TEXT("RequestID"), RequestID)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCommandRequest(const FString& Command, const int64 RequestID)
@@ -141,22 +150,34 @@ public:
 
 	static FSpatialTraceEvent SendRemoveEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_remove_entity").AddObject(TEXT("Object"), Object).AddEntityId(TEXT("EntityId"), EntityId).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_remove_entity")
+			.AddObject(TEXT("Object"), Object)
+			.AddEntityId(TEXT("EntityId"), EntityId)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveRemoveEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_remove_entity").AddObject(TEXT("Object"), Object).AddEntityId(TEXT("EntityId"), EntityId).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_remove_entity")
+			.AddObject(TEXT("Object"), Object)
+			.AddEntityId(TEXT("EntityId"), EntityId)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent SendCreateEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_create_entity").AddObject(TEXT("Object"), Object).AddEntityId(TEXT("EntityId"), EntityId).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_create_entity")
+			.AddObject(TEXT("Object"), Object)
+			.AddEntityId(TEXT("EntityId"), EntityId)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCreateEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_create_entity").AddObject(TEXT("Object"), Object).AddEntityId(TEXT("EntityId"), EntityId).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "recieve_create_entity")
+			.AddObject(TEXT("Object"), Object)
+			.AddEntityId(TEXT("EntityId"), EntityId)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent RecieveCreateEntitySuccess(const UObject* Object, const Worker_EntityId EntityId)
@@ -169,7 +190,10 @@ public:
 
 	static FSpatialTraceEvent SendRetireEntity(const UObject* Object, const Worker_EntityId EntityId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_retire_entity").AddObject(TEXT("Object"), Object).AddEntityId(TEXT("EntityId"), EntityId).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_retire_entity")
+			.AddObject(TEXT("Object"), Object)
+			.AddEntityId(TEXT("EntityId"), EntityId)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent AuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object)
@@ -182,7 +206,10 @@ public:
 
 	static FSpatialTraceEvent AuthorityLossImminent(const UObject* Object, const ENetRole Role)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent").AddObject(TEXT("Object"), Object).AddNetRole(TEXT("NetRole"), Role).GetEvent();
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent")
+			.AddObject(TEXT("Object"), Object)
+			.AddNetRole(TEXT("NetRole"), Role)
+			.GetEvent();
 	}
 
 	static FSpatialTraceEvent ComponentUpdate(const UObject* Object, const UObject* TargetObject, const Worker_EntityId EntityId,
