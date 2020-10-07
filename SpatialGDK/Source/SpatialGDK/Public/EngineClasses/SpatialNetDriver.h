@@ -155,6 +155,7 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
+	// Fires on a client once is has received the spatial debugger through replication. Does not fire on servers.
 	UPROPERTY()
 	USpatialBasicAwaiter* SpatialDebuggerReady;
 	UPROPERTY()

@@ -328,6 +328,12 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 		return;
 	}
 
+	if (World->GetNetMode() != NM_Client)
+	{
+		UE_LOG(LogSpatial, Warning, TEXT("SpatialDebuggerSetOnConfigUIClosedCallback should only be called on clients. It has no effects on servers."));
+		return;
+	}
+
 	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 	if (SpatialNetDriver == nullptr)
 	{
