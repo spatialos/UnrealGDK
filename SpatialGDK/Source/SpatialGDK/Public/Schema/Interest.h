@@ -279,6 +279,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* SphereConstraintObject = Schema_GetObject(QueryConstraintObject, 1);
 
+		NewQueryConstraint.SphereConstraint = SphereConstraint{};
 		NewQueryConstraint.SphereConstraint->Center = GetCoordinateFromSchema(SphereConstraintObject, 1);
 		NewQueryConstraint.SphereConstraint->Radius = Schema_GetDouble(SphereConstraintObject, 2);
 	}
@@ -288,6 +289,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* CylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 2);
 
+		NewQueryConstraint.CylinderConstraint = CylinderConstraint{};
 		NewQueryConstraint.CylinderConstraint->Center = GetCoordinateFromSchema(CylinderConstraintObject, 1);
 		NewQueryConstraint.CylinderConstraint->Radius = Schema_GetDouble(CylinderConstraintObject, 2);
 	}
@@ -297,6 +299,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* BoxConstraintObject = Schema_GetObject(QueryConstraintObject, 3);
 
+		NewQueryConstraint.BoxConstraint = BoxConstraint{};
 		NewQueryConstraint.BoxConstraint->Center = GetCoordinateFromSchema(BoxConstraintObject, 1);
 		NewQueryConstraint.BoxConstraint->EdgeLength = GetCoordinateFromSchema(BoxConstraintObject, 2);
 	}
@@ -306,6 +309,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeSphereConstraintObject = Schema_GetObject(QueryConstraintObject, 4);
 
+		NewQueryConstraint.RelativeSphereConstraint = RelativeSphereConstraint{};
 		NewQueryConstraint.RelativeSphereConstraint->Radius = Schema_GetDouble(RelativeSphereConstraintObject, 1);
 	}
 
@@ -314,6 +318,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeCylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 5);
 
+		NewQueryConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{};
 		NewQueryConstraint.RelativeCylinderConstraint->Radius = Schema_GetDouble(RelativeCylinderConstraintObject, 1);
 	}
 
@@ -322,23 +327,20 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeBoxConstraintObject = Schema_GetObject(QueryConstraintObject, 6);
 
+		NewQueryConstraint.RelativeBoxConstraint = RelativeBoxConstraint{};
 		NewQueryConstraint.RelativeBoxConstraint->EdgeLength = GetCoordinateFromSchema(RelativeBoxConstraintObject, 1);
 	}
 
 	// option<int64> entity_id_constraint = 7;
-	if (Schema_GetObjectCount(QueryConstraintObject, 7) > 0)
+	if (Schema_GetInt64Count(QueryConstraintObject, 7) > 0)
 	{
-		Schema_Object* EntityIdConstraintObject = Schema_GetObject(QueryConstraintObject, 7);
-
-		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(EntityIdConstraintObject, 1);
+		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(QueryConstraintObject, 7);
 	}
 
 	// option<uint32> component_constraint = 8;
-	if (Schema_GetObjectCount(QueryConstraintObject, 8) > 0)
+	if (Schema_GetUint32Count(QueryConstraintObject, 8) > 0)
 	{
-		Schema_Object* ComponentConstraintObject = Schema_GetObject(QueryConstraintObject, 8);
-
-		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
+		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(QueryConstraintObject, 8);
 	}
 
 	// list<QueryConstraint> and_constraint = 9;
@@ -364,7 +366,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 
 inline QueryConstraint GetQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	return IndexQueryConstraintFromSchema(Object, Id, 1);
+	return IndexQueryConstraintFromSchema(Object, Id, 0);
 }
 
 inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
@@ -375,19 +377,19 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 
 	NewQuery.Constraint = GetQueryConstraintFromSchema(QueryObject, 1);
 
-	if (Schema_GetObjectCount(QueryObject, 2) > 0)
+	if (Schema_GetBoolCount(QueryObject, 2) > 0)
 	{
 		NewQuery.FullSnapshotResult = GetBoolFromSchema(QueryObject, 2);
 	}
 
-	uint32 ResultComponentIdCount = Schema_GetObjectCount(QueryObject, 3);
+	uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
 	NewQuery.ResultComponentIds.Reserve(ResultComponentIdCount);
 	for (uint32 ComponentIdIndex = 0; ComponentIdIndex < ResultComponentIdCount; ComponentIdIndex++)
 	{
 		NewQuery.ResultComponentIds.Add(Schema_IndexUint32(QueryObject, 3, ComponentIdIndex));
 	}
 
-	if (Schema_GetObjectCount(QueryObject, 4) > 0)
+	if (Schema_GetFloatCount(QueryObject, 4) > 0)
 	{
 		NewQuery.Frequency = Schema_GetFloat(QueryObject, 4);
 	}

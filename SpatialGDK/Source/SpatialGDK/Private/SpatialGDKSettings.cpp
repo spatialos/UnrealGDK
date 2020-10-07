@@ -125,6 +125,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
+	, StartupLogRate(5.0f)
 	, bEventTracingEnabled(false)
 	, MaxEventTracingFileSizeBytes(256 * 1024 * 1024) // 256mb
 {
