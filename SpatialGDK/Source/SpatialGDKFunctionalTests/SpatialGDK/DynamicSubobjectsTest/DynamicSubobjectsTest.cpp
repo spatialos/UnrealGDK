@@ -4,10 +4,10 @@
 #include "ReplicatedGASTestActor.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "SpatialGDKSettings.h"
 
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
-#include <SpatialGDK\Public\SpatialGDKSettings.h>
 
 /**
  * Tests if the dynamic Subobject of the AReplicatedGASTestActor is not duplicated on Clients when leaving
