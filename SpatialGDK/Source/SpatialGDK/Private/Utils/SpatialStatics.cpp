@@ -330,7 +330,8 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 
 	if (World->GetNetMode() != NM_Client)
 	{
-		UE_LOG(LogSpatial, Warning, TEXT("SpatialDebuggerSetOnConfigUIClosedCallback should only be called on clients. It has no effects on servers."));
+		UE_LOG(LogSpatial, Warning,
+			   TEXT("SpatialDebuggerSetOnConfigUIClosedCallback should only be called on clients. It has no effects on servers."));
 		return;
 	}
 
