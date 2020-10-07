@@ -443,6 +443,11 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 											  const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent,
 											  const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
+	if (StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
 	StepDefinition.StepName = StepName;
@@ -459,6 +464,10 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition,
 												   const FWorkerDefinition& Worker)
 {
+	if (StepDefinition.StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
 	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
 
 	StepDefinitionCopy.Workers.Add(Worker);
@@ -469,6 +478,10 @@ void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestS
 void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition,
 														const TArray<FWorkerDefinition>& Workers)
 {
+	if (StepDefinition.StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
 	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
 
 	StepDefinitionCopy.Workers.Append(Workers);
@@ -545,6 +558,11 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 																	  FTickEventFunc TickEvent /*= nullptr*/,
 																	  float StepTimeLimit /*= 0.0f*/)
 {
+	if (StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
 	StepDefinition.StepName = StepName;
@@ -629,17 +647,21 @@ void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 {
 	if (bPreparedTest)
 	{
-		if (!HasAuthority())
-		{
-			PrepareTest();
-		}
+		// We need to delay until next Tick since on non-Authority
+		// OnReplicated_bPreparedTest() will be called before BeginPlay().
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+			if (!HasAuthority())
+			{
+				PrepareTest();
+			}
 
-		// Currently PrepareTest() happens before FlowControllers are registered,
-		// but that is most likely because of the bug that forces us to delay their registration.
-		if (LocalFlowController != nullptr)
-		{
-			LocalFlowController->SetReadyToRunTest(true);
-		}
+			// Currently PrepareTest() happens before FlowControllers are registered,
+			// but that is most likely because of the bug that forces us to delay their registration.
+			if (LocalFlowController != nullptr)
+			{
+				LocalFlowController->SetReadyToRunTest(true);
+			}
+		});
 	}
 }
 
