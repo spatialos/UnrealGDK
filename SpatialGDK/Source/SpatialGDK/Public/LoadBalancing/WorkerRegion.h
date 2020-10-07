@@ -27,14 +27,10 @@ public:
 	UStaticMeshComponent* Mesh;
 
 	UPROPERTY()
-	USceneComponent* WorkerRootComponent;
-
-	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialBoundaryInstance;
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* MaterialTextInstance;
-	// UMaterial* MaterialTextInstance;
 
 	UPROPERTY()
 	UMaterial* TextMaterial;
@@ -48,8 +44,8 @@ public:
 	UPROPERTY()
 	FString WorkerInfo;
 
-	UPROPERTY()
-	UTexture2D* WorkerBoundaryTexture;
+	//UPROPERTY()
+	//UTexture2D* WorkerBoundaryTexture;
 
 	UFUNCTION()
 	void DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height);
@@ -57,12 +53,6 @@ public:
 private:
 	void SetOpacityAndEmissive(const float Opacity, const float Emissive);
 	void SetHeight(const float Height);
-	void SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D& Extents, bool bXAxis, const float VerticalScale, bool bSetPosition,
-							 bool bSetScale);
+	void SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D& Extents, bool bXAxis, const float VerticalScale);
 	void SetColor(const FColor& Color);
-	/*void TileWallWithWorkerText(const bool bTileX, const FBox2D& Extents, const float VerticalScale, const float TileOffset,
-								const float CentreOffset, UMaterial* TextMaterial, UFont* TextFont, const FString& WorkerName,
-								const float Yaw);
-	void CreateWorkerTextAtPosition(UMaterial* TextMaterial, UFont* TextFont, const float VerticalScale, const FString& WorkerName,
-									float PositionX, float PositionY, const float PositionZ, const float Yaw);*/
 };
