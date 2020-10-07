@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialSpanIdCache.h"
+#include "Interop/Connection/SpatialSpanIdStore.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 
 #include <WorkerSDK/improbable/c_io.h>
@@ -12,7 +12,6 @@
 
 // TODO(EventTracer): make sure SpatialEventTracer doesn't break the LatencyTracer functionality for now (maybe have some macro/branching in
 // .cpp file, when the LatencyTracer is enabled?)
-// TODO(EventTracer): make sure the overhead of SpatialEventTracer is minimal when it's switched off
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
@@ -42,10 +41,9 @@ public:
 	// be registered with this SpanId) e.g. void TraceEvent(... SpatialScopedActiveSpanId&& SpanIdActivator) = delete;
 	// TODO(EventTracer): Communicate to others, that SpatialScopedActiveSpanId must be creating prior to calling worker send functions
 
-	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent);
-	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId Causes);
-	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TArray<worker::c::Trace_SpanId>& Causes);
-	TOptional<Trace_SpanId> TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const worker::c::Trace_SpanId* Causes, int32 NumCauses);
+	TOptional<Trace_SpanId> CreateSpan();
+	TOptional<Trace_SpanId> CreateSpan(const worker::c::Trace_SpanId* Causes, int32 NumCauses);
+	void TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
 
 	bool IsEnabled() const;
 
@@ -69,7 +67,7 @@ private:
 
 	void Enable(const FString& FileName);
 
-	SpatialSpanIdCache SpanIdStore;
+	SpatialSpanIdStore SpanIdStore;
 	TUniquePtr<worker::c::Io_Stream, StreamDeleter> Stream;
 	worker::c::Trace_EventTracer* EventTracer = nullptr;
 

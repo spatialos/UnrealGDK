@@ -33,7 +33,9 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 	if (EventTracer != nullptr)
 	{
-		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendRPC(Target, Function));
+		 TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
+		 EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendRPC(Target, Function), SpanId);
+		 PendingPayload.SpanId = SpanId;
 	}
 
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
@@ -41,7 +43,9 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 		if (EventTracer != nullptr)
 		{
 			Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
-			PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), CauseSpanId);
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+		    EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), SpanId);
+			PendingPayload.SpanId = SpanId;
 		}
 
 		// Already has queued RPCs of this type, queue until those are pushed.
@@ -185,7 +189,9 @@ void SpatialRPCService::PushOverflowedRPCs()
 				if (EventTracer != nullptr)
 				{
 					Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
-					PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), CauseSpanId);
+					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::QueueRPC(), SpanId);
+					PendingPayload.SpanId = SpanId;
 				}
 				break;
 			case EPushRPCResult::DropOverflowed:
@@ -252,8 +258,10 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			UpdateToSend.SpanId = EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::MergeComponent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), It.Value.SpanIds);
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(It.Value.SpanIds.GetData(), It.Value.SpanIds.Num());
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::MergeComponent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), SpanId);
+			UpdateToSend.SpanId = SpanId;
 		}
 
 #if TRACE_LIB_ACTIVE
