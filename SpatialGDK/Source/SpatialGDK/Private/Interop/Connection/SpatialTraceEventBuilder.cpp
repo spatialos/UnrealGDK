@@ -2,6 +2,8 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/SpatialActorUtils.h"
 
 namespace SpatialGDK
@@ -32,7 +34,6 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(FString Key, cons
 			}
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
-		
 	}
 	return *this;
 }
