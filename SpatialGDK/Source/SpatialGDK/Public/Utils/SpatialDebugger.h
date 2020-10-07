@@ -51,7 +51,7 @@ struct FWorkerRegionInfo
 	FString WorkerName;
 
 	UPROPERTY()
-	uint32 WorkerID;
+	uint32 VirtualWorkerID;
 };
 
 /**
@@ -144,7 +144,7 @@ public:
 	UFont* WorkerInfoFont;
 
 	UPROPERTY()
-	UMaterial* WorkerTextMaterial;
+	UMaterial* WorkerCombinedMaterial;
 
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();

@@ -37,13 +37,8 @@ const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
 const FString DEFAULT_WORKER_TEXT_FONT =
 	TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular - custom install
-const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
+const FString DEFAULT_WORKER_COMBINED_MATERIAL = TEXT(
 	"/SpatialGDK/SpatialDebugger/Materials/DynamicWorkerTextMaterial.DynamicWorkerTextMaterial"); // Fully emmissive material - single sided
-// const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
-//	"/SpatialGDK/SpatialDebugger/Materials/WorkTextMaterialEmissive.WorkTextMaterialEmissive"); // Fully emmissive material - single sided
-// const FString DEFAULT_WORKER_TEXT_MATERIAL = TEXT(
-//	"/SpatialGDK/SpatialDebugger/Materials/WorkerTextMaterialTranslucent.WorkerTextMaterialTranslucent"); // Partially transparent and
-// partially emmissive material - single sided
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -175,7 +170,7 @@ void ASpatialDebugger::OnAuthorityGained()
 			{
 				FWorkerRegionInfo WorkerRegionInfo;
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				WorkerRegionInfo.WorkerID = LBStrategyRegion.Key;
+				WorkerRegionInfo.VirtualWorkerID = LBStrategyRegion.Key;
 				WorkerRegionInfo.WorkerName = *NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
 				WorkerRegionInfo.Color = (WorkerRegionInfo.WorkerName == "")
 											 ? InvalidServerTintColor
@@ -197,11 +192,11 @@ void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 		return;
 	}
 
-	WorkerTextMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_TEXT_MATERIAL);
-	if (WorkerTextMaterial == nullptr)
+	WorkerCombinedMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_COMBINED_MATERIAL);
+	if (WorkerCombinedMaterial == nullptr)
 	{
 		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker text was not rendered. Could not find default material: %s"),
-			   *DEFAULT_WORKER_TEXT_MATERIAL);
+			   *DEFAULT_WORKER_COMBINED_MATERIAL);
 	}
 
 	obj_ptr = StaticLoadObject(UFont::StaticClass(), nullptr, *DEFAULT_WORKER_TEXT_FONT);
@@ -221,9 +216,9 @@ void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.WorkerID,
+		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.VirtualWorkerID,
 											 *WorkerRegionData.WorkerName);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerTextMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionData.Extents,
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerCombinedMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionData.Extents,
 						   WorkerRegionVerticalScale, WorkerInfo, bInEditor);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
@@ -630,10 +625,9 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		{
 			const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
 			FWorkerRegionInfo WorkerRegionInfo;
-			WorkerRegionInfo.WorkerID = i;
-			WorkerRegionInfo.WorkerName = FString::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
 			// Generate our own unique worker name as we only need it to generate a unique colour
-			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerRegionInfo.WorkerName);
+			const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
+			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
 			WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 			WorkerRegions[i] = WorkerRegionInfo;
 		}
