@@ -41,7 +41,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	if (bInEditor)
 	{
 		// translucent boundary
-		Mesh->SetMaterial(0, MaterialBoundaryInstance); 
+		Mesh->SetMaterial(0, MaterialBoundaryInstance);
 	}
 	else
 	{
@@ -57,7 +57,7 @@ void AWorkerRegion::Init(UMaterial* BoundaryMaterial, UMaterial* InTextMaterial,
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 	SetOpacityAndEmissive(DEFAULT_WORKER_REGION_OPACITY, DEFAULT_WORKER_TEXT_EMISSIVE);
 
-	//Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
+	// Mesh->SetMaterial(0, MaterialBoundaryInstance); // Translucent neighbour boundary
 
 	SetColor(Color);
 

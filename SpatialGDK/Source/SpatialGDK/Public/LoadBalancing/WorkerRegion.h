@@ -44,8 +44,8 @@ public:
 	UPROPERTY()
 	FString WorkerInfo;
 
-	//UPROPERTY()
-	//UTexture2D* WorkerBoundaryTexture;
+	// UPROPERTY()
+	// UTexture2D* WorkerBoundaryTexture;
 
 	UFUNCTION()
 	void DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height);
