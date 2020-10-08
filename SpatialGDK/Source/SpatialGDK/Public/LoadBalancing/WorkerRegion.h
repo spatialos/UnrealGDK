@@ -20,8 +20,9 @@ class SPATIALGDK_API AWorkerRegion : public AActor
 public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
-	void Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color, const float Opacity,
-			  const FBox2D& Extents, const float Height, const float VerticalScale, const FString& InWorkerInfo, const bool bInEditor);
+	void Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
+			  const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale, const FString& InWorkerInfo,
+			  const bool bInEditor);
 
 	UPROPERTY()
 	UStaticMeshComponent* Mesh;
