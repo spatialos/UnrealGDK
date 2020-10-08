@@ -11,8 +11,6 @@
 
 namespace
 {
-const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
-const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
 const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
 const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
 const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
@@ -29,11 +27,12 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Mesh);
 }
 
-void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
-						 const FBox2D& Extents, const float VerticalScale, const FString& InWorkerInfo, const bool bInEditor)
+void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color, const float Opacity,
+						 const FBox2D& Extents, const float Height, const float VerticalScale, const FString& InWorkerInfo, const bool bInEditor)
 {
 	// Background translucent coloured worker material
 	BackgroundMaterialInstance = UMaterialInstanceDynamic::Create(BackgroundMaterial, nullptr);
+	SetHeight(Height);
 
 	if (bInEditor)
 	{
@@ -51,8 +50,7 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 		WorkerInfo = InWorkerInfo;
 	}
 
-	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
-	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
+	SetOpacity(Opacity);
 	SetColor(Color);
 	SetPositionAndScale(Mesh, Extents, true, VerticalScale);
 

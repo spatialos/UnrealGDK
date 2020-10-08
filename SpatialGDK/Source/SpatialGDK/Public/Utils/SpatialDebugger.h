@@ -108,6 +108,17 @@ public:
 			  meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
 	bool bShowWorkerRegions = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
+			  meta = (ToolTip = "Height at which the origin of each worker region cuboid is placed"))
+	float WorkerRegionHeight = 30.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
+	float WorkerRegionVerticalScale = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Opacity of the worker region cuboids"))
+	float WorkerRegionOpacity = 0.7f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
 	UTexture2D* AuthTexture;
 
@@ -129,10 +140,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
-			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
-	float WorkerRegionVerticalScale = 1.0f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;

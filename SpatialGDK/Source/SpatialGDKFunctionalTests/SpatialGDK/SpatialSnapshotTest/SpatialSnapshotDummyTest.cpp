@@ -16,9 +16,9 @@ ASpatialSnapshotDummyTest::ASpatialSnapshotDummyTest()
 	SetNumRequiredClients(1);
 }
 
-void ASpatialSnapshotDummyTest::BeginPlay()
+void ASpatialSnapshotDummyTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{
 		AddStep(TEXT("Always Pass"), FWorkerDefinition::Server(1), nullptr, [this]() {

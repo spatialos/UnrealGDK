@@ -371,4 +371,10 @@ public:
 		meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
 	// clang-format on
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
+
+	/**
+	 * Time in seconds, controls at which frequency logs related to startup are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float StartupLogRate;
 };
