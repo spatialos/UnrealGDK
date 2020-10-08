@@ -275,19 +275,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 
 bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 {
-	// There's currently a bug that lets handover data get sent to clients in the initial
-	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
-	// properties on clients, we can prevent that spam.
-	if (!NetDriver->IsServer())
-	{
-		return true;
-	}
-
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
-	check(Strategy != nullptr);
-	return Strategy->RequiresHandoverData();
+	return USpatialStatics::IsHandoverEnabled(NetDriver);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)

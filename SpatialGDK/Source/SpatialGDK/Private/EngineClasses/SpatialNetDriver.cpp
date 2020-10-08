@@ -450,8 +450,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
 		USpatialStatics::GetSpatialMultiWorkerClass(CurrentWorld);
 
-	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-		NewObject<UAbstractSpatialMultiWorkerSettings>(this, *MultiWorkerSettingsClass);
+	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings = MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
 	{

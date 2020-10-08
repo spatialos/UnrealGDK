@@ -43,8 +43,6 @@ public:
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
 
-	virtual bool RequiresHandoverData() const override { return GetMinimumRequiredWorkers() > 1; }
-
 	virtual FVector GetWorkerEntityPosition() const override;
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
