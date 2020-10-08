@@ -7,11 +7,11 @@ SpatialOSDispatcherSpy::SpatialOSDispatcherSpy() {}
 // Dispatcher Calls
 void SpatialOSDispatcherSpy::OnCriticalSection(bool InCriticalSection) {}
 
-void SpatialOSDispatcherSpy::OnAddEntity(const Worker_Op& Op) {}
+void SpatialOSDispatcherSpy::OnAddEntity(const Worker_AddEntityOp& Op) {}
 
 void SpatialOSDispatcherSpy::OnAddComponent(const Worker_AddComponentOp& Op) {}
 
-void SpatialOSDispatcherSpy::OnRemoveEntity(const Worker_Op& Op) {}
+void SpatialOSDispatcherSpy::OnRemoveEntity(const Worker_RemoveEntityOp& Op) {}
 
 void SpatialOSDispatcherSpy::OnRemoveComponent(const Worker_RemoveComponentOp& Op) {}
 
@@ -19,9 +19,9 @@ void SpatialOSDispatcherSpy::FlushRemoveComponentOps() {}
 
 void SpatialOSDispatcherSpy::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) {}
 
-void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_Op& Op) {}
+void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_AuthorityChangeOp& Op) {}
 
-void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_Op& Op) {}
+void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}
 
 // This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 // SpatialRPCService::ExtractRPCsForEntity.

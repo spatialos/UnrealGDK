@@ -112,7 +112,10 @@ void SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const 
 	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
 	const ANSICHAR* Message = MessageSrc.Get();
 
-	Trace_Event TraceEvent{ OptionalSpanId.GetValue(), /* unix_timestamp_millis: ignored */ 0, Message, SpatialTraceEvent.Type, nullptr };
+	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type);
+	const ANSICHAR* Type = TypeSrc.Get();
+
+	Trace_Event TraceEvent{ OptionalSpanId.GetValue(), /* unix_timestamp_millis: ignored */ 0, Message, Type, nullptr };
 	if (!Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent))
 	{
 		return;
@@ -145,7 +148,7 @@ void SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const 
 
 bool SpatialEventTracer::IsEnabled() const
 {
-	return bEnabled; // Trace_EventTracer_IsEnabled(EventTracer);
+	return bEnabled;
 }
 
 void SpatialEventTracer::Enable(const FString& FileName)
@@ -184,14 +187,40 @@ void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* StreamT
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
+void SpatialEventTracer::AddEntity(const Worker_Op& Op)
+{
+	TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
+	TraceEvent(FSpatialTraceEventBuilder::ReceiveCreateEntity(Op.op.add_entity.entity_id), SpanId);
+}
+
+void SpatialEventTracer::RemoveEntity(const Worker_Op& Op)
+{
+	TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
+	TraceEvent(FSpatialTraceEventBuilder::ReceiveRemoveEntity(Op.op.remove_entity.entity_id), SpanId);
+}
+
+void SpatialEventTracer::AuthChanged(const Worker_Op& Op)
+{
+	const Worker_AuthorityChangeOp& AuthorityChangeOp = Op.op.authority_change;
+	if (AuthorityChangeOp.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+	{
+		TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
+		TraceEvent(FSpatialTraceEventBuilder::AuthorityChange(AuthorityChangeOp.entity_id, AuthorityChangeOp.component_id, static_cast<Worker_Authority>(AuthorityChangeOp.authority)), SpanId);
+	}
+}
+
 void SpatialEventTracer::ComponentAdd(const Worker_Op& Op)
 {
-	SpanIdStore.ComponentAdd(Op);
+	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
+	EntityComponentId Id(AddComponentOp.entity_id, AddComponentOp.data.component_id);
+	EntityComponentSpanIds.FindOrAdd(Id, Op.span_id);
 }
 
 void SpatialEventTracer::ComponentRemove(const Worker_Op& Op)
 {
-	SpanIdStore.ComponentRemove(Op);
+	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
+	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
+	EntityComponentSpanIds.Remove(Id);
 }
 
 void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
@@ -199,66 +228,31 @@ void SpatialEventTracer::ComponentUpdate(const Worker_Op& Op)
 	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
 	EntityComponentId Id = { ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id };
 
-	TArray<SpatialSpanIdStore::FieldSpanIdUpdate> FieldSpanIdUpdates = SpanIdStore.ComponentUpdate(Op);
-	for (const SpatialSpanIdStore::FieldSpanIdUpdate& FieldSpanIdUpdate : FieldSpanIdUpdates)
-	{
-		uint32 FieldId = FieldSpanIdUpdate.FieldId;
-		Trace_SpanId MergeCauses[2] = { FieldSpanIdUpdate.NewSpanId, FieldSpanIdUpdate.OldSpanId };
+	Trace_SpanId& OldSpanId = EntityComponentSpanIds.FindChecked(Id);
 
-		TOptional<Trace_SpanId> SpanId = CreateSpan(MergeCauses, 2);
-		TraceEvent(FSpatialTraceEventBuilder::MergeComponentField(Id.EntityId, Id.ComponentId, FieldId), SpanId);
-		SpanIdStore.AddSpanId(Id, FieldId, SpanId.GetValue());
-	}
+	Trace_SpanId MergeCauses[2] = { Op.span_id, OldSpanId };
+	TOptional<Trace_SpanId> SpanId = CreateSpan(MergeCauses, 2);
+	TraceEvent(FSpatialTraceEventBuilder::MergeComponent(Id.EntityId, Id.ComponentId), SpanId);
+
+	OldSpanId = SpanId.GetValue();
 }
 
-bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, const uint32 FieldId, Trace_SpanId& CauseSpanId, bool bRemove /*= true*/)
+bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId) const
 {
 	if (!IsEnabled())
 	{
 		return false;
 	}
 
-	if (!SpanIdStore.GetSpanId(Id, FieldId, CauseSpanId, bRemove))
+	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
+	if (SpanId == nullptr)
 	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d FieldId: %d"), Id.EntityId,
-			   Id.ComponentId, FieldId);
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId,
+			   Id.ComponentId);
 		return false;
 	}
+
+	OutSpanId = *SpanId;
 	return true;
-}
-
-bool SpatialEventTracer::GetMostRecentSpanId(const EntityComponentId& Id, worker::c::Trace_SpanId& CauseSpanId, bool bRemove /*= true*/)
-{
-	if (!IsEnabled())
-	{
-		return false;
-	}
-
-	if (!SpanIdStore.GetMostRecentSpanId(Id, CauseSpanId, bRemove))
-	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId, Id.ComponentId);
-		return false;
-	}
-	return true;
-}
-
-bool SpatialEventTracer::DropSpanId(const EntityComponentId& Id, const uint32 FieldId)
-{
-	if (!IsEnabled())
-	{
-		return false;
-	}
-
-	return SpanIdStore.DropSpanId(Id, FieldId);
-}
-
-bool SpatialEventTracer::DropSpanIds(const EntityComponentId& Id)
-{
-	if (!IsEnabled())
-	{
-		return false;
-	}
-
-	return SpanIdStore.DropSpanIds(Id);
 }
 } // namespace SpatialGDK

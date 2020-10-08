@@ -49,10 +49,10 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op);
+			Receiver->OnAddEntity(Op.op.add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op);
+			Receiver->OnRemoveEntity(Op.op.remove_entity);
 			StaticComponentView->OnRemoveEntity(Op.op.remove_entity.entity_id);
 			Receiver->DropQueuedRemoveComponentOpsForEntity(Op.op.remove_entity.entity_id);
 			break;
@@ -67,7 +67,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
-			Receiver->OnComponentUpdate(Op);
+			Receiver->OnComponentUpdate(Op.op.component_update);
 			break;
 
 		// Commands
@@ -80,7 +80,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op);
+			Receiver->OnAuthorityChange(Op.op.authority_change);
 			break;
 
 		// World Command Responses

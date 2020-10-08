@@ -8,13 +8,13 @@
 
 namespace SpatialGDK
 {
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType)
-	: SpatialTraceEvent(InType, "")
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FString InType)
+	: SpatialTraceEvent(MoveTemp(InType), "")
 {
 }
 
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(const char* InType, FString InMessage)
-	: SpatialTraceEvent(InType, MoveTemp(InMessage))
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FString InType, FString InMessage)
+	: SpatialTraceEvent(MoveTemp(InType), MoveTemp(InMessage))
 {
 }
 
@@ -83,9 +83,9 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddRequestID(FString Key, c
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddNetRole(FString Key, const ENetRole Role)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddAuthority(FString Key, const Worker_Authority Authority)
 {
-	AddKeyValue(MoveTemp(Key), NetRoleToString(Role));
+	AddKeyValue(MoveTemp(Key), AuthorityToString(Authority));
 	return *this;
 }
 

@@ -19,15 +19,15 @@ public:
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;
-	virtual void OnAddEntity(const Worker_Op& Op) override;
+	virtual void OnAddEntity(const Worker_AddEntityOp& Op) override;
 	virtual void OnAddComponent(const Worker_AddComponentOp& Op) override;
-	virtual void OnRemoveEntity(const Worker_Op& Op) override;
+	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_Op& Op) override;
+	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
 
-	virtual void OnComponentUpdate(const Worker_Op& Op) override;
+	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.

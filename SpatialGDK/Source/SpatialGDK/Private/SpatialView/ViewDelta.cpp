@@ -362,9 +362,17 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		break;
 	case WORKER_OP_TYPE_ADD_ENTITY:
 		EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
+		if (bEventTracerEnabled)
+		{
+			EventTracer->AddEntity(Op);
+		}
 		break;
 	case WORKER_OP_TYPE_REMOVE_ENTITY:
 		EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
+		if (bEventTracerEnabled)
+		{
+			EventTracer->RemoveEntity(Op);
+		}
 		break;
 	case WORKER_OP_TYPE_METRICS:
 	case WORKER_OP_TYPE_FLAG_UPDATE:
@@ -394,6 +402,10 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 		{
 			AuthorityChanges.Emplace(Op.op.authority_change);
+		}
+		if (bEventTracerEnabled)
+		{
+			EventTracer->AuthChanged(Op);
 		}
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
