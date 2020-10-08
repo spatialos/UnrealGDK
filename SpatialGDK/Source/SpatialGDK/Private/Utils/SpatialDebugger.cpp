@@ -41,7 +41,7 @@ const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts
 // Material to combine both the background and the worker information in one material
 const FString DEFAULT_WORKER_COMBINED_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkerRegionCombinedMaterial.WorkerRegionCombinedMaterial");
-} // namespace
+} // anonymous namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
