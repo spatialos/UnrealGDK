@@ -7,7 +7,6 @@
 #include "Misc/MessageDialog.h"
 
 #include "SpatialConstants.h"
-#include "Utils/CommandLineArgs.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/SpatialStatics.h"
 
@@ -23,6 +22,61 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
 #define LOCTEXT_NAMESPACE "SpatialGDKSettings"
+
+namespace
+{
+void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
+{
+#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
+	if (FParse::Param(CommandLine, Parameter))
+	{
+		bOutValue = true;
+	}
+	else
+	{
+		TCHAR TempStr[16];
+		if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
+		{
+			bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
+		}
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
+}
+
+void CheckCmdLineOverrideOptionalBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TOptional<bool>& bOutValue)
+{
+#if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
+	if (FParse::Param(CommandLine, Parameter))
+	{
+		bOutValue = true;
+	}
+	else
+	{
+		TCHAR TempStr[16];
+		if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
+		{
+			bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
+		}
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
+		   bOutValue.IsSet() ? bOutValue ? TEXT("enabled") : TEXT("disabled") : TEXT("not set"));
+}
+
+void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
+										TOptional<FString>& StrOutValue)
+{
+#if ALLOW_SPATIAL_CMDLINE_PARSING
+	FString TempStr;
+	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
+	{
+		StrOutValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
+}
+} // namespace
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -70,6 +124,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
+	, StartupLogRate(5.0f)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -80,24 +135,23 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
-										 bEnableCrossLayerActorSpawning);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"),
-										 bEnableNetCullDistanceInterest);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"),
-										 TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"),
-										 bUseIsActorRelevantForConnection);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"),
-										 bBatchSpatialPositionUpdates);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"),
-										 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
-	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
-										 TEXT("Flush worker ops after sending an outgoing network op."),
-										 bWorkerFlushAfterOutgoingNetworkOp);
-	SpatialGDK::CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"),
-												   TEXT("Override MultiWorker Settings Class"), OverrideMultiWorkerSettingsClass);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
+							 bEnableCrossLayerActorSpawning);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"),
+							 bEnableNetCullDistanceInterest);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"),
+							 bEnableNetCullDistanceFrequency);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"),
+							 bUseIsActorRelevantForConnection);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"),
+							 bBatchSpatialPositionUpdates);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverridePreventClientCloudDeploymentAutoConnect"),
+							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
+							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
+									   OverrideMultiWorkerSettingsClass);
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
