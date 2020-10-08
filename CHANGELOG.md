@@ -36,8 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now enable/disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Enable Multi-Worker` from the drop option from the `Start Deployment` button on the toolbar to use the multi-worker strategy or de-select to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
 - Enabled packaging the command line arguments when building a mobile client by default.
 - Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
-- You can now filter logs for Local and Cloud deploy separately. Two dropdowns in editor settings now accordingly. The 'Worker Log Level' editor setting is removed and replaced by 'Local Worker Log Level' and 'Cloud Worker Log Level'. If a previous value was set via the 'Worker Log Level' setting, it will be carried forward into both new settings as default.
-
+- You can now filter logs for Local and Cloud deployments separately with editor settings. The 'WorkerLogLevel' GDK setting was removed and has been replaced by 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. If a previous value was set via the 'WorkerLogLevel' setting, it will be carried forward into both new settings as default.
 ### Bug fixes:
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
 - No longer AddOwnerInterestToServer unless the owner is replicating, otherwise this warning fires erroneously: "Interest for Actor <ActorName> is out of date because owner <OwnerName> does not have an entity id."

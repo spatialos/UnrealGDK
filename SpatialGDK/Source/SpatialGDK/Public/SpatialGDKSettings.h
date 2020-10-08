@@ -245,7 +245,7 @@ public:
 	Upgraded into the two settings below for local/cloud configurations. 
 	Ticket for removal UNR-4348 */
 	UPROPERTY(config)
-	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+	FString WorkerLogLevel;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Local Worker Log Level"))

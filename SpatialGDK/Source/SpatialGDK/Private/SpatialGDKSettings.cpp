@@ -106,9 +106,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
-	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
-	, LocalWorkerLogLevel(WorkerLogLevel)
-	, CloudWorkerLogLevel(WorkerLogLevel)
+	, WorkerLogLevel(FString(TEXT("Deprecated"))) // Deprecated - UNR-4348
+	, LocalWorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, CloudWorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableMultiWorker(true)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -155,6 +155,8 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("testing deprecated value %s"), *WorkerLogLevel);
+
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
