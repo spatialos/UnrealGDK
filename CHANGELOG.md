@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2. Set the value of `PositionUpdateThresholdMaxCentimeters` and `PositionUpdateThresholdMaxSeconds` to larger values than the lower thresholds. 
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
-- Removed the `bEnableHandover` setting, the LoadBalancingStrategy `RequiresHandoverData` method is used instead. If this returns false, handover will never occur.
+- Removed the method `RequiresHandoverData` from `UAbstractLBStrategy`, handover is now determined by the `USpatialMultiWorkerSettings` class by the `bHandoverEnabled` setting. If this is false, handover will never be evaluated.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.

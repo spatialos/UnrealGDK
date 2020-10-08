@@ -113,17 +113,6 @@ bool FCheckMinimumWorkers::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckHandoverEnabled, TSharedPtr<TestData>, TestData, FAutomationTestBase*, Test, bool,
-												 Expected);
-bool FCheckHandoverEnabled::Update()
-{
-	bool Actual = USpatialStatics::IsHandoverEnabled(TestData->TestWorld);
-	Test->TestEqual(
-		FString::Printf(TEXT("Strategy did not have handover enabled. Actual %d, Expected: %d"), Actual ? 1 : 0, Expected ? 1 : 0), Actual,
-		Expected);
-	return true;
-}
-
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckStratIsReady, TSharedPtr<TestData>, TestData, FAutomationTestBase*, Test, bool,
 												 Expected);
 bool FCheckStratIsReady::Update()
@@ -226,7 +215,6 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckStratIsReady(Data, this, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckStratIsReady(Data, this, true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckHandoverEnabled(Data, this, true));
 
 	return true;
 }
@@ -245,7 +233,6 @@ LAYEREDLBSTRATEGY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckMinimumWorkers(Data, this, 10));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckHandoverEnabled(Data, this, true));
 
 	return true;
 }
@@ -285,7 +272,6 @@ LAYEREDLBSTRATEGY_TEST(
 	// The two single strategies plus the default strategy require 3 virtual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, 3));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckHandoverEnabled(Data, this, true));
 
 	return true;
 }
@@ -305,7 +291,6 @@ LAYEREDLBSTRATEGY_TEST(
 	// The two single strategies plus the default strategy require 3 virtual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, 3));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckHandoverEnabled(Data, this, false));
 
 	return true;
 }
