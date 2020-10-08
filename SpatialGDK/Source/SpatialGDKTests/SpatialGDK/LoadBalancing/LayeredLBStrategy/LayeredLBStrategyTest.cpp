@@ -69,8 +69,8 @@ bool FWaitForWorld::Update()
 	return false;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCreateStrategy, TSharedPtr<TestData>, TestData, TSharedPtr<TestConfiguration>,
-												 TestConfig, TOptional<uint32>, NumVirtualWorkers);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCreateStrategy, TSharedPtr<TestData>, TestData, TSharedPtr<TestConfiguration>, TestConfig,
+												 TOptional<uint32>, NumVirtualWorkers);
 bool FCreateStrategy::Update()
 {
 	TestData->Strat = NewObject<ULayeredLBStrategy>(TestData->TestWorld);
@@ -113,14 +113,16 @@ bool FCheckMinimumWorkers::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckHandoverEnabled, TSharedPtr<TestData>, TestData, FAutomationTestBase*, Test, bool, Expected);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckHandoverEnabled, TSharedPtr<TestData>, TestData, FAutomationTestBase*, Test, bool,
+												 Expected);
 bool FCheckHandoverEnabled::Update()
 {
 	bool Actual = USpatialStatics::IsHandoverEnabled(TestData->TestWorld);
-	Test->TestEqual(FString::Printf(TEXT("Strategy did not have handover enabled. Actual %d, Expected: %d"), Actual ? 1 : 0, Expected ? 1 : 0), Actual, Expected);
+	Test->TestEqual(
+		FString::Printf(TEXT("Strategy did not have handover enabled. Actual %d, Expected: %d"), Actual ? 1 : 0, Expected ? 1 : 0), Actual,
+		Expected);
 	return true;
 }
-
 
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckStratIsReady, TSharedPtr<TestData>, TestData, FAutomationTestBase*, Test, bool,
 												 Expected);
@@ -256,11 +258,9 @@ LAYEREDLBSTRATEGY_TEST(
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
 
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+
 	this->AddExpectedError("LayeredLBStrategy was not given enough VirtualWorkerIds to meet the demands of the layer strategies.",
 						   EAutomationExpectedErrorFlags::MatchType::Contains, 1);
 
@@ -279,10 +279,8 @@ LAYEREDLBSTRATEGY_TEST(
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
 
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
 
 	// The two single strategies plus the default strategy require 3 virtual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
@@ -300,11 +298,9 @@ LAYEREDLBSTRATEGY_TEST(
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
 
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-/*	Config->bHandoverEnabled = false;*/
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+	/*	Config->bHandoverEnabled = false;*/
 
 	// The two single strategies plus the default strategy require 3 virtual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
@@ -334,9 +330,8 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
-	
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerOne"), { ADefaultPawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ADefaultPawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, {}));
@@ -387,10 +382,8 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
 
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, {}));
@@ -415,10 +408,8 @@ LAYEREDLBSTRATEGY_TEST(
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
 
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
-	Config->WorkerLayers.Add(
-		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
+	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, UTwoByFourLBGridStrategy::StaticClass() });
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, {}));

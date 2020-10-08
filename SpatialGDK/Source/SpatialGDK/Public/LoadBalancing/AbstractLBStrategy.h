@@ -42,24 +42,24 @@ public:
 	// Deprecated: will be removed ASAP.
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const
+		virtual bool ShouldHaveAuthority(const AActor& Actor) const
 	{
 		return false;
 	}
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const
-	PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
+		PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
 
-	/**
-		* Get the query constraints required by this worker based on the load balancing strategy used.
-		*/
-	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const
-	PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
+		/**
+		 * Get the query constraints required by this worker based on the load balancing strategy used.
+		 */
+		virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const
+		PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
 
-	/**
-		* Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
-		* Optional- otherwise returns the origin.
-		*/
-	virtual FVector GetWorkerEntityPosition() const
+		/**
+		 * Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
+		 * Optional- otherwise returns the origin.
+		 */
+		virtual FVector GetWorkerEntityPosition() const
 	{
 		return FVector::ZeroVector;
 	}
@@ -69,12 +69,12 @@ public:
 	 * strategy. LastVirtualWorkerId - FirstVirtualWorkerId + 1  is guaranteed to be >= GetMinimumRequiredWorkers.
 	 */
 	virtual uint32 GetMinimumRequiredWorkers() const
-	PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers,
-				return 0;) virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId,
-															const VirtualWorkerId& LastVirtualWorkerId)
-	PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;)
+		PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers,
+					 return 0;) virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId,
+																 const VirtualWorkerId& LastVirtualWorkerId)
+			PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;)
 
-	protected :
+				protected :
 
 		VirtualWorkerId LocalVirtualWorkerId;
 };
