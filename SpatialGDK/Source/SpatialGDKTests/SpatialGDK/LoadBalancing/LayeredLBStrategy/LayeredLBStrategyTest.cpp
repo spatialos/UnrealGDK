@@ -275,25 +275,6 @@ LAYEREDLBSTRATEGY_TEST(
 	return true;
 }
 
-LAYEREDLBSTRATEGY_TEST(
-	Given_layered_strat_of_2_single_cell_grid_strats_and_no_handover_default_strat_WHEN_set_virtual_worker_ids_called_with_3_ids_THEN_no_error_is_logged_and_handover_is_disabled)
-{
-	AutomationOpenMap("/Engine/Maps/Entry");
-
-	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
-	TSharedPtr<TestConfiguration> Config = TSharedPtr<TestConfiguration>(new TestConfiguration);
-
-	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	Config->WorkerLayers.Add(FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	/*	Config->bHandoverEnabled = false;*/
-
-	// The two single strategies plus the default strategy require 3 virtual workers.
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, Config, 3));
-
-	return true;
-}
-
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handover_called_THEN_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
