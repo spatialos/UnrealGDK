@@ -6,7 +6,6 @@
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "TestLayeredLBStrategy.h"
 #include "Utils/LayerInfo.h"
-#include "Utils/SpatialStatics.h"
 
 #include "Engine/Engine.h"
 #include "GameFramework/DefaultPawn.h"
