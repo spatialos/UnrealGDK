@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now enable/disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Enable Multi-Worker` from the drop option from the `Start Deployment` button on the toolbar to use the multi-worker strategy or de-select to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
 - Enabled packaging the command line arguments when building a mobile client by default.
 - You can now see worker information displayed on the worker's boundaries. The worker name and virtual worker id displayed corresponds to the worker that you are currently within and will be visible when you are near a border.
-- Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
+- You can now see worker information displayed on the worker's boundaries. The worker name and virtual worker id displayed corresponds to the worker that you are currently looking at and will be visible when you are near a border.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
