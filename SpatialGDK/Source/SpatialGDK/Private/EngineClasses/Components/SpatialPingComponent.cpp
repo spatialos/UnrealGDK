@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPingComponent);
