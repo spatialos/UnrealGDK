@@ -19,11 +19,12 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 {
 }
 
-void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
+void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 InNumVirtualWorkers)
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"),
-		   NumVirtualWorkers);
+		   InNumVirtualWorkers);
 
+	NumVirtualWorkers = InNumVirtualWorkers;
 	// Currently, this should only be called once on startup. In the future we may allow for more
 	// flexibility.
 	for (uint32 i = 1; i <= NumVirtualWorkers; i++)
@@ -131,7 +132,7 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Sending query for WorkerEntities"));
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose, TEXT("Sending query for WorkerEntities"));
 
 	if (bWorkerEntityQueryInFlight)
 	{
@@ -179,7 +180,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Processing ServerWorker Entity query response"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose, TEXT("Processing ServerWorker Entity query response"));
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 
@@ -191,7 +192,9 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	else
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-			   TEXT("Waiting for all virtual workers to be assigned before publishing translation update."));
+			   TEXT("Waiting for all virtual workers to be assigned before publishing translation update. "
+					"We currently have %i workers connected out of the %i required"),
+			   VirtualToPhysicalWorkerMapping.Num(), NumVirtualWorkers);
 		QueryForServerWorkerEntities();
 	}
 }
