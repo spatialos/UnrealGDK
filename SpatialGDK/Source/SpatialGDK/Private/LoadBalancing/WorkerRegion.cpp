@@ -36,18 +36,19 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 
 	if (bInEditor)
 	{
-		// In editor, display the basic boundary material
+		// In editor, setup the basic boundary material
 		Mesh->SetMaterial(0, BackgroundMaterialInstance);
 	}
 	else
 	{
 		// At runtime, setup the dynamic boundary material
-		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
-		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
-
 		CombinedMaterial = InCombinedMaterial;
 		WorkerInfoFont = InWorkerInfoFont;
 		WorkerInfo = InWorkerInfo;
+		CombinedMaterialInstance = UMaterialInstanceDynamic::Create(CombinedMaterial, nullptr);
+		Mesh->SetMaterial(0, CombinedMaterialInstance);
+		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
+		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
 	}
 
 	SetOpacity(Opacity);
@@ -71,9 +72,6 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 	Canvas->SetDrawColor(FColor::White);
 	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500, 1.0, 1.0);
 
-	// Create a dynamic boundary material and attach it to this mesh
-	CombinedMaterialInstance = UMaterialInstanceDynamic::Create(CombinedMaterial, nullptr);
-	Mesh->SetMaterial(0, CombinedMaterialInstance);
 	// Write the canvas data to the dynamic boundary material
 	CombinedMaterialInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
 }
@@ -87,6 +85,10 @@ void AWorkerRegion::SetHeight(const float Height)
 void AWorkerRegion::SetOpacity(const float Opacity)
 {
 	BackgroundMaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	if (CombinedMaterialInstance != nullptr)
+	{
+		CombinedMaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	}
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale)
