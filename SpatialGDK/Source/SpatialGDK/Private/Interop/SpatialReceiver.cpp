@@ -3035,7 +3035,8 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 	{
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
-			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id, static_cast<Worker_Authority>(PendingAuthorityChange.authority));
+			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id,
+									  static_cast<Worker_Authority>(PendingAuthorityChange.authority));
 		}
 		else
 		{

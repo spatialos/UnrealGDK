@@ -187,30 +187,6 @@ void SpatialEventTracer::StreamDeleter::operator()(worker::c::Io_Stream* StreamT
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
-void SpatialEventTracer::AddEntity(const Worker_Op& Op)
-{
-	TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
-	TraceEvent(FSpatialTraceEventBuilder::ReceiveCreateEntity(Op.op.add_entity.entity_id), SpanId);
-}
-
-void SpatialEventTracer::RemoveEntity(const Worker_Op& Op)
-{
-	TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
-	TraceEvent(FSpatialTraceEventBuilder::ReceiveRemoveEntity(Op.op.remove_entity.entity_id), SpanId);
-}
-
-void SpatialEventTracer::AuthChanged(const Worker_Op& Op)
-{
-	const Worker_AuthorityChangeOp& AuthorityChangeOp = Op.op.authority_change;
-	if (AuthorityChangeOp.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-	{
-		TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
-		TraceEvent(FSpatialTraceEventBuilder::AuthorityChange(AuthorityChangeOp.entity_id, AuthorityChangeOp.component_id,
-															  static_cast<Worker_Authority>(AuthorityChangeOp.authority)),
-				   SpanId);
-	}
-}
-
 void SpatialEventTracer::ComponentAdd(const Worker_Op& Op)
 {
 	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;

@@ -37,9 +37,6 @@ public:
 
 	bool IsEnabled() const;
 
-	void AddEntity(const Worker_Op& Op);
-	void RemoveEntity(const Worker_Op& Op);
-	void AuthChanged(const Worker_Op& Op);
 	void ComponentAdd(const Worker_Op& Op);
 	void ComponentRemove(const Worker_Op& Op);
 	void ComponentUpdate(const Worker_Op& Op);
