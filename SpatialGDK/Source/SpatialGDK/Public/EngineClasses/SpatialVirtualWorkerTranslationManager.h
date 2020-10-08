@@ -51,6 +51,7 @@ private:
 	TMap<VirtualWorkerId, TPair<PhysicalWorkerName, Worker_EntityId>> VirtualToPhysicalWorkerMapping;
 	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
+	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
 
