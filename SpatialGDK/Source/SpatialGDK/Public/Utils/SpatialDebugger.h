@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialDebuggerConfigUI.h"
 
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
@@ -48,6 +49,19 @@ struct FWorkerRegionInfo
 	FBox2D Extents;
 };
 
+UENUM()
+namespace EActorTagDrawMode
+{
+enum Type
+{
+	None,
+	LocalPlayer,
+	All
+};
+} // namespace EActorTagDrawMode
+
+DECLARE_DYNAMIC_DELEGATE(FOnConfigUIClosedDelegate);
+
 /**
  * Visualise spatial information at runtime and in the editor
  */
@@ -67,6 +81,18 @@ public:
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
 
+	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
+	bool IsEnabled();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
+	FKey ConfigUIToggleKey = EKeys::F9;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
+	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
+
+	FOnConfigUIClosedDelegate OnConfigUIClosed;
+
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
 	int PlayerPanelStartX = 64;
@@ -77,6 +103,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
 	float MaxRange = 100.0f * 100.0f; // 100m
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which Actor tags to show"))
+	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Show server authority for every entity in range"))
@@ -141,6 +170,17 @@ public:
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
+	UFUNCTION()
+	void OnToggleConfigUI();
+
+private:
+	UFUNCTION()
+	void DefaultOnConfigUIClosed();
+
+public:
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void SetShowWorkerRegions(const bool bNewShow);
+
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
@@ -204,4 +244,6 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
+
+	USpatialDebuggerConfigUI* ConfigUIWidget;
 };
