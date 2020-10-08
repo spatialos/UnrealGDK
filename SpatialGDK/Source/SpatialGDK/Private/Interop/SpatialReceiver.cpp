@@ -167,11 +167,11 @@ void USpatialReceiver::LeaveCriticalSection()
 		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
-	for (Worker_AuthorityChangeOp& Op : PendingAuthorityChanges)
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			HandleActorAuthority(Op);
+			HandleActorAuthority(PendingAuthorityChange);
 		}
 	}
 
@@ -3031,15 +3031,15 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 	EntityComponentOpListBuilder ExtractedOps;
 	TArray<Worker_AuthorityChangeOp> RemainingOps;
 
-	for (const Worker_AuthorityChangeOp& Op : PendingAuthorityChanges)
+	for (const Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		if (Op.entity_id == Entity)
+		if (PendingAuthorityChange.entity_id == Entity)
 		{
-			ExtractedOps.SetAuthority(Entity, Op.component_id, static_cast<Worker_Authority>(Op.authority));
+			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id, static_cast<Worker_Authority>(PendingAuthorityChange.authority));
 		}
 		else
 		{
-			RemainingOps.Add(Op);
+			RemainingOps.Add(PendingAuthorityChange);
 		}
 	}
 	PendingAuthorityChanges = MoveTemp(RemainingOps);
