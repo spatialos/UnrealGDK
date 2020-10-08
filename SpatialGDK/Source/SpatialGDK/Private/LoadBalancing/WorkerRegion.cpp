@@ -71,7 +71,7 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 
 	// Draw the worker information to the canvas
 	Canvas->SetDrawColor(FColor::White);
-	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 0, 0, 1.0, 1.0);
+	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500, 1.0, 1.0);
 
 	// Create a dynamic boundary material and attach it to this mesh
 	CombinedMaterialInstance = UMaterialInstanceDynamic::Create(CombinedMaterial, nullptr);

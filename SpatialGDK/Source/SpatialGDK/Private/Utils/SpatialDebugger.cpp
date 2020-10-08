@@ -38,7 +38,7 @@ const FString DEFAULT_WORKER_REGION_MATERIAL =
 const FString DEFAULT_WORKER_TEXT_FONT =
 	TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular - custom install
 const FString DEFAULT_WORKER_COMBINED_MATERIAL = TEXT(
-	"/SpatialGDK/SpatialDebugger/Materials/DynamicWorkerTextMaterial.DynamicWorkerTextMaterial"); // Fully emmissive material - single sided
+	"/SpatialGDK/SpatialDebugger/Materials/WorkerRegionCombinedMaterial.WorkerRegionCombinedMaterial"); // Fully emmissive material - single sided
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -192,19 +192,19 @@ void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 		return;
 	}
 
-	WorkerCombinedMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_COMBINED_MATERIAL);
+	UMaterial* WorkerCombinedMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_COMBINED_MATERIAL);
 	if (WorkerCombinedMaterial == nullptr)
 	{
-		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker text was not rendered. Could not find default material: %s"),
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
 			   *DEFAULT_WORKER_COMBINED_MATERIAL);
 	}
 
-	obj_ptr = StaticLoadObject(UFont::StaticClass(), nullptr, *DEFAULT_WORKER_TEXT_FONT);
-	if (obj_ptr == nullptr)
+	UFont* WorkerInfoFont = LoadObject<UFont>(nullptr, *DEFAULT_WORKER_TEXT_FONT);
+	if (WorkerInfoFont == nullptr)
 	{
-		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"), *DEFAULT_WORKER_TEXT_FONT);
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"),
+			   *DEFAULT_WORKER_TEXT_FONT);
 	}
-	WorkerInfoFont = Cast<UFont>(obj_ptr);
 
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;

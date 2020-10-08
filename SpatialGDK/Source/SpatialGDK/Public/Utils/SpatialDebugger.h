@@ -137,15 +137,6 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;
 
-	UPROPERTY()
-	UObject* obj_ptr;
-
-	UPROPERTY()
-	UFont* WorkerInfoFont;
-
-	UPROPERTY()
-	UMaterial* WorkerCombinedMaterial;
-
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
