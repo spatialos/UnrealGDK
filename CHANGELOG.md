@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now enable/disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Enable Multi-Worker` from the drop option from the `Start Deployment` button on the toolbar to use the multi-worker strategy or de-select to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
 - Enabled packaging the command line arguments when building a mobile client by default.
 - Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
+- You can now configure what the Spatial Debugger visualises in an in-game menu. Use F9 (by default) to open and close it. The key can be changed through a setting on the Spatial Debugger object.
+- Added a setting for the spatial debugger to visualise all replicated actors in the local player's hierarchy, instead of just the player's controller, player state and pawn.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -48,6 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with deployments failing due to the incorrect number of workers when the launch config was specified, rather than automatically generated.
 - Fixed the `too many dynamic subobjects` error on Clients appearing when a Startup Actor, with one dynamic subobject was leaving and re-entering interest multiple times. Added the `RemovedDynamicSubobjectObjectRefs` map in `USpatialPackageMapClient` that keeps the dynamic subobjects removed from Startup Actor's client's interest to avoid duplication of the dynamic subojects when the Startup Actor re-enters the Client's interest.
 - Fixed an issue that prevented the Interest component from being initialized properly when provided with `Worker_ComponentData`.
+- Cleaned up startup logs of a few noisy messages.
+- Fixed a crash that sometimes occurred upon trying to resolve a pointer to an object that has been unloaded.
+- Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
 - By default, only an actor's replicated owners will be used when determining which worker should have authority over an actor. Non-replicated actors are now ignored.
   
 ## [`0.11.0`] - 2020-09-03

@@ -606,7 +606,7 @@ bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
 }
 
