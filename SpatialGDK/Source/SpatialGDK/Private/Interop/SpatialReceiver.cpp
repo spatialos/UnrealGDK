@@ -549,7 +549,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	// be correctly configured to process RPCs sent during Actor creation
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+			|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 			|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 		{
 			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
@@ -610,7 +611,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (NetDriver->VirtualWorkerTranslator != nullptr &&  Op.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
+	if (NetDriver->VirtualWorkerTranslator != nullptr && Op.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		NetDriver->InitializeVirtualWorkerTranslationManager();
@@ -806,7 +807,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		}
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+		|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 		|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
 		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
@@ -833,7 +835,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			UE_LOG(LogSpatialReceiver, Error,
 				   TEXT("USpatialReceiver::HandleActorAuthority: Gained authority over ring buffer endpoint but ring buffers not enabled! "
 						"Entity: %lld, Component: %d"),
-				Op.entity_id, Op.component_id);
+				   Op.entity_id, Op.component_id);
 		}
 	}
 
@@ -849,7 +851,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		}
 	}
 
-	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE && Op.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
+		&& Op.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 	{
 		NetDriver->DebugCtx->OnDebugComponentAuthLost(Op.entity_id);
 	}
@@ -1651,7 +1654,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"),
-			Op.entity_id, Op.update.component_id);
+			   Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 #if WITH_EDITOR
@@ -1699,7 +1702,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is a reserved spatial system component"),
-			Op.entity_id, Op.update.component_id);
+			   Op.entity_id, Op.update.component_id);
 		return;
 	}
 
@@ -1707,8 +1710,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id,
-			Op.update.component_id);
+			   TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."),
+			   Op.entity_id, Op.update.component_id);
 		return;
 	}
 
@@ -1775,14 +1778,15 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find target object for update"), Op.entity_id,
-			Op.update.component_id);
+			   Op.update.component_id);
 		return;
 	}
 
 	Trace_SpanId CauseSpanId;
 	EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id), CauseSpanId);
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id), SpanId);
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
+							SpanId);
 
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
 
@@ -1797,7 +1801,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		if (!NetDriver->IsServer())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."),
-				Op.entity_id, Op.update.component_id);
+				   Op.entity_id, Op.update.component_id);
 			return;
 		}
 
@@ -1808,7 +1812,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a "
 					"result of gaining authority)"),
-			Op.entity_id, Op.update.component_id);
+			   Op.entity_id, Op.update.component_id);
 	}
 }
 
@@ -3031,8 +3035,7 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 	{
 		if (Op.entity_id == Entity)
 		{
-			ExtractedOps.SetAuthority(Entity, Op.component_id,
-									  static_cast<Worker_Authority>(Op.authority));
+			ExtractedOps.SetAuthority(Entity, Op.component_id, static_cast<Worker_Authority>(Op.authority));
 		}
 		else
 		{

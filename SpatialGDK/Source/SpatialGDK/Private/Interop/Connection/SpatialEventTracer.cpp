@@ -205,7 +205,9 @@ void SpatialEventTracer::AuthChanged(const Worker_Op& Op)
 	if (AuthorityChangeOp.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 	{
 		TOptional<Trace_SpanId> SpanId = CreateSpan(&Op.span_id, 1);
-		TraceEvent(FSpatialTraceEventBuilder::AuthorityChange(AuthorityChangeOp.entity_id, AuthorityChangeOp.component_id, static_cast<Worker_Authority>(AuthorityChangeOp.authority)), SpanId);
+		TraceEvent(FSpatialTraceEventBuilder::AuthorityChange(AuthorityChangeOp.entity_id, AuthorityChangeOp.component_id,
+															  static_cast<Worker_Authority>(AuthorityChangeOp.authority)),
+				   SpanId);
 	}
 }
 
@@ -247,8 +249,7 @@ bool SpatialEventTracer::GetSpanId(const EntityComponentId& Id, Trace_SpanId& Ou
 	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	if (SpanId == nullptr)
 	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId,
-			   Id.ComponentId);
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("Could not find SpanId for Entity: %d Component: %d"), Id.EntityId, Id.ComponentId);
 		return false;
 	}
 

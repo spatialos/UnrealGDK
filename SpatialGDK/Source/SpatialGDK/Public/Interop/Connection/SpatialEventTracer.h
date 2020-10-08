@@ -66,8 +66,8 @@ private:
 	uint64 MaxFileSize = 0;
 };
 
-
-// SpatialScopedActiveSpanId must be creating prior to calling worker send functions so that worker can use the input SpanId to continue traces
+// SpatialScopedActiveSpanId must be creating prior to calling worker send functions so that worker can use the input SpanId to continue
+// traces
 struct SpatialScopedActiveSpanId
 {
 	SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
