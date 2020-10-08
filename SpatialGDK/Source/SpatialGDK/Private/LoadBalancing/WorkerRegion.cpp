@@ -3,7 +3,6 @@
 #include "LoadBalancing/WorkerRegion.h"
 
 #include "Engine/Canvas.h"
-#include "Engine/EngineTypes.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Engine/Classes/Engine/CanvasRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
@@ -53,7 +52,7 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 
 	SetOpacity(Opacity);
 	SetColor(Color);
-	SetPositionAndScale(Mesh, Extents, true, VerticalScale);
+	SetPositionAndScale(Extents, VerticalScale);
 
 	if (!bInEditor)
 	{
@@ -75,7 +74,7 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 	// Create a dynamic boundary material and attach it to this mesh
 	CombinedMaterialInstance = UMaterialInstanceDynamic::Create(CombinedMaterial, nullptr);
 	Mesh->SetMaterial(0, CombinedMaterialInstance);
-	// Set the material parameter TP2D for the dynamic texture to use the canvas as input
+	// Write the canvas data to the dynamic boundary material
 	CombinedMaterialInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
 }
 
@@ -90,7 +89,7 @@ void AWorkerRegion::SetOpacity(const float Opacity)
 	BackgroundMaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 }
 
-void AWorkerRegion::SetPositionAndScale(UStaticMeshComponent* Wall, const FBox2D& Extents, bool bXAxis, const float VerticalScale)
+void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale)
 {
 	const FVector CurrentLocation = GetActorLocation();
 
