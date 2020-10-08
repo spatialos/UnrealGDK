@@ -37,8 +37,9 @@ const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
 const FString DEFAULT_WORKER_TEXT_FONT =
 	TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont"); // Improbable primary font - Muli regular - custom install
-const FString DEFAULT_WORKER_COMBINED_MATERIAL = TEXT(
-	"/SpatialGDK/SpatialDebugger/Materials/WorkerRegionCombinedMaterial.WorkerRegionCombinedMaterial"); // Fully emmissive material - single sided
+const FString DEFAULT_WORKER_COMBINED_MATERIAL =
+	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkerRegionCombinedMaterial.WorkerRegionCombinedMaterial"); // Fully emmissive material -
+																											 // single sided
 } // namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -202,8 +203,7 @@ void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 	UFont* WorkerInfoFont = LoadObject<UFont>(nullptr, *DEFAULT_WORKER_TEXT_FONT);
 	if (WorkerInfoFont == nullptr)
 	{
-		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"),
-			   *DEFAULT_WORKER_TEXT_FONT);
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker font was not rendered. Could not find default font: %s"), *DEFAULT_WORKER_TEXT_FONT);
 	}
 
 	// Create new actors for all new worker regions
