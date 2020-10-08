@@ -155,7 +155,6 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
-
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
