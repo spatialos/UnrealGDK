@@ -35,7 +35,7 @@ namespace
 {
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
-}
+} // anonymous namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -51,6 +51,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	NetUpdateFrequency = 1.f;
 
 	NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+
+	OnConfigUIClosed.BindDynamic(this, &ASpatialDebugger::DefaultOnConfigUIClosed);
 
 	// For GDK design reasons, this is the approach chosen to get a pointer
 	// on the net driver to the client ASpatialDebugger.  Various alternatives
@@ -196,7 +198,8 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents, WorkerRegionVerticalScale);
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionOpacity, WorkerRegionData.Extents, WorkerRegionHeight,
+						   WorkerRegionVerticalScale);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -282,7 +285,87 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		if (Actor->IsA<APlayerController>())
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
+
+			if (GetNetMode() == NM_Client)
+			{
+				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+			}
 		}
+	}
+}
+
+void ASpatialDebugger::OnToggleConfigUI()
+{
+	if (ConfigUIWidget == nullptr)
+	{
+		if (ConfigUIClass != nullptr)
+		{
+			ConfigUIWidget = CreateWidget<USpatialDebuggerConfigUI>(LocalPlayerController.Get(), ConfigUIClass);
+			if (ConfigUIWidget == nullptr)
+			{
+				UE_LOG(LogSpatialDebugger, Error,
+					   TEXT("SpatialDebugger config UI will not load. Couldn't create config UI widget for class: %s"),
+					   *GetNameSafe(ConfigUIClass));
+				return;
+			}
+			else
+			{
+				ConfigUIWidget->SetSpatialDebugger(this);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialDebugger, Error,
+				   TEXT("SpatialDebugger config UI will not load. ConfigUIClass is not set on the spatial debugger."));
+			return;
+		}
+
+		ConfigUIWidget->AddToViewport();
+
+		FInputModeGameAndUI InputModeSettings;
+		InputModeSettings.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputModeSettings.SetWidgetToFocus(ConfigUIWidget->TakeWidget());
+
+		LocalPlayerController->SetInputMode(InputModeSettings);
+		LocalPlayerController->bShowMouseCursor = true;
+
+		ConfigUIWidget->OnShow();
+	}
+	else
+	{
+		ConfigUIWidget->RemoveFromParent();
+		ConfigUIWidget = nullptr;
+		OnConfigUIClosed.ExecuteIfBound();
+	}
+}
+
+void ASpatialDebugger::DefaultOnConfigUIClosed()
+{
+	if (LocalPlayerController.IsValid())
+	{
+		FInputModeGameOnly InputModeSettings;
+		LocalPlayerController->SetInputMode(InputModeSettings);
+		LocalPlayerController->bShowMouseCursor = false;
+	}
+}
+
+void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
+{
+	if (bNewShow != bShowWorkerRegions)
+	{
+		if (IsEnabled())
+		{
+			if (bNewShow)
+			{
+				CreateWorkerRegions();
+			}
+			else
+			{
+				DestroyWorkerRegions();
+			}
+		}
+
+		bShowWorkerRegions = bNewShow;
 	}
 }
 
@@ -453,49 +536,67 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 #endif
 
-	DrawDebugLocalPlayer(Canvas);
+	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
+	{
+		DrawDebugLocalPlayer(Canvas);
+	}
 
 	FVector PlayerLocation = FVector::ZeroVector;
 
-	if (LocalPawn.IsValid())
+	if (ActorTagDrawMode == EActorTagDrawMode::All)
 	{
-		PlayerLocation = LocalPawn->GetActorLocation();
-	}
-
-	for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
-	{
-		const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
-		const Worker_EntityId EntityId = EntityActorPair.Key;
-
-		if (Actor != nullptr)
+		if (LocalPawn.IsValid())
 		{
-			FVector ActorLocation = Actor->GetActorLocation();
-
-			if (ActorLocation.IsZero())
-			{
-				continue;
-			}
-
-			if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
-			{
-				continue;
-			}
-
-			FVector2D ScreenLocation = FVector2D::ZeroVector;
-			if (LocalPlayerController.IsValid())
-			{
-				SCOPE_CYCLE_COUNTER(STAT_Projection);
-				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset,
-													   ScreenLocation, false);
-			}
-
-			if (ScreenLocation.IsZero())
-			{
-				continue;
-			}
-
-			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
+			PlayerLocation = LocalPawn->GetActorLocation();
 		}
+
+		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+		{
+			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
+			const Worker_EntityId EntityId = EntityActorPair.Key;
+
+			if (Actor != nullptr)
+			{
+				FVector ActorLocation = Actor->GetActorLocation();
+
+				if (ActorLocation.IsZero())
+				{
+					continue;
+				}
+
+				if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
+				{
+					continue;
+				}
+
+				FVector2D ScreenLocation = FVector2D::ZeroVector;
+				if (LocalPlayerController.IsValid())
+				{
+					SCOPE_CYCLE_COUNTER(STAT_Projection);
+					UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset,
+														   ScreenLocation, false);
+				}
+
+				if (ScreenLocation.IsZero())
+				{
+					continue;
+				}
+
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
+			}
+		}
+	}
+}
+
+void GetReplicatedActorsInHierarchy(const AActor* Actor, TArray<const AActor*>& HierarchyActors)
+{
+	if (Actor->GetIsReplicated() && !HierarchyActors.Contains(Actor))
+	{
+		HierarchyActors.Add(Actor);
+	}
+	for (const AActor* Child : Actor->Children)
+	{
+		GetReplicatedActorsInHierarchy(Child, HierarchyActors);
 	}
 }
 
@@ -506,18 +607,20 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 		return;
 	}
 
-	const TArray<TWeakObjectPtr<AActor>> LocalPlayerActors = { LocalPawn, LocalPlayerController, LocalPlayerState };
+	TArray<const AActor*> ActorsToDisplay = { LocalPlayerState.Get(), LocalPlayerController.Get(), LocalPawn.Get() };
+
+	if (bShowPlayerHierarchy)
+	{
+		GetReplicatedActorsInHierarchy(LocalPlayerController.Get(), ActorsToDisplay);
+	}
 
 	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
 
-	for (int32 i = 0; i < LocalPlayerActors.Num(); ++i)
+	for (int32 i = 0; i < ActorsToDisplay.Num(); ++i)
 	{
-		if (LocalPlayerActors[i].IsValid())
-		{
-			const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(LocalPlayerActors[i].Get());
-			DrawTag(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
-			ScreenLocation.Y -= PLAYER_TAG_VERTICAL_OFFSET;
-		}
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
+		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName());
+		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}
 }
 
@@ -540,6 +643,11 @@ void ASpatialDebugger::SpatialToggleDebugger()
 			CreateWorkerRegions();
 		}
 	}
+}
+
+bool ASpatialDebugger::IsEnabled()
+{
+	return DrawDebugDelegateHandle.IsValid();
 }
 
 #if WITH_EDITOR

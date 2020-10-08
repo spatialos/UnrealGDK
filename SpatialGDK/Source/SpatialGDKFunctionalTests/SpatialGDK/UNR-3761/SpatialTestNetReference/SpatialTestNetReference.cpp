@@ -56,9 +56,9 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 	*/
 }
 
-void ASpatialTestNetReference::BeginPlay()
+void ASpatialTestNetReference::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
 

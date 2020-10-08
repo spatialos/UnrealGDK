@@ -41,7 +41,7 @@ AVisibilityTest::AVisibilityTest()
 	Author = "Evi";
 	Description = TEXT("Test Actor Visibility");
 
-	CharacterSpawnLocation = FVector(0.0f, 120.0f, 50.0f);
+	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
 }
 
@@ -56,9 +56,9 @@ int AVisibilityTest::GetNumberOfVisibilityTestActors()
 	return Counter;
 }
 
-void AVisibilityTest::BeginPlay()
+void AVisibilityTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("VisibilityTestServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -141,7 +141,7 @@ void AVisibilityTest::BeginPlay()
 
 				if (IsValid(PlayerCharacter))
 				{
-					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
+					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 1.0f))
 					{
 						FinishStep();
 					}
@@ -186,7 +186,7 @@ void AVisibilityTest::BeginPlay()
 		AddStep(TEXT("VisibilityTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation))
 			{
-				if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+				if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 1.0f))
 				{
 					FinishStep();
 				}
@@ -204,7 +204,7 @@ void AVisibilityTest::BeginPlay()
 
 				if (IsValid(PlayerCharacter))
 				{
-					if (PlayerCharacter->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+					if (PlayerCharacter->GetActorLocation().Equals(CharacterSpawnLocation, 1.0f))
 					{
 						FinishStep();
 					}

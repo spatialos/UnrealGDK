@@ -42,7 +42,10 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
@@ -91,12 +94,15 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bMapLoaded(false)
 	, SessionId(0)
 	, NextRPCIndex(0)
+	, StartupTimestamp(0)
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
 	// in the RepLayout, the below change forces its creation on clients, but this is a workaround
 	// TODO: UNR-2375
 	bMaySendProperties = true;
+
+	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 }
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
@@ -467,8 +473,20 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	LoadBalanceEnforcer =
-		MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AclUpdate)> AclUpdateSender =
+		[this](SpatialGDK::EntityComponentUpdate AclUpdate) {
+			// We pass the component update function of the view coordinator rather than the connection. This
+			// is so any updates are written to the local view before being sent. This does mean the connection send
+			// is not fully async right now, but could be if we replaced this with a "send and flush", which would
+			// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
+			// we can make that optimisation.
+			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
+		};
+	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
+																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
@@ -515,6 +533,7 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 
 void USpatialNetDriver::OnGSMQuerySuccess()
 {
+	StartupClientDebugString.Empty();
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
@@ -583,7 +602,7 @@ void USpatialNetDriver::RetryQueryGSM()
 	RetryTimerDelay = 0.1f;
 #endif
 
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
+	UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(
 		RetryTimer,
@@ -616,16 +635,15 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 	}
 	else if (!bNewAcceptingPlayers)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Log,
-			   TEXT("GlobalStateManager not accepting players. Usually caused by servers not registering themselves with the deployment "
-					"yet. Did you launch the correct number of servers?"));
+		StartupClientDebugString = FString(
+			TEXT("GlobalStateManager not accepting players. This is likely caused by waiting for all the required servers to connect"));
 		RetryQueryGSM();
 		return;
 	}
 	else if (QuerySessionId != SessionId)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId,
-			   SessionId);
+		StartupClientDebugString =
+			FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId, SessionId);
 		RetryQueryGSM();
 		return;
 	}
@@ -1750,15 +1768,25 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 		Connection->Advance();
+
 		if (Connection->HasDisconnected())
 		{
 			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
 			return;
 		}
 
+		if (LoadBalanceEnforcer.IsValid())
+		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
+			LoadBalanceEnforcer->Advance();
+			// Immediately flush. The messages to spatial created by the load balance enforcer in response
+			// to other workers should be looped back as quick as possible.
+			Connection->Flush();
+		}
+
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-			Dispatcher->ProcessOps(SpatialGDK::GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
+			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
@@ -1770,15 +1798,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
-		}
-
-		if (LoadBalanceEnforcer.IsValid())
-		{
-			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for (const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
-			{
-				Sender->SetAclWriteAuthority(AclAssignmentRequest);
-			}
 		}
 	}
 }
@@ -2544,20 +2563,35 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 
 void USpatialNetDriver::TryFinishStartup()
 {
+	// Limit Log frequency.
+	bool bShouldLogStartup = [this]() {
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+		const uint64 WatchdogTimer = Settings->StartupLogRate / FPlatformTime::GetSecondsPerCycle64();
+		const uint64 CurrentTime = FPlatformTime::Cycles64();
+		if (CurrentTime - StartupTimestamp > WatchdogTimer)
+		{
+			StartupTimestamp = CurrentTime;
+			return true;
+		}
+		return false;
+	}();
+
 	if (IsServer())
 	{
 		if (!PackageMap->IsEntityPoolReady())
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
 		}
 		else if (!GlobalStateManager->IsReady())
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
+					TEXT("Waiting for the GSM to be ready (this includes waiting for the expected number of servers to be connected)"));
 		}
 		else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 		{
 			GlobalStateManager->QueryTranslation();
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for the Load balancing system to be ready."));
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
 		}
 		else
 		{
@@ -2584,10 +2618,18 @@ void USpatialNetDriver::TryFinishStartup()
 			Connection->SetStartupComplete();
 		}
 	}
-	else if (bMapLoaded)
+	else
 	{
-		bIsReadyToStart = true;
-		Connection->SetStartupComplete();
+		if (bMapLoaded)
+		{
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
+		}
+		else
+		{
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the deployment to be ready : %s"),
+					StartupClientDebugString.IsEmpty() ? TEXT("Waiting for connection.") : *StartupClientDebugString)
+		}
 	}
 }
 
@@ -2626,6 +2668,7 @@ void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 	}
 
 	SpatialDebugger = InSpatialDebugger;
+	SpatialDebuggerReady->Ready();
 }
 
 FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()

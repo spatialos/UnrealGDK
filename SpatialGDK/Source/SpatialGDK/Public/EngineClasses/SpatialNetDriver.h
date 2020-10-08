@@ -12,6 +12,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/SpatialBasicAwaiter.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -154,6 +155,9 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
+	// Fires on a client once is has received the spatial debugger through replication. Does not fire on servers.
+	UPROPERTY()
+	USpatialBasicAwaiter* SpatialDebuggerReady;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 	UPROPERTY()
@@ -164,7 +168,7 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
-	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
+	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
@@ -303,4 +307,6 @@ private:
 	void ProcessOwnershipChanges();
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
+	uint64 StartupTimestamp;
+	FString StartupClientDebugString;
 };
