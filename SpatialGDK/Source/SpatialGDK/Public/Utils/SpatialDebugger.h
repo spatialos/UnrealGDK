@@ -98,7 +98,7 @@ public:
 	int PlayerPanelStartX = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "Y location of player data panel"))
-	int PlayerPanelStartY = 128;
+	int PlayerPanelStartY = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
@@ -106,6 +106,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which Actor tags to show"))
 	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (Tooltip = "Show all replicated Actors in the player controller's hierarchy, or just state/controller/pawn"))
+	bool bShowPlayerHierarchy = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Show server authority for every entity in range"))
