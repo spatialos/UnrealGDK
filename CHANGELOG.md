@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that prevented the Interest component from being initialized properly when provided with `Worker_ComponentData`.
 - Cleaned up startup logs of a few noisy messages.
 - Fixed a crash that sometimes occurred upon trying to resolve a pointer to an object that has been unloaded.
+- Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
 
 ## [`0.11.0`] - 2020-09-03
 
