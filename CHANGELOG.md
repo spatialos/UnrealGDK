@@ -51,7 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the `too many dynamic subobjects` error on Clients appearing when a Startup Actor, with one dynamic subobject was leaving and re-entering interest multiple times. Added the `RemovedDynamicSubobjectObjectRefs` map in `USpatialPackageMapClient` that keeps the dynamic subobjects removed from Startup Actor's client's interest to avoid duplication of the dynamic subojects when the Startup Actor re-enters the Client's interest.
 - Fixed an issue that prevented the Interest component from being initialized properly when provided with `Worker_ComponentData`.
 - Cleaned up startup logs of a few noisy messages.
-
+- Fixed a crash that sometimes occurred upon trying to resolve a pointer to an object that has been unloaded.
+- Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
+- By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
+  
 ## [`0.11.0`] - 2020-09-03
 
 ### Breaking changes:
