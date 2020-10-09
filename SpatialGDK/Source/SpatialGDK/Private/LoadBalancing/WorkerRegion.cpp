@@ -2,8 +2,10 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 
+#include "Engine/Canvas.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Runtime/Engine/Classes/Engine/CanvasRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "UObject/UObjectGlobals.h"
 
@@ -12,6 +14,7 @@ namespace
 const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
 const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
 const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
+const FName WORKER_TEXT_MATERIAL_TP2D_PARAM = TEXT("TP2D");
 const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
 } // namespace
 
@@ -24,16 +27,54 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	SetRootComponent(Mesh);
 }
 
-void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const float Opacity, const FBox2D& Extents, const float Height,
-						 const float VerticalScale)
+void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
+						 const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale,
+						 const FString& InWorkerInfo, const bool bInEditor)
 {
+	// Background translucent coloured worker material
+	BackgroundMaterialInstance = UMaterialInstanceDynamic::Create(BackgroundMaterial, nullptr);
 	SetHeight(Height);
 
-	MaterialInstance = UMaterialInstanceDynamic::Create(Material, nullptr);
-	Mesh->SetMaterial(0, MaterialInstance);
+	if (bInEditor)
+	{
+		// In editor, setup the basic boundary material
+		Mesh->SetMaterial(0, BackgroundMaterialInstance);
+	}
+	else
+	{
+		// At runtime, setup the dynamic boundary material
+		CombinedMaterial = InCombinedMaterial;
+		WorkerInfoFont = InWorkerInfoFont;
+		WorkerInfo = InWorkerInfo;
+		CombinedMaterialInstance = UMaterialInstanceDynamic::Create(CombinedMaterial, nullptr);
+		Mesh->SetMaterial(0, CombinedMaterialInstance);
+		CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
+		CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
+	}
+
 	SetOpacity(Opacity);
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale);
+
+	if (!bInEditor)
+	{
+		// At runtime, calls DrawToCanvasRenderTarget to render the dynamic boundary material
+		CanvasRenderTarget->UpdateResource();
+	}
+}
+
+// Render the dynamic boundary material with a translucent coloured background and worker information
+void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height)
+{
+	// Draw the worker background to the canvas
+	Canvas->K2_DrawMaterial(BackgroundMaterialInstance, FVector2D(0, 0), FVector2D(Width, Height), FVector2D(0, 0));
+
+	// Draw the worker information to the canvas
+	Canvas->SetDrawColor(FColor::White);
+	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500, 1.0, 1.0);
+
+	// Write the canvas data to the dynamic boundary material
+	CombinedMaterialInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);
 }
 
 void AWorkerRegion::SetHeight(const float Height)
@@ -44,7 +85,11 @@ void AWorkerRegion::SetHeight(const float Height)
 
 void AWorkerRegion::SetOpacity(const float Opacity)
 {
-	MaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	BackgroundMaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	if (CombinedMaterialInstance != nullptr)
+	{
+		CombinedMaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
+	}
 }
 
 void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale)
@@ -67,5 +112,5 @@ void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float Verti
 
 void AWorkerRegion::SetColor(const FColor& Color)
 {
-	MaterialInstance->SetVectorParameterValue(WORKER_REGION_MATERIAL_COLOR_PARAM, Color);
+	BackgroundMaterialInstance->SetVectorParameterValue(WORKER_REGION_MATERIAL_COLOR_PARAM, Color);
 }

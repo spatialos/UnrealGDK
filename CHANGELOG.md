@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
 - You can now configure what the Spatial Debugger visualises in an in-game menu. Use F9 (by default) to open and close it. The key can be changed through a setting on the Spatial Debugger object.
 - Added a setting for the spatial debugger to visualise all replicated actors in the local player's hierarchy, instead of just the player's controller, player state and pawn.
+- You can now see worker information displayed on the worker's boundaries. The worker name and virtual worker id displayed corresponds to the worker that you are currently looking at and will be visible when you are near a border.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.

@@ -33,8 +33,14 @@ DEFINE_LOG_CATEGORY(LogSpatialDebugger);
 
 namespace
 {
+// Background material for worker region
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+// Improbable primary font - Muli regular
+const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont");
+// Material to combine both the background and the worker information in one material
+const FString DEFAULT_WORKER_COMBINED_MATERIAL =
+	TEXT("/SpatialGDK/SpatialDebugger/Materials/WorkerRegionCombinedMaterial.WorkerRegionCombinedMaterial");
 } // anonymous namespace
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
@@ -166,10 +172,12 @@ void ASpatialDebugger::OnAuthorityGained()
 			WorkerRegions.SetNum(LBStrategyRegions.Num());
 			for (int i = 0; i < LBStrategyRegions.Num(); i++)
 			{
+				FWorkerRegionInfo WorkerRegionInfo;
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				WorkerRegionInfo.VirtualWorkerID = LBStrategyRegion.Key;
 				const PhysicalWorkerName* WorkerName =
 					NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
-				FWorkerRegionInfo WorkerRegionInfo;
+				WorkerRegionInfo.WorkerName = (WorkerName == nullptr) ? "" : *WorkerName;
 				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
 				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 				WorkerRegions[i] = WorkerRegionInfo;
@@ -178,7 +186,7 @@ void ASpatialDebugger::OnAuthorityGained()
 	}
 }
 
-void ASpatialDebugger::CreateWorkerRegions()
+void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 {
 	UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
 	if (WorkerRegionMaterial == nullptr)
@@ -186,6 +194,20 @@ void ASpatialDebugger::CreateWorkerRegions()
 		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
 			   *DEFAULT_WORKER_REGION_MATERIAL);
 		return;
+	}
+
+	UMaterial* WorkerCombinedMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_COMBINED_MATERIAL);
+	if (WorkerCombinedMaterial == nullptr)
+	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
+			   *DEFAULT_WORKER_COMBINED_MATERIAL);
+	}
+
+	UFont* WorkerInfoFont = LoadObject<UFont>(nullptr, *DEFAULT_WORKER_TEXT_FONT);
+	if (WorkerInfoFont == nullptr)
+	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker information was not rendered. Could not find default font: %s"),
+			   *DEFAULT_WORKER_TEXT_FONT);
 	}
 
 	// Create new actors for all new worker regions
@@ -198,8 +220,10 @@ void ASpatialDebugger::CreateWorkerRegions()
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
 		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionOpacity, WorkerRegionData.Extents, WorkerRegionHeight,
-						   WorkerRegionVerticalScale);
+		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.VirtualWorkerID,
+											 *WorkerRegionData.WorkerName);
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerCombinedMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionOpacity,
+						   WorkerRegionData.Extents, WorkerRegionHeight, WorkerRegionVerticalScale, WorkerInfo, bInEditor);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -219,7 +243,7 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 	if (NetDriver != nullptr && !NetDriver->IsServer() && DrawDebugDelegateHandle.IsValid() && bShowWorkerRegions)
 	{
 		DestroyWorkerRegions();
-		CreateWorkerRegions();
+		CreateWorkerRegions(false);
 	}
 }
 
@@ -357,7 +381,7 @@ void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 		{
 			if (bNewShow)
 			{
-				CreateWorkerRegions();
+				CreateWorkerRegions(false);
 			}
 			else
 			{
@@ -640,7 +664,7 @@ void ASpatialDebugger::SpatialToggleDebugger()
 			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
 		if (bShowWorkerRegions)
 		{
-			CreateWorkerRegions();
+			CreateWorkerRegions(false);
 		}
 	}
 }
@@ -673,7 +697,7 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 	if (bShowWorkerRegions && EditorAllowWorkerBoundaries())
 	{
 		EditorInitialiseWorkerRegions();
-		CreateWorkerRegions();
+		CreateWorkerRegions(true);
 	}
 
 	EditorRefreshDisplay();
@@ -714,7 +738,6 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 			const PhysicalWorkerName WorkerName = PhysicalWorkerName::Printf(TEXT("WorkerRegion%d%d%d"), i, i, i);
 			WorkerRegionInfo.Color = GetColorForWorkerName(WorkerName);
 			WorkerRegionInfo.Extents = LBStrategyRegion.Value;
-
 			WorkerRegions[i] = WorkerRegionInfo;
 		}
 	}

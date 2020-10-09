@@ -9,6 +9,9 @@
 
 #include "WorkerRegion.generated.h"
 
+class UCanvas;
+class UCanvasRenderTarget2D;
+
 UCLASS(Transient, NotPlaceable, NotBlueprintable)
 class SPATIALGDK_API AWorkerRegion : public AActor
 {
@@ -17,14 +20,33 @@ class SPATIALGDK_API AWorkerRegion : public AActor
 public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
-	void Init(UMaterial* Material, const FColor& Color, const float Opacity, const FBox2D& Extents, const float Height,
-			  const float VerticalScale);
+	void Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
+			  const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale, const FString& InWorkerInfo,
+			  const bool bInEditor);
 
 	UPROPERTY()
 	UStaticMeshComponent* Mesh;
 
 	UPROPERTY()
-	UMaterialInstanceDynamic* MaterialInstance;
+	UMaterialInstanceDynamic* BackgroundMaterialInstance;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* CombinedMaterialInstance;
+
+	UPROPERTY()
+	UMaterial* CombinedMaterial;
+
+	UPROPERTY()
+	UCanvasRenderTarget2D* CanvasRenderTarget;
+
+	UPROPERTY()
+	UFont* WorkerInfoFont;
+
+	UPROPERTY()
+	FString WorkerInfo;
+
+	UFUNCTION()
+	void DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height);
 
 private:
 	void SetOpacity(const float Opacity);

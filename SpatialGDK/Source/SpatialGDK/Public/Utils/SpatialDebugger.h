@@ -47,6 +47,12 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FBox2D Extents;
+
+	UPROPERTY()
+	FString WorkerName;
+
+	UPROPERTY()
+	uint32 VirtualWorkerID;
 };
 
 UENUM()
@@ -208,7 +214,7 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	void CreateWorkerRegions();
+	void CreateWorkerRegions(const bool bInEditor);
 	void DestroyWorkerRegions();
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
