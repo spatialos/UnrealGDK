@@ -120,11 +120,11 @@ void USpatialReceiver::LeaveCriticalSection()
 	// We process Lose Auth -> Add Components -> Gain Auth. A common thing that happens is that on handover we get
 	// ComponentData -> Gain Auth, and with this split you receive data as if you were a client to get the most up-to-date state,
 	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
-	for (Worker_AuthorityChangeOp& Op : PendingAuthorityChanges)
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		if (Op.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			HandleActorAuthority(Op);
+			HandleActorAuthority(PendingAuthorityChange);
 		}
 	}
 
@@ -228,10 +228,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
-	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
+	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
@@ -1782,8 +1782,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	Trace_SpanId CauseSpanId;
-	EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id), CauseSpanId);
+	Trace_SpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
 							SpanId);
@@ -2214,8 +2213,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
 
 					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
-					Trace_SpanId CauseSpanId;
-					EventTracer->GetSpanId(Id, CauseSpanId);
+					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(Id);
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::ProcessRPC(TargetObject, Function), SpanId);
 				}

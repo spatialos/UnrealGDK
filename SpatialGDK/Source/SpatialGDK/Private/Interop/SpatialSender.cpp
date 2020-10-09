@@ -52,7 +52,7 @@ DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
 										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
-										   const TOptional<worker::c::Trace_SpanId>& InSpanId)
+										   const TOptional<Trace_SpanId>& InSpanId)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
@@ -1037,7 +1037,7 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response,
-										 const worker::c::Trace_SpanId CauseSpanId)
+										 const Trace_SpanId CauseSpanId)
 {
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, true), SpanId);
@@ -1046,7 +1046,7 @@ void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_Comm
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
-											  const worker::c::Trace_SpanId CauseSpanId)
+											  const Trace_SpanId CauseSpanId)
 {
 	Worker_CommandResponse Response = {};
 	Response.component_id = ComponentId;
@@ -1059,7 +1059,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const worker::c::Trace_SpanId CauseSpanId)
+void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanId)
 {
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendCommandResponse(RequestId, false), SpanId);

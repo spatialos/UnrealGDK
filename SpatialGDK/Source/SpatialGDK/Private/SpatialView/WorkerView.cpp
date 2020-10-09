@@ -90,14 +90,14 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
-void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
 	Element.Components.Emplace(Data.DeepCopy());
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data), SpanId);
 }
 
-void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<worker::c::Trace_SpanId>& SpanId)
+void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
 	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
@@ -110,7 +110,7 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 }
 
 void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-									 const TOptional<worker::c::Trace_SpanId>& SpanId)
+									 const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
 	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ ComponentId });

@@ -6,7 +6,7 @@ namespace SpatialGDK
 {
 struct FSpatialTraceEvent
 {
-	FSpatialTraceEvent(FString InType, FString InMessage)
+	explicit FSpatialTraceEvent(FString InType, FString InMessage)
 		: Type(MoveTemp(InType))
 		, Message(MoveTemp(InMessage))
 	{

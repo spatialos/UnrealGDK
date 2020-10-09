@@ -49,7 +49,7 @@ public:
 	{
 		Worker_EntityId EntityId;
 		FWorkerComponentUpdate Update;
-		TOptional<worker::c::Trace_SpanId> SpanId;
+		TOptional<Trace_SpanId> SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
@@ -78,7 +78,7 @@ private:
 		}
 
 		RPCPayload Payload;
-		TOptional<worker::c::Trace_SpanId> SpanId;
+		TOptional<Trace_SpanId> SpanId;
 	};
 
 	// For now, we should drop overflowed RPCs when entity crosses the boundary.
@@ -94,7 +94,7 @@ private:
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 
-	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const worker::c::Trace_SpanId* SpanId);
+	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 private:
@@ -121,7 +121,7 @@ private:
 		}
 
 		Schema_ComponentUpdate* Update;
-		TArray<worker::c::Trace_SpanId> SpanIds;
+		TArray<Trace_SpanId> SpanIds;
 	};
 
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
