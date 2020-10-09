@@ -145,7 +145,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
-	const bool bTrackHandoverProperties = USpatialStatics::IsHandoverEnabled(NetDriver);
+	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
 	for (TFieldIterator<GDK_PROPERTY(Property)> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		GDK_PROPERTY(Property)* Property = *PropertyIt;
@@ -192,7 +192,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
-		if (!USpatialStatics::IsHandoverEnabled(NetDriver) && Type == SCHEMA_Handover)
+		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 		{
 			return;
 		}
@@ -228,7 +228,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-			if (!USpatialStatics::IsHandoverEnabled(NetDriver) && Type == SCHEMA_Handover)
+			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 			{
 				return;
 			}
@@ -271,6 +271,16 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 
 		Info->DynamicSubobjectInfo.Add(SpecificDynamicSubobjectInfo);
 	}
+}
+
+bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
+{
+	if (!NetDriver->IsServer())
+	{
+		return false;
+	}
+
+	return USpatialStatics::IsHandoverEnabled(NetDriver);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
