@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 
+#include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 #include "UObject/UObjectGlobals.h"
