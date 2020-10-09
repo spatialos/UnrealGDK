@@ -72,15 +72,15 @@ public:
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;
-	virtual void OnAddEntity(const Worker_Op& Op) override;
+	virtual void OnAddEntity(const Worker_AddEntityOp& Op) override;
 	virtual void OnAddComponent(const Worker_AddComponentOp& Op) override;
-	virtual void OnRemoveEntity(const Worker_Op& Op) override;
+	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_Op& Op) override;
+	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
 
-	virtual void OnComponentUpdate(const Worker_Op& Op) override;
+	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.
@@ -136,7 +136,7 @@ private:
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
 	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
-	void HandleActorAuthority(const Worker_Op& Op);
+	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
 	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op,
@@ -203,7 +203,7 @@ private:
 
 		bool bInCriticalSection;
 		TArray<Worker_EntityId> PendingAddActors;
-		TArray<Worker_Op> PendingAuthorityChanges;
+		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
 
@@ -252,7 +252,7 @@ private:
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddActors;
-	TArray<Worker_Op> PendingAuthorityChanges;
+	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 

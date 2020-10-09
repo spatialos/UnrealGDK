@@ -372,6 +372,12 @@ public:
 	// clang-format on
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 
+	/**
+	 * Time in seconds, controls at which frequency logs related to startup are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float StartupLogRate;
+
 	/*
 	 * -- EXPERIMENTAL --
 	 * This will enable event tracing for the Unreal client/worker.

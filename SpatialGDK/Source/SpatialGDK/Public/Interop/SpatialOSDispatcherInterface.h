@@ -22,16 +22,18 @@ class SpatialOSDispatcherInterface
 public:
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCriticalSection, return;);
-	virtual void OnAddEntity(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAddEntity, return;);
+	virtual void OnAddEntity(const Worker_AddEntityOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAddEntity, return;);
 	virtual void OnAddComponent(const Worker_AddComponentOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAddComponent, return;);
-	virtual void OnRemoveEntity(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnRemoveEntity, return;);
+	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnRemoveEntity, return;);
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnRemoveComponent, return;);
 	virtual void FlushRemoveComponentOps() PURE_VIRTUAL(SpatialOSDispatcherInterface::FlushRemoveComponentOps, return;);
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::DropQueuedRemoveComponentOpsForEntity, return;);
-	virtual void OnAuthorityChange(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAuthorityChange, return;);
-	virtual void OnComponentUpdate(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
+	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAuthorityChange, return;);
+	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
+		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnEntityQueryResponse, return;);
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)

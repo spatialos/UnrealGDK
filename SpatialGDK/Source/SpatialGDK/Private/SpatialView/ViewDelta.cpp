@@ -3,6 +3,7 @@
 #include "SpatialView/ViewDelta.h"
 
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialView/EntityComponentTypes.h"
 
 #include "Algo/StableSort.h"
@@ -362,9 +363,19 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		break;
 	case WORKER_OP_TYPE_ADD_ENTITY:
 		EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
+		if (bEventTracerEnabled)
+		{
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCreateEntity(Op.op.add_entity.entity_id), SpanId);
+		}
 		break;
 	case WORKER_OP_TYPE_REMOVE_ENTITY:
 		EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
+		if (bEventTracerEnabled)
+		{
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveRemoveEntity(Op.op.remove_entity.entity_id), SpanId);
+		}
 		break;
 	case WORKER_OP_TYPE_METRICS:
 	case WORKER_OP_TYPE_FLAG_UPDATE:
@@ -394,6 +405,14 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 		{
 			AuthorityChanges.Emplace(Op.op.authority_change);
+		}
+		if (bEventTracerEnabled)
+		{
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::AuthorityChange(Op.op.authority_change.entity_id, Op.op.authority_change.component_id,
+														   static_cast<Worker_Authority>(Op.op.authority_change.authority)),
+				SpanId);
 		}
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:

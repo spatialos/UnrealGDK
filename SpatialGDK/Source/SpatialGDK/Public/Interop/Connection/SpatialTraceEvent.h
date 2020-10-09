@@ -6,15 +6,15 @@ namespace SpatialGDK
 {
 struct FSpatialTraceEvent
 {
-	FSpatialTraceEvent(const char* InType, const FString& InMessage)
-		: Type(InType)
-		, Message(InMessage)
+	FSpatialTraceEvent(FString InType, FString InMessage)
+		: Type(MoveTemp(InType))
+		, Message(MoveTemp(InMessage))
 	{
 	}
 
 	void AddData(FString Key, FString Value) { Data.Add(MakeTuple(MoveTemp(Key), MoveTemp(Value))); }
 
-	const char* Type;
+	FString Type;
 	FString Message;
 	TArray<TTuple<FString, FString>> Data;
 };

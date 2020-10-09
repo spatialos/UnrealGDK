@@ -4,6 +4,7 @@
 #include "improbable/c_trace.h"
 
 #include "Async/Async.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
 
 namespace SpatialGDK
@@ -196,6 +197,7 @@ void SpatialOSConnectionHandler::WorkerConnectionDeleter::operator()(Worker_Conn
 
 SpatialOSConnectionHandler::~SpatialOSConnectionHandler()
 {
+	// TODO: UNR-4211 - this is a mitigation for the slow connection destruction code in pie.
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
 			  [Connection = MoveTemp(Connection), EventTracer = MoveTemp(EventTracer)]() mutable {
 				  Connection.Reset(nullptr);

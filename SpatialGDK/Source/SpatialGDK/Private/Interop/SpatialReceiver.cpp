@@ -120,11 +120,11 @@ void USpatialReceiver::LeaveCriticalSection()
 	// We process Lose Auth -> Add Components -> Gain Auth. A common thing that happens is that on handover we get
 	// ComponentData -> Gain Auth, and with this split you receive data as if you were a client to get the most up-to-date state,
 	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
-	for (Worker_Op& PendingAuthorityChange : PendingAuthorityChanges)
+	for (Worker_AuthorityChangeOp& Op : PendingAuthorityChanges)
 	{
-		if (PendingAuthorityChange.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+		if (Op.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			HandleActorAuthority(PendingAuthorityChange);
+			HandleActorAuthority(Op);
 		}
 	}
 
@@ -167,9 +167,9 @@ void USpatialReceiver::LeaveCriticalSection()
 		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
-	for (Worker_Op& PendingAuthorityChange : PendingAuthorityChanges)
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		if (PendingAuthorityChange.op.authority_change.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			HandleActorAuthority(PendingAuthorityChange);
 		}
@@ -182,15 +182,9 @@ void USpatialReceiver::LeaveCriticalSection()
 	PendingAuthorityChanges.Empty();
 }
 
-void USpatialReceiver::OnAddEntity(const Worker_Op& Op)
+void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
-	const Worker_EntityId EntityId = Op.op.add_entity.entity_id;
-
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), EntityId);
-
-	TWeakObjectPtr<UObject> SpawnedObject = PackageMap->GetObjectFromEntityId(EntityId);
-	const AActor* Actor = SpawnedObject.IsValid() ? Cast<AActor>(SpawnedObject) : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCreateEntity(Actor, EntityId), Op.span_id);
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
 }
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
@@ -206,8 +200,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
@@ -238,14 +230,14 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
-		// We either don't care about processing these components or we only need to store
-		// the data (which is handled by the SpatialStaticComponentView).
-
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
-		return;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		// We either don't care about processing these components or we only need to store
+		// the data (which is handled by the SpatialStaticComponentView).
 		return;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		// The UnrealMetadata component is used to indicate when an Actor needs to be created from the entity.
@@ -253,16 +245,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
 		PendingAddActors.AddUnique(Op.entity_id);
-
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
-		return;
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
@@ -272,8 +254,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			WorkerConnectionEntities.Add(Op.entity_id, WorkerData->WorkerId);
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
 		}
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
@@ -284,18 +264,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		RemoveActor(Op.entity_id);
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::DORMANT_COMPONENT_ID:
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
@@ -307,8 +281,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
 		}
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
@@ -316,8 +288,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
@@ -332,20 +302,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 				NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
 			}
 		}
-		// Unhandled by EventTracer.
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
 	if (Op.data.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
 	{
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
 	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(Op.data.component_id))
 	{
-		EventTracer->DropSpanIds({ Op.entity_id, Op.data.component_id });
 		return;
 	}
 
@@ -360,34 +326,30 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 }
 
-void USpatialReceiver::OnRemoveEntity(const Worker_Op& Op)
+void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
 
-	const Worker_RemoveEntityOp& RemoveEntityOp = Op.op.remove_entity;
-	const Worker_EntityId EntityId = RemoveEntityOp.entity_id;
-
 	// Stop tracking if the entity was deleted as a result of deleting the actor during creation.
 	// This assumes that authority will be gained before interest is gained and lost.
-	const int32 RetiredActorIndex = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([EntityId](const DeferredRetire& Retire) {
-		return EntityId == Retire.EntityId;
+	const int32 RetiredActorIndex = EntitiesToRetireOnAuthorityGain.IndexOfByPredicate([Op](const DeferredRetire& Retire) {
+		return Op.entity_id == Retire.EntityId;
 	});
 	if (RetiredActorIndex != INDEX_NONE)
 	{
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
 
-	TWeakObjectPtr<UObject> RemovedObject = PackageMap->GetObjectFromEntityId(EntityId);
+	TWeakObjectPtr<UObject> RemovedObject = PackageMap->GetObjectFromEntityId(Op.entity_id);
 	const AActor* Actor = RemovedObject.IsValid() ? Cast<AActor>(RemovedObject) : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveRemoveEntity(Actor, EntityId), Op.span_id);
 
-	OnEntityRemovedDelegate.Broadcast(EntityId);
+	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 
 	if (NetDriver->IsServer())
 	{
 		// Check to see if we are removing a system entity for a worker connection. If so clean up the ClientConnection to delete any and
 		// all actors for this connection's controller.
-		if (FString* WorkerName = WorkerConnectionEntities.Find(EntityId))
+		if (FString* WorkerName = WorkerConnectionEntities.Find(Op.entity_id))
 		{
 			TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(*WorkerName);
 			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
@@ -403,7 +365,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_Op& Op)
 					}
 				}
 			}
-			WorkerConnectionEntities.Remove(EntityId);
+			WorkerConnectionEntities.Remove(Op.entity_id);
 		}
 	}
 }
@@ -555,47 +517,43 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 	ActorChannel->UpdateShadowData();
 }
 
-void USpatialReceiver::OnAuthorityChange(const Worker_Op& Op)
+void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
-	const Worker_AuthorityChangeOp& AuthorityChangeOp = Op.op.authority_change;
-	const Worker_EntityId EntityId = AuthorityChangeOp.entity_id;
-	const Worker_ComponentId ComponentId = AuthorityChangeOp.component_id;
-	const uint8_t Authority = AuthorityChangeOp.authority;
-
-	if (HasEntityBeenRequestedForDelete(EntityId))
+	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
-		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE && ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
-			HandleEntityDeletedAuthority(EntityId);
+			HandleEntityDeletedAuthority(Op.entity_id);
 		}
 		return;
 	}
 
 	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 	// This way systems that depend on having non-stale state can function correctly.
-	StaticComponentView->OnAuthorityChange(AuthorityChangeOp);
+	StaticComponentView->OnAuthorityChange(Op);
 
-	if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (Op.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 		return;
 	}
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
-	if (IsEntityWaitingForAsyncLoad(EntityId))
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
-		QueueAuthorityOpForAsyncLoad(AuthorityChangeOp);
+		QueueAuthorityOpForAsyncLoad(Op);
 		return;
 	}
 
 	// Process authority gained event immediately, so if we're in a critical section, the RPCService will
 	// be correctly configured to process RPCs sent during Actor creation
-	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
-			|| ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+			|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+			|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 		{
-			RPCService->OnEndpointAuthorityGained(EntityId, ComponentId);
+			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
 		}
 	}
 
@@ -645,33 +603,28 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 	}
 }
 
-void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
+void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 {
-	const Worker_AuthorityChangeOp& AuthorityChangeOp = Op.op.authority_change;
-	const Worker_EntityId EntityId = AuthorityChangeOp.entity_id;
-	const Worker_ComponentId ComponentId = AuthorityChangeOp.component_id;
-	const uint8_t Authority = AuthorityChangeOp.authority;
-
-	if (GlobalStateManager->HandlesComponent(ComponentId))
+	if (GlobalStateManager->HandlesComponent(Op.component_id))
 	{
-		GlobalStateManager->AuthorityChanged(AuthorityChangeOp);
+		GlobalStateManager->AuthorityChanged(Op);
 		return;
 	}
 
-	if (NetDriver->VirtualWorkerTranslator != nullptr && ComponentId == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
-		&& Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (NetDriver->VirtualWorkerTranslator != nullptr && Op.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		NetDriver->InitializeVirtualWorkerTranslationManager();
-		NetDriver->VirtualWorkerTranslationManager->AuthorityChanged(AuthorityChangeOp);
+		NetDriver->VirtualWorkerTranslationManager->AuthorityChanged(Op);
 	}
 
-	if (NetDriver->SpatialDebugger != nullptr && Authority == WORKER_AUTHORITY_AUTHORITATIVE
-		&& ComponentId == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	if (NetDriver->SpatialDebugger != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE
+		&& Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
-		NetDriver->SpatialDebugger->ActorAuthorityChanged(AuthorityChangeOp);
+		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
 	}
 
-	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
+	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
 	if (Actor == nullptr)
 	{
 		return;
@@ -680,45 +633,45 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 	// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
 	const bool bActorHadAuthority = Actor->HasAuthority();
 
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 
 	if (Channel != nullptr)
 	{
-		if (ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
-			Channel->SetServerAuthority(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
+			Channel->SetServerAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
-		else if (ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
-			Channel->SetClientAuthority(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
+			Channel->SetClientAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
 	}
 
-	if (ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		check(!NetDriver->IsServer());
-		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(EntityId))
+		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				ProcessQueuedActorRPCsOnEntityCreation(EntityId, *QueuedRPCs);
+				ProcessQueuedActorRPCsOnEntityCreation(Op.entity_id, *QueuedRPCs);
 			}
 
-			Sender->SendRequestToClearRPCsOnEntityCreation(EntityId);
+			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
 		}
 	}
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
-		HandlePlayerLifecycleAuthority(AuthorityChangeOp, PlayerController);
+		HandlePlayerLifecycleAuthority(Op, PlayerController);
 	}
 
 	if (NetDriver->IsServer())
 	{
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
-		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			Sender->ProcessUpdatesQueuedUntilAuthority(EntityId, ComponentId);
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id, Op.component_id);
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
@@ -728,9 +681,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 		// is player controlled when gaining authority over the pawn and need to wait for the player
 		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
 		// yet, so we need to wait for the pawn to arrive.
-		if (ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
-			if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
 				const bool bDormantActor = (Actor->NetDormancy >= DORM_DormantAll);
 
@@ -765,7 +718,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 
 					if (!bDormantActor)
 					{
-						UpdateShadowData(EntityId);
+						UpdateShadowData(Op.entity_id);
 					}
 
 					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
@@ -786,11 +739,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 					UE_LOG(LogSpatialReceiver, Verbose,
 						   TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to "
 								"delete it earlier, when it had no authority. Retrying to delete now."),
-						   *Actor->GetName(), EntityId);
-					Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+						   *Actor->GetName(), Op.entity_id);
+					Sender->RetireEntity(Op.entity_id, Actor->IsNetStartupActor());
 				}
 			}
-			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 			{
 				if (Channel != nullptr)
 				{
@@ -808,22 +761,17 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 					Actor->OnAuthorityLost();
 				}
 			}
-
-			if (Authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-			{
-				EventTracer->TraceEvent(FSpatialTraceEventBuilder::AuthorityLossImminent(Actor, Actor->Role), Op.span_id);
-			}
 		}
 
 		// Subobject Delegation
 		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair =
-			MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId);
+			MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.component_id);
 		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr =
 				PendingEntitySubobjectDelegations.Find(EntityComponentPair))
 		{
 			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
 
-			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(ComponentId);
+			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(Op.component_id);
 
 			if (PendingSubobjectAttachment.PendingAuthorityDelegations.Num() == 0)
 			{
@@ -841,44 +789,45 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
 		}
 	}
-	else if (ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 	{
 		if (Channel != nullptr)
 		{
 			// Soft handover isn't supported currently.
-			if (Authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+			if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
-				Channel->ClientProcessOwnershipChange(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
+				Channel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 			}
 		}
 
 		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 		{
-			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 	}
 
-	if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
-		|| ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+		|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+		|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
 		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
 		{
-			if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
 					// we want to scrape the server endpoint for any server -> client RPCs that are waiting to be called.
-					const Worker_ComponentId ComponentToExtractFrom = ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+					const Worker_ComponentId ComponentToExtractFrom = Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
 																		  ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 																		  : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
-					RPCService->ExtractRPCsForEntity(EntityId, ComponentToExtractFrom);
+					RPCService->ExtractRPCsForEntity(Op.entity_id, ComponentToExtractFrom);
 				}
 			}
-			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 			{
-				RPCService->OnEndpointAuthorityLost(EntityId, ComponentId);
+				RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
 			}
 		}
 		else
@@ -886,25 +835,26 @@ void USpatialReceiver::HandleActorAuthority(const Worker_Op& Op)
 			UE_LOG(LogSpatialReceiver, Error,
 				   TEXT("USpatialReceiver::HandleActorAuthority: Gained authority over ring buffer endpoint but ring buffers not enabled! "
 						"Entity: %lld, Component: %d"),
-				   EntityId, ComponentId);
+				   Op.entity_id, Op.component_id);
 		}
 	}
 
-	if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
-			Sender->SendClientEndpointReadyUpdate(EntityId);
+			Sender->SendClientEndpointReadyUpdate(Op.entity_id);
 		}
-		if (ComponentId == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
-			Sender->SendServerEndpointReadyUpdate(EntityId);
+			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
 	}
 
-	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE && ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
+		&& Op.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 	{
-		NetDriver->DebugCtx->OnDebugComponentAuthLost(EntityId);
+		NetDriver->DebugCtx->OnDebugComponentAuthLost(Op.entity_id);
 	}
 }
 
@@ -1678,21 +1628,16 @@ void USpatialReceiver::ApplyComponentData(USpatialActorChannel& Channel, UObject
 	}
 }
 
-void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
+void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
-	const Worker_EntityId EntityId = ComponentUpdateOp.entity_id;
-	const Worker_ComponentUpdate& ComponentUpdate = ComponentUpdateOp.update;
-	const Worker_ComponentId ComponentId = ComponentUpdate.component_id;
-
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverComponentUpdate);
-	if (IsEntityWaitingForAsyncLoad(EntityId))
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
-		QueueComponentUpdateOpForAsyncLoad(ComponentUpdateOp);
+		QueueComponentUpdateOpForAsyncLoad(Op);
 		return;
 	}
 
-	switch (ComponentId)
+	switch (Op.update.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::METADATA_COMPONENT_ID:
@@ -1709,26 +1654,26 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"),
-			   EntityId, ComponentId);
+			   Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 #if WITH_EDITOR
-		GlobalStateManager->OnShutdownComponentUpdate(ComponentUpdate);
+		GlobalStateManager->OnShutdownComponentUpdate(Op.update);
 #endif // WITH_EDITOR
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		OnHeartbeatComponentUpdate(ComponentUpdateOp);
+		OnHeartbeatComponentUpdate(Op);
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(ComponentUpdate);
+		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(ComponentUpdate);
+		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
-		HandleRPCLegacy(ComponentUpdateOp);
+		HandleRPCLegacy(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
@@ -1737,53 +1682,53 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		if (NetDriver->VirtualWorkerTranslator.IsValid())
 		{
-			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		HandleRPC(ComponentUpdateOp);
+		HandleRPC(Op);
 		return;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		if (NetDriver->DebugCtx != nullptr)
 		{
-			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(EntityId);
+			NetDriver->DebugCtx->OnDebugComponentUpdateReceived(Op.entity_id);
 		}
 		return;
 	}
 
-	if (ComponentId < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
+	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is a reserved spatial system component"),
-			   ComponentUpdateOp.entity_id, ComponentId);
+			   Op.entity_id, Op.update.component_id);
 		return;
 	}
 
 	// If this entity has a Tombstone component, abort all component processing
-	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(EntityId))
+	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), EntityId,
-			   ComponentId);
+			   TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."),
+			   Op.entity_id, Op.update.component_id);
 		return;
 	}
 
-	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(ComponentId))
+	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(Op.update.component_id))
 	{
 		return;
 	}
 
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (Channel == nullptr)
 	{
 		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
-		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+		if (StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
-			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
+			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
-				Channel = GetOrRecreateChannelForDomantActor(Actor, EntityId);
+				Channel = GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
 
 				// As we haven't removed the dormant component just yet, this might be a single replication update where the actor
 				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
@@ -1795,7 +1740,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 				UE_LOG(LogSpatialReceiver, Warning,
 					   TEXT("Worker: %s Dormant actor (entity: %lld) has been deleted on this worker but we have received a component "
 							"update (id: %d) from the server."),
-					   *NetDriver->Connection->GetWorkerId(), EntityId, ComponentId);
+					   *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 				return;
 			}
 		}
@@ -1804,18 +1749,18 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 			UE_LOG(LogSpatialReceiver, Log,
 				   TEXT("Worker: %s Entity: %lld Component: %d - No actor channel for update. This most likely occured due to the "
 						"component updates that are sent when authority is lost during entity deletion."),
-				   *NetDriver->Connection->GetWorkerId(), EntityId, ComponentId);
+				   *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 			return;
 		}
 	}
 
 	uint32 Offset;
-	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.update.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
 			   TEXT("Worker: %s EntityId %d ComponentId %d - Could not find offset for component id when receiving a component update."),
-			   *NetDriver->Connection->GetWorkerId(), EntityId, ComponentId);
+			   *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 		return;
 	}
 
@@ -1827,26 +1772,28 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 	}
 	else
 	{
-		TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset)).Get();
+		TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
 	}
 
 	if (TargetObject == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find target object for update"), EntityId,
-			   ComponentId);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find target object for update"), Op.entity_id,
+			   Op.update.component_id);
 		return;
 	}
 
-	Trace_SpanId SpanId;
-	EventTracer->GetMostRecentSpanId(EntityComponentId(EntityId, ComponentId), SpanId, false);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId), SpanId);
+	Trace_SpanId CauseSpanId;
+	EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id), CauseSpanId);
+	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
+							SpanId);
 
-	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(ComponentId);
+	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
 
 	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyData);
-		ApplyComponentUpdate(ComponentUpdate, *TargetObject, *Channel, /* bIsHandover */ false);
+		ApplyComponentUpdate(Op.update, *TargetObject, *Channel, /* bIsHandover */ false);
 	}
 	else if (Category == ESchemaComponentType::SCHEMA_Handover)
 	{
@@ -1854,18 +1801,18 @@ void USpatialReceiver::OnComponentUpdate(const Worker_Op& Op)
 		if (!NetDriver->IsServer())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."),
-				   ComponentId, ComponentId);
+				   Op.entity_id, Op.update.component_id);
 			return;
 		}
 
-		ApplyComponentUpdate(ComponentUpdate, *TargetObject, *Channel, /* bIsHandover */ true);
+		ApplyComponentUpdate(Op.update, *TargetObject, *Channel, /* bIsHandover */ true);
 	}
 	else
 	{
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a "
 					"result of gaining authority)"),
-			   EntityId, ComponentId);
+			   Op.entity_id, Op.update.component_id);
 	}
 }
 
@@ -1969,7 +1916,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		UE_LOG(LogSpatialReceiver, Warning,
 			   TEXT("USpatialReceiver::OnCommandRequest: Actor class async loading, cannot handle command. Entity %lld, Class %s"),
 			   EntityId, *EntitiesWaitingForAsyncLoad[EntityId].ClassPath);
-		Sender->SendCommandFailure(RequestId, TEXT("Target actor async loading."));
+		Sender->SendCommandFailure(RequestId, TEXT("Target actor async loading."), Op.span_id);
 		return;
 	}
 
@@ -1977,23 +1924,28 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		&& CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), Op.span_id);
+
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), SpanId);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
+
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), Op.span_id);
+			FSpatialTraceEventBuilder::ReceiveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), SpanId);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(EntityId);
 		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, Op.span_id);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId),
-								Op.span_id);
+
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId), SpanId);
 		return;
 	}
 #if WITH_EDITOR
@@ -2001,8 +1953,10 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
-								Op.span_id);
+
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
+								SpanId);
 		return;
 	}
 #endif // WITH_EDITOR
@@ -2064,9 +2018,10 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 #endif
 
 	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject,
+	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject,
 																			 Function, TraceId, RequestId),
-							Op.span_id);
+							SpanId);
 }
 
 void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
@@ -2080,14 +2035,15 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), Op.span_id);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId), Op.span_id);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::RecieveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), Op.span_id);
+			FSpatialTraceEventBuilder::ReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId), SpanId);
 		return;
 	}
 
@@ -2113,7 +2069,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	if (ReliableRPCPtr == nullptr)
 	{
 		// We received a response for some other command, ignore.
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TargetActor, RequestId, false), Op.span_id);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandResponse(TargetActor, RequestId, false), Op.span_id);
 		return;
 	}
 
@@ -2121,7 +2077,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	PendingReliableRPCs.Remove(RequestId);
 
 	UObject* TargetObject = ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function, RequestId,
+	EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function, RequestId,
 																			  WORKER_STATUS_CODE_SUCCESS),
 							Op.span_id);
 
@@ -2245,12 +2201,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		{
 			ErrorInfo.ErrorCode = ERPCResult::NoAuthority;
 			ErrorInfo.QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
-
-			if (EventTracer->IsEnabled())
-			{
-				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
-				EventTracer->DropSpanIds(EntityComponentId(EntityId, ComponentId));
-			}
 		}
 		else
 		{
@@ -2265,8 +2215,9 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 
 					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
 					Trace_SpanId CauseSpanId;
-					EventTracer->GetSpanId(Id, FieldId, CauseSpanId);
-					EventTracer->TraceEvent(FSpatialTraceEventBuilder::ProcessRPC(TargetObject, Function), CauseSpanId);
+					EventTracer->GetSpanId(Id, CauseSpanId);
+					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::ProcessRPC(TargetObject, Function), SpanId);
 				}
 			}
 
@@ -2299,12 +2250,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		if (EventTracer->IsEnabled())
-		{
-			Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Params.Type);
-			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
-			EventTracer->DropSpanIds(Id);
-		}
 		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::StopProcessing };
 	}
 
@@ -2313,12 +2258,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		if (EventTracer->IsEnabled())
-		{
-			Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Params.Type);
-			EntityComponentId Id(Params.ObjectRef.Entity, ComponentId);
-			EventTracer->DropSpanId(Id, Params.Payload.Index);
-		}
 		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 	}
 
@@ -2405,7 +2344,9 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(CreateEntityResponseOp);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::RecieveCreateEntitySuccess(Channel->Actor, EntityId), Op.span_id);
+
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::ReceiveCreateEntitySuccess(Channel->Actor, EntityId), SpanId);
 	}
 	else if (Channel.IsStale())
 	{
@@ -2419,11 +2360,14 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 		FString Message =
 			FString::Printf(TEXT("Stale Actor Channel - tried to delete entity before gaining authority. Actor - %s EntityId - %d"),
 							*Channel->Actor->GetName(), EntityId);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::GenericMessage(Message), Op.span_id);
+
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::GenericMessage(Message), SpanId);
 	}
 	else
 	{
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::GenericMessage(TEXT("Create entity response unknown error")), Op.span_id);
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::GenericMessage(TEXT("Create entity response unknown error")), SpanId);
 	}
 }
 
@@ -3085,11 +3029,10 @@ TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker
 EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_EntityId Entity)
 {
 	EntityComponentOpListBuilder ExtractedOps;
-	TArray<Worker_Op> RemainingOps;
+	TArray<Worker_AuthorityChangeOp> RemainingOps;
 
-	for (const Worker_Op& Op : PendingAuthorityChanges)
+	for (const Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
-		const Worker_AuthorityChangeOp& PendingAuthorityChange = Op.op.authority_change;
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
 			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id,
@@ -3097,7 +3040,7 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 		}
 		else
 		{
-			RemainingOps.Add(Op);
+			RemainingOps.Add(PendingAuthorityChange);
 		}
 	}
 	PendingAuthorityChanges = MoveTemp(RemainingOps);
@@ -3115,10 +3058,10 @@ void USpatialReceiver::HandleQueuedOpForAsyncLoad(const Worker_Op& Op)
 		ProcessRemoveComponent(Op.op.remove_component);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		HandleActorAuthority(Op);
+		HandleActorAuthority(Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		OnComponentUpdate(Op);
+		OnComponentUpdate(Op.op.component_update);
 		break;
 	default:
 		checkNoEntry();
