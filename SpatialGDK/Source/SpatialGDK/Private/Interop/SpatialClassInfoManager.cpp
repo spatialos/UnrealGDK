@@ -275,9 +275,10 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 
 bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 {
-	// There's currently a bug that lets handover data get sent to clients in the initial	
-	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover	
-	// properties on clients, we can prevent that spam. Cannot be removed yet because of Kraken, UNR-4358 will remove this in a squid-only world.
+	// There's currently a bug that lets handover data get sent to clients in the initial
+	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
+	// properties on clients, we can prevent that spam. Cannot be removed yet because of Kraken, UNR-4358 will remove this in a squid-only
+	// world.
 	if (!NetDriver->IsServer())
 	{
 		return true;
