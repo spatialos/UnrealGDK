@@ -315,6 +315,9 @@ const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
+// An empty map with the game mode override set to GameModeBase.
+const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
+
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
