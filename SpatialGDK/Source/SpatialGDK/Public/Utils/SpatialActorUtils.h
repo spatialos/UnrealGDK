@@ -19,17 +19,17 @@
 
 namespace SpatialGDK
 {
-inline AActor* GetTopmostOwner(const AActor* Actor)
+inline AActor* GetTopmostReplicatedOwner(const AActor* Actor)
 {
 	check(Actor != nullptr);
 
 	AActor* Owner = Actor->GetOwner();
-	if (Owner == nullptr || Owner->IsPendingKillPending())
+	if (Owner == nullptr || Owner->IsPendingKillPending() || !Owner->GetIsReplicated())
 	{
 		return nullptr;
 	}
 
-	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
+	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending() && Owner->GetIsReplicated())
 	{
 		Owner = Owner->GetOwner();
 	}
@@ -37,9 +37,9 @@ inline AActor* GetTopmostOwner(const AActor* Actor)
 	return Owner;
 }
 
-inline AActor* GetHierarchyRoot(const AActor* Actor)
+inline AActor* GetReplicatedHierarchyRoot(const AActor* Actor)
 {
-	AActor* TopmostOwner = GetTopmostOwner(Actor);
+	AActor* TopmostOwner = GetTopmostReplicatedOwner(Actor);
 	return TopmostOwner != nullptr ? TopmostOwner : const_cast<AActor*>(Actor);
 }
 
