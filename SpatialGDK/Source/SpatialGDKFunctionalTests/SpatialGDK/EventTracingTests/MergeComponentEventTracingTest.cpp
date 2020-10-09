@@ -1,17 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "MergeComponentFieldEventTracingTest.h"
+#include "MergeComponentEventTracingTest.h"
 
-AMergeComponentFieldEventTracingTest::AMergeComponentFieldEventTracingTest()
+AMergeComponentEventTracingTest::AMergeComponentEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the merge component field trace events have appropriate causes");
 
-	FilterEventNames = { MergeComponentFieldUpdateEventName, ReceiveOpEventName };
+	FilterEventNames = { MergeComponentUpdateEventName, ReceiveOpEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
-void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
+void AMergeComponentEventTracingTest::FinishEventTraceTest()
 {
 	int EventsTested = 0;
 	int EventsFailed = 0;
@@ -20,14 +20,14 @@ void AMergeComponentFieldEventTracingTest::FinishEventTraceTest()
 		const FString& SpanIdString = Pair.Key;
 		const FName EventName = Pair.Value;
 
-		if (EventName != MergeComponentFieldUpdateEventName)
+		if (EventName != MergeComponentUpdateEventName)
 		{
 			continue;
 		}
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }, 2))
+		if (!CheckEventTraceCause(SpanIdString, { MergeComponentUpdateEventName, ReceiveOpEventName }, 2))
 		{
 			EventsFailed++;
 		}

@@ -181,6 +181,10 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 		{
 			return false;
 		}
+		if (!CauseEventNames.Contains(*CauseEventName))
+		{
+			return false;
+		}
 	}
 
 	return true;

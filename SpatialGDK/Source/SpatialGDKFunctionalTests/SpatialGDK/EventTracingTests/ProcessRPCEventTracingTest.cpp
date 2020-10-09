@@ -7,7 +7,7 @@ AProcessRPCEventTracingTest::AProcessRPCEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
 
-	FilterEventNames = { ProcessRPCEventName, ReceiveOpEventName, MergeComponentFieldUpdateEventName };
+	FilterEventNames = { ProcessRPCEventName, ReceiveOpEventName, MergeComponentUpdateEventName };
 	WorkerDefinition = FWorkerDefinition::Server(1);
 }
 
@@ -27,7 +27,7 @@ void AProcessRPCEventTracingTest::FinishEventTraceTest()
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName, MergeComponentFieldUpdateEventName }))
+		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName, MergeComponentUpdateEventName }))
 		{
 			EventsFailed++;
 		}

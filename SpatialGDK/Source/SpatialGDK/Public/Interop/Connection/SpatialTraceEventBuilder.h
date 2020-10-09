@@ -64,9 +64,17 @@ public:
 			.GetEvent();
 	}
 
-	static FSpatialTraceEvent MergeComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+	static FSpatialTraceEvent MergeRPCSends(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 	{
-		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component")
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_rpc_sends")
+			.AddEntityId(TEXT("EntityId"), EntityId)
+			.AddComponentId(TEXT("ComponentId"), ComponentId)
+			.GetEvent();
+	}
+
+	static FSpatialTraceEvent MergeComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+	{
+		return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component_update")
 			.AddEntityId(TEXT("EntityId"), EntityId)
 			.AddComponentId(TEXT("ComponentId"), ComponentId)
 			.GetEvent();

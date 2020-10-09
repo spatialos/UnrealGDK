@@ -29,7 +29,7 @@ public:
 
 protected:
 	FName ReceiveOpEventName = "worker.receive_op";
-	FName MergeComponentFieldUpdateEventName = "unreal_gdk.merge_component_field";
+	FName MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
 
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
