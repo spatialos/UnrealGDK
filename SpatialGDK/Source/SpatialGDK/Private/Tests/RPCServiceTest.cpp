@@ -602,7 +602,7 @@ bool FDropRPCQueueTest::Update()
 RPC_SERVICE_TEST(
 	GIVEN_receiving_an_rpc_whose_target_we_do_not_have_authority_over_WHEN_we_process_the_rpc_THEN_return_DropEntireQueue_queue_command)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeShared<TestData>();
 
