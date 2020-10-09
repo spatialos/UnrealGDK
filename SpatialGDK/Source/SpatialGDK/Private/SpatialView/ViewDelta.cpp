@@ -409,8 +409,9 @@ void ViewDelta::ProcessOp(Worker_Op& Op)
 		if (bEventTracerEnabled)
 		{
 			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::AuthorityChange(Op.op.authority_change.entity_id, Op.op.authority_change.component_id,
-				static_cast<Worker_Authority>(Op.op.authority_change.authority)),
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::AuthorityChange(Op.op.authority_change.entity_id, Op.op.authority_change.component_id,
+														   static_cast<Worker_Authority>(Op.op.authority_change.authority)),
 				SpanId);
 		}
 		break;
