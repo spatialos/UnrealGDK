@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2. Set the value of `PositionUpdateThresholdMaxCentimeters` and `PositionUpdateThresholdMaxSeconds` to larger values than the lower thresholds. 
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
+- 'WorkerLogLevel' in Runtime Settings was split into two new settings - 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. Update these values which will be set to 'Warning' by default.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
 - You can now configure what the Spatial Debugger visualises in an in-game menu. Use F9 (by default) to open and close it. The key can be changed through a setting on the Spatial Debugger object.
 - Added a setting for the spatial debugger to visualise all replicated actors in the local player's hierarchy, instead of just the player's controller, player state and pawn.
+- You can now filter logs for Local and Cloud deployments separately with editor settings. The 'WorkerLogLevel' GDK setting was removed and has been replaced by 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -54,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash that sometimes occurred upon trying to resolve a pointer to an object that has been unloaded.
 - Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
 - By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
-  
+
 ## [`0.11.0`] - 2020-09-03
 
 ### Breaking changes:
