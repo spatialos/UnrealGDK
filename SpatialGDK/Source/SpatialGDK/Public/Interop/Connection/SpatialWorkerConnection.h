@@ -33,8 +33,7 @@ public:
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
 													 const TOptional<Trace_SpanId>& SpanId = {}) override;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId,
-													 const TOptional<Trace_SpanId>& SpanId = {}) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId = {}) override;
 	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
 								  const TOptional<Trace_SpanId>& SpanId = {}) override;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,

@@ -14,7 +14,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 namespace SpatialGDK
 {
-
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SpatialEventTracer
 {
@@ -57,7 +56,8 @@ private:
 	uint64 MaxFileSize = 0;
 };
 
-// SpatialScopedActiveSpanIds are creating prior to calling worker send functions so that worker can use the input SpanId to continue traces.
+// SpatialScopedActiveSpanIds are creating prior to calling worker send functions so that worker can use the input SpanId to continue
+// traces.
 struct SpatialScopedActiveSpanId
 {
 	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);

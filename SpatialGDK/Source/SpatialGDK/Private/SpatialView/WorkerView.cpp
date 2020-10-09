@@ -109,8 +109,7 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
 }
 
-void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-									 const TOptional<Trace_SpanId>& SpanId)
+void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement& Element = View.FindChecked(EntityId);
 	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ ComponentId });

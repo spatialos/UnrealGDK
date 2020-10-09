@@ -15,7 +15,8 @@ class SpatialEventTracer;
 class ComponentReader
 {
 public:
-	explicit ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, SpatialEventTracer* InEventTracer);
+	explicit ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap,
+							 SpatialEventTracer* InEventTracer);
 
 	void ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel, bool bIsHandover,
 							bool& bOutReferencesChanged);

@@ -38,8 +38,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FW
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId,
-																	   const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
 {
 	return NextRequestId++;
 }
