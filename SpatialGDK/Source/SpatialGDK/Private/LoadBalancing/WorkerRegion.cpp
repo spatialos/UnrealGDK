@@ -3,6 +3,7 @@
 #include "LoadBalancing/WorkerRegion.h"
 
 #include "Engine/Canvas.h"
+#include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Engine/Classes/Engine/CanvasRenderTarget2D.h"
 #include "UObject/ConstructorHelpers.h"
