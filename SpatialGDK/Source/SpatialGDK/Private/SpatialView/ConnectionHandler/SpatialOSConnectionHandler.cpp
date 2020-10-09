@@ -1,11 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
-#include "improbable/c_trace.h"
 
 #include "Async/Async.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
+
+#include <improbable/c_trace.h>
 
 namespace SpatialGDK
 {

@@ -12,20 +12,13 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
-// TODO - Individual RPC Calls (distinguishing between GDK and USER)
-// TODO - RPCs on newly created objects go through a different flow and need to be handled
-
 namespace SpatialGDK
 {
-// Note: SpatialEventTracer wraps Trace_EventTracer related functionality
-// Note(EventTracer): EventTracer must be created prior to WorkerConnection, since it has to be passed to ConnectionConfig
-// It is owned by the connection handler and ViewCoordinator.
-// SpatialNetDriver initializes SpatialSender and SpatialReceiver with pointers to EventTracer read from SpatialWorkerConnection.
-
+// SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
 public:
-	SpatialEventTracer(const FString& WorkerId);
+	explicit SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
@@ -37,11 +30,11 @@ public:
 
 	bool IsEnabled() const;
 
-	void ComponentAdd(const Worker_Op& Op);
-	void ComponentRemove(const Worker_Op& Op);
-	void ComponentUpdate(const Worker_Op& Op);
+	void AddComponent(const Worker_Op& Op);
+	void RemoveComponent(const Worker_Op& Op);
+	void UpdateComponent(const Worker_Op& Op);
 
-	bool GetSpanId(const EntityComponentId& Id, Trace_SpanId& OutSpanId) const;
+	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
@@ -68,11 +61,11 @@ private:
 	FString FolderPath;
 };
 
-// SpatialScopedActiveSpanId must be creating prior to calling worker send functions so that worker can use the input SpanId to continue
-// traces
+// SpatialScopedActiveSpanIds are creating prior to calling worker send functions so that worker can use the input SpanId to continue
+// traces.
 struct SpatialScopedActiveSpanId
 {
-	SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
+	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
 	~SpatialScopedActiveSpanId();
 
 	SpatialScopedActiveSpanId(const SpatialScopedActiveSpanId&) = delete;
