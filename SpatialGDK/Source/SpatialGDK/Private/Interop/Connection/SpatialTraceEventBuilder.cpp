@@ -137,7 +137,6 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::PropertyUpdate(const UObject* Obje
 		.GetEvent();
 }
 
-
 FSpatialTraceEvent FSpatialTraceEventBuilder::MergeRPCSends(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_rpc_sends")
