@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned up startup logs of a few noisy messages.
 - Fixed a crash that sometimes occurred upon trying to resolve a pointer to an object that has been unloaded.
 - Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
-- By default, only an actor's replicated owners will be used when determining which worker should have authority over an actor. Non-replicated actors are now ignored.
+- By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
   
 ## [`0.11.0`] - 2020-09-03
 
