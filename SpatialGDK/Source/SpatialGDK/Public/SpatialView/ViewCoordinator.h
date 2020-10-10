@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "ReceivedOpEventHandler.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
@@ -92,7 +93,7 @@ private:
 
 	TArray<TUniquePtr<FSubView>> SubViews;
 
-	TSharedPtr<SpatialEventTracer> EventTracer;
+	FReceivedOpEventHandler ReceivedOpEventHandler;
 };
 
 } // namespace SpatialGDK

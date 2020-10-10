@@ -2,19 +2,16 @@
 
 #pragma once
 
-#include "Containers/Set.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta.h"
 
 namespace SpatialGDK
 {
-class SpatialEventTracer;
-
 class WorkerView
 {
 public:
-	explicit WorkerView(SpatialEventTracer* InEventTracer);
+	WorkerView();
 
 	// Process op lists to create a new view delta.
 	// The view delta will exist until the next call to AdvanceViewDelta.
@@ -44,7 +41,5 @@ private:
 	ViewDelta Delta;
 
 	TUniquePtr<MessagesToSend> LocalChanges;
-
-	SpatialEventTracer* EventTracer;
 };
 } // namespace SpatialGDK
