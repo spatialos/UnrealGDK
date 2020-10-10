@@ -71,8 +71,8 @@ public:
 	void TickServer();
 
 	// Called from SpatialReveiver when the corresponding Ops are encountered.
-	void OnDebugComponentUpdateReceived(Worker_EntityId);
-	void OnDebugComponentAuthLost(Worker_EntityId EntityId);
+	void OnDebugComponentUpdateReceived(FEntityId);
+	void OnDebugComponentAuthLost(FEntityId EntityId);
 
 	void ClearNeedEntityInterestUpdate() { bNeedToUpdateInterest = false; }
 
@@ -85,7 +85,7 @@ protected:
 	struct DebugComponentView
 	{
 		SpatialGDK::DebugComponent Component;
-		Worker_EntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
+		FEntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
 		bool bAdded = false;
 		bool bDirty = false;
 	};
@@ -95,8 +95,8 @@ protected:
 	TOptional<VirtualWorkerId> GetActorExplicitDelegation(const AActor* Actor);
 	TOptional<VirtualWorkerId> GetActorHierarchyExplicitDelegation_Traverse(const AActor* Actor);
 
-	void AddEntityToWatch(Worker_EntityId);
-	void RemoveEntityToWatch(Worker_EntityId);
+	void AddEntityToWatch(FEntityId);
+	void RemoveEntityToWatch(FEntityId);
 
 	bool NeedEntityInterestUpdate() { return bNeedToUpdateInterest; }
 
@@ -112,6 +112,6 @@ protected:
 	TMap<AActor*, DebugComponentView> ActorDebugInfo;
 
 	// Contains a cache of entities computed from the semantic interest.
-	TSet<Worker_EntityId_Key> CachedInterestSet;
+	TSet<FEntityId> CachedInterestSet;
 	bool bNeedToUpdateInterest = false;
 };

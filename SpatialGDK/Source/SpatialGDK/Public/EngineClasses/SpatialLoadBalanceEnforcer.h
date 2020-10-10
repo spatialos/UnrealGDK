@@ -49,20 +49,20 @@ public:
 							   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender);
 
 	void Advance();
-	void ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId);
+	void ShortCircuitMaybeRefreshAcl(const FEntityId EntityId);
 
 private:
-	void PopulateDataStore(const Worker_EntityId EntityId);
-	bool ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	bool ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+	void PopulateDataStore(const FEntityId EntityId);
+	bool ApplyComponentUpdate(const FEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	bool ApplyComponentRefresh(const FEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
-	void RefreshAcl(const Worker_EntityId EntityId);
-	EntityComponentUpdate ConstructAclUpdate(const Worker_EntityId EntityId, const PhysicalWorkerName* DestinationWorkerId);
+	void RefreshAcl(const FEntityId EntityId);
+	EntityComponentUpdate ConstructAclUpdate(const FEntityId EntityId, const PhysicalWorkerName* DestinationWorkerId);
 
 	const PhysicalWorkerName WorkerId;
 	const FSubView* SubView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
-	TMap<Worker_EntityId_Key, LBComponents> DataStore;
+	TMap<FEntityId, LBComponents> DataStore;
 	TUniqueFunction<void(EntityComponentUpdate)> UpdateSender;
 };
 

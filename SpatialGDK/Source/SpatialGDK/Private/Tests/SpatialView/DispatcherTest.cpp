@@ -16,8 +16,8 @@ namespace
 {
 constexpr Worker_ComponentId COMPONENT_ID = 1000;
 constexpr Worker_ComponentId OTHER_COMPONENT_ID = 1001;
-constexpr Worker_EntityId ENTITY_ID = 1;
-constexpr Worker_EntityId OTHER_ENTITY_ID = 2;
+constexpr FEntityId ENTITY_ID = 1;
+constexpr FEntityId OTHER_ENTITY_ID = 2;
 constexpr double COMPONENT_VALUE = 3;
 constexpr double OTHER_COMPONENT_VALUE = 4;
 } // anonymous namespace
@@ -181,7 +181,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Gained_Callback_Added_Then_Invok
 	SpatialGDK::EntityView View;
 	SpatialGDK::ViewDelta Delta;
 
-	const SpatialGDK::FEntityCallback Callback = [&Invoked](const Worker_EntityId&) {
+	const SpatialGDK::FEntityCallback Callback = [&Invoked](const FEntityId&) {
 		Invoked = true;
 	};
 	Dispatcher.RegisterAuthorityGainedCallback(COMPONENT_ID, Callback);
@@ -204,7 +204,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Lost_Callback_Added_Then_Invoked
 	SpatialGDK::EntityView View;
 	SpatialGDK::ViewDelta Delta;
 
-	const SpatialGDK::FEntityCallback Callback = [&Invoked](const Worker_EntityId&) {
+	const SpatialGDK::FEntityCallback Callback = [&Invoked](const FEntityId&) {
 		Invoked = true;
 	};
 	Dispatcher.RegisterAuthorityLostCallback(COMPONENT_ID, Callback);
@@ -228,7 +228,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Lost_Temp_Callback_Added_Then_In
 	SpatialGDK::EntityView View;
 	SpatialGDK::ViewDelta Delta;
 
-	const SpatialGDK::FEntityCallback Callback = [&Invoked](const Worker_EntityId&) {
+	const SpatialGDK::FEntityCallback Callback = [&Invoked](const FEntityId&) {
 		Invoked = true;
 	};
 	Dispatcher.RegisterAuthorityLostTempCallback(COMPONENT_ID, Callback);

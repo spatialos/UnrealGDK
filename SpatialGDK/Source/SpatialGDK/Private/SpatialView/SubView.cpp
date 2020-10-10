@@ -6,14 +6,14 @@
 
 namespace SpatialGDK
 {
-const FFilterPredicate FSubView::NoFilter = [](const Worker_EntityId&, const EntityViewElement&) {
+const FFilterPredicate FSubView::NoFilter = [](const FEntityId&, const EntityViewElement&) {
 	return true;
 };
 const TArray<FDispatcherRefreshCallback> FSubView::NoDispatcherCallbacks = TArray<FDispatcherRefreshCallback>{};
 const FComponentChangeRefreshPredicate FSubView::NoComponentChangeRefreshPredicate = [](const FEntityComponentChange&) {
 	return true;
 };
-const FAuthorityChangeRefreshPredicate FSubView::NoAuthorityChangeRefreshPredicate = [](const Worker_EntityId) {
+const FAuthorityChangeRefreshPredicate FSubView::NoAuthorityChangeRefreshPredicate = [](const FEntityId) {
 	return true;
 };
 
@@ -52,7 +52,7 @@ const FSubViewDelta& FSubView::GetViewDelta() const
 	return SubViewDelta;
 }
 
-void FSubView::RefreshEntity(const Worker_EntityId EntityId)
+void FSubView::RefreshEntity(const FEntityId EntityId)
 {
 	if (TaggedEntities.Contains(EntityId))
 	{
@@ -101,13 +101,13 @@ FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispa
 																		  const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
-		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityId Id) {
 			if (RefreshPredicate(Id))
 			{
 				Callback(Id);
 			}
 		});
-		Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+		Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const FEntityId Id) {
 			if (RefreshPredicate(Id))
 			{
 				Callback(Id);
@@ -132,7 +132,7 @@ void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 
 void FSubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
-	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId EntityId) {
+	const FRefreshCallback RefreshEntityCallback = [this](const FEntityId EntityId) {
 		RefreshEntity(EntityId);
 	};
 	for (FDispatcherRefreshCallback Callback : DispatcherRefreshCallbacks)
@@ -141,19 +141,19 @@ void FSubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>
 	}
 }
 
-void FSubView::OnTaggedEntityAdded(const Worker_EntityId EntityId)
+void FSubView::OnTaggedEntityAdded(const FEntityId EntityId)
 {
 	TaggedEntities.Add(EntityId);
 	CheckEntityAgainstFilter(EntityId);
 }
 
-void FSubView::OnTaggedEntityRemoved(const Worker_EntityId EntityId)
+void FSubView::OnTaggedEntityRemoved(const FEntityId EntityId)
 {
 	TaggedEntities.RemoveSingleSwap(EntityId);
 	EntityIncomplete(EntityId);
 }
 
-void FSubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
+void FSubView::CheckEntityAgainstFilter(const FEntityId EntityId)
 {
 	if (Filter(EntityId, (*View)[EntityId]))
 	{
@@ -163,7 +163,7 @@ void FSubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
 	EntityIncomplete(EntityId);
 }
 
-void FSubView::EntityComplete(const Worker_EntityId EntityId)
+void FSubView::EntityComplete(const FEntityId EntityId)
 {
 	// We were just about to remove this entity, but it has become complete again before the delta was read.
 	// Mark it as temporarily incomplete, but otherwise treat it as if it hadn't gone incomplete.
@@ -180,7 +180,7 @@ void FSubView::EntityComplete(const Worker_EntityId EntityId)
 	}
 }
 
-void FSubView::EntityIncomplete(const Worker_EntityId EntityId)
+void FSubView::EntityIncomplete(const FEntityId EntityId)
 {
 	// If we were about to add this, don't. It's as if we never saw it.
 	if (NewlyCompleteEntities.RemoveSingleSwap(EntityId))

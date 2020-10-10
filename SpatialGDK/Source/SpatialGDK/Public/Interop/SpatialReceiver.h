@@ -41,8 +41,7 @@ class SpatialEventTracer;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId,
-							   TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
+	PendingAddComponentWrapper(FEntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
 		: EntityId(InEntityId)
 		, ComponentId(InComponentId)
 		, Data(MoveTemp(InData))
@@ -56,7 +55,7 @@ struct PendingAddComponentWrapper
 		return EntityId == Other.EntityId && ComponentId == Other.ComponentId;
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	Worker_ComponentId ComponentId;
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
 };
@@ -77,14 +76,14 @@ public:
 	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
-	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
+	virtual void DropQueuedRemoveComponentOpsForEntity(FEntityId EntityId) override;
 	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
+	virtual bool OnExtractIncomingRPC(FEntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
 	virtual void OnCommandRequest(const Worker_Op& Op) override;
 	virtual void OnCommandResponse(const Worker_Op& Op) override;
@@ -106,15 +105,15 @@ public:
 
 	void OnDisconnect(uint8 StatusCode, const FString& Reason);
 
-	void RemoveActor(Worker_EntityId EntityId);
+	void RemoveActor(FEntityId EntityId);
 	bool IsPendingOpsOnChannel(USpatialActorChannel& Channel);
 
-	void ClearPendingRPCs(Worker_EntityId EntityId);
+	void ClearPendingRPCs(FEntityId EntityId);
 
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
-	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
+	void RetireWhenAuthoritive(FEntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 
@@ -122,15 +121,15 @@ private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
-	void ReceiveActor(Worker_EntityId EntityId);
-	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
+	void ReceiveActor(FEntityId EntityId);
+	void DestroyActor(AActor* Actor, FEntityId EntityId);
 
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
 								SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
 						SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
 
-	USpatialActorChannel* GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID);
+	USpatialActorChannel* GetOrRecreateChannelForDomantActor(AActor* Actor, FEntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
@@ -139,17 +138,15 @@ private:
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
-	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op,
-							  const Worker_ComponentId RPCEndpointComponentId);
+	void ProcessRPCEventField(FEntityId EntityId, const Worker_ComponentUpdateOp& Op, const Worker_ComponentId RPCEndpointComponentId);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel,
+	void ApplyComponentDataOnActorCreation(FEntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel,
 										   const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 
-	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-									  TUniquePtr<SpatialGDK::DynamicComponent> Data);
-	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
+	void HandleIndividualAddComponent(FEntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data);
+	void AttachDynamicSubobject(AActor* Actor, FEntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel,
 							  bool bIsHandover);
@@ -158,7 +155,7 @@ private:
 
 	void ReceiveCommandResponse(const Worker_Op& Op);
 
-	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
+	bool IsReceivedEntityTornOff(FEntityId EntityId);
 
 	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload);
 
@@ -168,12 +165,12 @@ private:
 								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
 								 int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies, bool& bOutSomeObjectsWereMapped);
 
-	void ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
-	void UpdateShadowData(Worker_EntityId EntityId);
+	void ProcessQueuedActorRPCsOnEntityCreation(FEntityId EntityId, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
+	void UpdateShadowData(FEntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
-	void CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId);
+	void CloseClientConnection(USpatialNetConnection* ClientConnection, FEntityId PlayerControllerEntityId);
 
 	void PeriodicallyProcessIncomingRPCs();
 
@@ -181,18 +178,18 @@ private:
 	static bool NeedToLoadClass(const FString& ClassPath);
 	static FString GetPackagePath(const FString& ClassPath);
 
-	void StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId);
+	void StartAsyncLoadingClass(const FString& ClassPath, FEntityId EntityId);
 	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);
 
-	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
+	bool IsEntityWaitingForAsyncLoad(FEntityId Entity);
 
 	void QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op);
 	void QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op);
 	void QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op);
 	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
 
-	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
-	SpatialGDK::EntityComponentOpListBuilder ExtractAuthorityOps(Worker_EntityId Entity);
+	TArray<PendingAddComponentWrapper> ExtractAddComponents(FEntityId Entity);
+	SpatialGDK::EntityComponentOpListBuilder ExtractAuthorityOps(FEntityId Entity);
 
 	struct CriticalSectionSaveState
 	{
@@ -202,7 +199,7 @@ private:
 		USpatialReceiver& Receiver;
 
 		bool bInCriticalSection;
-		TArray<Worker_EntityId> PendingAddActors;
+		TArray<FEntityId> PendingAddActors;
 		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
@@ -211,7 +208,7 @@ private:
 	// END TODO
 
 public:
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
+	TMap<TPair<FEntityId, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
@@ -251,7 +248,7 @@ private:
 	FRPCContainer IncomingRPCs{ ERPCQueueType::Receive };
 
 	bool bInCriticalSection;
-	TArray<Worker_EntityId> PendingAddActors;
+	TArray<FEntityId> PendingAddActors;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
@@ -266,10 +263,10 @@ private:
 	// This will map PlayerController entities to the corresponding SpatialNetConnection
 	// for PlayerControllers that this server has authority over. This is used for player
 	// lifecycle logic (Heartbeat component updates, disconnection logic).
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
+	TMap<FEntityId, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
-	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntities;
+	TMap<TPair<FEntityId, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
+	TMap<FEntityId, FString> WorkerConnectionEntities;
 
 	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
 	struct EntityWaitingForAsyncLoad
@@ -278,21 +275,21 @@ private:
 		TArray<PendingAddComponentWrapper> InitialPendingAddComponents;
 		SpatialGDK::EntityComponentOpListBuilder PendingOps;
 	};
-	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
-	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
+	TMap<FEntityId, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
+	TMap<FName, TArray<FEntityId>> AsyncLoadingPackages;
 	// END TODO
 
 	struct DeferredRetire
 	{
-		Worker_EntityId EntityId;
+		FEntityId EntityId;
 		Worker_ComponentId ActorClassId;
 		bool bIsNetStartupActor;
 		bool bNeedsTearOff;
 	};
 	TArray<DeferredRetire> EntitiesToRetireOnAuthorityGain;
-	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
+	bool HasEntityBeenRequestedForDelete(FEntityId EntityId);
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
-	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
+	void HandleEntityDeletedAuthority(FEntityId EntityId);
 	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 
 	SpatialGDK::SpatialEventTracer* EventTracer;

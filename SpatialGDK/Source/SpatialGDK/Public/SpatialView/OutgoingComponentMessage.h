@@ -30,7 +30,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, ComponentData ComponentAdded, const TOptional<Trace_SpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentAdded.GetComponentId())
 		, SpanId(SpanId)
@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated, const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, ComponentUpdate ComponentUpdated, const TOptional<Trace_SpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentUpdated.GetComponentId())
 		, SpanId(SpanId)
@@ -48,8 +48,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId,
-									  const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, Worker_ComponentId RemovedComponentId, const TOptional<Trace_SpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(RemovedComponentId)
 		, SpanId(SpanId)
@@ -138,7 +137,7 @@ public:
 		return Update;
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	Worker_ComponentId ComponentId;
 
 	TOptional<Trace_SpanId> SpanId;

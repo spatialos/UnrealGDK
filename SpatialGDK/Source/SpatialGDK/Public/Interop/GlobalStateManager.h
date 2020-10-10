@@ -68,7 +68,7 @@ public:
 
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
-	Worker_EntityId GlobalStateManagerEntityId;
+	FEntityId GlobalStateManagerEntityId;
 
 private:
 	// Deployment Map Component

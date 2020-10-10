@@ -9,7 +9,7 @@ EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 {
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_EntityId EntityId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(FEntityId EntityId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
@@ -19,7 +19,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_Ent
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(Worker_EntityId EntityId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(FEntityId EntityId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
@@ -29,7 +29,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(Worker_
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_EntityId EntityId, ComponentData Data)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(FEntityId EntityId, ComponentData Data)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
@@ -41,7 +41,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(FEntityId EntityId, ComponentUpdate Update)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
@@ -53,7 +53,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(Work
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
@@ -64,7 +64,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Work
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId,
 																		 Worker_Authority Authority)
 {
 	Worker_Op Op = {};

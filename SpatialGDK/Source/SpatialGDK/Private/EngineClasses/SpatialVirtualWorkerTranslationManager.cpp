@@ -199,7 +199,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 }
 
-void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name, const Worker_EntityId& ServerWorkerEntityId)
+void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name, const FEntityId& ServerWorkerEntityId)
 {
 	if (PhysicalToVirtualWorkerMapping.Contains(Name))
 	{

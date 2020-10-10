@@ -926,7 +926,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		// Check if this is a dormant entity, and if so retire the entity
 		if (PackageMap != nullptr && World != nullptr)
 		{
-			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+			const FEntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
 
 			// If the actor is an initially dormant startup actor that has not been replicated.
 			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated()
@@ -1003,7 +1003,7 @@ void USpatialNetDriver::Shutdown()
 
 	if (bDeleteDynamicEntities && IsServer())
 	{
-		for (const Worker_EntityId EntityId : DormantEntities)
+		for (const FEntityId EntityId : DormantEntities)
 		{
 			if (StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))
 			{
@@ -1011,7 +1011,7 @@ void USpatialNetDriver::Shutdown()
 			}
 		}
 
-		for (const Worker_EntityId EntityId : TombstonedEntities)
+		for (const FEntityId EntityId : TombstonedEntities)
 		{
 			if (StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))
 			{
@@ -1060,7 +1060,7 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	FEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return;
@@ -1079,7 +1079,7 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
-	for (Worker_EntityId EntityId : OwnershipChangedEntities)
+	for (FEntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
@@ -2324,12 +2324,12 @@ void USpatialPendingNetGame::SendJoin()
 	bSentJoinRequest = true;
 }
 
-void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
+void USpatialNetDriver::AddActorChannel(FEntityId EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
 }
 
-void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel)
+void USpatialNetDriver::RemoveActorChannel(FEntityId EntityId, USpatialActorChannel& Channel)
 {
 	for (auto& ChannelRefs : Channel.ObjectReferenceMap)
 	{
@@ -2347,7 +2347,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 	EntityToActorChannel.FindAndRemoveChecked(EntityId);
 }
 
-TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
+TMap<FEntityId, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
 {
 	return EntityToActorChannel;
 }
@@ -2395,7 +2395,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 	return Channel;
 }
 
-USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
+USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(FEntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
 }
@@ -2405,7 +2405,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	check(IsServer());
 	check(Actor);
 
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	const FEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
@@ -2451,7 +2451,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 	check(IsServer());
 	check(Actor);
 
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	const FEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on an actor without entity id. Actor's name: %s"),
@@ -2498,7 +2498,7 @@ void USpatialNetDriver::RemovePendingDormantChannel(USpatialActorChannel* Channe
 	PendingDormantChannels.Remove(Channel);
 }
 
-void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
+void USpatialNetDriver::RegisterDormantEntityId(FEntityId EntityId)
 {
 	// Register dormant entities when their actor channel has been closed, but their entity is still alive.
 	// This allows us to clean them up when shutting down. Might be nice to not rely on ActorChannels to
@@ -2506,12 +2506,12 @@ void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 	DormantEntities.Emplace(EntityId);
 }
 
-void USpatialNetDriver::UnregisterDormantEntityId(Worker_EntityId EntityId)
+void USpatialNetDriver::UnregisterDormantEntityId(FEntityId EntityId)
 {
 	DormantEntities.Remove(EntityId);
 }
 
-bool USpatialNetDriver::IsDormantEntity(Worker_EntityId EntityId) const
+bool USpatialNetDriver::IsDormantEntity(FEntityId EntityId) const
 {
 	return (DormantEntities.Find(EntityId) != nullptr);
 }
@@ -2523,7 +2523,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	check(Actor != nullptr);
 	check(PackageMap != nullptr);
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	FEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 
 	check(GetActorChannelByEntityId(EntityId) == nullptr);
 
@@ -2550,7 +2550,7 @@ void USpatialNetDriver::WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfter
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
-void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor)
+void USpatialNetDriver::DelayedRetireEntity(FEntityId EntityId, float Delay, bool bIsNetStartupActor)
 {
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(
@@ -2646,7 +2646,7 @@ void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpati
 }
 
 #if WITH_EDITOR
-void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
+void USpatialNetDriver::TrackTombstone(const FEntityId EntityId)
 {
 	TombstonedEntities.Add(EntityId);
 }

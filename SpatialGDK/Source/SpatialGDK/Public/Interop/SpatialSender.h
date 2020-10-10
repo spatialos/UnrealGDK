@@ -65,7 +65,7 @@ struct FPendingRPC
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation>;
-using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
+using FUpdatesQueuedUntilAuthority = TMap<FEntityId, TArray<FWorkerComponentUpdate>>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
 UCLASS()
@@ -80,7 +80,7 @@ public:
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
-	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
+	void SendPositionUpdate(FEntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
@@ -96,24 +96,24 @@ public:
 								  const Trace_SpanId CauseSpanId);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanI);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
-	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
-	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
-	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
-	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent,
+	void SendAddComponents(FEntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
+	void SendRemoveComponentForClassInfo(FEntityId EntityId, const FClassInfo& Info);
+	void SendRemoveComponents(FEntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
+	void SendInterestBucketComponentChange(const FEntityId EntityId, const Worker_ComponentId OldComponent,
 										   const Worker_ComponentId NewComponent);
-	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendActorTornOffUpdate(FEntityId EntityId, Worker_ComponentId ComponentId);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);
+	void RetireEntity(const FEntityId EntityId, bool bIsNetStartupActor);
 
 	// Creates an entity containing just a tombstone component and the minimal data to resolve an actor.
 	void CreateTombstoneEntity(AActor* Actor);
 
-	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
-	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
+	void SendRequestToClearRPCsOnEntityCreation(FEntityId EntityId);
+	void ClearRPCsOnEntityCreation(FEntityId EntityId);
 
-	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
-	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
+	void SendClientEndpointReadyUpdate(FEntityId EntityId);
+	void SendServerEndpointReadyUpdate(FEntityId EntityId);
 
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
@@ -125,7 +125,7 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
-	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void ProcessUpdatesQueuedUntilAuthority(FEntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushRPCService();
 
@@ -136,10 +136,10 @@ public:
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	UFUNCTION()
 	void CreateServerWorkerEntity();
-	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounte);
+	void RetryServerWorkerEntityCreation(FEntityId EntityId, int AttemptCounte);
 	void UpdateServerWorkerEntityInterestAndPosition();
 
-	void ClearPendingRPCs(const Worker_EntityId EntityId);
+	void ClearPendingRPCs(const FEntityId EntityId);
 
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
 
@@ -150,13 +150,13 @@ private:
 	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
 
 	// Create an entity given a set of components and an ID. Retries with the same component data and entity ID on timeout.
-	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> Components);
+	void CreateEntityWithRetries(FEntityId EntityId, FString EntityName, TArray<FWorkerComponentData> Components);
 
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 
-	void AddTombstoneToEntity(const Worker_EntityId EntityId);
+	void AddTombstoneToEntity(const FEntityId EntityId);
 
 	void PeriodicallyProcessOutgoingRPCs();
 
@@ -164,8 +164,7 @@ private:
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
 
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
-												  Worker_EntityId& OutEntityId);
+												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, FEntityId& OutEntityId);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 	FWorkerComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
 												Worker_ComponentId ComponentId, Schema_FieldId EventIndext);

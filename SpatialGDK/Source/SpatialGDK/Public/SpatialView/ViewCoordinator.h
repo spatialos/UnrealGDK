@@ -43,21 +43,21 @@ public:
 	// broadcast events which subviews subscribe to in order to trigger a refresh. This global refresh may only be a
 	// temporary solution which keeps the API simple while the main systems are Actors and the load balancer.
 	// In the future when there could be an unbounded number of user systems this should probably be revisited.
-	void RefreshEntityCompleteness(Worker_EntityId EntityId);
+	void RefreshEntityCompleteness(FEntityId EntityId);
 
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendAddComponent(FEntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
+	void SendComponentUpdate(FEntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
+	void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FEntityId> EntityId,
 											 TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
+	Worker_RequestId SendDeleteEntityRequest(FEntityId EntityId, TOptional<uint32> TimeoutMillis = {},
 											 const TOptional<Trace_SpanId>& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
+	Worker_RequestId SendEntityCommandRequest(FEntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
 											  const TOptional<Trace_SpanId>& SpanId = {});
 	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId);
 	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId);

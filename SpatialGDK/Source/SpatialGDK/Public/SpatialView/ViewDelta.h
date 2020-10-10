@@ -40,9 +40,8 @@ public:
 	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
 	// the projection. The given arrays represent the state of the sub view and dictates the projection.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
-	void Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
-				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
+	void Project(FSubViewDelta& SubDelta, const TArray<FEntityId>& CompleteEntities, const TArray<FEntityId>& NewlyCompleteEntities,
+				 const TArray<FEntityId>& NewlyIncompleteEntities, const TArray<FEntityId>& TemporarilyIncompleteEntities) const;
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;
@@ -59,7 +58,7 @@ private:
 		explicit ReceivedComponentChange(const Worker_ComponentUpdateOp& Op);
 		explicit ReceivedComponentChange(const Worker_RemoveComponentOp& Op);
 
-		Worker_EntityId EntityId;
+		FEntityId EntityId;
 		Worker_ComponentId ComponentId;
 		enum
 		{
@@ -76,14 +75,14 @@ private:
 
 	struct ReceivedEntityChange
 	{
-		Worker_EntityId EntityId;
+		FEntityId EntityId;
 		bool bAdded;
 	};
 
 	// Comparator that will return true when the entity change in question is not for the same entity ID as stored.
 	struct DifferentEntity
 	{
-		Worker_EntityId EntityId;
+		FEntityId EntityId;
 		bool operator()(const ReceivedEntityChange& E) const;
 		bool operator()(const ReceivedComponentChange& Op) const;
 		bool operator()(const Worker_AuthorityChangeOp& Op) const;
@@ -92,7 +91,7 @@ private:
 	// Comparator that will return true when the entity change in question is not for the same entity-component as stored.
 	struct DifferentEntityComponent
 	{
-		Worker_EntityId EntityId;
+		FEntityId EntityId;
 		Worker_ComponentId ComponentId;
 		bool operator()(const ReceivedComponentChange& Op) const;
 		bool operator()(const Worker_AuthorityChangeOp& Op) const;
@@ -155,7 +154,7 @@ private:
 	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
 	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
 	// will be greater than all valid IDs.
-	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+	static const FEntityId SENTINEL_ENTITY_ID = -1;
 
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;

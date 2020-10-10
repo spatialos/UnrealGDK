@@ -13,7 +13,7 @@ namespace
 class AuthorityChangeRecordFixture
 {
 public:
-	const Worker_EntityId kTestEntityId = 1337;
+	const FEntityId kTestEntityId = 1337;
 	const Worker_ComponentId kTestComponentId = 1338;
 
 	const EntityComponentId kEntityComponentId{ kTestEntityId, kTestComponentId };

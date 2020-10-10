@@ -8,7 +8,7 @@ namespace SpatialGDK
 {
 struct ExpectedEntityDelta
 {
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	enum
 	{
 		UPDATE,

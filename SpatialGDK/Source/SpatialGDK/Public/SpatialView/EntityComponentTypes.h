@@ -10,7 +10,7 @@ namespace SpatialGDK
 {
 struct EntityComponentUpdate
 {
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	ComponentUpdate Update;
 
 	EntityComponentId GetEntityComponentId() const { return { EntityId, Update.GetComponentId() }; }
@@ -18,7 +18,7 @@ struct EntityComponentUpdate
 
 struct EntityComponentData
 {
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	ComponentData Data;
 
 	EntityComponentId GetEntityComponentId() const { return { EntityId, Data.GetComponentId() }; }
@@ -26,7 +26,7 @@ struct EntityComponentData
 
 struct EntityComponentCompleteUpdate
 {
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	ComponentData CompleteUpdate;
 	ComponentUpdate Events;
 

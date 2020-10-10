@@ -24,12 +24,12 @@ class EntityComponentOpListBuilder
 public:
 	EntityComponentOpListBuilder();
 
-	EntityComponentOpListBuilder& AddEntity(Worker_EntityId EntityId);
-	EntityComponentOpListBuilder& RemoveEntity(Worker_EntityId EntityId);
-	EntityComponentOpListBuilder& AddComponent(Worker_EntityId EntityId, ComponentData Data);
-	EntityComponentOpListBuilder& UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update);
-	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	EntityComponentOpListBuilder& SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
+	EntityComponentOpListBuilder& AddEntity(FEntityId EntityId);
+	EntityComponentOpListBuilder& RemoveEntity(FEntityId EntityId);
+	EntityComponentOpListBuilder& AddComponent(FEntityId EntityId, ComponentData Data);
+	EntityComponentOpListBuilder& UpdateComponent(FEntityId EntityId, ComponentUpdate Update);
+	EntityComponentOpListBuilder& RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId);
+	EntityComponentOpListBuilder& SetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
 	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString& DisconnectReason);
 
 	OpList CreateOpList() &&;

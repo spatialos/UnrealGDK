@@ -31,35 +31,34 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
-																	   const Worker_EntityId* EntityId,
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FEntityId* EntityId,
 																	   const TOptional<Trace_SpanId>& SpanId)
 {
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
 {
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+void SpatialOSWorkerConnectionSpy::SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData,
 													const TOptional<Trace_SpanId>& SpanId)
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void SpatialOSWorkerConnectionSpy::SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId,
 													   const TOptional<Trace_SpanId>& SpanId)
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+void SpatialOSWorkerConnectionSpy::SendComponentUpdate(FEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 													   const TOptional<Trace_SpanId>& SpanId)
 {
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
-																  uint32_t CommandId, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
+																  const TOptional<Trace_SpanId>& SpanId)
 {
 	return NextRequestId++;
 }
@@ -76,7 +75,7 @@ void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId
 
 void SpatialOSWorkerConnectionSpy::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) {}
 
-void SpatialOSWorkerConnectionSpy::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) {}
+void SpatialOSWorkerConnectionSpy::SendComponentInterest(FEntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) {}
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {

@@ -43,7 +43,7 @@ const WorkerRequirementSet OtherClientRequirementSet =
 constexpr VirtualWorkerId ThisVirtualWorker = 1;
 constexpr VirtualWorkerId OtherVirtualWorker = 2;
 
-constexpr Worker_EntityId EntityIdOne = 1;
+constexpr FEntityId EntityIdOne = 1;
 
 constexpr Worker_ComponentId TestComponentIdOne = 123;
 constexpr Worker_ComponentId TestComponentIdTwo = 456;
@@ -88,7 +88,7 @@ SpatialGDK::ComponentUpdate MakeComponentUpdateFromUpdate(Worker_ComponentUpdate
 // and the auth intent to the passed virtual worker. The ACL is always assigned to "UnrealWorker".
 // Optionally pass a client name to designate the entity as net owned by that client.
 void AddLBEntityToView(
-	SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const WorkerRequirementSet AuthRequirementSet,
+	SpatialGDK::EntityView& View, const FEntityId EntityId, const WorkerRequirementSet AuthRequirementSet,
 	const VirtualWorkerId IntentWorkerId,
 	const SpatialGDK::TSchemaOption<PhysicalWorkerName> ClientWorkerName = SpatialGDK::TSchemaOption<PhysicalWorkerName>())
 {

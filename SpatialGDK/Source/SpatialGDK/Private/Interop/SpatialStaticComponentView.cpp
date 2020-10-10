@@ -19,7 +19,7 @@
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 
-Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+Worker_Authority USpatialStaticComponentView::GetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	if (const TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
 	{
@@ -32,12 +32,12 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+bool USpatialStaticComponentView::HasAuthority(FEntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 
-bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+bool USpatialStaticComponentView::HasComponent(FEntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	if (auto* EntityComponentStorage = EntityComponentMap.Find(EntityId))
 	{
@@ -127,7 +127,7 @@ void USpatialStaticComponentView::OnRemoveComponent(const Worker_RemoveComponent
 	}
 }
 
-void USpatialStaticComponentView::OnRemoveEntity(Worker_EntityId EntityId)
+void USpatialStaticComponentView::OnRemoveEntity(FEntityId EntityId)
 {
 	EntityComponentMap.Remove(EntityId);
 	EntityComponentAuthorityMap.Remove(EntityId);

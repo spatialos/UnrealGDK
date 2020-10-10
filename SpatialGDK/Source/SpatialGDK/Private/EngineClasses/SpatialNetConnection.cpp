@@ -149,7 +149,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	}
 }
 
-void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
+void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, FEntityId InPlayerControllerEntity)
 {
 	UE_LOG(LogSpatialNetConnection, Log, TEXT("Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(),
 		   InPlayerControllerEntity);

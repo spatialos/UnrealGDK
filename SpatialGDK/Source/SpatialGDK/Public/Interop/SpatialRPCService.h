@@ -18,7 +18,7 @@ class USpatialLatencyTracer;
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
-DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, ERPCType, const SpatialGDK::RPCPayload&);
+DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, FEntityId, ERPCType, const SpatialGDK::RPCPayload&);
 
 namespace SpatialGDK
 {
@@ -41,33 +41,33 @@ public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
 					  USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
+	EPushRPCResult PushRPC(FEntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
 						   UFunction* Function = nullptr);
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
 	{
-		Worker_EntityId EntityId;
+		FEntityId EntityId;
 		FWorkerComponentUpdate Update;
 		TOptional<Trace_SpanId> SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
-	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
+	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(FEntityId EntityId);
 
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
-	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void ExtractRPCsForEntity(FEntityId EntityId, Worker_ComponentId ComponentId);
 
 	// Will also store acked IDs locally.
-	void IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type);
+	void IncrementAckedRPCID(FEntityId EntityId, ERPCType Type);
 
-	void OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId);
-	void OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId);
+	void OnCheckoutMulticastRPCComponentOnEntity(FEntityId EntityId);
+	void OnRemoveMulticastRPCComponentForEntity(FEntityId EntityId);
 
-	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityGained(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityLost(FEntityId EntityId, Worker_ComponentId ComponentId);
 
-	uint64 GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const;
+	uint64 GetLastAckedRPCId(FEntityId EntityId, ERPCType Type) const;
 
 private:
 	struct PendingRPCPayload
@@ -83,16 +83,16 @@ private:
 
 	// For now, we should drop overflowed RPCs when entity crosses the boundary.
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
-	void ClearOverflowedRPCs(Worker_EntityId EntityId);
+	void ClearOverflowedRPCs(FEntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload&& Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPCInternal(FEntityId EntityId, ERPCType Type, PendingRPCPayload&& Payload, bool bCreatedEntity);
 
-	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
+	void ExtractRPCsForType(FEntityId EntityId, ERPCType Type);
 
 	void AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& Payload);
 
-	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
-	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
+	uint64 GetAckFromView(FEntityId EntityId, ERPCType Type);
+	const RPCRingBuffer& GetBufferFromView(FEntityId EntityId, ERPCType Type);
 
 	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
@@ -104,7 +104,7 @@ private:
 	SpatialEventTracer* EventTracer;
 
 	// This is local, not written into schema.
-	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;
+	TMap<FEntityId, uint64> LastSeenMulticastRPCIds;
 	TMap<EntityRPCType, uint64> LastSeenRPCIds;
 
 	// Stored here for things we have authority over.

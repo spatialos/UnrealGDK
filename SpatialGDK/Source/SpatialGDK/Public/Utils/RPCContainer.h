@@ -101,13 +101,13 @@ public:
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
 	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessRPCs();
-	void DropForEntity(const Worker_EntityId& EntityId);
+	void DropForEntity(const FEntityId& EntityId);
 
-	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const;
+	bool ObjectHasRPCsQueuedOfType(const FEntityId& EntityId, ERPCType Type) const;
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
-	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
+	using FRPCMap = TMap<FEntityId, FArrayOfParams>;
 	using RPCContainerType = TMap<ERPCType, FRPCMap>;
 
 	void ProcessRPCs(FArrayOfParams& RPCList);

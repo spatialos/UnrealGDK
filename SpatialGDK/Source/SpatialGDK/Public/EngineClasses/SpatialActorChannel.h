@@ -145,9 +145,9 @@ public:
 	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.
-	FORCEINLINE Worker_EntityId GetEntityId() const { return EntityId; }
+	FORCEINLINE FEntityId GetEntityId() const { return EntityId; }
 
-	FORCEINLINE void SetEntityId(Worker_EntityId InEntityId) { EntityId = InEntityId; }
+	FORCEINLINE void SetEntityId(FEntityId InEntityId) { EntityId = InEntityId; }
 
 	FORCEINLINE bool IsReadyForReplication()
 	{
@@ -292,7 +292,7 @@ private:
 
 	void RetireEntityIfAuthoritative();
 
-	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
+	void SendPositionUpdate(AActor* InActor, FEntityId InEntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
@@ -313,7 +313,7 @@ public:
 	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState> ObjectReferenceMap;
 
 private:
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	bool bInterestDirty;
 
 	bool bIsAuthServer;

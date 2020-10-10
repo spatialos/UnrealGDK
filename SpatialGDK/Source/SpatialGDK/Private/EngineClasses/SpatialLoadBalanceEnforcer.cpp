@@ -71,7 +71,7 @@ void SpatialLoadBalanceEnforcer::Advance()
 	}
 }
 
-void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const FEntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
 	if (Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::LB_TAG_COMPONENT_ID }))
@@ -83,7 +83,7 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_Entity
 	}
 }
 
-void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::RefreshAcl(const FEntityId EntityId)
 {
 	const AuthorityIntent& AuthorityIntentComponent = DataStore[EntityId].Intent;
 
@@ -97,7 +97,7 @@ void SpatialLoadBalanceEnforcer::RefreshAcl(const Worker_EntityId EntityId)
 	}
 }
 
-EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worker_EntityId EntityId,
+EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const FEntityId EntityId,
 																	 const PhysicalWorkerName* DestinationWorkerId)
 {
 	LBComponents& Components = DataStore[EntityId];
@@ -144,7 +144,7 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 	return EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) };
 }
 
-void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::PopulateDataStore(const FEntityId EntityId)
 {
 	LBComponents& Components = DataStore.Emplace(EntityId, LBComponents{});
 	for (const ComponentData& Data : SubView->GetView()[EntityId].Components)
@@ -169,7 +169,7 @@ void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityI
 	}
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const FEntityId EntityId, const Worker_ComponentId ComponentId,
 													  Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
@@ -189,7 +189,7 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId Enti
 	return false;
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const FEntityId EntityId, const Worker_ComponentId ComponentId,
 													   Schema_ComponentData* Data)
 {
 	switch (ComponentId)

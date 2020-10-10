@@ -109,7 +109,7 @@ private:
 
 struct EntityDelta
 {
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	enum
 	{
 		UPDATE,

@@ -55,7 +55,7 @@ public:
 	void ProcessMigrations();
 
 protected:
-	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
+	void UpdateSpatialDebugInfo(AActor* Actor, FEntityId EntityId) const;
 
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
 

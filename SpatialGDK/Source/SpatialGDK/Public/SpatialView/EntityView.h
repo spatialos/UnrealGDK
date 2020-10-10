@@ -17,6 +17,6 @@ struct EntityViewElement
 	TArray<Worker_ComponentId> Authority;
 };
 
-using EntityView = TMap<Worker_EntityId_Key, EntityViewElement>;
+using EntityView = TMap<FEntityId, EntityViewElement>;
 
 } // namespace SpatialGDK

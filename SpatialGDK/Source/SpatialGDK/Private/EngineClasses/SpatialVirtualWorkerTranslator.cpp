@@ -18,7 +18,7 @@ SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrate
 
 const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const
 {
-	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	if (const TPair<PhysicalWorkerName, FEntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
 		return &PhysicalWorkerInfo->Key;
 	}
@@ -26,9 +26,9 @@ const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVi
 	return nullptr;
 }
 
-Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
+FEntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
 {
-	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	if (const TPair<PhysicalWorkerName, FEntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
 		return PhysicalWorkerInfo->Value;
 	}
@@ -104,7 +104,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 		PhysicalWorkerName PhysicalWorkerName =
 			SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME);
-		Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
+		FEntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
 
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
 			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), VirtualWorkerId, *PhysicalWorkerName,
@@ -115,7 +115,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 	}
 }
 
-void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name, Worker_EntityId ServerWorkerEntityId)
+void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name, FEntityId ServerWorkerEntityId)
 {
 	VirtualToPhysicalWorkerMapping.Add(Id, MakeTuple(Name, ServerWorkerEntityId));
 

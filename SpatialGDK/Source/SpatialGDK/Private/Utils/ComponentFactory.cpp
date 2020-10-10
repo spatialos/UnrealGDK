@@ -415,7 +415,7 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	return ComponentData;
 }
 
-TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId,
+TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, FEntityId EntityId,
 																		const FRepChangeState* RepChangeState,
 																		const FHandoverChangeState* HandoverChangeState,
 																		uint32& OutBytesWritten)

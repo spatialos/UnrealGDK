@@ -4,7 +4,7 @@
 
 namespace SpatialGDK
 {
-void EntityComponentUpdateRecord::AddComponentDataAsUpdate(Worker_EntityId EntityId, ComponentData CompleteUpdate)
+void EntityComponentUpdateRecord::AddComponentDataAsUpdate(FEntityId EntityId, ComponentData CompleteUpdate)
 {
 	const EntityComponentId Id = { EntityId, CompleteUpdate.GetComponentId() };
 	EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{ Id });
@@ -20,7 +20,7 @@ void EntityComponentUpdateRecord::AddComponentDataAsUpdate(Worker_EntityId Entit
 	}
 }
 
-void EntityComponentUpdateRecord::AddComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+void EntityComponentUpdateRecord::AddComponentUpdate(FEntityId EntityId, ComponentUpdate Update)
 {
 	const EntityComponentId Id = { EntityId, Update.GetComponentId() };
 	EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{ Id });
@@ -36,7 +36,7 @@ void EntityComponentUpdateRecord::AddComponentUpdate(Worker_EntityId EntityId, C
 	}
 }
 
-void EntityComponentUpdateRecord::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void EntityComponentUpdateRecord::RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 
@@ -72,7 +72,7 @@ const TArray<EntityComponentCompleteUpdate>& EntityComponentUpdateRecord::GetCom
 	return CompleteUpdates;
 }
 
-void EntityComponentUpdateRecord::InsertOrMergeUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+void EntityComponentUpdateRecord::InsertOrMergeUpdate(FEntityId EntityId, ComponentUpdate Update)
 {
 	const EntityComponentId Id = { EntityId, Update.GetComponentId() };
 	EntityComponentUpdate* FoundUpdate = Updates.FindByPredicate(EntityComponentIdEquality{ Id });
@@ -87,7 +87,7 @@ void EntityComponentUpdateRecord::InsertOrMergeUpdate(Worker_EntityId EntityId, 
 	}
 }
 
-void EntityComponentUpdateRecord::InsertOrSetCompleteUpdate(Worker_EntityId EntityId, ComponentData CompleteUpdate)
+void EntityComponentUpdateRecord::InsertOrSetCompleteUpdate(FEntityId EntityId, ComponentData CompleteUpdate)
 {
 	const EntityComponentId Id = { EntityId, CompleteUpdate.GetComponentId() };
 	EntityComponentCompleteUpdate* FoundCompleteUpdate = CompleteUpdates.FindByPredicate(EntityComponentIdEquality{ Id });

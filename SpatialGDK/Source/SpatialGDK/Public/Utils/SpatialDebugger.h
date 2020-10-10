@@ -186,7 +186,7 @@ public:
 	void SetShowWorkerRegions(const bool bNewShow);
 
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+	void ActorAuthorityIntentChanged(FEntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 #if WITH_EDITOR
 	void EditorRefreshWorkerRegions();
@@ -199,13 +199,13 @@ private:
 	void LoadIcons();
 
 	// FOnEntityAdded/FOnEntityRemoved Delegates
-	void OnEntityAdded(const Worker_EntityId EntityId);
-	void OnEntityRemoved(const Worker_EntityId EntityId);
+	void OnEntityAdded(const FEntityId EntityId);
+	void OnEntityRemoved(const FEntityId EntityId);
 
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
-	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
+	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const FEntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	void CreateWorkerRegions();
@@ -235,7 +235,7 @@ private:
 
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
+	TMap<FEntityId, TWeakObjectPtr<AActor>> EntityActorMapping;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 	FDelegateHandle OnEntityAddedHandle;

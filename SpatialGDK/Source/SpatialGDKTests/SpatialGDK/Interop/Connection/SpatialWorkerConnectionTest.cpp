@@ -148,7 +148,7 @@ DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendCreateEntityRequest, USpatia
 bool FSendCreateEntityRequest::Update()
 {
 	TArray<FWorkerComponentData> Components;
-	const Worker_EntityId* EntityId = nullptr;
+	const FEntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
 	Connection->Flush();
@@ -159,7 +159,7 @@ bool FSendCreateEntityRequest::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendDeleteEntityRequest, USpatialConnectionManager*, ConnectionManager);
 bool FSendDeleteEntityRequest::Update()
 {
-	const Worker_EntityId EntityId = 0;
+	const FEntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendDeleteEntityRequest(EntityId);
 	Connection->Flush();

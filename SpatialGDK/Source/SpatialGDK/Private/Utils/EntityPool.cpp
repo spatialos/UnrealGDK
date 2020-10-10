@@ -128,7 +128,7 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 	}
 }
 
-Worker_EntityId UEntityPool::GetNextEntityId()
+FEntityId UEntityPool::GetNextEntityId()
 {
 	if (ReservedEntityIDRanges.Num() == 0)
 	{
@@ -139,7 +139,7 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	}
 
 	EntityRange& CurrentEntityRange = ReservedEntityIDRanges[0];
-	Worker_EntityId NextId = CurrentEntityRange.CurrentEntityId++;
+	FEntityId NextId = CurrentEntityRange.CurrentEntityId++;
 
 	uint32_t TotalRemainingEntityIds = 0;
 	for (EntityRange Range : ReservedEntityIDRanges)

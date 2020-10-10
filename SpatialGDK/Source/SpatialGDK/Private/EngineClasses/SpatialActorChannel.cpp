@@ -1241,7 +1241,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 }
 
-void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
+void USpatialActorChannel::SendPositionUpdate(AActor* InActor, FEntityId InEntityId, const FVector& NewPosition)
 {
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID
 		&& NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::POSITION_COMPONENT_ID))
@@ -1348,7 +1348,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	// need to iterate through.
 	for (AActor* Child : Actor->Children)
 	{
-		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+		FEntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
 
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
 		{

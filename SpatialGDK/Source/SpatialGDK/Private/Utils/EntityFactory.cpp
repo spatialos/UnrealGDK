@@ -50,7 +50,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
-	Worker_EntityId EntityId = Channel->GetEntityId();
+	FEntityId EntityId = Channel->GetEntityId();
 
 	FString ClientWorkerAttribute = GetConnectionOwningWorkerId(Actor);
 

@@ -181,7 +181,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		{
 			// Get an entity to spawn and a reserved EntityID
 			TArray<FWorkerComponentData> EntityToSpawn = EntitiesToSpawn[i];
-			Worker_EntityId ReservedEntityID = Op.first_entity_id + i;
+			FEntityId ReservedEntityID = Op.first_entity_id + i;
 
 			// Check if this is the GSM
 			for (auto& ComponentData : EntityToSpawn)

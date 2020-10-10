@@ -24,14 +24,14 @@ public:
 	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
-	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
+	virtual void DropQueuedRemoveComponentOpsForEntity(FEntityId EntityId) override;
 	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling
 	// SpatialRPCService::ExtractRPCsForEntity.
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
+	virtual bool OnExtractIncomingRPC(FEntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
 	virtual void OnCommandRequest(const Worker_Op& Op) override;
 	virtual void OnCommandResponse(const Worker_Op& Op) override;

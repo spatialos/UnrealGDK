@@ -26,16 +26,16 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
-	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
+	FEntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
 
-	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
-	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
+	bool IsEntityIdPendingCreation(FEntityId EntityId) const;
+	void RemovePendingCreationEntityId(FEntityId EntityId);
 
-	bool ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	bool ResolveEntityActor(AActor* Actor, FEntityId EntityId);
 	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
-	void RemoveEntityActor(Worker_EntityId EntityId);
+	void RemoveEntityActor(FEntityId EntityId);
 	void RemoveSubobject(const FUnrealObjectRef& ObjectRef);
 
 	// This function is ONLY used in SpatialReceiver::GetOrCreateActor to undo
@@ -46,24 +46,24 @@ public:
 
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
-	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
+	FNetworkGUID GetNetGUIDFromEntityId(const FEntityId& EntityId) const;
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
-	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
+	TWeakObjectPtr<UObject> GetObjectFromEntityId(const FEntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object);
-	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
+	FEntityId GetEntityIdFromObject(const UObject* Object);
 
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
 
 	FNetworkGUID* GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
-	void ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId);
+	void ClearRemovedDynamicSubobjectObjectRefs(const FEntityId& InEntityId);
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
-	Worker_EntityId AllocateEntityId();
+	FEntityId AllocateEntityId();
 	bool IsEntityPoolReady() const;
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
@@ -81,7 +81,7 @@ private:
 	bool bIsServer = false;
 
 	// Entities that have been assigned on this server and not created yet
-	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
+	TSet<FEntityId> PendingCreationEntityIds;
 	TMap<FUnrealObjectRef, FNetworkGUID> RemovedDynamicSubobjectObjectRefs;
 };
 
@@ -90,17 +90,17 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, FEntityId EntityId);
 	void AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef);
 
-	void RemoveEntityNetGUID(Worker_EntityId EntityId);
+	void RemoveEntityNetGUID(FEntityId EntityId);
 	void RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
 
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
+	FNetworkGUID GetNetGUIDFromEntityId(FEntityId EntityId) const;
 
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef, bool bReading) const;
 

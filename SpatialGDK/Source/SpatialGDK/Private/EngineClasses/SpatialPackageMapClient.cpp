@@ -64,7 +64,7 @@ void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 	});
 }
 
-Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
+FEntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
 {
 	check(Actor);
 	checkf(bIsServer, TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
@@ -75,7 +75,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
-	Worker_EntityId EntityId = AllocateEntityId();
+	FEntityId EntityId = AllocateEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
@@ -115,7 +115,7 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	// Resolve as an entity if it is an unregistered actor
 	if (Actor->Role == ROLE_Authority && GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		Worker_EntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
+		FEntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
@@ -128,17 +128,17 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	return NetGUID;
 }
 
-bool USpatialPackageMapClient::IsEntityIdPendingCreation(Worker_EntityId EntityId) const
+bool USpatialPackageMapClient::IsEntityIdPendingCreation(FEntityId EntityId) const
 {
 	return PendingCreationEntityIds.Contains(EntityId);
 }
 
-void USpatialPackageMapClient::RemovePendingCreationEntityId(Worker_EntityId EntityId)
+void USpatialPackageMapClient::RemovePendingCreationEntityId(FEntityId EntityId)
 {
 	PendingCreationEntityIds.Remove(EntityId);
 }
 
-bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId)
+bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, FEntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId);
@@ -170,7 +170,7 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	}
 }
 
-void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
+void USpatialPackageMapClient::RemoveEntityActor(FEntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 
@@ -214,7 +214,7 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const FUnre
 	return SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const
+FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const FEntityId& EntityId) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FUnrealObjectRef ObjectRef(EntityId, 0);
@@ -246,7 +246,7 @@ void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnreal
 	RemovedDynamicSubobjectObjectRefs.Emplace(ObjectRef, NetGUID);
 }
 
-void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId)
+void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const FEntityId& InEntityId)
 {
 	for (auto DynamicSubobjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubobjectIterator;
 		 ++DynamicSubobjectIterator)
@@ -258,7 +258,7 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 	}
 }
 
-TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId& EntityId)
+TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const FEntityId& EntityId)
 {
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
@@ -275,7 +275,7 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UO
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
-Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
+FEntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
 {
 	if (Object == nullptr)
 	{
@@ -327,7 +327,7 @@ AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClass(UClass* UniqueOb
 	return nullptr;
 }
 
-Worker_EntityId USpatialPackageMapClient::AllocateEntityId()
+FEntityId USpatialPackageMapClient::AllocateEntityId()
 {
 	return EntityPool->GetNextEntityId();
 }
@@ -363,7 +363,7 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
 {
 	AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
-	Worker_EntityId EntityId = GetEntityIdFromObject(Actor);
+	FEntityId EntityId = GetEntityIdFromObject(Actor);
 
 	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
@@ -399,7 +399,7 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, FEntityId EntityId)
 {
 	check(EntityId > 0);
 
@@ -528,7 +528,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 	return NetGUID;
 }
 
-void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
+void FSpatialNetGUIDCache::RemoveEntityNetGUID(FEntityId EntityId)
 {
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
@@ -721,7 +721,7 @@ FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetw
 	return ObjRef ? (FUnrealObjectRef)*ObjRef : FUnrealObjectRef::UNRESOLVED_OBJECT_REF;
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(Worker_EntityId EntityId) const
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(FEntityId EntityId) const
 {
 	FUnrealObjectRef ObjRef(EntityId, 0);
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);

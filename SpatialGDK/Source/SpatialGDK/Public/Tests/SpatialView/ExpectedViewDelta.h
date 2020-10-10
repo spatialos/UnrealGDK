@@ -19,14 +19,14 @@ public:
 		TEMPORARILY_REMOVED
 	};
 
-	ExpectedViewDelta& AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType);
-	ExpectedViewDelta& AddComponentAdded(const Worker_EntityId EntityId, ComponentData Data);
-	ExpectedViewDelta& AddComponentRemoved(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddComponentUpdate(const Worker_EntityId EntityId, ComponentUpdate Update);
-	ExpectedViewDelta& AddComponentRefreshed(const Worker_EntityId EntityId, ComponentUpdate Update, ComponentData Data);
-	ExpectedViewDelta& AddAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLostTemporarily(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddEntityDelta(const FEntityId EntityId, const EntityChangeType ChangeType);
+	ExpectedViewDelta& AddComponentAdded(const FEntityId EntityId, ComponentData Data);
+	ExpectedViewDelta& AddComponentRemoved(const FEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddComponentUpdate(const FEntityId EntityId, ComponentUpdate Update);
+	ExpectedViewDelta& AddComponentRefreshed(const FEntityId EntityId, ComponentUpdate Update, ComponentData Data);
+	ExpectedViewDelta& AddAuthorityGained(const FEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLost(const FEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLostTemporarily(const FEntityId EntityId, const Worker_ComponentId ComponentId);
 	ExpectedViewDelta& AddDisconnect(const uint8 StatusCode, FString StatusMessage);
 
 	// Compares the stored Entity Deltas

@@ -50,7 +50,7 @@ public:
 	///////
 	// End NetConnection Interface
 
-	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
+	void InitHeartbeat(class FTimerManager* InTimerManager, FEntityId InPlayerControllerEntity);
 	void SetHeartbeatTimeoutTimer();
 	void SetHeartbeatEventTimer();
 
@@ -69,6 +69,6 @@ public:
 	class FTimerManager* TimerManager;
 
 	// Player lifecycle
-	Worker_EntityId PlayerControllerEntity;
+	FEntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
 };

@@ -21,9 +21,8 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 	PopulateEntityDeltas(View);
 }
 
-void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
-						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
+void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<FEntityId>& CompleteEntities, const TArray<FEntityId>& NewlyCompleteEntities,
+						const TArray<FEntityId>& NewlyIncompleteEntities, const TArray<FEntityId>& TemporarilyIncompleteEntities) const
 {
 	SubDelta.EntityDeltas.Empty();
 
@@ -39,15 +38,15 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 	for (;;)
 	{
-		const Worker_EntityId DeltaId = DeltaIt ? DeltaIt->EntityId : SENTINEL_ENTITY_ID;
-		const Worker_EntityId CompleteId = CompleteIt ? *CompleteIt : SENTINEL_ENTITY_ID;
-		const Worker_EntityId NewlyCompleteId = NewlyCompleteIt ? *NewlyCompleteIt : SENTINEL_ENTITY_ID;
-		const Worker_EntityId NewlyIncompleteId = NewlyIncompleteIt ? *NewlyIncompleteIt : SENTINEL_ENTITY_ID;
-		const Worker_EntityId TemporarilyIncompleteId = TemporarilyIncompleteIt ? *TemporarilyIncompleteIt : SENTINEL_ENTITY_ID;
+		const FEntityId DeltaId = DeltaIt ? DeltaIt->EntityId : SENTINEL_ENTITY_ID;
+		const FEntityId CompleteId = CompleteIt ? *CompleteIt : SENTINEL_ENTITY_ID;
+		const FEntityId NewlyCompleteId = NewlyCompleteIt ? *NewlyCompleteIt : SENTINEL_ENTITY_ID;
+		const FEntityId NewlyIncompleteId = NewlyIncompleteIt ? *NewlyIncompleteIt : SENTINEL_ENTITY_ID;
+		const FEntityId TemporarilyIncompleteId = TemporarilyIncompleteIt ? *TemporarilyIncompleteIt : SENTINEL_ENTITY_ID;
 		const uint64 MinEntityId = FMath::Min3(FMath::Min(static_cast<uint64>(DeltaId), static_cast<uint64>(CompleteId)),
 											   FMath::Min(static_cast<uint64>(NewlyCompleteId), static_cast<uint64>(NewlyIncompleteId)),
 											   static_cast<uint64>(TemporarilyIncompleteId));
-		const Worker_EntityId CurrentEntityId = static_cast<Worker_EntityId>(MinEntityId);
+		const FEntityId CurrentEntityId = static_cast<FEntityId>(MinEntityId);
 		// If no list has elements left to read then stop.
 		if (CurrentEntityId == SENTINEL_ENTITY_ID)
 		{
@@ -424,12 +423,12 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 											   static_cast<uint64>(EntityIt->EntityId));
 
 		// If no list has elements left to read then stop.
-		if (static_cast<Worker_EntityId>(MinEntityId) == SENTINEL_ENTITY_ID)
+		if (static_cast<FEntityId>(MinEntityId) == SENTINEL_ENTITY_ID)
 		{
 			break;
 		}
 
-		const Worker_EntityId CurrentEntityId = static_cast<Worker_EntityId>(MinEntityId);
+		const FEntityId CurrentEntityId = static_cast<FEntityId>(MinEntityId);
 
 		EntityDelta Delta = {};
 		Delta.EntityId = CurrentEntityId;
@@ -476,7 +475,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	int32 RemoveCount = 0;
 	int32 RefreshCount = 0;
 
-	const Worker_EntityId EntityId = It->EntityId;
+	const FEntityId EntityId = It->EntityId;
 	// At the end of each loop `It` should point to the first element for an entity-component.
 	// Stop and return when the component is for a different entity.
 	// There will always be at least one iteration of the loop.
@@ -554,7 +553,7 @@ Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_Author
 	int32 LossCount = 0;
 	int32 LossTempCount = 0;
 
-	const Worker_EntityId EntityId = It->entity_id;
+	const FEntityId EntityId = It->entity_id;
 	// After each loop the iterator points to the first op relating to the next entity-component.
 	// Stop and return when that component is for a different entity.
 	// There will always be at least one iteration of the loop.
@@ -606,7 +605,7 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 																		 EntityView& View)
 {
 	// Find the last element relating to the same entity.
-	const Worker_EntityId EntityId = It->EntityId;
+	const FEntityId EntityId = It->EntityId;
 	It = std::find_if(It, End, DifferentEntity{ EntityId }) - 1;
 
 	const bool bAlreadyInView = *ViewElement != nullptr;

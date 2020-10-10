@@ -320,7 +320,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 				if (bEventTracerEnabled)
 				{
-					Worker_EntityId EntityId = Channel.GetEntityId();
+					FEntityId EntityId = Channel.GetEntityId();
 
 					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);

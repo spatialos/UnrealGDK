@@ -284,8 +284,7 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 		   *ClientWorkerId, *GetNameSafe(PlayerStart), SpawningVirtualWorker);
 
 	// Find the server worker entity corresponding to the PlayerStart strategized virtual worker.
-	const Worker_EntityId ServerWorkerEntity =
-		NetDriver->VirtualWorkerTranslator->GetServerWorkerEntityForVirtualWorker(SpawningVirtualWorker);
+	const FEntityId ServerWorkerEntity = NetDriver->VirtualWorkerTranslator->GetServerWorkerEntityForVirtualWorker(SpawningVirtualWorker);
 	if (ServerWorkerEntity == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Error,
@@ -406,7 +405,7 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 		SpatialConstants::GetCommandRetryWaitTimeSeconds(SpatialConstants::FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS), false);
 }
 
-void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId,
+void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const FEntityId EntityId, const Worker_RequestId RequestId,
 														   const bool bShouldTryDifferentPlayerStart)
 {
 	// If the forward request data doesn't exist, we assume the command actually succeeded previously and this failure is spurious.

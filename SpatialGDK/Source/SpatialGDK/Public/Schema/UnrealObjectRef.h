@@ -14,13 +14,13 @@ struct SPATIALGDK_API FUnrealObjectRef
 	FUnrealObjectRef() = default;
 	FUnrealObjectRef(const FUnrealObjectRef&) = default;
 
-	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
+	FUnrealObjectRef(FEntityId Entity, uint32 Offset)
 		: Entity(Entity)
 		, Offset(Offset)
 	{
 	}
 
-	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient = false)
+	FUnrealObjectRef(FEntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient = false)
 		: Entity(Entity)
 		, Offset(Offset)
 		, Path(Path)
@@ -74,7 +74,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
 
-	Worker_EntityId Entity;
+	FEntityId Entity;
 	uint32 Offset;
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;

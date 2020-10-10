@@ -90,13 +90,12 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const FEntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo,
-															 const Worker_EntityId InEntityId) const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const FEntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
@@ -164,7 +163,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const FEntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -203,7 +202,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 	}
 }
 
-void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const FEntityId& EntityId) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
@@ -214,7 +213,7 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_
 		OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), NewQuery);
 }
 
-void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
+void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const FEntityId& EntityId) const
 {
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
@@ -247,7 +246,7 @@ bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
 	return true;
 }
 
-void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
+void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const FEntityId& EntityId) const
 {
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;

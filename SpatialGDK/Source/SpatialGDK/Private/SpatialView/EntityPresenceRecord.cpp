@@ -2,7 +2,7 @@
 
 namespace SpatialGDK
 {
-void EntityPresenceRecord::AddEntity(Worker_EntityId EntityId)
+void EntityPresenceRecord::AddEntity(FEntityId EntityId)
 {
 	if (EntitiesRemoved.RemoveSingleSwap(EntityId) == 0)
 	{
@@ -10,7 +10,7 @@ void EntityPresenceRecord::AddEntity(Worker_EntityId EntityId)
 	}
 }
 
-void EntityPresenceRecord::RemoveEntity(Worker_EntityId EntityId)
+void EntityPresenceRecord::RemoveEntity(FEntityId EntityId)
 {
 	if (EntitiesAdded.RemoveSingleSwap(EntityId) == 0)
 	{
@@ -24,12 +24,12 @@ void EntityPresenceRecord::Clear()
 	EntitiesRemoved.Empty();
 }
 
-const TArray<Worker_EntityId>& EntityPresenceRecord::GetEntitiesAdded() const
+const TArray<FEntityId>& EntityPresenceRecord::GetEntitiesAdded() const
 {
 	return EntitiesAdded;
 }
 
-const TArray<Worker_EntityId>& EntityPresenceRecord::GetEntitiesRemoved() const
+const TArray<FEntityId>& EntityPresenceRecord::GetEntitiesRemoved() const
 {
 	return EntitiesRemoved;
 }

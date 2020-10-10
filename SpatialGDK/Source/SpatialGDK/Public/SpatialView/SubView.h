@@ -6,11 +6,11 @@
 #include "EntityView.h"
 #include "Templates/Function.h"
 
-using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
-using FRefreshCallback = TFunction<void(const Worker_EntityId)>;
+using FFilterPredicate = TFunction<bool(const FEntityId, const SpatialGDK::EntityViewElement&)>;
+using FRefreshCallback = TFunction<void(const FEntityId)>;
 using FDispatcherRefreshCallback = TFunction<void(const FRefreshCallback)>;
 using FComponentChangeRefreshPredicate = TFunction<bool(SpatialGDK::FEntityComponentChange)>;
-using FAuthorityChangeRefreshPredicate = TFunction<bool(Worker_EntityId)>;
+using FAuthorityChangeRefreshPredicate = TFunction<bool(FEntityId)>;
 
 namespace SpatialGDK
 {
@@ -40,7 +40,7 @@ public:
 
 	void Advance(const ViewDelta& Delta);
 	const FSubViewDelta& GetViewDelta() const;
-	void RefreshEntity(const Worker_EntityId EntityId);
+	void RefreshEntity(const FEntityId EntityId);
 
 	const EntityView& GetView() const;
 
@@ -57,11 +57,11 @@ public:
 private:
 	void RegisterTagCallbacks(FDispatcher& Dispatcher);
 	void RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
-	void OnTaggedEntityAdded(const Worker_EntityId EntityId);
-	void OnTaggedEntityRemoved(const Worker_EntityId EntityId);
-	void CheckEntityAgainstFilter(const Worker_EntityId EntityId);
-	void EntityComplete(const Worker_EntityId EntityId);
-	void EntityIncomplete(const Worker_EntityId EntityId);
+	void OnTaggedEntityAdded(const FEntityId EntityId);
+	void OnTaggedEntityRemoved(const FEntityId EntityId);
+	void CheckEntityAgainstFilter(const FEntityId EntityId);
+	void EntityComplete(const FEntityId EntityId);
+	void EntityIncomplete(const FEntityId EntityId);
 
 	Worker_ComponentId TagComponentId;
 	FFilterPredicate Filter;
@@ -69,11 +69,11 @@ private:
 
 	FSubViewDelta SubViewDelta;
 
-	TArray<Worker_EntityId> TaggedEntities;
-	TArray<Worker_EntityId> CompleteEntities;
-	TArray<Worker_EntityId> NewlyCompleteEntities;
-	TArray<Worker_EntityId> NewlyIncompleteEntities;
-	TArray<Worker_EntityId> TemporarilyIncompleteEntities;
+	TArray<FEntityId> TaggedEntities;
+	TArray<FEntityId> CompleteEntities;
+	TArray<FEntityId> NewlyCompleteEntities;
+	TArray<FEntityId> NewlyIncompleteEntities;
+	TArray<FEntityId> TemporarilyIncompleteEntities;
 };
 
 } // namespace SpatialGDK

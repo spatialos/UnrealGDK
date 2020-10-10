@@ -20,7 +20,7 @@ FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* In
 FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner,
 																									VirtualWorkerId& OutWorkerId)
 {
-	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const FEntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return EvaluateActorResult::None;
@@ -71,7 +71,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
-					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+					FEntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 					if (SpatialGDK::AuthorityIntent* OwnerAuthIntent =
 							NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(OwnerId))
 					{
@@ -119,7 +119,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 	ActorsToMigrate.Empty();
 }
 
-void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
+void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, FEntityId EntityId) const
 {
 	if (SpatialGDK::SpatialDebugging* DebuggingInfo =
 			NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))

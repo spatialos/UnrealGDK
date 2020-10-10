@@ -251,12 +251,12 @@ inline bool WorkerComponentIdEquality(const Worker_ComponentId Lhs, const Worker
 	return Lhs == Rhs;
 }
 
-inline bool WorkerEntityIdEquality(const Worker_EntityId Lhs, const Worker_EntityId Rhs)
+inline bool WorkerEntityIdEquality(const FEntityId Lhs, const FEntityId Rhs)
 {
 	return Lhs == Rhs;
 }
 
-inline bool CompareWorkerEntityId(const Worker_EntityId Lhs, const Worker_EntityId Rhs)
+inline bool CompareWorkerEntityId(const FEntityId Lhs, const FEntityId Rhs)
 {
 	return Lhs < Rhs;
 }

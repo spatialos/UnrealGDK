@@ -58,36 +58,35 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId,
-						 const TOptional<Trace_SpanId>& SpanId)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const FEntityId* InEntityId, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
-		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
+		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<FEntityId>())
 		, SpanId(SpanId)
 	{
 	}
 
 	TArray<FWorkerComponentData> Components;
-	TOptional<Worker_EntityId> EntityId;
+	TOptional<FEntityId> EntityId;
 	TOptional<Trace_SpanId> SpanId;
 };
 
 struct FDeleteEntityRequest : FOutgoingMessage
 {
-	FDeleteEntityRequest(Worker_EntityId InEntityId, const TOptional<Trace_SpanId>& SpanId)
+	FDeleteEntityRequest(FEntityId InEntityId, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
 		, SpanId(SpanId)
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	const TOptional<Trace_SpanId> SpanId;
 };
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData, const TOptional<Trace_SpanId>& SpanId)
+	FAddComponent(FEntityId InEntityId, const FWorkerComponentData& InData, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
@@ -95,14 +94,14 @@ struct FAddComponent : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	FWorkerComponentData Data;
 	TOptional<Trace_SpanId> SpanId;
 };
 
 struct FRemoveComponent : FOutgoingMessage
 {
-	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TOptional<Trace_SpanId>& SpanId)
+	FRemoveComponent(FEntityId InEntityId, Worker_ComponentId InComponentId, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
@@ -110,14 +109,14 @@ struct FRemoveComponent : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	Worker_ComponentId ComponentId;
 	TOptional<Trace_SpanId> SpanId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const TOptional<Trace_SpanId>& SpanId)
+	FComponentUpdate(FEntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
@@ -125,14 +124,14 @@ struct FComponentUpdate : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	FWorkerComponentUpdate Update;
 	TOptional<Trace_SpanId> SpanId;
 };
 
 struct FCommandRequest : FOutgoingMessage
 {
-	FCommandRequest(Worker_EntityId InEntityId, const Worker_CommandRequest& InRequest, uint32_t InCommandId)
+	FCommandRequest(FEntityId InEntityId, const Worker_CommandRequest& InRequest, uint32_t InCommandId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandRequest)
 		, EntityId(InEntityId)
 		, Request(InRequest)
@@ -140,7 +139,7 @@ struct FCommandRequest : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	Worker_CommandRequest Request;
 	uint32_t CommandId;
 };
@@ -192,14 +191,14 @@ struct FLogMessage : FOutgoingMessage
 
 struct FComponentInterest : FOutgoingMessage
 {
-	FComponentInterest(Worker_EntityId InEntityId, TArray<Worker_InterestOverride>&& InInterests)
+	FComponentInterest(FEntityId InEntityId, TArray<Worker_InterestOverride>&& InInterests)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
 		, Interests(MoveTemp(InInterests))
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	TArray<Worker_InterestOverride> Interests;
 };
 

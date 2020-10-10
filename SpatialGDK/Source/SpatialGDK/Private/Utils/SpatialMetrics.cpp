@@ -143,7 +143,7 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		FEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -243,7 +243,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		FEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -272,7 +272,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		FEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{

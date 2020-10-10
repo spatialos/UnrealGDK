@@ -14,8 +14,8 @@ DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseO
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const FEntityId);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const FEntityId);
 
 class SpatialOSDispatcherInterface
 {
@@ -28,7 +28,7 @@ public:
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnRemoveComponent, return;);
 	virtual void FlushRemoveComponentOps() PURE_VIRTUAL(SpatialOSDispatcherInterface::FlushRemoveComponentOps, return;);
-	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId)
+	virtual void DropQueuedRemoveComponentOpsForEntity(FEntityId EntityId)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::DropQueuedRemoveComponentOpsForEntity, return;);
 	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAuthorityChange, return;);
@@ -36,7 +36,7 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnEntityQueryResponse, return;);
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)
+	virtual bool OnExtractIncomingRPC(FEntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnExtractIncomingRPC, return false;);
 	virtual void OnCommandRequest(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCommandRequest, return;);
 	virtual void OnCommandResponse(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCommandResponse, return;);

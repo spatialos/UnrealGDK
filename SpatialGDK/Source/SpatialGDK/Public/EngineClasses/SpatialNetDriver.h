@@ -107,12 +107,12 @@ public:
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
 	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& ConnectionOwningWorkerId);
 
-	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
-	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
-	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
+	void AddActorChannel(FEntityId EntityId, USpatialActorChannel* Channel);
+	void RemoveActorChannel(FEntityId EntityId, USpatialActorChannel& Channel);
+	TMap<FEntityId, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
-	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+	USpatialActorChannel* GetActorChannelByEntityId(FEntityId EntityId) const;
 
 	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
@@ -120,9 +120,9 @@ public:
 
 	void AddPendingDormantChannel(USpatialActorChannel* Channel);
 	void RemovePendingDormantChannel(USpatialActorChannel* Channel);
-	void RegisterDormantEntityId(Worker_EntityId EntityId);
-	void UnregisterDormantEntityId(Worker_EntityId EntityId);
-	bool IsDormantEntity(Worker_EntityId EntityId) const;
+	void RegisterDormantEntityId(FEntityId EntityId);
+	void UnregisterDormantEntityId(FEntityId EntityId);
+	bool IsDormantEntity(FEntityId EntityId) const;
 
 	void WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
@@ -171,7 +171,7 @@ public:
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
-	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+	FEntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
@@ -185,13 +185,13 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	void DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor);
+	void DelayedRetireEntity(FEntityId EntityId, float Delay, bool bIsNetStartupActor);
 
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
 	int32 PlayInEditorID;
 
-	void TrackTombstone(const Worker_EntityId EntityId);
+	void TrackTombstone(const FEntityId EntityId);
 #endif
 
 	// IsReady evaluates the GSM, Load Balancing system, and others to get a holistic
@@ -211,8 +211,8 @@ private:
 
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
-	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
-	TSet<Worker_EntityId_Key> DormantEntities;
+	TMap<FEntityId, USpatialActorChannel*> EntityToActorChannel;
+	TSet<FEntityId> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
 	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
@@ -293,7 +293,7 @@ private:
 
 #if WITH_EDITOR
 	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
-	TArray<Worker_EntityId> TombstonedEntities;
+	TArray<FEntityId> TombstonedEntities;
 #endif
 
 	void MakePlayerSpawnRequest();
@@ -306,7 +306,7 @@ private:
 
 	void ProcessOwnershipChanges();
 
-	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
+	TSet<FEntityId> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
 	FString StartupClientDebugString;
 };

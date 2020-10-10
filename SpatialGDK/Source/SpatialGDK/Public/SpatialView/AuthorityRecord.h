@@ -28,7 +28,7 @@ public:
 	//    lost-temporarily -> UNDEFINED
 	//  WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT
 	//    ignored
-	void SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
+	void SetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
 
 	// Remove all records.
 	void Clear();

@@ -11,7 +11,7 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-using StringToEntityMap = TMap<FString, Worker_EntityId>;
+using StringToEntityMap = TMap<FString, FEntityId>;
 
 namespace SpatialGDK
 {
@@ -191,7 +191,7 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 		Schema_Object* PairObject = Schema_IndexObject(Object, Id, i);
 
 		FString String = GetStringFromSchema(PairObject, SCHEMA_MAP_KEY_FIELD_ID);
-		Worker_EntityId Entity = Schema_GetEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+		FEntityId Entity = Schema_GetEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 		Map.Add(String, Entity);
 	}

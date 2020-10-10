@@ -12,7 +12,7 @@ namespace SpatialGDK
 {
 SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Contains_Entity)
 {
-	const Worker_EntityId TaggedEntityId = 2;
+	const FEntityId TaggedEntityId = 2;
 	const Worker_ComponentId TagComponentId = 1;
 
 	FDispatcher Dispatcher;
@@ -44,8 +44,8 @@ SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Co
 SUBVIEW_TEST(
 	GIVEN_SubView_With_Filter_WHEN_Tagged_Entities_Added_THEN_Delta_Only_Contains_Filtered_Entities_ALSO_Dispatcher_Callback_Refreshes_Correctly)
 {
-	const Worker_EntityId TaggedEntityId = 2;
-	const Worker_EntityId OtherTaggedEntityId = 3;
+	const FEntityId TaggedEntityId = 2;
+	const FEntityId OtherTaggedEntityId = 3;
 	const Worker_ComponentId TagComponentId = 1;
 	const Worker_ComponentId ValueComponentId = 2;
 	const double CorrectValue = 1;
@@ -55,7 +55,7 @@ SUBVIEW_TEST(
 	EntityView View;
 	ViewDelta Delta;
 
-	FFilterPredicate Filter = [ValueComponentId, CorrectValue](const Worker_EntityId&, const EntityViewElement& Element) {
+	FFilterPredicate Filter = [ValueComponentId, CorrectValue](const FEntityId&, const EntityViewElement& Element) {
 		const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ ValueComponentId });
 		if (GetValueFromTestComponentData(It->GetUnderlying()) == CorrectValue)
 		{
@@ -112,7 +112,7 @@ SUBVIEW_TEST(
 
 SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refresh_Entity_THEN_Entity_Is_Complete)
 {
-	const Worker_EntityId TaggedEntityId = 2;
+	const FEntityId TaggedEntityId = 2;
 	const Worker_ComponentId TagComponentId = 1;
 
 	FDispatcher Dispatcher;
@@ -121,7 +121,7 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 
 	bool IsFilterComplete = false;
 
-	FFilterPredicate Filter = [&IsFilterComplete](const Worker_EntityId&, const EntityViewElement&) {
+	FFilterPredicate Filter = [&IsFilterComplete](const FEntityId&, const EntityViewElement&) {
 		return IsFilterComplete;
 	};
 

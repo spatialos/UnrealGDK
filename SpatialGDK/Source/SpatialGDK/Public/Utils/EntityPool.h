@@ -14,8 +14,8 @@
 
 struct EntityRange
 {
-	Worker_EntityId CurrentEntityId;
-	Worker_EntityId LastEntityId;
+	FEntityId CurrentEntityId;
+	FEntityId LastEntityId;
 	bool bExpired;
 	uint32 EntityRangeId; // Used to identify an entity range when it has expired.
 };
@@ -35,7 +35,7 @@ class SPATIALGDK_API UEntityPool : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
 	void ReserveEntityIDs(int32 EntitiesToReserve);
-	Worker_EntityId GetNextEntityId();
+	FEntityId GetNextEntityId();
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
 	FORCEINLINE bool IsReady() const { return bIsReady; }

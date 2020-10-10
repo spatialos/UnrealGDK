@@ -24,7 +24,7 @@ struct CreateEntityRequest
 {
 	Worker_RequestId RequestId;
 	TArray<ComponentData> EntityComponents;
-	TOptional<Worker_EntityId> EntityId;
+	TOptional<FEntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
 	TOptional<Trace_SpanId> SpanId;
 };
@@ -32,7 +32,7 @@ struct CreateEntityRequest
 struct DeleteEntityRequest
 {
 	Worker_RequestId RequestId;
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	TOptional<uint32> TimeoutMillis;
 	TOptional<Trace_SpanId> SpanId;
 };
@@ -46,7 +46,7 @@ struct EntityQueryRequest
 
 struct EntityCommandRequest
 {
-	Worker_EntityId EntityId;
+	FEntityId EntityId;
 	Worker_RequestId RequestId;
 	CommandRequest Request;
 	TOptional<uint32> TimeoutMillis;

@@ -175,7 +175,7 @@ void FDispatcher::InvokeWithExistingValues(Worker_ComponentId ComponentId, const
 	}
 }
 
-void FDispatcher::HandleComponentPresenceChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
+void FDispatcher::HandleComponentPresenceChanges(FEntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
 												 TCallbacks<FEntityComponentChange> FComponentCallbacks::*Callbacks)
 {
 	auto* CallbackIt = ComponentCallbacks.GetData();
@@ -206,7 +206,7 @@ void FDispatcher::HandleComponentPresenceChanges(Worker_EntityId EntityId, const
 	}
 }
 
-void FDispatcher::HandleComponentValueChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges)
+void FDispatcher::HandleComponentValueChanges(FEntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges)
 {
 	auto* CallbackIt = ComponentCallbacks.GetData();
 	auto* ChangeIt = ComponentChanges.GetData();
@@ -235,8 +235,8 @@ void FDispatcher::HandleComponentValueChanges(Worker_EntityId EntityId, const Co
 	}
 }
 
-void FDispatcher::HandleAuthorityChange(Worker_EntityId EntityId, const ComponentSpan<AuthorityChange>& AuthorityChanges,
-										TCallbacks<Worker_EntityId> FAuthorityCallbacks::*Callbacks)
+void FDispatcher::HandleAuthorityChange(FEntityId EntityId, const ComponentSpan<AuthorityChange>& AuthorityChanges,
+										TCallbacks<FEntityId> FAuthorityCallbacks::*Callbacks)
 {
 	auto* CallbackIt = AuthorityCallbacks.GetData();
 	auto* ChangeIt = AuthorityChanges.GetData();

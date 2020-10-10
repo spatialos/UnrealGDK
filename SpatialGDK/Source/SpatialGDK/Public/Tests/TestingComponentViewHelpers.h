@@ -11,10 +11,10 @@
 struct SPATIALGDK_API TestingComponentViewHelpers
 {
 	// Can be used add components to a component view for a given entity.
-	static void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const Worker_EntityId EntityId,
+	static void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const FEntityId EntityId,
 														const Worker_ComponentId ComponentId, Schema_ComponentData* ComponentData,
 														const Worker_Authority Authority);
 
-	static void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const Worker_EntityId EntityId,
+	static void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const FEntityId EntityId,
 														const Worker_ComponentId ComponentId, const Worker_Authority Authority);
 };

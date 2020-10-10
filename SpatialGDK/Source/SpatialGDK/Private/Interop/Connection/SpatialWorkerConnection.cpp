@@ -71,11 +71,11 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FEntityId* EntityId,
 																   const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
+	const TOptional<FEntityId> Id = EntityId ? *EntityId : TOptional<FEntityId>();
 	TArray<SpatialGDK::ComponentData> Data;
 	Data.Reserve(Components.Num());
 	for (auto& Component : Components)
@@ -85,34 +85,34 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, {}, SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendDeleteEntityRequest(EntityId, {}, SpanId);
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+void USpatialWorkerConnection::SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData,
 												const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData), SpanId);
 }
 
-void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void USpatialWorkerConnection::SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId,
 												   const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+void USpatialWorkerConnection::SendComponentUpdate(FEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 												   const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
+Worker_RequestId USpatialWorkerConnection::SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
 															  const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
@@ -144,7 +144,7 @@ void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& Logger
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
 }
 
-void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
+void USpatialWorkerConnection::SendComponentInterest(FEntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
 	// Deprecated.
 	checkNoEntry();
