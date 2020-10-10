@@ -24,9 +24,9 @@ void ViewCoordinator::Advance()
 	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
 	for (uint32 i = 0; i < OpListCount; ++i)
 	{
-		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
+		CriticalSectionFilter.AddOpList(ConnectionHandler->GetNextOpList());
 	}
-	View.AdvanceViewDelta();
+	View.AdvanceViewDelta(CriticalSectionFilter.GetReadyOpLists());
 	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 
 	for (const TUniquePtr<FSubView>& SubviewToAdvance : SubViews)
