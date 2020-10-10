@@ -2,21 +2,21 @@
 
 namespace SpatialGDK
 {
-CommandRequest::CommandRequest(FComponentId ComponentId, Worker_CommandIndex CommandIndex)
+CommandRequest::CommandRequest(FComponentId ComponentId, FCommandIndex CommandIndex)
 	: ComponentId(ComponentId)
 	, CommandIndex(CommandIndex)
 	, Data(Schema_CreateCommandRequest())
 {
 }
 
-CommandRequest::CommandRequest(OwningCommandRequestPtr Data, FComponentId ComponentId, Worker_CommandIndex CommandIndex)
+CommandRequest::CommandRequest(OwningCommandRequestPtr Data, FComponentId ComponentId, FCommandIndex CommandIndex)
 	: ComponentId(ComponentId)
 	, CommandIndex(CommandIndex)
 	, Data(MoveTemp(Data))
 {
 }
 
-CommandRequest CommandRequest::CreateCopy(const Schema_CommandRequest* Data, FComponentId ComponentId, Worker_CommandIndex CommandIndex)
+CommandRequest CommandRequest::CreateCopy(const Schema_CommandRequest* Data, FComponentId ComponentId, FCommandIndex CommandIndex)
 {
 	return CommandRequest(OwningCommandRequestPtr(Schema_CopyCommandRequest(Data)), ComponentId, CommandIndex);
 }
@@ -50,7 +50,7 @@ FComponentId CommandRequest::GetComponentId() const
 	return ComponentId;
 }
 
-Worker_CommandIndex CommandRequest::GetCommandIndex() const
+FCommandIndex CommandRequest::GetCommandIndex() const
 {
 	return CommandIndex;
 }
