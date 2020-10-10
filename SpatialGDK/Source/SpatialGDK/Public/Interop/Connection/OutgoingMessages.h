@@ -146,7 +146,7 @@ struct FCommandRequest : FOutgoingMessage
 
 struct FCommandResponse : FOutgoingMessage
 {
-	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse, const TOptional<Trace_SpanId>& SpanId)
+	FCommandResponse(FRequestId InRequestId, const Worker_CommandResponse& InResponse, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandResponse)
 		, RequestId(InRequestId)
 		, Response(InResponse)
@@ -154,14 +154,14 @@ struct FCommandResponse : FOutgoingMessage
 	{
 	}
 
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	Worker_CommandResponse Response;
 	TOptional<Trace_SpanId> SpanId;
 };
 
 struct FCommandFailure : FOutgoingMessage
 {
-	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage, const TOptional<Trace_SpanId>& SpanId)
+	FCommandFailure(FRequestId InRequestId, const FString& InMessage, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandFailure)
 		, RequestId(InRequestId)
 		, Message(InMessage)
@@ -169,7 +169,7 @@ struct FCommandFailure : FOutgoingMessage
 	{
 	}
 
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	FString Message;
 	TOptional<Trace_SpanId> SpanId;
 };

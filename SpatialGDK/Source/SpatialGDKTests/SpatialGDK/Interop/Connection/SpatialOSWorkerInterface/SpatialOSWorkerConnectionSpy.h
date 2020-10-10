@@ -25,32 +25,32 @@ public:
 
 	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() override;
 	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
-	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FEntityId* EntityId,
-													 const TOptional<Trace_SpanId>& SpanId) override;
-	virtual Worker_RequestId SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId) override;
+	virtual FRequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
+	virtual FRequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FEntityId* EntityId,
+											   const TOptional<Trace_SpanId>& SpanId) override;
+	virtual FRequestId SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendComponentUpdate(FEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const TOptional<Trace_SpanId>& SpanId) override;
-	virtual Worker_RequestId SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-												const TOptional<Trace_SpanId>& SpanId) override;
-	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
+	virtual FRequestId SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
+										  const TOptional<Trace_SpanId>& SpanId) override;
+	virtual void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse* Response,
 									 const TOptional<Trace_SpanId>& SpanId) override;
-	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId) override;
+	virtual void SendCommandFailure(FRequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
 	virtual void SendComponentInterest(FEntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
-	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
+	virtual FRequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
 	// The following methods are used to query for state in tests.
 	const Worker_EntityQuery* GetLastEntityQuery();
 	void ClearLastEntityQuery();
 
-	Worker_RequestId GetLastRequestId();
+	FRequestId GetLastRequestId();
 
 private:
-	Worker_RequestId NextRequestId;
+	FRequestId NextRequestId;
 
 	const Worker_EntityQuery* LastEntityQuery;
 

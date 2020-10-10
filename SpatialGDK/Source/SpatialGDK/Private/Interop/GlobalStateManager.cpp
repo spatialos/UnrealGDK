@@ -469,7 +469,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	GSMQuery.constraint = GSMConstraint;
 	GSMQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	Worker_RequestId RequestID;
+	FRequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
@@ -512,7 +512,7 @@ void UGlobalStateManager::QueryTranslation()
 	TranslationQuery.constraint = TranslationConstraint;
 	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+	FRequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
 	bTranslationQueryInFlight = true;
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);

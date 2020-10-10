@@ -49,7 +49,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	WorldQuery.constraint = UnrealMetadataConstraint;
 	WorldQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	Worker_RequestId RequestID;
+	FRequestId RequestID;
 	check(Connection.IsValid());
 	RequestID = Connection->SendEntityQueryRequest(&WorldQuery);
 
@@ -203,7 +203,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Reserve the Entity IDs
 	check(Connection.IsValid());
-	Worker_RequestId ReserveRequestID = Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
+	FRequestId ReserveRequestID = Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
 
 	// TODO: UNR-654
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.

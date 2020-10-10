@@ -90,45 +90,45 @@ void ViewCoordinator::SendRemoveComponent(FEntityId EntityId, Worker_ComponentId
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis)
+FRequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis)
 {
 	View.SendReserveEntityIdsRequest({ NextRequestId, NumberOfEntityIds, TimeoutMillis });
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FEntityId> EntityId,
-														  TOptional<uint32> TimeoutMillis, const TOptional<Trace_SpanId>& SpanId)
+FRequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FEntityId> EntityId,
+													TOptional<uint32> TimeoutMillis, const TOptional<Trace_SpanId>& SpanId)
 {
 	View.SendCreateEntityRequest({ NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(FEntityId EntityId, TOptional<uint32> TimeoutMillis,
-														  const TOptional<Trace_SpanId>& SpanId)
+FRequestId ViewCoordinator::SendDeleteEntityRequest(FEntityId EntityId, TOptional<uint32> TimeoutMillis,
+													const TOptional<Trace_SpanId>& SpanId)
 {
 	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis)
+FRequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis)
 {
 	View.SendEntityQueryRequest({ NextRequestId, MoveTemp(Query), TimeoutMillis });
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendEntityCommandRequest(FEntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis,
-														   const TOptional<Trace_SpanId>& SpanId)
+FRequestId ViewCoordinator::SendEntityCommandRequest(FEntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis,
+													 const TOptional<Trace_SpanId>& SpanId)
 {
 	View.SendEntityCommandRequest({ EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
 
-void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandResponse(FRequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId)
 {
 	View.SendEntityCommandResponse({ RequestId, MoveTemp(Response), SpanId });
 }
 
-void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandFailure(FRequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId)
 {
 	View.SendEntityCommandFailure({ RequestId, MoveTemp(Message), SpanId });
 }

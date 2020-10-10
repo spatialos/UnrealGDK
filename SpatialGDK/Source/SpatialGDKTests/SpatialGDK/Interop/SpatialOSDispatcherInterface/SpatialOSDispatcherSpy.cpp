@@ -38,22 +38,22 @@ void SpatialOSDispatcherSpy::OnReserveEntityIdsResponse(const Worker_ReserveEnti
 
 void SpatialOSDispatcherSpy::OnCreateEntityResponse(const Worker_Op& Op) {}
 
-void SpatialOSDispatcherSpy::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) {}
+void SpatialOSDispatcherSpy::AddPendingActorRequest(FRequestId RequestId, USpatialActorChannel* Channel) {}
 
-void SpatialOSDispatcherSpy::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) {}
+void SpatialOSDispatcherSpy::AddPendingReliableRPC(FRequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) {}
 
-void SpatialOSDispatcherSpy::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
+void SpatialOSDispatcherSpy::AddEntityQueryDelegate(FRequestId RequestId, EntityQueryDelegate Delegate)
 {
 	EntityQueryDelegates.Add(RequestId, Delegate);
 }
 
-void SpatialOSDispatcherSpy::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) {}
+void SpatialOSDispatcherSpy::AddReserveEntityIdsDelegate(FRequestId RequestId, ReserveEntityIDsDelegate Delegate) {}
 
-void SpatialOSDispatcherSpy::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) {}
+void SpatialOSDispatcherSpy::AddCreateEntityDelegate(FRequestId RequestId, CreateEntityDelegate Delegate) {}
 
 void SpatialOSDispatcherSpy::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) {}
 
-EntityQueryDelegate* SpatialOSDispatcherSpy::GetEntityQueryDelegate(Worker_RequestId RequestId)
+EntityQueryDelegate* SpatialOSDispatcherSpy::GetEntityQueryDelegate(FRequestId RequestId)
 {
 	return EntityQueryDelegates.Find(RequestId);
 }

@@ -1905,7 +1905,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	const Worker_CommandRequest& Request = CommandRequestOp.request;
 	const FEntityId EntityId = CommandRequestOp.entity_id;
 	const Worker_ComponentId ComponentId = Request.component_id;
-	const Worker_RequestId RequestId = CommandRequestOp.request_id;
+	const FRequestId RequestId = CommandRequestOp.request_id;
 	const Schema_FieldId CommandIndex = Request.command_index;
 
 	if (IsEntityWaitingForAsyncLoad(CommandRequestOp.entity_id))
@@ -2026,7 +2026,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
 	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
 	const Worker_ComponentId ComponentId = Repsonse.component_id;
-	const Worker_RequestId RequestId = CommandResponseOp.request_id;
+	const FRequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
 	if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
@@ -2058,7 +2058,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
 	const FEntityId EntityId = CommandResponseOp.entity_id;
 	const Worker_ComponentId ComponentId = Repsonse.component_id;
-	const Worker_RequestId RequestId = CommandResponseOp.request_id;
+	const FRequestId RequestId = CommandResponseOp.request_id;
 	const uint8_t StatusCode = CommandResponseOp.status_code;
 
 	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
@@ -2294,7 +2294,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 {
 	const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
 	const FEntityId EntityId = CreateEntityResponseOp.entity_id;
-	const Worker_RequestId RequestId = CreateEntityResponseOp.request_id;
+	const FRequestId RequestId = CreateEntityResponseOp.request_id;
 	const uint8_t StatusCode = CreateEntityResponseOp.status_code;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCreateEntityResponse);
@@ -2391,32 +2391,32 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 }
 
-void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
+void USpatialReceiver::AddPendingActorRequest(FRequestId RequestId, USpatialActorChannel* Channel)
 {
 	PendingActorRequests.Add(RequestId, Channel);
 }
 
-void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<FReliableRPCForRetry> ReliableRPC)
+void USpatialReceiver::AddPendingReliableRPC(FRequestId RequestId, TSharedRef<FReliableRPCForRetry> ReliableRPC)
 {
 	PendingReliableRPCs.Add(RequestId, ReliableRPC);
 }
 
-void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
+void USpatialReceiver::AddEntityQueryDelegate(FRequestId RequestId, EntityQueryDelegate Delegate)
 {
 	EntityQueryDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
+void USpatialReceiver::AddReserveEntityIdsDelegate(FRequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {
 	ReserveEntityIDsDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
+void USpatialReceiver::AddCreateEntityDelegate(FRequestId RequestId, CreateEntityDelegate Delegate)
 {
 	CreateEntityDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
-TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
+TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(FRequestId RequestId)
 {
 	TWeakObjectPtr<USpatialActorChannel>* ChannelPtr = PendingActorRequests.Find(RequestId);
 	if (ChannelPtr == nullptr)

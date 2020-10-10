@@ -44,14 +44,14 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnReserveEntityIdsResponse, return;);
 	virtual void OnCreateEntityResponse(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCreateEntityResponse, return;);
 
-	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
+	virtual void AddPendingActorRequest(FRequestId RequestId, USpatialActorChannel* Channel)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddPendingActorRequest, return;);
-	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC)
+	virtual void AddPendingReliableRPC(FRequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddPendingReliableRPC, return;);
-	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
+	virtual void AddEntityQueryDelegate(FRequestId RequestId, EntityQueryDelegate Delegate)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddEntityQueryDelegate, return;);
-	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
+	virtual void AddReserveEntityIdsDelegate(FRequestId RequestId, ReserveEntityIDsDelegate Delegate)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddReserveEntityIdsDelegate, return;);
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
+	virtual void AddCreateEntityDelegate(FRequestId RequestId, CreateEntityDelegate Delegate)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddCreateEntityDelegate, return;);
 };

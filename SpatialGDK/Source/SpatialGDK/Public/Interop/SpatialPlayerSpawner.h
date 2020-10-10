@@ -62,7 +62,7 @@ private:
 	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const PhysicalWorkerName& ClientWorkerId);
 	void ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart,
 												const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
-	void RetryForwardSpawnPlayerRequest(const FEntityId EntityId, const Worker_RequestId RequestId,
+	void RetryForwardSpawnPlayerRequest(const FEntityId EntityId, const FRequestId RequestId,
 										const bool bShouldTryDifferentPlayerStart = false);
 
 	// Any server
@@ -73,7 +73,7 @@ private:
 
 	FTimerManager* TimerManager;
 	int NumberOfAttempts;
-	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
+	TMap<FRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
 
 	TSet<FString> WorkersWithPlayersSpawned;
 };

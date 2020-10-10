@@ -91,12 +91,12 @@ public:
 	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;
 	virtual void OnCreateEntityResponse(const Worker_Op& Op) override;
 
-	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
-	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
+	virtual void AddPendingActorRequest(FRequestId RequestId, USpatialActorChannel* Channel) override;
+	virtual void AddPendingReliableRPC(FRequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
 
-	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
-	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) override;
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) override;
+	virtual void AddEntityQueryDelegate(FRequestId RequestId, EntityQueryDelegate Delegate) override;
+	virtual void AddReserveEntityIdsDelegate(FRequestId RequestId, ReserveEntityIDsDelegate Delegate) override;
+	virtual void AddCreateEntityDelegate(FRequestId RequestId, CreateEntityDelegate Delegate) override;
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
@@ -167,7 +167,7 @@ private:
 
 	void ProcessQueuedActorRPCsOnEntityCreation(FEntityId EntityId, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(FEntityId EntityId);
-	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
+	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(FRequestId RequestId);
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void CloseClientConnection(USpatialNetConnection* ClientConnection, FEntityId PlayerControllerEntityId);
@@ -253,12 +253,12 @@ private:
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 
-	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
+	TMap<FRequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
-	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
-	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
-	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
+	TMap<FRequestId, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<FRequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
+	TMap<FRequestId, CreateEntityDelegate> CreateEntityDelegates;
 
 	// This will map PlayerController entities to the corresponding SpatialNetConnection
 	// for PlayerControllers that this server has authority over. This is used for player

@@ -51,16 +51,16 @@ public:
 	void SendAddComponent(FEntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
 	void SendComponentUpdate(FEntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
 	void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
-	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FEntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
-	Worker_RequestId SendDeleteEntityRequest(FEntityId EntityId, TOptional<uint32> TimeoutMillis = {},
-											 const TOptional<Trace_SpanId>& SpanId = {});
-	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendEntityCommandRequest(FEntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
-											  const TOptional<Trace_SpanId>& SpanId = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId);
+	FRequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
+	FRequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FEntityId> EntityId,
+									   TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
+	FRequestId SendDeleteEntityRequest(FEntityId EntityId, TOptional<uint32> TimeoutMillis = {},
+									   const TOptional<Trace_SpanId>& SpanId = {});
+	FRequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
+	FRequestId SendEntityCommandRequest(FEntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
+										const TOptional<Trace_SpanId>& SpanId = {});
+	void SendEntityCommandResponse(FRequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId);
+	void SendEntityCommandFailure(FRequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
@@ -88,7 +88,7 @@ private:
 
 	FCriticalSectionFilter CriticalSectionFilter;
 
-	Worker_RequestId NextRequestId;
+	FRequestId NextRequestId;
 	FDispatcher Dispatcher;
 
 	TArray<TUniquePtr<FSubView>> SubViews;

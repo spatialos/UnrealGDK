@@ -15,14 +15,14 @@ namespace SpatialGDK
 {
 struct ReserveEntityIdsRequest
 {
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	uint32 NumberOfEntityIds;
 	TOptional<uint32> TimeoutMillis;
 };
 
 struct CreateEntityRequest
 {
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	TArray<ComponentData> EntityComponents;
 	TOptional<FEntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
@@ -31,7 +31,7 @@ struct CreateEntityRequest
 
 struct DeleteEntityRequest
 {
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	FEntityId EntityId;
 	TOptional<uint32> TimeoutMillis;
 	TOptional<Trace_SpanId> SpanId;
@@ -39,7 +39,7 @@ struct DeleteEntityRequest
 
 struct EntityQueryRequest
 {
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	EntityQuery Query;
 	TOptional<uint32> TimeoutMillis;
 };
@@ -47,7 +47,7 @@ struct EntityQueryRequest
 struct EntityCommandRequest
 {
 	FEntityId EntityId;
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	CommandRequest Request;
 	TOptional<uint32> TimeoutMillis;
 	TOptional<Trace_SpanId> SpanId;
@@ -55,14 +55,14 @@ struct EntityCommandRequest
 
 struct EntityCommandResponse
 {
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	CommandResponse Response;
 	TOptional<Trace_SpanId> SpanId;
 };
 
 struct EntityCommandFailure
 {
-	Worker_RequestId RequestId;
+	FRequestId RequestId;
 	FString Message;
 	TOptional<Trace_SpanId> SpanId;
 };

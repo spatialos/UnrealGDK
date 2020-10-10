@@ -36,7 +36,7 @@ OpList SpatialOSConnectionHandler::GetNextOpList()
 	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
 		Worker_Op& Op = Ops.Ops[i];
-		Worker_RequestId* Id;
+		FRequestId* Id;
 		switch (static_cast<Worker_OpType>(Op.op_type))
 		{
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
@@ -103,7 +103,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	for (auto& Request : Messages->ReserveEntityIdsRequests)
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendReserveEntityIdsRequest(Connection.Get(), Request.NumberOfEntityIds, Timeout);
+		const FRequestId Id = Worker_Connection_SendReserveEntityIdsRequest(Connection.Get(), Request.NumberOfEntityIds, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -120,7 +120,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 
 		FEntityId* EntityId = Request.EntityId.IsSet() ? &Request.EntityId.GetValue() : nullptr;
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id =
+		const FRequestId Id =
 			Worker_Connection_SendCreateEntityRequest(Connection.Get(), Components.Num(), Components.GetData(), EntityId, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
@@ -129,7 +129,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	{
 		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId, Timeout);
+		const FRequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -137,7 +137,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	{
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		Worker_EntityQuery Query = Request.Query.GetWorkerQuery();
-		const Worker_RequestId Id = Worker_Connection_SendEntityQueryRequest(Connection.Get(), &Query, Timeout);
+		const FRequestId Id = Worker_Connection_SendEntityQueryRequest(Connection.Get(), &Query, Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -147,7 +147,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		Worker_CommandRequest r = { nullptr, Request.Request.GetComponentId(), Request.Request.GetCommandIndex(),
 									MoveTemp(Request.Request).Release(), nullptr };
-		const Worker_RequestId Id = Worker_Connection_SendCommandRequest(Connection.Get(), Request.EntityId, &r, Timeout, &CommandParams);
+		const FRequestId Id = Worker_Connection_SendCommandRequest(Connection.Get(), Request.EntityId, &r, Timeout, &CommandParams);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 

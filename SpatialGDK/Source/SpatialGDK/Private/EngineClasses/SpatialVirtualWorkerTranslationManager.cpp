@@ -156,7 +156,7 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 
 	// Make the query.
 	check(Connection != nullptr);
-	Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
+	FRequestId RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.

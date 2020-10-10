@@ -51,7 +51,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	SpatialSpawnerQuery.constraint = SpatialSpawnerConstraint;
 	SpatialSpawnerQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
+	const FRequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
 
 	EntityQueryDelegate SpatialSpawnerQueryDelegate;
 	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op) {
@@ -313,7 +313,7 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(ForwardSpawnPlayerSchemaRequest));
 
-	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(
+	const FRequestId RequestId = NetDriver->Connection->SendCommandRequest(
 		ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
 
 	OutgoingForwardPlayerSpawnRequests.Add(RequestId,
@@ -405,7 +405,7 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 		SpatialConstants::GetCommandRetryWaitTimeSeconds(SpatialConstants::FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS), false);
 }
 
-void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const FEntityId EntityId, const Worker_RequestId RequestId,
+void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const FEntityId EntityId, const FRequestId RequestId,
 														   const bool bShouldTryDifferentPlayerStart)
 {
 	// If the forward request data doesn't exist, we assume the command actually succeeded previously and this failure is spurious.
@@ -435,7 +435,7 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const FEntityId Entit
 	// Resend the ForwardSpawnPlayer request.
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(OldRequest.Get()));
-	const Worker_RequestId NewRequestId = NetDriver->Connection->SendCommandRequest(
+	const FRequestId NewRequestId = NetDriver->Connection->SendCommandRequest(
 		EntityId, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
 
 	// Move the request data from the old request ID map entry across to the new ID entry.

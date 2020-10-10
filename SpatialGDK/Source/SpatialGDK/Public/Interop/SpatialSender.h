@@ -91,10 +91,10 @@ public:
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const Trace_SpanId CauseSpanId);
-	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
+	void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse& Response, const Trace_SpanId CauseSpanId);
+	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId,
 								  const Trace_SpanId CauseSpanId);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanI);
+	void SendCommandFailure(FRequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanI);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(FEntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(FEntityId EntityId, const FClassInfo& Info);
@@ -153,7 +153,7 @@ private:
 	void CreateEntityWithRetries(FEntityId EntityId, FString EntityName, TArray<FWorkerComponentData> Components);
 
 	// Actor Lifecycle
-	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
+	FRequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 
 	void AddTombstoneToEntity(const FEntityId EntityId);
