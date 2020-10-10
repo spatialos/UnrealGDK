@@ -26,7 +26,7 @@ struct CreateEntityRequest
 	TArray<ComponentData> EntityComponents;
 	TOptional<FEntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 };
 
 struct DeleteEntityRequest
@@ -34,7 +34,7 @@ struct DeleteEntityRequest
 	FRequestId RequestId;
 	FEntityId EntityId;
 	TOptional<uint32> TimeoutMillis;
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 };
 
 struct EntityQueryRequest
@@ -50,21 +50,21 @@ struct EntityCommandRequest
 	FRequestId RequestId;
 	CommandRequest Request;
 	TOptional<uint32> TimeoutMillis;
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 };
 
 struct EntityCommandResponse
 {
 	FRequestId RequestId;
 	CommandResponse Response;
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 };
 
 struct EntityCommandFailure
 {
 	FRequestId RequestId;
 	FString Message;
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 };
 
 struct LogMessage

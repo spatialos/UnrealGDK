@@ -23,9 +23,9 @@ public:
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(FEntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
-	void SendComponentUpdate(FEntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendAddComponent(FEntityId EntityId, ComponentData Data, const TOptional<FSpanId>& SpanId);
+	void SendComponentUpdate(FEntityId EntityId, ComponentUpdate Update, const TOptional<FSpanId>& SpanId);
+	void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<FSpanId>& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);

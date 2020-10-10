@@ -30,7 +30,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(FEntityId EntityId, ComponentData ComponentAdded, const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, ComponentData ComponentAdded, const TOptional<FSpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentAdded.GetComponentId())
 		, SpanId(SpanId)
@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(FEntityId EntityId, ComponentUpdate ComponentUpdated, const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, ComponentUpdate ComponentUpdated, const TOptional<FSpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentUpdated.GetComponentId())
 		, SpanId(SpanId)
@@ -48,7 +48,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(FEntityId EntityId, FComponentId RemovedComponentId, const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, FComponentId RemovedComponentId, const TOptional<FSpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(RemovedComponentId)
 		, SpanId(SpanId)
@@ -140,7 +140,7 @@ public:
 	FEntityId EntityId;
 	FComponentId ComponentId;
 
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 
 private:
 	void DeleteSchemaObjects()

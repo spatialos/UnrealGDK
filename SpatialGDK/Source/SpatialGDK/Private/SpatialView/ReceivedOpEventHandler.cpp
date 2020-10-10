@@ -22,7 +22,7 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 	{
 		Worker_Op& Op = Ops.Ops[i];
 
-		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
+		TOptional<FSpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
 
 		switch (static_cast<Worker_OpType>(Op.op_type))
 		{

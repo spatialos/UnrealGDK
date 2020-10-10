@@ -24,17 +24,17 @@ public:
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	TOptional<Trace_SpanId> CreateSpan();
-	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses);
-	void TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
+	TOptional<FSpanId> CreateSpan();
+	TOptional<FSpanId> CreateSpan(const FSpanId* Causes, int32 NumCauses);
+	void TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<FSpanId>& OptionalSpanId);
 
 	bool IsEnabled() const;
 
-	void AddComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId);
+	void AddComponent(FEntityId EntityId, FComponentId ComponentId, const FSpanId& SpanId);
 	void RemoveComponent(FEntityId EntityId, FComponentId ComponentId);
-	void UpdateComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId);
+	void UpdateComponent(FEntityId EntityId, FComponentId ComponentId, const FSpanId& SpanId);
 
-	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
+	FSpanId GetSpanId(const EntityComponentId& Id) const;
 
 private:
 	struct StreamDeleter
@@ -49,7 +49,7 @@ private:
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;
 
-	TMap<EntityComponentId, Trace_SpanId> EntityComponentSpanIds;
+	TMap<EntityComponentId, FSpanId> EntityComponentSpanIds;
 
 	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;
@@ -60,7 +60,7 @@ private:
 // traces.
 struct SpatialScopedActiveSpanId
 {
-	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
+	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<FSpanId>& InCurrentSpanId);
 	~SpatialScopedActiveSpanId();
 
 	SpatialScopedActiveSpanId(const SpatialScopedActiveSpanId&) = delete;
@@ -69,7 +69,7 @@ struct SpatialScopedActiveSpanId
 	SpatialScopedActiveSpanId& operator=(SpatialScopedActiveSpanId&&) = delete;
 
 private:
-	const TOptional<Trace_SpanId>& CurrentSpanId;
+	const TOptional<FSpanId>& CurrentSpanId;
 	Trace_EventTracer* EventTracer;
 };
 

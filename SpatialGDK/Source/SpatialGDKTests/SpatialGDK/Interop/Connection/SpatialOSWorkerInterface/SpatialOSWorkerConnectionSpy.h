@@ -27,17 +27,16 @@ public:
 	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
 	virtual FRequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual FRequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FEntityId* EntityId,
-											   const TOptional<Trace_SpanId>& SpanId) override;
-	virtual FRequestId SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId) override;
-	virtual void SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<Trace_SpanId>& SpanId) override;
-	virtual void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId) override;
+											   const TOptional<FSpanId>& SpanId) override;
+	virtual FRequestId SendDeleteEntityRequest(FEntityId EntityId, const TOptional<FSpanId>& SpanId) override;
+	virtual void SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<FSpanId>& SpanId) override;
+	virtual void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<FSpanId>& SpanId) override;
 	virtual void SendComponentUpdate(FEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
-									 const TOptional<Trace_SpanId>& SpanId) override;
+									 const TOptional<FSpanId>& SpanId) override;
 	virtual FRequestId SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-										  const TOptional<Trace_SpanId>& SpanId) override;
-	virtual void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse* Response,
-									 const TOptional<Trace_SpanId>& SpanId) override;
-	virtual void SendCommandFailure(FRequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId) override;
+										  const TOptional<FSpanId>& SpanId) override;
+	virtual void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse* Response, const TOptional<FSpanId>& SpanId) override;
+	virtual void SendCommandFailure(FRequestId RequestId, const FString& Message, const TOptional<FSpanId>& SpanId) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
 	virtual void SendComponentInterest(FEntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
 	virtual FRequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;

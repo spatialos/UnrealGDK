@@ -26,9 +26,9 @@ class CommandResponse
 {
 public:
 	// Creates a new component data.
-	explicit CommandResponse(FComponentId ComponentId, Worker_CommandIndex CommandIndex);
+	explicit CommandResponse(FComponentId ComponentId, FCommandIndex CommandIndex);
 	// Takes ownership of component data.
-	explicit CommandResponse(OwningCommandResponsePtr Data, FComponentId ComponentId, Worker_CommandIndex CommandIndex);
+	explicit CommandResponse(OwningCommandResponsePtr Data, FComponentId ComponentId, FCommandIndex CommandIndex);
 
 	~CommandResponse() = default;
 
@@ -38,7 +38,7 @@ public:
 	CommandResponse& operator=(const CommandResponse&) = delete;
 	CommandResponse& operator=(CommandResponse&&) = default;
 
-	static CommandResponse CreateCopy(const Schema_CommandResponse* Data, FComponentId ComponentId, Worker_CommandIndex CommandIndex);
+	static CommandResponse CreateCopy(const Schema_CommandResponse* Data, FComponentId ComponentId, FCommandIndex CommandIndex);
 
 	// Creates a copy of the command response.
 	CommandResponse DeepCopy() const;
@@ -50,11 +50,11 @@ public:
 	Schema_CommandResponse* GetUnderlying() const;
 
 	FComponentId GetComponentId() const;
-	Worker_CommandIndex GetCommandIndex() const;
+	FCommandIndex GetCommandIndex() const;
 
 private:
 	FComponentId ComponentId;
-	Worker_CommandIndex CommandIndex;
+	FCommandIndex CommandIndex;
 	OwningCommandResponsePtr Data;
 };
 

@@ -37,7 +37,7 @@ class SpatialEventTracer;
 struct FReliableRPCForRetry
 {
 	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, FComponentId InComponentId, Schema_FieldId InRPCIndex,
-						 const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<Trace_SpanId>& InSpanId);
+						 const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<FSpanId>& InSpanId);
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
@@ -47,7 +47,7 @@ struct FReliableRPCForRetry
 	int Attempts; // For reliable RPCs
 
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	TOptional<Trace_SpanId> SpanId;
+	TOptional<FSpanId> SpanId;
 };
 
 struct FPendingRPC
@@ -91,10 +91,9 @@ public:
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse& Response, const Trace_SpanId CauseSpanId);
-	void SendEmptyCommandResponse(FComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId,
-								  const Trace_SpanId CauseSpanId);
-	void SendCommandFailure(FRequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanI);
+	void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse& Response, const FSpanId CauseSpanId);
+	void SendEmptyCommandResponse(FComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId, const FSpanId CauseSpanId);
+	void SendCommandFailure(FRequestId RequestId, const FString& Message, const FSpanId CauseSpanI);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(FEntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(FEntityId EntityId, const FClassInfo& Info);

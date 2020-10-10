@@ -37,7 +37,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId)
+SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<FSpanId>& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
 	, EventTracer(InEventTracer->GetWorkerEventTracer())
 {
@@ -77,7 +77,7 @@ SpatialEventTracer::~SpatialEventTracer()
 	}
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan()
+TOptional<FSpanId> SpatialEventTracer::CreateSpan()
 {
 	if (!IsEnabled())
 	{
@@ -87,7 +87,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan()
 	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan(const Trace_SpanId* Causes, int32 NumCauses)
+TOptional<FSpanId> SpatialEventTracer::CreateSpan(const FSpanId* Causes, int32 NumCauses)
 {
 	if (!IsEnabled())
 	{
@@ -102,7 +102,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan(const Trace_SpanId* Cause
 	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 }
 
-void SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId)
+void SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<FSpanId>& OptionalSpanId)
 {
 	if (!IsEnabled())
 	{
@@ -187,7 +187,7 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
-void SpatialEventTracer::AddComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId)
+void SpatialEventTracer::AddComponent(FEntityId EntityId, FComponentId ComponentId, const FSpanId& SpanId)
 {
 	EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId }, SpanId);
 }
@@ -197,27 +197,27 @@ void SpatialEventTracer::RemoveComponent(FEntityId EntityId, FComponentId Compon
 	EntityComponentSpanIds.Remove({ EntityId, ComponentId });
 }
 
-void SpatialEventTracer::UpdateComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId)
+void SpatialEventTracer::UpdateComponent(FEntityId EntityId, FComponentId ComponentId, const FSpanId& SpanId)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 
-	Trace_SpanId& StoredSpanId = EntityComponentSpanIds.FindChecked(Id);
+	FSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked(Id);
 
-	Trace_SpanId MergeCauses[2] = { SpanId, StoredSpanId };
-	TOptional<Trace_SpanId> NewSpanId = CreateSpan(MergeCauses, 2);
+	FSpanId MergeCauses[2] = { SpanId, StoredSpanId };
+	TOptional<FSpanId> NewSpanId = CreateSpan(MergeCauses, 2);
 	TraceEvent(FSpatialTraceEventBuilder::MergeComponent(Id.EntityId, Id.ComponentId), NewSpanId);
 
 	StoredSpanId = NewSpanId.GetValue();
 }
 
-Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
+FSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 {
 	if (!IsEnabled())
 	{
-		return Trace_SpanId();
+		return FSpanId();
 	}
 
-	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
+	const FSpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	check(SpanId != nullptr)
 
 		return *SpanId;

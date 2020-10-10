@@ -321,8 +321,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				{
 					FEntityId EntityId = Channel.GetEntityId();
 
-					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					FSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
+					TOptional<FSpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 					EventTracer->TraceEvent(
 						FSpatialTraceEventBuilder::PropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()), SpanId);
 				}

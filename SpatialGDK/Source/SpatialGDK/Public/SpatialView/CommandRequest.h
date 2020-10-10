@@ -26,9 +26,9 @@ class CommandRequest
 {
 public:
 	// Creates a new component data.
-	explicit CommandRequest(FComponentId ComponentId, Worker_CommandIndex CommandIndex);
+	explicit CommandRequest(FComponentId ComponentId, FCommandIndex CommandIndex);
 	// Takes ownership of component data.
-	explicit CommandRequest(OwningCommandRequestPtr Data, FComponentId ComponentId, Worker_CommandIndex CommandIndex);
+	explicit CommandRequest(OwningCommandRequestPtr Data, FComponentId ComponentId, FCommandIndex CommandIndex);
 
 	~CommandRequest() = default;
 
@@ -38,7 +38,7 @@ public:
 	CommandRequest& operator=(const CommandRequest&) = delete;
 	CommandRequest& operator=(CommandRequest&&) = default;
 
-	static CommandRequest CreateCopy(const Schema_CommandRequest* Data, FComponentId ComponentId, Worker_CommandIndex CommandIndex);
+	static CommandRequest CreateCopy(const Schema_CommandRequest* Data, FComponentId ComponentId, FCommandIndex CommandIndex);
 
 	// Creates a copy of the command request.
 	CommandRequest DeepCopy() const;
@@ -50,11 +50,11 @@ public:
 	Schema_CommandRequest* GetUnderlying() const;
 
 	FComponentId GetComponentId() const;
-	Worker_CommandIndex GetCommandIndex() const;
+	FCommandIndex GetCommandIndex() const;
 
 private:
 	FComponentId ComponentId;
-	Worker_CommandIndex CommandIndex;
+	FCommandIndex CommandIndex;
 	OwningCommandRequestPtr Data;
 };
 
