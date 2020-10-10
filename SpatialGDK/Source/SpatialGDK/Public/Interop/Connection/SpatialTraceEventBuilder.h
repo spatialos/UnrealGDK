@@ -21,7 +21,7 @@ public:
 	FSpatialTraceEventBuilder AddObject(FString Key, const UObject* Object);
 	FSpatialTraceEventBuilder AddFunction(FString Key, const UFunction* Function);
 	FSpatialTraceEventBuilder AddEntityId(FString Key, const FEntityId EntityId);
-	FSpatialTraceEventBuilder AddComponentId(FString Key, const Worker_ComponentId ComponentId);
+	FSpatialTraceEventBuilder AddComponentId(FString Key, const FComponentId ComponentId);
 	FSpatialTraceEventBuilder AddFieldId(FString Key, const uint32 FieldId);
 	FSpatialTraceEventBuilder AddNewWorkerId(FString Key, const uint32 NewWorkerId);
 	FSpatialTraceEventBuilder AddCommand(FString Key, const FString& Command);
@@ -36,9 +36,9 @@ public:
 	static FSpatialTraceEvent SendRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent QueueRPC();
 	static FSpatialTraceEvent RetryRPC();
-	static FSpatialTraceEvent PropertyUpdate(const UObject* Object, const FEntityId EntityId, const Worker_ComponentId ComponentId,
+	static FSpatialTraceEvent PropertyUpdate(const UObject* Object, const FEntityId EntityId, const FComponentId ComponentId,
 											 const FString& PropertyName);
-	static FSpatialTraceEvent MergeComponent(const FEntityId EntityId, const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent MergeComponent(const FEntityId EntityId, const FComponentId ComponentId);
 	static FSpatialTraceEvent SendCommandRequest(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent ReceiveCommandRequest(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent ReceiveCommandRequest(const FString& Command, const UObject* Actor, const UObject* TargetObject,
@@ -55,10 +55,9 @@ public:
 	static FSpatialTraceEvent ReceiveCreateEntitySuccess(const UObject* Object, const FEntityId EntityId);
 	static FSpatialTraceEvent SendRetireEntity(const UObject* Object, const FEntityId EntityId);
 	static FSpatialTraceEvent AuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object);
-	static FSpatialTraceEvent AuthorityChange(const FEntityId EntityId, const Worker_ComponentId ComponentId,
-											  const Worker_Authority Authority);
+	static FSpatialTraceEvent AuthorityChange(const FEntityId EntityId, const FComponentId ComponentId, const Worker_Authority Authority);
 	static FSpatialTraceEvent ComponentUpdate(const UObject* Object, const UObject* TargetObject, const FEntityId EntityId,
-											  const Worker_ComponentId ComponentId);
+											  const FComponentId ComponentId);
 	static FSpatialTraceEvent GenericMessage(FString Message);
 	static FString AuthorityToString(Worker_Authority Authority);
 	static FString BoolToString(bool bInput);

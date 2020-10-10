@@ -53,8 +53,8 @@ public:
 
 private:
 	void PopulateDataStore(const FEntityId EntityId);
-	bool ApplyComponentUpdate(const FEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	bool ApplyComponentRefresh(const FEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+	bool ApplyComponentUpdate(const FEntityId EntityId, const FComponentId ComponentId, Schema_ComponentUpdate* Update);
+	bool ApplyComponentRefresh(const FEntityId EntityId, const FComponentId ComponentId, Schema_ComponentData* Data);
 
 	void RefreshAcl(const FEntityId EntityId);
 	EntityComponentUpdate ConstructAclUpdate(const FEntityId EntityId, const PhysicalWorkerName* DestinationWorkerId);

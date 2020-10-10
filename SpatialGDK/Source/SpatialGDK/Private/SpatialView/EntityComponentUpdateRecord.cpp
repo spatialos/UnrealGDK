@@ -36,7 +36,7 @@ void EntityComponentUpdateRecord::AddComponentUpdate(FEntityId EntityId, Compone
 	}
 }
 
-void EntityComponentUpdateRecord::RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId)
+void EntityComponentUpdateRecord::RemoveComponent(FEntityId EntityId, FComponentId ComponentId)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 

@@ -29,7 +29,7 @@ public:
 	void AddComponentUpdate(FEntityId EntityId, ComponentUpdate Update);
 
 	// Clear all records for an entity-component.
-	void RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void RemoveComponent(FEntityId EntityId, FComponentId ComponentId);
 
 	// Clear all records.
 	void Clear();

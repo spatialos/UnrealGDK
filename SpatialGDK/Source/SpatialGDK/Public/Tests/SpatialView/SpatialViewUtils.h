@@ -27,7 +27,7 @@ inline void AddComponentToView(EntityView& View, const FEntityId EntityId, Compo
 	View[EntityId].Components.Push(MoveTemp(Data));
 }
 
-inline void AddAuthorityToView(EntityView& View, const FEntityId EntityId, const Worker_ComponentId ComponentId)
+inline void AddAuthorityToView(EntityView& View, const FEntityId EntityId, const FComponentId ComponentId)
 {
 	View[EntityId].Authority.Push(ComponentId);
 }
@@ -47,7 +47,7 @@ inline void PopulateViewDeltaWithComponentUpdated(ViewDelta& Delta, EntityView& 
 }
 
 inline void PopulateViewDeltaWithComponentRemoved(ViewDelta& Delta, EntityView& View, const FEntityId EntityId,
-												  const Worker_ComponentId ComponentId)
+												  const FComponentId ComponentId)
 {
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(EntityId, ComponentId);
@@ -55,7 +55,7 @@ inline void PopulateViewDeltaWithComponentRemoved(ViewDelta& Delta, EntityView& 
 }
 
 inline void PopulateViewDeltaWithAuthorityChange(ViewDelta& Delta, EntityView& View, const FEntityId EntityId,
-												 const Worker_ComponentId ComponentId, const Worker_Authority Authority)
+												 const FComponentId ComponentId, const Worker_Authority Authority)
 {
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(EntityId, ComponentId, Authority);
@@ -63,7 +63,7 @@ inline void PopulateViewDeltaWithAuthorityChange(ViewDelta& Delta, EntityView& V
 }
 
 inline void PopulateViewDeltaWithAuthorityLostTemp(ViewDelta& Delta, EntityView& View, const FEntityId EntityId,
-												   const Worker_ComponentId ComponentId)
+												   const FComponentId ComponentId)
 {
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(EntityId, ComponentId, WORKER_AUTHORITY_NOT_AUTHORITATIVE);

@@ -98,8 +98,7 @@ void USpatialWorkerConnection::SendAddComponent(FEntityId EntityId, FWorkerCompo
 	Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData), SpanId);
 }
 
-void USpatialWorkerConnection::SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId,
-												   const TOptional<Trace_SpanId>& SpanId)
+void USpatialWorkerConnection::SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendRemoveComponent(EntityId, ComponentId, SpanId);
@@ -209,42 +208,42 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return Coordinator->GetWorkerAttributes();
 }
 
-SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(Worker_ComponentId ComponentId,
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(FComponentId ComponentId,
 																				SpatialGDK::FComponentValueCallback Callback)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
 }
 
-SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentRemovedCallback(Worker_ComponentId ComponentId,
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentRemovedCallback(FComponentId ComponentId,
 																				  SpatialGDK::FComponentValueCallback Callback)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
 }
 
-SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentValueCallback(Worker_ComponentId ComponentId,
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentValueCallback(FComponentId ComponentId,
 																				SpatialGDK::FComponentValueCallback Callback)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
 }
 
-SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId,
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityGainedCallback(FComponentId ComponentId,
 																				 SpatialGDK::FEntityCallback Callback)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
 }
 
-SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityLostCallback(Worker_ComponentId ComponentId,
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityLostCallback(FComponentId ComponentId,
 																			   SpatialGDK::FEntityCallback Callback)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->RegisterAuthorityLostCallback(ComponentId, MoveTemp(Callback));
 }
 
-SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId,
+SpatialGDK::CallbackId USpatialWorkerConnection::RegisterAuthorityLostTempCallback(FComponentId ComponentId,
 																				   SpatialGDK::FEntityCallback Callback)
 {
 	check(Coordinator.IsValid());
@@ -267,7 +266,7 @@ void USpatialWorkerConnection::SetStartupComplete()
 	StartupComplete = true;
 }
 
-bool USpatialWorkerConnection::IsStartupComponent(Worker_ComponentId Id)
+bool USpatialWorkerConnection::IsStartupComponent(FComponentId Id)
 {
 	return Id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID || Id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
 		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID;

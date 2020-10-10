@@ -15,7 +15,7 @@ namespace SpatialGDK
 {
 struct NetOwningClientWorker : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
 
 	NetOwningClientWorker() = default;
 

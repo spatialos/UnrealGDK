@@ -13,7 +13,7 @@ namespace SpatialGDK
 SUBVIEW_TEST(GIVEN_SubView_Without_Filter_WHEN_Tagged_Entity_Added_THEN_Delta_Contains_Entity)
 {
 	const FEntityId TaggedEntityId = 2;
-	const Worker_ComponentId TagComponentId = 1;
+	const FComponentId TagComponentId = 1;
 
 	FDispatcher Dispatcher;
 	EntityView View;
@@ -46,8 +46,8 @@ SUBVIEW_TEST(
 {
 	const FEntityId TaggedEntityId = 2;
 	const FEntityId OtherTaggedEntityId = 3;
-	const Worker_ComponentId TagComponentId = 1;
-	const Worker_ComponentId ValueComponentId = 2;
+	const FComponentId TagComponentId = 1;
+	const FComponentId ValueComponentId = 2;
 	const double CorrectValue = 1;
 	const double IncorrectValue = 2;
 
@@ -113,7 +113,7 @@ SUBVIEW_TEST(
 SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refresh_Entity_THEN_Entity_Is_Complete)
 {
 	const FEntityId TaggedEntityId = 2;
-	const Worker_ComponentId TagComponentId = 1;
+	const FComponentId TagComponentId = 1;
 
 	FDispatcher Dispatcher;
 	EntityView View;

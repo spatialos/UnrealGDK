@@ -14,7 +14,7 @@ class AuthorityChangeRecordFixture
 {
 public:
 	const FEntityId kTestEntityId = 1337;
-	const Worker_ComponentId kTestComponentId = 1338;
+	const FComponentId kTestComponentId = 1338;
 
 	const EntityComponentId kEntityComponentId{ kTestEntityId, kTestComponentId };
 

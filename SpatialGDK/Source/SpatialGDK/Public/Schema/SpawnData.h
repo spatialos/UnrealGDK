@@ -16,7 +16,7 @@ namespace SpatialGDK
 {
 struct SpawnData : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::SPAWN_DATA_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::SPAWN_DATA_COMPONENT_ID;
 
 	SpawnData() = default;
 

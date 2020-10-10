@@ -88,9 +88,9 @@ void UCheckoutRadiusConstraint::CreateConstraint(const USpatialClassInfoManager&
 	SpatialGDK::QueryConstraint RadiusConstraint;
 	RadiusConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ static_cast<double>(Radius) / 100.0 };
 
-	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ActorClass.Get());
+	TArray<FComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ActorClass.Get());
 	SpatialGDK::QueryConstraint ActorClassConstraints;
-	for (Worker_ComponentId ComponentId : ComponentIds)
+	for (FComponentId ComponentId : ComponentIds)
 	{
 		SpatialGDK::QueryConstraint ComponentTypeConstraint;
 		ComponentTypeConstraint.ComponentConstraint = ComponentId;
@@ -112,8 +112,8 @@ void UActorClassConstraint::CreateConstraint(const USpatialClassInfoManager& Cla
 		return;
 	}
 
-	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ActorClass.Get(), bIncludeDerivedClasses);
-	for (Worker_ComponentId ComponentId : ComponentIds)
+	TArray<FComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ActorClass.Get(), bIncludeDerivedClasses);
+	for (FComponentId ComponentId : ComponentIds)
 	{
 		SpatialGDK::QueryConstraint ComponentTypeConstraint;
 		ComponentTypeConstraint.ComponentConstraint = ComponentId;
@@ -129,9 +129,8 @@ void UComponentClassConstraint::CreateConstraint(const USpatialClassInfoManager&
 		return;
 	}
 
-	TArray<Worker_ComponentId> ComponentIds =
-		ClassInfoManager.GetComponentIdsForClassHierarchy(*ComponentClass.Get(), bIncludeDerivedClasses);
-	for (Worker_ComponentId ComponentId : ComponentIds)
+	TArray<FComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ComponentClass.Get(), bIncludeDerivedClasses);
+	for (FComponentId ComponentId : ComponentIds)
 	{
 		SpatialGDK::QueryConstraint ComponentTypeConstraint;
 		ComponentTypeConstraint.ComponentConstraint = ComponentId;

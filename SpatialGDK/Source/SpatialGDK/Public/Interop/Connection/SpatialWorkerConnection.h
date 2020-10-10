@@ -36,8 +36,7 @@ public:
 	virtual FRequestId SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId = {}) override;
 	virtual void SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData,
 								  const TOptional<Trace_SpanId>& SpanId = {}) override;
-	virtual void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId,
-									 const TOptional<Trace_SpanId>& SpanId = {}) override;
+	virtual void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId = {}) override;
 	virtual void SendComponentUpdate(FEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const TOptional<Trace_SpanId>& SpanId = {}) override;
 	virtual FRequestId SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
@@ -61,12 +60,12 @@ public:
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	SpatialGDK::CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
-	SpatialGDK::CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
-	SpatialGDK::CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
-	SpatialGDK::CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
-	SpatialGDK::CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
-	SpatialGDK::CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentAddedCallback(FComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentRemovedCallback(FComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterComponentValueCallback(FComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityGainedCallback(FComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityLostCallback(FComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
+	SpatialGDK::CallbackId RegisterAuthorityLostTempCallback(FComponentId ComponentId, SpatialGDK::FEntityCallback Callback);
 	void RemoveCallback(SpatialGDK::CallbackId Id);
 
 	void Flush();
@@ -82,7 +81,7 @@ public:
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
-	static bool IsStartupComponent(Worker_ComponentId Id);
+	static bool IsStartupComponent(FComponentId Id);
 	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
 	bool StartupComplete = false;
 	SpatialGDK::SpatialEventTracer* EventTracer;

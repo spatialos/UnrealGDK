@@ -14,7 +14,7 @@ namespace SpatialGDK
 struct EntityViewElement
 {
 	TArray<ComponentData> Components;
-	TArray<Worker_ComponentId> Authority;
+	TArray<FComponentId> Authority;
 };
 
 using EntityView = TMap<FEntityId, EntityViewElement>;

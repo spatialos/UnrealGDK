@@ -46,7 +46,7 @@ struct EntityComponentIdEquality
 
 struct ComponentIdEquality
 {
-	Worker_ComponentId Id;
+	FComponentId Id;
 
 	bool operator()(const ComponentData& Element) const { return Element.GetComponentId() == Id; }
 

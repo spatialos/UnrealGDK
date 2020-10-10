@@ -28,9 +28,9 @@ class ComponentData
 {
 public:
 	// Creates a new component data.
-	explicit ComponentData(Worker_ComponentId Id);
+	explicit ComponentData(FComponentId Id);
 	// Takes ownership of component data.
-	explicit ComponentData(OwningComponentDataPtr Data, Worker_ComponentId Id);
+	explicit ComponentData(OwningComponentDataPtr Data, FComponentId Id);
 
 	~ComponentData() = default;
 
@@ -40,7 +40,7 @@ public:
 	ComponentData& operator=(const ComponentData&) = delete;
 	ComponentData& operator=(ComponentData&&) = default;
 
-	static ComponentData CreateCopy(const Schema_ComponentData* Data, Worker_ComponentId Id);
+	static ComponentData CreateCopy(const Schema_ComponentData* Data, FComponentId Id);
 
 	// Creates a copy of the component data.
 	ComponentData DeepCopy() const;
@@ -58,10 +58,10 @@ public:
 	Schema_ComponentData* GetUnderlying() const;
 	Worker_ComponentData GetWorkerComponentData() const;
 
-	Worker_ComponentId GetComponentId() const;
+	FComponentId GetComponentId() const;
 
 private:
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	OwningComponentDataPtr Data;
 };
 

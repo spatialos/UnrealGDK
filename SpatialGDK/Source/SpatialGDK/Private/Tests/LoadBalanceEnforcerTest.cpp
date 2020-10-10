@@ -45,20 +45,20 @@ constexpr VirtualWorkerId OtherVirtualWorker = 2;
 
 constexpr FEntityId EntityIdOne = 1;
 
-constexpr Worker_ComponentId TestComponentIdOne = 123;
-constexpr Worker_ComponentId TestComponentIdTwo = 456;
+constexpr FComponentId TestComponentIdOne = 123;
+constexpr FComponentId TestComponentIdTwo = 456;
 
-const TArray<Worker_ComponentId> PresentComponents = {
+const TArray<FComponentId> PresentComponents = {
 	SpatialConstants::ENTITY_ACL_COMPONENT_ID,		   SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
 	SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 	SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,	   SpatialConstants::HEARTBEAT_COMPONENT_ID
 };
-const TArray<Worker_ComponentId> NonAclLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-														SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-														SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
-const TArray<Worker_ComponentId> TestComponentIds = { TestComponentIdOne, TestComponentIdTwo };
-const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::HEARTBEAT_COMPONENT_ID,
-														SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID };
+const TArray<FComponentId> NonAclLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+												  SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+												  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+const TArray<FComponentId> TestComponentIds = { TestComponentIdOne, TestComponentIdTwo };
+const TArray<FComponentId> ClientComponentIds = { SpatialConstants::HEARTBEAT_COMPONENT_ID,
+												  SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID };
 
 TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 {
@@ -141,9 +141,9 @@ WriteAclMap GetWriteAclMapFromUpdate(const SpatialGDK::EntityComponentUpdate& Up
 }
 
 bool AclMapDelegatesComponents(const WriteAclMap& AclMap, const WorkerRequirementSet DelegatedRequirementSet,
-							   const TArray<Worker_ComponentId>& DelegatedComponents)
+							   const TArray<FComponentId>& DelegatedComponents)
 {
-	for (Worker_ComponentId ComponentId : DelegatedComponents)
+	for (FComponentId ComponentId : DelegatedComponents)
 	{
 		const auto Entry = AclMap.Find(ComponentId);
 		if (Entry == nullptr)
@@ -284,7 +284,7 @@ LOADBALANCEENFORCER_TEST(GIVEN_component_presence_change_op_WHEN_we_advance_load
 		});
 
 	// Create a ComponentPresence component update op with the required components.
-	TArray<Worker_ComponentId> NewPresentIds = PresentComponents;
+	TArray<FComponentId> NewPresentIds = PresentComponents;
 	NewPresentIds.Append(TestComponentIds);
 	Worker_ComponentUpdate Update;
 	Update.component_id = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;

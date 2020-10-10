@@ -32,7 +32,7 @@ private:
 	// `Constraint` should refer to the same query that Constraints[Index] was copied from.
 	void StoreChildConstraints(const Worker_Constraint& Constraint, int32 Index);
 
-	TArray<Worker_ComponentId> SnapshotComponentIds;
+	TArray<FComponentId> SnapshotComponentIds;
 	TArray<Worker_Constraint> Constraints; // Stable pointer storage.
 	uint8 ResultType;
 };

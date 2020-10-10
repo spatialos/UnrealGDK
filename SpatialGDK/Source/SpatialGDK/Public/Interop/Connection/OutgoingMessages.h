@@ -101,7 +101,7 @@ struct FAddComponent : FOutgoingMessage
 
 struct FRemoveComponent : FOutgoingMessage
 {
-	FRemoveComponent(FEntityId InEntityId, Worker_ComponentId InComponentId, const TOptional<Trace_SpanId>& SpanId)
+	FRemoveComponent(FEntityId InEntityId, FComponentId InComponentId, const TOptional<Trace_SpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
@@ -110,7 +110,7 @@ struct FRemoveComponent : FOutgoingMessage
 	}
 
 	FEntityId EntityId;
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	TOptional<Trace_SpanId> SpanId;
 };
 
@@ -222,7 +222,7 @@ struct FEntityQueryRequest : FOutgoingMessage
 
 	Worker_EntityQuery EntityQuery;
 	TArray<TUniquePtr<Worker_Constraint[]>> ConstraintStorage;
-	TArray<Worker_ComponentId> ComponentIdStorage;
+	TArray<FComponentId> ComponentIdStorage;
 };
 
 /** Parameters for a gauge metric. */

@@ -13,7 +13,7 @@ namespace SpatialGDK
 namespace
 {
 const FEntityId TEST_ENTITY_ID = 1337;
-const Worker_ComponentId TEST_COMPONENT_ID = 1338;
+const FComponentId TEST_COMPONENT_ID = 1338;
 const double TEST_VALUE = 7331;
 const double TEST_UPDATE_VALUE = 7332;
 } // anonymous namespace

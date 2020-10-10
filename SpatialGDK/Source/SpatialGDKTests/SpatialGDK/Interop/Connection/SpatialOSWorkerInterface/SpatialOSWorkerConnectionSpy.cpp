@@ -47,8 +47,7 @@ void SpatialOSWorkerConnectionSpy::SendAddComponent(FEntityId EntityId, FWorkerC
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId,
-													   const TOptional<Trace_SpanId>& SpanId)
+void SpatialOSWorkerConnectionSpy::SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
 {
 }
 

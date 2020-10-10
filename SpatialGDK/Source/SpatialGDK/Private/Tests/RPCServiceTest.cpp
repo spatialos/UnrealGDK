@@ -178,7 +178,7 @@ bool CompareComponentDataAndEntityPayload(const FWorkerComponentData& ComponentD
 FWorkerComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::SpatialRPCService& RPCService, FEntityId EntityID,
 																	ERPCType RPCType)
 {
-	Worker_ComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
+	FComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 	TArray<FWorkerComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);
 
 	const FWorkerComponentData* ComponentData =

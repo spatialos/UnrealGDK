@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 
 void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
-																		  const FEntityId EntityId, const Worker_ComponentId ComponentId,
+																		  const FEntityId EntityId, const FComponentId ComponentId,
 																		  Schema_ComponentData* ComponentData,
 																		  const Worker_Authority Authority)
 {
@@ -23,7 +23,7 @@ void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpati
 }
 
 void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
-																		  const FEntityId EntityId, const Worker_ComponentId ComponentId,
+																		  const FEntityId EntityId, const FComponentId ComponentId,
 																		  const Worker_Authority Authority)
 {
 	AddEntityComponentToStaticComponentView(StaticComponentView, EntityId, ComponentId, Schema_CreateComponentData(), Authority);

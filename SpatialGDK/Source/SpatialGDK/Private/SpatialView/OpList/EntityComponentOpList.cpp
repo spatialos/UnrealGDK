@@ -53,7 +53,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(FEnt
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(FEntityId EntityId, FComponentId ComponentId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
@@ -64,7 +64,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(FEnt
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(FEntityId EntityId, FComponentId ComponentId,
 																		 Worker_Authority Authority)
 {
 	Worker_Op Op = {};

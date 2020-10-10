@@ -14,7 +14,7 @@ RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 
 namespace RPCRingBufferUtils
 {
-Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
+FComponentId GetRingBufferComponentId(ERPCType Type)
 {
 	switch (Type)
 	{
@@ -73,7 +73,7 @@ uint32 GetRingBufferSize(ERPCType Type)
 	return GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(Type);
 }
 
-Worker_ComponentId GetAckComponentId(ERPCType Type)
+FComponentId GetAckComponentId(ERPCType Type)
 {
 	switch (Type)
 	{

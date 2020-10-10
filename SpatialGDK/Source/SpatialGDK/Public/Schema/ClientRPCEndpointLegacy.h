@@ -13,7 +13,7 @@ namespace SpatialGDK
 {
 struct ClientRPCEndpointLegacy : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+	static const FComponentId ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 
 	ClientRPCEndpointLegacy() = default;
 

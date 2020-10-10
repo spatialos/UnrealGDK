@@ -50,7 +50,7 @@ DECLARE_CYCLE_STAT(TEXT("Sender UpdateInterestComponent"), STAT_SpatialSenderUpd
 DECLARE_CYCLE_STAT(TEXT("Sender FlushRetryRPCs"), STAT_SpatialSenderFlushRetryRPCs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
-FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
+FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, FComponentId InComponentId,
 										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
 										   const TOptional<Trace_SpanId>& InSpanId)
 	: TargetObject(InTargetObject)
@@ -185,9 +185,9 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	PendingSubobjectAttachment->Info = Info;
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
-	TArray<Worker_ComponentId> NewComponentIds;
+	TArray<FComponentId> NewComponentIds;
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
+		FComponentId ComponentId = Info->SchemaComponents[Type];
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			// For each valid ComponentId, we need to wait for its authority delegation before
@@ -214,9 +214,9 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 void USpatialSender::SendRemoveComponentForClassInfo(FEntityId EntityId, const FClassInfo& Info)
 {
-	TArray<Worker_ComponentId> ComponentsToRemove;
+	TArray<FComponentId> ComponentsToRemove;
 	ComponentsToRemove.Reserve(SCHEMA_Count);
-	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
+	for (FComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
@@ -229,7 +229,7 @@ void USpatialSender::SendRemoveComponentForClassInfo(FEntityId EntityId, const F
 	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
 
-void USpatialSender::SendRemoveComponents(FEntityId EntityId, TArray<Worker_ComponentId> ComponentIds)
+void USpatialSender::SendRemoveComponents(FEntityId EntityId, TArray<FComponentId> ComponentIds)
 {
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
@@ -473,7 +473,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 }
 
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
-void USpatialSender::ProcessUpdatesQueuedUntilAuthority(FEntityId EntityId, Worker_ComponentId ComponentId)
+void USpatialSender::ProcessUpdatesQueuedUntilAuthority(FEntityId EntityId, FComponentId ComponentId)
 {
 	if (TArray<FWorkerComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
@@ -527,8 +527,8 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 #endif
 }
 
-void USpatialSender::SendInterestBucketComponentChange(const FEntityId EntityId, const Worker_ComponentId OldComponent,
-													   const Worker_ComponentId NewComponent)
+void USpatialSender::SendInterestBucketComponentChange(const FEntityId EntityId, const FComponentId OldComponent,
+													   const FComponentId NewComponent)
 {
 	if (OldComponent != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -555,7 +555,7 @@ void USpatialSender::SendInterestBucketComponentChange(const FEntityId EntityId,
 	}
 }
 
-void USpatialSender::SendActorTornOffUpdate(FEntityId EntityId, Worker_ComponentId ComponentId)
+void USpatialSender::SendActorTornOffUpdate(FEntityId EntityId, FComponentId ComponentId)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -693,7 +693,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
+	FComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
 	FEntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
@@ -744,7 +744,7 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	FEntityId EntityId = TargetObjectRef.Entity;
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
+	FComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 	{
 		ERPCQueueProcessResult QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
@@ -980,9 +980,8 @@ FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction*
 	return PayloadWriter;
 }
 
-Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload,
-															  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
-															  FEntityId& OutEntityId)
+Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload, FComponentId ComponentId,
+															  Schema_FieldId CommandIndex, FEntityId& OutEntityId)
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
@@ -1014,8 +1013,8 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload,
-															Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
+FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, FComponentId ComponentId,
+															Schema_FieldId EventIndex)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -1044,7 +1043,7 @@ void USpatialSender::SendCommandResponse(FRequestId RequestId, Worker_CommandRes
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId,
+void USpatialSender::SendEmptyCommandResponse(FComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId,
 											  const Trace_SpanId CauseSpanId)
 {
 	Worker_CommandResponse Response = {};

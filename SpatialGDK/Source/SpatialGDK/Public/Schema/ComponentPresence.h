@@ -18,11 +18,11 @@ namespace SpatialGDK
 {
 struct ComponentPresence : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 
 	ComponentPresence() = default;
 
-	ComponentPresence(TArray<Worker_ComponentId>&& InComponentList)
+	ComponentPresence(TArray<FComponentId>&& InComponentList)
 		: ComponentList(MoveTemp(InComponentList))
 	{
 	}
@@ -40,7 +40,7 @@ struct ComponentPresence : Component
 
 	Worker_ComponentData CreateComponentPresenceData() { return CreateComponentPresenceData(ComponentList); }
 
-	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ComponentList)
+	static Worker_ComponentData CreateComponentPresenceData(const TArray<FComponentId>& ComponentList)
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -58,7 +58,7 @@ struct ComponentPresence : Component
 
 	Worker_ComponentUpdate CreateComponentPresenceUpdate() { return CreateComponentPresenceUpdate(ComponentList); }
 
-	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<Worker_ComponentId>& ComponentList)
+	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<FComponentId>& ComponentList)
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
@@ -90,7 +90,7 @@ struct ComponentPresence : Component
 
 	void AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
 	{
-		TArray<Worker_ComponentId> ComponentIds;
+		TArray<FComponentId> ComponentIds;
 		ComponentIds.Reserve(ComponentDatas.Num());
 		for (const FWorkerComponentData& ComponentData : ComponentDatas)
 		{
@@ -100,23 +100,23 @@ struct ComponentPresence : Component
 		AddComponentIds(ComponentIds);
 	}
 
-	void AddComponentIds(const TArray<Worker_ComponentId>& ComponentsToAdd)
+	void AddComponentIds(const TArray<FComponentId>& ComponentsToAdd)
 	{
-		for (const Worker_ComponentId& NewComponentId : ComponentsToAdd)
+		for (const FComponentId& NewComponentId : ComponentsToAdd)
 		{
 			ComponentList.AddUnique(NewComponentId);
 		}
 	}
 
-	void RemoveComponentIds(const TArray<Worker_ComponentId>& ComponentsToRemove)
+	void RemoveComponentIds(const TArray<FComponentId>& ComponentsToRemove)
 	{
-		ComponentList.RemoveAll([&](Worker_ComponentId PresentComponent) {
+		ComponentList.RemoveAll([&](FComponentId PresentComponent) {
 			return ComponentsToRemove.Contains(PresentComponent);
 		});
 	}
 
 	// List of component IDs that exist on an entity.
-	TArray<Worker_ComponentId> ComponentList;
+	TArray<FComponentId> ComponentList;
 };
 
 } // namespace SpatialGDK

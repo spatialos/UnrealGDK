@@ -764,7 +764,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		}
 
 		// Subobject Delegation
-		TPair<FEntityId, Worker_ComponentId> EntityComponentPair = MakeTuple(static_cast<FEntityId>(Op.entity_id), Op.component_id);
+		TPair<FEntityId, FComponentId> EntityComponentPair = MakeTuple(static_cast<FEntityId>(Op.entity_id), Op.component_id);
 		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr =
 				PendingEntitySubobjectDelegations.Find(EntityComponentPair))
 		{
@@ -818,9 +818,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
 					// we want to scrape the server endpoint for any server -> client RPCs that are waiting to be called.
-					const Worker_ComponentId ComponentToExtractFrom = Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-																		  ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
-																		  : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+					const FComponentId ComponentToExtractFrom = Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+																	? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+																	: SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 					RPCService->ExtractRPCsForEntity(Op.entity_id, ComponentToExtractFrom);
 				}
 			}
@@ -1418,7 +1418,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(FEntityId EntityId, con
 	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
 }
 
-void USpatialReceiver::HandleIndividualAddComponent(FEntityId EntityId, Worker_ComponentId ComponentId,
+void USpatialReceiver::HandleIndividualAddComponent(FEntityId EntityId, FComponentId ComponentId,
 													TUniquePtr<SpatialGDK::DynamicComponent> Data)
 {
 	uint32 Offset = 0;
@@ -1468,7 +1468,7 @@ void USpatialReceiver::HandleIndividualAddComponent(FEntityId EntityId, Worker_C
 
 	bool bReadyToCreate = true;
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId SchemaComponentId = Info.SchemaComponents[Type];
+		FComponentId SchemaComponentId = Info.SchemaComponents[Type];
 
 		if (SchemaComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
@@ -1508,14 +1508,14 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, FEntityId EntityId,
 	Channel->CreateSubObjects.Add(Subobject);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+		FComponentId ComponentId = Info.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return;
 		}
 
-		TPair<FEntityId, Worker_ComponentId> EntityComponentPair = MakeTuple(static_cast<FEntityId>(EntityId), ComponentId);
+		TPair<FEntityId, FComponentId> EntityComponentPair = MakeTuple(static_cast<FEntityId>(EntityId), ComponentId);
 
 		PendingAddComponentWrapper& AddComponent = PendingDynamicSubobjectComponents[EntityComponentPair];
 		ApplyComponentData(*Channel, *Subobject, AddComponent.Data->Data.GetWorkerComponentData());
@@ -1820,9 +1820,9 @@ void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
 
 	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice
 	// versa Ideally these events are never delivered to workers which are not able to handle them with clever interest management
-	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
-														  ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
-														  : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+	const FComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+													? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+													: SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 
 	// Multicast RPCs should be executed by whoever receives them.
 	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY)
@@ -1836,8 +1836,7 @@ void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
 	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId);
 }
 
-void USpatialReceiver::ProcessRPCEventField(FEntityId EntityId, const Worker_ComponentUpdateOp& Op,
-											Worker_ComponentId RPCEndpointComponentId)
+void USpatialReceiver::ProcessRPCEventField(FEntityId EntityId, const Worker_ComponentUpdateOp& Op, FComponentId RPCEndpointComponentId)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 	const Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
@@ -1904,7 +1903,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	const Worker_CommandRequestOp& CommandRequestOp = Op.op.command_request;
 	const Worker_CommandRequest& Request = CommandRequestOp.request;
 	const FEntityId EntityId = CommandRequestOp.entity_id;
-	const Worker_ComponentId ComponentId = Request.component_id;
+	const FComponentId ComponentId = Request.component_id;
 	const FRequestId RequestId = CommandRequestOp.request_id;
 	const Schema_FieldId CommandIndex = Request.command_index;
 
@@ -2025,7 +2024,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 {
 	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
 	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
-	const Worker_ComponentId ComponentId = Repsonse.component_id;
+	const FComponentId ComponentId = Repsonse.component_id;
 	const FRequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
@@ -2057,7 +2056,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
 	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
 	const FEntityId EntityId = CommandResponseOp.entity_id;
-	const Worker_ComponentId ComponentId = Repsonse.component_id;
+	const FComponentId ComponentId = Repsonse.component_id;
 	const FRequestId RequestId = CommandResponseOp.request_id;
 	const uint8_t StatusCode = CommandResponseOp.status_code;
 
@@ -2206,7 +2205,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 				uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
 				if (RPCId != 0)
 				{
-					Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
+					FComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 					RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
 					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
 
@@ -2962,7 +2961,7 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 	}
 }
 
-void USpatialReceiver::RetireWhenAuthoritive(FEntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
+void USpatialReceiver::RetireWhenAuthoritive(FEntityId EntityId, FComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
 {
 	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
 	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);

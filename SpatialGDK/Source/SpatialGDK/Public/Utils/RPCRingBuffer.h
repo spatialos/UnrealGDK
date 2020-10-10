@@ -35,11 +35,11 @@ struct RPCRingBufferDescriptor
 
 namespace RPCRingBufferUtils
 {
-Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
+FComponentId GetRingBufferComponentId(ERPCType Type);
 RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
 uint32 GetRingBufferSize(ERPCType Type);
 
-Worker_ComponentId GetAckComponentId(ERPCType Type);
+FComponentId GetAckComponentId(ERPCType Type);
 Schema_FieldId GetAckFieldId(ERPCType Type);
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();

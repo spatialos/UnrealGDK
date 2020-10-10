@@ -484,7 +484,7 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 	}
 }
 
-void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
+void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const FComponentId ComponentId,
 															   const Query& QueryToAdd) const
 {
 	if (!OutInterest.ComponentInterestMap.Contains(ComponentId))
@@ -548,11 +548,11 @@ QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 {
 	QueryConstraint AlwaysRelevantConstraint;
 
-	Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-										  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
-										  SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID };
+	FComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+									SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+									SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID };
 
-	for (Worker_ComponentId ComponentId : ComponentIds)
+	for (FComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint Constraint;
 		Constraint.ComponentConstraint = ComponentId;
@@ -588,7 +588,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	// Create component constraints for every loaded sub-level
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		const Worker_ComponentId ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
+		const FComponentId ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			QueryConstraint SpecificLevelConstraint;

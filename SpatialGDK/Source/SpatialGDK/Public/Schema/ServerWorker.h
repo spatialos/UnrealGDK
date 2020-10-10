@@ -20,7 +20,7 @@ namespace SpatialGDK
 // worker names using the server worker entities.
 struct ServerWorker : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 
 	ServerWorker()
 		: WorkerName(SpatialConstants::INVALID_WORKER_NAME)

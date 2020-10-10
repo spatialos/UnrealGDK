@@ -187,17 +187,17 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
-void SpatialEventTracer::AddComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
+void SpatialEventTracer::AddComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId)
 {
 	EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId }, SpanId);
 }
 
-void SpatialEventTracer::RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialEventTracer::RemoveComponent(FEntityId EntityId, FComponentId ComponentId)
 {
 	EntityComponentSpanIds.Remove({ EntityId, ComponentId });
 }
 
-void SpatialEventTracer::UpdateComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
+void SpatialEventTracer::UpdateComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 

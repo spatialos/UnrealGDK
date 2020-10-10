@@ -161,8 +161,7 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 }
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
-										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
-										bool& bOutReferencesChanged)
+										const TArray<Schema_FieldId>& UpdatedIds, FComponentId ComponentId, bool& bOutReferencesChanged)
 {
 	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
 	if (Replicator == nullptr)
@@ -360,8 +359,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 }
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel,
-												bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds,
-												Worker_ComponentId ComponentId, bool& bOutReferencesChanged)
+												bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds, FComponentId ComponentId,
+												bool& bOutReferencesChanged)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyHandoverPropertyUpdates);
 

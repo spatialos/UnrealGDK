@@ -49,8 +49,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 {
 	const FEntityId EntityId = 1;
 	const FEntityId TaggedEntityId = 2;
-	const Worker_ComponentId ComponentId = 1;
-	const Worker_ComponentId TagComponentId = 2;
+	const FComponentId ComponentId = 1;
+	const FComponentId TagComponentId = 2;
 
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> OpLists;
@@ -86,8 +86,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 {
 	const FEntityId TaggedEntityId = 2;
 	const FEntityId OtherTaggedEntityId = 3;
-	const Worker_ComponentId TagComponentId = 2;
-	const Worker_ComponentId ValueComponentId = 3;
+	const FComponentId TagComponentId = 2;
+	const FComponentId ValueComponentId = 3;
 	const double CorrectValue = 1;
 	const double IncorrectValue = 2;
 
@@ -153,7 +153,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_refresh_THEN_all_subviews_refreshed)
 {
 	const FEntityId TaggedEntityId = 2;
-	const Worker_ComponentId TagComponentId = 2;
+	const FComponentId TagComponentId = 2;
 
 	bool EntityComplete = false;
 	const int NumberOfSubViews = 100;

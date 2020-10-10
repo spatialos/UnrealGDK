@@ -75,7 +75,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraint(US
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
-	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
+	const TMap<float, FComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
 
 	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
@@ -100,7 +100,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraint(US
 FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* InClassInfoManager)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
+	const TMap<float, FComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
 
 	FrequencyToConstraintsMap FrequencyToConstraints;
 
@@ -328,8 +328,8 @@ void NetCullDistanceInterest::AddTypeHierarchyToConstraint(const UClass& BaseTyp
 														   USpatialClassInfoManager* ClassInfoManager)
 {
 	check(ClassInfoManager);
-	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
-	for (Worker_ComponentId ComponentId : ComponentIds)
+	TArray<FComponentId> ComponentIds = ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
+	for (FComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint ComponentTypeConstraint;
 		ComponentTypeConstraint.ComponentConstraint = ComponentId;

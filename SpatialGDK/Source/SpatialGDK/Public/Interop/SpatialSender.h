@@ -36,12 +36,12 @@ class SpatialEventTracer;
 
 struct FReliableRPCForRetry
 {
-	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex,
+	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, FComponentId InComponentId, Schema_FieldId InRPCIndex,
 						 const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<Trace_SpanId>& InSpanId);
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	Schema_FieldId RPCIndex;
 	TArray<uint8> Payload;
 	int Attempts; // For reliable RPCs
@@ -92,16 +92,15 @@ public:
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	void SendCommandResponse(FRequestId RequestId, Worker_CommandResponse& Response, const Trace_SpanId CauseSpanId);
-	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId,
+	void SendEmptyCommandResponse(FComponentId ComponentId, Schema_FieldId CommandIndex, FRequestId RequestId,
 								  const Trace_SpanId CauseSpanId);
 	void SendCommandFailure(FRequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanI);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(FEntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(FEntityId EntityId, const FClassInfo& Info);
-	void SendRemoveComponents(FEntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
-	void SendInterestBucketComponentChange(const FEntityId EntityId, const Worker_ComponentId OldComponent,
-										   const Worker_ComponentId NewComponent);
-	void SendActorTornOffUpdate(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void SendRemoveComponents(FEntityId EntityId, TArray<FComponentId> ComponentIds);
+	void SendInterestBucketComponentChange(const FEntityId EntityId, const FComponentId OldComponent, const FComponentId NewComponent);
+	void SendActorTornOffUpdate(FEntityId EntityId, FComponentId ComponentId);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void RetireEntity(const FEntityId EntityId, bool bIsNetStartupActor);
@@ -125,7 +124,7 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
-	void ProcessUpdatesQueuedUntilAuthority(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void ProcessUpdatesQueuedUntilAuthority(FEntityId EntityId, FComponentId ComponentId);
 
 	void FlushRPCService();
 
@@ -163,11 +162,11 @@ private:
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
 
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, FEntityId& OutEntityId);
+	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload, FComponentId ComponentId,
+												  Schema_FieldId CommandIndex, FEntityId& OutEntityId);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
-	FWorkerComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												Worker_ComponentId ComponentId, Schema_FieldId EventIndext);
+	FWorkerComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload, FComponentId ComponentId,
+												Schema_FieldId EventIndext);
 
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING

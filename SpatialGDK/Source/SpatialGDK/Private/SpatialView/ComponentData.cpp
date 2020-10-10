@@ -5,19 +5,19 @@
 
 namespace SpatialGDK
 {
-ComponentData::ComponentData(Worker_ComponentId Id)
+ComponentData::ComponentData(FComponentId Id)
 	: ComponentId(Id)
 	, Data(Schema_CreateComponentData())
 {
 }
 
-ComponentData::ComponentData(OwningComponentDataPtr Data, Worker_ComponentId Id)
+ComponentData::ComponentData(OwningComponentDataPtr Data, FComponentId Id)
 	: ComponentId(Id)
 	, Data(MoveTemp(Data))
 {
 }
 
-ComponentData ComponentData::CreateCopy(const Schema_ComponentData* Data, Worker_ComponentId Id)
+ComponentData ComponentData::CreateCopy(const Schema_ComponentData* Data, FComponentId Id)
 {
 	return ComponentData(OwningComponentDataPtr(Schema_CopyComponentData(Data)), Id);
 }
@@ -60,7 +60,7 @@ Worker_ComponentData ComponentData::GetWorkerComponentData() const
 	return { nullptr, ComponentId, Data.Get(), nullptr };
 }
 
-Worker_ComponentId ComponentData::GetComponentId() const
+FComponentId ComponentData::GetComponentId() const
 {
 	return ComponentId;
 }

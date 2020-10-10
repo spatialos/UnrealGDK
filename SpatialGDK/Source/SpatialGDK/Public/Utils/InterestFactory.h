@@ -88,8 +88,7 @@ private:
 
 	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
-	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
-												  const Query& QueryToAdd) const;
+	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const FComponentId ComponentId, const Query& QueryToAdd) const;
 
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;

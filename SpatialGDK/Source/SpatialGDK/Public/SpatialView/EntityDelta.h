@@ -16,34 +16,34 @@ struct CompleteUpdateData
 
 struct ComponentChange
 {
-	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentData* Data)
+	explicit ComponentChange(FComponentId Id, Schema_ComponentData* Data)
 		: ComponentId(Id)
 		, Type(ADD)
 		, Data(Data)
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentUpdate* Update)
+	explicit ComponentChange(FComponentId Id, Schema_ComponentUpdate* Update)
 		: ComponentId(Id)
 		, Type(UPDATE)
 		, Update(Update)
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId Id, Schema_ComponentData* Data, Schema_Object* Events)
+	explicit ComponentChange(FComponentId Id, Schema_ComponentData* Data, Schema_Object* Events)
 		: ComponentId(Id)
 		, Type(COMPLETE_UPDATE)
 		, CompleteUpdate{ Data, Events }
 	{
 	}
 
-	explicit ComponentChange(Worker_ComponentId id)
+	explicit ComponentChange(FComponentId id)
 		: ComponentId(id)
 		, Type(REMOVE)
 	{
 	}
 
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	enum
 	{
 		ADD,
@@ -61,13 +61,13 @@ struct ComponentChange
 
 struct AuthorityChange
 {
-	AuthorityChange(Worker_ComponentId Id, int Type)
+	AuthorityChange(FComponentId Id, int Type)
 		: ComponentId(Id)
 		, Type(static_cast<AuthorityType>(Type))
 	{
 	}
 
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	enum AuthorityType
 	{
 		AUTHORITY_GAINED = 1,

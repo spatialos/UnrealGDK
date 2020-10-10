@@ -151,7 +151,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 			continue;
 		}
 
-		Worker_ComponentId ComponentId = 0;
+		FComponentId ComponentId = 0;
 		if (ExistingSchemaData != nullptr && ExistingSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
 		{
 			ComponentId = ExistingSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
@@ -176,7 +176,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		Worker_ComponentId ComponentId = 0;
+		FComponentId ComponentId = 0;
 		if (ExistingSchemaData != nullptr && ExistingSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
 		{
 			ComponentId = ExistingSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
@@ -315,7 +315,7 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 	return FString();
 }
 
-void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes,
+void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, FComponentId ComponentId, TArray<ERPCType> SentRPCTypes,
 						 TArray<ERPCType> AckedRPCTypes)
 {
 	Writer.PrintNewLine();
@@ -494,7 +494,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 			Writer.PrintNewLine();
 
-			Worker_ComponentId ComponentId = 0;
+			FComponentId ComponentId = 0;
 			if (ExistingSchemaData != nullptr)
 			{
 				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, PropertyGroupToSchemaComponentType(Group));
@@ -519,7 +519,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		{
 			Writer.PrintNewLine();
 
-			Worker_ComponentId ComponentId = 0;
+			FComponentId ComponentId = 0;
 			if (ExistingSchemaData != nullptr)
 			{
 				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, SCHEMA_Handover);
@@ -592,7 +592,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			}
 		}
 
-		Worker_ComponentId ComponentId = 0;
+		FComponentId ComponentId = 0;
 		if (SchemaData != nullptr && SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
 		{
 			ComponentId = SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
@@ -623,7 +623,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		Worker_ComponentId ComponentId = 0;
+		FComponentId ComponentId = 0;
 		if (SchemaData != nullptr && SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
 		{
 			ComponentId = SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
@@ -699,7 +699,7 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 }
 
 // Add the component ID to the passed schema components array and the set of components of that type.
-void AddComponentId(const Worker_ComponentId ComponentId, ComponentIdPerType& SchemaComponents, const ESchemaComponentType ComponentType)
+void AddComponentId(const FComponentId ComponentId, ComponentIdPerType& SchemaComponents, const ESchemaComponentType ComponentType)
 {
 	SchemaComponents[ComponentType] = ComponentId;
 	SchemaComponentTypeToComponents[ComponentType].Add(ComponentId);

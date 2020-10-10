@@ -53,7 +53,7 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddEntityId(FString Key, co
 	return *this;
 }
 
-FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddComponentId(FString Key, const Worker_ComponentId ComponentId)
+FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddComponentId(FString Key, const FComponentId ComponentId)
 {
 	AddKeyValue(MoveTemp(Key), FString::FromInt(ComponentId));
 	return *this;
@@ -127,7 +127,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::RetryRPC()
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::PropertyUpdate(const UObject* Object, const FEntityId EntityId,
-															 const Worker_ComponentId ComponentId, const FString& PropertyName)
+															 const FComponentId ComponentId, const FString& PropertyName)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "property_update")
 		.AddObject(TEXT("Object"), Object)
@@ -137,7 +137,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::PropertyUpdate(const UObject* Obje
 		.GetEvent();
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::MergeComponent(const FEntityId EntityId, const Worker_ComponentId ComponentId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::MergeComponent(const FEntityId EntityId, const FComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component")
 		.AddEntityId(TEXT("EntityId"), EntityId)
@@ -262,7 +262,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::AuthorityIntentUpdate(VirtualWorke
 		.GetEvent();
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::AuthorityChange(const FEntityId EntityId, const Worker_ComponentId ComponentId,
+FSpatialTraceEvent FSpatialTraceEventBuilder::AuthorityChange(const FEntityId EntityId, const FComponentId ComponentId,
 															  const Worker_Authority Authority)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent")
@@ -273,7 +273,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::AuthorityChange(const FEntityId En
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::ComponentUpdate(const UObject* Object, const UObject* TargetObject, const FEntityId EntityId,
-															  const Worker_ComponentId ComponentId)
+															  const FComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "component_update")
 		.AddObject(TEXT("Object"), Object)

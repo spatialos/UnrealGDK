@@ -13,7 +13,7 @@ namespace SpatialGDK
 {
 struct Heartbeat : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 
 	Heartbeat() = default;
 	Heartbeat(const Worker_ComponentData& Data) {}

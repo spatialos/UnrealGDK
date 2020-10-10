@@ -10,6 +10,6 @@
 
 namespace SpatialGDK
 {
-Worker_ComponentId GetComponentId(const Worker_Op& Op);
+FComponentId GetComponentId(const Worker_Op& Op);
 
 } // namespace SpatialGDK

@@ -25,7 +25,7 @@ public:
 
 	void SendAddComponent(FEntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
 	void SendComponentUpdate(FEntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);

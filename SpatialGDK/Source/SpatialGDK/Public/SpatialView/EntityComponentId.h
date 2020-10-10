@@ -7,14 +7,14 @@ namespace SpatialGDK
 {
 struct EntityComponentId
 {
-	EntityComponentId(FEntityId InEntityId, Worker_ComponentId InComponentId)
+	EntityComponentId(FEntityId InEntityId, FComponentId InComponentId)
 		: EntityId(InEntityId)
 		, ComponentId(InComponentId)
 	{
 	}
 
 	FEntityId EntityId;
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 
 	friend bool operator==(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
 	{

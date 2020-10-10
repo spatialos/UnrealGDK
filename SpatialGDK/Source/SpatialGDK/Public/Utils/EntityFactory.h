@@ -34,7 +34,7 @@ public:
 														uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
 
-	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
+	static TArray<FComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
 
 private:
 	USpatialNetDriver* NetDriver;

@@ -41,7 +41,7 @@ class SpatialEventTracer;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(FEntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
+	PendingAddComponentWrapper(FEntityId InEntityId, FComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
 		: EntityId(InEntityId)
 		, ComponentId(InComponentId)
 		, Data(MoveTemp(InData))
@@ -56,7 +56,7 @@ struct PendingAddComponentWrapper
 	}
 
 	FEntityId EntityId;
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
 };
 
@@ -113,7 +113,7 @@ public:
 	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
-	void RetireWhenAuthoritive(FEntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
+	void RetireWhenAuthoritive(FEntityId EntityId, FComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 
@@ -138,14 +138,14 @@ private:
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
-	void ProcessRPCEventField(FEntityId EntityId, const Worker_ComponentUpdateOp& Op, const Worker_ComponentId RPCEndpointComponentId);
+	void ProcessRPCEventField(FEntityId EntityId, const Worker_ComponentUpdateOp& Op, const FComponentId RPCEndpointComponentId);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
 	void ApplyComponentDataOnActorCreation(FEntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel,
 										   const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 
-	void HandleIndividualAddComponent(FEntityId EntityId, Worker_ComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data);
+	void HandleIndividualAddComponent(FEntityId EntityId, FComponentId ComponentId, TUniquePtr<SpatialGDK::DynamicComponent> Data);
 	void AttachDynamicSubobject(AActor* Actor, FEntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel,
@@ -208,7 +208,7 @@ private:
 	// END TODO
 
 public:
-	TMap<TPair<FEntityId, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
+	TMap<TPair<FEntityId, FComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
@@ -265,7 +265,7 @@ private:
 	// lifecycle logic (Heartbeat component updates, disconnection logic).
 	TMap<FEntityId, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
-	TMap<TPair<FEntityId, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
+	TMap<TPair<FEntityId, FComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
 	TMap<FEntityId, FString> WorkerConnectionEntities;
 
 	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
@@ -282,7 +282,7 @@ private:
 	struct DeferredRetire
 	{
 		FEntityId EntityId;
-		Worker_ComponentId ActorClassId;
+		FComponentId ActorClassId;
 		bool bIsNetStartupActor;
 		bool bNeedsTearOff;
 	};

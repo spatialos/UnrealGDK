@@ -59,7 +59,7 @@ private:
 		explicit ReceivedComponentChange(const Worker_RemoveComponentOp& Op);
 
 		FEntityId EntityId;
-		Worker_ComponentId ComponentId;
+		FComponentId ComponentId;
 		enum
 		{
 			ADD,
@@ -92,7 +92,7 @@ private:
 	struct DifferentEntityComponent
 	{
 		FEntityId EntityId;
-		Worker_ComponentId ComponentId;
+		FComponentId ComponentId;
 		bool operator()(const ReceivedComponentChange& Op) const;
 		bool operator()(const Worker_AuthorityChangeOp& Op) const;
 	};
@@ -141,7 +141,7 @@ private:
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the authority changes list.
 	Worker_AuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
-															TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
+															TArray<FComponentId>& EntityAuthority, EntityDelta& Delta);
 
 	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
 	// `It` must point to the first element with a given entity ID.

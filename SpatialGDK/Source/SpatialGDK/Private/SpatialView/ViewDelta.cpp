@@ -547,7 +547,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 }
 
 Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
-																   TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta)
+																   TArray<FComponentId>& EntityAuthority, EntityDelta& Delta)
 {
 	int32 GainCount = 0;
 	int32 LossCount = 0;
@@ -560,7 +560,7 @@ Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_Author
 	for (;;)
 	{
 		// Find the last element for this entity-component.
-		const Worker_ComponentId ComponentId = It->component_id;
+		const FComponentId ComponentId = It->component_id;
 		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentId }) - 1;
 		const int32 AuthorityIndex = EntityAuthority.Find(ComponentId);
 		const bool bHasAuthority = AuthorityIndex != INDEX_NONE;

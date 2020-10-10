@@ -14,7 +14,7 @@ namespace SpatialGDK
 {
 struct DebugComponent : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 
 	DebugComponent() {}
 

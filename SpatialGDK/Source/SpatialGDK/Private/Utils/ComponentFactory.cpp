@@ -378,7 +378,7 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	return ComponentDatas;
 }
 
-FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
+FWorkerComponentData ComponentFactory::CreateComponentData(FComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
 														   ESchemaComponentType PropertyGroup, uint32& OutBytesWritten)
 {
 	FWorkerComponentData ComponentData = {};
@@ -394,7 +394,7 @@ FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 	return ComponentData;
 }
 
-FWorkerComponentData ComponentFactory::CreateEmptyComponentData(Worker_ComponentId ComponentId)
+FWorkerComponentData ComponentFactory::CreateEmptyComponentData(FComponentId ComponentId)
 {
 	FWorkerComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
@@ -403,7 +403,7 @@ FWorkerComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 	return ComponentData;
 }
 
-FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info,
+FWorkerComponentData ComponentFactory::CreateHandoverComponentData(FComponentId ComponentId, UObject* Object, const FClassInfo& Info,
 																   const FHandoverChangeState& Changes, uint32& OutBytesWritten)
 {
 	FWorkerComponentData ComponentData = CreateEmptyComponentData(ComponentId);
@@ -480,9 +480,8 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	return ComponentUpdates;
 }
 
-FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object,
-															   const FRepChangeState& Changes, ESchemaComponentType PropertyGroup,
-															   uint32& OutBytesWritten)
+FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(FComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
+															   ESchemaComponentType PropertyGroup, uint32& OutBytesWritten)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -511,9 +510,8 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object,
-																	   const FClassInfo& Info, const FHandoverChangeState& Changes,
-																	   uint32& OutBytesWritten)
+FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(FComponentId ComponentId, UObject* Object, const FClassInfo& Info,
+																	   const FHandoverChangeState& Changes, uint32& OutBytesWritten)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 

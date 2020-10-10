@@ -152,10 +152,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	}
 
-	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	FComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+		FComponentId ComponentId = Info.SchemaComponents[Type];
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return;
@@ -176,7 +176,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		}
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
+			FComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
 			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{
 				return;
@@ -401,9 +401,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 // This method should be called once all the components besides ComponentPresence have been added to the
 // ComponentDatas list.
-TArray<Worker_ComponentId> EntityFactory::GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas)
+TArray<FComponentId> EntityFactory::GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas)
 {
-	TArray<Worker_ComponentId> ComponentPresenceList;
+	TArray<FComponentId> ComponentPresenceList;
 	ComponentPresenceList.SetNum(ComponentDatas.Num() + 1);
 	for (int i = 0; i < ComponentDatas.Num(); i++)
 	{
@@ -454,7 +454,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	Components.Add(Tombstone().CreateData());
 	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
 
-	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	FComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		Components.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));

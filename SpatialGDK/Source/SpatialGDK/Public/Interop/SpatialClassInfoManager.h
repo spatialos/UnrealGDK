@@ -66,7 +66,7 @@ struct FClassInfo
 	TArray<FInterestPropertyInfo> InterestProperties;
 
 	// For Actors and default Subobjects belonging to Actors
-	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
+	FComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
 	// Only for Actors
 	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
@@ -100,32 +100,32 @@ public:
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
 	const FClassInfo& GetOrCreateClassInfoByObject(UObject* Object);
-	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
+	const FClassInfo& GetClassInfoByComponentId(FComponentId ComponentId);
 
-	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
-	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
-	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
+	UClass* GetClassByComponentId(FComponentId ComponentId);
+	bool GetOffsetByComponentId(FComponentId ComponentId, uint32& OutOffset);
+	ESchemaComponentType GetCategoryByComponentId(FComponentId ComponentId);
 
-	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
-	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
+	FComponentId GetComponentIdForClass(const UClass& Class) const;
+	TArray<FComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
 
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
-	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
-	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
+	FComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
+	bool IsSublevelComponent(FComponentId ComponentId) const;
 
-	const TMap<float, Worker_ComponentId>& GetNetCullDistanceToComponentIds() const;
+	const TMap<float, FComponentId>& GetNetCullDistanceToComponentIds() const;
 
-	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
-	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+	FComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
+	FComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
 
-	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
-	bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const;
+	bool IsNetCullDistanceComponent(FComponentId ComponentId) const;
+	bool IsEntityCompletenessComponent(FComponentId ComponentId) const;
 
-	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
+	const TArray<FComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
 
 	// Used to check if component is used for qbi tracking only
-	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
+	bool IsGeneratedQBIMarkerComponent(FComponentId ComponentId) const;
 
 	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
 	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, FEntityId EntityId, USpatialPackageMapClient* PackageMapClient);
@@ -137,7 +137,7 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
-	void TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId);
+	void TryCreateClassInfoForComponentId(FComponentId ComponentId);
 
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
@@ -149,7 +149,7 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
-	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
-	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
-	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
+	TMap<FComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
+	TMap<FComponentId, uint32> ComponentToOffsetMap;
+	TMap<FComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };

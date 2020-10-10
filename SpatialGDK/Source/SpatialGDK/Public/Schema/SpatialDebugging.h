@@ -14,7 +14,7 @@ namespace SpatialGDK
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct SpatialDebugging : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID;
 
 	SpatialDebugging()
 		: AuthoritativeVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)

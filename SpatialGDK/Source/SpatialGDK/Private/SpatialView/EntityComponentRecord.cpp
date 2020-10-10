@@ -20,7 +20,7 @@ void EntityComponentRecord::AddComponent(FEntityId EntityId, ComponentData Data)
 	}
 }
 
-void EntityComponentRecord::RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId)
+void EntityComponentRecord::RemoveComponent(FEntityId EntityId, FComponentId ComponentId)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 	const EntityComponentData* FoundComponentAdded = ComponentsAdded.FindByPredicate(EntityComponentIdEquality{ Id });

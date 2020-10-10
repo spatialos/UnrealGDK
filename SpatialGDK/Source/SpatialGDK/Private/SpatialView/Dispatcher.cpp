@@ -27,14 +27,14 @@ void FDispatcher::InvokeCallbacks(const TArray<EntityDelta>& Deltas)
 	}
 }
 
-CallbackId FDispatcher::RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+CallbackId FDispatcher::RegisterAndInvokeComponentAddedCallback(FComponentId ComponentId, FComponentValueCallback Callback,
 																const EntityView& View)
 {
 	InvokeWithExistingValues(ComponentId, Callback, View);
 	return RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(FComponentId ComponentId, FComponentValueCallback Callback,
 																  const EntityView& View)
 {
 	for (const auto& Entity : View)
@@ -47,15 +47,14 @@ CallbackId FDispatcher::RegisterAndInvokeComponentRemovedCallback(Worker_Compone
 	return RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+CallbackId FDispatcher::RegisterAndInvokeComponentValueCallback(FComponentId ComponentId, FComponentValueCallback Callback,
 																const EntityView& View)
 {
 	InvokeWithExistingValues(ComponentId, Callback, View);
 	return RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
-																 const EntityView& View)
+CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(FComponentId ComponentId, FEntityCallback Callback, const EntityView& View)
 {
 	for (const auto& Entity : View)
 	{
@@ -67,8 +66,7 @@ CallbackId FDispatcher::RegisterAndInvokeAuthorityGainedCallback(Worker_Componen
 	return RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
-															   const EntityView& View)
+CallbackId FDispatcher::RegisterAndInvokeAuthorityLostCallback(FComponentId ComponentId, FEntityCallback Callback, const EntityView& View)
 {
 	for (const auto& Entity : View)
 	{
@@ -80,7 +78,7 @@ CallbackId FDispatcher::RegisterAndInvokeAuthorityLostCallback(Worker_ComponentI
 	return RegisterAuthorityLostCallback(ComponentId, MoveTemp(Callback));
 }
 
-CallbackId FDispatcher::RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+CallbackId FDispatcher::RegisterComponentAddedCallback(FComponentId ComponentId, FComponentValueCallback Callback)
 {
 	const int32 Index = Algo::LowerBound(ComponentCallbacks, ComponentId, FComponentCallbacks::ComponentIdComparator());
 	if (Index == ComponentCallbacks.Num() || ComponentCallbacks[Index].Id != ComponentId)
@@ -91,7 +89,7 @@ CallbackId FDispatcher::RegisterComponentAddedCallback(Worker_ComponentId Compon
 	return NextCallbackId++;
 }
 
-CallbackId FDispatcher::RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+CallbackId FDispatcher::RegisterComponentRemovedCallback(FComponentId ComponentId, FComponentValueCallback Callback)
 {
 	const int32 Index = Algo::LowerBound(ComponentCallbacks, ComponentId, FComponentCallbacks::ComponentIdComparator());
 	if (Index == ComponentCallbacks.Num() || ComponentCallbacks[Index].Id != ComponentId)
@@ -102,7 +100,7 @@ CallbackId FDispatcher::RegisterComponentRemovedCallback(Worker_ComponentId Comp
 	return NextCallbackId++;
 }
 
-CallbackId FDispatcher::RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+CallbackId FDispatcher::RegisterComponentValueCallback(FComponentId ComponentId, FComponentValueCallback Callback)
 {
 	const int32 Index = Algo::LowerBound(ComponentCallbacks, ComponentId, FComponentCallbacks::ComponentIdComparator());
 	if (Index == ComponentCallbacks.Num() || ComponentCallbacks[Index].Id != ComponentId)
@@ -113,7 +111,7 @@ CallbackId FDispatcher::RegisterComponentValueCallback(Worker_ComponentId Compon
 	return NextCallbackId++;
 }
 
-CallbackId FDispatcher::RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+CallbackId FDispatcher::RegisterAuthorityGainedCallback(FComponentId ComponentId, FEntityCallback Callback)
 {
 	const int32 Index = Algo::LowerBound(AuthorityCallbacks, ComponentId, FAuthorityCallbacks::ComponentIdComparator());
 	if (Index == AuthorityCallbacks.Num() || AuthorityCallbacks[Index].Id != ComponentId)
@@ -124,7 +122,7 @@ CallbackId FDispatcher::RegisterAuthorityGainedCallback(Worker_ComponentId Compo
 	return NextCallbackId++;
 }
 
-CallbackId FDispatcher::RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+CallbackId FDispatcher::RegisterAuthorityLostCallback(FComponentId ComponentId, FEntityCallback Callback)
 {
 	const int32 Index = Algo::LowerBound(AuthorityCallbacks, ComponentId, FAuthorityCallbacks::ComponentIdComparator());
 	if (Index == AuthorityCallbacks.Num() || AuthorityCallbacks[Index].Id != ComponentId)
@@ -135,7 +133,7 @@ CallbackId FDispatcher::RegisterAuthorityLostCallback(Worker_ComponentId Compone
 	return NextCallbackId++;
 }
 
-CallbackId FDispatcher::RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+CallbackId FDispatcher::RegisterAuthorityLostTempCallback(FComponentId ComponentId, FEntityCallback Callback)
 {
 	const int32 Index = Algo::LowerBound(AuthorityCallbacks, ComponentId, FAuthorityCallbacks::ComponentIdComparator());
 	if (Index == AuthorityCallbacks.Num() || AuthorityCallbacks[Index].Id != ComponentId)
@@ -162,7 +160,7 @@ void FDispatcher::RemoveCallback(CallbackId Id)
 	}
 }
 
-void FDispatcher::InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View)
+void FDispatcher::InvokeWithExistingValues(FComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View)
 {
 	for (const auto& Entity : View)
 	{

@@ -26,7 +26,7 @@ ExpectedViewDelta& ExpectedViewDelta::AddComponentAdded(const FEntityId EntityId
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddComponentRemoved(const FEntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddComponentRemoved(const FEntityId EntityId, const FComponentId ComponentId)
 {
 	EntityDeltas[EntityId].ComponentsRemoved.Push(ComponentChange(ComponentId));
 	return *this;
@@ -47,19 +47,19 @@ ExpectedViewDelta& ExpectedViewDelta::AddComponentRefreshed(const FEntityId Enti
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddAuthorityGained(const FEntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddAuthorityGained(const FEntityId EntityId, const FComponentId ComponentId)
 {
 	EntityDeltas[EntityId].AuthorityGained.Add(AuthorityChange(ComponentId, AuthorityChange::AUTHORITY_GAINED));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLost(const FEntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLost(const FEntityId EntityId, const FComponentId ComponentId)
 {
 	EntityDeltas[EntityId].AuthorityLost.Add(AuthorityChange(ComponentId, AuthorityChange::AUTHORITY_LOST));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLostTemporarily(const FEntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLostTemporarily(const FEntityId EntityId, const FComponentId ComponentId)
 {
 	EntityDeltas[EntityId].AuthorityLostTemporarily.Add(AuthorityChange(ComponentId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY));
 	return *this;

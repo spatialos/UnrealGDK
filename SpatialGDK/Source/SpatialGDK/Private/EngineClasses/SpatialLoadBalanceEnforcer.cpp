@@ -105,11 +105,11 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const FEnti
 	const ComponentPresence& ComponentPresenceComponent = Components.Presence;
 	const NetOwningClientWorker& NetOwningClientWorkerComponent = Components.OwningClientWorker;
 
-	TArray<Worker_ComponentId> ComponentIds;
+	TArray<FComponentId> ComponentIds;
 	Acl.ComponentWriteAcl.GetKeys(ComponentIds);
 
 	// Ensure that every component ID in ComponentPresence is set in the write ACL.
-	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
+	for (const FComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
 	{
 		ComponentIds.AddUnique(RequiredComponentId);
 	}
@@ -122,7 +122,7 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const FEnti
 
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
-	for (const Worker_ComponentId ComponentId : ComponentIds)
+	for (const FComponentId ComponentId : ComponentIds)
 	{
 		switch (ComponentId)
 		{
@@ -169,7 +169,7 @@ void SpatialLoadBalanceEnforcer::PopulateDataStore(const FEntityId EntityId)
 	}
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const FEntityId EntityId, const Worker_ComponentId ComponentId,
+bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const FEntityId EntityId, const FComponentId ComponentId,
 													  Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
@@ -189,8 +189,7 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const FEntityId EntityId, 
 	return false;
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const FEntityId EntityId, const Worker_ComponentId ComponentId,
-													   Schema_ComponentData* Data)
+bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const FEntityId EntityId, const FComponentId ComponentId, Schema_ComponentData* Data)
 {
 	switch (ComponentId)
 	{

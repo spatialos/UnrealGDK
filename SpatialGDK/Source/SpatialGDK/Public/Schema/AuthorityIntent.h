@@ -16,7 +16,7 @@ namespace SpatialGDK
 // VirtualWorkerId set here doesn't match the worker's Id.
 struct AuthorityIntent : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
 	AuthorityIntent()
 		: VirtualWorkerId(SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID)

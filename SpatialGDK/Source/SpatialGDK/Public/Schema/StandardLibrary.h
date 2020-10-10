@@ -75,7 +75,7 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 
 struct EntityAcl : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
 
 	EntityAcl() = default;
 
@@ -176,7 +176,7 @@ struct EntityAcl : Component
 
 struct Metadata : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
 	Metadata() = default;
 
@@ -209,7 +209,7 @@ struct Metadata : Component
 
 struct Position : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
 	Position() = default;
 
@@ -263,7 +263,7 @@ struct Position : Component
 
 struct Persistence : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data) {}
@@ -305,7 +305,7 @@ struct Connection
 
 struct Worker : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
 
 	Worker() = default;
 	Worker(const Worker_ComponentData& Data)

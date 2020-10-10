@@ -16,7 +16,7 @@ const Schema_FieldId EVENT_INT_FIELD_ID = 2;
 const Schema_FieldId TEST_DOUBLE_FIELD_ID = 1;
 } // namespace EntityComponentTestUtils
 
-inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const double Value)
+inline ComponentData CreateTestComponentData(const FComponentId Id, const double Value)
 {
 	ComponentData Data{ Id };
 	Schema_Object* Fields = Data.GetFields();
@@ -30,7 +30,7 @@ inline double GetValueFromTestComponentData(Schema_ComponentData* Data)
 	return Schema_GetDouble(Schema_GetComponentDataFields(Data), EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID);
 }
 
-inline ComponentUpdate CreateTestComponentUpdate(const Worker_ComponentId Id, const double Value)
+inline ComponentUpdate CreateTestComponentUpdate(const FComponentId Id, const double Value)
 {
 	ComponentUpdate Update{ Id };
 	Schema_Object* Fields = Update.GetFields();
@@ -45,7 +45,7 @@ inline void AddTestEvent(ComponentUpdate* Update, const int Value)
 	Schema_AddInt32(eventData, EntityComponentTestUtils::EVENT_INT_FIELD_ID, Value);
 }
 
-inline ComponentUpdate CreateTestComponentEvent(const Worker_ComponentId Id, const int Value)
+inline ComponentUpdate CreateTestComponentEvent(const FComponentId Id, const int Value)
 {
 	ComponentUpdate Update{ Id };
 	AddTestEvent(&Update, Value);
@@ -246,7 +246,7 @@ inline bool EntityComponentIdEquality(const EntityComponentId& Lhs, const Entity
 	return Lhs == Rhs;
 }
 
-inline bool WorkerComponentIdEquality(const Worker_ComponentId Lhs, const Worker_ComponentId Rhs)
+inline bool WorkerComponentIdEquality(const FComponentId Lhs, const FComponentId Rhs)
 {
 	return Lhs == Rhs;
 }

@@ -56,7 +56,7 @@ public:
 
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
-	void ExtractRPCsForEntity(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void ExtractRPCsForEntity(FEntityId EntityId, FComponentId ComponentId);
 
 	// Will also store acked IDs locally.
 	void IncrementAckedRPCID(FEntityId EntityId, ERPCType Type);
@@ -64,8 +64,8 @@ public:
 	void OnCheckoutMulticastRPCComponentOnEntity(FEntityId EntityId);
 	void OnRemoveMulticastRPCComponentForEntity(FEntityId EntityId);
 
-	void OnEndpointAuthorityGained(FEntityId EntityId, Worker_ComponentId ComponentId);
-	void OnEndpointAuthorityLost(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityGained(FEntityId EntityId, FComponentId ComponentId);
+	void OnEndpointAuthorityLost(FEntityId EntityId, FComponentId ComponentId);
 
 	uint64 GetLastAckedRPCId(FEntityId EntityId, ERPCType Type) const;
 

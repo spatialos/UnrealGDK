@@ -67,7 +67,7 @@ struct RPCPayload
 
 struct RPCsOnEntityCreation : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
+	static const FComponentId ComponentId = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
 
 	RPCsOnEntityCreation() = default;
 

@@ -30,9 +30,9 @@ public:
 
 	bool IsEnabled() const;
 
-	void AddComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
-	void RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId);
-	void UpdateComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
+	void AddComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId);
+	void RemoveComponent(FEntityId EntityId, FComponentId ComponentId);
+	void UpdateComponent(FEntityId EntityId, FComponentId ComponentId, const Trace_SpanId& SpanId);
 
 	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
 

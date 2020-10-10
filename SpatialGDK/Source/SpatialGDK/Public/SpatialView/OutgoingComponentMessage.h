@@ -48,7 +48,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(FEntityId EntityId, Worker_ComponentId RemovedComponentId, const TOptional<Trace_SpanId>& SpanId)
+	explicit OutgoingComponentMessage(FEntityId EntityId, FComponentId RemovedComponentId, const TOptional<Trace_SpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(RemovedComponentId)
 		, SpanId(SpanId)
@@ -138,7 +138,7 @@ public:
 	}
 
 	FEntityId EntityId;
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 
 	TOptional<Trace_SpanId> SpanId;
 

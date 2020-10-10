@@ -188,7 +188,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
+		FComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
 		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 		{
@@ -231,7 +231,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 				return;
 			}
 
-			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
+			FComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
 				ActorSubobjectInfo->SchemaComponents[Type] = ComponentId;
@@ -256,7 +256,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
+			FComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
 			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 			{
@@ -288,7 +288,7 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
 }
 
-void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
+void USpatialClassInfoManager::TryCreateClassInfoForComponentId(FComponentId ComponentId)
 {
 	if (FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
 	{
@@ -332,7 +332,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 	}
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId)
+const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(FComponentId ComponentId)
 {
 	if (!ComponentToClassInfoMap.Contains(ComponentId))
 	{
@@ -343,7 +343,7 @@ const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_Com
 	return Info.Get();
 }
 
-UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId ComponentId)
+UClass* USpatialClassInfoManager::GetClassByComponentId(FComponentId ComponentId)
 {
 	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
 	if (UClass* Class = Info->Class.Get())
@@ -386,10 +386,10 @@ uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) con
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass,
-																					  const bool bIncludeDerivedTypes /* = true */) const
+TArray<FComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass,
+																				const bool bIncludeDerivedTypes /* = true */) const
 {
-	TArray<Worker_ComponentId> OutComponentIds;
+	TArray<FComponentId> OutComponentIds;
 
 	check(SchemaDatabase);
 	if (bIncludeDerivedTypes)
@@ -400,7 +400,7 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 			check(Class);
 			if (Class->IsChildOf(&BaseClass))
 			{
-				const Worker_ComponentId ComponentId = GetComponentIdForClass(*Class);
+				const FComponentId ComponentId = GetComponentIdForClass(*Class);
 				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 				{
 					OutComponentIds.Add(ComponentId);
@@ -420,7 +420,7 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 	return OutComponentIds;
 }
 
-bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
+bool USpatialClassInfoManager::GetOffsetByComponentId(FComponentId ComponentId, uint32& OutOffset)
 {
 	if (!ComponentToOffsetMap.Contains(ComponentId))
 	{
@@ -436,7 +436,7 @@ bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId Compone
 	return false;
 }
 
-ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_ComponentId ComponentId)
+ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(FComponentId ComponentId)
 {
 	if (!ComponentToCategoryMap.Contains(ComponentId))
 	{
@@ -476,27 +476,27 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 	return *RPCInfoPtr;
 }
 
-Worker_ComponentId USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath) const
+FComponentId USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath) const
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-	if (const Worker_ComponentId* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	if (const FComponentId* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
 	{
 		return *ComponentId;
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId) const
+bool USpatialClassInfoManager::IsSublevelComponent(FComponentId ComponentId) const
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
-const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDistanceToComponentIds() const
+const TMap<float, FComponentId>& USpatialClassInfoManager::GetNetCullDistanceToComponentIds() const
 {
 	return SchemaDatabase->NetCullDistanceToComponentId;
 }
 
-const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
+const TArray<FComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
 {
 	switch (ComponentType)
 	{
@@ -509,7 +509,7 @@ const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForCo
 	default:
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
 		checkNoEntry();
-		static const TArray<Worker_ComponentId> EmptyArray;
+		static const TArray<FComponentId> EmptyArray;
 		return EmptyArray;
 	}
 }
@@ -546,7 +546,7 @@ const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UO
 	return Info;
 }
 
-Worker_ComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
+FComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
 {
 	if (const uint32* ComponentId = SchemaDatabase->NetCullDistanceToComponentId.Find(NetCullDistance))
 	{
@@ -555,17 +555,17 @@ Worker_ComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(fl
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const
+bool USpatialClassInfoManager::IsNetCullDistanceComponent(FComponentId ComponentId) const
 {
 	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
 }
 
-bool USpatialClassInfoManager::IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const
+bool USpatialClassInfoManager::IsEntityCompletenessComponent(FComponentId ComponentId) const
 {
 	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
 }
 
-bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
+bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(FComponentId ComponentId) const
 {
 	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId) || IsEntityCompletenessComponent(ComponentId);
 }
@@ -582,7 +582,7 @@ void USpatialClassInfoManager::QuitGame()
 #endif
 }
 
-Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
+FComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
 {
 	check(Actor);
 	const AActor* ActorForRelevancy = Actor;
@@ -599,7 +599,7 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
 	{
-		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
+		FComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
 		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return NCDComponentId;

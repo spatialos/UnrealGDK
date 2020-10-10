@@ -14,8 +14,8 @@
 
 namespace
 {
-constexpr Worker_ComponentId COMPONENT_ID = 1000;
-constexpr Worker_ComponentId OTHER_COMPONENT_ID = 1001;
+constexpr FComponentId COMPONENT_ID = 1000;
+constexpr FComponentId OTHER_COMPONENT_ID = 1001;
 constexpr FEntityId ENTITY_ID = 1;
 constexpr FEntityId OTHER_ENTITY_ID = 2;
 constexpr double COMPONENT_VALUE = 3;

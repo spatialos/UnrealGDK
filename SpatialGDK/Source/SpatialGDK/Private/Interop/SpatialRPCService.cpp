@@ -72,7 +72,7 @@ EPushRPCResult SpatialRPCService::PushRPC(FEntityId EntityId, ERPCType Type, RPC
 EPushRPCResult SpatialRPCService::PushRPCInternal(FEntityId EntityId, ERPCType Type, PendingRPCPayload&& PendingPayload,
 												  bool bCreatedEntity)
 {
-	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
+	const FComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
 	const EntityComponentId EntityComponent(EntityId, RingBufferComponentId);
 	const EntityRPCType EntityType = EntityRPCType(EntityId, Type);
@@ -278,13 +278,13 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(FEntityId EntityId)
 {
-	static Worker_ComponentId EndpointComponentIds[] = { SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-														 SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-														 SpatialConstants::MULTICAST_RPCS_COMPONENT_ID };
+	static FComponentId EndpointComponentIds[] = { SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
+												   SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
+												   SpatialConstants::MULTICAST_RPCS_COMPONENT_ID };
 
 	TArray<FWorkerComponentData> Components;
 
-	for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
+	for (FComponentId EndpointComponentId : EndpointComponentIds)
 	{
 		const EntityComponentId EntityComponent = { EntityId, EndpointComponentId };
 
@@ -325,7 +325,7 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 	return Components;
 }
 
-void SpatialRPCService::ExtractRPCsForEntity(FEntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialRPCService::ExtractRPCsForEntity(FEntityId EntityId, FComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
@@ -372,7 +372,7 @@ void SpatialRPCService::OnRemoveMulticastRPCComponentForEntity(FEntityId EntityI
 	LastSeenMulticastRPCIds.Remove(EntityId);
 }
 
-void SpatialRPCService::OnEndpointAuthorityGained(FEntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialRPCService::OnEndpointAuthorityGained(FEntityId EntityId, FComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
@@ -426,7 +426,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(FEntityId EntityId, Worker_Com
 	}
 }
 
-void SpatialRPCService::OnEndpointAuthorityLost(FEntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialRPCService::OnEndpointAuthorityLost(FEntityId EntityId, FComponentId ComponentId)
 {
 	switch (ComponentId)
 	{

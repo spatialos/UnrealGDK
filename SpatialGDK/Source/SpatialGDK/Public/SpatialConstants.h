@@ -74,65 +74,65 @@ enum EntityIds
 	FIRST_AVAILABLE_ENTITY_ID = 4,
 };
 
-const Worker_ComponentId INVALID_COMPONENT_ID = 0;
+const FComponentId INVALID_COMPONENT_ID = 0;
 
-const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
-const Worker_ComponentId METADATA_COMPONENT_ID = 53;
-const Worker_ComponentId POSITION_COMPONENT_ID = 54;
-const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
-const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
+const FComponentId ENTITY_ACL_COMPONENT_ID = 50;
+const FComponentId METADATA_COMPONENT_ID = 53;
+const FComponentId POSITION_COMPONENT_ID = 54;
+const FComponentId PERSISTENCE_COMPONENT_ID = 55;
+const FComponentId INTEREST_COMPONENT_ID = 58;
 // This is a component on per-worker system entities.
-const Worker_ComponentId WORKER_COMPONENT_ID = 60;
-const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
+const FComponentId WORKER_COMPONENT_ID = 60;
+const FComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
 
-const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
+const FComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
-const Worker_ComponentId SPAWN_DATA_COMPONENT_ID = 9999;
-const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
-const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
-const Worker_ComponentId GDK_DEBUG_COMPONENT_ID = 9995;
-const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
-const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
-const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
-const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+const FComponentId SPAWN_DATA_COMPONENT_ID = 9999;
+const FComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
+const FComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
+const FComponentId GDK_DEBUG_COMPONENT_ID = 9995;
+const FComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
+const FComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
+const FComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
+const FComponentId HEARTBEAT_COMPONENT_ID = 9991;
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
-const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
-const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9989;
-const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY = 9987;
+const FComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
+const FComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9989;
+const FComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY = 9987;
 
-const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
-const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID = 9985;
-const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
-const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID = 9983;
-const Worker_ComponentId TOMBSTONE_COMPONENT_ID = 9982;
-const Worker_ComponentId DORMANT_COMPONENT_ID = 9981;
-const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
-const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
-const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
+const FComponentId NOT_STREAMED_COMPONENT_ID = 9986;
+const FComponentId RPCS_ON_ENTITY_CREATION_ID = 9985;
+const FComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
+const FComponentId ALWAYS_RELEVANT_COMPONENT_ID = 9983;
+const FComponentId TOMBSTONE_COMPONENT_ID = 9982;
+const FComponentId DORMANT_COMPONENT_ID = 9981;
+const FComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
+const FComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
+const FComponentId VISIBLE_COMPONENT_ID = 9970;
 
-const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
-const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
-const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID = 9976;
-const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID = 9975;
-const Worker_ComponentId SERVER_WORKER_COMPONENT_ID = 9974;
-const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
-const Worker_ComponentId COMPONENT_PRESENCE_COMPONENT_ID = 9972;
-const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
+const FComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
+const FComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
+const FComponentId MULTICAST_RPCS_COMPONENT_ID = 9976;
+const FComponentId SPATIAL_DEBUGGING_COMPONENT_ID = 9975;
+const FComponentId SERVER_WORKER_COMPONENT_ID = 9974;
+const FComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
+const FComponentId COMPONENT_PRESENCE_COMPONENT_ID = 9972;
+const FComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 
-const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
+const FComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
-const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
-const Worker_ComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
-const Worker_ComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
-const Worker_ComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
-const Worker_ComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
-const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
-const Worker_ComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
-const Worker_ComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const Worker_ComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
+const FComponentId FIRST_EC_COMPONENT_ID = 2001;
+const FComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
+const FComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
+const FComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
+const FComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
+const FComponentId LB_TAG_COMPONENT_ID = 2005;
+const FComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
+const FComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
+const FComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
+const FComponentId LAST_EC_COMPONENT_ID = 2008;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -292,8 +292,8 @@ const uint16 DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT = 7777;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
-const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
-const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
+const FComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
+const FComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
@@ -321,7 +321,7 @@ const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<FComponentId>{
 	// Actor components
 	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
 
@@ -337,42 +337,42 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
-	TArray<Worker_ComponentId>{ // RPCs from the server
-								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
+	TArray<FComponentId>{ // RPCs from the server
+						  SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
 // correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
-	TArray<Worker_ComponentId>{ // Actor components
-								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID,
-								DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
+	TArray<FComponentId>{ // Actor components
+						  UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID,
+						  DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
-								// Multicast RPCs
-								MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+						  // Multicast RPCs
+						  MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
-								// Global state components
-								DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
+						  // Global state components
+						  DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
 
-								// Unreal load balancing components
-								VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+						  // Unreal load balancing components
+						  VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
-								// Authority intent component to handle scattered hierarchies
-								AUTHORITY_INTENT_COMPONENT_ID
+						  // Authority intent component to handle scattered hierarchies
+						  AUTHORITY_INTENT_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
-	TArray<Worker_ComponentId>{ // RPCs from clients
-								CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
+	TArray<FComponentId>{ // RPCs from clients
+						  CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
 
-								// Heartbeat
-								HEARTBEAT_COMPONENT_ID
+						  // Heartbeat
+						  HEARTBEAT_COMPONENT_ID
 	};
 
-inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
+inline FComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
@@ -400,7 +400,7 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 	}
 }
 
-inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+inline FComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }

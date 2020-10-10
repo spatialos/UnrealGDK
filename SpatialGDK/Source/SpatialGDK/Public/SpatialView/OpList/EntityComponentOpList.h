@@ -28,8 +28,8 @@ public:
 	EntityComponentOpListBuilder& RemoveEntity(FEntityId EntityId);
 	EntityComponentOpListBuilder& AddComponent(FEntityId EntityId, ComponentData Data);
 	EntityComponentOpListBuilder& UpdateComponent(FEntityId EntityId, ComponentUpdate Update);
-	EntityComponentOpListBuilder& RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId);
-	EntityComponentOpListBuilder& SetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
+	EntityComponentOpListBuilder& RemoveComponent(FEntityId EntityId, FComponentId ComponentId);
+	EntityComponentOpListBuilder& SetAuthority(FEntityId EntityId, FComponentId ComponentId, Worker_Authority Authority);
 	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString& DisconnectReason);
 
 	OpList CreateOpList() &&;

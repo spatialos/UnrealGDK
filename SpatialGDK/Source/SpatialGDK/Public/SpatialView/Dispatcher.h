@@ -24,66 +24,58 @@ public:
 
 	void InvokeCallbacks(const TArray<EntityDelta>& Deltas);
 
-	CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-													   const EntityView& View);
-	CallbackId RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+	CallbackId RegisterAndInvokeComponentAddedCallback(FComponentId ComponentId, FComponentValueCallback Callback, const EntityView& View);
+	CallbackId RegisterAndInvokeComponentRemovedCallback(FComponentId ComponentId, FComponentValueCallback Callback,
 														 const EntityView& View);
-	CallbackId RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-													   const EntityView& View);
-	CallbackId RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
-	CallbackId RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
+	CallbackId RegisterAndInvokeComponentValueCallback(FComponentId ComponentId, FComponentValueCallback Callback, const EntityView& View);
+	CallbackId RegisterAndInvokeAuthorityGainedCallback(FComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
+	CallbackId RegisterAndInvokeAuthorityLostCallback(FComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
 
-	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterComponentAddedCallback(FComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterComponentRemovedCallback(FComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterComponentValueCallback(FComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterAuthorityGainedCallback(FComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAuthorityLostCallback(FComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAuthorityLostTempCallback(FComponentId ComponentId, FEntityCallback Callback);
 
 	void RemoveCallback(CallbackId Id);
 
 private:
 	struct FComponentCallbacks
 	{
-		explicit FComponentCallbacks(Worker_ComponentId Id)
+		explicit FComponentCallbacks(FComponentId Id)
 			: Id(Id)
 		{
 		}
-		Worker_ComponentId Id;
+		FComponentId Id;
 		TCallbacks<FEntityComponentChange> ComponentAddedCallbacks;
 		TCallbacks<FEntityComponentChange> ComponentRemovedCallbacks;
 		TCallbacks<FEntityComponentChange> ComponentValueCallbacks;
 
 		struct ComponentIdComparator
 		{
-			bool operator()(const FComponentCallbacks& Callbacks, Worker_ComponentId ComponentId) const
-			{
-				return Callbacks.Id < ComponentId;
-			}
+			bool operator()(const FComponentCallbacks& Callbacks, FComponentId ComponentId) const { return Callbacks.Id < ComponentId; }
 		};
 	};
 
 	struct FAuthorityCallbacks
 	{
-		explicit FAuthorityCallbacks(Worker_ComponentId Id)
+		explicit FAuthorityCallbacks(FComponentId Id)
 			: Id(Id)
 		{
 		}
-		Worker_ComponentId Id;
+		FComponentId Id;
 		TCallbacks<FEntityId> AuthorityGainedCallbacks;
 		TCallbacks<FEntityId> AuthorityLostCallbacks;
 		TCallbacks<FEntityId> AuthorityLostTemporarilyCallbacks;
 
 		struct ComponentIdComparator
 		{
-			bool operator()(const FAuthorityCallbacks& Callbacks, Worker_ComponentId ComponentId) const
-			{
-				return Callbacks.Id < ComponentId;
-			}
+			bool operator()(const FAuthorityCallbacks& Callbacks, FComponentId ComponentId) const { return Callbacks.Id < ComponentId; }
 		};
 	};
 
-	static void InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View);
+	static void InvokeWithExistingValues(FComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View);
 	void HandleComponentPresenceChanges(FEntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
 										TCallbacks<FEntityComponentChange> FComponentCallbacks::*Callbacks);
 	void HandleComponentValueChanges(FEntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges);

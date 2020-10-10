@@ -21,12 +21,12 @@ public:
 
 	ExpectedViewDelta& AddEntityDelta(const FEntityId EntityId, const EntityChangeType ChangeType);
 	ExpectedViewDelta& AddComponentAdded(const FEntityId EntityId, ComponentData Data);
-	ExpectedViewDelta& AddComponentRemoved(const FEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddComponentRemoved(const FEntityId EntityId, const FComponentId ComponentId);
 	ExpectedViewDelta& AddComponentUpdate(const FEntityId EntityId, ComponentUpdate Update);
 	ExpectedViewDelta& AddComponentRefreshed(const FEntityId EntityId, ComponentUpdate Update, ComponentData Data);
-	ExpectedViewDelta& AddAuthorityGained(const FEntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLost(const FEntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLostTemporarily(const FEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityGained(const FEntityId EntityId, const FComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLost(const FEntityId EntityId, const FComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLostTemporarily(const FEntityId EntityId, const FComponentId ComponentId);
 	ExpectedViewDelta& AddDisconnect(const uint8 StatusCode, FString StatusMessage);
 
 	// Compares the stored Entity Deltas

@@ -17,7 +17,7 @@ const FAuthorityChangeRefreshPredicate FSubView::NoAuthorityChangeRefreshPredica
 	return true;
 };
 
-FSubView::FSubView(const Worker_ComponentId InTagComponentId, FFilterPredicate InFilter, const EntityView* InView, FDispatcher& Dispatcher,
+FSubView::FSubView(const FComponentId InTagComponentId, FFilterPredicate InFilter, const EntityView* InView, FDispatcher& Dispatcher,
 				   const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 	: TagComponentId(InTagComponentId)
 	, Filter(MoveTemp(InFilter))
@@ -65,7 +65,7 @@ const EntityView& FSubView::GetView() const
 	return *View;
 }
 
-FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
+FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const FComponentId ComponentId,
 																			 const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -84,7 +84,7 @@ FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDi
 	};
 }
 
-FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
+FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const FComponentId ComponentId,
 																		   const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -97,7 +97,7 @@ FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDisp
 	};
 }
 
-FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
+FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const FComponentId ComponentId,
 																		  const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {

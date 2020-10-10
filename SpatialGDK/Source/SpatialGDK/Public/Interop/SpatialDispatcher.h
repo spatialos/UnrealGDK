@@ -33,12 +33,12 @@ public:
 	// Each callback method returns a callback ID which is incremented for each registration.
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
-	FCallbackId OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
-	FCallbackId OnRemoveComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
-	FCallbackId OnAuthorityChange(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
-	FCallbackId OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
-	FCallbackId OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
-	FCallbackId OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
+	FCallbackId OnAddComponent(FComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
+	FCallbackId OnRemoveComponent(FComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
+	FCallbackId OnAuthorityChange(FComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
+	FCallbackId OnComponentUpdate(FComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
+	FCallbackId OnCommandRequest(FComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
+	FCallbackId OnCommandResponse(FComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
 	bool RemoveOpCallback(FCallbackId Id);
 
 private:
@@ -50,7 +50,7 @@ private:
 
 	struct CallbackIdData
 	{
-		Worker_ComponentId ComponentId;
+		FComponentId ComponentId;
 		Worker_OpType OpType;
 	};
 
@@ -58,9 +58,8 @@ private:
 
 	bool IsExternalSchemaOp(const Worker_Op& Op) const;
 	void ProcessExternalSchemaOp(const Worker_Op& Op);
-	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType,
-									 const TFunction<void(const Worker_Op*)>& Callback);
-	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
+	FCallbackId AddGenericOpCallback(FComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
+	void RunCallbacks(FComponentId ComponentId, const Worker_Op* Op);
 
 	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
@@ -74,6 +73,6 @@ private:
 	// RunCallbacks is called by the SpatialDispatcher and executes all user registered
 	// callbacks for the matching component ID and network operation type.
 	FCallbackId NextCallbackId;
-	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
+	TMap<FComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
 };

@@ -33,7 +33,7 @@ public:
 	void FlushMessagesToSend();
 
 	// Create a subview with the specified tag, filter, and refresh callbacks.
-	FSubView& CreateSubView(Worker_ComponentId Tag, const FFilterPredicate& Filter,
+	FSubView& CreateSubView(FComponentId Tag, const FFilterPredicate& Filter,
 							const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 	// Force a refresh of the given entity ID across all subviews. Used when local state changes which could
 	// change any subview's filter's truth value for the given entity. Conceptually this can be thought of
@@ -50,7 +50,7 @@ public:
 
 	void SendAddComponent(FEntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
 	void SendComponentUpdate(FEntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
 	FRequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	FRequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FEntityId> EntityId,
 									   TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
@@ -64,23 +64,20 @@ public:
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
-	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterComponentAddedCallback(FComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterComponentRemovedCallback(FComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterComponentValueCallback(FComponentId ComponentId, FComponentValueCallback Callback);
+	CallbackId RegisterAuthorityGainedCallback(FComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAuthorityLostCallback(FComponentId ComponentId, FEntityCallback Callback);
+	CallbackId RegisterAuthorityLostTempCallback(FComponentId ComponentId, FEntityCallback Callback);
 	void RemoveCallback(CallbackId Id);
 
 	FDispatcherRefreshCallback CreateComponentExistenceRefreshCallback(
-		Worker_ComponentId ComponentId,
-		const FComponentChangeRefreshPredicate& RefreshPredicate = FSubView::NoComponentChangeRefreshPredicate);
+		FComponentId ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate = FSubView::NoComponentChangeRefreshPredicate);
 	FDispatcherRefreshCallback CreateComponentChangedRefreshCallback(
-		Worker_ComponentId ComponentId,
-		const FComponentChangeRefreshPredicate& RefreshPredicate = FSubView::NoComponentChangeRefreshPredicate);
+		FComponentId ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate = FSubView::NoComponentChangeRefreshPredicate);
 	FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(
-		Worker_ComponentId ComponentId,
-		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
+		FComponentId ComponentId, const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
 
 private:
 	WorkerView View;

@@ -35,22 +35,22 @@ public:
 														  const FRepChangeState* RepChangeState,
 														  const FHandoverChangeState* HandoverChangeState, uint32& OutBytesWritten);
 
-	FWorkerComponentData CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info,
+	FWorkerComponentData CreateHandoverComponentData(FComponentId ComponentId, UObject* Object, const FClassInfo& Info,
 													 const FHandoverChangeState& Changes, uint32& OutBytesWritten);
 
-	static FWorkerComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
+	static FWorkerComponentData CreateEmptyComponentData(FComponentId ComponentId);
 
 private:
-	FWorkerComponentData CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
+	FWorkerComponentData CreateComponentData(FComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
 											 ESchemaComponentType PropertyGroup, uint32& OutBytesWritten);
-	FWorkerComponentUpdate CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
+	FWorkerComponentUpdate CreateComponentUpdate(FComponentId ComponentId, UObject* Object, const FRepChangeState& Changes,
 												 ESchemaComponentType PropertyGroup, uint32& OutBytesWritten);
 
 	uint32 FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes,
 							ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId,
 							TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	FWorkerComponentUpdate CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info,
+	FWorkerComponentUpdate CreateHandoverComponentUpdate(FComponentId ComponentId, UObject* Object, const FClassInfo& Info,
 														 const FHandoverChangeState& Changes, uint32& OutBytesWritten);
 
 	uint32 FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info,

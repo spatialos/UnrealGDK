@@ -21,7 +21,7 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 	GENERATED_BODY()
 
 public:
-	bool HasAuthority(FEntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasAuthority(FEntityId EntityId, FComponentId ComponentId) const;
 
 	template <typename T>
 	T* GetComponentData(FEntityId EntityId) const
@@ -37,7 +37,7 @@ public:
 		return nullptr;
 	}
 
-	bool HasComponent(FEntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasComponent(FEntityId EntityId, FComponentId ComponentId) const;
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
@@ -48,8 +48,8 @@ public:
 	void GetEntityIds(TArray<FEntityId>& OutEntityIds) const { EntityComponentMap.GetKeys(OutEntityIds); }
 
 private:
-	Worker_Authority GetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId) const;
+	Worker_Authority GetAuthority(FEntityId EntityId, FComponentId ComponentId) const;
 
-	TMap<FEntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<FEntityId, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::Component>>> EntityComponentMap;
+	TMap<FEntityId, TMap<FComponentId, Worker_Authority>> EntityComponentAuthorityMap;
+	TMap<FEntityId, TMap<FComponentId, TUniquePtr<SpatialGDK::Component>>> EntityComponentMap;
 };

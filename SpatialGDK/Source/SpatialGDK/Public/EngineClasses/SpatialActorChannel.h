@@ -105,7 +105,7 @@ struct FPendingSubobjectAttachment
 	const FClassInfo* Info;
 	TWeakObjectPtr<UObject> Subobject;
 
-	TSet<Worker_ComponentId> PendingAuthorityDelegations;
+	TSet<FComponentId> PendingAuthorityDelegations;
 };
 
 // Utility class to manage mapped and unresolved references.
@@ -329,7 +329,7 @@ private:
 
 	// Used on the server
 	// Tracks the interest bucket component ID for the relevant Actor.
-	Worker_ComponentId SavedInterestBucketComponentID;
+	FComponentId SavedInterestBucketComponentID;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;

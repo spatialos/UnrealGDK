@@ -7,7 +7,7 @@
 namespace SpatialGDK
 {
 using EdgeLength = Coordinates;
-using SchemaResultType = TArray<Worker_ComponentId>;
+using SchemaResultType = TArray<FComponentId>;
 
 struct SphereConstraint
 {
@@ -415,7 +415,7 @@ inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, S
 
 struct Interest : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
 
 	Interest() = default;
 

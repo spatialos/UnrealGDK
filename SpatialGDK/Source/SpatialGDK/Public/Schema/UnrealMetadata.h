@@ -24,7 +24,7 @@ namespace SpatialGDK
 {
 struct UnrealMetadata : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	UnrealMetadata() = default;
 

@@ -19,7 +19,7 @@ public:
 											   const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual FRequestId SendDeleteEntityRequest(FEntityId EntityId, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendAddComponent(FEntityId EntityId, FWorkerComponentData* ComponentData, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
-	virtual void SendRemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
+	virtual void SendRemoveComponent(FEntityId EntityId, FComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendComponentUpdate(FEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual FRequestId SendCommandRequest(FEntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,

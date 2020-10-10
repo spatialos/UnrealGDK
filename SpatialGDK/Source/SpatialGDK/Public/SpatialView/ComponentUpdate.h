@@ -26,9 +26,9 @@ class ComponentUpdate
 {
 public:
 	// Creates a new component update.
-	explicit ComponentUpdate(Worker_ComponentId Id);
+	explicit ComponentUpdate(FComponentId Id);
 	// Takes ownership of a component update.
-	explicit ComponentUpdate(OwningComponentUpdatePtr Update, Worker_ComponentId Id);
+	explicit ComponentUpdate(OwningComponentUpdatePtr Update, FComponentId Id);
 
 	~ComponentUpdate() = default;
 
@@ -38,7 +38,7 @@ public:
 	ComponentUpdate& operator=(const ComponentUpdate&) = delete;
 	ComponentUpdate& operator=(ComponentUpdate&&) = default;
 
-	static ComponentUpdate CreateCopy(const Schema_ComponentUpdate* Update, Worker_ComponentId Id);
+	static ComponentUpdate CreateCopy(const Schema_ComponentUpdate* Update, FComponentId Id);
 
 	// Creates a copy of the component update.
 	ComponentUpdate DeepCopy() const;
@@ -54,10 +54,10 @@ public:
 	Schema_ComponentUpdate* GetUnderlying() const;
 	Worker_ComponentUpdate GetWorkerComponentUpdate() const;
 
-	Worker_ComponentId GetComponentId() const;
+	FComponentId GetComponentId() const;
 
 private:
-	Worker_ComponentId ComponentId;
+	FComponentId ComponentId;
 	OwningComponentUpdatePtr Update;
 };
 

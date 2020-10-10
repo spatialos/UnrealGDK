@@ -4,19 +4,19 @@
 
 namespace SpatialGDK
 {
-ComponentUpdate::ComponentUpdate(Worker_ComponentId Id)
+ComponentUpdate::ComponentUpdate(FComponentId Id)
 	: ComponentId(Id)
 	, Update(Schema_CreateComponentUpdate())
 {
 }
 
-ComponentUpdate::ComponentUpdate(OwningComponentUpdatePtr Update, Worker_ComponentId Id)
+ComponentUpdate::ComponentUpdate(OwningComponentUpdatePtr Update, FComponentId Id)
 	: ComponentId(Id)
 	, Update(MoveTemp(Update))
 {
 }
 
-ComponentUpdate ComponentUpdate::CreateCopy(const Schema_ComponentUpdate* Update, Worker_ComponentId Id)
+ComponentUpdate ComponentUpdate::CreateCopy(const Schema_ComponentUpdate* Update, FComponentId Id)
 {
 	return ComponentUpdate(OwningComponentUpdatePtr(Schema_CopyComponentUpdate(Update)), Id);
 }
@@ -66,7 +66,7 @@ Worker_ComponentUpdate ComponentUpdate::GetWorkerComponentUpdate() const
 	return { nullptr, ComponentId, Update.Get(), nullptr };
 }
 
-Worker_ComponentId ComponentUpdate::GetComponentId() const
+FComponentId ComponentUpdate::GetComponentId() const
 {
 	return ComponentId;
 }

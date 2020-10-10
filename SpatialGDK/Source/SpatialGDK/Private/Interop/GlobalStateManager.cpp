@@ -328,7 +328,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 	}
 }
 
-bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId) const
+bool UGlobalStateManager::HandlesComponent(const FComponentId ComponentId) const
 {
 	switch (ComponentId)
 	{

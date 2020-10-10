@@ -28,7 +28,7 @@ struct SpawnPlayerRequest
 
 struct PlayerSpawner : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+	static const FComponentId ComponentId = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 
 	PlayerSpawner() = default;
 

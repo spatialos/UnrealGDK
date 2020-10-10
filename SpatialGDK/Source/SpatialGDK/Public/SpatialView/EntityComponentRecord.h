@@ -17,7 +17,7 @@ class EntityComponentRecord
 {
 public:
 	void AddComponent(FEntityId EntityId, ComponentData Data);
-	void RemoveComponent(FEntityId EntityId, Worker_ComponentId ComponentId);
+	void RemoveComponent(FEntityId EntityId, FComponentId ComponentId);
 	void AddComponentAsUpdate(FEntityId EntityId, ComponentData Data);
 	void AddUpdate(FEntityId EntityId, ComponentUpdate Update);
 

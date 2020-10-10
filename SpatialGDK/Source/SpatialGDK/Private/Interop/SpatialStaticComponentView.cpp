@@ -19,9 +19,9 @@
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 
-Worker_Authority USpatialStaticComponentView::GetAuthority(FEntityId EntityId, Worker_ComponentId ComponentId) const
+Worker_Authority USpatialStaticComponentView::GetAuthority(FEntityId EntityId, FComponentId ComponentId) const
 {
-	if (const TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	if (const TMap<FComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
 	{
 		if (const Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
 		{
@@ -32,12 +32,12 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(FEntityId EntityId, W
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-bool USpatialStaticComponentView::HasAuthority(FEntityId EntityId, Worker_ComponentId ComponentId) const
+bool USpatialStaticComponentView::HasAuthority(FEntityId EntityId, FComponentId ComponentId) const
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 
-bool USpatialStaticComponentView::HasComponent(FEntityId EntityId, Worker_ComponentId ComponentId) const
+bool USpatialStaticComponentView::HasComponent(FEntityId EntityId, FComponentId ComponentId) const
 {
 	if (auto* EntityComponentStorage = EntityComponentMap.Find(EntityId))
 	{
