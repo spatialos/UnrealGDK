@@ -32,11 +32,6 @@ const EntityView& WorkerView::GetView() const
 	return View;
 }
 
-const EntityView* WorkerView::GetViewPtr() const
-{
-	return &View;
-}
-
 void WorkerView::EnqueueOpList(OpList Ops)
 {
 	// Ensure that we only process closed critical sections.
