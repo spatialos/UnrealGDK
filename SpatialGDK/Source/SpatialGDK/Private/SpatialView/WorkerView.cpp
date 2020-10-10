@@ -8,10 +8,8 @@
 
 namespace SpatialGDK
 {
-WorkerView::WorkerView(SpatialEventTracer* InEventTracer)
-	: Delta(InEventTracer)
-	, LocalChanges(MakeUnique<MessagesToSend>())
-	, EventTracer(InEventTracer)
+WorkerView::WorkerView()
+	: LocalChanges(MakeUnique<MessagesToSend>())
 {
 }
 
