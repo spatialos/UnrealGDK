@@ -2,9 +2,8 @@
 
 #pragma once
 
+#include "SpatialView/CommonTypes.h"
 #include "SpatialView/OpList/OpList.h"
-
-#include "CoreMinimal.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 

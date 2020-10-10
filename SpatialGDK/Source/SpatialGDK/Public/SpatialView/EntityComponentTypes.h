@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SpatialView/CommonTypes.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 #include "SpatialView/EntityComponentId.h"

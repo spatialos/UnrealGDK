@@ -74,65 +74,65 @@ enum EntityIds
 	FIRST_AVAILABLE_ENTITY_ID = 4,
 };
 
-const SpatialGDK::FComponentId INVALID_COMPONENT_ID = 0;
+const FComponentId INVALID_COMPONENT_ID = 0;
 
-const SpatialGDK::FComponentId ENTITY_ACL_COMPONENT_ID = 50;
-const SpatialGDK::FComponentId METADATA_COMPONENT_ID = 53;
-const SpatialGDK::FComponentId POSITION_COMPONENT_ID = 54;
-const SpatialGDK::FComponentId PERSISTENCE_COMPONENT_ID = 55;
-const SpatialGDK::FComponentId INTEREST_COMPONENT_ID = 58;
+const FComponentId ENTITY_ACL_COMPONENT_ID = 50;
+const FComponentId METADATA_COMPONENT_ID = 53;
+const FComponentId POSITION_COMPONENT_ID = 54;
+const FComponentId PERSISTENCE_COMPONENT_ID = 55;
+const FComponentId INTEREST_COMPONENT_ID = 58;
 // This is a component on per-worker system entities.
-const SpatialGDK::FComponentId WORKER_COMPONENT_ID = 60;
-const SpatialGDK::FComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
+const FComponentId WORKER_COMPONENT_ID = 60;
+const FComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
 
-const SpatialGDK::FComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
+const FComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
-const SpatialGDK::FComponentId SPAWN_DATA_COMPONENT_ID = 9999;
-const SpatialGDK::FComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
-const SpatialGDK::FComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
-const SpatialGDK::FComponentId GDK_DEBUG_COMPONENT_ID = 9995;
-const SpatialGDK::FComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
-const SpatialGDK::FComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
-const SpatialGDK::FComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
-const SpatialGDK::FComponentId HEARTBEAT_COMPONENT_ID = 9991;
+const FComponentId SPAWN_DATA_COMPONENT_ID = 9999;
+const FComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
+const FComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
+const FComponentId GDK_DEBUG_COMPONENT_ID = 9995;
+const FComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
+const FComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
+const FComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
+const FComponentId HEARTBEAT_COMPONENT_ID = 9991;
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
-const SpatialGDK::FComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
-const SpatialGDK::FComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9989;
-const SpatialGDK::FComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY = 9987;
+const FComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
+const FComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9989;
+const FComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY = 9987;
 
-const SpatialGDK::FComponentId NOT_STREAMED_COMPONENT_ID = 9986;
-const SpatialGDK::FComponentId RPCS_ON_ENTITY_CREATION_ID = 9985;
-const SpatialGDK::FComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
-const SpatialGDK::FComponentId ALWAYS_RELEVANT_COMPONENT_ID = 9983;
-const SpatialGDK::FComponentId TOMBSTONE_COMPONENT_ID = 9982;
-const SpatialGDK::FComponentId DORMANT_COMPONENT_ID = 9981;
-const SpatialGDK::FComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
-const SpatialGDK::FComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
-const SpatialGDK::FComponentId VISIBLE_COMPONENT_ID = 9970;
+const FComponentId NOT_STREAMED_COMPONENT_ID = 9986;
+const FComponentId RPCS_ON_ENTITY_CREATION_ID = 9985;
+const FComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
+const FComponentId ALWAYS_RELEVANT_COMPONENT_ID = 9983;
+const FComponentId TOMBSTONE_COMPONENT_ID = 9982;
+const FComponentId DORMANT_COMPONENT_ID = 9981;
+const FComponentId AUTHORITY_INTENT_COMPONENT_ID = 9980;
+const FComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
+const FComponentId VISIBLE_COMPONENT_ID = 9970;
 
-const SpatialGDK::FComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
-const SpatialGDK::FComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
-const SpatialGDK::FComponentId MULTICAST_RPCS_COMPONENT_ID = 9976;
-const SpatialGDK::FComponentId SPATIAL_DEBUGGING_COMPONENT_ID = 9975;
-const SpatialGDK::FComponentId SERVER_WORKER_COMPONENT_ID = 9974;
-const SpatialGDK::FComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
-const SpatialGDK::FComponentId COMPONENT_PRESENCE_COMPONENT_ID = 9972;
-const SpatialGDK::FComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
+const FComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
+const FComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
+const FComponentId MULTICAST_RPCS_COMPONENT_ID = 9976;
+const FComponentId SPATIAL_DEBUGGING_COMPONENT_ID = 9975;
+const FComponentId SERVER_WORKER_COMPONENT_ID = 9974;
+const FComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
+const FComponentId COMPONENT_PRESENCE_COMPONENT_ID = 9972;
+const FComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 
-const SpatialGDK::FComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
+const FComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
-const SpatialGDK::FComponentId FIRST_EC_COMPONENT_ID = 2001;
-const SpatialGDK::FComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
-const SpatialGDK::FComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
-const SpatialGDK::FComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
-const SpatialGDK::FComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
-const SpatialGDK::FComponentId LB_TAG_COMPONENT_ID = 2005;
-const SpatialGDK::FComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
-const SpatialGDK::FComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const SpatialGDK::FComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
-const SpatialGDK::FComponentId LAST_EC_COMPONENT_ID = 2008;
+const FComponentId FIRST_EC_COMPONENT_ID = 2001;
+const FComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
+const FComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
+const FComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
+const FComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
+const FComponentId LB_TAG_COMPONENT_ID = 2005;
+const FComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
+const FComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
+const FComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
+const FComponentId LAST_EC_COMPONENT_ID = 2008;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -193,7 +193,7 @@ const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID = 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID = 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME = 2;
 const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID = 3;
-const SpatialGDK::PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
+const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID = 1;
@@ -241,18 +241,18 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
-const SpatialGDK::VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
-const SpatialGDK::ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
+const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
+const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
 
 static const FName DefaultLayer = FName(TEXT("DefaultLayer"));
 
-const SpatialGDK::WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ DefaultServerWorkerType.ToString() };
-const SpatialGDK::WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ DefaultClientWorkerType.ToString() };
+const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ DefaultServerWorkerType.ToString() };
+const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ DefaultClientWorkerType.ToString() };
 
-const SpatialGDK::WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
-const SpatialGDK::WorkerRequirementSet UnrealClientPermission{ { UnrealClientAttributeSet } };
-const SpatialGDK::WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet } };
+const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
+const WorkerRequirementSet UnrealClientPermission{ { UnrealClientAttributeSet } };
+const WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet } };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
@@ -292,8 +292,8 @@ const uint16 DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT = 7777;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
-const SpatialGDK::FComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
-const SpatialGDK::FComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
+const FComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
+const FComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
@@ -321,7 +321,7 @@ const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
-const TArray<SpatialGDK::FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<SpatialGDK::FComponentId>{
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<FComponentId>{
 	// Actor components
 	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
 
@@ -337,42 +337,42 @@ const TArray<SpatialGDK::FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_I
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<SpatialGDK::FComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
-	TArray<SpatialGDK::FComponentId>{ // RPCs from the server
-									  SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
+	TArray<FComponentId>{ // RPCs from the server
+						  SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
 // correctly.
-const TArray<SpatialGDK::FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
-	TArray<SpatialGDK::FComponentId>{ // Actor components
-									  UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID,
-									  TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
+	TArray<FComponentId>{ // Actor components
+						  UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID,
+						  DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
-									  // Multicast RPCs
-									  MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+						  // Multicast RPCs
+						  MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
-									  // Global state components
-									  DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
+						  // Global state components
+						  DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
 
-									  // Unreal load balancing components
-									  VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+						  // Unreal load balancing components
+						  VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
-									  // Authority intent component to handle scattered hierarchies
-									  AUTHORITY_INTENT_COMPONENT_ID
+						  // Authority intent component to handle scattered hierarchies
+						  AUTHORITY_INTENT_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<SpatialGDK::FComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
-	TArray<SpatialGDK::FComponentId>{ // RPCs from clients
-									  CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+const TArray<FComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
+	TArray<FComponentId>{ // RPCs from clients
+						  CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
 
-									  // Heartbeat
-									  HEARTBEAT_COMPONENT_ID
+						  // Heartbeat
+						  HEARTBEAT_COMPONENT_ID
 	};
 
-inline SpatialGDK::FComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
+inline FComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
@@ -400,7 +400,7 @@ inline SpatialGDK::FComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCTyp
 	}
 }
 
-inline SpatialGDK::FComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+inline FComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }

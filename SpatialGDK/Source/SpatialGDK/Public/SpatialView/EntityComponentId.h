@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SpatialView/CommonTypes.h"
+
 #include "Templates/TypeHash.h"
 #include <improbable/c_worker.h>
 

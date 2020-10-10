@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "SpatialView/CommonTypes.h"
+
 #include "Templates/UniquePtr.h"
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>

@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "Containers/Array.h"
+#include "SpatialView/CommonTypes.h"
+
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 

@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <WorkerSDK/improbable/c_worker.h>
+#include "SpatialView/CommonTypes.h"
+
+#include <improbable/c_worker.h>
 #include "SnapshotGenerationTemplate.generated.h"
 
 UCLASS(abstract)

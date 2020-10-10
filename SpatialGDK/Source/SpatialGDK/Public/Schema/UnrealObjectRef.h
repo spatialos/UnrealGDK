@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
+#include "SpatialView/CommonTypes.h"
 #include "Utils/SchemaOption.h"
+
+#include "CoreMinimal.h"
 #include <WorkerSDK/Improbable/c_worker.h>
 
 class USpatialPackageMapClient;
