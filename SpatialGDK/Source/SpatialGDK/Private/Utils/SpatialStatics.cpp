@@ -63,12 +63,19 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 		return true;
 	}
 
-	if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		if (const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>())
+		// Calling IsHandoverEnabled before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
+		if (!SpatialNetDriver->IsReady())
 		{
-			return MultiWorkerSettings->bHandoverEnabled;
+			UE_LOG(LogSpatial, Error,
+				TEXT("Called IsHandoverEnabled before NotifyBeginPlay has been called is invalid. Returning enabled."));
+			return true;
+		}
+
+		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
+		{
+			return LBStrategy->RequiresHandoverData();
 		}
 	}
 	return true;
