@@ -22,8 +22,8 @@ namespace ESettingsWorkerLogVerbosity
 {
 enum Type
 {
-	NoLogging,
-	Fatal = 1,
+	NoLogging = 0,
+	Fatal,
 	Error,
 	Warning,
 	Display,
