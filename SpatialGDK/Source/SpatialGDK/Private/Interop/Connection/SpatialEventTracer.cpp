@@ -22,6 +22,28 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 
 #ifdef DEBUG_EVENT_TRACING
+	DebugTraceItem(Item);
+#endif // DEBUG_EVENT_TRACING
+
+	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
+	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
+	{
+		EventTracer->BytesWrittenToStream += ItemSize;
+		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
+		if (Code != 1)
+		{
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
+		}
+	}
+	else
+	{
+		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
+	}
+}
+
+#ifdef DEBUG_EVENT_TRACING
+void SpatialEventTracer::DebugTraceItem(const Trace_Item* Item)
+{
 	if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
 	{
 		const Trace_Event& Event = Item->item.event;
@@ -46,23 +68,8 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("SpanId: %s Causes: %s"), *SpanIdString, *Causes);
 	}
-#endif // DEBUG_EVENT_TRACING
-
-	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
-	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
-	{
-		EventTracer->BytesWrittenToStream += ItemSize;
-		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code != 1)
-		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
-		}
-	}
-	else
-	{
-		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
-	}
 }
+#endif // DEBUG_EVENT_TRACING
 
 SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
@@ -109,9 +116,8 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 	FString HexStr;
 	for (int i = 0; i < 16; i++)
 	{
-		char b[32];
-		unsigned int x = (unsigned char)SpanId.data[i];
-		sprintf(b, "%0x", x);
+		char b[3];
+		sprintf_s(b, 3, "%x", SpanId.data[i]);
 		HexStr += ANSI_TO_TCHAR(b);
 	}
 	return HexStr;

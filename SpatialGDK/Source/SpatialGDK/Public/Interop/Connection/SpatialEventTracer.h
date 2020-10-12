@@ -47,6 +47,9 @@ private:
 	};
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
+#ifdef DEBUG_EVENT_TRACING
+	static void DebugTraceItem(const Trace_Item* Item);
+#endif // DEBUG_EVENT_TRACING
 
 	void Enable(const FString& FileName);
 
