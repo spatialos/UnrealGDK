@@ -10,6 +10,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
+#define __STDC_WANT_SECURE_LIB__ = 1
+
 namespace SpatialGDK
 {
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
@@ -118,7 +120,7 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 	for (int i = 0; i < 16; i++)
 	{
 		char b[3];
-		sprintf(b, "%02x", SpanId.data[i]);
+		sprintf_s(b, 3, "%02x", SpanId.data[i]);
 		HexStr += ANSI_TO_TCHAR(b);
 	}
 	return HexStr;
