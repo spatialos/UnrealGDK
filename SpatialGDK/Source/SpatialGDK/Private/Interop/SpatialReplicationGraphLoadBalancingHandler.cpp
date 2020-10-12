@@ -31,6 +31,22 @@ void FSpatialReplicationGraphLoadBalancingContext::AddActorToReplicate(AActor* A
 	AdditionalActorsToReplicate.Add(Actor);
 }
 
+#if ENGINE_MINOR_VERSION > 25
+FGlobalActorReplicationInfo::FDependantListType FSpatialReplicationGraphLoadBalancingContext::GetDependentActors(AActor* Actor)
+{
+	static FGlobalActorReplicationInfo::FDependantListType EmptyList = [] {
+		FGlobalActorReplicationInfo::FDependantListType List;
+		List.Reset(0);
+		return List;
+	}();
+
+	if (FGlobalActorReplicationInfo* GlobalActorInfo = ReplicationGraph->GetGlobalActorReplicationInfoMap().Find(Actor))
+	{
+		return GlobalActorInfo->GetDependentActorList();
+	}
+	return EmptyList;
+}
+#else
 FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentActors(AActor* Actor)
 {
 	static FActorRepListRefView EmptyList = [] {
@@ -49,6 +65,7 @@ FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentA
 	}
 	return EmptyList;
 }
+#endif
 
 EActorMigrationResult FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
