@@ -746,7 +746,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->IsMultiWorkerEditorEnabled());
+	SpatialGDKSettings->SetMultiWorkerEditorEnabled(!SpatialGDKSettings->IsMultiWorkerEditorEnabled());
 	GDK_PROPERTY(Property)* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
 	SpatialGDKSettings->UpdateSinglePropertyInConfigFile(EnableMultiWorkerProperty, SpatialGDKSettings->GetDefaultConfigFilename());
 
