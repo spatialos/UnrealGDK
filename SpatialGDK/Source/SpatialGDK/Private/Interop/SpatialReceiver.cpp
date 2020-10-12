@@ -340,9 +340,6 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
 
-	TWeakObjectPtr<UObject> RemovedObject = PackageMap->GetObjectFromEntityId(Op.entity_id);
-	const AActor* Actor = RemovedObject.IsValid() ? Cast<AActor>(RemovedObject) : nullptr;
-
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 
 	if (NetDriver->IsServer())
