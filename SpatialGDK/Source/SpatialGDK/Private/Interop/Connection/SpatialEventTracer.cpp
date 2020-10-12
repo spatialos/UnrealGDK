@@ -6,11 +6,8 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
-#include <stdio.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
-
-#define __STDC_WANT_SECURE_LIB__ = 1
 
 namespace SpatialGDK
 {
@@ -119,9 +116,7 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 	FString HexStr;
 	for (int i = 0; i < 16; i++)
 	{
-		char b[3];
-		sprintf_s(b, 3, "%02x", SpanId.data[i]);
-		HexStr += ANSI_TO_TCHAR(b);
+		HexStr += FString::Printf(TEXT("%02x"), SpanId.data[i]);
 	}
 	return HexStr;
 }
