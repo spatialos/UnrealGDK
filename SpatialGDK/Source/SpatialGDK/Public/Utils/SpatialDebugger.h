@@ -214,7 +214,7 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	void CreateWorkerRegions(const bool bInEditor);
+	void CreateWorkerRegions();
 	void DestroyWorkerRegions();
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;

@@ -186,7 +186,7 @@ void ASpatialDebugger::OnAuthorityGained()
 	}
 }
 
-void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
+void ASpatialDebugger::CreateWorkerRegions()
 {
 	UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
 	if (WorkerRegionMaterial == nullptr)
@@ -223,7 +223,7 @@ void ASpatialDebugger::CreateWorkerRegions(const bool bInEditor)
 		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.VirtualWorkerID,
 											 *WorkerRegionData.WorkerName);
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerCombinedMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionOpacity,
-						   WorkerRegionData.Extents, WorkerRegionHeight, WorkerRegionVerticalScale, WorkerInfo, bInEditor);
+						   WorkerRegionData.Extents, WorkerRegionHeight, WorkerRegionVerticalScale, WorkerInfo);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -243,7 +243,7 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 	if (NetDriver != nullptr && !NetDriver->IsServer() && DrawDebugDelegateHandle.IsValid() && bShowWorkerRegions)
 	{
 		DestroyWorkerRegions();
-		CreateWorkerRegions(false);
+		CreateWorkerRegions();
 	}
 }
 
@@ -381,7 +381,7 @@ void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 		{
 			if (bNewShow)
 			{
-				CreateWorkerRegions(false);
+				CreateWorkerRegions();
 			}
 			else
 			{
@@ -664,7 +664,7 @@ void ASpatialDebugger::SpatialToggleDebugger()
 			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
 		if (bShowWorkerRegions)
 		{
-			CreateWorkerRegions(false);
+			CreateWorkerRegions();
 		}
 	}
 }
@@ -697,7 +697,7 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 	if (bShowWorkerRegions && EditorAllowWorkerBoundaries())
 	{
 		EditorInitialiseWorkerRegions();
-		CreateWorkerRegions(true);
+		CreateWorkerRegions();
 	}
 
 	EditorRefreshDisplay();
