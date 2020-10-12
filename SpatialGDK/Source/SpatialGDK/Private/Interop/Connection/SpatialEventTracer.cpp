@@ -210,7 +210,7 @@ void SpatialEventTracer::UpdateComponent(const Worker_Op& Op)
 
 	Trace_SpanId MergeCauses[2] = { Op.span_id, OldSpanId };
 	TOptional<Trace_SpanId> SpanId = CreateSpan(MergeCauses, 2);
-	TraceEvent(FSpatialTraceEventBuilder::MergeComponent(Id.EntityId, Id.ComponentId), SpanId);
+	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponent(Id.EntityId, Id.ComponentId), SpanId);
 
 	OldSpanId = SpanId.GetValue();
 }
