@@ -105,7 +105,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
-	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
+	, LocalWorkerLogLevel(WorkerLogLevel)
+	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -124,6 +126,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
+	, StartupLogRate(5.0f)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }

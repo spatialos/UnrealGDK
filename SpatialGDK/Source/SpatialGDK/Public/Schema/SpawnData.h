@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "Engine/EngineTypes.h"
+#include "GameFramework/Actor.h"
+
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"

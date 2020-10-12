@@ -342,3 +342,37 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	check(LBStrategy != nullptr);
 	return LBStrategy->GetLocalLayerName();
 }
+
+void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("World was nullptr when calling SpatialDebuggerSetOnConfigUIClosedCallback"));
+		return;
+	}
+
+	if (World->GetNetMode() != NM_Client)
+	{
+		UE_LOG(LogSpatial, Warning,
+			   TEXT("SpatialDebuggerSetOnConfigUIClosedCallback should only be called on clients. It has no effects on servers."));
+		return;
+	}
+
+	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (SpatialNetDriver == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("No spatial net driver found when calling SpatialDebuggerSetOnConfigUIClosedCallback"));
+		return;
+	}
+
+	SpatialNetDriver->SpatialDebuggerReady->Await(FOnReady::CreateLambda([SpatialNetDriver, Delegate](const FString& ErrorMessage) {
+		if (!ErrorMessage.IsEmpty())
+		{
+			UE_LOG(LogSpatial, Error, TEXT("Couldn't set config ui closed callback due to error: %s"), *ErrorMessage);
+			return;
+		}
+
+		SpatialNetDriver->SpatialDebugger->OnConfigUIClosed = Delegate;
+	}));
+}
