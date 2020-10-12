@@ -265,7 +265,7 @@ public:
 	bool UseRPCRingBuffer() const;
 
 #if WITH_EDITOR
-	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
 
