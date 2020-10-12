@@ -13,8 +13,6 @@ namespace SpatialGDK
 class FSpatialTraceEventBuilder
 {
 public:
-	explicit FSpatialTraceEventBuilder(FString InType);
-	explicit FSpatialTraceEventBuilder(FString InType, FString InMessage);
 
 	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateSendRPC(const UObject* Object, UFunction* Function);
@@ -49,8 +47,8 @@ private:
 	static FString AuthorityToString(Worker_Authority Authority);
 	static FString BoolToString(bool bInput);
 
-	FSpatialTraceEvent SpatialTraceEvent;
-
+	explicit FSpatialTraceEventBuilder(FString InType);
+	explicit FSpatialTraceEventBuilder(FString InType, FString InMessage);
 	FSpatialTraceEventBuilder AddObject(FString Key, const UObject* Object);
 	FSpatialTraceEventBuilder AddFunction(FString Key, const UFunction* Function);
 	FSpatialTraceEventBuilder AddEntityId(FString Key, const Worker_EntityId EntityId);
@@ -62,5 +60,7 @@ private:
 	FSpatialTraceEventBuilder AddAuthority(FString Key, const Worker_Authority Role);
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
 	FSpatialTraceEvent GetEvent() &&;
+
+	FSpatialTraceEvent SpatialTraceEvent;
 };
 } // namespace SpatialGDK
