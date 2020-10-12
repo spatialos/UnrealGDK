@@ -22,7 +22,7 @@ namespace ESettingsWorkerLogVerbosity
 {
 enum Type
 {
-	Disable,
+	NoLogging,
 	Fatal = 1,
 	Error,
 	Warning,
