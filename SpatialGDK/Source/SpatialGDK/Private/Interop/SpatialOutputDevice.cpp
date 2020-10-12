@@ -35,7 +35,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 		{
 			return;
 		}
-#else // !WITH_EDITOR
+#else  // !WITH_EDITOR
 		if ((Verbosity > CloudFilterLevel && Category != FName("LogSpatial")) || CloudFilterLevel == ELogVerbosity::NoLogging)
 		{
 			return;

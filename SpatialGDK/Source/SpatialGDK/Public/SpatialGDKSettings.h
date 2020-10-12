@@ -243,9 +243,9 @@ public:
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Deprecated!
-	Upgraded into the two settings below for local/cloud configurations. 
+	Upgraded into the two settings below for local/cloud configurations.
 	Ticket for removal UNR-4348 */
-	UPROPERTY(config, meta = (DeprecatedProperty, DeprecationMessage="Use LocalWorkerLogLevel or CloudWorkerLogLevel"))
+	UPROPERTY(config, meta = (DeprecatedProperty, DeprecationMessage = "Use LocalWorkerLogLevel or CloudWorkerLogLevel"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
