@@ -12,9 +12,9 @@ ARegisterAutoDestroyActorsTestPart1::ARegisterAutoDestroyActorsTestPart1()
 	Description = TEXT("Part1: Verify that server spawned a character and that is is visible to the clients");
 }
 
-void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
+void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 	{ // Step 1 - Spawn Actor On Auth
 		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			UWorld* World = GetWorld();
@@ -97,13 +97,13 @@ ARegisterAutoDestroyActorsTestPart2::ARegisterAutoDestroyActorsTestPart2()
 	Description = TEXT("Part2: Verify that the actors have been destroyed across all workers");
 }
 
-void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
+void ARegisterAutoDestroyActorsTestPart2::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 	{
 		// Check nobody has characters
-		FSpatialFunctionalTestStepDefinition StepDefinition;
-		StepDefinition.bIsNativeDefinition = true;
+		FSpatialFunctionalTestStepDefinition StepDefinition(/*bIsNativeDefinition*/ true);
+		StepDefinition.StepName = TEXT("Check No Worker Has Characters");
 		StepDefinition.TimeLimit = 0.0f;
 		StepDefinition.NativeStartEvent.BindLambda([this]() {
 			UWorld* World = GetWorld();

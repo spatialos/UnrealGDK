@@ -98,7 +98,7 @@ public:
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
 
-	void OnDisconnect(Worker_DisconnectOp& Op);
+	void OnDisconnect(uint8 StatusCode, const FString& Reason);
 
 	void RemoveActor(Worker_EntityId EntityId);
 	bool IsPendingOpsOnChannel(USpatialActorChannel& Channel);
@@ -231,8 +231,6 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	SpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-
 	FTimerManager* TimerManager;
 
 	SpatialGDK::SpatialRPCService* RPCService;
@@ -289,4 +287,5 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
+	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 };

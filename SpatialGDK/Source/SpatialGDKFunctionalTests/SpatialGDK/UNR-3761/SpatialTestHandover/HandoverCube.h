@@ -19,10 +19,10 @@ public:
 
 	void OnAuthorityGained() override;
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(CrossServer, Reliable)
 	void AcquireLock(int ServerID);
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(CrossServer, Reliable)
 	void ReleaseLock();
 
 	UPROPERTY(Replicated)

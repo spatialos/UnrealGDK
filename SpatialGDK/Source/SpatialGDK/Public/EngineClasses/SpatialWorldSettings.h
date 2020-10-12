@@ -53,9 +53,9 @@ class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 
 public:
 	/** If command line override -OverrideMultiWorkerSettingsClass is set then return the specified class from the command line.
-	 * Else if multi-worker is disabled, return the single worker settings class.
 	 * Else if bForceNonEditorSettings is set, return the MultiWorkerSettingsClass.
 	 * Else if the EditorMultiWorkerSettingsOverride is set and we are in the Editor, return the EditorMultiWorkerSettings.
+	 * Else if multi-worker is disabled in the editor, return the single worker settings class
 	 * Else if the MultiWorkerSettingsClass is set return it.
 	 * Otherwise return the single worker settings class.  */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
@@ -74,20 +74,13 @@ public:
 	static void EditorRefreshSpatialDebugger();
 #endif // WITH_EDITOR
 
-	/** Is multi-worker enabled from the commmand line or in the WorldSettings*/
-	bool IsMultiWorkerEnabled() const;
-
 private:
-	/** Enable running different server worker types to split the simulation. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
-
 	/** Specify the load balancing strategy to be used for multiple workers */
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
 
 	/** Editor override to specify a different load balancing strategy to run in-editor */
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
 
 	/** Gets MultiWorkerSettingsClass if set, otherwise returns a single worker behaviour. */

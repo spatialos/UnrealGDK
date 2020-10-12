@@ -4,6 +4,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -71,19 +72,22 @@ void USpatialNetDriverDebugContext::Cleanup()
 
 void USpatialNetDriverDebugContext::Reset()
 {
-	TArray<Worker_EntityId_Key> EntityIds;
-	NetDriver->StaticComponentView->GetEntityIds(EntityIds);
-
-	for (auto Entity : EntityIds)
+	for (const auto& Entry : NetDriver->Connection->GetView())
 	{
-		if (NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::GDK_DEBUG_COMPONENT_ID))
+		const SpatialGDK::EntityViewElement& ViewElement = Entry.Value;
+		if (ViewElement.Authority.Contains(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+			&& ViewElement.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& Data) {
+				   return Data.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+			   }))
 		{
-			NetDriver->Sender->SendRemoveComponents(Entity, { SpatialConstants::GDK_DEBUG_COMPONENT_ID });
+			NetDriver->Sender->SendRemoveComponents(Entry.Key, { SpatialConstants::GDK_DEBUG_COMPONENT_ID });
 		}
 	}
+
 	SemanticInterest.Empty();
 	SemanticDelegations.Empty();
 	CachedInterestSet.Empty();
+	ActorDebugInfo.Empty();
 
 	NetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
 }
@@ -274,7 +278,7 @@ void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)
 {
-	const AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+	const AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 	return GetActorHierarchyExplicitDelegation_Traverse(NetOwner);
 }
 

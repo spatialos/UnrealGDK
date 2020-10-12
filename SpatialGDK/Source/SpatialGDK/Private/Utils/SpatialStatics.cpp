@@ -94,18 +94,24 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
-bool USpatialStatics::IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject)
+bool USpatialStatics::IsMultiWorkerEnabled()
 {
-	checkf(WorldContextObject != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr WorldContextObject*"));
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	const UWorld* World = WorldContextObject->GetWorld();
-	checkf(World != nullptr, TEXT("Called IsSpatialMultiWorkerEnabled with a nullptr World*"));
-
-	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	// Check if multi-worker settings class was overridden from the command line
+	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
 	{
-		return WorldSettings->IsMultiWorkerEnabled();
+		// If command line override for Multi Worker Settings is set then enable multi-worker.
+		return true;
 	}
-	return false;
+#if WITH_EDITOR
+	else if (!SpatialGDKSettings->IsMultiWorkerEditorEnabled())
+	{
+		// If  multi-worker is not enabled in editor then disable multi-worker.
+		return false;
+	}
+#endif // WITH_EDITOR
+	return true;
 }
 
 TSubclassOf<UAbstractSpatialMultiWorkerSettings> USpatialStatics::GetSpatialMultiWorkerClass(const UObject* WorldContextObject,
@@ -129,7 +135,7 @@ bool USpatialStatics::IsSpatialOffloadingEnabled(const UWorld* World)
 	{
 		if (const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 		{
-			if (!IsSpatialMultiWorkerEnabled(World))
+			if (!IsMultiWorkerEnabled())
 			{
 				return false;
 			}
@@ -242,7 +248,7 @@ FString USpatialStatics::GetActorEntityIdAsString(const AActor* Actor)
 
 FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugString)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	if (!CanProcessActor(Actor) || !IsMultiWorkerEnabled())
 	{
 		return FLockingToken{ SpatialConstants::INVALID_ACTOR_LOCK_TOKEN };
 	}
@@ -259,7 +265,7 @@ FLockingToken USpatialStatics::AcquireLock(AActor* Actor, const FString& DebugSt
 
 bool USpatialStatics::IsLocked(const AActor* Actor)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	if (!CanProcessActor(Actor) || !IsMultiWorkerEnabled())
 	{
 		return false;
 	}
@@ -269,7 +275,7 @@ bool USpatialStatics::IsLocked(const AActor* Actor)
 
 void USpatialStatics::ReleaseLock(const AActor* Actor, FLockingToken LockToken)
 {
-	if (!CanProcessActor(Actor) || !IsSpatialMultiWorkerEnabled(Actor))
+	if (!CanProcessActor(Actor) || !IsMultiWorkerEnabled())
 	{
 		return;
 	}
@@ -311,4 +317,38 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
 	check(LBStrategy != nullptr);
 	return LBStrategy->GetLocalLayerName();
+}
+
+void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("World was nullptr when calling SpatialDebuggerSetOnConfigUIClosedCallback"));
+		return;
+	}
+
+	if (World->GetNetMode() != NM_Client)
+	{
+		UE_LOG(LogSpatial, Warning,
+			   TEXT("SpatialDebuggerSetOnConfigUIClosedCallback should only be called on clients. It has no effects on servers."));
+		return;
+	}
+
+	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (SpatialNetDriver == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("No spatial net driver found when calling SpatialDebuggerSetOnConfigUIClosedCallback"));
+		return;
+	}
+
+	SpatialNetDriver->SpatialDebuggerReady->Await(FOnReady::CreateLambda([SpatialNetDriver, Delegate](const FString& ErrorMessage) {
+		if (!ErrorMessage.IsEmpty())
+		{
+			UE_LOG(LogSpatial, Error, TEXT("Couldn't set config ui closed callback due to error: %s"), *ErrorMessage);
+			return;
+		}
+
+		SpatialNetDriver->SpatialDebugger->OnConfigUIClosed = Delegate;
+	}));
 }

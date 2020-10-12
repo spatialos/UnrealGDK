@@ -437,7 +437,8 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
 	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
 	// not. Make sure that the Actor is also not always relevant.
-	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()) && !InActor->bAlwaysRelevant)
+	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled())
+		&& !InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
@@ -1314,11 +1315,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		FWorkerComponentUpdate Update = NetOwningClientWorkerData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Update the EntityACL component (if authoritative).
-		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
-		}
+		// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 
 		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
 

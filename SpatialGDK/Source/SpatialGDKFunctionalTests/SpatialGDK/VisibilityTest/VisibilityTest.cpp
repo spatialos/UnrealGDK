@@ -33,13 +33,15 @@
  *    - The spawned Character is destroyed.
  */
 
+const static float StepTimeLimit = 10.0f;
+
 AVisibilityTest::AVisibilityTest()
 	: Super()
 {
 	Author = "Evi";
 	Description = TEXT("Test Actor Visibility");
 
-	CharacterSpawnLocation = FVector(0.0f, 120.0f, 50.0f);
+	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
 }
 
@@ -54,9 +56,9 @@ int AVisibilityTest::GetNumberOfVisibilityTestActors()
 	return Counter;
 }
 
-void AVisibilityTest::BeginPlay()
+void AVisibilityTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("VisibilityTestServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -95,7 +97,7 @@ void AVisibilityTest::BeginPlay()
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 2 - Client 1 checks if it has correctly possessed the TestMovementCharacter.
@@ -113,7 +115,7 @@ void AVisibilityTest::BeginPlay()
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 4 - Server moves the TestMovementCharacter of Client 1 to a remote location, so that it does not see the
@@ -139,13 +141,13 @@ void AVisibilityTest::BeginPlay()
 
 				if (IsValid(PlayerCharacter))
 				{
-					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 50.0f))
+					if (PlayerCharacter->GetActorLocation().Equals(CharacterRemoteLocation, 1.0f))
 					{
 						FinishStep();
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 6 - Client 1 checks that it can no longer see the AReplicatedVisibilityTestActor.
@@ -157,7 +159,7 @@ void AVisibilityTest::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 7 - Server Set AReplicatedVisibilityTestActor to be hidden.
@@ -184,7 +186,7 @@ void AVisibilityTest::BeginPlay()
 		AddStep(TEXT("VisibilityTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation))
 			{
-				if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+				if (ClientOneSpawnedPawn->GetActorLocation().Equals(CharacterSpawnLocation, 1.0f))
 				{
 					FinishStep();
 				}
@@ -202,13 +204,13 @@ void AVisibilityTest::BeginPlay()
 
 				if (IsValid(PlayerCharacter))
 				{
-					if (PlayerCharacter->GetActorLocation().Equals(CharacterSpawnLocation, 50.0f))
+					if (PlayerCharacter->GetActorLocation().Equals(CharacterSpawnLocation, 1.0f))
 					{
 						FinishStep();
 					}
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 11 - Clients check that they can still not see the AReplicatedVisibilityTestActor
@@ -220,7 +222,7 @@ void AVisibilityTest::BeginPlay()
 					FinishStep();
 				}
 			},
-			5.0f);
+			StepTimeLimit);
 	}
 
 	{ // Step 12 - Server Set AReplicatedVisibilityTestActor to not be hidden anymore.

@@ -14,7 +14,7 @@ constexpr int INVALID_FLOW_CONTROLLER_ID = 0;
 
 class ASpatialFunctionalTest;
 
-UCLASS()
+UCLASS(SpatialType = NotPersistent)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTestFlowController : public AActor
 {
 	GENERATED_BODY()
@@ -52,12 +52,17 @@ public:
 	FWorkerDefinition WorkerDefinition;
 
 	// Prettier way to display type+id combo since it can be quite useful
-	const FString GetDisplayName();
+	const FString GetDisplayName() const;
 
 	// When Test is finished, this gets triggered. It's mostly important for when a Test was failed during runtime
 	void OnTestFinished();
 
-	// Returns if the data regarding the FlowControllers has been replicated to their owners
+	// Marks the Flow Controller to be ready or not for the test to start, which means that PrepareTest()
+	// has been called locally on the OwningTest.
+	UFUNCTION()
+	void SetReadyToRunTest(bool bIsReady);
+
+	// Returns if the data regarding the FlowControllers has been replicated PrepareTest() has run on locally on the OwningTest.
 	bool IsReadyToRunTest() { return WorkerDefinition.Id != INVALID_FLOW_CONTROLLER_ID && bIsReadyToRunTest; }
 
 	// Each server worker will assign local client ids, this function will be used by
@@ -67,6 +72,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	FWorkerDefinition GetWorkerDefinition() { return WorkerDefinition; }
+
+	// Let's you know if the owning worker has acknowledged the FinishTest flow.
+	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
 
 private:
 	// Current Step being executed
@@ -78,11 +86,14 @@ private:
 	UPROPERTY(Replicated)
 	bool bIsReadyToRunTest;
 
+	UPROPERTY(Replicated)
+	bool bHasAckFinishedTest;
+
 	UFUNCTION()
 	void OnReadyToRegisterWithTest();
 
 	UFUNCTION(Server, Reliable)
-	void ServerSetReadyToRunTest();
+	void ServerSetReadyToRunTest(bool bIsReady);
 
 	UFUNCTION(Client, Reliable)
 	void ClientStartStep(int StepIndex);
@@ -101,4 +112,7 @@ private:
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 
 	void ServerNotifyFinishTestInternal(EFunctionalTestResult TestResult, const FString& Message);
+
+	UFUNCTION(Server, Reliable)
+	void ServerAckFinishedTest();
 };

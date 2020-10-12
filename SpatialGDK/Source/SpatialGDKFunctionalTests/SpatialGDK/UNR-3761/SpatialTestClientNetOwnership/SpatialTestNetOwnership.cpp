@@ -41,13 +41,18 @@ ASpatialTestNetOwnership::ASpatialTestNetOwnership()
 	Description = TEXT("Test Net Ownership");
 }
 
-void ASpatialTestNetOwnership::BeginPlay()
+void ASpatialTestNetOwnership::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
+
+	if (HasAuthority())
+	{
+		AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube"), 1, false);
+	}
 
 	// Step definition for Client 1 to send a Server RPC
-	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;
-	ClientSendRPCStepDefinition.bIsNativeDefinition = true;
+	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition(/*bIsNativeDefinition*/ true);
+	ClientSendRPCStepDefinition.StepName = TEXT("SpatialTestNetOwnershipClientSendRPC");
 	ClientSendRPCStepDefinition.TimeLimit = 5.0f;
 	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this]() {
 		NetOwnershipCube->ServerIncreaseRPCCount();

@@ -16,7 +16,7 @@ ViewCoordinator::~ViewCoordinator()
 	FlushMessagesToSend();
 }
 
-OpList ViewCoordinator::Advance()
+void ViewCoordinator::Advance()
 {
 	ConnectionHandler->Advance();
 	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
@@ -24,12 +24,43 @@ OpList ViewCoordinator::Advance()
 	{
 		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
 	}
-	return GetOpListFromViewDelta(View.GenerateViewDelta());
+	View.AdvanceViewDelta();
+	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
+
+	for (const TUniquePtr<FSubView>& SubviewToAdvance : SubViews)
+	{
+		SubviewToAdvance->Advance(View.GetViewDelta());
+	}
+}
+
+const ViewDelta& ViewCoordinator::GetViewDelta() const
+{
+	return View.GetViewDelta();
+}
+
+const EntityView& ViewCoordinator::GetView() const
+{
+	return View.GetView();
 }
 
 void ViewCoordinator::FlushMessagesToSend()
 {
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
+}
+
+FSubView& ViewCoordinator::CreateSubView(Worker_ComponentId Tag, const FFilterPredicate& Filter,
+										 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+{
+	const int Index = SubViews.Emplace(MakeUnique<FSubView>(Tag, Filter, View.GetViewPtr(), Dispatcher, DispatcherRefreshCallbacks));
+	return *SubViews[Index];
+}
+
+void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
+{
+	for (const TUniquePtr<FSubView>& SubviewToRefresh : SubViews)
+	{
+		SubviewToRefresh->RefreshEntity(EntityId);
+	}
 }
 
 void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
@@ -97,6 +128,59 @@ void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
 {
 	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
+}
+
+CallbackId ViewCoordinator::RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentAddedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentRemovedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
+{
+	return Dispatcher.RegisterComponentValueCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityGainedCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityLostCallback(ComponentId, MoveTemp(Callback));
+}
+
+CallbackId ViewCoordinator::RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback)
+{
+	return Dispatcher.RegisterAuthorityLostTempCallback(ComponentId, MoveTemp(Callback));
+}
+
+void ViewCoordinator::RemoveCallback(CallbackId Id)
+{
+	Dispatcher.RemoveCallback(Id);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateComponentExistenceRefreshCallback(
+	Worker_ComponentId ComponentId, const FComponentChangeRefreshPredicate& RefreshPredicate)
+{
+	return FSubView::CreateComponentExistenceRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateComponentChangedRefreshCallback(Worker_ComponentId ComponentId,
+																				  const FComponentChangeRefreshPredicate& RefreshPredicate)
+{
+	return FSubView::CreateComponentChangedRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback(Worker_ComponentId ComponentId,
+																				 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
+{
+	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

@@ -28,9 +28,9 @@ ADormancyAndTombstoneTest::ADormancyAndTombstoneTest()
 	Description = TEXT("Test Actor Dormancy and Tombstones");
 }
 
-void ADormancyAndTombstoneTest::BeginPlay()
+void ADormancyAndTombstoneTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 1 - Set TestIntProp to 1.
 		AddStep(TEXT("ServerSetTestIntPropTo1"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -39,10 +39,10 @@ void ADormancyAndTombstoneTest::BeginPlay()
 			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
 				Counter++;
-				AssertEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"), this);
+				RequireEqual_Int(Iter->NetDormancy, DORM_Initial, TEXT("Dormancy on ADormancyTestActor (should be DORM_Initial)"));
 				Iter->TestIntProp = 1;
 			}
-			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
+			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});
@@ -51,25 +51,19 @@ void ADormancyAndTombstoneTest::BeginPlay()
 		AddStep(
 			TEXT("ClientCheckValue"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
-				bool bPassesChecks = true;
-
 				int Counter = 0;
 				int ExpectedDormancyActors = 1;
 				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 				{
-					Counter++;
-					if (Iter->TestIntProp != 0 || Iter->NetDormancy != DORM_Initial)
+					if (Iter->TestIntProp == 0 && Iter->NetDormancy == DORM_Initial)
 					{
-						bPassesChecks = false;
-						break;
+						Counter++;
 					}
 				}
-				if (Counter == ExpectedDormancyActors && bPassesChecks)
-				{
-					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
 
-					FinishStep();
-				}
+				RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
+
+				FinishStep();
 			},
 			5.0f);
 	}
@@ -83,7 +77,7 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				Counter++;
 				Iter->Destroy();
 			}
-			AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"), this);
+			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
 
 			FinishStep();
 		});
@@ -99,11 +93,10 @@ void ADormancyAndTombstoneTest::BeginPlay()
 				{
 					Counter++;
 				}
-				if (Counter == ExpectedDormancyActors)
-				{
-					AssertEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"), this);
-					FinishStep();
-				}
+
+				RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
+
+				FinishStep();
 			},
 			5.0f);
 	}

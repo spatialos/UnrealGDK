@@ -3,15 +3,19 @@
 #include "Tests/SpatialView/ExpectedViewDelta.h"
 
 #include "Algo/Compare.h"
-#include "ComponentTestUtils.h"
 #include "SpatialView/ViewDelta.h"
+#include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
 
 using namespace SpatialGDK;
 
 ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType)
 {
-	EntityDeltas.Add(EntityId, { EntityId, ChangeType == ADD, ChangeType == REMOVE });
+	EntityDeltas.Add(
+		EntityId, { EntityId, ChangeType == UPDATE ? ExpectedEntityDelta::UPDATE
+												   : ChangeType == ADD ? ExpectedEntityDelta::ADD
+																	   : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE
+																							  : ExpectedEntityDelta::TEMPORARILY_REMOVED });
 	return *this;
 }
 
@@ -81,13 +85,37 @@ void ExpectedViewDelta::SortEntityDeltas()
 		Pair.Value.ComponentUpdates.Sort(CompareComponentChangeById);
 	}
 
-	EntityDeltas.KeySort(CompareWorkerEntityIdKey);
+	EntityDeltas.KeySort(CompareWorkerEntityId);
 }
 
 bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 {
-	TArray<EntityDelta> RhsEntityDeltas = Other.GetEntityDeltas();
-	if (EntityDeltas.Num() != RhsEntityDeltas.Num())
+	// We need to check if a disconnect op has been processed during the last tick.
+	// First call HasConnectionStatusChanged() before comparing the values stored.
+	if (Other.HasConnectionStatusChanged())
+	{
+		if (ConnectionStatusCode != Other.GetConnectionStatusChange())
+		{
+			return false;
+		}
+
+		if (ConnectionStatusMessage != Other.GetConnectionStatusChangeMessage())
+		{
+			return false;
+		}
+	}
+
+	return CompareDeltas(Other.GetEntityDeltas());
+}
+
+bool ExpectedViewDelta::Compare(const FSubViewDelta& Other)
+{
+	return CompareDeltas(Other.EntityDeltas);
+}
+
+bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
+{
+	if (EntityDeltas.Num() != Other.Num())
 	{
 		return false;
 	}
@@ -97,21 +125,41 @@ bool ExpectedViewDelta::Compare(const ViewDelta& Other)
 	EntityDeltas.GetKeys(DeltaKeys);
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{
-		ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
-		EntityDelta RhsEntityDelta = RhsEntityDeltas[i];
+		const ExpectedEntityDelta& LhsEntityDelta = EntityDeltas[DeltaKeys[i]];
+		const EntityDelta& RhsEntityDelta = Other[i];
 		if (LhsEntityDelta.EntityId != RhsEntityDelta.EntityId)
 		{
 			return false;
 		}
 
-		if (LhsEntityDelta.bAdded != RhsEntityDelta.bAdded)
+		switch (LhsEntityDelta.Type)
 		{
-			return false;
-		}
-
-		if (LhsEntityDelta.bRemoved != RhsEntityDelta.bRemoved)
-		{
-			return false;
+		case ExpectedEntityDelta::UPDATE:
+			if (!(RhsEntityDelta.Type == EntityDelta::UPDATE))
+			{
+				return false;
+			}
+			break;
+		case ExpectedEntityDelta::ADD:
+			if (!(RhsEntityDelta.Type == EntityDelta::ADD))
+			{
+				return false;
+			}
+			break;
+		case ExpectedEntityDelta::REMOVE:
+			if (!(RhsEntityDelta.Type == EntityDelta::REMOVE))
+			{
+				return false;
+			}
+			break;
+		case ExpectedEntityDelta::TEMPORARILY_REMOVED:
+			if (!(RhsEntityDelta.Type == EntityDelta::TEMPORARILY_REMOVED))
+			{
+				return false;
+			}
+			break;
+		default:
+			checkNoEntry();
 		}
 
 		if (!CompareData(LhsEntityDelta.AuthorityGained, RhsEntityDelta.AuthorityGained, CompareAuthorityChanges))

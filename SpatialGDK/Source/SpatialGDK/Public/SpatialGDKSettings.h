@@ -241,23 +241,33 @@ public:
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
-	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
+	/** Deprecated!
+	Upgraded into the two settings below for local/cloud configurations. 
+	Ticket for removal UNR-4348 */
+	UPROPERTY(config, meta = (DeprecatedProperty, DeprecationMessage="Use LocalWorkerLogLevel or CloudWorkerLogLevel"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
-	/** Enable/Disable logging to Spatial */
-	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Disable Log to Spatial"))
-	bool bDisableLoggingToSpatial;
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Local Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> LocalWorkerLogLevel;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Cloud Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> CloudWorkerLogLevel;
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
-	UPROPERTY(Config)
-	bool bRunSpatialWorkerConnectionOnGameThread;
-
+	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	bool bEnableMultiWorker;
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
+
+#if WITH_EDITOR
+	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
+#endif // WITH_EDITOR
 
 private:
 #if WITH_EDITOR
@@ -354,16 +364,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableClientQueriesOnServer;
 
-	/** Use SpatialView to manage communication with SpatialOS. */
-	UPROPERTY(Config)
-	bool bUseSpatialView;
-
-	/**
-	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
-	 * the map's config with a 1x1 grid.
-	 */
-	TOptional<bool> bOverrideMultiWorker;
-
 	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the multi-worker settings class
@@ -381,4 +381,10 @@ public:
 		meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
 	// clang-format on
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
+
+	/**
+	 * Time in seconds, controls at which frequency logs related to startup are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float StartupLogRate;
 };

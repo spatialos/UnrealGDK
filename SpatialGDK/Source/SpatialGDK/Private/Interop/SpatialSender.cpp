@@ -190,28 +190,16 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		}
 	});
 
-	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
-	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
-
-		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
-		for (auto& ComponentId : NewComponentIds)
-		{
-			EntityACL->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
-		}
-
-		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
-	}
-
-	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
-	// authority, this component is used to inform the enforcer of the component IDs to add to the EntityACL.
+	// Update the ComponentPresence component with the new component IDs. This component is used to inform the enforcer
+	// of the component IDs to add to the EntityACL.
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -272,7 +260,9 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/).CreateInterestData());
+	Components.Add(
+		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+			.CreateInterestData());
 
 	// GDK known entities completeness tags
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -296,6 +286,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
+				Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 				return;
 			}
 
@@ -421,7 +412,8 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
-		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/).CreateInterestUpdate();
+		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
@@ -503,9 +495,9 @@ void USpatialSender::FlushRPCService()
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 		}
 
-		if (RPCs.Num())
+		if (RPCs.Num() && GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
 		{
-			Connection->MaybeFlush();
+			Connection->Flush();
 		}
 	}
 }
@@ -611,45 +603,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
-	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
-}
-
-void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
-{
-	check(NetDriver);
-	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
-
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
-
-	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
-
-	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
-	NewAcl->ReadAcl = Request.ReadAcl;
-
-	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
-	{
-		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
-			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
-		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
-			continue;
-		}
-
-		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
-		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
-			continue;
-		}
-
-		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
-	}
-
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"),
-		   *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
-
-	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
-	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
+	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
@@ -786,7 +741,10 @@ FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Fu
 	FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
 	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-	Connection->MaybeFlush();
+	if (GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
+	{
+		Connection->Flush();
+	}
 #if !UE_BUILD_SHIPPING
 	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
@@ -1067,24 +1025,6 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	Connection->SendCommandFailure(RequestId, Message);
-}
-
-// Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
-// This function updates the authority of that component as the owning connection can change.
-void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
-{
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
-
-	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
-	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
-
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()),
-									 OwningClientOnly);
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
-	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-
-	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)

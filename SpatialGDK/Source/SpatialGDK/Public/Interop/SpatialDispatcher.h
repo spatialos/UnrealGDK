@@ -28,12 +28,7 @@ public:
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
 			  USpatialWorkerFlags* InSpatialWorkerFlags);
-	void ProcessOps(const SpatialGDK::OpList& Ops);
-
-	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
-	// from the SpatialNetDriver, and should be temporary since an alternative solution will be available via the Worker SDK soon.
-	void MarkOpToSkip(const Worker_Op* Op);
-	int GetNumOpsToSkip() const;
+	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 	// Each callback method returns a callback ID which is incremented for each registration.
 	// ComponentId must be in the range 1000 - 2000.
@@ -61,8 +56,8 @@ private:
 
 	using OpTypeToCallbacksMap = TMap<Worker_OpType, TArray<UserOpCallbackData>>;
 
-	bool IsExternalSchemaOp(Worker_Op* Op) const;
-	void ProcessExternalSchemaOp(Worker_Op* Op);
+	bool IsExternalSchemaOp(const Worker_Op& Op) const;
+	void ProcessExternalSchemaOp(const Worker_Op& Op);
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType,
 									 const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
@@ -81,5 +76,4 @@ private:
 	FCallbackId NextCallbackId;
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
-	TArray<const Worker_Op*> OpsToSkip;
 };

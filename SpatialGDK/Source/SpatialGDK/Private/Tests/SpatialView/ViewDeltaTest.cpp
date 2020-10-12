@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialViewUtils.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
@@ -12,6 +12,9 @@
 namespace SpatialGDK
 {
 const static Worker_EntityId TestEntityId = 1;
+const static Worker_EntityId OtherTestEntityId = 2;
+const static Worker_EntityId AnotherTestEntityId = 3;
+const static Worker_EntityId YetAnotherTestEntityId = 4;
 const static Worker_ComponentId TestComponentId = 1;
 const static double TestComponentValue = 20;
 const static double OtherTestComponentValue = 30;
@@ -25,7 +28,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_THEN_get_entity_in_view_and_delt
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -47,7 +50,7 @@ VIEWDELTA_TEST(GIVEN_entity_in_view_WHEN_remove_entity_THEN_empty_view)
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveEntity(TestEntityId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	ExpectedViewDelta ExpectedDelta;
@@ -67,7 +70,7 @@ VIEWDELTA_TEST(GIVEN_entity_in_view_WHEN_add_component_THEN_entity_and_component
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -92,7 +95,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_component_THEN_com
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -117,7 +120,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_component_THEN_com
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(TestEntityId, TestComponentId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -141,7 +144,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_authority_gained_THEN_aut
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_AUTHORITATIVE);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -168,7 +171,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_auth_component_in_view_WHEN_authority_lost_THEN_
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -191,7 +194,7 @@ VIEWDELTA_TEST(GIVEN_connected_view_WHEN_disconnect_op_THEN_disconnected_view)
 
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetDisconnect(WORKER_CONNECTION_STATUS_CODE_REJECTED, DisconnectReason);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 
@@ -215,7 +218,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_auth_component_in_view_WHEN_authority_lost_and_g
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 	OpListBuilder.SetAuthority(TestEntityId, TestComponentId, WORKER_AUTHORITY_AUTHORITATIVE);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -240,7 +243,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_remove_THEN_get_empty_view_and_delta)
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId);
 	OpListBuilder.RemoveEntity(TestEntityId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	ExpectedViewDelta ExpectedDelta;
@@ -261,7 +264,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_update_and_add_component_
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentEvent(TestComponentId, TestEventValue));
 	OpListBuilder.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, OtherTestComponentValue));
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -288,7 +291,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_and_add_component_
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(TestEntityId, TestComponentId);
 	OpListBuilder.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, OtherTestComponentValue));
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -314,7 +317,7 @@ VIEWDELTA_TEST(GIVEN_entity_view_WHEN_entity_remove_and_add_THEN_no_entity_flag)
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveEntity(TestEntityId);
 	OpListBuilder.AddEntity(TestEntityId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -337,7 +340,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_remove_add_THEN_entity_in_view_and_delt
 	OpListBuilder.AddEntity(TestEntityId);
 	OpListBuilder.RemoveEntity(TestEntityId);
 	OpListBuilder.AddEntity(TestEntityId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -359,7 +362,7 @@ VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_add_component_THEN_entity_and_co
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddEntity(TestEntityId);
 	OpListBuilder.AddComponent(TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 	AddEntityToView(ExpectedView, TestEntityId);
@@ -384,7 +387,7 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_entity_THEN_empty_
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.RemoveComponent(TestEntityId, TestComponentId);
 	OpListBuilder.RemoveEntity(TestEntityId);
-	SetFromOpList(InputDelta, InputView, OpListBuilder);
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 
@@ -394,6 +397,125 @@ VIEWDELTA_TEST(GIVEN_entity_and_component_in_view_WHEN_remove_entity_THEN_empty_
 
 	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
 	TestTrue("Views are equal", CompareViews(InputView, ExpectedView));
+
+	return true;
+}
+
+// Projection Tests
+VIEWDELTA_TEST(GIVEN_view_delta_with_update_for_entity_complete_WHEN_project_THEN_contains_update)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedSubViewDelta.AddComponentUpdate(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_complete_entity_WHEN_project_THEN_contains_marker_add)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::ADD);
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_incomplete_entity_WHEN_project_THEN_contains_marker_remove)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId },
+				  TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::REMOVE);
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_empty_view_delta_with_temporarily_incomplete_entity_WHEN_project_THEN_contains_marker_temporary_remove)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
+				  TArray<Worker_EntityId>{ TestEntityId });
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::TEMPORARILY_REMOVED);
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_arbitrary_delta_and_completeness_WHEN_project_THEN_subview_delta_correct)
+{
+	ViewDelta Delta;
+	FSubViewDelta SubViewDelta;
+	EntityView View;
+	AddEntityToView(View, TestEntityId);
+	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
+	AddEntityToView(View, OtherTestEntityId);
+	AddEntityToView(View, AnotherTestEntityId);
+	AddEntityToView(View, YetAnotherTestEntityId);
+	AddComponentToView(View, YetAnotherTestEntityId, CreateTestComponentData(TestComponentId, OtherTestComponentValue));
+
+	TArray<OpList> OpLists;
+	EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+	OpLists.Push(MoveTemp(OpListBuilder).CreateOpList());
+	OpListBuilder = EntityComponentOpListBuilder{};
+	OpListBuilder.UpdateComponent(YetAnotherTestEntityId, CreateTestComponentUpdate(TestComponentId, TestComponentValue));
+	OpLists.Push(MoveTemp(OpListBuilder).CreateOpList());
+	Delta.SetFromOpList(MoveTemp(OpLists), View);
+
+	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId, YetAnotherTestEntityId },
+				  TArray<Worker_EntityId>{ OtherTestEntityId }, TArray<Worker_EntityId>{ AnotherTestEntityId }, TArray<Worker_EntityId>{});
+
+	ExpectedViewDelta ExpectedSubViewDelta;
+	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedSubViewDelta.AddComponentUpdate(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
+	ExpectedSubViewDelta.AddEntityDelta(OtherTestEntityId, ExpectedViewDelta::ADD);
+	ExpectedSubViewDelta.AddEntityDelta(AnotherTestEntityId, ExpectedViewDelta::REMOVE);
+	ExpectedSubViewDelta.AddEntityDelta(YetAnotherTestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedSubViewDelta.AddComponentUpdate(YetAnotherTestEntityId, CreateTestComponentUpdate(TestComponentId, TestComponentValue));
+
+	TestTrue("View Deltas are equal", ExpectedSubViewDelta.Compare(SubViewDelta));
 
 	return true;
 }

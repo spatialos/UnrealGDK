@@ -11,7 +11,7 @@ void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
 {
 	UReplicationGraph::InitForNetDriver(InNetDriver);
 
-	if (USpatialStatics::IsSpatialMultiWorkerEnabled(GetWorld()))
+	if (USpatialStatics::IsMultiWorkerEnabled())
 	{
 		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
 		{
@@ -51,6 +51,8 @@ void USpatialReplicationGraph::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 	if (NewOwner != nullptr)
 	{
+		GlobalActorReplicationInfoMap.Get(NewOwner);
+		GlobalActorReplicationInfoMap.Get(Actor);
 		GlobalActorReplicationInfoMap.AddDependentActor(NewOwner, Actor);
 	}
 }
@@ -67,7 +69,7 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 		for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
 		{
 			// Only add net owners to the list as they will visit their dependents when replicated.
-			AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+			AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 			if (NetOwner == Actor)
 			{
 				FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);

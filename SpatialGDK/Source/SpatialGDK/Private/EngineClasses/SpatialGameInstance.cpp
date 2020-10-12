@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
+#include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/Guid.h"
@@ -17,6 +18,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Interop/SpatialWorkerFlags.h"
+#include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -28,6 +31,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 USpatialGameInstance::USpatialGameInstance()
 	: Super()
 	, bIsSpatialNetDriverReady(false)
+	, bPreparingForShutdown(false)
 {
 }
 
@@ -225,7 +229,7 @@ void USpatialGameInstance::Init()
 	}
 }
 
-void USpatialGameInstance::HandleOnConnected()
+void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
@@ -238,6 +242,27 @@ void USpatialGameInstance::HandleOnConnected()
 #endif
 
 	OnSpatialConnected.Broadcast();
+
+	if (NetDriver.IsServer())
+	{
+		FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
+		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
+
+		NetDriver.SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+	}
+}
+
+void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
+{
+	if (FlagName.Equals(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, ESearchCase::IgnoreCase))
+	{
+		if (!bPreparingForShutdown)
+		{
+			bPreparingForShutdown = true;
+			UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
+			OnPrepareShutdown.Broadcast();
+		}
+	}
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
