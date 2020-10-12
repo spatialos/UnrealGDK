@@ -16,7 +16,42 @@ public:
 	explicit FSpatialTraceEventBuilder(FString InType);
 	explicit FSpatialTraceEventBuilder(FString InType, FString InMessage);
 
-	// --- Builder Functions ---
+	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function);
+	static FSpatialTraceEvent CreateSendRPC(const UObject* Object, UFunction* Function);
+	static FSpatialTraceEvent CreateQueueRPC();
+	static FSpatialTraceEvent CreateRetryRPC();
+	static FSpatialTraceEvent CreatePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
+												   const Worker_ComponentId ComponentId, const FString& PropertyName);
+	static FSpatialTraceEvent CreateMergeRPCSends(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent CreateMergeComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent CreateSendCommandRequest(const FString& Command, const int64 RequestId);
+	static FSpatialTraceEvent CreateReceiveCommandRequest(const FString& Command, const int64 RequestId);
+	static FSpatialTraceEvent CreateReceiveCommandRequest(const FString& Command, const UObject* Actor, const UObject* TargetObject,
+														  const UFunction* Function, const int32 TraceId, const int64 RequestId);
+	static FSpatialTraceEvent CreateSendCommandResponse(const int64 RequestId, const bool bSuccess);
+	static FSpatialTraceEvent CreateReceiveCommandResponse(const FString& Command, const int64 RequestId);
+	static FSpatialTraceEvent CreateReceiveCommandResponse(const UObject* Actor, const int64 RequestId, const bool bSuccess);
+	static FSpatialTraceEvent CreateReceiveCommandResponse(const UObject* Actor, const UObject* TargetObject, const UFunction* Function,
+														   int64 RequestId, const bool bSuccess);
+	static FSpatialTraceEvent CreateSendRemoveEntity(const UObject* Object, const Worker_EntityId EntityId);
+	static FSpatialTraceEvent CreateReceiveRemoveEntity(const Worker_EntityId EntityId);
+	static FSpatialTraceEvent CreateSendCreateEntity(const UObject* Object, const Worker_EntityId EntityId);
+	static FSpatialTraceEvent CreateReceiveCreateEntity(const Worker_EntityId EntityId);
+	static FSpatialTraceEvent CreateReceiveCreateEntitySuccess(const UObject* Object, const Worker_EntityId EntityId);
+	static FSpatialTraceEvent CreateSendRetireEntity(const UObject* Object, const Worker_EntityId EntityId);
+	static FSpatialTraceEvent CreateAuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object);
+	static FSpatialTraceEvent CreateAuthorityChange(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													const Worker_Authority Authority);
+	static FSpatialTraceEvent CreateComponentUpdate(const UObject* Object, const UObject* TargetObject, const Worker_EntityId EntityId,
+													const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent CreateGenericMessage(FString Message);
+
+private:
+
+	FSpatialTraceEvent SpatialTraceEvent;
+
+	static FString AuthorityToString(Worker_Authority Authority);
+	static FString BoolToString(bool bInput);
 
 	FSpatialTraceEventBuilder AddObject(FString Key, const UObject* Object);
 	FSpatialTraceEventBuilder AddFunction(FString Key, const UFunction* Function);
@@ -29,42 +64,5 @@ public:
 	FSpatialTraceEventBuilder AddAuthority(FString Key, const Worker_Authority Role);
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
 	FSpatialTraceEvent GetEvent() &&;
-
-	// --- Static Functions ---
-
-	static FSpatialTraceEvent ProcessRPC(const UObject* Object, UFunction* Function);
-	static FSpatialTraceEvent SendRPC(const UObject* Object, UFunction* Function);
-	static FSpatialTraceEvent QueueRPC();
-	static FSpatialTraceEvent RetryRPC();
-	static FSpatialTraceEvent PropertyUpdate(const UObject* Object, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											 const FString& PropertyName);
-	static FSpatialTraceEvent MergeRPCSends(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	static FSpatialTraceEvent MergeComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	static FSpatialTraceEvent SendCommandRequest(const FString& Command, const int64 RequestId);
-	static FSpatialTraceEvent ReceiveCommandRequest(const FString& Command, const int64 RequestId);
-	static FSpatialTraceEvent ReceiveCommandRequest(const FString& Command, const UObject* Actor, const UObject* TargetObject,
-													const UFunction* Function, const int32 TraceId, const int64 RequestId);
-	static FSpatialTraceEvent SendCommandResponse(const int64 RequestId, const bool bSuccess);
-	static FSpatialTraceEvent ReceiveCommandResponse(const FString& Command, const int64 RequestId);
-	static FSpatialTraceEvent ReceiveCommandResponse(const UObject* Actor, const int64 RequestId, const bool bSuccess);
-	static FSpatialTraceEvent ReceiveCommandResponse(const UObject* Actor, const UObject* TargetObject, const UFunction* Function,
-													 int64 RequestId, const bool bSuccess);
-	static FSpatialTraceEvent SendRemoveEntity(const UObject* Object, const Worker_EntityId EntityId);
-	static FSpatialTraceEvent ReceiveRemoveEntity(const Worker_EntityId EntityId);
-	static FSpatialTraceEvent SendCreateEntity(const UObject* Object, const Worker_EntityId EntityId);
-	static FSpatialTraceEvent ReceiveCreateEntity(const Worker_EntityId EntityId);
-	static FSpatialTraceEvent ReceiveCreateEntitySuccess(const UObject* Object, const Worker_EntityId EntityId);
-	static FSpatialTraceEvent SendRetireEntity(const UObject* Object, const Worker_EntityId EntityId);
-	static FSpatialTraceEvent AuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object);
-	static FSpatialTraceEvent AuthorityChange(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											  const Worker_Authority Authority);
-	static FSpatialTraceEvent ComponentUpdate(const UObject* Object, const UObject* TargetObject, const Worker_EntityId EntityId,
-											  const Worker_ComponentId ComponentId);
-	static FSpatialTraceEvent GenericMessage(FString Message);
-	static FString AuthorityToString(Worker_Authority Authority);
-	static FString BoolToString(bool bInput);
-
-private:
-	FSpatialTraceEvent SpatialTraceEvent;
 };
 } // namespace SpatialGDK

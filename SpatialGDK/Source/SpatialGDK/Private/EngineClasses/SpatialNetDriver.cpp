@@ -205,21 +205,22 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 {
-	USpatialGameInstance* GameInstance = nullptr;
-
-	// A client does not have a world at this point, so we use the WorldContext
+	// A client might not have a world at this point, so we use the WorldContext
 	// to get a reference to the GameInstance
 	if (bConnectAsClient)
 	{
-		const FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
-		GameInstance = Cast<USpatialGameInstance>(WorldContext.OwningGameInstance);
-	}
-	else if (World != nullptr)
-	{
-		GameInstance = Cast<USpatialGameInstance>(World->GetGameInstance());
+		if (const FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this))
+		{
+			return Cast<USpatialGameInstance>(WorldContext->OwningGameInstance);
+		}
 	}
 
-	return GameInstance;
+	if (GetWorld() != nullptr)
+	{
+		return Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
+	}
+
+	return nullptr;
 }
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
