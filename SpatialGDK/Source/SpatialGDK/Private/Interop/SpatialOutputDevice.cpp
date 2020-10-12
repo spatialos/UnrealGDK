@@ -13,7 +13,7 @@ FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnectio
 	, PIEIndex(InPIEIndex)
 {
 	const TCHAR* CommandLine = FCommandLine::Get();
-	bLogToSpatial = !FParse::Param(CommandLine, TEXT("NoLogToSpatial")) && !GetDefault<USpatialGDKSettings>()->bDisableLoggingToSpatial;
+	bLogToSpatial = !FParse::Param(CommandLine, TEXT("NoLogToSpatial"));
 
 	FOutputDeviceRedirector::Get()->AddOutputDevice(this);
 }
@@ -30,12 +30,13 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 	if (bLogToSpatial && Connection != nullptr)
 	{
 #if WITH_EDITOR
-		if ((Verbosity > LocalFilterLevel && Category != FName("LogSpatial")) || GPlayInEditorID != PIEIndex)
+		if ((Verbosity > LocalFilterLevel && Category != FName("LogSpatial")) || GPlayInEditorID != PIEIndex
+			|| LocalFilterLevel == ESettingsWorkerLogVerbosity::Disable)
 		{
 			return;
 		}
 #else // !WITH_EDITOR
-		if (Verbosity > CloudFilterLevel && Category != FName("LogSpatial"))
+		if ((Verbosity > CloudFilterLevel && Category != FName("LogSpatial")) CloudFilterLevel == ESettingsWorkerLogVerbosity::Disable)
 		{
 			return;
 		}
