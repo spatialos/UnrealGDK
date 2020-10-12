@@ -118,7 +118,7 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 	for (int i = 0; i < 16; i++)
 	{
 		char b[3];
-		sprintf_s(b, 3, "%02x", SpanId.data[i]);
+		sprintf(b, "%02x", SpanId.data[i]);
 		HexStr += ANSI_TO_TCHAR(b);
 	}
 	return HexStr;
