@@ -48,8 +48,6 @@ public:
 
 private:
 
-	FSpatialTraceEvent SpatialTraceEvent;
-
 	static FString AuthorityToString(Worker_Authority Authority);
 	static FString BoolToString(bool bInput);
 
@@ -64,5 +62,7 @@ private:
 	FSpatialTraceEventBuilder AddAuthority(FString Key, const Worker_Authority Role);
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
 	FSpatialTraceEvent GetEvent() &&;
+
+	FSpatialTraceEvent SpatialTraceEvent;
 };
 } // namespace SpatialGDK
