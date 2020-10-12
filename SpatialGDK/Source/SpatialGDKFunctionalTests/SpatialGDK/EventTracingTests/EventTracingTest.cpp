@@ -140,7 +140,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 			if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
 			{
 				const Trace_Event& Event = Item->item.event;
-				FName EventName = FName::FromString(FString(Event.type));
+				FName EventName = FName(*FString(Event.type));
 
 				FString SpanIdString = SpatialEventTracer::SpanIdToString(Event.span_id);
 				if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
