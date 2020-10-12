@@ -37,14 +37,15 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 
 	// Setup the basic boundary material, this will always be shown in the editor
 	Mesh->SetMaterial(0, BackgroundMaterialInstance);
-	
-	// For runtime, initialise the canvas for creating the combined boundary material which will be setup when the DrawToCanvasRenderTarget callback is triggered
+
+	// For runtime, initialise the canvas for creating the combined boundary material which will be setup when the DrawToCanvasRenderTarget
+	// callback is triggered
 	CombinedMaterial = InCombinedMaterial;
 	WorkerInfoFont = InWorkerInfoFont;
 	WorkerInfo = InWorkerInfo;
 	CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
 	CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
-	
+
 	SetOpacity(Opacity);
 	SetColor(Color);
 	SetPositionAndScale(Extents, VerticalScale);
@@ -53,8 +54,8 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	CanvasRenderTarget->UpdateResource();
 }
 
-// Render the dynamic boundary material with a translucent coloured background and worker information, note this callback is only triggered at
-// runtime and not in the editor
+// Render the dynamic boundary material with a translucent coloured background and worker information, note this callback is only triggered
+// at runtime and not in the editor
 void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32 Height)
 {
 	// Setup the boundary material to combine background and text
