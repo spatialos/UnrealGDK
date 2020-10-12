@@ -271,6 +271,6 @@ Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	check(SpanId != nullptr)
 
-	return *SpanId;
+		return *SpanId;
 }
 } // namespace SpatialGDK
