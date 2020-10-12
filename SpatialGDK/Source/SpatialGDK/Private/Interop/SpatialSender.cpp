@@ -1109,6 +1109,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 
 		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::SendRetireEntity(Actor, EntityId), SpanId);
+
+		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }
 
