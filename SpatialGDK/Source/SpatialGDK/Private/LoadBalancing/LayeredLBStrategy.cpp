@@ -141,7 +141,7 @@ SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint
 	}
 }
 
-bool ULayeredLBStrategy::RequiresHandoverData() const 
+bool ULayeredLBStrategy::RequiresHandoverData() const
 {
 	for (const auto& Elem : LayerNameToLBStrategy)
 	{
