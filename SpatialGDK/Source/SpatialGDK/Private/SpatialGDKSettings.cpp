@@ -280,7 +280,6 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 void USpatialGDKSettings::SetMultiWorkerEnabled(bool bIsEnabled)
 {
 	bEnableMultiWorker = bIsEnabled;
-	SaveConfig();
 }
 #endif // WITH_EDITOR
 

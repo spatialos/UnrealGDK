@@ -729,9 +729,13 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	if (SpatialDebugger.IsValid())
 	{
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->IsSpatialDebuggerEditorEnabled());
+		GDK_PROPERTY(Property)* SpatialDebuggerEditorEnabledProperty =
+			USpatialGDKEditorSettings::StaticClass()->FindPropertyByName(FName("bSpatialDebuggerEditorEnabled"));
+		SpatialGDKEditorSettings->UpdateSinglePropertyInConfigFile(SpatialDebuggerEditorEnabledProperty,
+																   SpatialGDKEditorSettings->GetDefaultConfigFilename());
 
-		SpatialDebugger->EditorSpatialToggleDebugger(SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+		SpatialDebugger->EditorSpatialToggleDebugger(SpatialGDKEditorSettings->IsSpatialDebuggerEditorEnabled());
 	}
 	else
 	{
@@ -742,7 +746,9 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->bEnableMultiWorker);
+	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->IsMultiWorkerEditorEnabled());
+	GDK_PROPERTY(Property)* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
+	SpatialGDKSettings->UpdateSinglePropertyInConfigFile(EnableMultiWorkerProperty, SpatialGDKSettings->GetDefaultConfigFilename());
 
 	if (SpatialDebugger.IsValid())
 	{
