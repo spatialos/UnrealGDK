@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
 - 'WorkerLogLevel' in Runtime Settings was split into two new settings - 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. Update these values which will be set to 'Warning' by default.
-- Removed the method `RequiresHandoverData` from `UAbstractLBStrategy`, handover is now determined by the `USpatialMultiWorkerSettings` class by the `bHandoverEnabled` setting. If this is false, handover will never be evaluated.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -37,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow specifying the locator port via `?locatorPort=` URL option when performing client travel.
 - You can now enable/disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Enable Multi-Worker` from the drop option from the `Start Deployment` button on the toolbar to use the multi-worker strategy or de-select to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
 - Enabled packaging the command line arguments when building a mobile client by default.
-- Handover is now optional according to the multi-worker settings (`USpatialMultiWorkerSettings::bHandoverEnabled`). 
+Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
 - You can now configure what the Spatial Debugger visualises in an in-game menu. Use F9 (by default) to open and close it. The key can be changed through a setting on the Spatial Debugger object.
 - Added a setting for the spatial debugger to visualise all replicated actors in the local player's hierarchy, instead of just the player's controller, player state and pawn.
