@@ -47,6 +47,12 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FBox2D Extents;
+
+	UPROPERTY()
+	FString WorkerName;
+
+	UPROPERTY()
+	uint32 VirtualWorkerID;
 };
 
 UENUM()
