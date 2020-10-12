@@ -13,7 +13,6 @@ namespace SpatialGDK
 class FSpatialTraceEventBuilder
 {
 public:
-
 	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateSendRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateQueueRPC();
