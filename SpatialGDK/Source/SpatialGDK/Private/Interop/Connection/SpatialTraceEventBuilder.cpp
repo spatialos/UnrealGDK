@@ -127,7 +127,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRetryRPC()
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreatePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
-															 const Worker_ComponentId ComponentId, const FString& PropertyName)
+																   const Worker_ComponentId ComponentId, const FString& PropertyName)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "property_update")
 		.AddObject(TEXT("Object"), Object)
@@ -162,8 +162,8 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveCommandRequest(const 
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveCommandRequest(const FString& Command, const UObject* Actor,
-																	const UObject* TargetObject, const UFunction* Function,
-																	const int32 TraceId, const int64 RequestId)
+																		  const UObject* TargetObject, const UFunction* Function,
+																		  const int32 TraceId, const int64 RequestId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_command_request")
 		.AddCommand(TEXT("Command"), Command)
@@ -201,7 +201,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveCommandResponse(const
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveCommandResponse(const UObject* Actor, const UObject* TargetObject,
-																	 const UFunction* Function, int64 RequestId, const bool bSuccess)
+																		   const UFunction* Function, int64 RequestId, const bool bSuccess)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_command_response")
 		.AddObject(TEXT("Object"), Actor)
@@ -263,7 +263,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(Virtua
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateAuthorityChange(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-															  const Worker_Authority Authority)
+																	const Worker_Authority Authority)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent")
 		.AddEntityId(TEXT("EntityId"), EntityId)
@@ -273,7 +273,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateAuthorityChange(const Worker
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateComponentUpdate(const UObject* Object, const UObject* TargetObject,
-															  const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+																	const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "component_update")
 		.AddObject(TEXT("Object"), Object)

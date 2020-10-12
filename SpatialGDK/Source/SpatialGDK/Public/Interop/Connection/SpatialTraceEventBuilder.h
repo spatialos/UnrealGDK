@@ -20,18 +20,18 @@ public:
 	static FSpatialTraceEvent CreateSendRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
-	static FSpatialTraceEvent CreatePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											 const FString& PropertyName);
+	static FSpatialTraceEvent CreatePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
+												   const Worker_ComponentId ComponentId, const FString& PropertyName);
 	static FSpatialTraceEvent CreateMergeComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateSendCommandRequest(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent CreateReceiveCommandRequest(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent CreateReceiveCommandRequest(const FString& Command, const UObject* Actor, const UObject* TargetObject,
-													const UFunction* Function, const int32 TraceId, const int64 RequestId);
+														  const UFunction* Function, const int32 TraceId, const int64 RequestId);
 	static FSpatialTraceEvent CreateSendCommandResponse(const int64 RequestId, const bool bSuccess);
 	static FSpatialTraceEvent CreateReceiveCommandResponse(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent CreateReceiveCommandResponse(const UObject* Actor, const int64 RequestId, const bool bSuccess);
 	static FSpatialTraceEvent CreateReceiveCommandResponse(const UObject* Actor, const UObject* TargetObject, const UFunction* Function,
-													 int64 RequestId, const bool bSuccess);
+														   int64 RequestId, const bool bSuccess);
 	static FSpatialTraceEvent CreateSendRemoveEntity(const UObject* Object, const Worker_EntityId EntityId);
 	static FSpatialTraceEvent CreateReceiveRemoveEntity(const Worker_EntityId EntityId);
 	static FSpatialTraceEvent CreateSendCreateEntity(const UObject* Object, const Worker_EntityId EntityId);
@@ -40,13 +40,12 @@ public:
 	static FSpatialTraceEvent CreateSendRetireEntity(const UObject* Object, const Worker_EntityId EntityId);
 	static FSpatialTraceEvent CreateAuthorityIntentUpdate(VirtualWorkerId WorkerId, const UObject* Object);
 	static FSpatialTraceEvent CreateAuthorityChange(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											  const Worker_Authority Authority);
+													const Worker_Authority Authority);
 	static FSpatialTraceEvent CreateComponentUpdate(const UObject* Object, const UObject* TargetObject, const Worker_EntityId EntityId,
-											  const Worker_ComponentId ComponentId);
+													const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateGenericMessage(FString Message);
 
 private:
-
 	static FString AuthorityToString(Worker_Authority Authority);
 	static FString BoolToString(bool bInput);
 
@@ -62,6 +61,6 @@ private:
 	FSpatialTraceEventBuilder AddRequestId(FString Key, const int64 RequestId);
 	FSpatialTraceEventBuilder AddAuthority(FString Key, const Worker_Authority Role);
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
-	FSpatialTraceEvent GetEvent() && ;
+	FSpatialTraceEvent GetEvent() &&;
 };
 } // namespace SpatialGDK
