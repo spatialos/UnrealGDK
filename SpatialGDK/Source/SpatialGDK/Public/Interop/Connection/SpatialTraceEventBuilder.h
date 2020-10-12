@@ -47,7 +47,6 @@ public:
 	static FSpatialTraceEvent CreateGenericMessage(FString Message);
 
 private:
-
 	static FString AuthorityToString(Worker_Authority Authority);
 	static FString BoolToString(bool bInput);
 

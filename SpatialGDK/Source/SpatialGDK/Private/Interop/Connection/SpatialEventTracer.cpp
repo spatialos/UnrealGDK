@@ -6,6 +6,7 @@
 
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
+#include <stdio.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
