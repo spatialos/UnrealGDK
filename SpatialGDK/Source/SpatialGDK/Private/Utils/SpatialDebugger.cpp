@@ -675,7 +675,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	for (int32 i = 0; i < ActorsToDisplay.Num(); ++i)
 	{
 		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
-		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName(), false);
+		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName(), false /*bCentre*/ );
 		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}
 }
