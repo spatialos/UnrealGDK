@@ -331,7 +331,6 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategi
 	MultiWorkerSettings->WorkerLayers.Add(
 		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
 
-
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
