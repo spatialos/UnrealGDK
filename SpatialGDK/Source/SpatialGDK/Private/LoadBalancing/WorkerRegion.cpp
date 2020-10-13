@@ -38,8 +38,8 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	// Setup the basic boundary material, this will always be shown in the editor
 	Mesh->SetMaterial(0, BackgroundMaterialInstance);
 
-	// For runtime, initialise the canvas for creating the combined boundary material which will be rendered when the DrawToCanvasRenderTarget
-	// callback is triggered
+	// For runtime, initialise the canvas for creating the combined boundary material which will be rendered when the
+	// DrawToCanvasRenderTarget callback is triggered
 	CombinedMaterial = InCombinedMaterial;
 	WorkerInfoFont = InWorkerInfoFont;
 	WorkerInfo = InWorkerInfo;

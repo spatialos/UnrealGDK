@@ -764,7 +764,7 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionHeight)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionVerticalScale)
 			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionOpacity))
-			
+
 		{
 			EditorRefreshWorkerRegions();
 		}
