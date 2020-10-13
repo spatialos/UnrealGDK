@@ -481,24 +481,25 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		}
 		if (bShowAuth)
 		{
-			// If showing the authority, add the authority icon width and the width of the authoritative virtual worker ID 
+			// If showing the authority, add the authority icon width and the width of the authoritative virtual worker ID
 			TagWidth += BaseHorizontalOffset;
 			TagWidth += (BaseHorizontalOffset * AuthIdWidth);
 		}
 		if (bShowAuthIntent)
 		{
-			// If showing the authority intent, add the authority intent icon width and the width of the authoritative intent virtual worker ID 
+			// If showing the authority intent, add the authority intent icon width and the width of the authoritative intent virtual worker
+			// ID
 			TagWidth += BaseHorizontalOffset;
 			TagWidth += (BaseHorizontalOffset * AuthIntentIdWidth);
 		}
 		if (bShowEntityId)
 		{
-			// If showing the entity ID, add the width of the entity ID 
+			// If showing the entity ID, add the width of the entity ID
 			TagWidth += (BaseHorizontalOffset * EntityIdWidth);
 		}
 		if (bShowActorName)
 		{
-			// If showing the actor name, add the width of the actor name 
+			// If showing the actor name, add the width of the actor name
 			const float ActorNameWidth = TextScale * ActorName.Len();
 			TagWidth += (BaseHorizontalOffset * ActorNameWidth);
 		}
@@ -542,7 +543,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(VirtualWorkerColor);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthIntentIdWidth, 1.f, 1.f));
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
+							   FVector(AuthIntentIdWidth, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
 		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
 						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
@@ -643,7 +645,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 					continue;
 				}
 
-				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/ );
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 			}
 		}
 	}
@@ -680,7 +682,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	for (int32 i = 0; i < ActorsToDisplay.Num(); ++i)
 	{
 		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
-		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName(), false /*bCentre*/ );
+		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName(), false /*bCentre*/);
 		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}
 }
