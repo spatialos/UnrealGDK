@@ -444,7 +444,8 @@ void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, Vir
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName, const bool bCentre)
+void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+							   const bool bCentre)
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
 
@@ -468,7 +469,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	const float AuthIntentWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
 	const float EntityIdWidth = NumberScale * GetNumberOfDigitsIn(EntityId);
 
-	int32 HorizontalOffset = 0; 
+	int32 HorizontalOffset = 0;
 	if (bCentre)
 	{
 		// If tag should be centered, calculate the total width of the icons and text to be rendered
