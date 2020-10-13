@@ -301,7 +301,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handov
 	return true;
 }
 
-LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default_strat_WHEN_requires_handover_called_THEN_returns_true)
+LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default_strat_WHEN_requires_handover_called_THEN_returns_false)
 {
 	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
@@ -314,7 +314,28 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
+
+	return true;
+}
+
+LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategies_WHEN_requires_handover_called_THEN_returns_false)
+{
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+
+	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
+
+	USpatialMultiWorkerSettings* MultiWorkerSettings = NewObject<USpatialMultiWorkerSettings>();
+	MultiWorkerSettings->WorkerLayers.Add(
+		FLayerInfo{ TEXT("LayerOne"), { ALayer1Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+	MultiWorkerSettings->WorkerLayers.Add(
+		FLayerInfo{ TEXT("LayerTwo"), { ALayer2Pawn::StaticClass() }, USingleWorkerStrategy::StaticClass() });
+
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
 
 	return true;
 }
