@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now filter logs for Local and Cloud deployments separately with editor settings. The 'WorkerLogLevel' GDK setting was removed and has been replaced by 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'.
 - You can now disable logging to spatial for local and/or cloud deployments from the GUI (Project Settings -> Runtime Settings -> Logging). The command line argument -NoLogToSpatial can still be used for that as well.
 - Servers now log a warning message when detecting a client has timed out.
+- Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.

@@ -145,13 +145,6 @@ public:
 	float OpsUpdateRate;
 
 	/**
-	 * Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will
-	 * be set based on the load balancing strategy.
-	 */
-	UPROPERTY(EditAnywhere, config, Category = "Replication")
-	bool bEnableHandover;
-
-	/**
 	 * Maximum NetCullDistanceSquared value used in Spatial networking. Not respected when using the Replication Graph.
 	 * Set to 0.0 to disable. This is temporary and will be removed when the runtime issue is resolved.
 	 */
