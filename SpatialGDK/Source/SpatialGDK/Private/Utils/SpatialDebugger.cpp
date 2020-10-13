@@ -638,7 +638,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 					continue;
 				}
 
-				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true);
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/ );
 			}
 		}
 	}
