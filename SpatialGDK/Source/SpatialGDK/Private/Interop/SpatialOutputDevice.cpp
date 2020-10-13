@@ -30,12 +30,13 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 	if (bLogToSpatial && Connection != nullptr)
 	{
 #if WITH_EDITOR
-		if ((Verbosity > LocalFilterLevel && Category != FName("LogSpatial")) || GPlayInEditorID != PIEIndex)
+		if ((Verbosity > LocalFilterLevel && Category != FName("LogSpatial")) || GPlayInEditorID != PIEIndex
+			|| LocalFilterLevel == ELogVerbosity::NoLogging)
 		{
 			return;
 		}
 #else  // !WITH_EDITOR
-		if (Verbosity > CloudFilterLevel && Category != FName("LogSpatial"))
+		if ((Verbosity > CloudFilterLevel && Category != FName("LogSpatial")) || CloudFilterLevel == ELogVerbosity::NoLogging)
 		{
 			return;
 		}

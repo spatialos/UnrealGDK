@@ -22,7 +22,8 @@ namespace ESettingsWorkerLogVerbosity
 {
 enum Type
 {
-	Fatal = 1,
+	NoLogging = 0,
+	Fatal,
 	Error,
 	Warning,
 	Display,
@@ -265,7 +266,7 @@ public:
 	bool UseRPCRingBuffer() const;
 
 #if WITH_EDITOR
-	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
 
