@@ -465,8 +465,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	static const float BaseHorizontalOffset = 16.0f;
 	static const float NumberScale = 0.75f;
 	static const float TextScale = 0.5f;
-	const float AuthWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
-	const float AuthIntentWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
+	const float AuthIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
+	const float AuthIntentIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
 	const float EntityIdWidth = NumberScale * GetNumberOfDigitsIn(EntityId);
 
 	int32 HorizontalOffset = 0;
@@ -476,24 +476,29 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		float TagWidth = 0;
 		if (bShowLock)
 		{
+			// If showing the lock, add the lock icon width
 			TagWidth += BaseHorizontalOffset;
 		}
 		if (bShowAuth)
 		{
+			// If showing the authority, add the authority icon width and the width of the authoritative virtual worker ID 
 			TagWidth += BaseHorizontalOffset;
-			TagWidth += (BaseHorizontalOffset * AuthWidth);
+			TagWidth += (BaseHorizontalOffset * AuthIdWidth);
 		}
 		if (bShowAuthIntent)
 		{
+			// If showing the authority intent, add the authority intent icon width and the width of the authoritative intent virtual worker ID 
 			TagWidth += BaseHorizontalOffset;
-			TagWidth += (BaseHorizontalOffset * AuthIntentWidth);
+			TagWidth += (BaseHorizontalOffset * AuthIntentIdWidth);
 		}
 		if (bShowEntityId)
 		{
+			// If showing the entity ID, add the width of the entity ID 
 			TagWidth += (BaseHorizontalOffset * EntityIdWidth);
 		}
 		if (bShowActorName)
 		{
+			// If showing the actor name, add the width of the actor name 
 			const float ActorNameWidth = TextScale * ActorName.Len();
 			TagWidth += (BaseHorizontalOffset * ActorNameWidth);
 		}
@@ -522,11 +527,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(ServerWorkerColor);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthWidth, 1.f, 1.f));
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthIdWidth, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(ServerWorkerColor));
 		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
 						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
-		HorizontalOffset += (BaseHorizontalOffset * AuthWidth);
+		HorizontalOffset += (BaseHorizontalOffset * AuthIdWidth);
 	}
 
 	if (bShowAuthIntent)
@@ -537,11 +542,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(VirtualWorkerColor);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthIntentWidth, 1.f, 1.f));
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthIntentIdWidth, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
 		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
 						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
-		HorizontalOffset += (BaseHorizontalOffset * AuthIntentWidth);
+		HorizontalOffset += (BaseHorizontalOffset * AuthIntentIdWidth);
 	}
 
 	FString Label;
