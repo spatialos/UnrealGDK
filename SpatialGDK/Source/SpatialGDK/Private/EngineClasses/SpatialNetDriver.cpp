@@ -669,7 +669,7 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (!SpatialGDKSettings->bEnableCrossLayerActorSpawning)
+	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;
 	}
