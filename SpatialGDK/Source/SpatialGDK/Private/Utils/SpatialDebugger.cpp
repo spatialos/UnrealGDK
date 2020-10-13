@@ -213,13 +213,20 @@ void ASpatialDebugger::CreateWorkerRegions()
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
+	UWorld* World = GetWorld();
 #if WITH_EDITOR
+	if (World == nullptr)
+	{
+		// We are in the editor at design time
+		World = GEditor->GetEditorWorldContext().World();
+	}
 	SpawnParams.bHideFromSceneOutliner = true;
 #endif
+	check(World != nullptr);
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
-		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
+		AWorkerRegion* WorkerRegion = World->SpawnActor<AWorkerRegion>(SpawnParams);
 		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.VirtualWorkerID,
 											 *WorkerRegionData.WorkerName);
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerCombinedMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionOpacity,
@@ -713,7 +720,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 {
 	WorkerRegions.Empty();
 
-	const UWorld* World = GetWorld();
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
@@ -744,5 +751,23 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 
 	// Needed to clean up LoadBalanceStrategy memory, otherwise it gets duplicated exponentially
 	GEngine->ForceGarbageCollection(true);
+}
+
+void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property != nullptr)
+	{
+		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
+		// TODO: Add opacity and check for any other properties that affect look
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionHeight)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionVerticalScale)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionOpacity))
+			
+		{
+			EditorRefreshWorkerRegions();
+		}
+	}
 }
 #endif // WITH_EDITOR
