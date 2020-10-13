@@ -462,7 +462,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		return;
 	}
 
-	static const float BaseHorizontalOffset(16.0f);
+	static const float BaseHorizontalOffset = 16.0f;
 	static const float NumberScale = 0.75f;
 	static const float TextScale = 0.5f;
 	const float AuthWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
