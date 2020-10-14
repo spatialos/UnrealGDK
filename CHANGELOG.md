@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
 - By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
 - Fixed a crash that would sometimes occur when connection to SpatialOS fails.
+- Non-replicated actors are no longer considered for replication or migration. 
 
 ## [`0.11.0`] - 2020-09-03
 
