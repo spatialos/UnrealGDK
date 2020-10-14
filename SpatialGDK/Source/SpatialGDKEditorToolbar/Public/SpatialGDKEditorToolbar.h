@@ -16,6 +16,7 @@
 #include "LocalDeploymentManager.h"
 #include "LocalReceptionistProxyServerManager.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialPackageManager.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
