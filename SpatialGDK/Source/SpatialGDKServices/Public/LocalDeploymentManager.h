@@ -23,8 +23,6 @@ public:
 
 	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
 
-	void SPATIALGDKSERVICES_API RefreshServiceStatus();
-
 	bool CheckIfPortIsBound(int32 Port);
 	bool KillProcessBlockingPort(int32 Port);
 	bool LocalDeploymentPreRunChecks();
@@ -36,20 +34,10 @@ public:
 														const LocalDeploymentCallback& CallBack);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
-	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose);
-	bool SPATIALGDKSERVICES_API TryStopSpatialService();
-
-	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
-	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory();
-
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
-	bool SPATIALGDKSERVICES_API IsSpatialServiceRunning() const;
 
 	bool SPATIALGDKSERVICES_API IsDeploymentStarting() const;
 	bool SPATIALGDKSERVICES_API IsDeploymentStopping() const;
-
-	bool SPATIALGDKSERVICES_API IsServiceStarting() const;
-	bool SPATIALGDKSERVICES_API IsServiceStopping() const;
 
 	bool SPATIALGDKSERVICES_API IsRedeployRequired() const;
 	void SPATIALGDKSERVICES_API SetRedeployRequired();

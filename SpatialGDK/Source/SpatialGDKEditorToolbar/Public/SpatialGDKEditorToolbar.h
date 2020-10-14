@@ -73,9 +73,6 @@ private:
 	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 
-	void StartSpatialServiceButtonClicked();
-	void StopSpatialServiceButtonClicked();
-
 	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
 	void DestroySpatialDebuggerEditor();
 	void InitialiseSpatialDebuggerEditor(UWorld* World);
@@ -96,12 +93,6 @@ private:
 
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
-
-	bool StartSpatialServiceIsVisible() const;
-	bool StartSpatialServiceCanExecute() const;
-
-	bool StopSpatialServiceIsVisible() const;
-	bool StopSpatialServiceCanExecute() const;
 
 	void OnToggleSpatialNetworking();
 	bool OnIsSpatialNetworkingEnabled() const;
