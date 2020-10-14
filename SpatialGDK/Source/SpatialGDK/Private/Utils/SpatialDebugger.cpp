@@ -213,13 +213,20 @@ void ASpatialDebugger::CreateWorkerRegions()
 	// Create new actors for all new worker regions
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
+	UWorld* World = GetWorld();
 #if WITH_EDITOR
+	if (World == nullptr)
+	{
+		// We are in the editor at design time
+		World = GEditor->GetEditorWorldContext().World();
+	}
 	SpawnParams.bHideFromSceneOutliner = true;
 #endif
+	check(World != nullptr);
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
-		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
+		AWorkerRegion* WorkerRegion = World->SpawnActor<AWorkerRegion>(SpawnParams);
 		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.VirtualWorkerID,
 											 *WorkerRegionData.WorkerName);
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerCombinedMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionOpacity,
@@ -444,13 +451,10 @@ void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, Vir
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
+void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+							   const bool bCentre)
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
-
-	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled
-	// https://improbableio.atlassian.net/browse/UNR-2360.
-	int32 HorizontalOffset = -32.0f;
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID))
@@ -460,13 +464,58 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 	const SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 
-	static const float BaseHorizontalOffset(16.0f);
-
 	if (!FApp::CanEverRender()) // DrawIcon can attempt to use the underlying texture resource even when using nullrhi
 	{
 		return;
 	}
 
+	static const float BaseHorizontalOffset = 16.0f;
+	static const float NumberScale = 0.75f;
+	static const float TextScale = 0.5f;
+	const float AuthIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
+	const float AuthIntentIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
+	const float EntityIdWidth = NumberScale * GetNumberOfDigitsIn(EntityId);
+
+	int32 HorizontalOffset = 0;
+	if (bCentre)
+	{
+		// If tag should be centered, calculate the total width of the icons and text to be rendered
+		float TagWidth = 0;
+		if (bShowLock)
+		{
+			// If showing the lock, add the lock icon width
+			TagWidth += BaseHorizontalOffset;
+		}
+		if (bShowAuth)
+		{
+			// If showing the authority, add the authority icon width and the width of the authoritative virtual worker ID
+			TagWidth += BaseHorizontalOffset;
+			TagWidth += (BaseHorizontalOffset * AuthIdWidth);
+		}
+		if (bShowAuthIntent)
+		{
+			// If showing the authority intent, add the authority intent icon width and the width of the authoritative intent virtual worker
+			// ID
+			TagWidth += BaseHorizontalOffset;
+			TagWidth += (BaseHorizontalOffset * AuthIntentIdWidth);
+		}
+		if (bShowEntityId)
+		{
+			// If showing the entity ID, add the width of the entity ID
+			TagWidth += (BaseHorizontalOffset * EntityIdWidth);
+		}
+		if (bShowActorName)
+		{
+			// If showing the actor name, add the width of the actor name
+			const float ActorNameWidth = TextScale * ActorName.Len();
+			TagWidth += (BaseHorizontalOffset * ActorNameWidth);
+		}
+
+		// Calculate the offset based on the total width of the tag
+		HorizontalOffset = TagWidth / -2;
+	}
+
+	// Draw icons and text based on the offset
 	if (bShowLock)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
@@ -486,13 +535,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(ServerWorkerColor);
-		const float BoxScaleBasedOnNumberSize = 0.75f * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
-							   FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthIdWidth, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(ServerWorkerColor));
 		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
 						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
-		HorizontalOffset += (BaseHorizontalOffset * BoxScaleBasedOnNumberSize);
+		HorizontalOffset += (BaseHorizontalOffset * AuthIdWidth);
 	}
 
 	if (bShowAuthIntent)
@@ -501,15 +548,14 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		const FColor& VirtualWorkerColor = DebuggingInfo->IntentColor;
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
+		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(VirtualWorkerColor);
-		const float BoxScaleBasedOnNumberSize = 0.75f * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
 		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
-							   FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
+							   FVector(AuthIntentIdWidth, 1.f, 1.f));
 		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
 		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
 						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
-		HorizontalOffset += (BaseHorizontalOffset * BoxScaleBasedOnNumberSize);
+		HorizontalOffset += (BaseHorizontalOffset * AuthIntentIdWidth);
 	}
 
 	FString Label;
@@ -606,7 +652,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 					continue;
 				}
 
-				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 			}
 		}
 	}
@@ -643,7 +689,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	for (int32 i = 0; i < ActorsToDisplay.Num(); ++i)
 	{
 		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
-		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName());
+		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName(), false /*bCentre*/);
 		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}
 }
@@ -713,7 +759,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 {
 	WorkerRegions.Empty();
 
-	const UWorld* World = GetWorld();
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
@@ -744,5 +790,22 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 
 	// Needed to clean up LoadBalanceStrategy memory, otherwise it gets duplicated exponentially
 	GEngine->ForceGarbageCollection(true);
+}
+
+void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property != nullptr)
+	{
+		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionHeight)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionVerticalScale)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(ASpatialDebugger, WorkerRegionOpacity))
+
+		{
+			EditorRefreshWorkerRegions();
+		}
+	}
 }
 #endif // WITH_EDITOR
