@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2. Set the value of `PositionUpdateThresholdMaxCentimeters` and `PositionUpdateThresholdMaxSeconds` to larger values than the lower thresholds. 
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
-- Removed the method `RequiresHandoverData` from `UAbstractLBStrategy`, handover is now determined by the `USpatialMultiWorkerSettings` class by the `bHandoverEnabled` setting. If this is false, handover will never be evaluated.
+- 'WorkerLogLevel' in Runtime Settings was split into two new settings - 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. Update these values which will be set to 'Warning' by default.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -36,9 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow specifying the locator port via `?locatorPort=` URL option when performing client travel.
 - You can now enable/disable the multi-worker load balancing strategy with an in-editor toggle so that no Uasset files are changed. Select `Enable Multi-Worker` from the drop option from the `Start Deployment` button on the toolbar to use the multi-worker strategy or de-select to use a single worker strategy in the editor. The `Enable Multi-Worker` toggle in World Settings and the command line option  `-OverrideMultiWorker` have been removed as they are now redundant.
 - Enabled packaging the command line arguments when building a mobile client by default.
-- Handover is now optional according to the multi-worker settings (`USpatialMultiWorkerSettings`). 
+- Added settings for the positioning and opacity of the spatial debugger worker region visualisation.
+- You can now configure what the Spatial Debugger visualises in an in-game menu. Use F9 (by default) to open and close it. The key can be changed through a setting on the Spatial Debugger object.
+- Added a setting for the spatial debugger to visualise all replicated actors in the local player's hierarchy, instead of just the player's controller, player state and pawn.
+- You can now see worker information displayed on the worker's boundaries. The worker name and virtual worker id displayed corresponds to the worker that you are currently looking at and will be visible when you are near a border.
+- You can now filter logs for Local and Cloud deployments separately with editor settings. The 'WorkerLogLevel' GDK setting was removed and has been replaced by 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'.
+- You can now disable logging to spatial for local and/or cloud deployments from the GUI (Project Settings -> Runtime Settings -> Logging). The command line argument -NoLogToSpatial can still be used for that as well.
+- Servers now log a warning message when detecting a client has timed out.
+- Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 
 ### Bug fixes:
+- Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
 - Added the `Handover` tag to `APlayerController::LastSpectatorSyncLocation` and `APlayerController::LastSpectatorSyncRotation` in order to fix a character spawning issue for players starting in the `Spectating` state when using zoning.
 - No longer AddOwnerInterestToServer unless the owner is replicating, otherwise this warning fires erroneously: "Interest for Actor <ActorName> is out of date because owner <OwnerName> does not have an entity id."
 - Properly handle pairs of Add/Remove component in critical section. The issue manifested in the form of remnant actors which the worker should have lost interest in.
@@ -47,6 +55,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for the `bHidden` relevancy flag. Clients will not checkout Actors that have `bHidden` set to true (unless they are always relevant or the root component has collisions enabled).
 - Fixed an issue with deployments failing due to the incorrect number of workers when the launch config was specified, rather than automatically generated.
 - Fixed the `too many dynamic subobjects` error on Clients appearing when a Startup Actor, with one dynamic subobject was leaving and re-entering interest multiple times. Added the `RemovedDynamicSubobjectObjectRefs` map in `USpatialPackageMapClient` that keeps the dynamic subobjects removed from Startup Actor's client's interest to avoid duplication of the dynamic subojects when the Startup Actor re-enters the Client's interest.
+- Fixed an issue that prevented the Interest component from being initialized properly when provided with `Worker_ComponentData`.
+- Cleaned up startup logs of a few noisy messages.
+- Fixed a crash that sometimes occurred upon trying to resolve a pointer to an object that has been unloaded.
+- Fixed a crash when spawn requests are forwarded but the `APlayerStart` actor is not resolvable on the target worker.
+- By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
+- Fixed a crash that would sometimes occur when connection to SpatialOS fails.
+- Fixed a crash that occurred when an actor subobject became invalid after applying initial component data.
 
 ## [`0.11.0`] - 2020-09-03
 

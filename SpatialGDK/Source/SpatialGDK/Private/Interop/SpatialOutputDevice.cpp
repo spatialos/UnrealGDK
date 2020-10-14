@@ -6,7 +6,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName InLoggerName, int32 InPIEIndex)
-	: FilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->WorkerLogLevel.GetValue()))
+	: LocalFilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->LocalWorkerLogLevel.GetValue()))
+	, CloudFilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->CloudWorkerLogLevel.GetValue()))
 	, Connection(InConnection)
 	, LoggerName(InLoggerName)
 	, PIEIndex(InPIEIndex)
@@ -25,15 +26,17 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
 	// Log category LogSpatial ignores the verbosity check.
-	if (Verbosity > FilterLevel && Category != FName("LogSpatial"))
-	{
-		return;
-	}
 
 	if (bLogToSpatial && Connection != nullptr)
 	{
 #if WITH_EDITOR
-		if (GPlayInEditorID != PIEIndex)
+		if ((Verbosity > LocalFilterLevel && Category != FName("LogSpatial")) || GPlayInEditorID != PIEIndex
+			|| LocalFilterLevel == ELogVerbosity::NoLogging)
+		{
+			return;
+		}
+#else  // !WITH_EDITOR
+		if ((Verbosity > CloudFilterLevel && Category != FName("LogSpatial")) || CloudFilterLevel == ELogVerbosity::NoLogging)
 		{
 			return;
 		}
@@ -52,9 +55,14 @@ void FSpatialOutputDevice::RemoveRedirectCategory(const FName& Category)
 	CategoriesToRedirect.Remove(Category);
 }
 
-void FSpatialOutputDevice::SetVerbosityFilterLevel(ELogVerbosity::Type Verbosity)
+void FSpatialOutputDevice::SetVerbosityLocalFilterLevel(ELogVerbosity::Type Verbosity)
 {
-	FilterLevel = Verbosity;
+	LocalFilterLevel = Verbosity;
+}
+
+void FSpatialOutputDevice::SetVerbosityCloudFilterLevel(ELogVerbosity::Type Verbosity)
+{
+	CloudFilterLevel = Verbosity;
 }
 
 Worker_LogLevel FSpatialOutputDevice::ConvertLogLevelToSpatial(ELogVerbosity::Type Verbosity)

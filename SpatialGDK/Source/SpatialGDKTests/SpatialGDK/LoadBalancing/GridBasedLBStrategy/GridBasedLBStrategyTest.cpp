@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/StandardLibrary.h"
+#include "SpatialConstants.h"
 #include "TestGridBasedLBStrategy.h"
 
 #include "CoreMinimal.h"
@@ -245,7 +246,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_entity_position_for_vi
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -259,7 +260,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_reli
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -279,7 +280,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -297,7 +298,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -313,7 +314,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_shou
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(0.f, -2500.f, 0.f)));

@@ -183,6 +183,9 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 			if (USpatialNetConnection* Connection = WeakThis.Get())
 			{
 				// This client timed out. Disconnect it and trigger OnDisconnected logic.
+				UE_LOG(LogSpatialNetConnection, Warning,
+					   TEXT("Client timed out - destroying connection: NetConnection %s, PlayerController entity %lld"),
+					   *Connection->GetName(), Connection->PlayerControllerEntity);
 				Connection->CleanUp();
 			}
 		},

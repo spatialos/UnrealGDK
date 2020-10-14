@@ -1408,9 +1408,19 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 		Channel.CreateSubObjects.Add(TargetObject.Get());
 	}
 
+	FString TargetObjectPath = TargetObject->GetPathName();
 	ApplyComponentData(Channel, *TargetObject, Data);
 
-	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
+	if (TargetObject.IsValid())
+	{
+		OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
+	}
+	else
+	{
+		// TODO: remove / downgrade this to a log after verifying we handle this properly - UNR-4379
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Actor subobject got invalidated after applying component data! Subobject: %s"),
+			   *TargetObjectPath);
+	}
 }
 
 void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,

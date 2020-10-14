@@ -51,7 +51,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
-	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
+	, LocalWorkerLogLevel(WorkerLogLevel)
+	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -70,6 +72,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
+	, bEnableCrossLayerActorSpawning(true)
+	, StartupLogRate(5.0f)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -80,6 +84,7 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
+
 	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
 										 bEnableCrossLayerActorSpawning);
 	SpatialGDK::CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
@@ -98,6 +103,7 @@ void USpatialGDKSettings::PostInitProperties()
 										 bWorkerFlushAfterOutgoingNetworkOp);
 	SpatialGDK::CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"),
 												   TEXT("Override MultiWorker Settings Class"), OverrideMultiWorkerSettingsClass);
+
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
@@ -219,10 +225,9 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 };
 
 #if WITH_EDITOR
-void USpatialGDKSettings::SetMultiWorkerEnabled(bool bIsEnabled)
+void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 {
 	bEnableMultiWorker = bIsEnabled;
-	SaveConfig();
 }
 #endif // WITH_EDITOR
 

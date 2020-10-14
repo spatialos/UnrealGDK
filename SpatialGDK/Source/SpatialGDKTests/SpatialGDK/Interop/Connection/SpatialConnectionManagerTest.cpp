@@ -365,3 +365,17 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Receptionist_URLAndExternalBridge)
 
 	return true;
 }
+
+CONNECTIONMANAGER_TEST(SetupFromCommandLine_Empty)
+{
+	// GIVEN
+	FTemporaryCommandLine TemporaryCommandLine("");
+	USpatialConnectionManager* Manager = NewObject<USpatialConnectionManager>();
+
+	// WHEN
+	const bool bSuccess = Manager->TrySetupConnectionConfigFromCommandLine("");
+
+	// THEN
+	TestEqual("Success", bSuccess, false);
+	return true;
+}
