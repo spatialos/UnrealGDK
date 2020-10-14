@@ -82,10 +82,14 @@ protected:
 				// although it has the risk of creating an infinite lock if the child is unable to become ready.
 				if (bNetOwnerHasAuth)
 				{
-					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
-						   *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor), *FailureReason);
+					if (Actor->GetGameTimeSinceCreation() > 0.1)
+					{
+						// Delay time for printing logs as may be too soon after creation and create false warnings
+						AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+						UE_LOG(LogSpatialLoadBalancingHandler, Warning,
+							   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
+							   *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor), *FailureReason);
+					}
 
 					return false;
 				}
