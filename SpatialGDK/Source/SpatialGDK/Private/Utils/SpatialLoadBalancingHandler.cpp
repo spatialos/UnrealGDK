@@ -26,7 +26,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		return EvaluateActorResult::None;
 	}
 
-	if (!Actor->HasAuthority())
+	if (!Actor->HasAuthority() || !Actor->GetIsReplicated())
 	{
 		return EvaluateActorResult::None;
 	}
