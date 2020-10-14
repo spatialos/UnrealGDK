@@ -892,6 +892,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
 	VerifyAndStartDeployment();
+
+	// UNR-4334 - Also plug into the new runtime fetching using SpatialPackageManager
+	FSpatialPackageManager::TryFetchRuntimeBinary();
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
