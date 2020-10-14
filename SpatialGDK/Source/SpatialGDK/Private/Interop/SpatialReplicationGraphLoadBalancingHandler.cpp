@@ -50,10 +50,17 @@ FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentA
 	return EmptyList;
 }
 
-bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor, FString& OutFailureReason)
 {
-	if (!Actor->HasAuthority() || !Actor->IsActorReady())
+	if (!Actor->HasAuthority())
 	{
+		OutFailureReason = TEXT("does not have authority");
+		return false;
+	}
+
+	if (!Actor->IsActorReady())
+	{
+		OutFailureReason = TEXT("is not ready");
 		return false;
 	}
 
@@ -63,14 +70,17 @@ bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AAct
 
 	if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
+		OutFailureReason = TEXT("does not have spatial class flags");
 		return false;
 	}
 
 	FConnectionReplicationActorInfo& ConnectionData = InfoMap.FindOrAdd(Actor);
 	if (ConnectionData.bDormantOnConnection)
 	{
+		OutFailureReason = TEXT("is dormant on connection");
 		return false;
 	}
 
+	OutFailureReason = TEXT("");
 	return true;
 }

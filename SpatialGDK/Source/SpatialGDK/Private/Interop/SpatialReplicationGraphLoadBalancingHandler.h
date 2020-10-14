@@ -49,7 +49,7 @@ struct FSpatialReplicationGraphLoadBalancingContext
 
 	FActorRepListRefView GetDependentActors(AActor* Actor);
 
-	bool IsActorReadyForMigration(AActor*);
+	bool IsActorReadyForMigration(AActor* Actor, FString& OutFailureReason);
 
 	USpatialNetDriver* NetDriver;
 	USpatialReplicationGraph* ReplicationGraph;

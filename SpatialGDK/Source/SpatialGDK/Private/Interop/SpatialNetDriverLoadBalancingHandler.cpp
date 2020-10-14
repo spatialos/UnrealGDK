@@ -29,10 +29,17 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 	}
 }
 
-bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor, FString& OutFailureReason)
 {
-	if (!Actor->HasAuthority() || !Actor->IsActorReady())
+	if (!Actor->HasAuthority())
 	{
+		OutFailureReason = TEXT("does not have authority");
+		return false;
+	}
+
+	if (!Actor->IsActorReady())
+	{
+		OutFailureReason = TEXT("is not ready");
 		return false;
 	}
 
@@ -40,12 +47,14 @@ bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Act
 
 	if (Actor->IsPendingKillPending())
 	{
+		OutFailureReason = TEXT("is pending kill");
 		return false;
 	}
 
 	// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
 	if (!Actor->IsActorInitialized())
 	{
+		OutFailureReason = TEXT("is not initialized");
 		return false;
 	}
 
@@ -53,14 +62,17 @@ bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Act
 	ULevel* Level = Actor->GetLevel();
 	if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
 	{
+		OutFailureReason = TEXT("is streaming in or out");
 		return false;
 	}
 
 	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
 	{
+		OutFailureReason = TEXT("is startup actor and initially net dormant");
 		return false;
 	}
 
+	OutFailureReason = TEXT("");
 	return true;
 }
 

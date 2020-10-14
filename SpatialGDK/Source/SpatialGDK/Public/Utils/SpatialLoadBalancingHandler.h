@@ -73,7 +73,8 @@ protected:
 	{
 		if (Actor->GetIsReplicated())
 		{
-			if (!iCtx.IsActorReadyForMigration(Actor))
+			FString FailureReason;
+			if (!iCtx.IsActorReadyForMigration(Actor, FailureReason))
 			{
 				// Prevents an Actor hierarchy from migrating if one of its actor is not ready.
 				// Child Actors are always allowed to join the owner.
@@ -83,8 +84,8 @@ protected:
 				{
 					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) is not ready."),
-						   *HierarchyRoot->GetName(), *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor));
+						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
+						   *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor), *FailureReason);
 
 					return false;
 				}
