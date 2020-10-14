@@ -1417,7 +1417,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Actor subobject got invalidated after applying component data! Subobject: %s"), *TargetObjectPath);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Actor subobject got invalidated after applying component data! Subobject: %s"), *TargetObjectPath);
 	}
 }
 
