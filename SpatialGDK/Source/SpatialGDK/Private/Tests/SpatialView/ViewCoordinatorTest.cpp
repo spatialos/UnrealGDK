@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
@@ -64,7 +64,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
 	auto& SubView = Coordinator.CreateSubView(TagComponentId, FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
 
 	Coordinator.Advance();
@@ -111,7 +111,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
 
 	auto& SubView = Coordinator.CreateSubView(
 		TagComponentId,
@@ -172,7 +172,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
 
 	TArray<FSubView*> SubViews;
 

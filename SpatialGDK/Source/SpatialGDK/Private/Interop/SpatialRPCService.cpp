@@ -2,6 +2,8 @@
 
 #include "Interop/SpatialRPCService.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/MulticastRPCs.h"
@@ -13,32 +15,50 @@ DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View,
-									 USpatialLatencyTracer* SpatialLatencyTracer)
+									 USpatialLatencyTracer* SpatialLatencyTracer, SpatialEventTracer* EventTracer)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
 	, SpatialLatencyTracer(SpatialLatencyTracer)
+	, EventTracer(EventTracer)
 {
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target,
+										  UFunction* Function)
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	EPushRPCResult Result = EPushRPCResult::Success;
+	PendingRPCPayload PendingPayload(Payload);
+
+	if (EventTracer != nullptr)
+	{
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), SpanId);
+		PendingPayload.SpanId = SpanId;
+	}
 
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
+		if (EventTracer != nullptr)
+		{
+			Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), SpanId);
+			PendingPayload.SpanId = SpanId;
+		}
+
 		// Already has queued RPCs of this type, queue until those are pushed.
-		AddOverflowedRPC(EntityType, MoveTemp(Payload));
+		AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
 		Result = EPushRPCResult::QueueOverflowed;
 	}
 	else
 	{
-		Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), bCreatedEntity);
+		Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload), bCreatedEntity);
 
 		if (Result == EPushRPCResult::QueueOverflowed)
 		{
-			AddOverflowedRPC(EntityType, MoveTemp(Payload));
+			AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
 		}
 	}
 
@@ -49,11 +69,12 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	return Result;
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload, bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload&& PendingPayload,
+												  bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
-	const EntityComponentId EntityComponent = { EntityId, RingBufferComponentId };
+	const EntityComponentId EntityComponent(EntityId, RingBufferComponentId);
 	const EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	Schema_Object* EndpointObject;
@@ -69,7 +90,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent));
+		EndpointObject = Schema_GetComponentUpdateFields(
+			GetOrCreateComponentUpdate(EntityComponent, PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -105,18 +127,18 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	// Check capacity.
 	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
 	{
-		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
+		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, PendingPayload.Payload);
 
 #if TRACE_LIB_ACTIVE
-		if (SpatialLatencyTracer != nullptr && Payload.Trace != InvalidTraceKey)
+		if (SpatialLatencyTracer != nullptr && PendingPayload.Payload.Trace != InvalidTraceKey)
 		{
 			if (PendingTraces.Find(EntityComponent) == nullptr)
 			{
-				PendingTraces.Add(EntityComponent, Payload.Trace);
+				PendingTraces.Add(EntityComponent, PendingPayload.Payload.Trace);
 			}
 			else
 			{
-				SpatialLatencyTracer->WriteAndEndTrace(Payload.Trace,
+				SpatialLatencyTracer->WriteAndEndTrace(PendingPayload.Payload.Trace,
 													   TEXT("Multiple rpc updates in single update, ending further stack tracing"), true);
 			}
 		}
@@ -146,13 +168,13 @@ void SpatialRPCService::PushOverflowedRPCs()
 	{
 		Worker_EntityId EntityId = It.Key().EntityId;
 		ERPCType Type = It.Key().Type;
-		TArray<RPCPayload>& OverflowedRPCArray = It.Value();
+		TArray<PendingRPCPayload>& OverflowedRPCArray = It.Value();
 
 		int NumProcessed = 0;
 		bool bShouldDrop = false;
-		for (RPCPayload& Payload : OverflowedRPCArray)
+		for (PendingRPCPayload& PendingPayload : OverflowedRPCArray)
 		{
-			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload), false);
+			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload.Payload), false);
 
 			switch (Result)
 			{
@@ -164,6 +186,13 @@ void SpatialRPCService::PushOverflowedRPCs()
 					   TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still "
 							"overflowed: %d, Entity: %lld, RPC type: %s"),
 					   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+				if (EventTracer != nullptr)
+				{
+					Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
+					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), SpanId);
+					PendingPayload.SpanId = SpanId;
+				}
 				break;
 			case EPushRPCResult::DropOverflowed:
 				checkf(false, TEXT("Shouldn't be able to drop on overflow for RPC type that was previously queued."));
@@ -187,7 +216,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 			}
 
 #if TRACE_LIB_ACTIVE
-			ProcessResultToLatencyTrace(Result, Payload.Trace);
+			ProcessResultToLatencyTrace(Result, PendingPayload.Payload.Trace);
 #endif
 
 			// This includes the valid case of RPCs still overflowing (EPushRPCResult::QueueOverflowed), as well as the error cases.
@@ -225,7 +254,16 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		SpatialRPCService::UpdateToSend& UpdateToSend = UpdatesToSend.AddZeroed_GetRef();
 		UpdateToSend.EntityId = It.Key.EntityId;
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
-		UpdateToSend.Update.schema_type = It.Value;
+		UpdateToSend.Update.schema_type = It.Value.Update;
+
+		if (EventTracer != nullptr)
+		{
+			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(It.Value.SpanIds.GetData(), It.Value.SpanIds.Num());
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreateMergeComponent(UpdateToSend.EntityId, UpdateToSend.Update.component_id), SpanId);
+			UpdateToSend.SpanId = SpanId;
+		}
+
 #if TRACE_LIB_ACTIVE
 		TraceKey Trace = InvalidTraceKey;
 		PendingTraces.RemoveAndCopyValue(It.Key, Trace);
@@ -372,7 +410,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
 			Schema_Object* SchemaObject =
-				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
+				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
 			Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component->InitiallyPresentMulticastRPCsCount);
 		}
 		else
@@ -516,6 +554,16 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 }
 
+uint64 SpatialRPCService::GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const
+{
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+	if (const uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair))
+	{
+		return *LastAckedRPCId;
+	}
+	return 0;
+}
+
 void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)
 {
 	if (Type == ERPCType::NetMulticast)
@@ -536,14 +584,14 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 	++(*LastAckedRPCId);
 
 	const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
-	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair, nullptr));
 
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
 
-void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload)
+void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& PendingPayload)
 {
-	OverflowedRPCs.FindOrAdd(EntityType).Add(MoveTemp(Payload));
+	OverflowedRPCs.FindOrAdd(EntityType).Add(MoveTemp(PendingPayload));
 }
 
 uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, ERPCType Type)
@@ -589,14 +637,18 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
-Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair)
+Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId)
 {
-	Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
+	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
-		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentIdPair, Schema_CreateComponentUpdate());
+		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
-	return *ComponentUpdatePtr;
+	if (SpanId != nullptr)
+	{
+		ComponentUpdatePtr->SpanIds.Add(*SpanId);
+	}
+	return ComponentUpdatePtr->Update;
 }
 
 Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponentId EntityComponentIdPair)

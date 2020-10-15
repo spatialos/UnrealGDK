@@ -409,14 +409,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (SpatialSettings->UseRPCRingBuffer())
 	{
-		RPCService =
-			MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC),
-													  StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()));
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
+			ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView,
+			USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get());
-	Receiver->Init(this, &TimerManager, RPCService.Get());
+	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -484,7 +484,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 			// is not fully async right now, but could be if we replaced this with a "send and flush", which would
 			// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
 			// we can make that optimisation.
-			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update));
+			Connection->GetCoordinator().SendComponentUpdate(AclUpdate.EntityId, MoveTemp(AclUpdate.Update), {});
 		};
 	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
 																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
