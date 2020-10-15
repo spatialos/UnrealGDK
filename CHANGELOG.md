@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
 - Fixed a crash that would sometimes occur when connection to SpatialOS fails.
 - Fixed a crash that occurred when an actor subobject became invalid after applying initial component data.
-- Non-replicated actors are no longer considered for replication or migration. 
+- Non-replicated Actors are no longer considered for replication or migration. 
 
 ## [`0.11.0`] - 2020-09-03
 
