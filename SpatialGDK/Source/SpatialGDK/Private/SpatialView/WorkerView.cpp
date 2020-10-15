@@ -8,8 +8,10 @@
 
 namespace SpatialGDK
 {
-WorkerView::WorkerView()
-	: LocalChanges(MakeUnique<MessagesToSend>())
+WorkerView::WorkerView(SpatialEventTracer* InEventTracer)
+	: Delta(InEventTracer)
+	, LocalChanges(MakeUnique<MessagesToSend>())
+	, EventTracer(InEventTracer)
 {
 }
 
@@ -88,17 +90,17 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
-void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
+void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
 	{
 		Element->Components.Emplace(Data.DeepCopy());
-		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data));
+		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data), SpanId);
 	}
 }
 
-void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
@@ -108,11 +110,11 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 		{
 			Component->ApplyUpdate(Update);
 		}
-		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update));
+		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
 	}
 }
 
-void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
@@ -120,7 +122,7 @@ void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentI
 		ComponentData* Component = Element->Components.FindByPredicate(ComponentIdEquality{ ComponentId });
 		check(Component != nullptr);
 		Element->Components.RemoveAtSwap(Component - Element->Components.GetData());
-		LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);
+		LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId, SpanId);
 	}
 }
 

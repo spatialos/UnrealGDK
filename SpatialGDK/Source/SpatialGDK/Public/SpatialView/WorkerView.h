@@ -9,10 +9,12 @@
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class WorkerView
 {
 public:
-	WorkerView();
+	explicit WorkerView(SpatialEventTracer* InEventTracer);
 
 	// Process queued op lists to create a new view delta.
 	// The view delta will exist until the next call to advance.
@@ -28,9 +30,9 @@ public:
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);
@@ -49,6 +51,8 @@ private:
 	TArray<OpList> OpenCriticalSectionOps;
 
 	TUniquePtr<MessagesToSend> LocalChanges;
+
+	SpatialEventTracer* EventTracer;
 };
 
 } // namespace SpatialGDK

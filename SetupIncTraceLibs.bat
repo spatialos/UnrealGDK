@@ -28,7 +28,12 @@ call spatial version
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\trace_lib\trace-win32.zip\"	-DestinationPath \"%BINARIES_DIR%\Win64\" -Force;"^
 						"Expand-Archive -Path \"%CORE_SDK_DIR%\trace_lib\trace-linux.zip\"	-DestinationPath \"%BINARIES_DIR%\Linux\" -Force;"
-	xcopy /s /i /q "%BINARIES_DIR%\Win64\improbable" "%WORKER_SDK_DIR%\improbable"
+	xcopy /s /i /q "%BINARIES_DIR%\Win64\improbable" "%WORKER_SDK_DIR%\improbable\legacy"
+
+	set LEGACY_FOLDER=%WORKER_SDK_DIR%\improbable\legacy\
+	set TRACE_HEADER="%LEGACY_FOLDER%trace.h"
+	powershell -Command "(Get-Content '%TRACE_HEADER%').replace('#include <improbable/c_trace.h>', '#include <improbable/legacy/c_trace.h>') | Set-Content -Force '%TRACE_HEADER%'"
+	
 call :MarkEndOfBlock "Unpack dependencies"
 
 call :MarkEndOfBlock "%~0"

@@ -72,10 +72,10 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op.op.command_request);
+			Receiver->OnCommandRequest(Op);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op.op.command_response);
+			Receiver->OnCommandResponse(Op);
 			break;
 
 		// Authority Change
@@ -88,7 +88,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op.op.create_entity_response);
+			Receiver->OnCreateEntityResponse(Op);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
