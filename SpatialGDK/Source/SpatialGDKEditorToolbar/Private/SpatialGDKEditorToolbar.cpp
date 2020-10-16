@@ -895,7 +895,14 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 	// UNR-4334 - Also plug into the new runtime fetching using SpatialPackageManager
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	FSpatialPackageManager::TryFetchRuntimeBinary(RuntimeVersion);
+	if (FSpatialPackageManager::TryFetchRuntimeBinary(RuntimeVersion))
+	{
+		LaunchInspectorWebpageButtonClicked();
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to fetch runtime."));
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()

@@ -15,8 +15,7 @@ void FSpatialPackageManager::Init() {}
 bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 {
 
-
-	UE_LOG(LogSpatialPackageManager, Error, TEXT("RUNTIME VERSION %s"), *RuntimeVersion);
+	UE_LOG(LogSpatialPackageManager, Log, TEXT("RUNTIME VERSION %s"), *RuntimeVersion);
 
 	FString RuntimePath = FString::Printf(TEXT("%s/runtime/runtime.exe"), *SpatialGDKServicesConstants::GDKProgramPath);
 
@@ -32,7 +31,7 @@ bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// Download the zip to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version* and unzip
 	else
 	{
-		FString RuntimeRetrieveArgs = FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime --unzip"), RuntimeVersion);
+		FString RuntimeRetrieveArgs = FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime --unzip"), *RuntimeVersion);
 		FString RuntimeRetrieveResult;
 		int32 ExitCode;
 		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, RuntimeRetrieveArgs,
@@ -41,7 +40,6 @@ bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 		UE_LOG(LogSpatialPackageManager, Log, TEXT("OUTPUT %s"), *RuntimeRetrieveResult);
 		return (ExitCode == exitCodeSuccess);
 	}
-	
 	
 	return true;
 }
