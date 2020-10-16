@@ -145,7 +145,8 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeSendRPCs(const Worker_E
 		.GetEvent();
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeComponentUpdate(const Worker_EntityId EntityId,
+																		 const Worker_ComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component_update")
 		.AddEntityId(TEXT("EntityId"), EntityId)

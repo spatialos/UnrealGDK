@@ -36,7 +36,7 @@ public:
 
 	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
 
-	FString GetFolderPath() const { return FolderPath; }
+	const FString& GetFolderPath() const { return FolderPath; }
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
