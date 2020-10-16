@@ -77,6 +77,29 @@ SpatialEventTracer::~SpatialEventTracer()
 	}
 }
 
+FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
+{
+	FString HexStr;
+	for (int i = 0; i < 16; i++)
+	{
+		HexStr += FString::Printf(TEXT("%02x"), SpanId.data[i]);
+	}
+	return HexStr;
+}
+
+Trace_SpanId SpatialEventTracer::StringToSpanId(const FString& SpanIdString)
+{
+	Trace_SpanId SpanId;
+	for (int i = 0; i < 16; i++)
+	{
+		FString SubString = SpanIdString.Mid(i * 2, 2);
+		unsigned int Value;
+		sscanf(TCHAR_TO_ANSI(*SubString), "%02x", &Value);
+		SpanId.data[i] = Value;
+	}
+	return SpanId;
+}
+
 TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan()
 {
 	if (!IsEnabled())
@@ -227,14 +250,33 @@ Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 
 		return *SpanId;
 }
-FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
+
+void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, Trace_SpanId SpanId)
 {
-	FString HexStr;
-	for (int i = 0; i < 16; i++)
+	FSpatialSpanIdStack& Stack = EntityComponentSpanIdStacks.FindOrAdd(Id);
+	Stack.AddToLayer(SpanId);
+}
+
+TArray<Trace_SpanId> SpatialEventTracer::GetLatentPropertyUpdateSpanIds(const EntityComponentId& Id)
+{
+	if (!IsEnabled())
 	{
-		HexStr += FString::Printf(TEXT("%02x"), SpanId.data[i]);
+		return {};
 	}
-	return HexStr;
+
+	FSpatialSpanIdStack* Stack = EntityComponentSpanIdStacks.Find(Id);
+	if (Stack == nullptr)
+	{
+		return {};
+	}
+
+	TArray<Trace_SpanId> SpanIds = Stack->PopLayer();
+	if (!Stack->HasSpanId())
+	{
+		EntityComponentSpanIdStacks.Remove(Id);
+	}
+
+	return SpanIds;
 }
 
 } // namespace SpatialGDK

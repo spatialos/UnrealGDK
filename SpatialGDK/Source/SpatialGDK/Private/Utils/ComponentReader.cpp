@@ -184,6 +184,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
+	TMap<GDK_PROPERTY(Property)*, Trace_SpanId> PropertySpanIds;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
@@ -318,14 +319,16 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					}
 				}
 
+				TOptional<Trace_SpanId> SpanId;
 				if (bEventTracerEnabled)
 				{
 					Worker_EntityId EntityId = Channel.GetEntityId();
 
 					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
 					EventTracer->TraceEvent(
-						FSpatialTraceEventBuilder::CreatePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()), SpanId);
+						FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
+						SpanId);
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
@@ -333,6 +336,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				{
 					bool bIsIdentical =
 						Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+
+					if (SpanId.IsSet())
+					{
+						PropertySpanIds.Add(Parent.Property, SpanId.GetValue());
+					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
 					if (bIsInitialData)
@@ -356,7 +364,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
 
-	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies);
+	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
 }
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel,
@@ -401,7 +409,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		}
 	}
 
-	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>());
+	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>(), {});
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,

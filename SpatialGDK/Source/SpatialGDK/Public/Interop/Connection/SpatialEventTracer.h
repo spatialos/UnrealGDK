@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialSpanIdStack.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "SpatialView/EntityComponentId.h"
 
@@ -36,9 +37,15 @@ public:
 
 	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
 
+	static FString SpanIdToString(const Trace_SpanId& SpanId);
+	static Trace_SpanId StringToSpanId(const FString& SpanIdString);
+
 	const FString& GetFolderPath() const { return FolderPath; }
 
-	static FString SpanIdToString(const Trace_SpanId& SpanId);
+	void AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, Trace_SpanId SpanId);
+	TArray<Trace_SpanId> GetLatentPropertyUpdateSpanIds(const EntityComponentId& Id);
+
+	FSpatialSpanIdStack SpanIdStack;
 
 private:
 	struct StreamDeleter
@@ -56,6 +63,7 @@ private:
 	Trace_EventTracer* EventTracer = nullptr;
 
 	TMap<EntityComponentId, Trace_SpanId> EntityComponentSpanIds;
+	TMap<EntityComponentId, FSpatialSpanIdStack> EntityComponentSpanIdStacks;
 
 	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;
