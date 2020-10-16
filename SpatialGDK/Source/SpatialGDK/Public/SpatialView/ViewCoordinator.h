@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "ReceivedOpEventHandler.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
+#include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/WorkerView.h"
 #include "SubView.h"
@@ -83,12 +85,15 @@ public:
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
+
+	FCriticalSectionFilter CriticalSectionFilter;
+
 	Worker_RequestId NextRequestId;
 	FDispatcher Dispatcher;
+
 	TArray<TUniquePtr<FSubView>> SubViews;
 
-	// Stored on ViewCoordinator to handle lifetime
-	TSharedPtr<SpatialEventTracer> EventTracer;
+	FReceivedOpEventHandler ReceivedOpEventHandler;
 };
 
 } // namespace SpatialGDK

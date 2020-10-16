@@ -16,8 +16,6 @@ struct FSubViewDelta
 	const TArray<Worker_Op>* WorkerMessages;
 };
 
-class SpatialEventTracer;
-
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.
@@ -38,9 +36,6 @@ class SpatialEventTracer;
 class ViewDelta
 {
 public:
-	ViewDelta();
-	explicit ViewDelta(SpatialEventTracer* InEventTracer);
-
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
 	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
 	// the projection. The given arrays represent the state of the sub view and dictates the projection.
@@ -56,8 +51,6 @@ public:
 	bool HasConnectionStatusChanged() const;
 	Worker_ConnectionStatusCode GetConnectionStatusChange() const;
 	FString GetConnectionStatusChangeMessage() const;
-
-	SpatialEventTracer* EventTracer;
 
 private:
 	struct ReceivedComponentChange
@@ -136,7 +129,7 @@ private:
 	// The accumulated component change in this range must be an update or a complete-update.
 	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
 
-	void ProcessOp(Worker_Op& Op);
+	void ProcessOpList(const OpList& Ops);
 	void PopulateEntityDeltas(EntityView& View);
 
 	// Adds component changes to `Delta` and updates `Components` accordingly.
@@ -183,5 +176,4 @@ private:
 	TArray<ComponentChange> ComponentsRefreshedForDelta;
 	TArray<OpList> OpListStorage;
 };
-
 } // namespace SpatialGDK
