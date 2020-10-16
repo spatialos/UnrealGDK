@@ -236,8 +236,8 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	}
 }
 
-void USpatialNetConnection::OnControllerDestroyed(AActor* DestroyedActor)
+void USpatialNetConnection::OnControllerDestroyed(AActor* /*DestroyedActor*/)
 {
-	// Controller destroy, prevent future heartbeat updates
+	// Controller destroyed, prevent future heartbeat updates
 	DisableHeartbeat();
 }
