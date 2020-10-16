@@ -16,6 +16,5 @@ public:
 	APropertyUpdateEventTracingTest();
 
 private:
-
 	virtual void FinishEventTraceTest() override;
 };

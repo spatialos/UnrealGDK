@@ -377,13 +377,13 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 
 uint32 USpatialClassInfoManager::GetComponentIdForSpecificSubObject(const UClass& ParentClass, const UClass& SubClass) const
 {
-	const FString ClassPath = ParentClass.GetPathName();
+	const FString& SubClassPath = SubClass.GetPathName();
 	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(ParentClass.GetPathName()))
 	{
 		for (const auto& Pair : ActorSchemaData->SubobjectData)
 		{
 			const FActorSpecificSubobjectSchemaData& SpecificSubObjectData = Pair.Value;
-			if (SpecificSubObjectData.ClassPath == SubClass.GetPathName())
+			if (SpecificSubObjectData.ClassPath == SubClassPath)
 			{
 				return SpecificSubObjectData.SchemaComponents[SCHEMA_Data];
 			}
@@ -394,7 +394,6 @@ uint32 USpatialClassInfoManager::GetComponentIdForSpecificSubObject(const UClass
 
 uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
 {
-	const FString ClassPath = Class.GetPathName();
 	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
 	{
 		return ActorSchemaData->SchemaComponents[SCHEMA_Data];

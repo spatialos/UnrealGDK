@@ -31,10 +31,15 @@ TArray<Trace_SpanId> FSpatialSpanIdStack::PopLayer()
 
 TArray<Trace_SpanId> FSpatialSpanIdStack::GetTopLayer() const
 {
+	if (!HasLayer())
+	{
+		return {};
+	}
+
 	return Stack[Stack.Num() - 1];
 }
 
-bool FSpatialSpanIdStack::HasSpanId() const
+bool FSpatialSpanIdStack::HasLayer() const
 {
 	return Stack.Num() > 0;
 }

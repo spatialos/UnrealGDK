@@ -13,7 +13,7 @@ public:
 	void AddToLayer(const Trace_SpanId& SpanId);
 	TArray<Trace_SpanId> PopLayer();
 	TArray<Trace_SpanId> GetTopLayer() const;
-	bool HasSpanId() const;
+	bool HasLayer() const;
 
 private:
 	TArray<TArray<Trace_SpanId>> Stack;

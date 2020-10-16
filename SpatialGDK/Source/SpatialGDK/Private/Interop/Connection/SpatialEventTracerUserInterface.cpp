@@ -123,6 +123,7 @@ void USpatialEventTracerUserInterface::AddLatentComponentSpanId(UObject* WorldCo
 	AActor* Owner = Component.GetOwner();
 	if (Owner == nullptr)
 	{
+		UE_LOG(LogSpatialEventTracerUserInterface, Error, TEXT("USpatialEventTracerUserInterface::AddLatentComponentSpanId - Component has now owner"));
 		return;
 	}
 
@@ -142,16 +143,19 @@ void USpatialEventTracerUserInterface::AddLatentSpanId(UObject* WorldContextObje
 	{
 		AddLatentComponentSpanId(WorldContextObject, *Component, SpanId);
 	}
+	UE_LOG(LogSpatialEventTracerUserInterface, Warning, TEXT("USpatialEventTracerUserInterface::AddLatentSpanId - Could not add latent SpanId for %s"), Object->GetName());
 }
 
 SpatialGDK::SpatialEventTracer* USpatialEventTracerUserInterface::GetEventTracer(UObject* WorldContextObject)
 {
 	USpatialNetDriver* NetDriver = GetSpatialNetDriver(WorldContextObject);
-	if (NetDriver != nullptr && NetDriver->Connection != nullptr)
+	if (NetDriver == nullptr || NetDriver->Connection == nullptr)
 	{
-		return NetDriver->Connection->GetEventTracer();
+		UE_LOG(LogSpatialEventTracerUserInterface, Error, TEXT("USpatialEventTracerUserInterface::GetEventTracer - NetDriver or Connection is null"));
+		return nullptr;
 	}
-	return nullptr;
+
+	return NetDriver->Connection->GetEventTracer();
 }
 
 USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject* WorldContextObject)
@@ -159,6 +163,7 @@ USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
 	if (World == nullptr)
 	{
+		UE_LOG(LogSpatialEventTracerUserInterface, Error, TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null"));
 		World = GWorld;
 	}
 
