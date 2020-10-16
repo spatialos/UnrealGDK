@@ -28,8 +28,12 @@ public:
 	virtual void PrepareTest() override;
 
 protected:
+	FName ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
 	FName ReceiveOpEventName = "worker.receive_op";
 	FName MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
+	FName ProcessRPCEventName = "unreal_gdk.process_rpc";
+	FName SendRPCEventName = "unreal_gdk.send_rpc";
+
 
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
