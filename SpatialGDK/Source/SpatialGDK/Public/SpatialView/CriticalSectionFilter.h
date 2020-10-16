@@ -7,6 +7,7 @@
 
 namespace SpatialGDK
 {
+// Splits and queues op lists to ensure that we don't partially process open critical sections.
 class FCriticalSectionFilter
 {
 public:

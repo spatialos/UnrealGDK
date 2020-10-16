@@ -7,8 +7,15 @@
 namespace SpatialGDK
 {
 void FCriticalSectionFilter::AddOpList(OpList Ops)
-{ // Ensure that we only process closed critical sections.
-	// Scan backwards looking for critical sections ops.
+{
+	// Work out which ops are in an open critical section by scanning backwards to the first critical sections op.
+	// Critical sections can't overlap so if the first op we find (the last one in the list) tells us the status of all received ops,
+	//
+	// If the first critical section op found is closed, we know that there are no open critical sections.
+	// In this case we expose all received ops as ready.
+	//
+	// If the first critical section op we find is open, we know that all subsequent ops are in an open critical section.
+	// In this case we split the op list around the open critical section start, set the first part to ready and queue the second.
 	for (uint32 i = Ops.Count; i > 0; --i)
 	{
 		Worker_Op& Op = Ops.Ops[i - 1];
