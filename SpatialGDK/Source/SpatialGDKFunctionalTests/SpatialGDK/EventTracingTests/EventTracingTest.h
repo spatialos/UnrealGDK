@@ -34,7 +34,6 @@ protected:
 	FName ProcessRPCEventName = "unreal_gdk.process_rpc";
 	FName SendRPCEventName = "unreal_gdk.send_rpc";
 
-
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 

@@ -4,12 +4,12 @@
 
 namespace SpatialGDK
 {
-void FSpatialSpanIdStack::AddNewLayer(const Trace_SpanId SpanId)
+void FSpatialSpanIdStack::AddNewLayer(const Trace_SpanId& SpanId)
 {
 	Stack.Add({ SpanId });
 }
 
-void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId SpanId)
+void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId& SpanId)
 {
 	const int32 Size = Stack.Num();
 	if (Size == 0)

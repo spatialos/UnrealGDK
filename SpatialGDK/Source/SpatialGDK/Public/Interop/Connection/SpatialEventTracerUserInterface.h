@@ -20,6 +20,8 @@ class SpatialEventTracer;
 
 class USpatialNetDriver;
 
+// Docs on how to use the interface can be found: https://docs.google.com/document/d/1i0fOdeldqeZ9kgBdmYcTD3fCwYXT9pX1RzpTIupgjcg/edit?usp=sharing
+
 UCLASS()
 class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctionLibrary
 {
@@ -30,10 +32,10 @@ public:
 	static FString CreateSpanId(UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FString CreateSpanIdWithCauses(UObject* WorldContextObject, TArray<FString> Causes);
+	static FString CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FString>& Causes);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void TraceEvent(UObject* WorldContextObject, FSpatialTraceEvent SpatialTraceEvent, const FString& SpanId);
+	static void TraceEvent(UObject* WorldContextObject, const FString& SpanId, FSpatialTraceEvent SpatialTraceEvent, );
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static void SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate, const FString& SpanId);

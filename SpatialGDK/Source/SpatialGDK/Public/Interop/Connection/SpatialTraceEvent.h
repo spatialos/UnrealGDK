@@ -11,7 +11,7 @@ struct FTraceData
 {
 	GENERATED_BODY()
 
-		FTraceData() {};
+	FTraceData(){};
 	explicit FTraceData(FString InKey, FString InValue)
 		: Key(MoveTemp(InKey))
 		, Value(MoveTemp(InValue))
@@ -30,7 +30,7 @@ struct FSpatialTraceEvent
 {
 	GENERATED_BODY()
 
-		FSpatialTraceEvent() {};
+	FSpatialTraceEvent(){};
 	explicit FSpatialTraceEvent(FString InType, FString InMessage)
 		: Type(MoveTemp(InType))
 		, Message(MoveTemp(InMessage))

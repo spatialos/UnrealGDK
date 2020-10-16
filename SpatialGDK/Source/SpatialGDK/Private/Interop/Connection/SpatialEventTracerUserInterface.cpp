@@ -22,7 +22,7 @@ FString USpatialEventTracerUserInterface::CreateSpanId(UObject* WorldContextObje
 	return SpatialGDK::SpatialEventTracer::SpanIdToString(EventTracer->CreateSpan().GetValue());
 }
 
-FString USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* WorldContextObject, TArray<FString> Causes)
+FString USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FString>& Causes)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)
@@ -39,7 +39,7 @@ FString USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* WorldC
 	return SpatialGDK::SpatialEventTracer::SpanIdToString(EventTracer->CreateSpan(SpanIdS.GetData(), SpanIdS.Num()).GetValue());
 }
 
-void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, FSpatialTraceEvent SpatialTraceEvent, const FString& SpanId)
+void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& SpanId, FSpatialTraceEvent SpatialTraceEvent)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)
