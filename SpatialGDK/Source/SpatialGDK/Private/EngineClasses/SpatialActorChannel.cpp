@@ -658,6 +658,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
+
 			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, ReplicationBytesWritten);
 
 			bInterestDirty = false;
