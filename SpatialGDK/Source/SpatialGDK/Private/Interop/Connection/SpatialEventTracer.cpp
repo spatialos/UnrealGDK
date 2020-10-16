@@ -169,8 +169,8 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	{
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
-	const FString FolderPath = EventTracePath;
 
+	FolderPath = EventTracePath;
 	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *FDateTime::Now().ToString());
 	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
 
@@ -210,7 +210,7 @@ void SpatialEventTracer::UpdateComponent(const Worker_Op& Op)
 
 	Trace_SpanId MergeCauses[2] = { Op.span_id, OldSpanId };
 	TOptional<Trace_SpanId> SpanId = CreateSpan(MergeCauses, 2);
-	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponent(Id.EntityId, Id.ComponentId), SpanId);
+	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(Id.EntityId, Id.ComponentId), SpanId);
 
 	OldSpanId = SpanId.GetValue();
 }
@@ -227,4 +227,14 @@ Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 
 		return *SpanId;
 }
+FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
+{
+	FString HexStr;
+	for (int i = 0; i < 16; i++)
+	{
+		HexStr += FString::Printf(TEXT("%02x"), SpanId.data[i]);
+	}
+	return HexStr;
+}
+
 } // namespace SpatialGDK
