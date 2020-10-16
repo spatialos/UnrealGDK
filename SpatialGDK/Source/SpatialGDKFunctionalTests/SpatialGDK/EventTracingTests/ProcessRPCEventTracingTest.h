@@ -16,7 +16,6 @@ public:
 	AProcessRPCEventTracingTest();
 
 private:
-
 	FName ProcessRPCEventName = "unreal_gdk.process_rpc";
 
 	virtual void FinishEventTraceTest() override;

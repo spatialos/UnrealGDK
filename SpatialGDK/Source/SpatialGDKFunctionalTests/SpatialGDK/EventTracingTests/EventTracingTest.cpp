@@ -13,7 +13,6 @@
 #include <WorkerSDK/improbable/c_trace.h>
 
 using namespace SpatialGDK;
-using namespace worker::c;
 
 AEventTracingTest::AEventTracingTest()
 {
