@@ -27,10 +27,12 @@ static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
+	SpatialOutputLog = SNew(SSpatialOutputLog);
+
 	return SNew(SDockTab)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
 		.TabRole(ETabRole::NomadTab)
-		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SNew(SSpatialOutputLog)];
+		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SpatialOutputLog];
 }
 
 void FSpatialGDKServicesModule::StartupModule()

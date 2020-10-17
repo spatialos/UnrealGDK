@@ -19,6 +19,7 @@
 #include "Json/Public/Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
+#include "Misc/MonitoredProcess.h"
 #include "SocketSubsystem.h"
 #include "Sockets.h"
 #include "SpatialCommandUtils.h"
@@ -45,16 +46,6 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 {
-	bIsInChina = bChinaEnabled;
-	// Don't kick off background processes when running commandlets
-	const bool bCommandletRunning = IsRunningCommandlet();
-
-	if (bCommandletRunning)
-	{
-		bLocalDeploymentManagerEnabled = false;
-		return;
-	}
-
 	// Ensure the worker.jsons are up to date.
 	// TOOD: Probably remove this
 	WorkerBuildConfigAsync();
@@ -63,7 +54,15 @@ void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 	StartUpWorkerConfigDirectoryWatcher();
 }
 
-void FLocalDeploymentManager::Init(FString RuntimeIPToExpose) {}
+void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
+{
+	// Check if a runtime process is already running. This can either be an old editor started runtime or a runtime started outside the
+	// editor.
+	if (FPlatformProcess::IsApplicationRunning(TEXT("runtime.exe")))
+	{
+		bExistingRuntimeStarted = true;
+	}
+}
 
 // TOOD: Do we need this with local standalone or just for the classic platform deployments?
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
@@ -180,103 +179,157 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 	return bSuccess;
 }
 
+void FLocalDeploymentManager::KillExistingRuntime()
+{
+	FPlatformProcess::FProcEnumerator ProcessIt;
+	do
+	{
+		if (ProcessIt.GetCurrent().GetName().Equals(TEXT("runtime.exe")))
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Killing runtime process: %d"), ProcessIt.GetCurrent().GetPID());
+			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
+			FPlatformProcess::TerminateProc(Handle);
+		}
+	} while (ProcessIt.MoveNext());
+}
+
 bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 {
 	bool bSuccess = true;
 
-	// Check for the known runtime port (5301) which could be blocked.
-	if (CheckIfPortIsBound(RequiredRuntimePort))
+	// Check for the known runtime ports which could be blocked by other processes.
+	TArray<int32> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, GRPCPort };
+
+	for (int32 RuntimePort : RequiredRuntimePorts)
 	{
-		// If it exists offer the user the ability to kill it.
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess",
-															 "A required port is blocked by another process (potentially by an old "
-															 "deployment). Would you like to kill this process?"))
-			== EAppReturnType::Yes)
+		if (CheckIfPortIsBound(RequiredRuntimePort))
 		{
-			bSuccess = KillProcessBlockingPort(RequiredRuntimePort);
-		}
-		else
-		{
-			bSuccess = false;
+			// If it exists offer the user the ability to kill it.
+			if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess",
+																 "A required port is blocked by another process (potentially by an old "
+																 "deployment). Would you like to kill this process?"))
+				== EAppReturnType::Yes)
+			{
+				bSuccess = bSuccess && KillProcessBlockingPort(RequiredRuntimePort);
+			}
+			else
+			{
+				bSuccess = false;
+			}
 		}
 	}
 
 	return bSuccess;
 }
 
+bool FLocalDeploymentManager::UseExistingRuntime()
+{
+	if (bExistingRuntimeStarted)
+	{
+		bExistingRuntimeStarted = false;
+
+		// If an existing runtime still exists, ask if the user wants to restart it or carry on using it.
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillExistingRuntime",
+															 "An existing local deployment runtime is still running."
+															 "Would you like to restart the local deployment?"))
+			== EAppReturnType::Yes)
+		{
+			// If yes kill the old runtime and move forward.
+			KillExistingRuntime();
+		}
+		else
+		{
+			// If no, get a handle for the old runtime and use it for the current local deployment.
+			FPlatformProcess::FProcEnumerator ProcessIt;
+			do
+			{
+				if (ProcessIt.GetCurrent().GetName().Equals(TEXT("runtime.exe")))
+				{
+					RuntimeProcID = ProcessIt.GetCurrent().GetPID();
+					RuntimeProc = FPlatformProcess::OpenProcess(RuntimeProcID);
+				}
+			} while (ProcessIt.MoveNext());
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // TODO: Change this to starting the runtime binary
 bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName,
 													FString RuntimeIPToExpose)
 {
-	FString SpotCreateArgs =
-		FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json "
-							 "--starting-snapshot-id=\"%s\" --runtime-version=%s %s"),
-						*LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *RuntimeVersion, *LaunchArgs);
+	// runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 
-	FDateTime SpotCreateStart = FDateTime::Now();
+	LaunchConfig = TEXT("B:\\UnrealEngine425\\Samples\\UnrealGDKExampleProject\\spatial\\squid_config.json");
+	FString SnapshotPath = TEXT("B:\\UnrealEngine425\\Samples\\UnrealGDKExampleProject\\spatial\\snapshots\\default.snapshot");
 
-	FString SpotCreateResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr);
-	bStartingDeployment = false;
+	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s %s"),
+										  *LaunchConfig, *SnapshotPath, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
+										  *FString::FromInt(GRPCPort), *LaunchArgs);
 
-	if (ExitCode != ExitCodeSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. Result: %s - Error: %s"), *SpotCreateResult,
-			   *StdErr);
-		return false;
-	}
+	FDateTime StartTime = FDateTime::Now();
 
-	bool bSuccess = false;
+	FString RuntimePath = TEXT("B:\\UnrealEngine425\\Samples\\UnrealGDKExampleProject\\spatial\\runtime.exe");
 
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotCreateResult, SpotJsonResult);
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed. Result: %s"), *SpotCreateResult);
-	}
+	uint32 OutProcessID;
 
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot create': %s"),
-			   *SpotCreateResult);
-		bParsingSuccess = false;
-	}
+	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
 
-	FString DeploymentStatus;
-	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
-	{
-		if (DeploymentStatus == TEXT("RUNNING"))
+	// const TCHAR* URL, const TCHAR* Parms, bool bLaunchDetached, bool bLaunchHidden, bool bLaunchReallyHidden, uint32* OutProcessID, int32
+	// PriorityModifier, const TCHAR* OptionalWorkingDirectory, void* PipeWriteChild, void * PipeReadChild)
+	// TODO: Ignore the pipes for now but implement later.
+	RuntimeProc = FPlatformProcess::CreateProc(*RuntimePath, *RuntimeArgs, false, true, true, &OutProcessID, 0, nullptr, WritePipe);
+
+	RuntimeProcID = OutProcessID;
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
+		while (FPlatformProcess::IsProcRunning(RuntimeProc))
 		{
-			FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
-			LocalRunningDeploymentID = DeploymentID;
-			bLocalDeploymentRunning = true;
+			FString RuntimeLogs = FPlatformProcess::ReadPipe(ReadPipe);
 
-			FDateTime SpotCreateEnd = FDateTime::Now();
-			FTimespan Span = SpotCreateEnd - SpotCreateStart;
+			// Split the logs into newlines
+			TArray<FString> RuntimeLogLines;
+			RuntimeLogs.ParseIntoArrayLines(RuntimeLogLines);
 
-			AsyncTask(ENamedThreads::GameThread, [this] {
-				OnDeploymentStart.Broadcast();
-			});
+			for (FString LogLine : RuntimeLogLines)
+			{
+				// TODO: We might want to log these to a separate place or to disk.
+				// TODO: This will need proper categories
+				UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime: %s"), *LogLine);
+			}
 
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
-			bSuccess = true;
+			FPlatformProcess::Sleep(0.01f);
 		}
-		else
-		{
-			UE_LOG(
-				LogSpatialDeploymentManager, Error,
-				TEXT("Local deployment creation failed. Deployment status: %s. Please check the 'Spatial Output' window for more details."),
-				*DeploymentStatus);
-		}
+	});
+
+	if (RuntimeProc.IsValid())
+	{
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("RuntimeProc is valid"));
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"),
-			   *SpotCreateResult);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("RuntimeProc is not valid"));
 	}
+
+	if (FPlatformProcess::IsProcRunning(RuntimeProc))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("RuntimeProc is running"));
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("RuntimeProc is not running"));
+	}
+
+	bStartingDeployment = false;
+	bool bSuccess = false;
+	bLocalDeploymentRunning = true;
+
+	AsyncTask(ENamedThreads::GameThread, [this] {
+		OnDeploymentStart.Broadcast();
+	});
 
 	return true;
 }
@@ -286,6 +339,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 													  FString SnapshotName, FString RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
 {
+	// TODO: Can probs get rid of this now.
 	if (bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
@@ -293,6 +347,12 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		{
 			CallBack(false);
 		}
+		return;
+	}
+
+	if (UseExistingRuntime())
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Using existing runtime that was started before the editor was booted."));
 		return;
 	}
 
@@ -311,39 +371,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	bStartingDeployment = true;
 
-	// TODO: Pretty sure we don't need this runtime exposing code anymore
-	//// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
-	// if (ExposedRuntimeIP != RuntimeIPToExpose)
-	//{
-	//	UE_LOG(LogSpatialDeploymentManager, Verbose,
-	//		   TEXT("Settings for exposing runtime IP have changed since service startup. Restarting service to reflect changes."));
-	//}
-
-	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
-
-	AttemptSpatialAuthResult = Async(
-		EAsyncExecution::Thread,
-		[this]() {
-			return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina);
-		},
-		[this, LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack]() {
-			bool bSuccess = AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true;
-			if (bSuccess)
-			{
-				bSuccess = FinishLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose);
-			}
-			else
-			{
-				UE_LOG(LogSpatialDeploymentManager, Error,
-					   TEXT("Failed to authenticate against SpatialOS while attempting to start a local deployment."));
-			}
-			bStartingDeployment = false;
-
-			if (CallBack)
-			{
-				CallBack(bSuccess);
-			}
-		});
+	FinishLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose);
 
 	return;
 }
@@ -351,7 +379,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 // TODO: Change this to killing the runtime binary
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
-	if (!bLocalDeploymentRunning || LocalRunningDeploymentID.IsEmpty())
+	if (!bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
 		return false;
@@ -359,59 +387,28 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	bStoppingDeployment = true;
 
-	FString SpotDeleteArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
+	FPlatformProcess::ClosePipe(0, ReadPipe);
+	FPlatformProcess::ClosePipe(0, WritePipe);
 
-	FString SpotDeleteResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr);
-	bStoppingDeployment = false;
+	FPlatformProcess::TerminateProc(RuntimeProc, true);
 
-	if (ExitCode != ExitCodeSuccess)
+	// bool bSuccess = SpatialCommandUtils::TryKillProcessWithPID(FString::Printf(TEXT("%u"), RuntimeProcID));
+
+	if (!FPlatformProcess::IsProcRunning(RuntimeProc))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! Result: %s - Error: %s"), *SpotDeleteResult,
-			   *StdErr);
-	}
-
-	bool bSuccess = false;
-
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotDeleteResult, SpotJsonResult);
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed. Result: %s"), *SpotDeleteResult);
-	}
-
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot delete': %s"),
-			   *SpotDeleteResult);
-		bParsingSuccess = false;
-	}
-
-	FString DeploymentStatus;
-	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
-	{
-		if (DeploymentStatus == TEXT("STOPPED"))
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully stopped local deplyoment"));
-			LocalRunningDeploymentID.Empty();
-			bLocalDeploymentRunning = false;
-			bSuccess = true;
-		}
-		else
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Stopping local deployment failed. Deployment status: %s"), *DeploymentStatus);
-		}
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Stopped local runtime."));
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot delete': %s"),
-			   *SpotDeleteResult);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local runtime."));
 	}
 
-	return bSuccess;
+	FPlatformProcess::CloseProc(RuntimeProc);
+
+	bLocalDeploymentRunning = false;
+	bStoppingDeployment = false;
+
+	return true;
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const

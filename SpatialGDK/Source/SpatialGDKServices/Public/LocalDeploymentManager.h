@@ -26,6 +26,7 @@ public:
 	bool CheckIfPortIsBound(int32 Port);
 	bool KillProcessBlockingPort(int32 Port);
 	bool LocalDeploymentPreRunChecks();
+	bool UseExistingRuntime();
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
@@ -66,11 +67,18 @@ private:
 	bool FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName,
 							   FString RuntimeIPToExpose);
 
+	void KillExistingRuntime();
+
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;
+
+	// TODO: This RequiredRuntimePort might no longer be required.
 	static const int32 RequiredRuntimePort = 5301;
+	static const int32 WorkerPort = 8018;
+	static const int32 HTTPPort = 5006;
+	static const int32 GRPCPort = 7777;
 
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial
 	// service outside of the editor.
@@ -95,4 +103,11 @@ private:
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
 	bool bIsInChina = false;
+
+	bool bExistingRuntimeStarted = false;
+
+	FProcHandle RuntimeProc;
+	uint32 RuntimeProcID;
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
 };

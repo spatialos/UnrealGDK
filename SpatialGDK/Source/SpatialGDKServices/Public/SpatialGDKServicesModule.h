@@ -38,4 +38,6 @@ private:
 
 	static FString ParseProjectName();
 	static TSharedPtr<FJsonObject> ParseProjectFile();
+
+	TSharedRef<SSpatialOutputLog> SpatialOutputLog;
 };

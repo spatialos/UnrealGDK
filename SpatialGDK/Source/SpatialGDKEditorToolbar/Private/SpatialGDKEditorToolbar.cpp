@@ -805,7 +805,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		if (LocalDeploymentManager->IsRedeployRequired() && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
-			OnShowTaskStartNotification(TEXT("Local deployment restarting."));
+			// OnShowTaskStartNotification(TEXT("Local deployment restarting."));
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
 		else if (LocalDeploymentManager->IsLocalDeploymentRunning())
@@ -814,20 +814,20 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 			return;
 		}
 
-		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
-			if (bSuccess)
-			{
-				OnShowSuccessNotification(TEXT("Local deployment started!"));
-			}
-			else
-			{
-				OnShowFailedNotification(TEXT("Local deployment failed to start"));
-			}
-		};
+		// FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
+		//	if (bSuccess)
+		//	{
+		//		OnShowSuccessNotification(TEXT("Local deployment started!"));
+		//	}
+		//	else
+		//	{
+		//		OnShowFailedNotification(TEXT("Local deployment failed to start"));
+		//	}
+		//};
 
-		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
+		// OnShowTaskStartNotification(TEXT("Starting local deployment..."));
 		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName,
-														GetOptionalExposedRuntimeIP(), CallBack);
+														GetOptionalExposedRuntimeIP(), nullptr);
 	});
 }
 
@@ -842,14 +842,14 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		OnShowTaskStartNotification(TEXT("Stopping local deployment..."));
+		// OnShowTaskStartNotification(TEXT("Stopping local deployment..."));
 		if (LocalDeploymentManager->TryStopLocalDeployment())
 		{
-			OnShowSuccessNotification(TEXT("Successfully stopped local deployment"));
+			// OnShowSuccessNotification(TEXT("Successfully stopped local deployment"));
 		}
 		else
 		{
-			OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
+			// OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
 		}
 	});
 }
