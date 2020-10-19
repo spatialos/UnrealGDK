@@ -15,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 namespace SpatialGDK
 {
 // SpatialEventTracer wraps Trace_EventTracer related functionality
-class SpatialEventTracer
+class SPATIALGDK_API SpatialEventTracer
 {
 public:
 	explicit SpatialEventTracer(const FString& WorkerId);
@@ -30,11 +30,15 @@ public:
 
 	bool IsEnabled() const;
 
-	void AddComponent(const Worker_Op& Op);
-	void RemoveComponent(const Worker_Op& Op);
-	void UpdateComponent(const Worker_Op& Op);
+	void AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
+	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
 
 	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
+
+	const FString& GetFolderPath() const { return FolderPath; }
+
+	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
 private:
 	struct StreamDeleter
@@ -45,6 +49,8 @@ private:
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
 	void Enable(const FString& FileName);
+
+	FString FolderPath;
 
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;

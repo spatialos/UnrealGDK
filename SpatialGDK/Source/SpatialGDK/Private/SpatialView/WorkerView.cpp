@@ -8,18 +8,14 @@
 
 namespace SpatialGDK
 {
-WorkerView::WorkerView(SpatialEventTracer* InEventTracer)
-	: Delta(InEventTracer)
-	, LocalChanges(MakeUnique<MessagesToSend>())
-	, EventTracer(InEventTracer)
+WorkerView::WorkerView()
+	: LocalChanges(MakeUnique<MessagesToSend>())
 {
 }
 
-void WorkerView::AdvanceViewDelta()
+void WorkerView::AdvanceViewDelta(TArray<OpList> OpLists)
 {
-	Delta.Clear();
-	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
-	QueuedOps.Empty();
+	Delta.SetFromOpList(MoveTemp(OpLists), View);
 }
 
 const ViewDelta& WorkerView::GetViewDelta() const
@@ -30,57 +26,6 @@ const ViewDelta& WorkerView::GetViewDelta() const
 const EntityView& WorkerView::GetView() const
 {
 	return View;
-}
-
-const EntityView* WorkerView::GetViewPtr() const
-{
-	return &View;
-}
-
-void WorkerView::EnqueueOpList(OpList Ops)
-{
-	// Ensure that we only process closed critical sections.
-	// Scan backwards looking for critical sections ops.
-	for (uint32 i = Ops.Count; i > 0; --i)
-	{
-		Worker_Op& Op = Ops.Ops[i - 1];
-		if (Op.op_type != WORKER_OP_TYPE_CRITICAL_SECTION)
-		{
-			continue;
-		}
-
-		// There can only be one critical section open at a time.
-		// So any previous open critical section must now be closed.
-		for (OpList& OpenCriticalSection : OpenCriticalSectionOps)
-		{
-			QueuedOps.Add(MoveTemp(OpenCriticalSection));
-		}
-		OpenCriticalSectionOps.Empty();
-
-		// If critical section op is opening the section then enqueue any ops before this point and store the open critical section.
-		if (Op.op.critical_section.in_critical_section)
-		{
-			SplitOpListPair SplitOpLists(MoveTemp(Ops), i);
-			QueuedOps.Add(MoveTemp(SplitOpLists.Head));
-			OpenCriticalSectionOps.Add(MoveTemp(SplitOpLists.Tail));
-		}
-		// If critical section op is closing the section then enqueue all ops.
-		else
-		{
-			QueuedOps.Add(MoveTemp(Ops));
-		}
-		return;
-	}
-
-	// If no critical section is present then either add this to existing open section ops if there are any or enqueue if not.
-	if (OpenCriticalSectionOps.Num())
-	{
-		OpenCriticalSectionOps.Push(MoveTemp(Ops));
-	}
-	else
-	{
-		QueuedOps.Push(MoveTemp(Ops));
-	}
 }
 
 TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()

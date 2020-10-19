@@ -6,10 +6,9 @@
 namespace SpatialGDK
 {
 ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer)
-	: View(EventTracer.Get())
-	, ConnectionHandler(MoveTemp(ConnectionHandler))
+	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
-	, EventTracer(MoveTemp(EventTracer))
+	, ReceivedOpEventHandler(MoveTemp(EventTracer))
 {
 }
 
@@ -20,15 +19,26 @@ ViewCoordinator::~ViewCoordinator()
 
 void ViewCoordinator::Advance()
 {
+	// Get new op lists.
 	ConnectionHandler->Advance();
 	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
+
+	// Hold back open critical sections.
 	for (uint32 i = 0; i < OpListCount; ++i)
 	{
-		View.EnqueueOpList(ConnectionHandler->GetNextOpList());
+		CriticalSectionFilter.AddOpList(ConnectionHandler->GetNextOpList());
 	}
-	View.AdvanceViewDelta();
-	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 
+	// Process ops.
+	TArray<OpList> OpLists = CriticalSectionFilter.GetReadyOpLists();
+	for (const OpList& Ops : OpLists)
+	{
+		ReceivedOpEventHandler.ProcessOpLists(Ops);
+	}
+	View.AdvanceViewDelta(MoveTemp(OpLists));
+
+	// Process the view delta.
+	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 	for (const TUniquePtr<FSubView>& SubviewToAdvance : SubViews)
 	{
 		SubviewToAdvance->Advance(View.GetViewDelta());
@@ -53,7 +63,7 @@ void ViewCoordinator::FlushMessagesToSend()
 FSubView& ViewCoordinator::CreateSubView(Worker_ComponentId Tag, const FFilterPredicate& Filter,
 										 const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
-	const int Index = SubViews.Emplace(MakeUnique<FSubView>(Tag, Filter, View.GetViewPtr(), Dispatcher, DispatcherRefreshCallbacks));
+	const int Index = SubViews.Emplace(MakeUnique<FSubView>(Tag, Filter, &View.GetView(), Dispatcher, DispatcherRefreshCallbacks));
 	return *SubViews[Index];
 }
 
