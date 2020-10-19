@@ -32,7 +32,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 
 	AddStep(TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor =
-			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(100.0f, 100.0f, 80.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(TestActor);
 
 		FinishStep();
