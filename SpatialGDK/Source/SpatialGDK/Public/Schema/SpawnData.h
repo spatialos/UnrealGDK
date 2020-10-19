@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "Engine/EngineTypes.h"
+#include "GameFramework/Actor.h"
+
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -11,7 +14,6 @@
 
 namespace SpatialGDK
 {
-
 struct SpawnData : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SPAWN_DATA_COMPONENT_ID;

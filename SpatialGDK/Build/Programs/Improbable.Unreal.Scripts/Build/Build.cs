@@ -38,6 +38,7 @@ namespace Improbable
             var projectFile = Path.GetFullPath(args[3]);
             var noBuild = args.Count(arg => arg.ToLowerInvariant() == "-nobuild") > 0;
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
+            var noServer = args.Count(arg => arg.ToLowerInvariant() == "-noserver") > 0;
             var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
 
             var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
@@ -177,16 +178,16 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
-                var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
+                var windowsTargetPath = Path.Combine(stagingDir, noServer ? "WindowsClient" : "WindowsNoEditor");
 
-                ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsNoEditorPath, baseGameName);
+                ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsTargetPath, baseGameName);
 
-                RenameExeForLauncher(windowsNoEditorPath, baseGameName);
+                RenameExeForLauncher(windowsTargetPath, baseGameName);
 
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "ZipUtils",
-                    "-add=" + Quote(windowsNoEditorPath),
+                    "-add=" + Quote(windowsTargetPath),
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
@@ -196,13 +197,13 @@ exit /b !ERRORLEVEL!";
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "BuildCookRun",
-                    "-build",
+                    noBuild ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
                     "-clientconfig=" + configuration,
                     "-serverconfig=" + configuration,
                     "-utf8output",
-                    "-compile",
                     "-cook",
                     "-stage",
                     "-package",
@@ -221,7 +222,7 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
-                var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
+                var linuxSimulatedPlayerPath = Path.Combine(stagingDir, noServer ? "LinuxClient" : "LinuxNoEditor");
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, linuxSimulatedPlayerPath, baseGameName);
 

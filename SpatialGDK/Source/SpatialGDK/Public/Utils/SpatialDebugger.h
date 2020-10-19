@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialDebuggerConfigUI.h"
 
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
@@ -46,16 +47,36 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FBox2D Extents;
+
+	UPROPERTY()
+	FString WorkerName;
+
+	UPROPERTY()
+	uint32 VirtualWorkerID;
 };
 
-UCLASS(SpatialType=(NotPersistent), Blueprintable, NotPlaceable)
-class SPATIALGDK_API ASpatialDebugger :
-	public AInfo
+UENUM()
+namespace EActorTagDrawMode
+{
+enum Type
+{
+	None,
+	LocalPlayer,
+	All
+};
+} // namespace EActorTagDrawMode
+
+DECLARE_DYNAMIC_DELEGATE(FOnConfigUIClosedDelegate);
+
+/**
+ * Visualise spatial information at runtime and in the editor
+ */
+UCLASS(SpatialType = (NotPersistent), Blueprintable, NotPlaceable, Transient)
+class SPATIALGDK_API ASpatialDebugger : public AInfo
 {
 	GENERATED_UCLASS_BODY()
 
 public:
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
@@ -66,18 +87,43 @@ public:
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
 
+	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
+	bool IsEnabled();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
+	FKey ConfigUIToggleKey = EKeys::F9;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
+	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
+
+	FOnConfigUIClosedDelegate OnConfigUIClosed;
+
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
 	int PlayerPanelStartX = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "Y location of player data panel"))
-	int PlayerPanelStartY = 128;
+	int PlayerPanelStartY = 64;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General, meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
+			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
 	float MaxRange = 100.0f * 100.0f; // 100m
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which Actor tags to show"))
+	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (Tooltip = "Show all replicated Actors in the player controller's hierarchy, or just state/controller/pawn"))
+	bool bShowPlayerHierarchy = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Show server authority for every entity in range"))
 	bool bShowAuth = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Show authority intent for every entity in range"))
+	bool bShowAuthIntent = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
 	bool bShowLock = false;
@@ -91,29 +137,42 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
+			  meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
 	bool bShowWorkerRegions = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
+			  meta = (ToolTip = "Height at which the origin of each worker region cuboid is placed"))
+	float WorkerRegionHeight = 30.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
+	float WorkerRegionVerticalScale = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Opacity of the worker region cuboids"))
+	float WorkerRegionOpacity = 0.7f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
-	UTexture2D *AuthTexture;
+	UTexture2D* AuthTexture;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Intent Icon"))
+	UTexture2D* AuthIntentTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Unlocked Icon"))
-	UTexture2D *UnlockedTexture;
+	UTexture2D* UnlockedTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Locked Icon"))
-	UTexture2D *LockedTexture;
+	UTexture2D* LockedTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Box Icon"))
-	UTexture2D *BoxTexture;
+	UTexture2D* BoxTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
-	float WorkerRegionVerticalScale = 1.0f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;
@@ -121,7 +180,25 @@ public:
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
+	UFUNCTION()
+	void OnToggleConfigUI();
+
+private:
+	UFUNCTION()
+	void DefaultOnConfigUIClosed();
+
+public:
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void SetShowWorkerRegions(const bool bNewShow);
+
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
+
+#if WITH_EDITOR
+	void EditorRefreshWorkerRegions();
+	static void EditorRefreshDisplay();
+	bool EditorAllowWorkerBoundaries() const;
+	void EditorSpatialToggleDebugger(bool bEnabled);
+#endif
 
 private:
 	void LoadIcons();
@@ -133,7 +210,8 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
-	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
+	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+				 const bool bCentre);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	void CreateWorkerRegions();
@@ -142,12 +220,18 @@ private:
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
 
+#if WITH_EDITOR
+	void EditorInitialiseWorkerRegions();
+	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
+#endif
+
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
 
 	enum EIcon
 	{
 		ICON_AUTH,
+		ICON_AUTH_INTENT,
 		ICON_UNLOCKED,
 		ICON_LOCKED,
 		ICON_BOX,
@@ -171,4 +255,6 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
+
+	USpatialDebuggerConfigUI* ConfigUIWidget;
 };

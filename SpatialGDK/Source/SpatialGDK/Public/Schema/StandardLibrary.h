@@ -7,8 +7,8 @@
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
-#include "UObject/UObjectGlobals.h"
 #include "UObject/Package.h"
+#include "UObject/UObjectGlobals.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -16,7 +16,6 @@
 
 namespace SpatialGDK
 {
-
 struct Coordinates
 {
 	double X;
@@ -43,10 +42,7 @@ struct Coordinates
 		return Location;
 	}
 
-	inline bool operator!=(const Coordinates& Right) const
-	{
-		return X != Right.X || Y != Right.Y || Z != Right.Z;
-	}
+	inline bool operator!=(const Coordinates& Right) const { return X != Right.X || Y != Right.Y || Z != Right.Z; }
 };
 
 static const Coordinates DeploymentOrigin{ 0, 0, 0 };
@@ -84,11 +80,19 @@ struct EntityAcl : Component
 	EntityAcl() = default;
 
 	EntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
-		: ReadAcl(InReadAcl), ComponentWriteAcl(InComponentWriteAcl) {}
+		: ReadAcl(InReadAcl)
+		, ComponentWriteAcl(InComponentWriteAcl)
+	{
+	}
 
 	EntityAcl(const Worker_ComponentData& Data)
+		: EntityAcl(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	EntityAcl(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		ReadAcl = GetWorkerRequirementSetFromSchema(ComponentObject, 1);
 
@@ -177,7 +181,9 @@ struct Metadata : Component
 	Metadata() = default;
 
 	Metadata(const FString& InEntityType)
-		: EntityType(InEntityType) {}
+		: EntityType(InEntityType)
+	{
+	}
 
 	Metadata(const Worker_ComponentData& Data)
 	{
@@ -208,7 +214,9 @@ struct Position : Component
 	Position() = default;
 
 	Position(const Coordinates& InCoords)
-		: Coords(InCoords) {}
+		: Coords(InCoords)
+	{
+	}
 
 	Position(const Worker_ComponentData& Data)
 	{
@@ -258,9 +266,7 @@ struct Persistence : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
-	Persistence(const Worker_ComponentData& Data)
-	{
-	}
+	Persistence(const Worker_ComponentData& Data) {}
 
 	FORCEINLINE Worker_ComponentData CreatePersistenceData()
 	{

@@ -4,7 +4,6 @@
 
 namespace SpatialGDK
 {
-
 ComponentUpdate::ComponentUpdate(Worker_ComponentId Id)
 	: ComponentId(Id)
 	, Update(Schema_CreateComponentUpdate())
@@ -64,7 +63,7 @@ Schema_ComponentUpdate* ComponentUpdate::GetUnderlying() const
 Worker_ComponentUpdate ComponentUpdate::GetWorkerComponentUpdate() const
 {
 	check(Update.IsValid());
-	return {nullptr, ComponentId, Update.Get(), nullptr};
+	return { nullptr, ComponentId, Update.Get(), nullptr };
 }
 
 Worker_ComponentId ComponentUpdate::GetComponentId() const

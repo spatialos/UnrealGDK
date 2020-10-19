@@ -5,7 +5,6 @@
 
 namespace SpatialGDK
 {
-
 struct EntityComponentId
 {
 	Worker_EntityId EntityId;
@@ -22,4 +21,4 @@ struct EntityComponentId
 	}
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

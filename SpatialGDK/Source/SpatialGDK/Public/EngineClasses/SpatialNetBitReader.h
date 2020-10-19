@@ -14,7 +14,8 @@ class USpatialPackageMapClient;
 class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader
 {
 public:
-	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs);
+	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs,
+						 TSet<FUnrealObjectRef>& InUnresolvedRefs);
 
 	~FSpatialNetBitReader();
 

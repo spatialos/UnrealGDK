@@ -2,10 +2,11 @@
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
 
-#include "Schema/Interest.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/Interest.h"
 
-void UActorInterestComponent::PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
+void UActorInterestComponent::PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
+																SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 {
 	// Loop through the user specified queries to extract the constraints and frequencies.
 	// We don't construct the actual query at this point because the interest factory enforces the result types.

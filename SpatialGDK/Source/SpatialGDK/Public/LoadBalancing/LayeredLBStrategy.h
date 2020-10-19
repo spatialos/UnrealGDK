@@ -35,7 +35,7 @@ public:
 	void SetLayers(const TArray<FLayerInfo>& WorkerLayers);
 
 	/* UAbstractLBStrategy Interface */
-	virtual void Init() override {};
+	virtual void Init() override{};
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -46,7 +46,7 @@ public:
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
-	virtual bool RequiresHandoverData() const override { return GetMinimumRequiredWorkers() > 1; }
+	virtual bool RequiresHandoverData() const override;
 
 	virtual FVector GetWorkerEntityPosition() const override;
 
@@ -61,6 +61,8 @@ public:
 	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
 	// Currently, this is just the default strategy.
 	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
+
+	UAbstractLBStrategy* GetLBStrategyForLayer(FName) const;
 
 	FName GetLocalLayerName() const;
 

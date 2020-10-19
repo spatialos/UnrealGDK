@@ -38,10 +38,7 @@ public:
 	Worker_EntityId GetNextEntityId();
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
-	FORCEINLINE bool IsReady() const
-	{
-		return bIsReady;
-	}
+	FORCEINLINE bool IsReady() const { return bIsReady; }
 
 private:
 	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);

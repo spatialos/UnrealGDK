@@ -12,23 +12,26 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
-SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
-	SpatialOSDispatcherInterface* InReceiver,
-	SpatialOSWorkerInterface* InConnection,
-	SpatialVirtualWorkerTranslator* InTranslator)
-	: Translator(InTranslator)
-	, Receiver(InReceiver)
+SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
+																			   SpatialOSWorkerInterface* InConnection,
+																			   SpatialVirtualWorkerTranslator* InTranslator)
+	: Receiver(InReceiver)
 	, Connection(InConnection)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
-{}
-
-void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"), NumVirtualWorkers);
+}
+
+void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uint32 InNumVirtualWorkers)
+{
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("TranslationManager is configured to look for %d workers"),
+		   InNumVirtualWorkers);
+
+	NumVirtualWorkers = InNumVirtualWorkers;
 
 	// Currently, this should only be called once on startup. In the future we may allow for more flexibility.
 	VirtualWorkersToAssign.Reserve(NumVirtualWorkers);
+
 	for (uint32 i = 1; i <= NumVirtualWorkers; i++)
 	{
 		VirtualWorkersToAssign.Emplace(i);
@@ -43,7 +46,8 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 
 	if (!bAuthoritative)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Lost authority over the translation mapping. This is not supported."));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
+			   TEXT("Lost authority over the translation mapping. This is not supported."));
 		return;
 	}
 
@@ -114,7 +118,8 @@ bool SpatialVirtualWorkerTranslationManager::AllServerWorkersAreReady(const Work
 				// The translator should only acknowledge workers that are ready to begin play. This means we can make
 				// guarantees based on where non-GSM-authoritative servers canBeginPlay=true as an AddComponent
 				// or ComponentUpdate op. This affects how startup Actors are treated in a zoned environment.
-				const bool bWorkerIsReadyToBeginPlay = SpatialGDK::GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
+				const bool bWorkerIsReadyToBeginPlay =
+					SpatialGDK::GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 				if (!bWorkerIsReadyToBeginPlay)
 				{
 					ServerWorkersNotReady++;
@@ -247,7 +252,8 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 
 	if (bWorkerEntityQueryInFlight)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Trying to query for worker entities while a previous query is still in flight!"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("Trying to query for worker entities while a previous query is still in flight!"));
 		return;
 	}
 
@@ -285,7 +291,8 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Could not find ServerWorker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("Could not find ServerWorker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
@@ -295,7 +302,10 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 
 	if (Op.result_count != Partitions.Num())
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Didn't find correct ServerWorker entity count. Found %d. Expected %d. Retrying."), Op.result_count, Partitions.Num());
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Waiting for all virtual workers to be assigned before publishing translation update. "
+					"We currently have %i workers connected out of the %i required"),
+			   Op.result_count, Partitions.Num());
 		QueryForServerWorkerEntities();
 		return;
 	}

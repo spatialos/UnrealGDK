@@ -14,7 +14,7 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADormancyTestActor : public AStaticMeshActor
 {
 	GENERATED_BODY()
-	
+
 public:
 	ADormancyTestActor();
 

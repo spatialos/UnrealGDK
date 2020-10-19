@@ -30,6 +30,9 @@ pushd "$(dirname "$0")"
     mkdir -p "${TEST_REPO_PATH}/Game/Plugins"
     cp -R "${GDK_HOME}" "${TEST_REPO_PATH}/Game/Plugins/UnrealGDK"
 
+    # Unreal likes to save some settings outside of the project folders. Let's clean this up to make sure it doesn't cause issues when running the tests.
+    rm -rf ~/Library/Preferences/Unreal\ Engine/
+
     # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
     echo "\r\n[/Script/IntroTutorials.TutorialStateSettings]\r\nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)\r\n" >> "${UNREAL_PATH}/Engine/Config/BaseEditorSettings.ini"
     pushd "${UNREAL_PATH}"

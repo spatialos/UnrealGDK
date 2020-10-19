@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPingComponent);
@@ -38,7 +39,9 @@ void USpatialPingComponent::BeginPlay()
 	OwningController = Cast<APlayerController>(GetOwner());
 	if (OwningController == nullptr)
 	{
-		UE_LOG(LogSpatialPingComponent, Warning, TEXT("SpatialPingComponent did not find a valid owning PlayerController and will not function correctly. Ensure this component is only attached to a PlayerController."));
+		UE_LOG(LogSpatialPingComponent, Warning,
+			   TEXT("SpatialPingComponent did not find a valid owning PlayerController and will not function correctly. Ensure this "
+					"component is only attached to a PlayerController."));
 	}
 
 	if (bStartWithPingEnabled)
@@ -92,14 +95,16 @@ void USpatialPingComponent::EnablePing()
 	{
 		if (UGameplayStatics::GetGlobalTimeDilation(World) != 1.f)
 		{
-			UE_LOG(LogSpatialPingComponent, Warning, TEXT("Global time dilation is not 1. This will affect the rate at which SpatialPingComponent sends ping requests."));
+			UE_LOG(LogSpatialPingComponent, Warning,
+				   TEXT("Global time dilation is not 1. This will affect the rate at which SpatialPingComponent sends ping requests."));
 		}
 
 		LastSentPingID = 0;
 		TimeoutCount = 0;
 		// Send a new ping, which will trigger a self-perpetuating sequence via timers.
 		SendNewPing();
-		// Set looping timer to 'tick' this component, it doesn't send any pings but matches the MinPingInterval for passing updates to the owning controller.
+		// Set looping timer to 'tick' this component, it doesn't send any pings but matches the MinPingInterval for passing updates to the
+		// owning controller.
 		World->GetTimerManager().SetTimer(PingTickHandle, this, &USpatialPingComponent::TickPingComponent, MinPingInterval, true);
 		bIsPingEnabled = true;
 	}
@@ -151,7 +156,8 @@ void USpatialPingComponent::OnPingTimeout()
 
 void USpatialPingComponent::OnRep_ReplicatedPingID()
 {
-	// Check that replicated ping ID matches the last sent AND check ping is enabled to catch cases where a value is replicated after being locally disabled.
+	// Check that replicated ping ID matches the last sent AND check ping is enabled to catch cases where a value is replicated after being
+	// locally disabled.
 	if (ReplicatedPingID == LastSentPingID && bIsPingEnabled)
 	{
 		UWorld* World = GetWorld();

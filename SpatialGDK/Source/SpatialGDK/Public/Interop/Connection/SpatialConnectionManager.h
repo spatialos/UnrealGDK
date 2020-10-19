@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
+
+#include "Engine/EngineBaseTypes.h"
 
 #include "SpatialConnectionManager.generated.h"
 
@@ -29,10 +31,10 @@ class SPATIALGDK_API USpatialConnectionManager : public UObject
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
-	
+
 	using LoginTokenResponseCallback = TFunction<bool(const Worker_LoginTokensResponse*)>;
 	using LogCallback = TFunction<void(const Worker_LogData*)>;
-    
+
     /// Register a callback using this function.
     /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
     /// @param Callback - callback function.

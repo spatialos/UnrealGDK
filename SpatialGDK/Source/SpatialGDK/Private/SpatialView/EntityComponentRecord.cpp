@@ -4,7 +4,6 @@
 
 namespace SpatialGDK
 {
-
 void EntityComponentRecord::AddComponent(Worker_EntityId EntityId, ComponentData Data)
 {
 	const EntityComponentId Id = { EntityId, Data.GetComponentId() };

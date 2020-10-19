@@ -6,8 +6,10 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
+#include "Containers/Queue.h"
 #include "CoreMinimal.h"
 
+#include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
@@ -25,8 +27,7 @@ public:
 	};
 
 	SpatialVirtualWorkerTranslator() = delete;
-	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
-		PhysicalWorkerName InPhysicalWorkerName);
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InPhysicalWorkerName);
 
 	void SetNetDriver(USpatialNetDriver* InNetDriver) { NetDriver = InNetDriver; };
 

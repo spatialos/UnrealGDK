@@ -1,27 +1,29 @@
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 
-
-#include "Engine/World.h"
 #include "Engine/NetDriver.h"
+#include "Engine/World.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "SpatialFunctionalTestFlowController.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialFunctionalTestFlowController.h"
 
 SpatialFunctionalTestFlowControllerSpawner::SpatialFunctionalTestFlowControllerSpawner()
-	: SpatialFunctionalTestFlowControllerSpawner(nullptr, TSubclassOf<ASpatialFunctionalTestFlowController>(ASpatialFunctionalTestFlowController::StaticClass()))
+	: SpatialFunctionalTestFlowControllerSpawner(
+		nullptr, TSubclassOf<ASpatialFunctionalTestFlowController>(ASpatialFunctionalTestFlowController::StaticClass()))
 {
 }
 
-SpatialFunctionalTestFlowControllerSpawner::SpatialFunctionalTestFlowControllerSpawner(ASpatialFunctionalTest* ControllerOwningTest, TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerClassToSpawn)
-	: OwningTest(ControllerOwningTest),
-	FlowControllerClass(FlowControllerClassToSpawn),
-	NextClientControllerId(1)
+SpatialFunctionalTestFlowControllerSpawner::SpatialFunctionalTestFlowControllerSpawner(
+	ASpatialFunctionalTest* ControllerOwningTest, TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerClassToSpawn)
+	: OwningTest(ControllerOwningTest)
+	, FlowControllerClass(FlowControllerClassToSpawn)
+	, NextClientControllerId(1)
 {
 }
 
-void SpatialFunctionalTestFlowControllerSpawner::ModifyFlowControllerClassToSpawn(TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerClassToSpawn)
+void SpatialFunctionalTestFlowControllerSpawner::ModifyFlowControllerClassToSpawn(
+	TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerClassToSpawn)
 {
 	FlowControllerClass = FlowControllerClassToSpawn;
 }
@@ -32,11 +34,12 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 	UNetDriver* NetDriver = World->GetNetDriver();
 	if (NetDriver != nullptr && !NetDriver->IsServer())
 	{
-		//Not a server, quit
+		// Not a server, quit
 		return nullptr;
 	}
 
-	ASpatialFunctionalTestFlowController* ServerFlowController = World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, FTransform());
+	ASpatialFunctionalTestFlowController* ServerFlowController =
+		World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, FTransform());
 	ServerFlowController->OwningTest = OwningTest;
 	ServerFlowController->WorkerDefinition = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Server, OwningServerIntanceId(World) };
 
@@ -51,10 +54,13 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 {
 	UWorld* World = OwningTest->GetWorld();
 
-	ASpatialFunctionalTestFlowController* FlowController = World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, OwningTest->GetActorTransform(), OwningClient);
+	ASpatialFunctionalTestFlowController* FlowController =
+		World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, OwningTest->GetActorTransform(), OwningClient);
 	FlowController->OwningTest = OwningTest;
-	FlowController->WorkerDefinition = FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client , INVALID_FLOW_CONTROLLER_ID}; // by default have invalid id, Test Authority will set it to ensure uniqueness
-	
+	FlowController->WorkerDefinition =
+		FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client,
+						   INVALID_FLOW_CONTROLLER_ID }; // by default have invalid id, Test Authority will set it to ensure uniqueness
+
 	FlowController->FinishSpawning(OwningTest->GetActorTransform(), true);
 	// TODO: Replace locking with custom LB strategy - UNR-3393
 	LockFlowControllerDelegations(FlowController);
@@ -64,7 +70,9 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 
 void SpatialFunctionalTestFlowControllerSpawner::AssignClientFlowControllerId(ASpatialFunctionalTestFlowController* ClientFlowController)
 {
-	check(OwningTest->HasAuthority() && ClientFlowController != nullptr && ClientFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client && ClientFlowController->WorkerDefinition.Id == INVALID_FLOW_CONTROLLER_ID);
+	check(OwningTest->HasAuthority() && ClientFlowController != nullptr
+		  && ClientFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client
+		  && ClientFlowController->WorkerDefinition.Id == INVALID_FLOW_CONTROLLER_ID);
 
 	ClientFlowController->CrossServerSetWorkerId(NextClientControllerId++);
 }
@@ -74,7 +82,7 @@ uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 	if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
 	{
-		//not load balanced test, default instance 1
+		// not load balanced test, default instance 1
 		return 1;
 	}
 	else
@@ -86,7 +94,7 @@ uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* 
 void SpatialFunctionalTestFlowControllerSpawner::LockFlowControllerDelegations(ASpatialFunctionalTestFlowController* FlowController) const
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(FlowController->GetNetDriver());
-	if(SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
+	if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
 	{
 		return;
 	}

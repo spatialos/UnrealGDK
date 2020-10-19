@@ -9,7 +9,6 @@
 
 namespace SpatialGDK
 {
-
 class AbstractConnectionHandler
 {
 public:
@@ -28,11 +27,11 @@ public:
 	// Consumes messages and sends them to the deployment.
 	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) = 0;
 
-	 // Return the unique ID for the worker.
-	 virtual const FString& GetWorkerId() const = 0;
+	// Return the unique ID for the worker.
+	virtual const FString& GetWorkerId() const = 0;
 
-	 // Returns the attributes for the worker.
-	 virtual const TArray<FString>& GetWorkerAttributes() const = 0;
+	// Returns the attributes for the worker.
+	virtual const TArray<FString>& GetWorkerAttributes() const = 0;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

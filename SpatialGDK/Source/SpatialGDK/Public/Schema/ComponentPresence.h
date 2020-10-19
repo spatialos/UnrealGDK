@@ -16,7 +16,6 @@
 
 namespace SpatialGDK
 {
-
 struct ComponentPresence : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
@@ -24,18 +23,22 @@ struct ComponentPresence : Component
 	ComponentPresence() = default;
 
 	ComponentPresence(TArray<Worker_ComponentId>&& InComponentList)
-		: ComponentList(MoveTemp(InComponentList)) {}
+		: ComponentList(MoveTemp(InComponentList))
+	{
+	}
 
 	ComponentPresence(const Worker_ComponentData& Data)
+		: ComponentPresence(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	ComponentPresence(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		CopyListFromComponentObject(ComponentObject);
 	}
 
-	Worker_ComponentData CreateComponentPresenceData()
-	{
-		return CreateComponentPresenceData(ComponentList);
-	}
+	Worker_ComponentData CreateComponentPresenceData() { return CreateComponentPresenceData(ComponentList); }
 
 	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ComponentList)
 	{
@@ -53,10 +56,7 @@ struct ComponentPresence : Component
 		return Data;
 	}
 
-	Worker_ComponentUpdate CreateComponentPresenceUpdate()
-	{
-		return CreateComponentPresenceUpdate(ComponentList);
-	}
+	Worker_ComponentUpdate CreateComponentPresenceUpdate() { return CreateComponentPresenceUpdate(ComponentList); }
 
 	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<Worker_ComponentId>& ComponentList)
 	{
@@ -74,9 +74,11 @@ struct ComponentPresence : Component
 		return Update;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		CopyListFromComponentObject(ComponentObject);
 	}
 
@@ -108,8 +110,7 @@ struct ComponentPresence : Component
 
 	void RemoveComponentIds(const TArray<Worker_ComponentId>& ComponentsToRemove)
 	{
-		ComponentList.RemoveAll([&](Worker_ComponentId PresentComponent)
-		{
+		ComponentList.RemoveAll([&](Worker_ComponentId PresentComponent) {
 			return ComponentsToRemove.Contains(PresentComponent);
 		});
 	}

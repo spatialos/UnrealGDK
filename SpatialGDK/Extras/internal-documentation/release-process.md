@@ -8,6 +8,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 
 ## Release
 1. Notify `#dev-unreal-internal` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or documentation that should be resolved prior to commencement of the release process.
+1. Notify `@techwriters` in #docs that they may commence their [CHANGELOG review process](https://improbableio.atlassian.net/l/c/4FsZzbHk).
 1. If nobody objects to the release, navigate to [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release/) and select the New Build button.
 1. In the Message field type "Releasing [GDK release version]".
 1. The "Commit" field is prepopulated with `HEAD`, leave it as is.

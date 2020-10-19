@@ -16,7 +16,8 @@ Schema_Object* TestingSchemaHelpers::CreateTranslationComponentDataFields()
 	return Schema_GetComponentDataFields(Data.schema_type);
 }
 
-void TestingSchemaHelpers::AddTranslationComponentDataMapping(Schema_Object* ComponentDataFields, VirtualWorkerId VWId, const PhysicalWorkerName& WorkerName)
+void TestingSchemaHelpers::AddTranslationComponentDataMapping(Schema_Object* ComponentDataFields, VirtualWorkerId VWId,
+															  const PhysicalWorkerName& WorkerName)
 {
 	Schema_Object* SchemaObject = Schema_AddObject(ComponentDataFields, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	Schema_AddUint32(SchemaObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, VWId);

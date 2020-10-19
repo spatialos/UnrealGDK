@@ -30,7 +30,6 @@ public:
 	void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
 
 private:
-
 	FOnWorkerFlagsUpdated OnWorkerFlagsUpdated;
 
 	TMap<FString, FString> WorkerFlags;

@@ -12,7 +12,7 @@ using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = {REP_MultiClient, REP_SingleClient};
+	static TArray<EReplicatedPropertyGroup> Groups = { REP_MultiClient, REP_SingleClient };
 	return Groups;
 }
 
@@ -52,16 +52,18 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 
 // GenerateChecksum is a method which replicates how Unreal generates it's own CompatibleChecksum for RepLayout Cmds.
 // The original code can be found in the Unreal Engine's RepLayout. We use this to ensure we have the correct property at run-time.
-uint32 GenerateChecksum(GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
+uint32 GenerateChecksum(GDK_PROPERTY(Property) * Property, uint32 ParentChecksum, int32 StaticArrayIndex)
 {
 	uint32 Checksum = 0;
-	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);            // Evolve checksum on name
-	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum);     // Evolve by property type
-	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex), Checksum);     // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
+	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);		  // Evolve checksum on name
+	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum); // Evolve by property type
+	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex),
+							  Checksum); // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
 	return Checksum;
 }
 
-TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, GDK_PROPERTY(Property)* Property, uint32 ParentChecksum, uint32 StaticArrayIndex)
+TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNode, GDK_PROPERTY(Property) * Property, uint32 ParentChecksum,
+												 uint32 StaticArrayIndex)
 {
 	TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
 	PropertyNode->Property = Property;
@@ -119,23 +121,26 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				TSharedPtr<FUnrealProperty> StaticStructArrayPropertyNode = CreateUnrealProperty(TypeNode, Property, ParentChecksum, i);
 
 				// Generate Type information on the inner struct.
-				// Note: The parent checksum of the properties within a struct that is a member of a static struct array, is the checksum for the struct itself after index modification.
-				StaticStructArrayPropertyNode->Type = CreateUnrealTypeInfo(StructProperty->Struct, StaticStructArrayPropertyNode->CompatibleChecksum, 0);
+				// Note: The parent checksum of the properties within a struct that is a member of a static struct array, is the checksum
+				// for the struct itself after index modification.
+				StaticStructArrayPropertyNode->Type =
+					CreateUnrealTypeInfo(StructProperty->Struct, StaticStructArrayPropertyNode->CompatibleChecksum, 0);
 				StaticStructArrayPropertyNode->Type->ParentProperty = StaticStructArrayPropertyNode;
 			}
 			continue;
 		}
 
 		// If this is an object property, then we need to do two things:
-		//	 1) Determine whether this property is a strong or weak reference to the object. Some subobjects (such as the CharacterMovementComponent)
-		//		are in fact owned by the character, and can be stored in the same entity as the character itself. Some subobjects (such as the Controller
-		//		field in AActor) is a weak reference, and should just store a reference to the real object. We inspect the CDO to determine whether
-		//		the owner of the property value is equal to itself. As structs don't have CDOs, we assume that all object properties in structs are
-		//		weak references.
 		//
-		//   2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
-		//      might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored there
-		//		during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
+		// 1) Determine whether this property is a strong or weak reference to the object. Some subobjects (such as the
+		// CharacterMovementComponent) are in fact owned by the character, and can be stored in the same entity as the character itself.
+		// Some subobjects (such as the Controller field in AActor) is a weak reference, and should just store a reference to the real
+		// object. We inspect the CDO to determine whether the owner of the property value is equal to itself. As structs don't have CDOs,
+		// we assume that all object properties in structs are weak references.
+		//
+		// 2) Obtain the concrete object type stored in this property. For example, the property containing the CharacterMovementComponent
+		// might be a property which stores a MovementComponent pointer, so we'd need to somehow figure out the real type being stored
+		// there during runtime. This is determined by getting the CDO of this class to determine what is stored in that property.
 		GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(Property);
 		check(ObjectProperty);
 
@@ -167,11 +172,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// or the CDO of any of its parent classes.
 			// (this also covers generating schema for a Blueprint derived from the outer's class)
 			UObject* Outer = Value->GetOuter();
-			if ((Outer != nullptr) &&
-				Outer->HasAnyFlags(RF_ClassDefaultObject) &&
-				ContainerCDO->IsA(Outer->GetClass()))
+			if ((Outer != nullptr) && Outer->HasAnyFlags(RF_ClassDefaultObject) && ContainerCDO->IsA(Outer->GetClass()))
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"),
+					   *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(Value->GetClass(), ParentChecksum, 0);
@@ -193,13 +197,15 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(),
+					   *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - %s weak reference (null init)"), *Property->GetName(),
+				   *ObjectProperty->PropertyClass->GetName());
 		}
 
 		// Weak reference static arrays are handled as a single UObjectRef per static array member.
@@ -229,7 +235,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				for (auto& PropertyPair : TypeNode->Properties)
 				{
 					GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(PropertyPair.Key);
-					if (ObjectProperty == nullptr) continue;
+					if (ObjectProperty == nullptr)
+						continue;
 					TSharedPtr<FUnrealProperty> PropertyNode = PropertyPair.Value;
 
 					if (ObjectProperty->GetName().Equals(Node->GetVariableName().ToString()))
@@ -256,7 +263,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of
 	// ownership. However, the rep layout will recurse into structs and allocate rep handles for their properties, unless the condition
 	// "Struct->StructFlags & STRUCT_NetSerializeNative" is true. In this case, the entire struct is replicated as a whole.
-	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr/*ServerConnection*/, ECreateRepLayoutFlags::None);
+	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr /*ServerConnection*/, ECreateRepLayoutFlags::None);
 	FRepLayout& RepLayout = *RepLayoutPtr.Get();
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
@@ -267,7 +274,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 
 		// Jump over invalid replicated property types
-		if (Cmd.Property->IsA<GDK_PROPERTY(DelegateProperty)>() || Cmd.Property->IsA<GDK_PROPERTY(MulticastDelegateProperty)>() || Cmd.Property->IsA<GDK_PROPERTY(InterfaceProperty)>())
+		if (Cmd.Property->IsA<GDK_PROPERTY(DelegateProperty)>() || Cmd.Property->IsA<GDK_PROPERTY(MulticastDelegateProperty)>()
+			|| Cmd.Property->IsA<GDK_PROPERTY(InterfaceProperty)>())
 		{
 			continue;
 		}
@@ -280,7 +288,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		// multiple Cmds map to the structs properties, but they all have the same ParentIndex (which points to the root replicated property
 		// which contains them.
 		//
-		// This might be problematic if we have a property which is inside a struct, nested in another struct which is replicated. For example:
+		// This might be problematic if we have a property which is inside a struct, nested in another struct which is replicated. For
+		// example:
 		//
 		//	class Foo
 		//	{
@@ -293,8 +302,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		// 		} Bar;
 		//	}
 		//
-		// The parents array will contain "Bar", and the cmds array will contain "Nested", but we have no reference to "Baz" anywhere in the RepLayout.
-		// What we do here is recurse into all of Bar's properties in the AST until we find Baz.
+		// The parents array will contain "Bar", and the cmds array will contain "Nested", but we have no reference to "Baz" anywhere in the
+		// RepLayout. What we do here is recurse into all of Bar's properties in the AST until we find Baz.
 
 		TSharedPtr<FUnrealProperty> PropertyNode = nullptr;
 
@@ -312,19 +321,21 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 		else
 		{
-			// It's possible to have duplicate parent properties (they are distinguished by ArrayIndex), so we make sure to look at them all.
+			// It's possible to have duplicate parent properties (they are distinguished by ArrayIndex), so we make sure to look at them
+			// all.
 			TArray<TSharedPtr<FUnrealProperty>> RootProperties;
 			TypeNode->Properties.MultiFind(Parent.Property, RootProperties);
 
 			for (TSharedPtr<FUnrealProperty>& RootProperty : RootProperties)
 			{
-				checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
-				VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
-				{
+				checkf(RootProperty->Type.IsValid(),
+					   TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
+				VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
 					if (Property->CompatibleChecksum == Cmd.CompatibleChecksum)
 					{
-						checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
-						PropertyNode = Property;
+						checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This "
+															 "indicates that we have a 'diamond of death' style situation.")) PropertyNode =
+							Property;
 					}
 					return true;
 				});
@@ -376,8 +387,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	// Find the handover properties.
 	uint16 HandoverDataHandle = 1;
-	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo)
-	{
+	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
 			if (GDK_PROPERTY(StructProperty)* StructProp = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(PropertyInfo->Property))
@@ -385,8 +395,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
 				{
 					// Warn about delta serialization
-					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s in %s uses delta serialization. " \
-						"This is not supported and standard serialization will be used instead."), *PropertyInfo->Property->GetName(), *Class->GetName());
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning,
+						   TEXT("%s in %s uses delta serialization. "
+								"This is not supported and standard serialization will be used instead."),
+						   *PropertyInfo->Property->GetName(), *Class->GetName());
 				}
 			}
 			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
@@ -404,8 +416,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
 
-	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo)
-	{
+	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
@@ -423,12 +434,10 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	});
 
 	// Sort by replication handle.
-	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B)
-	{
+	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
-	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B)
-	{
+	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
 	return RepData;
@@ -437,8 +446,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FCmdHandlePropertyMap HandoverData;
-	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo)
-	{
+	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->HandoverData.IsValid())
 		{
 			HandoverData.Add(PropertyInfo->HandoverData->Handle, PropertyInfo);
@@ -447,8 +455,7 @@ FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 	});
 
 	// Sort by property handle.
-	HandoverData.KeySort([](uint16 A, uint16 B)
-	{
+	HandoverData.KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
 	return HandoverData;

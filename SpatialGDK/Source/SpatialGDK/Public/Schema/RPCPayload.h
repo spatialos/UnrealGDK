@@ -12,7 +12,6 @@
 
 namespace SpatialGDK
 {
-
 struct RPCPayload
 {
 	RPCPayload() = delete;
@@ -22,7 +21,8 @@ struct RPCPayload
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
 		, Trace(InTraceKey)
-	{}
+	{
+	}
 
 	RPCPayload(Schema_Object* RPCObject)
 	{
@@ -38,10 +38,7 @@ struct RPCPayload
 #endif
 	}
 
-	int64 CountDataBits() const
-	{
-		return PayloadData.Num() * 8;
-	}
+	int64 CountDataBits() const { return PayloadData.Num() * 8; }
 
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
 	{
@@ -74,10 +71,7 @@ struct RPCsOnEntityCreation : Component
 
 	RPCsOnEntityCreation() = default;
 
-	bool HasRPCPayloadData() const
-	{
-		return RPCs.Num() > 0;
-	}
+	bool HasRPCPayloadData() const { return RPCs.Num() > 0; }
 
 	RPCsOnEntityCreation(const Worker_ComponentData& Data)
 	{

@@ -25,7 +25,8 @@ ActorLockToken UOwnershipLockingPolicy::AcquireLock(AActor* Actor, FString Debug
 {
 	if (!CanAcquireLock(Actor))
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Called AcquireLock but CanAcquireLock returned false. Actor: %s."), *GetNameSafe(Actor));
+		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Called AcquireLock but CanAcquireLock returned false. Actor: %s."),
+			   *GetNameSafe(Actor));
 		return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;
 	}
 
@@ -42,14 +43,14 @@ ActorLockToken UOwnershipLockingPolicy::AcquireLock(AActor* Actor, FString Debug
 			Actor->OnDestroyed.AddDynamic(this, &UOwnershipLockingPolicy::OnExplicitlyLockedActorDeleted);
 		}
 
-		AActor* OwnershipHierarchyRoot = SpatialGDK::GetTopmostOwner(Actor);
+		AActor* OwnershipHierarchyRoot = SpatialGDK::GetTopmostReplicatedOwner(Actor);
 		AddOwnershipHierarchyRootInformation(OwnershipHierarchyRoot, Actor);
 
 		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, OwnershipHierarchyRoot });
 	}
 
 	UE_LOG(LogOwnershipLockingPolicy, Verbose, TEXT("Acquiring migration lock. Actor: %s. Lock name: %s. Token %lld: Locks held: %d."),
-		*GetNameSafe(Actor), *DebugString, NextToken, ActorToLockingState.Find(Actor)->LockCount);
+		   *GetNameSafe(Actor), *DebugString, NextToken, ActorToLockingState.Find(Actor)->LockCount);
 	TokenToNameAndActor.Emplace(NextToken, LockNameAndActor{ MoveTemp(DebugString), Actor });
 	return NextToken++;
 }
@@ -65,7 +66,8 @@ bool UOwnershipLockingPolicy::ReleaseLock(const ActorLockToken Token)
 
 	AActor* Actor = NameAndActor->Actor;
 	const FString& Name = NameAndActor->LockName;
-	UE_LOG(LogOwnershipLockingPolicy, Verbose, TEXT("Releasing Actor migration lock. Actor: %s. Token: %lld. Lock name: %s"), *Actor->GetName(), Token, *Name);
+	UE_LOG(LogOwnershipLockingPolicy, Verbose, TEXT("Releasing Actor migration lock. Actor: %s. Token: %lld. Lock name: %s"),
+		   *Actor->GetName(), Token, *Name);
 
 	check(ActorToLockingState.Contains(Actor));
 
@@ -106,7 +108,7 @@ bool UOwnershipLockingPolicy::IsLocked(const AActor* Actor) const
 	}
 
 	// Is the hierarchy root of this Actor explicitly locked or on a locked hierarchy ownership path.
-	if (AActor* HierarchyRoot = SpatialGDK::GetTopmostOwner(Actor))
+	if (AActor* HierarchyRoot = SpatialGDK::GetTopmostReplicatedOwner(Actor))
 	{
 		return IsExplicitlyLocked(HierarchyRoot) || IsLockedHierarchyRoot(HierarchyRoot);
 	}
@@ -154,7 +156,8 @@ bool UOwnershipLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, co
 {
 	if (!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %s."), *DelegateLockIdentifier);
+		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %s."),
+			   *DelegateLockIdentifier);
 		return false;
 	}
 	const ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
@@ -182,13 +185,13 @@ void UOwnershipLockingPolicy::OnOwnerUpdated(const AActor* Actor, const AActor* 
 	// recalculate ownership hierarchies of all explicitly locked Actors in that hierarchy.
 	else if (OldOwner != nullptr)
 	{
-		const AActor* OldHierarchyRoot = OldOwner->GetOwner() != nullptr ? SpatialGDK::GetTopmostOwner(OldOwner) : OldOwner;
+		const AActor* OldHierarchyRoot = OldOwner->GetOwner() != nullptr ? SpatialGDK::GetTopmostReplicatedOwner(OldOwner) : OldOwner;
 		if (IsLockedHierarchyRoot(OldHierarchyRoot))
 		{
 			RecalculateAllExplicitlyLockedActorsInThisHierarchy(OldHierarchyRoot);
 		}
 	}
- }
+}
 
 void UOwnershipLockingPolicy::OnExplicitlyLockedActorDeleted(AActor* DestroyedActor)
 {
@@ -220,7 +223,8 @@ void UOwnershipLockingPolicy::OnHierarchyRootActorDeleted(AActor* DeletedHierarc
 
 void UOwnershipLockingPolicy::RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* HierarchyRoot)
 {
-	TArray<const AActor*> ExplicitlyLockedActorsWithThisActorInOwnershipPath = LockedOwnershipRootActorToExplicitlyLockedActors.FindChecked(HierarchyRoot);
+	TArray<const AActor*> ExplicitlyLockedActorsWithThisActorInOwnershipPath =
+		LockedOwnershipRootActorToExplicitlyLockedActors.FindChecked(HierarchyRoot);
 	for (const AActor* ExplicitlyLockedActor : ExplicitlyLockedActorsWithThisActorInOwnershipPath)
 	{
 		RecalculateLockedActorOwnershipHierarchyInformation(ExplicitlyLockedActor);
@@ -234,7 +238,7 @@ void UOwnershipLockingPolicy::RecalculateLockedActorOwnershipHierarchyInformatio
 	RemoveOwnershipHierarchyRootInformation(OldHierarchyRoot, ExplicitlyLockedActor);
 
 	// For the new ownership path, update ownership path Actor mapping to explicitly locked Actors to include this Actor.
-	AActor* NewOwnershipHierarchyRoot = SpatialGDK::GetTopmostOwner(ExplicitlyLockedActor);
+	AActor* NewOwnershipHierarchyRoot = SpatialGDK::GetTopmostReplicatedOwner(ExplicitlyLockedActor);
 	ActorToLockingState.FindChecked(ExplicitlyLockedActor).HierarchyRoot = NewOwnershipHierarchyRoot;
 	AddOwnershipHierarchyRootInformation(NewOwnershipHierarchyRoot, ExplicitlyLockedActor);
 }
@@ -247,7 +251,8 @@ void UOwnershipLockingPolicy::RemoveOwnershipHierarchyRootInformation(AActor* Hi
 	}
 
 	// Find Actors in this root Actor's hierarchy which are explicitly locked.
-	TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath = LockedOwnershipRootActorToExplicitlyLockedActors.FindChecked(HierarchyRoot);
+	TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath =
+		LockedOwnershipRootActorToExplicitlyLockedActors.FindChecked(HierarchyRoot);
 	check(ExplicitlyLockedActorsWithThisActorOnPath.Num() > 0);
 
 	// If there's only one explicitly locked Actor in the hierarchy, we're removing the only Actor with this root,
@@ -272,7 +277,8 @@ void UOwnershipLockingPolicy::AddOwnershipHierarchyRootInformation(AActor* Hiera
 
 	// For the hierarchy root of an explicitly locked Actor, we store a reference from the hierarchy root Actor back to
 	// the explicitly locked Actor, as well as binding a deletion delegate to the hierarchy root Actor.
-	TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath = LockedOwnershipRootActorToExplicitlyLockedActors.FindOrAdd(HierarchyRoot);
+	TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath =
+		LockedOwnershipRootActorToExplicitlyLockedActors.FindOrAdd(HierarchyRoot);
 	ExplicitlyLockedActorsWithThisActorOnPath.AddUnique(ExplicitlyLockedActor);
 
 	if (!HierarchyRoot->OnDestroyed.IsAlreadyBound(this, &UOwnershipLockingPolicy::OnHierarchyRootActorDeleted))

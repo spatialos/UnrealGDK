@@ -17,8 +17,9 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestNetOwnership : public ASpatialFu
 public:
 	ASpatialTestNetOwnership();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
-	// Reference to the NetOwnershipCube, used to avoid using GetAllActorsOfClass() in every step to get a reference to the NetOwnershipCube.
+	// Reference to the NetOwnershipCube, used to avoid using GetAllActorsOfClass() in every step to get a reference to the
+	// NetOwnershipCube.
 	ANetOwnershipCube* NetOwnershipCube;
 };

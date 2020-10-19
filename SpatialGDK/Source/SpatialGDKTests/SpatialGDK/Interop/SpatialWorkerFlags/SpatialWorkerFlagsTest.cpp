@@ -5,20 +5,19 @@
 #include "Tests/TestDefinitions.h"
 #include "WorkerFlagsTestSpyObject.h"
 
-#define SPATIALWORKERFLAGS_TEST(TestName) \
-	GDK_TEST(Core, SpatialWorkerFlags, TestName)
+#define SPATIALWORKERFLAGS_TEST(TestName) GDK_TEST(Core, SpatialWorkerFlags, TestName)
 
 namespace
 {
-	Worker_FlagUpdateOp CreateWorkerFlagUpdateOp(const char* FlagName, const char* FlagValue)
-	{
-		Worker_FlagUpdateOp Op = {};
-		Op.name = FlagName;
-		Op.value = FlagValue;
+Worker_FlagUpdateOp CreateWorkerFlagUpdateOp(const char* FlagName, const char* FlagValue)
+{
+	Worker_FlagUpdateOp Op = {};
+	Op.name = FlagName;
+	Op.value = FlagValue;
 
-		return Op;
-	}
-}  // anonymous namespace
+	return Op;
+}
+} // anonymous namespace
 
 SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_adding_a_worker_flag_THEN_flag_added)
 {
@@ -32,7 +31,6 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_adding_a_worker_flag_THEN_fla
 
 	return true;
 }
-
 
 SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_removing_a_worker_flag_THEN_flag_removed)
 {

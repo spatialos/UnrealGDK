@@ -8,6 +8,7 @@
 
 #include "CoreMinimal.h"
 
+#include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
@@ -39,9 +40,8 @@ public:
 		Worker_EntityId SimulatingWorkerSystemEntityId;
 	};
 
-	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
-		SpatialOSWorkerInterface* InConnection,
-		SpatialVirtualWorkerTranslator* InTranslator);
+	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver, SpatialOSWorkerInterface* InConnection,
+										   SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
@@ -60,6 +60,8 @@ private:
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TArray<PartitionInfo> Partitions;
 	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualToPhysicalWorkerMapping;
+	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
+	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
 

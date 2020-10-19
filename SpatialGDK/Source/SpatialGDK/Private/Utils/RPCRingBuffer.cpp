@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 	: Type(InType)
 {
@@ -15,7 +14,6 @@ RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 
 namespace RPCRingBufferUtils
 {
-
 Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 {
 	switch (Type)
@@ -47,7 +45,8 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	//   Last sent unreliable RPC,
 	//   followed by reliable and unreliable RPC acks.
 	// MulticastRPCs component will only have one buffer that looks like the reliable buffer above.
-	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator (GenerateRPCEndpointsSchema).
+	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator
+	// (GenerateRPCEndpointsSchema).
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
@@ -98,7 +97,8 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	{
 	case ERPCType::ClientReliable:
 	case ERPCType::ServerReliable:
-		// In the generated schema components, acks will follow two ring buffers, each containing MaxRingBufferSize elements as well as a last sent ID.
+		// In the generated schema components, acks will follow two ring buffers, each containing MaxRingBufferSize elements as well as a
+		// last sent ID.
 		return 1 + 2 * (MaxRingBufferSize + 1);
 	case ERPCType::ClientUnreliable:
 	case ERPCType::ServerUnreliable:

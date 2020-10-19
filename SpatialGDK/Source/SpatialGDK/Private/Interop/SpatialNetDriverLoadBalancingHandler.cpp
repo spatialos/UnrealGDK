@@ -5,11 +5,11 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
+FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver,
+																			 TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
 	: NetDriver(InNetDriver)
 	, NetworkObjects(InOutNetworkObjects)
 {
-
 }
 
 void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
@@ -31,8 +31,7 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 
 bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	// Auth check.
-	if (!Actor->HasAuthority())
+	if (!Actor->HasAuthority() || !Actor->IsActorReady())
 	{
 		return false;
 	}
@@ -62,18 +61,6 @@ bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Act
 		return false;
 	}
 
-	// Additional check that the actor is seen by the spatial runtime.
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return false;
-	}
-
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
-	{
-		return false;
-	}
-
 	return true;
 }
 
@@ -92,7 +79,7 @@ void FSpatialNetDriverLoadBalancingContext::RemoveAdditionalActor(AActor* Actor)
 
 void FSpatialNetDriverLoadBalancingContext::AddActorToReplicate(AActor* Actor)
 {
-	if(FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
+	if (FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
 	{
 		AdditionalActorsToReplicate.Add(Info);
 	}
@@ -102,4 +89,3 @@ TArray<AActor*>& FSpatialNetDriverLoadBalancingContext::GetDependentActors(AActo
 {
 	return Actor->Children;
 }
-

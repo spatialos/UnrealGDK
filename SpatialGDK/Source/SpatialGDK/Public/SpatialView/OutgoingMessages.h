@@ -2,19 +2,17 @@
 
 #pragma once
 
-#include "SpatialView/ComponentData.h"
-#include "SpatialView/CommandResponse.h"
-#include "SpatialView/CommandRequest.h"
-#include "SpatialView/EntityQuery.h"
 #include "Containers/UnrealString.h"
 #include "Misc/Optional.h"
+#include "SpatialView/CommandRequest.h"
+#include "SpatialView/CommandResponse.h"
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/EntityQuery.h"
 #include "UObject/NameTypes.h"
 #include <improbable/c_worker.h>
 
-
 namespace SpatialGDK
 {
-
 struct ReserveEntityIdsRequest
 {
 	Worker_RequestId RequestId;
@@ -71,4 +69,4 @@ struct LogMessage
 	FString Message;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

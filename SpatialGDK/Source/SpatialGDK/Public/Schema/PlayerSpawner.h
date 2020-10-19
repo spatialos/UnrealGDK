@@ -18,7 +18,6 @@
 
 namespace SpatialGDK
 {
-
 struct SpawnPlayerRequest
 {
 	FURL LoginURL;
@@ -83,7 +82,8 @@ struct PlayerSpawner : Component
 		FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
 		UniqueIdReader << UniqueId;
 
-		const FName OnlinePlatformName = FName(*GetStringFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
+		const FName OnlinePlatformName =
+			FName(*GetStringFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
 
 		const bool bIsSimulated = GetBoolFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID);
 
@@ -94,12 +94,16 @@ struct PlayerSpawner : Component
 
 	static void CopySpawnDataBetweenObjects(const Schema_Object* SpawnPlayerDataSource, Schema_Object* SpawnPlayerDataDestination)
 	{
-		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_URL_ID, GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_URL_ID));
+		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_URL_ID,
+						  GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_URL_ID));
 		TArray<uint8> UniqueId = GetBytesFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID);
 		AddBytesToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID, UniqueId.GetData(), UniqueId.Num());
-		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID, GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
-		Schema_AddBool(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID, GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
-		Schema_AddEntityId(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID, Schema_GetEntityId(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID));
+		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID,
+                  GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
+		Schema_AddBool(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID,
+                       GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
+		Schema_AddEntityId(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID,
+			Schema_GetEntityId(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID));
 	}
 };
 

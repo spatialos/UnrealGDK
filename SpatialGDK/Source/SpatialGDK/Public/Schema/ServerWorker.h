@@ -15,7 +15,6 @@
 
 namespace SpatialGDK
 {
-
 // The ServerWorker component exists to hold the physical worker name corresponding to a
 // server worker entity. This is so that the translator can make virtual workers to physical
 // worker names using the server worker entities.
@@ -27,7 +26,8 @@ struct ServerWorker : Component
 		: WorkerName(SpatialConstants::INVALID_WORKER_NAME)
 		, bReadyToBeginPlay(false)
 		, SystemEntityId(SpatialConstants::INVALID_ENTITY_ID)
-	{}
+	{
+	}
 
 	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const Worker_EntityId InSystemEntityId)
 	{
@@ -104,8 +104,10 @@ struct ServerWorker : Component
 		return CommandResponse;
 	}
 
-	static void CreateForwardPlayerSpawnSchemaRequest(Schema_CommandRequest* Request, const FUnrealObjectRef& PlayerStartObjectRef, const Schema_Object* OriginalPlayerSpawnRequest, const PhysicalWorkerName& ClientWorkerID)
-	{ 
+	static void CreateForwardPlayerSpawnSchemaRequest(Schema_CommandRequest* Request, const FUnrealObjectRef& PlayerStartObjectRef,
+													  const Schema_Object* OriginalPlayerSpawnRequest,
+													  const PhysicalWorkerName& ClientWorkerID)
+	{
 		Schema_Object* RequestFields = Schema_GetCommandRequestObject(Request);
 
 		AddObjectRefToSchema(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID, PlayerStartObjectRef);
@@ -122,4 +124,3 @@ struct ServerWorker : Component
 };
 
 } // namespace SpatialGDK
-

@@ -10,9 +10,9 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADormancyAndTombstoneTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
-	
+
 public:
 	ADormancyAndTombstoneTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 };

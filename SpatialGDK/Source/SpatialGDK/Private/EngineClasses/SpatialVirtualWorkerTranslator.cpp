@@ -59,7 +59,9 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 
 	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose,
+			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.WorkerName),
+			   Entry.Value.ServerWorkerEntityId);
 	}
 }
 
@@ -79,7 +81,8 @@ bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 			const VirtualWorkerId ReceivedVirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 			if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID && LocalVirtualWorkerId != ReceivedVirtualWorkerId)
 			{
-				UE_LOG(LogSpatialVirtualWorkerTranslator, Error, TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."));
+				UE_LOG(LogSpatialVirtualWorkerTranslator, Error,
+					   TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."));
 				return false;
 			}
 			return true;
@@ -96,7 +99,8 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 {
 	if (!IsValidMapping(Object))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Received invalid mapping, likely due to PiE restart, will wait for a valid version."));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
+			   TEXT("Received invalid mapping, server is still waiting for a valid mapping from the virtual worker translation manager."));
 		return;
 	}
 
@@ -104,6 +108,8 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 	VirtualToPhysicalWorkerMapping.Empty();
 	const int32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	VirtualToPhysicalWorkerMapping.Reserve(TranslationCount);
+
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose, TEXT("(%d) Apply valid mapping from schema"), LocalVirtualWorkerId);
 
 	for (int32 i = 0; i < TranslationCount; i++)
 	{
@@ -113,6 +119,10 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		const PhysicalWorkerName WorkerName = SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
 		const Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
 		const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
+
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
+			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), VirtualWorkerId, *PhysicalWorkerName,
+			   ServerWorkerEntityId);
 
 		// Insert each into the provided map.
 		UpdateMapping(VirtualWorkerId, WorkerName, PartitionEntityId, ServerWorkerEntityId);

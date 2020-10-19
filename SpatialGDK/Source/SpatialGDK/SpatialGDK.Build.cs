@@ -37,12 +37,20 @@ public class SpatialGDK : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "EngineSettings",
-                "Projects",
-                "OnlineSubsystemUtils",
                 "InputCore",
+                "OnlineSubsystemUtils",
+                "Projects",
+                "ReplicationGraph",
                 "Sockets",
-                "ReplicationGraph"
+                "Slate",
+                "UMG"
             });
+
+        if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&
+                                            Target.Configuration != UnrealTargetConfiguration.Test))
+        {
+            PublicDependencyModuleNames.Add("GameplayDebugger");
+        }
 
         if (Target.bBuildEditor)
         {

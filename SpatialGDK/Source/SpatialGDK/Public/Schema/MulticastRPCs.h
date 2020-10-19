@@ -11,7 +11,6 @@
 
 namespace SpatialGDK
 {
-
 struct MulticastRPCs : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
