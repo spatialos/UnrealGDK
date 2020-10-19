@@ -10,6 +10,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOutputLog, Log, All);
 
+class SSpatialOutputLog;
+
 // Child class of the file reader used by Unreal but with the ability to update the known file size.
 // This allows us to read a log file while it is being written to.
 class FArchiveLogFileReader : public FArchiveFileReaderGeneric
@@ -36,6 +38,8 @@ public:
 
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
 
+	void FormatAndPrintRawLogLine(const FString& LogLine);
+
 private:
 	void ReadLatestLogFile();
 	void ResetPollingLogFile(const FString& LogFilePath);
@@ -43,7 +47,6 @@ private:
 	void PollLogFile(const FString& LogFilePath);
 	void CloseLogReader();
 
-	void FormatAndPrintRawLogLine(const FString& LogLine);
 	void FormatAndPrintRawErrorLine(const FString& LogLine);
 
 	void StartUpLogDirectoryWatcher(const FString& LogDirectory);

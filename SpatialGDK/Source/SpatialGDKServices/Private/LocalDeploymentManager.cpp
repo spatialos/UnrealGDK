@@ -20,6 +20,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "SSpatialOutputLog.h"
 #include "SocketSubsystem.h"
 #include "Sockets.h"
 #include "SpatialCommandUtils.h"

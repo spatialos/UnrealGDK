@@ -24,15 +24,17 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
+TWeakPtr<SSpatialOutputLog> SpatialOutputLog;
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
-	SpatialOutputLog = SNew(SSpatialOutputLog);
+	TSharedRef<SSpatialOutputLog> SpatialOutputLogRef = SNew(SSpatialOutputLog);
+	SpatialOutputLog = TWeakPtr<SSpatialOutputLog>(SpatialOutputLogRef);
 
 	return SNew(SDockTab)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
 		.TabRole(ETabRole::NomadTab)
-		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SpatialOutputLog];
+		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SpatialOutputLogRef];
 }
 
 void FSpatialGDKServicesModule::StartupModule()
@@ -63,6 +65,11 @@ FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 FLocalReceptionistProxyServerManager* FSpatialGDKServicesModule::GetLocalReceptionistProxyServerManager()
 {
 	return &LocalReceptionistProxyServerManager;
+}
+
+TWeakPtr<SSpatialOutputLog> FSpatialGDKServicesModule::GetSpatialOutputLog()
+{
+	return SpatialOutputLog;
 }
 
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)

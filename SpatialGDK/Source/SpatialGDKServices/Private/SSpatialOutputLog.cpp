@@ -303,69 +303,74 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
-	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=\"(.*)\" loggerName=(.*\\.)?(.*)"));
-	FRegexMatcher LogMatcher(LogPattern, LogLine);
+	//// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
+	// const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=\"(.*)\" loggerName=(.*\\.)?(.*)"));
+	// FRegexMatcher LogMatcher(LogPattern, LogLine);
 
-	if (!LogMatcher.FindNext())
-	{
-		// If this log line did not match the log line regex then it is an error line which is parsed differently.
-		FormatAndPrintRawErrorLine(LogLine);
-		return;
-	}
+	// if (!LogMatcher.FindNext())
+	//{
+	//	// If this log line did not match the log line regex then it is an error line which is parsed differently.
+	//	FormatAndPrintRawErrorLine(LogLine);
+	//	return;
+	//}
 
-	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
-	FString LogMessage = LogMatcher.GetCaptureGroup(2);
-	FString LogCategory = LogMatcher.GetCaptureGroup(4);
+	// FString LogLevelText = LogMatcher.GetCaptureGroup(1);
+	// FString LogMessage = LogMatcher.GetCaptureGroup(2);
+	// FString LogCategory = LogMatcher.GetCaptureGroup(4);
 
-	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
-	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
-	if (LogCategory == TEXT("WorkerLogMessageHandler") || LogCategory == TEXT("Runtime"))
-	{
-		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
-		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
+	//// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
+	//// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
+	// if (LogCategory == TEXT("WorkerLogMessageHandler") || LogCategory == TEXT("Runtime"))
+	//{
+	//	const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
+	//	FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
 
-		if (WorkerLogMatcher.FindNext())
-		{
-			LogCategory = WorkerLogMatcher.GetCaptureGroup(1);		  // Worker Name
-			FString WorkerType = WorkerLogMatcher.GetCaptureGroup(2); // Worker Type
+	//	if (WorkerLogMatcher.FindNext())
+	//	{
+	//		LogCategory = WorkerLogMatcher.GetCaptureGroup(1);		  // Worker Name
+	//		FString WorkerType = WorkerLogMatcher.GetCaptureGroup(2); // Worker Type
 
-			if (LogCategory.StartsWith(WorkerType))
-			{
-				// We shorten the category name to make it more human readable. e.g. UnrealWorkerF5C56
-				LogCategory = LogCategory.Left(WorkerType.Len() + 5);
-			}
+	//		if (LogCategory.StartsWith(WorkerType))
+	//		{
+	//			// We shorten the category name to make it more human readable. e.g. UnrealWorkerF5C56
+	//			LogCategory = LogCategory.Left(WorkerType.Len() + 5);
+	//		}
 
-			LogMessage = WorkerLogMatcher.GetCaptureGroup(3);
-		}
-	}
+	//		LogMessage = WorkerLogMatcher.GetCaptureGroup(3);
+	//	}
+	//}
 
-	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
+	// ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 
-	if (LogLevelText.Contains(TEXT("error")))
-	{
-		LogVerbosity = ELogVerbosity::Error;
-	}
-	else if (LogLevelText.Contains(TEXT("warn")))
-	{
-		LogVerbosity = ELogVerbosity::Warning;
-	}
-	else if (LogLevelText.Contains(TEXT("debug")))
-	{
-		LogVerbosity = ELogVerbosity::Verbose;
-	}
-	else if (LogLevelText.Contains(TEXT("verbose")))
-	{
-		LogVerbosity = ELogVerbosity::Verbose;
-	}
-	else
-	{
-		LogVerbosity = ELogVerbosity::Log;
-	}
+	// if (LogLevelText.Contains(TEXT("error")))
+	//{
+	//	LogVerbosity = ELogVerbosity::Error;
+	//}
+	// else if (LogLevelText.Contains(TEXT("warn")))
+	//{
+	//	LogVerbosity = ELogVerbosity::Warning;
+	//}
+	// else if (LogLevelText.Contains(TEXT("debug")))
+	//{
+	//	LogVerbosity = ELogVerbosity::Verbose;
+	//}
+	// else if (LogLevelText.Contains(TEXT("verbose")))
+	//{
+	//	LogVerbosity = ELogVerbosity::Verbose;
+	//}
+	// else
+	//{
+	//	LogVerbosity = ELogVerbosity::Log;
+	//}
 
 	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory] {
-		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
+	// AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory] {
+	//	Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
+	//});
+
+	// TODO: Fix up serialization
+	AsyncTask(ENamedThreads::GameThread, [this, LogLine] {
+		Serialize(*LogLine, ELogVerbosity::Log, FName(TEXT("Runtime")));
 	});
 }
 
