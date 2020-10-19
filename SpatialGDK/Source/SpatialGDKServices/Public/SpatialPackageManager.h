@@ -25,5 +25,4 @@ public:
 private:
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;
-	static const int32 RequiredRuntimePort = 5301;
 };
