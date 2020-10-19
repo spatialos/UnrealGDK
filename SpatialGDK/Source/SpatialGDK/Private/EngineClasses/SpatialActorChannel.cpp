@@ -1129,7 +1129,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 
 	SpatialGDK::SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 
-	auto PreCallRepNotify = [EventTracer, PropertySpanIds](FProperty* Property) {
+	auto PreCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property)* Property) {
 		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
@@ -1137,7 +1137,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 		}
 	};
 
-	auto PostCallRepNotify = [EventTracer, PropertySpanIds](FProperty* Property) {
+	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property)* Property) {
 		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
