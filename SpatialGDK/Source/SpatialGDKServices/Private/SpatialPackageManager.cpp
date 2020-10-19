@@ -22,7 +22,7 @@ bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// Check if the binary already exists for a given version
 	bool bSuccess = FPaths::FileExists(RuntimePath);
 
-	if (bSuccess)
+	if (FPaths::FileExists(RuntimePath);)
 	{
 		UE_LOG(LogSpatialPackageManager, Log, TEXT("RUNTIME BINARIES ALREADY EXIST"));
 	}
