@@ -25,6 +25,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
 namespace
 {
+constexpr int32 DefaultEventTracingFileSize = 256 * 1024 * 1024; // 256mb
+
 void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
@@ -128,6 +130,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableClientQueriesOnServer(false)
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
+	, bEventTracingEnabled(false)
+	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }

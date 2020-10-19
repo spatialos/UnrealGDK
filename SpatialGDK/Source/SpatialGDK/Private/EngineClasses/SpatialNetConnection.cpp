@@ -120,35 +120,6 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 	}
 }
 
-void USpatialNetConnection::ClientNotifyClientHasQuit()
-{
-	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
-	{
-		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity,
-																				SpatialConstants::HEARTBEAT_COMPONENT_ID))
-		{
-			UE_LOG(LogSpatialNetConnection, Warning,
-				   TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"),
-				   *GetName(), PlayerControllerEntity);
-			return;
-		}
-
-		FWorkerComponentUpdate Update = {};
-		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, true);
-
-		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &Update);
-	}
-	else
-	{
-		UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"),
-			   *GetName());
-	}
-}
-
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
 	UE_LOG(LogSpatialNetConnection, Log, TEXT("Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(),
@@ -214,6 +185,11 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			}
 		},
 		GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
+
+	if (APlayerController* Controller = GetPlayerController(GetWorld()))
+	{
+		Controller->OnDestroyed.AddDynamic(this, &USpatialNetConnection::OnControllerDestroyed);
+	}
 }
 
 void USpatialNetConnection::DisableHeartbeat()
@@ -229,4 +205,39 @@ void USpatialNetConnection::DisableHeartbeat()
 void USpatialNetConnection::OnHeartbeat()
 {
 	SetHeartbeatTimeoutTimer();
+}
+
+void USpatialNetConnection::ClientNotifyClientHasQuit()
+{
+	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity,
+																				SpatialConstants::HEARTBEAT_COMPONENT_ID))
+		{
+			UE_LOG(LogSpatialNetConnection, Warning,
+				   TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"),
+				   *GetName(), PlayerControllerEntity);
+			return;
+		}
+
+		FWorkerComponentUpdate Update = {};
+		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+		Update.schema_type = Schema_CreateComponentUpdate();
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, true);
+
+		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &Update);
+	}
+	else
+	{
+		UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"),
+			   *GetName());
+	}
+}
+
+void USpatialNetConnection::OnControllerDestroyed(AActor* /*DestroyedActor*/)
+{
+	// Controller destroyed, prevent future heartbeat updates
+	DisableHeartbeat();
 }
