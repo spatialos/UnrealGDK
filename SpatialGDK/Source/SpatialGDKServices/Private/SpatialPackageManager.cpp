@@ -44,4 +44,34 @@ bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	return true;
 }
 
+bool FSpatialPackageManager::TryFetchInspectorBinary()
+{
+
+	FString InspectorPath = FString::Printf(TEXT("%s/inspector.exe"), *SpatialGDKServicesConstants::GDKProgramPath);
+
+	// Check if the binary already exists
+	bool bSuccess = FPaths::FileExists(InspectorPath);
+
+	if (bSuccess)
+	{
+		UE_LOG(LogSpatialPackageManager, Log, TEXT("INSPECTOR BINARIES ALREADY EXIST"));
+	}
+
+	// If it does not exist then fetch the binary using `spatial worker package get`
+	// Download the exe to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs
+	else
+	{
+		FString InspectorGetArgs = FString::Printf(TEXT("package get inspector x86_64-win32 1.1.2 ./inspector.exe"));
+		FString InspectorGetResult;
+		int32 ExitCode;
+		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, InspectorGetArgs,
+														SpatialGDKServicesConstants::GDKProgramPath, InspectorGetResult, ExitCode);
+		const int32 exitCodeSuccess = 0;
+		UE_LOG(LogSpatialPackageManager, Log, TEXT("OUTPUT %s"), *InspectorGetResult);
+		return (ExitCode == exitCodeSuccess);
+	}
+
+	return true;
+}
+
 #undef LOCTEXT_NAMESPACE

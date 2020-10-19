@@ -895,14 +895,7 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 	// UNR-4334 - Also plug into the new runtime fetching using SpatialPackageManager
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	if (FSpatialPackageManager::TryFetchRuntimeBinary(RuntimeVersion))
-	{
-		LaunchInspectorWebpageButtonClicked();
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to fetch runtime."));
-	}
+	FSpatialPackageManager::TryFetchRuntimeBinary(RuntimeVersion);
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
@@ -934,7 +927,13 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 	}
 
 	FString WebError;
-	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
+	if (FSpatialPackageManager::TryFetchInspectorBinary()) {
+		FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("INSPECTOR BINARIES DON'T EXIST"));
+	}
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

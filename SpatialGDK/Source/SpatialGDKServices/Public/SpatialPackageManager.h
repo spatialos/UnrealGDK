@@ -20,6 +20,7 @@ public:
 	void Init();
 
 	static bool TryFetchRuntimeBinary(FString RuntimeVersion);
+	static bool TryFetchInspectorBinary();
 
 private:
 	static const int32 ExitCodeSuccess = 0;
