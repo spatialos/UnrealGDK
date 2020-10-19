@@ -2,14 +2,18 @@
 
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
-#include "Async/Async.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
+
+#include "Async/Async.h"
+
+#include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection)
 	: Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
+	, WorkerSystemEntityId(Worker_Connection_GetWorkerEntityId(Connection))
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
 	for (uint32 i = 0; i < Attributes->attribute_count; ++i)
@@ -177,6 +181,11 @@ const FString& SpatialOSConnectionHandler::GetWorkerId() const
 const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
 {
 	return WorkerAttributes;
+}
+
+Worker_EntityId SpatialOSConnectionHandler::GetWorkerSystemEntityId() const
+{
+	return WorkerSystemEntityId;
 }
 
 void SpatialOSConnectionHandler::ConnectionDeleter::operator()(Worker_Connection* ConnectionToDelete) const noexcept

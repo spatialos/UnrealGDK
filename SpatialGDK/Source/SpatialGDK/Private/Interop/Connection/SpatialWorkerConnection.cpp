@@ -197,6 +197,12 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return Coordinator->GetWorkerAttributes();
 }
 
+Worker_EntityId USpatialWorkerConnection::GetWorkerSystemEntityId() const
+{
+	check(Coordinator.IsValid());
+	return Coordinator->GetWorkerSystemEntityId();
+}
+
 SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(Worker_ComponentId ComponentId,
 																				SpatialGDK::FComponentValueCallback Callback)
 {

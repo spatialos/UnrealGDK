@@ -345,8 +345,13 @@ struct AuthorityDelegation : Component
 		: Delegations(InDelegation) {}
 
 	AuthorityDelegation(const Worker_ComponentData& Data)
+        : AuthorityDelegation(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	AuthorityDelegation(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		const uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
 		for (uint32 i = 0; i < DelegationCount; i++)

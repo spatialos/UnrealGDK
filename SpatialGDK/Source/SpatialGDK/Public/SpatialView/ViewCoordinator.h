@@ -43,6 +43,7 @@ public:
 
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
+	Worker_EntityId GetWorkerSystemEntityId() const;
 
 	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
