@@ -43,5 +43,4 @@ bool FSpatialSpanIdStack::HasLayer() const
 {
 	return Stack.Num() > 0;
 }
-
 } // namespace SpatialGDK
