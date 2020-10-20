@@ -16,6 +16,5 @@ public:
 	AComponentUpdateEventTracingTest();
 
 private:
-
 	virtual void FinishEventTraceTest() override;
 };

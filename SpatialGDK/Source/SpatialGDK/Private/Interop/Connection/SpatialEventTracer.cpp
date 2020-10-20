@@ -241,6 +241,11 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
 {
+	if (Trace_SpanId_Equal(SpanId, {}))
+	{
+		return;
+	}
+
 	EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId }, SpanId);
 }
 
@@ -251,8 +256,12 @@ void SpatialEventTracer::RemoveComponent(Worker_EntityId EntityId, Worker_Compon
 
 void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
 {
-	const EntityComponentId Id = { EntityId, ComponentId };
+	if (Trace_SpanId_Equal(SpanId, {}))
+	{
+		return;
+	}
 
+	const EntityComponentId Id = { EntityId, ComponentId };
 	Trace_SpanId& StoredSpanId = EntityComponentSpanIds.FindChecked(Id);
 
 	Trace_SpanId MergeCauses[2] = { SpanId, StoredSpanId };
@@ -262,17 +271,17 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 	StoredSpanId = NewSpanId.GetValue();
 }
 
-Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
+TOptional<Trace_SpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 {
 	if (!IsEnabled())
 	{
-		return Trace_SpanId();
+		return {};
 	}
 
 	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	check(SpanId != nullptr)
 
-		return *SpanId;
+	return *SpanId;
 }
 
 void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId)

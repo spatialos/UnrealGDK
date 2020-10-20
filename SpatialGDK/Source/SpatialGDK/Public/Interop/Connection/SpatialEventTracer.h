@@ -36,7 +36,7 @@ public:
 	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
 
-	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
+	TOptional<Trace_SpanId> GetSpanId(const EntityComponentId& Id) const;
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 

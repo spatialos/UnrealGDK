@@ -28,7 +28,6 @@ public:
 	virtual void PrepareTest() override;
 
 protected:
-
 	FName ReceiveOpEventName = "worker.receive_op";
 	FName SendPropertyUpdatesEventName = "unreal_gdk.send_property_updates";
 	FName ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
