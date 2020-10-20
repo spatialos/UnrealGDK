@@ -30,8 +30,6 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 	GENERATED_BODY()
 
 public:
-
-
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static FUserSpanId CreateSpanId(UObject* WorldContextObject);
 

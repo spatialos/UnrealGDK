@@ -16,7 +16,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 namespace SpatialGDK
 {
-
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
@@ -42,7 +41,7 @@ public:
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
 	static FUserSpanId SpanIdToUserSpanId(const Trace_SpanId& SpanId);
-	static Trace_SpanId UserSpanIdToSpanId(const FUserSpanId & ByteArray);
+	static Trace_SpanId UserSpanIdToSpanId(const FUserSpanId& ByteArray);
 
 	const FString& GetFolderPath() const { return FolderPath; }
 

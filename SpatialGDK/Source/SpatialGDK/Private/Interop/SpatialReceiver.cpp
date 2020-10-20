@@ -2214,9 +2214,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		else
 		{
 			uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
-			bool bUseEventTracer = EventTracer->IsEnabled() &&
-								   RPCType != ERPCType::CrossServer &&
-								   RPCId != 0;
+			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer && RPCId != 0;
 			if (bUseEventTracer)
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
