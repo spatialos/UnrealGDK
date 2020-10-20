@@ -31,14 +31,6 @@ Remove-Item $env:LOCALAPPDATA\$project_name\Saved\Config -ErrorAction ignore -Re
 # to spawned Unreal editors (which we do as part of the tests)
 Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
 
-$build_config = Get-Content -Path "$unreal_path\Engine\Saved\UnrealBuildTool\BuildConfiguration.xml"
-if ( $build_config -ne @"
-<?xml version="1.0" encoding="utf-8" ?>
-<Configuration xmlns="https://www.unrealengine.com/BuildConfiguration">
-</Configuration>
-"@ ) {
-    Throw "Build configuration does not have the expected contents - engine upgrade?"
-}
 Set-Content -Path "$unreal_path\Engine\Saved\UnrealBuildTool\BuildConfiguration.xml" -Value @"
 <?xml version="1.0" encoding="utf-8" ?>
 <Configuration xmlns="https://www.unrealengine.com/BuildConfiguration">
