@@ -931,20 +931,21 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetSelectedInspectorVersion().GetInspectorVersion(); 
 	if (FSpatialPackageManager::TryFetchInspectorBinary(InspectorVersion)) {
 		FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
+		if (!WebError.IsEmpty())
+		{
+			FNotificationInfo Info(FText::FromString(WebError));
+			Info.ExpireDuration = 3.0f;
+			Info.bUseSuccessFailIcons = true;
+			TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+			NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+			NotificationItem->ExpireAndFadeout();
+		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("INSPECTOR BINARIES DON'T EXIST"));
 	}
-	if (!WebError.IsEmpty())
-	{
-		FNotificationInfo Info(FText::FromString(WebError));
-		Info.ExpireDuration = 3.0f;
-		Info.bUseSuccessFailIcons = true;
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-		NotificationItem->ExpireAndFadeout();
-	}
+	
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const
